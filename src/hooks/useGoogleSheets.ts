@@ -1,14 +1,15 @@
+
 import { useState, useEffect } from 'react';
 import { SalesData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
-  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-  CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-  REFRESH_TOKEN: import.meta.env.VITE_GOOGLE_REFRESH_TOKEN,
+  CLIENT_ID: "YOUR_CLIENT_ID_1.apps.googleusercontent.com",
+  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_1",
+  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_1B",
   TOKEN_URL: "https://oauth2.googleapis.com/token"
 };
 
-const SPREADSHEET_ID = import.meta.env.VITE_SALES_SPREADSHEET_ID;
+const SPREADSHEET_ID = "12xbYJQrh5wyYDaFhQrq4L0-YkSSlA6z7nMCb66XEbCQ";
 
 export const useGoogleSheets = () => {
   const [data, setData] = useState<SalesData[]>([]);
@@ -30,28 +31,39 @@ export const useGoogleSheets = () => {
         }),
       });
 
-      const data = await response.json();
-      return data.access_token;
+      const tokenData = await response.json();
+      return tokenData.access_token;
     } catch (error) {
       console.error('Error getting access token:', error);
       throw error;
     }
   };
 
+  const parseNumericValue = (value: string | number): number => {
+    if (typeof value === 'number') return value;
+    if (!value || value === '') return 0;
+    
+    const cleaned = value.toString().replace(/,/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const fetchSalesData = async () => {
     try {
       setLoading(true);
-      setError(null);
-
+      setError(null); // Clear previous errors
+      console.log('Fetching sales data from Google Sheets...');
       const accessToken = await getAccessToken();
+      console.log('Access token obtained successfully');
       
-      const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:Z`;
-      
-      const response = await fetch(sheetUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+      const response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch data');
@@ -60,34 +72,107 @@ export const useGoogleSheets = () => {
       const result = await response.json();
       const rows = result.values || [];
       
-      if (rows.length === 0) {
+      if (rows.length < 2) {
         setData([]);
         return;
       }
 
       const headers = rows[0];
-      const dataRows = rows.slice(1);
+      console.log('Sheet headers:', headers);
+      
+      // Transform the raw data to match SalesData interface - optimize with batching
+      const batchSize = 100;
+      const salesData: SalesData[] = [];
+      
+      const processRowsBatch = (startIndex: number, endIndex: number) => {
+        const batch = rows.slice(startIndex, endIndex).map((row: any[]) => {
+          const rawItem: any = {};
+          headers.forEach((header: string, index: number) => {
+            rawItem[header] = row[index] || '';
+          });
 
-      const processedData: SalesData[] = dataRows.map((row: string[], index: number) => ({
-        id: index + 1,
-        date: row[0] || '',
-        clientName: row[1] || '',
-        packageType: row[2] || '',
-        amount: parseFloat(row[3] || '0'),
-        paymentMethod: row[4] || '',
-        salesperson: row[5] || '',
-        location: row[6] || '',
-        clientType: row[7] || '',
-        renewalDate: row[8] || '',
-        discountApplied: parseFloat(row[9] || '0'),
-        referralSource: row[10] || '',
-        notes: row[11] || '',
-      }));
+          // Transform to match SalesData interface with camelCase field names
+          const transformedItem: SalesData = {
+            memberId: rawItem['Member ID'] || rawItem['memberId'] || '',
+            customerName: rawItem['Customer Name'] || rawItem['customerName'] || '',
+            customerEmail: rawItem['Customer Email'] || rawItem['customerEmail'] || '',
+            saleItemId: rawItem['Sale Item ID'] || rawItem['saleItemId'] || '',
+            paymentCategory: rawItem['Payment Category'] || rawItem['paymentCategory'] || '',
+            membershipType: rawItem['Membership Type'] || rawItem['membershipType'] || '',
+            paymentDate: rawItem['Payment Date'] || rawItem['paymentDate'] || '',
+            paymentValue: parseNumericValue(rawItem['Payment Value'] || rawItem['paymentValue'] || 0),
+            paidInMoneyCredits: parseNumericValue(rawItem['Paid in Money Credits'] || rawItem['Paid In Money Credits'] || rawItem['paidInMoneyCredits'] || 0),
+            paymentVAT: parseNumericValue(rawItem['Payment VAT'] || rawItem['paymentVAT'] || 0),
+            paymentItem: rawItem['Payment Item'] || rawItem['paymentItem'] || '',
+            paymentStatus: rawItem['Payment Status'] || rawItem['paymentStatus'] || '',
+            paymentMethod: rawItem['Payment Method'] || rawItem['paymentMethod'] || '',
+            paymentTransactionId: rawItem['Payment Transaction ID'] || rawItem['paymentTransactionId'] || '',
+            stripeToken: rawItem['Stripe Token'] || rawItem['stripeToken'] || '',
+            soldBy: rawItem['Sold By'] || rawItem['soldBy'] || '',
+            saleReference: rawItem['Sale Reference'] || rawItem['saleReference'] || '',
+            calculatedLocation: rawItem['Calculated Location'] || rawItem['calculatedLocation'] || '',
+            cleanedProduct: rawItem['Cleaned Product'] || rawItem['cleanedProduct'] || '',
+            cleanedCategory: rawItem['Cleaned Category'] || rawItem['cleanedCategory'] || '',
+            
+            // Calculate derived fields
+            netRevenue: parseNumericValue(rawItem['Payment Value'] || rawItem['paymentValue'] || 0) - parseNumericValue(rawItem['Payment VAT'] || rawItem['paymentVAT'] || 0),
+            vat: parseNumericValue(rawItem['Payment VAT'] || rawItem['paymentVAT'] || 0),
+            grossRevenue: parseNumericValue(rawItem['Payment Value'] || rawItem['paymentValue'] || 0),
+            
+            // Handle discount columns with multiple possible names
+            mrpPreTax: parseNumericValue(
+              rawItem['Mrp - Pre Tax'] || rawItem['MRP Pre Tax'] || rawItem['MRP_Pre_Tax'] || 
+              rawItem['mrpPreTax'] || rawItem['MrpPreTax'] || rawItem['Pre Tax MRP'] || 0
+            ),
+            mrpPostTax: parseNumericValue(
+              rawItem['Mrp - Post Tax'] || rawItem['MRP Post Tax'] || rawItem['MRP_Post_Tax'] || 
+              rawItem['mrpPostTax'] || rawItem['MrpPostTax'] || rawItem['Post Tax MRP'] || 0
+            ),
+            discountAmount: parseNumericValue(
+              rawItem['Discount Amount -Mrp- Payment Value'] || rawItem['Discount Amount'] || 
+              rawItem['discount_amount'] || rawItem['discountAmount'] || rawItem['DiscountAmount'] ||
+              rawItem['Discount_Amount'] || rawItem['Total Discount'] || 0
+            ),
+            discountPercentage: parseNumericValue(
+              rawItem['Discount Percentage - discount amount/mrp*100'] || rawItem['Discount Percentage'] || 
+              rawItem['discount_percentage'] || rawItem['discountPercentage'] || rawItem['DiscountPercentage'] ||
+              rawItem['Discount_Percentage'] || rawItem['Discount %'] || rawItem['Discount_Percent'] || 0
+            ),
+            hostId: rawItem['Host Id'] || rawItem['Host ID'] || rawItem['hostId'] || ''
+          };
 
-      setData(processedData);
-    } catch (error) {
-      console.error('Error fetching sales data:', error);
-      setError(error instanceof Error ? error.message : 'Unknown error occurred');
+          return transformedItem;
+        });
+        
+        salesData.push(...batch);
+      };
+
+      // Process data in batches to avoid blocking the main thread
+      const totalRows = rows.length - 1; // Exclude header
+      for (let i = 1; i <= totalRows; i += batchSize) {
+        const endIndex = Math.min(i + batchSize, totalRows + 1);
+        
+        // Use setTimeout to yield control back to the browser
+        if (i > 1) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+        
+        processRowsBatch(i, endIndex);
+      }
+
+      console.log('Transformed sales data sample:', salesData.slice(0, 3));
+      console.log('Sample discount data:', {
+        discountAmount: salesData[0]?.discountAmount,
+        discountPercentage: salesData[0]?.discountPercentage,
+        mrpPreTax: salesData[0]?.mrpPreTax,
+        mrpPostTax: salesData[0]?.mrpPostTax
+      });
+      
+      setData(salesData);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching sales data:', err);
+      setError('Failed to load sales data');
     } finally {
       setLoading(false);
     }
@@ -97,10 +182,5 @@ export const useGoogleSheets = () => {
     fetchSalesData();
   }, []);
 
-  return {
-    data,
-    loading,
-    error,
-    refetch: fetchSalesData,
-  };
+  return { data, loading, error, refetch: fetchSalesData };
 };
