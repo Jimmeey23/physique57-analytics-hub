@@ -159,17 +159,17 @@ class GeminiService {
   /**
    * Format currency values for AI analysis in INR lakhs
    */
-  private formatCurrency(value: number): string {
-    const valueInLakhs = value / 100000; // Convert to lakhs
+  public formatCurrency(amount: number): string {
+    const valueInLakhs = amount / 100000; // Convert to lakhs
     if (valueInLakhs >= 1) {
       return `₹${valueInLakhs.toFixed(2)} lakhs`;
     } else {
       // For values less than 1 lakh, show in thousands
-      const valueInThousands = value / 1000;
+      const valueInThousands = amount / 1000;
       if (valueInThousands >= 1) {
         return `₹${valueInThousands.toFixed(1)}K`;
       } else {
-        return `₹${value.toLocaleString('en-IN')}`;
+        return `₹${amount.toLocaleString('en-IN')}`;
       }
     }
   }
