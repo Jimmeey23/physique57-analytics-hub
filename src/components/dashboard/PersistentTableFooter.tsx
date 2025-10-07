@@ -409,9 +409,14 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
     if (!aiResult) return;
 
     const timestamp = new Date();
-    let aiText = `🤖 **Comprehensive AI Analysis Report**\n`;
+    const currentDate = new Date();
+    const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const previousMonthName = previousMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    let aiText = `🤖 **${previousMonthName} Performance Analysis Report**\n`;
     aiText += `📅 Generated on ${timestamp.toLocaleDateString()} at ${timestamp.toLocaleTimeString()}\n`;
-    aiText += `${tableName ? `📊 Table: ${tableName}` : ''}\n\n`;
+    aiText += `${tableName ? `📊 Table: ${tableName}` : ''}\n`;
+    aiText += `🎯 **Focus: ${previousMonthName} vs Previous Months Comparison**\n\n`;
     aiText += `═══════════════════════════════════════\n\n`;
     
     if (aiResult.summary) {
@@ -614,7 +619,7 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                   ) : (
                     <Brain className="w-3 h-3 text-blue-600" />
                   )}
-                  Full AI Analysis
+                  Previous Month Analysis
                 </Button>
               </div>
             )}
@@ -672,7 +677,7 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-600" />
-                  <h4 className="font-semibold text-slate-700">AI Analysis Results</h4>
+                  <h4 className="font-semibold text-slate-700">Previous Month Performance Analysis</h4>
                   {tableName && (
                     <Badge variant="outline" className="text-xs">
                       {tableName}

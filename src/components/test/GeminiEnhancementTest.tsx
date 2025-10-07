@@ -8,12 +8,30 @@ interface TestData {
   avgOrder: number;
 }
 
-const sampleData: TestData[] = [
-  { month: 'January', revenue: 545000, customers: 125, avgOrder: 4360 },
-  { month: 'February', revenue: 622000, customers: 142, avgOrder: 4380 },
-  { month: 'March', revenue: 698000, customers: 158, avgOrder: 4418 },
-  { month: 'April', revenue: 734000, customers: 165, avgOrder: 4448 },
-];
+// Generate realistic sample data with current date context
+const generateSampleData = (): TestData[] => {
+  const currentDate = new Date();
+  const months = [];
+  
+  // Generate last 6 months of data
+  for (let i = 5; i >= 0; i--) {
+    const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    const monthName = monthDate.toLocaleString('default', { month: 'long' });
+    const baseRevenue = 500000 + (Math.random() * 300000);
+    const baseCustomers = 120 + Math.floor(Math.random() * 50);
+    
+    months.push({
+      month: monthName,
+      revenue: Math.floor(baseRevenue),
+      customers: baseCustomers,
+      avgOrder: Math.floor(baseRevenue / baseCustomers),
+    });
+  }
+  
+  return months;
+};
+
+const sampleData: TestData[] = generateSampleData();
 
 export default function GeminiEnhancementTest() {
   const [analysis, setAnalysis] = useState<string>('');
@@ -54,7 +72,14 @@ export default function GeminiEnhancementTest() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Gemini Enhancement Test</h1>
+      <h1 className="text-3xl font-bold mb-6">Previous Month Performance Analysis Test</h1>
+      <div className="bg-yellow-50 p-4 rounded-lg mb-6 border-l-4 border-yellow-400">
+        <h2 className="text-lg font-semibold text-yellow-800 mb-2">📊 Focus: Previous Month Analysis</h2>
+        <p className="text-yellow-700">
+          This test validates that AI analysis focuses on <strong>{new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' })}</strong> performance 
+          compared to other months in the dataset.
+        </p>
+      </div>
       
       {/* Currency Formatting Test */}
       <div className="bg-blue-50 p-4 rounded-lg mb-6">
@@ -96,13 +121,13 @@ export default function GeminiEnhancementTest() {
 
       {/* AI Analysis Test */}
       <div className="bg-green-50 p-4 rounded-lg mb-6">
-        <h2 className="text-xl font-semibold mb-3">Enhanced AI Analysis Test</h2>
+        <h2 className="text-xl font-semibold mb-3">Previous Month AI Analysis Test</h2>
         <button
           onClick={testEnhancedAnalysis}
           disabled={loading}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          {loading ? 'Generating Analysis...' : 'Test Enhanced Analysis'}
+          {loading ? 'Analyzing Previous Month...' : 'Test Previous Month Analysis'}
         </button>
         
         {error && (
@@ -122,13 +147,15 @@ export default function GeminiEnhancementTest() {
       </div>
 
       <div className="text-sm text-gray-600">
-        <h3 className="font-semibold mb-2">Enhancement Features Being Tested:</h3>
+        <h3 className="font-semibold mb-2">Previous Month Analysis Features:</h3>
         <ul className="list-disc pl-5 space-y-1">
-          <li>INR currency formatting in lakhs instead of USD millions</li>
-          <li>Increased content limits (1000 chars summary, 8 key insights)</li>
-          <li>Enhanced analysis prompt with 6 detailed sections</li>
-          <li>Improved content parsing with flexible regex patterns</li>
-          <li>Higher token limits (4096) for detailed responses</li>
+          <li><strong>Previous Month Focus:</strong> Analysis centers on {new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleString('default', { month: 'long' })} performance</li>
+          <li><strong>Month-over-Month Comparisons:</strong> Detailed percentage changes and growth metrics</li>
+          <li><strong>Historical Ranking:</strong> How previous month ranks against all other months</li>
+          <li><strong>INR Currency Formatting:</strong> All amounts displayed in lakhs (₹ format)</li>
+          <li><strong>Trend Analysis:</strong> Previous month performance in context of broader patterns</li>
+          <li><strong>Comprehensive Insights:</strong> 6-section detailed analysis with 8 key points</li>
+          <li><strong>Enhanced Content:</strong> No truncation with 4096 token limit</li>
         </ul>
       </div>
     </div>
