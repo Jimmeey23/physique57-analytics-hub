@@ -34,9 +34,9 @@ class GeminiService {
       throw new Error('Gemini API key is not configured');
     }
     
-    this.genAI = new GoogleGenerativeAI(apiKey);
+        // FIX: Change model to the widely supported and current alias gemini-2.5-flash
     this.model = this.genAI.getGenerativeModel({ 
-      model: "gemini-flash-latest",
+      model: "gemini-2.5-flash", // <-- CHANGED HERE
       generationConfig: {
         temperature: 0.7,
         topP: 0.9,
