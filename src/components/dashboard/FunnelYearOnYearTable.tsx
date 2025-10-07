@@ -292,18 +292,24 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   }
   const columns = [{
     key: 'source',
-    header: 'Source',
+    header: 'Lead Source',
     render: (value: string) => <div className="font-semibold text-slate-800 min-w-[120px] truncate">
-          {value}
+          {value === 'TOTALS' ? (
+            <span className="text-white font-bold uppercase tracking-wide">TOTALS</span>
+          ) : (
+            value
+          )}
         </div>,
-    align: 'left' as const
+    align: 'left' as const,
+    className: 'min-w-[140px] sticky left-0 bg-white'
   }, ...months.flatMap(monthInfo => [{
     key: `${monthInfo.name}_${currentYear}`,
     header: `${monthInfo.name} ${currentYear}`,
-    render: (value: any) => <div className="text-center font-medium text-xs my-0 py-0 mx-[20px]">
+    render: (value: any) => <div className="text-center font-medium text-xs">
             {formatValue(value, selectedMetric)}
           </div>,
-    align: 'center' as const
+    align: 'center' as const,
+    className: 'min-w-[90px]'
   }, {
     key: `${monthInfo.name}_${currentYear - 1}`,
     header: `${monthInfo.name} ${currentYear - 1}`,
@@ -311,21 +317,35 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
       const currentValue = row[`${monthInfo.name}_${currentYear}`];
       const previousValue = value;
       let growth = null;
-      if (currentValue && previousValue) {
+      let growthDisplay = '';
+      
+      if (currentValue && previousValue && typeof currentValue === 'object' && typeof previousValue === 'object') {
         const current = currentValue[selectedMetric];
         const previous = previousValue[selectedMetric];
-        if (current && previous && previous !== 0) {
-          growth = (current - previous) / previous * 100;
+        if (current !== undefined && previous !== undefined && previous !== 0) {
+          growth = ((current - previous) / previous) * 100;
+          if (Math.abs(growth) > 0.1) {
+            growthDisplay = growth > 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+          }
         }
       }
-      return <div className="text-center group">
-          <div className="font-medium text-slate-600 text-xs text-center mx-[20px]">
+      
+      return <div className="text-center">
+          <div className="font-medium text-slate-600 text-xs">
             {formatValue(value, selectedMetric)}
           </div>
-          {growth !== null && Math.abs(growth) > 0.1}
+          {growthDisplay && (
+            <div className={cn(
+              "text-xs font-semibold mt-0.5",
+              growth && growth > 0 ? "text-green-600" : "text-red-600"
+            )}>
+              {growthDisplay}
+            </div>
+          )}
         </div>;
     },
-    align: 'center' as const
+    align: 'center' as const,
+    className: 'min-w-[90px]'
   }])];
   return (
     <motion.div

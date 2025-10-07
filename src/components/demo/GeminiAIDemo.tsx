@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { geminiService } from '@/services/geminiService';
+import { directGeminiService } from '@/services/directGeminiService';
+import { AlertCircle, CheckCircle, Loader2, Zap } from 'lucide-react';
 
 // Sample data for testing
 const demoTableData = [
@@ -58,6 +63,41 @@ const demoTableColumns = [
 ];
 
 export const GeminiAIDemo: React.FC = () => {
+  const [connectionTest, setConnectionTest] = useState<{ 
+    status: 'idle' | 'testing' | 'success' | 'error'; 
+    message?: string; 
+    service?: string;
+  }>({ status: 'idle' });
+
+  const testGeminiConnection = async (useDirect = false) => {
+    setConnectionTest({ status: 'testing' });
+    
+    try {
+      const service = useDirect ? directGeminiService : geminiService;
+      const serviceName = useDirect ? 'Direct API' : 'SDK';
+      
+      const result = await service.testConnection();
+      if (result.success) {
+        setConnectionTest({ 
+          status: 'success', 
+          message: `${serviceName}: Connected to ${result.model}`,
+          service: serviceName
+        });
+      } else {
+        setConnectionTest({ 
+          status: 'error', 
+          message: `${serviceName}: ${result.error || 'Connection failed'}`,
+          service: serviceName
+        });
+      }
+    } catch (error) {
+      setConnectionTest({ 
+        status: 'error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div className="text-center space-y-3">
@@ -66,6 +106,46 @@ export const GeminiAIDemo: React.FC = () => {
           This demo showcases how Gemini AI can automatically analyze table data and generate 
           comprehensive insights, trends, and recommendations in the footer notes section.
         </p>
+        
+        {/* Connection Test */}
+        <div className="flex flex-col items-center justify-center gap-3 mt-4">
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => testGeminiConnection(false)}
+              disabled={connectionTest.status === 'testing'}
+              variant="outline"
+              size="sm"
+            >
+              {connectionTest.status === 'testing' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Test SDK Connection
+            </Button>
+            
+            <Button 
+              onClick={() => testGeminiConnection(true)}
+              disabled={connectionTest.status === 'testing'}
+              variant="outline"
+              size="sm"
+            >
+              {connectionTest.status === 'testing' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Zap className="w-4 h-4 mr-1" />
+              Test Direct API
+            </Button>
+          </div>
+          
+          {connectionTest.status === 'success' && (
+            <Badge className="bg-green-100 text-green-800 border-green-200">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              {connectionTest.message}
+            </Badge>
+          )}
+          
+          {connectionTest.status === 'error' && (
+            <Badge className="bg-red-100 text-red-800 border-red-200">
+              <AlertCircle className="w-3 h-3 mr-1" />
+              {connectionTest.message}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <Card>

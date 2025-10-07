@@ -35,14 +35,38 @@ class GeminiService {
     }
     
     this.genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Use the exact model name from your reference
     this.model = this.genAI.getGenerativeModel({ 
-      model: "gemini-flash-latest",
+      model: "gemini-flash-latest",  // Matching your bash script reference
       generationConfig: {
         temperature: 0.7,
         topP: 0.9,
         maxOutputTokens: 2048,
       }
     });
+  }
+
+  /**
+   * Test the Gemini connection and model availability
+   */
+  async testConnection(): Promise<{ success: boolean; model?: string; error?: string }> {
+    try {
+      const testResult = await this.model.generateContent("Hello, please respond with 'Connection successful'");
+      const response = await testResult.response;
+      const text = response.text();
+      
+      return {
+        success: true,
+        model: "gemini-flash-latest",
+      };
+    } catch (error: any) {
+      console.error('Connection test failed:', error);
+      return {
+        success: false,
+        error: error?.message || 'Connection failed'
+      };
+    }
   }
 
   /**
@@ -281,13 +305,24 @@ Structure your response with clear section headers and bullet points. Be specifi
         recommendations: sections.recommendations || undefined
       };
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Gemini API error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'AI analysis temporarily unavailable. Please try again later.';
+      if (error?.status === 404) {
+        errorMessage = 'Model not found. Please check the Gemini model configuration.';
+      } else if (error?.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please try again in a few moments.';
+      } else if (error?.status === 403) {
+        errorMessage = 'API access denied. Please check your API key.';
+      }
+      
       return {
-        summary: 'AI analysis temporarily unavailable. Please try again later.',
+        summary: errorMessage,
         keyInsights: ['AI service encountered an error'],
         trends: ['Unable to analyze trends at this time'],
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error?.message || error?.status || 'Unknown error occurred'
       };
     }
   }
@@ -365,8 +400,17 @@ Provide exactly 3 bullet points with actionable insights:`;
       const text = response.text();
       
       return this.extractBulletPoints(text).slice(0, 3);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Quick insights error:', error);
+      
+      if (error?.status === 404) {
+        return ['Model configuration error - please contact support'];
+      } else if (error?.status === 429) {
+        return ['Rate limit exceeded - please try again in a moment'];
+      } else if (error?.status === 403) {
+        return ['API access denied - please check configuration'];
+      }
+      
       return ['Analysis unavailable at this time'];
     }
   }
