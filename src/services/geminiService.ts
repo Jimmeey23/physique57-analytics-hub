@@ -29,13 +29,20 @@ class GeminiService {
   private model: any;
 
   constructor() {
-    const apiKey = 'AIzaSy-REDACTED_GEMINI_KEY';
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSy-REDACTED_GEMINI_KEY';
     if (!apiKey) {
       throw new Error('Gemini API key is not configured');
     }
     
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    this.model = this.genAI.getGenerativeModel({ 
+      model: "gemini-flash-latest",
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.9,
+        maxOutputTokens: 2048,
+      }
+    });
   }
 
   /**
