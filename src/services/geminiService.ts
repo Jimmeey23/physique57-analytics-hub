@@ -156,15 +156,21 @@ class GeminiService {
   }
 
   /**
-   * Format currency values for AI analysis
+   * Format currency values for AI analysis in INR lakhs
    */
   private formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    const valueInLakhs = value / 100000; // Convert to lakhs
+    if (valueInLakhs >= 1) {
+      return `₹${valueInLakhs.toFixed(2)} lakhs`;
+    } else {
+      // For values less than 1 lakh, show in thousands
+      const valueInThousands = value / 1000;
+      if (valueInThousands >= 1) {
+        return `₹${valueInThousands.toFixed(1)}K`;
+      } else {
+        return `₹${value.toLocaleString('en-IN')}`;
+      }
+    }
   }
 
   /**
@@ -249,28 +255,43 @@ ${columns.map(col => `- ${col.header} (${col.key}): ${col.type || 'text'} data`)
     }
 
     prompt += `\n\n**ANALYSIS REQUEST:**
-Based on this ${tableName || 'table'} data, please provide:
+Based on this ${tableName || 'table'} data, please provide a comprehensive and detailed analysis:
 
-1. **Executive Summary**: A concise overview of what this data shows (2-3 sentences)
+1. **Executive Summary**: A detailed overview of what this data shows, highlighting the most significant findings and overall business performance (4-5 sentences minimum)
 
-2. **Key Insights**: 3-5 specific, actionable insights from the data
+2. **Key Insights**: 5-8 specific, actionable insights from the data with supporting numbers and percentages. Each insight should be detailed and explain the business impact
 
-3. **Trends & Patterns**: Notable trends, patterns, or anomalies you observe
+3. **Trends & Patterns**: Detailed analysis of notable trends, patterns, seasonality, growth rates, or anomalies you observe. Include month-over-month or period-over-period comparisons where applicable
 
-4. **Performance Assessment**: How is performance across different metrics/categories?
+4. **Performance Assessment**: Comprehensive evaluation of performance across different metrics/categories, including:
+   - Top performers and underperformers
+   - Efficiency metrics and ratios
+   - Comparative analysis between categories/segments
+   - Performance benchmarks and targets
 
-${includeRecommendations ? '5. **Strategic Recommendations**: 3-4 specific, actionable recommendations based on the data\n' : ''}
+5. **Financial Analysis**: Detailed revenue analysis including:
+   - Revenue distribution and concentration
+   - Average transaction values and member spending patterns
+   - Revenue per category/service breakdown
+   - Growth rates and financial health indicators
 
-**FORMATTING REQUIREMENTS:**
-- Use clear, business-appropriate language
-- Include specific numbers and percentages where relevant  
-- Focus on actionable insights for fitness/wellness business operations
-- Use bullet points for clarity
-- Highlight the most important findings
-- Keep each section concise but informative
+${includeRecommendations ? '6. **Strategic Recommendations**: 5-7 specific, actionable recommendations with implementation steps and expected outcomes\n' : ''}
+
+**CURRENCY FORMAT NOTE**: All revenue/financial figures are in Indian Rupees (₹) and should be presented in lakhs for large amounts (1 lakh = ₹100,000).
+
+**DETAILED FORMATTING REQUIREMENTS:**
+- Use clear, business-appropriate language suitable for executive reporting
+- Include specific numbers, percentages, and financial metrics throughout
+- Focus on actionable insights for fitness/wellness business operations in the Indian market
+- Use detailed bullet points with sub-points where necessary
+- Highlight the most important findings with emphasis
+- Provide context for all metrics and comparisons
+- Each section should be comprehensive and informative
+- Include growth rates, ratios, and benchmark comparisons
+- Explain the business implications of each finding
 
 **RESPONSE FORMAT:**
-Structure your response with clear section headers and bullet points. Be specific and data-driven in your analysis.`;
+Structure your response with clear section headers and detailed bullet points. Be extremely specific and data-driven in your analysis. Ensure no important insights are missed and provide comprehensive business intelligence.`;
 
     return prompt;
   }
@@ -299,9 +320,9 @@ Structure your response with clear section headers and bullet points. Be specifi
       const sections = this.parseGeminiResponse(text);
 
       return {
-        summary: sections.summary || text.slice(0, 500) + '...',
-        keyInsights: sections.keyInsights || ['Analysis completed successfully'],
-        trends: sections.trends || ['Multiple patterns identified'],
+        summary: sections.summary || text.slice(0, 1000) + (text.length > 1000 ? '...' : ''),
+        keyInsights: sections.keyInsights || this.extractBulletPoints(text).slice(0, 8),
+        trends: sections.trends || this.extractBulletPoints(text).slice(0, 6),
         recommendations: sections.recommendations || undefined
       };
       
@@ -339,26 +360,39 @@ Structure your response with clear section headers and bullet points. Be specifi
     const sections: any = {};
     
     try {
-      // Split by common section headers
-      const summaryMatch = text.match(/(?:Executive Summary|Summary)[:\s]*\n(.*?)(?=\n.*(?:Key Insights|Insights|Trends|Recommendations)|$)/is);
+      // Enhanced pattern matching for more comprehensive sections
+      const summaryMatch = text.match(/(?:Executive Summary|Summary)[:\s]*\n([\s\S]*?)(?=\n\s*(?:\d+\.|\*\*(?:Key Insights|Insights|Trends|Performance|Financial|Recommendations)))/i);
       if (summaryMatch) {
         sections.summary = summaryMatch[1].trim();
       }
 
-      const insightsMatch = text.match(/(?:Key Insights|Insights)[:\s]*\n(.*?)(?=\n.*(?:Trends|Performance|Recommendations)|$)/is);
+      // Capture Key Insights with more flexible matching
+      const insightsMatch = text.match(/(?:Key Insights|Insights)[:\s]*\n([\s\S]*?)(?=\n\s*(?:\d+\.|\*\*(?:Trends|Performance|Financial|Recommendations)))/i);
       if (insightsMatch) {
-        sections.keyInsights = this.extractBulletPoints(insightsMatch[1]);
+        sections.keyInsights = this.extractBulletPoints(insightsMatch[1], 8);
       }
 
-      const trendsMatch = text.match(/(?:Trends|Patterns|Performance)[:\s]*\n(.*?)(?=\n.*(?:Recommendations|Strategic)|$)/is);
+      // Capture Trends, Performance Assessment, and Financial Analysis together
+      const trendsMatch = text.match(/(?:Trends|Patterns|Performance Assessment|Financial Analysis)[\s\S]*?\n([\s\S]*?)(?=\n\s*(?:\d+\.|\*\*(?:Strategic|Recommendations))|$)/i);
       if (trendsMatch) {
-        sections.trends = this.extractBulletPoints(trendsMatch[1]);
+        sections.trends = this.extractBulletPoints(trendsMatch[1], 8);
       }
 
-      const recommendationsMatch = text.match(/(?:Strategic Recommendations|Recommendations)[:\s]*\n(.*?)$/is);
+      const recommendationsMatch = text.match(/(?:Strategic Recommendations|Recommendations)[:\s]*\n([\s\S]*?)$/i);
       if (recommendationsMatch) {
-        sections.recommendations = this.extractBulletPoints(recommendationsMatch[1]);
+        sections.recommendations = this.extractBulletPoints(recommendationsMatch[1], 8);
       }
+      
+      // If structured parsing fails, try to extract all bullet points from the full text
+      if (!sections.keyInsights || sections.keyInsights.length === 0) {
+        const allPoints = this.extractBulletPoints(text, 15);
+        sections.keyInsights = allPoints.slice(0, 8);
+        sections.trends = allPoints.slice(8, 14);
+        if (allPoints.length > 14) {
+          sections.recommendations = allPoints.slice(14);
+        }
+      }
+      
     } catch (error) {
       console.warn('Error parsing Gemini response structure:', error);
     }
@@ -367,18 +401,37 @@ Structure your response with clear section headers and bullet points. Be specifi
   }
 
   /**
-   * Extract bullet points from text
+   * Extract bullet points from text with configurable limits
    */
-  private extractBulletPoints(text: string): string[] {
+  private extractBulletPoints(text: string, maxPoints: number = 8): string[] {
     if (!text) return [];
     
+    // Split by various bullet point indicators and numbered lists
     const lines = text.split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0)
-      .map(line => line.replace(/^[-•*]\s*/, '').trim())
-      .filter(line => line.length > 10); // Filter out very short lines
+      .map(line => {
+        // Remove various bullet point prefixes
+        return line.replace(/^[-•*+→▶]\s*/, '')
+                  .replace(/^\d+\.\s*/, '')
+                  .replace(/^[a-zA-Z]\.\s*/, '')
+                  .trim();
+      })
+      .filter(line => {
+        // Filter out very short lines, headers, and section markers
+        return line.length > 15 && 
+               !line.match(/^\*\*.*\*\*$/) && // Remove markdown headers
+               !line.match(/^#{1,6}\s/) && // Remove markdown headers
+               !line.includes('**') && // Remove bold markers
+               line.length < 500; // Remove overly long paragraphs
+      })
+      .map(line => {
+        // Clean up the text and ensure proper formatting
+        return line.replace(/\*\*/g, '').trim();
+      })
+      .filter(line => line.length > 15); // Final length filter
     
-    return lines.slice(0, 6); // Limit to 6 points maximum
+    return lines.slice(0, maxPoints);
   }
 
   /**
@@ -388,18 +441,20 @@ Structure your response with clear section headers and bullet points. Be specifi
     try {
       const stats = this.extractTableStatistics(data, columns);
       
-      const prompt = `Analyze this ${tableName || 'business'} data and provide 3 key insights in bullet points:
+      const prompt = `Analyze this ${tableName || 'business'} data and provide 5 detailed key insights in bullet points:
 
 Data: ${data.length} rows
 Key metrics: ${Object.values(stats.numericColumns).map((stat: any) => `${stat.header}: ${this.formatCurrency(stat.sum)}`).join(', ')}
 
-Provide exactly 3 bullet points with actionable insights:`;
+Note: All currency figures are in Indian Rupees (₹) and large amounts should be presented in lakhs.
+
+Provide exactly 5 detailed bullet points with specific numbers, percentages, and actionable business insights for the Indian fitness/wellness market:`;
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
-      return this.extractBulletPoints(text).slice(0, 3);
+      return this.extractBulletPoints(text, 5);
     } catch (error: any) {
       console.error('Quick insights error:', error);
       

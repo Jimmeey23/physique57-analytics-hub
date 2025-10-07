@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { ExpirationData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
-  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-  CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-  REFRESH_TOKEN: import.meta.env.VITE_GOOGLE_REFRESH_TOKEN,
+  CLIENT_ID: "YOUR_CLIENT_ID_1.apps.googleusercontent.com",
+  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_1",
+  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_1B",
   TOKEN_URL: "https://oauth2.googleapis.com/token"
 };
 

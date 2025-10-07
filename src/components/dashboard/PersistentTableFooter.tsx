@@ -408,35 +408,41 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
   const insertAiSummaryToNote = () => {
     if (!aiResult) return;
 
-    let aiText = `🤖 **AI Analysis Summary** - Generated ${new Date().toLocaleDateString()}\n\n`;
+    const timestamp = new Date();
+    let aiText = `🤖 **Comprehensive AI Analysis Report**\n`;
+    aiText += `📅 Generated on ${timestamp.toLocaleDateString()} at ${timestamp.toLocaleTimeString()}\n`;
+    aiText += `${tableName ? `📊 Table: ${tableName}` : ''}\n\n`;
+    aiText += `═══════════════════════════════════════\n\n`;
     
     if (aiResult.summary) {
-      aiText += `📊 **Overview:**\n${aiResult.summary}\n\n`;
+      aiText += `📊 **EXECUTIVE SUMMARY**\n`;
+      aiText += `${aiResult.summary}\n\n`;
     }
     
     if (aiResult.keyInsights && aiResult.keyInsights.length > 0) {
-      aiText += `💡 **Key Insights:**\n`;
-      aiResult.keyInsights.forEach(insight => {
-        aiText += `• ${insight}\n`;
+      aiText += `💡 **KEY BUSINESS INSIGHTS** (${aiResult.keyInsights.length} insights)\n`;
+      aiResult.keyInsights.forEach((insight, index) => {
+        aiText += `${index + 1}. ${insight}\n\n`;
       });
-      aiText += '\n';
     }
     
     if (aiResult.trends && aiResult.trends.length > 0) {
-      aiText += `📈 **Trends & Patterns:**\n`;
-      aiResult.trends.forEach(trend => {
-        aiText += `• ${trend}\n`;
+      aiText += `📈 **TRENDS & PERFORMANCE ANALYSIS** (${aiResult.trends.length} findings)\n`;
+      aiResult.trends.forEach((trend, index) => {
+        aiText += `▶ ${trend}\n\n`;
       });
-      aiText += '\n';
     }
     
     if (aiResult.recommendations && aiResult.recommendations.length > 0) {
-      aiText += `🎯 **Recommendations:**\n`;
-      aiResult.recommendations.forEach(rec => {
-        aiText += `• ${rec}\n`;
+      aiText += `🎯 **STRATEGIC RECOMMENDATIONS** (${aiResult.recommendations.length} actions)\n`;
+      aiResult.recommendations.forEach((rec, index) => {
+        aiText += `🔸 **Action ${index + 1}:** ${rec}\n\n`;
       });
-      aiText += '\n';
     }
+
+    aiText += `───────────────────────────────────────\n`;
+    aiText += `💼 **Note:** All revenue figures are in Indian Rupees (₹) and large amounts are shown in lakhs.\n`;
+    aiText += `🔄 This analysis should be reviewed and validated with current business context.\n\n`;
 
     // Insert or append to existing text
     const newText = tempText ? `${tempText}\n\n${aiText}` : aiText;
@@ -693,32 +699,40 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="space-y-5 max-h-[600px] overflow-y-auto">
                 {/* AI Summary */}
                 {aiResult.summary && (
                   <div>
-                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-3">
                       <FileText className="w-4 h-4" />
                       Executive Summary
                     </h5>
-                    <p className="text-sm text-slate-600 bg-white p-3 rounded border">
-                      {aiResult.summary}
-                    </p>
+                    <div className="text-sm text-slate-600 bg-white p-4 rounded-lg border shadow-sm leading-relaxed">
+                      {aiResult.summary.split('\n').map((paragraph, index) => (
+                        <p key={index} className="mb-2 last:mb-0">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {/* Key Insights */}
                 {aiResult.keyInsights && aiResult.keyInsights.length > 0 && (
                   <div>
-                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-3">
                       <Zap className="w-4 h-4" />
-                      Key Insights
+                      Key Insights ({aiResult.keyInsights.length} insights)
                     </h5>
-                    <div className="bg-white p-3 rounded border space-y-1">
+                    <div className="bg-white p-4 rounded-lg border shadow-sm space-y-3">
                       {aiResult.keyInsights.map((insight, index) => (
-                        <div key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                          <span className="text-blue-500 font-medium">•</span>
-                          <span>{insight}</span>
+                        <div key={index} className="flex items-start gap-3 pb-2 border-b border-slate-100 last:border-b-0 last:pb-0">
+                          <span className="text-blue-500 font-bold text-lg leading-none mt-0.5">{index + 1}.</span>
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                              {insight}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -728,15 +742,19 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                 {/* Trends */}
                 {aiResult.trends && aiResult.trends.length > 0 && (
                   <div>
-                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-3">
                       <TrendingUp className="w-4 h-4" />
-                      Trends & Patterns
+                      Trends & Performance Analysis ({aiResult.trends.length} findings)
                     </h5>
-                    <div className="bg-white p-3 rounded border space-y-1">
+                    <div className="bg-white p-4 rounded-lg border shadow-sm space-y-3">
                       {aiResult.trends.map((trend, index) => (
-                        <div key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                          <span className="text-green-500 font-medium">•</span>
-                          <span>{trend}</span>
+                        <div key={index} className="flex items-start gap-3 pb-2 border-b border-slate-100 last:border-b-0 last:pb-0">
+                          <span className="text-emerald-500 font-bold text-lg leading-none mt-0.5">📈</span>
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                              {trend}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -746,15 +764,19 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                 {/* Recommendations */}
                 {aiResult.recommendations && aiResult.recommendations.length > 0 && (
                   <div>
-                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-3">
                       <CheckSquare className="w-4 h-4" />
-                      Recommendations
+                      Strategic Recommendations ({aiResult.recommendations.length} actions)
                     </h5>
-                    <div className="bg-white p-3 rounded border space-y-1">
+                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border border-orange-200 shadow-sm space-y-3">
                       {aiResult.recommendations.map((rec, index) => (
-                        <div key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                          <span className="text-orange-500 font-medium">•</span>
-                          <span>{rec}</span>
+                        <div key={index} className="flex items-start gap-3 pb-3 border-b border-orange-200 last:border-b-0 last:pb-0">
+                          <span className="text-orange-500 font-bold text-lg leading-none mt-0.5">🎯</span>
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                              {rec}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
