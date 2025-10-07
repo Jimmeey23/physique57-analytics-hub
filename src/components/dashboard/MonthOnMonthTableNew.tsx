@@ -200,6 +200,50 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     setLocalCollapsedGroups(allGroups);
   }, [processedData]);
 
+  // Prepare data for AI analysis
+  const aiTableData = useMemo(() => {
+    const flatData: any[] = [];
+    processedData.forEach(categoryGroup => {
+      categoryGroup.products.forEach(product => {
+        const monthlyEntries = Object.fromEntries(
+          monthlyData.slice(0, 12).map(({ key }) => [
+            `month_${key}`, product.monthlyValues[key] || 0
+          ])
+        );
+        
+        flatData.push({
+          category: categoryGroup.category,
+          product: product.product,
+          totalValue: product.totalValue,
+          totalItems: (product.rawData as SalesData[]).length,
+          totalRevenue: (product.rawData as SalesData[]).reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+          uniqueMembers: new Set((product.rawData as SalesData[]).map(item => item.memberId)).size,
+          ...monthlyEntries
+        });
+      });
+    });
+    return flatData;
+  }, [processedData, monthlyData]);
+
+  const aiTableColumns = useMemo(() => {
+    const baseColumns = [
+      { key: 'category', header: 'Category', type: 'text' as const },
+      { key: 'product', header: 'Product', type: 'text' as const },
+      { key: 'totalValue', header: `Total ${selectedMetric}`, type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const },
+      { key: 'totalItems', header: 'Total Items', type: 'number' as const },
+      { key: 'totalRevenue', header: 'Total Revenue', type: 'currency' as const },
+      { key: 'uniqueMembers', header: 'Unique Members', type: 'number' as const }
+    ];
+
+    const monthColumns = monthlyData.slice(0, 12).map(({ key, display }) => ({
+      key: `month_${key}`,
+      header: display,
+      type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const
+    }));
+
+    return [...baseColumns, ...monthColumns];
+  }, [monthlyData, selectedMetric]);
+
   const handleExpandAll = useCallback(() => {
     setLocalCollapsedGroups(new Set());
   }, []);
@@ -464,6 +508,10 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       <PersistentTableFooter
         tableId="month-on-month-analysis"
         initialText="• Monthly performance trends across all product categories • Growth patterns and seasonal variations • Key performance indicators by category and product"
+        tableData={aiTableData}
+        tableColumns={aiTableColumns}
+        tableName="Month-on-Month Performance Analysis"
+        tableContext={`Detailed monthly performance tracking by category and product showing ${selectedMetric} trends over ${monthlyData.slice(0, 12).length} months`}
       />
     </div>
   );

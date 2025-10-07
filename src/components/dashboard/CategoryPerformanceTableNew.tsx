@@ -139,6 +139,44 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
+  // Prepare data and columns for AI analysis
+  const aiTableData = useMemo(() => {
+    return processedData.map(category => ({
+      category: category.category,
+      totalRevenue: category.totalRevenue,
+      totalTransactions: category.totalTransactions,
+      uniqueMembers: category.uniqueMembers,
+      uniqueProducts: category.uniqueProducts,
+      avgTransactionValue: category.totalTransactions > 0 ? category.totalRevenue / category.totalTransactions : 0,
+      avgRevenuePerMember: category.uniqueMembers > 0 ? category.totalRevenue / category.uniqueMembers : 0,
+      ...Object.fromEntries(
+        monthlyData.slice(0, 12).map(({ key }) => [
+          `month_${key}`, category.monthlyValues[key] || 0
+        ])
+      )
+    }));
+  }, [processedData, monthlyData]);
+
+  const aiTableColumns = useMemo(() => {
+    const baseColumns = [
+      { key: 'category', header: 'Category', type: 'text' as const },
+      { key: 'totalRevenue', header: 'Total Revenue', type: 'currency' as const },
+      { key: 'totalTransactions', header: 'Total Transactions', type: 'number' as const },
+      { key: 'uniqueMembers', header: 'Unique Members', type: 'number' as const },
+      { key: 'uniqueProducts', header: 'Unique Products', type: 'number' as const },
+      { key: 'avgTransactionValue', header: 'Avg Transaction Value', type: 'currency' as const },
+      { key: 'avgRevenuePerMember', header: 'Avg Revenue per Member', type: 'currency' as const }
+    ];
+
+    const monthColumns = monthlyData.slice(0, 12).map(({ key, display }) => ({
+      key: `month_${key}`,
+      header: `${display}`,
+      type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const
+    }));
+
+    return [...baseColumns, ...monthColumns];
+  }, [monthlyData, selectedMetric]);
+
 
 
   return (
@@ -326,6 +364,10 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
         tableId="category-performance-analysis"
         initialText="• Category-level performance insights across all product lines\n• Revenue distribution and market share analysis by category\n• Growth trends and seasonal patterns identification"
         className="animate-in slide-in-from-bottom-4 fade-in duration-1000 delay-300"
+        tableData={aiTableData}
+        tableColumns={aiTableColumns}
+        tableName="Category Performance Analysis"
+        tableContext={`Performance analysis by product category showing ${selectedMetric} trends across ${monthlyData.slice(0, 12).length} months`}
       />
     </div>
   );

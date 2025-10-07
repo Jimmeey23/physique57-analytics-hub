@@ -3,13 +3,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit3, Save, X, FileText, Clock, Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Palette, Type, Eye, Users, CheckSquare, Zap, Calendar, Hash } from 'lucide-react';
+import { Edit3, Save, X, FileText, Clock, Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Palette, Type, Eye, Users, CheckSquare, Zap, Calendar, Hash, Sparkles, Brain, TrendingUp, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGeminiAnalysis, type TableColumn } from '@/hooks/useGeminiAnalysis';
 
 interface PersistentTableFooterProps {
   tableId: string;
   initialText?: string;
   className?: string;
+  tableData?: any[];
+  tableColumns?: TableColumn[];
+  tableName?: string;
+  tableContext?: string;
 }
 
 interface NoteData {
@@ -31,7 +36,11 @@ interface NoteData {
 export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
   tableId,
   initialText = '',
-  className
+  className,
+  tableData = [],
+  tableColumns = [],
+  tableName,
+  tableContext
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [footerText, setFooterText] = useState(initialText);
@@ -60,6 +69,11 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [previewText, setPreviewText] = useState('');
   const formatTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // AI Analysis hooks and state
+  const { isLoading: isAiLoading, result: aiResult, error: aiError, generateSummary, generateQuickInsights, reset: resetAi } = useGeminiAnalysis();
+  const [showAiSummary, setShowAiSummary] = useState(false);
+  const [aiSummaryType, setAiSummaryType] = useState<'comprehensive' | 'insights' | 'trends' | 'brief'>('comprehensive');
   
   // Real-time formatting with immediate application and preview update
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -350,6 +364,94 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
     }
   };
 
+  // AI Analysis functions
+  const handleGenerateAISummary = async () => {
+    if (!tableData.length || !tableColumns.length) {
+      console.warn('No table data or columns available for AI analysis');
+      return;
+    }
+
+    try {
+      await generateSummary({
+        tableData,
+        columns: tableColumns,
+        tableName: tableName || `${tableId} Analysis`,
+        context: tableContext || 'Business performance data analysis',
+        summaryType: aiSummaryType,
+        includeRecommendations: aiSummaryType === 'comprehensive',
+        maxRows: 500 // Limit data size for API efficiency
+      });
+      setShowAiSummary(true);
+    } catch (error) {
+      console.error('Failed to generate AI summary:', error);
+    }
+  };
+
+  const handleQuickInsights = async () => {
+    if (!tableData.length || !tableColumns.length) {
+      console.warn('No table data or columns available for quick insights');
+      return;
+    }
+
+    try {
+      await generateQuickInsights(
+        tableData.slice(0, 100), // Limit for quick analysis
+        tableColumns,
+        tableName || tableId
+      );
+      setShowAiSummary(true);
+    } catch (error) {
+      console.error('Failed to generate quick insights:', error);
+    }
+  };
+
+  const insertAiSummaryToNote = () => {
+    if (!aiResult) return;
+
+    let aiText = `🤖 **AI Analysis Summary** - Generated ${new Date().toLocaleDateString()}\n\n`;
+    
+    if (aiResult.summary) {
+      aiText += `📊 **Overview:**\n${aiResult.summary}\n\n`;
+    }
+    
+    if (aiResult.keyInsights && aiResult.keyInsights.length > 0) {
+      aiText += `💡 **Key Insights:**\n`;
+      aiResult.keyInsights.forEach(insight => {
+        aiText += `• ${insight}\n`;
+      });
+      aiText += '\n';
+    }
+    
+    if (aiResult.trends && aiResult.trends.length > 0) {
+      aiText += `📈 **Trends & Patterns:**\n`;
+      aiResult.trends.forEach(trend => {
+        aiText += `• ${trend}\n`;
+      });
+      aiText += '\n';
+    }
+    
+    if (aiResult.recommendations && aiResult.recommendations.length > 0) {
+      aiText += `🎯 **Recommendations:**\n`;
+      aiResult.recommendations.forEach(rec => {
+        aiText += `• ${rec}\n`;
+      });
+      aiText += '\n';
+    }
+
+    // Insert or append to existing text
+    const newText = tempText ? `${tempText}\n\n${aiText}` : aiText;
+    setTempText(newText);
+    setShowAiSummary(false);
+    
+    // Focus on textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(newText.length, newText.length);
+    }
+  };
+
+  const isAiAnalysisAvailable = tableData.length > 0 && tableColumns.length > 0;
+
   return (
     <Card className={cn(
       "mt-6 p-4 bg-gradient-to-r from-slate-50 via-blue-50/50 to-blue-50/30 border-t-4 border-t-blue-500",
@@ -451,27 +553,65 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Rich Text Mode Toggle */}
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={isRichTextMode}
-                onChange={(e) => setIsRichTextMode(e.target.checked)}
-                className="rounded"
-              />
-              Rich Text Mode
-            </label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowTemplates(!showTemplates)}
-              className="gap-1"
-            >
-              <FileText className="w-3 h-3" />
-              Templates
-            </Button>
+          {/* Rich Text Mode Toggle and AI Options */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={isRichTextMode}
+                  onChange={(e) => setIsRichTextMode(e.target.checked)}
+                  className="rounded"
+                />
+                Rich Text Mode
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="gap-1"
+              >
+                <FileText className="w-3 h-3" />
+                Templates
+              </Button>
+            </div>
+
+            {/* AI Analysis Section */}
+            {isAiAnalysisAvailable && (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleQuickInsights}
+                  disabled={isAiLoading}
+                  className="gap-1 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:border-purple-300"
+                >
+                  {isAiLoading ? (
+                    <div className="w-3 h-3 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                  ) : (
+                    <Sparkles className="w-3 h-3 text-purple-600" />
+                  )}
+                  Quick AI Insights
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateAISummary}
+                  disabled={isAiLoading}
+                  className="gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:border-blue-300"
+                >
+                  {isAiLoading ? (
+                    <div className="w-3 h-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                  ) : (
+                    <Brain className="w-3 h-3 text-blue-600" />
+                  )}
+                  Full AI Analysis
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Template Selector */}
@@ -517,6 +657,139 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                 <Calendar className="w-3 h-3" />
                 Trend Analysis
               </Button>
+            </div>
+          )}
+
+          {/* AI Summary Display */}
+          {showAiSummary && aiResult && (
+            <Card className="p-4 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 border border-purple-200">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  <h4 className="font-semibold text-slate-700">AI Analysis Results</h4>
+                  {tableName && (
+                    <Badge variant="outline" className="text-xs">
+                      {tableName}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={insertAiSummaryToNote}
+                    className="text-blue-600 hover:bg-blue-100"
+                  >
+                    Insert to Notes
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAiSummary(false)}
+                    className="text-slate-500 hover:bg-slate-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {/* AI Summary */}
+                {aiResult.summary && (
+                  <div>
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                      <FileText className="w-4 h-4" />
+                      Executive Summary
+                    </h5>
+                    <p className="text-sm text-slate-600 bg-white p-3 rounded border">
+                      {aiResult.summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Key Insights */}
+                {aiResult.keyInsights && aiResult.keyInsights.length > 0 && (
+                  <div>
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                      <Zap className="w-4 h-4" />
+                      Key Insights
+                    </h5>
+                    <div className="bg-white p-3 rounded border space-y-1">
+                      {aiResult.keyInsights.map((insight, index) => (
+                        <div key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                          <span className="text-blue-500 font-medium">•</span>
+                          <span>{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Trends */}
+                {aiResult.trends && aiResult.trends.length > 0 && (
+                  <div>
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                      <TrendingUp className="w-4 h-4" />
+                      Trends & Patterns
+                    </h5>
+                    <div className="bg-white p-3 rounded border space-y-1">
+                      {aiResult.trends.map((trend, index) => (
+                        <div key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                          <span className="text-green-500 font-medium">•</span>
+                          <span>{trend}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {aiResult.recommendations && aiResult.recommendations.length > 0 && (
+                  <div>
+                    <h5 className="font-medium text-slate-700 flex items-center gap-1 mb-2">
+                      <CheckSquare className="w-4 h-4" />
+                      Recommendations
+                    </h5>
+                    <div className="bg-white p-3 rounded border space-y-1">
+                      {aiResult.recommendations.map((rec, index) => (
+                        <div key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                          <span className="text-orange-500 font-medium">•</span>
+                          <span>{rec}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Error Display */}
+              {aiError && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                  <div className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Analysis Error</span>
+                  </div>
+                  <p className="text-xs text-red-600 mt-1">{aiError}</p>
+                </div>
+              )}
+
+              <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
+                <Brain className="w-3 h-3" />
+                Generated by AI • Review and edit as needed
+              </div>
+            </Card>
+          )}
+
+          {/* AI Not Available Notice */}
+          {!isAiAnalysisAvailable && isEditing && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-700">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">AI Analysis Unavailable</span>
+              </div>
+              <p className="text-xs text-amber-600 mt-1">
+                AI analysis requires table data and column definitions to generate insights.
+              </p>
             </div>
           )}
 

@@ -26,6 +26,7 @@ const PowerCycleVsBarre = React.lazy(() => import("./pages/PowerCycleVsBarre"));
 const ExpirationAnalytics = React.lazy(() => import("./pages/ExpirationAnalytics"));
 const LateCancellations = React.lazy(() => import("./pages/LateCancellations"));
 const HeroDemo = React.lazy(() => import("./pages/HeroDemo"));
+const GeminiAIDemoPage = React.lazy(() => import("./pages/GeminiAIDemo"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => {
               <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
               <Route path="/late-cancellations" element={<LateCancellations />} />
               <Route path="/hero-demo" element={<HeroDemo />} />
+              <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

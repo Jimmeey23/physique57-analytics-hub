@@ -137,6 +137,16 @@ const Index = () => {
             <div className="min-w-full glass-card glow-pulse rounded-2xl p-6">
               <DashboardGrid onButtonClick={handleSectionClick} />
             </div>
+            
+            {/* AI Demo Link */}
+            <div className="mt-6 text-center">
+              <Button
+                onClick={() => navigate('/gemini-ai-demo')}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
+              >
+                🤖 Try Gemini AI Table Analysis Demo
+              </Button>
+            </div>
           </main>
         </div>
       </div>
