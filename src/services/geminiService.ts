@@ -398,10 +398,8 @@ Provide exactly 5 detailed bullet points focusing EXCLUSIVELY on September 2025 
     
     return ['September 2025 analysis unavailable at this time'];
   }
-}
 
-// Add missing utility methods that are referenced in the code
-private extractTableStatistics(data: any[], columns: any[]): any {
+  private extractTableStatistics(data: any[], columns: any[]): any {
     return {
       totalRows: data.length,
       numericColumns: {},
