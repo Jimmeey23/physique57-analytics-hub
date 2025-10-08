@@ -1,6 +1,6 @@
 
 import * as React from 'react';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 
 interface GlobalFilters {
@@ -32,10 +32,10 @@ interface GlobalFiltersContextType {
   resetToDefaultDates: () => void;
 }
 
-const GlobalFiltersContext = createContext<GlobalFiltersContextType | undefined>(undefined);
+const GlobalFiltersContext = React.createContext<GlobalFiltersContextType | undefined>(undefined);
 
 export const useGlobalFilters = () => {
-  const context = useContext(GlobalFiltersContext);
+  const context = React.useContext(GlobalFiltersContext);
   if (!context) {
     throw new Error('useGlobalFilters must be used within a GlobalFiltersProvider');
   }
@@ -47,7 +47,7 @@ interface GlobalFiltersProviderProps {
 }
 
 export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ children }) => {
-  const [filters, setFilters] = useState<GlobalFilters>(() => {
+  const [filters, setFilters] = React.useState<GlobalFilters>(() => {
     const previousMonth = getPreviousMonthDateRange();
     return {
       dateRange: previousMonth,

@@ -1,6 +1,6 @@
 
 import * as React from 'react';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 
 interface SessionsFilters {
@@ -18,10 +18,10 @@ interface SessionsFiltersContextType {
   clearAllFilters: () => void;
 }
 
-const SessionsFiltersContext = createContext<SessionsFiltersContextType | undefined>(undefined);
+const SessionsFiltersContext = React.createContext<SessionsFiltersContextType | undefined>(undefined);
 
 export const useSessionsFilters = () => {
-  const context = useContext(SessionsFiltersContext);
+  const context = React.useContext(SessionsFiltersContext);
   if (!context) {
     throw new Error('useSessionsFilters must be used within a SessionsFiltersProvider');
   }
@@ -33,7 +33,7 @@ interface SessionsFiltersProviderProps {
 }
 
 export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = ({ children }) => {
-  const [filters, setFilters] = useState<SessionsFilters>(() => {
+  const [filters, setFilters] = React.useState<SessionsFilters>(() => {
     const previousMonth = getPreviousMonthDateRange();
     return {
       trainers: [],

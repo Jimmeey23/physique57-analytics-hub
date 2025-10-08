@@ -1,6 +1,6 @@
 
 import * as React from 'react';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { LeadsData } from '@/types/leads';
 
 interface LeadFilters {
@@ -45,15 +45,15 @@ const defaultFilters: LeadFilters = {
   }
 };
 
-const LeadContext = createContext<LeadContextType | undefined>(undefined);
+const LeadContext = React.createContext<LeadContextType | undefined>(undefined);
 
 export const LeadProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [filters, setFilters] = useState<LeadFilters>(defaultFilters);
-  const [sourceOptions, setSourceOptions] = useState<string[]>([]);
-  const [associateOptions, setAssociateOptions] = useState<string[]>([]);
-  const [centerOptions, setCenterOptions] = useState<string[]>([]);
-  const [stageOptions, setStageOptions] = useState<string[]>([]);
-  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  const [filters, setFilters] = React.useState<LeadFilters>(defaultFilters);
+  const [sourceOptions, setSourceOptions] = React.useState<string[]>([]);
+  const [associateOptions, setAssociateOptions] = React.useState<string[]>([]);
+  const [centerOptions, setCenterOptions] = React.useState<string[]>([]);
+  const [stageOptions, setStageOptions] = React.useState<string[]>([]);
+  const [statusOptions, setStatusOptions] = React.useState<string[]>([]);
 
   const clearFilters = () => {
     setFilters(defaultFilters);
@@ -91,7 +91,7 @@ export const LeadProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 };
 
 export const useLeads = () => {
-  const context = useContext(LeadContext);
+  const context = React.useContext(LeadContext);
   if (context === undefined) {
     throw new Error('useLeads must be used within a LeadProvider');
   }
