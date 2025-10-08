@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, Filter, Target, Eye, 
 import { LeadMetricTabs } from './LeadMetricTabs';
 import { LeadsMetricType } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 interface LeadSourceMonthOnMonthTableProps {
   data: Record<string, Record<string, number>>;
   months: string[];
@@ -32,33 +33,12 @@ export const LeadSourceMonthOnMonthTable: React.FC<LeadSourceMonthOnMonthTablePr
     referral: "Referral program generates highest quality leads with 67% trial rate"
   });
 
-  // Create comprehensive month range dynamically based on current date
-  const generateMonthRange = () => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const generatedMonths = [];
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth(); // 0-based
-
-    // Start from current month and go backwards 18 months
-    let year = currentYear;
-    let month = currentMonth;
-    for (let i = 0; i < 18; i++) {
-      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-      generatedMonths.push({
-        original: monthKey,
-        formatted: `${monthNames[month]} ${year}`,
-        sortKey: new Date(year, month).getTime()
-      });
-      month--;
-      if (month < 0) {
-        month = 11;
-        year--;
-      }
-    }
-    return generatedMonths;
-  };
-  const formattedMonths = generateMonthRange();
+  // Use standard 22-month range (October 2025 to January 2024)
+  const formattedMonths = generateStandardMonthRange().map(month => ({
+    original: month.key,
+    formatted: month.display,
+    sortKey: month.sortOrder
+  }));
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');

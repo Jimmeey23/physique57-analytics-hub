@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { generateDynamicMonths, parseDate } from '@/utils/dateUtils';
+import { generateStandardMonthRange, parseDate } from '@/utils/dateUtils';
 
 interface SoldByMonthOnMonthTableProps {
   data: SalesData[];
@@ -24,32 +24,8 @@ export const SoldByMonthOnMonthTable: React.FC<SoldByMonthOnMonthTableProps> = (
   const [isEditingSummary, setIsEditingSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('• Sales team performance analysis by individual seller\n• Consistent performers identified for recognition\n• Training opportunities highlighted for underperformers');
 
-  const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Get current date for dynamic month calculation
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    // Generate last 18 months of data including current month
-    for (let i = 17; i >= 0; i--) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthName = monthNames[date.getMonth()];
-      months.push({
-        key: `${year}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${year}`,
-        year: year,
-        month: month,
-        quarter: Math.ceil(month / 3)
-      });
-    }
-    
-    return months;
-  }, []);
+  // Use standard 22-month range (October 2025 to January 2024)
+  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
 
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
@@ -78,6 +54,10 @@ export const SoldByMonthOnMonthTable: React.FC<SoldByMonthOnMonthTableProps> = (
         return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
       case 'upt':
         return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
+      case 'vat':
+        return items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
+      case 'netRevenue':
+        return totalRevenue - items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
       case 'discountValue':
         return totalDiscount;
       case 'discountPercentage':
@@ -90,6 +70,8 @@ export const SoldByMonthOnMonthTable: React.FC<SoldByMonthOnMonthTableProps> = (
   const formatMetricValue = (value: number, metric: YearOnYearMetricType) => {
     switch (metric) {
       case 'revenue':
+      case 'vat':
+      case 'netRevenue':
       case 'discountValue':
         return formatCurrency(value);
       case 'atv':

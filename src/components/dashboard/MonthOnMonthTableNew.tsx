@@ -72,10 +72,11 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
     const totalTransactions = items.length;
     const uniqueMembers = new Set(items.map(item => item.memberId)).size;
-    const totalUnits = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const totalUnits = items.length; // Each transaction represents 1 unit
     const totalDiscountAmount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
-    const totalVat = items.reduce((sum, item) => sum + (item.vatAmount || 0), 0);
-    const avgDiscountPercentage = items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length;
+    const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
+    const avgDiscountPercentage = items.length > 0 ? 
+      items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length : 0;
 
     switch (metric) {
       case 'revenue': return totalRevenue;
@@ -87,8 +88,8 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       case 'upt': return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
       case 'asv': return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'vat': return totalVat;
-      case 'discountAmount': return totalDiscountAmount;
-      case 'discountPercentage': return avgDiscountPercentage || 0;
+      case 'discountValue': return totalDiscountAmount;
+      case 'discountPercentage': return avgDiscountPercentage;
       default: return 0;
     }
   };
@@ -100,7 +101,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       case 'atv':
       case 'asv':
       case 'vat':
-      case 'discountAmount':
+      case 'discountValue':
         return formatCurrency(value);
       case 'transactions':
       case 'members':
@@ -122,8 +123,8 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate last 15 months in descending order (most recent first)
-    for (let i = 0; i < 15; i++) {
+    // Generate last 22 months in descending order (October 2025 to January 2024)
+    for (let i = 0; i < 22; i++) {
       const date = new Date(currentYear, currentMonth - i, 1);
       const year = date.getFullYear();
       const month = date.getMonth() + 1;

@@ -52,6 +52,44 @@ export const getDateRangeForMonths = (monthsBack: number) => {
   };
 };
 
+/**
+ * Generate standard month range from current month (October 2025) back to January 2024
+ */
+export const generateStandardMonthRange = () => {
+  const months = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  // Start from current month (October 2025) and go back to January 2024
+  const currentDate = new Date(2025, 9, 1); // October 2025 (0-indexed)
+  const startDate = new Date(2024, 0, 1);   // January 2024 (0-indexed)
+  
+  let currentYear = currentDate.getFullYear();
+  let currentMonth = currentDate.getMonth();
+  
+  while (currentYear > startDate.getFullYear() || 
+         (currentYear === startDate.getFullYear() && currentMonth >= startDate.getMonth())) {
+    
+    const monthName = monthNames[currentMonth];
+    months.push({
+      key: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
+      display: `${monthName} ${currentYear}`,
+      year: currentYear,
+      month: currentMonth + 1,
+      quarter: Math.ceil((currentMonth + 1) / 3),
+      sortOrder: currentYear * 100 + (currentMonth + 1)
+    });
+    
+    // Move to previous month
+    currentMonth--;
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+    }
+  }
+  
+  return months;
+};
+
 export const generateDynamicMonths = (monthCount: number = 18) => {
   const months = [];
   const now = new Date();

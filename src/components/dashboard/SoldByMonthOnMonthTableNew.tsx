@@ -38,9 +38,18 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
     const totalTransactions = items.length;
     const uniqueMembers = new Set(items.map(item => item.memberId)).size;
     const totalUnits = items.length; // Each transaction is 1 unit
-    const totalDiscountAmount = items.reduce((sum, item) => sum + (item.paymentValue * 0.1 || 0), 0); // Estimated
-    const totalVat = items.reduce((sum, item) => sum + (item.paymentValue * 0.18 || 0), 0); // 18% VAT
-    const avgDiscountPercentage = 10; // Default discount percentage
+    
+    // Use actual VAT from data, not calculated percentage
+    const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
+    
+    // Use actual discount data from the items
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    
+    // Calculate average discount percentage from actual data
+    const itemsWithDiscount = items.filter(item => (item.discountAmount || 0) > 0);
+    const avgDiscountPercentage = itemsWithDiscount.length > 0 
+      ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
+      : 0;
 
     switch (metric) {
       case 'revenue': return totalRevenue;
@@ -52,7 +61,8 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
       case 'upt': return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
       case 'asv': return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'vat': return totalVat;
-      case 'discountPercentage': return avgDiscountPercentage || 0;
+      case 'discountValue': return totalDiscount;
+      case 'discountPercentage': return avgDiscountPercentage;
       default: return 0;
     }
   };
@@ -81,24 +91,35 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
   const monthlyData = useMemo(() => {
     const months = [];
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-
-    // Generate last 15 months in descending order (most recent first)
-    for (let i = 0; i < 15; i++) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthName = monthNames[date.getMonth()];
+    
+    // Generate from October 2025 back to January 2024 (22 months total)
+    const currentDate = new Date(2025, 9, 1); // October 2025 (0-indexed)
+    const startDate = new Date(2024, 0, 1);   // January 2024 (0-indexed)
+    
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth();
+    
+    while (currentYear > startDate.getFullYear() || 
+           (currentYear === startDate.getFullYear() && currentMonth >= startDate.getMonth())) {
+      
+      const monthName = monthNames[currentMonth];
       months.push({
-        key: `${year}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${year}`,
-        year: year,
-        month: month,
-        quarter: Math.ceil(month / 3)
+        key: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
+        display: `${monthName} ${currentYear}`,
+        year: currentYear,
+        month: currentMonth + 1,
+        quarter: Math.ceil((currentMonth + 1) / 3),
+        sortOrder: currentYear * 100 + (currentMonth + 1)
       });
+      
+      // Move to previous month
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
     }
+    
     return months;
   }, []);
 

@@ -76,8 +76,8 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate last 15 months in descending order (most recent first)
-    for (let i = 0; i < 15; i++) {
+    // Generate last 22 months in descending order (October 2025 to January 2024)
+    for (let i = 0; i < 22; i++) {
       const date = new Date(currentYear, currentMonth - i, 1);
       const year = date.getFullYear();
       const month = date.getMonth() + 1;

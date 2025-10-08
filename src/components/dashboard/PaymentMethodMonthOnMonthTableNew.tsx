@@ -5,6 +5,7 @@ import { PersistentTableFooter } from './PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
 import { getRankingDisplay } from '@/utils/rankingUtils';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 
 interface PaymentMethodMonthOnMonthTableNewProps {
   data: SalesData[];
@@ -76,29 +77,8 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
     }
   };
 
-  const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-
-    // Generate last 15 months in descending order (most recent first)
-    for (let i = 0; i < 15; i++) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthName = monthNames[date.getMonth()];
-      months.push({
-        key: `${year}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${year}`,
-        year: year,
-        month: month,
-        quarter: Math.ceil(month / 3)
-      });
-    }
-    return months;
-  }, []);
+  // Use standard 22-month range (October 2025 to January 2024)
+  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
 
   const processedData = useMemo(() => {
     // Group by payment method

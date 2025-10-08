@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { SalesData, FilterOptions, YearOnYearMetricType } from '@/types/dashboard';
-import { ModernTableWrapper, ModernTableRow, ModernGroupBadge, ModernMetricTabs } from './ModernTableWrapper';
+import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs } from './ModernTableWrapper';
 import { PersistentTableFooter } from './PersistentTableFooter';
 import { formatCurrency, formatNumber, formatPercentage, formatDiscount } from '@/utils/formatters';
 import { Calendar, TrendingUp, TrendingDown, ChevronDown, ChevronRight, BarChart3, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
@@ -122,8 +122,8 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
 
-    // Generate months from 18 months ago to current month (ascending order)
-    for (let i = 17; i >= 0; i--) {
+    // Generate months from 22 months ago to current month (October 2025 back to January 2024)
+    for (let i = 21; i >= 0; i--) {
       const date = new Date(currentYear, currentMonth - i, 1);
       const year = date.getFullYear();
       const month = date.getMonth();

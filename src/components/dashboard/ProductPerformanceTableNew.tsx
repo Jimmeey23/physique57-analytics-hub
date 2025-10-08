@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ChevronDown, ChevronRight, ShoppingCart, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, Target, Trophy, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 
 interface ProductPerformanceTableNewProps {
   data: SalesData[];
@@ -69,29 +70,8 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
     }
   };
 
-  const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-
-    // Generate last 18 months in descending order (most recent first)
-    for (let i = 0; i < 18; i++) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthName = monthNames[date.getMonth()];
-      months.push({
-        key: `${year}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${year}`,
-        year: year,
-        month: month,
-        quarter: Math.ceil(month / 3)
-      });
-    }
-    return months;
-  }, []);
+  // Use standard 22-month range (October 2025 to January 2024)
+  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
 
   const processedData = useMemo(() => {
     // Group by category and product

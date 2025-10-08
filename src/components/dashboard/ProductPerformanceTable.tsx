@@ -5,6 +5,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ShoppingCart, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 interface ProductPerformanceTableProps {
   data: SalesData[];
   onRowClick: (row: any) => void;
@@ -16,31 +17,8 @@ export const ProductPerformanceTable: React.FC<ProductPerformanceTableProps> = (
   selectedMetric: initialMetric = 'revenue'
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
-  const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    // Get current date for dynamic month calculation
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-
-    // Generate last 18 months of data including current month
-    for (let i = 17; i >= 0; i--) {
-      const date = new Date(currentYear, currentMonth - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthName = monthNames[date.getMonth()];
-      months.push({
-        key: `${year}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${year}`,
-        year: year,
-        month: month,
-        quarter: Math.ceil(month / 3)
-      });
-    }
-    return months;
-  }, []);
+  // Use standard 22-month range (October 2025 to January 2024)
+  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
 

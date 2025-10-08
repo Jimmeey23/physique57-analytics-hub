@@ -50,6 +50,7 @@ export const useSalesMetrics = (data: SalesData[]) => {
     // Calculate current period metrics
     const currentRevenue = currentPeriodData.reduce((sum, item) => sum + (typeof item.paymentValue === 'number' ? item.paymentValue : 0), 0);
     const currentDiscount = currentPeriodData.reduce((sum, item) => sum + (typeof item.discountAmount === 'number' ? item.discountAmount : 0), 0);
+    const currentVAT = currentPeriodData.reduce((sum, item) => sum + (typeof item.paymentVAT === 'number' ? item.paymentVAT : (typeof item.vat === 'number' ? item.vat : 0)), 0);
     const currentTransactions = currentPeriodData.length;
     const currentMembers = new Set(currentPeriodData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
     const currentUnits = currentPeriodData.length; // Use transaction count as units since each transaction represents units sold
@@ -61,6 +62,7 @@ export const useSalesMetrics = (data: SalesData[]) => {
     // Calculate comparison period metrics (using recent data as comparison)
     const prevRevenue = recentData.reduce((sum, item) => sum + (typeof item.paymentValue === 'number' ? item.paymentValue : 0), 0);
     const prevDiscount = recentData.reduce((sum, item) => sum + (typeof item.discountAmount === 'number' ? item.discountAmount : 0), 0);
+    const prevVAT = recentData.reduce((sum, item) => sum + (typeof item.paymentVAT === 'number' ? item.paymentVAT : (typeof item.vat === 'number' ? item.vat : 0)), 0);
     const prevTransactions = recentData.length;
     const prevMembers = new Set(recentData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
     const prevUnits = recentData.length; // Use transaction count as units
@@ -74,7 +76,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
       transactions: currentTransactions,
       members: currentMembers,
       units: currentUnits,
-      discount: currentDiscount
+      discount: currentDiscount,
+      vat: currentVAT
     });
 
     console.log('Previous calculations:', {
@@ -82,7 +85,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
       transactions: prevTransactions,
       members: prevMembers,
       units: prevUnits,
-      discount: prevDiscount
+      discount: prevDiscount,
+      vat: prevVAT
     });
 
     // Calculate growth rates
@@ -102,6 +106,7 @@ export const useSalesMetrics = (data: SalesData[]) => {
     const asvGrowth = calculateGrowth(currentASV, prevASV);
     const discountGrowth = calculateGrowth(currentDiscount, prevDiscount);
     const discountPercentageGrowth = calculateGrowth(currentDiscountPercentage, prevDiscountPercentage);
+    const vatGrowth = calculateGrowth(currentVAT, prevVAT);
 
     const calculatedMetrics: SalesMetric[] = [
       {
@@ -238,6 +243,23 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentDiscountPercentage,
           previous: prevDiscountPercentage,
           difference: currentDiscountPercentage - prevDiscountPercentage
+        }
+      },
+      {
+        title: "VAT Amount",
+        value: formatCurrency(currentVAT),
+        rawValue: currentVAT,
+        change: vatGrowth.rate,
+        changeDetails: vatGrowth,
+        icon: "Receipt",
+        color: "green",
+        description: "Total VAT collected from sales",
+        previousValue: formatCurrency(prevVAT),
+        previousRawValue: prevVAT,
+        comparison: {
+          current: currentVAT,
+          previous: prevVAT,
+          difference: currentVAT - prevVAT
         }
       }
     ];
