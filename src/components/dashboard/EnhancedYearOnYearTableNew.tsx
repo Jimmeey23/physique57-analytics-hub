@@ -148,9 +148,9 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
         products: Object.entries(products).map(([product, items]) => {
           const monthlyValues: Record<string, number> = {};
 
-          // Calculate values for each month
-          monthlyData.forEach(({ key, year, month }) => {
-            const monthItems = (items as SalesData[]).filter(item => {
+              const monthlyValues: Record<string, number> = {};
+              // Calculate values for each month
+              monthlyData.forEach(({ key, year, month }) => {
               const itemDate = parseDate(item.paymentDate);
               return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
             });
@@ -260,7 +260,10 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
             </thead>
 
             <tbody>
-              {processedData.map((categoryGroup, categoryIndex) => (
+              {processedData.map((categoryGroup, categoryIndex) => {
+                const visibleMonths = monthlyData.slice(0, 12);
+
+                return (
                 <React.Fragment key={categoryGroup.category}>
                   {/* Category Row */}
                   <tr 
@@ -301,7 +304,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                       </div>
                     </td>
                     
-                    {monthlyData.map(({ key }, monthIndex) => {
+                    {visibleMonths.map(({ key }, monthIndex) => {
                       const current = categoryGroup.monthlyValues[key] || 0;
                       // For YoY, compare with same month previous year
                       const previousYearKey = key.includes('2025') ? 
@@ -316,10 +319,10 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                           className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 hover:bg-blue-100/50 cursor-pointer transition-all duration-200"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const monthItems = categoryGroup.products.flatMap(p => p.rawData).filter(item => {
-                                const itemDate = parseDate(item.paymentDate);
-                                return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
-                            });
+              const monthItems = (categoryGroup.products.flatMap(p => (p.rawData as SalesData[])) as SalesData[]).filter(item => {
+                const itemDate = parseDate((item as any).paymentDate);
+                return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
+              });
                             onRowClick?.({
                               drillDownContext: 'yoy-category-month',
                               filterCriteria: { category: categoryGroup.category, month: key },
@@ -374,7 +377,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                           </div>
                         </td>
                         
-                        {monthlyData.map(({ key }, monthIndex) => {
+                        {visibleMonths.map(({ key }, monthIndex) => {
                           const current = product.monthlyValues[key] || 0;
                           const previousYearKey = key.includes('2025') ? 
                             key.replace('2025', '2024') : 
@@ -388,10 +391,10 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                               className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-blue-100/50 cursor-pointer transition-all duration-200"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const monthItems = product.rawData.filter(item => {
-                                    const itemDate = parseDate(item.paymentDate);
-                                    return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
-                                });
+                const monthItems = (product.rawData as SalesData[]).filter(item => {
+                  const itemDate = parseDate((item as any).paymentDate);
+                  return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
+                });
                                 onRowClick?.({
                                   drillDownContext: 'yoy-product-month',
                                   filterCriteria: { product: product.product, month: key },
