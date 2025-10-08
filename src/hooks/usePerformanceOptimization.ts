@@ -2,21 +2,28 @@ import { useEffect } from 'react';
 
 export const usePerformanceOptimization = () => {
   useEffect(() => {
-    // Preload critical pages for faster navigation
-    const preloadPages = () => {
-      const routes = [
-        '/executive-summary',
-        '/sales-analytics',
-        '/funnel-leads',
-        '/client-retention',
-        '/trainer-performance'
-      ];
+    // Warm up critical page bundles for faster navigation by dynamically importing
+    // the page modules instead of prefetching the route URLs (which triggers
+    // browser requests to those paths and can produce 404s on some servers).
+    const preloadPages = async () => {
+      const imports: Record<string, () => Promise<any>> = {
+        '/executive-summary': () => import('../pages/ExecutiveSummary'),
+        '/sales-analytics': () => import('../pages/SalesAnalytics'),
+        '/funnel-leads': () => import('../pages/FunnelLeads'),
+        '/client-retention': () => import('../pages/ClientRetention'),
+        '/trainer-performance': () => import('../pages/TrainerPerformance'),
+      };
 
-      routes.forEach(route => {
-        const link = document.createElement('link');
-        link.rel = 'prefetch';
-        link.href = route;
-        document.head.appendChild(link);
+      // Fire-and-forget imports to warm the code-split chunks. We intentionally
+      // don't await all of them serially to avoid blocking the main thread.
+      Object.values(imports).forEach((fn) => {
+        try {
+          fn().catch(() => {
+            // Ignore any load errors -- warming bundles should be best-effort
+          });
+        } catch (e) {
+          // Defensive: ignore synchronous import errors
+        }
       });
     };
 
