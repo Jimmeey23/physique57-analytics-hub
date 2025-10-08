@@ -40,9 +40,8 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
               return 'utils-vendor';
             }
-            if (id.includes('lucide-react')) {
-              return 'icons-vendor';
-            }
+            // Keep lucide-react bundled with the main vendor chunk to ensure
+            // React exports (like forwardRef) are available when icons execute.
             if (id.includes('framer-motion')) {
               return 'animation-vendor';
             }

@@ -317,10 +317,10 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                           className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 hover:bg-blue-100/50 cursor-pointer transition-all duration-200"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const monthItems = categoryGroup.products.flatMap(p => p.rawData).filter(item => {
-                                const itemDate = parseDate(item.paymentDate);
-                                return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
-                            });
+              const monthItems = (categoryGroup.products.flatMap(p => (p.rawData as SalesData[])) as SalesData[]).filter(item => {
+                const itemDate = parseDate((item as any).paymentDate);
+                return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
+              });
                             onRowClick?.({
                               drillDownContext: 'yoy-category-month',
                               filterCriteria: { category: categoryGroup.category, month: key },
@@ -389,10 +389,10 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                               className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-blue-100/50 cursor-pointer transition-all duration-200"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const monthItems = product.rawData.filter(item => {
-                                    const itemDate = parseDate(item.paymentDate);
-                                    return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
-                                });
+                const monthItems = (product.rawData as SalesData[]).filter(item => {
+                  const itemDate = parseDate((item as any).paymentDate);
+                  return itemDate && `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === key;
+                });
                                 onRowClick?.({
                                   drillDownContext: 'yoy-product-month',
                                   filterCriteria: { product: product.product, month: key },
