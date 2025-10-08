@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 export class GeminiService {
   private model: any;
 
@@ -389,11 +391,17 @@ Provide exactly 5 detailed bullet points focusing EXCLUSIVELY on September 2025 
     console.error('Quick insights error:', error);
     
     if (error?.status === 404) {
+      return ['September 2025 analysis unavailable at this time'];
+    } else if (error?.status === 403) {
+      return ['September 2025 analysis access denied - check configuration'];
+    }
+    
     return ['September 2025 analysis unavailable at this time'];
   }
+}
 
-  // Add missing utility methods that are referenced in the code
-  private extractTableStatistics(data: any[], columns: any[]): any {
+// Add missing utility methods that are referenced in the code
+private extractTableStatistics(data: any[], columns: any[]): any {
     return {
       totalRows: data.length,
       numericColumns: {},
@@ -424,17 +432,34 @@ Provide exactly 5 detailed bullet points focusing EXCLUSIVELY on September 2025 
     return 'Analysis column';
   }
 
-  private formatCurrency(value: number): string {
+  public formatCurrency(value: number): string {
     return `₹${value.toLocaleString('en-IN')}`;
   }
 
-  private formatNumber(value: number): string {
+  public formatNumber(value: number): string {
     return value.toLocaleString('en-IN');
+  }
+
+  async testConnection(): Promise<{ success: boolean; model?: string; error?: string }> {
+    try {
+      const result = await this.model.generateContent("Hello, please respond with 'Connection successful'");
+      const response = await result.response;
+      return {
+        success: true,
+        model: this.model.model || 'gemini-model',
+      };
+    } catch (error: any) {
+      console.error('Connection test failed:', error);
+      return {
+        success: false,
+        error: error?.message || 'Connection failed'
+      };
+    }
   }
 }
 
 // Add missing type definitions
-interface TableSummaryOptions {
+export interface TableSummaryOptions {
   tableData: any[];
   columns: TableColumn[];
   tableName?: string;
@@ -444,23 +469,35 @@ interface TableSummaryOptions {
   maxRows?: number;
 }
 
-interface TableColumn {
+export interface TableColumn {
   header: string;
   key: string;
   type?: string;
 }
 
-interface GeminiSummaryResult {
+export interface GeminiSummaryResult {
   summary: string;
   keyInsights: string[];
   trends: string[];
   recommendations?: string[];
   error?: string;
 }
-    } else if (error?.status === 403) {
-      return ['September 2025 analysis access denied - check configuration'];
-    }
-    
-    return ['September 2025 analysis unavailable at this time'];
+
+// Initialize Google Generative AI and export singleton instance
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSy-REDACTED_GEMINI_KEY';
+const genAI = new GoogleGenerativeAI(apiKey);
+
+// Create model instance with fallback model names
+let model;
+try {
+  model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+} catch {
+  try {
+    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  } catch {
+    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
   }
 }
+
+// Export singleton instance
+export const geminiService = new GeminiService(model);
