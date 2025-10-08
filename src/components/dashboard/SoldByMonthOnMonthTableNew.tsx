@@ -3,6 +3,7 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from './PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { ChevronDown, ChevronRight, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
@@ -88,40 +89,8 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
     }
   };
 
-  const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Generate from October 2025 back to January 2024 (22 months total)
-    const currentDate = new Date(2025, 9, 1); // October 2025 (0-indexed)
-    const startDate = new Date(2024, 0, 1);   // January 2024 (0-indexed)
-    
-    let currentYear = currentDate.getFullYear();
-    let currentMonth = currentDate.getMonth();
-    
-    while (currentYear > startDate.getFullYear() || 
-           (currentYear === startDate.getFullYear() && currentMonth >= startDate.getMonth())) {
-      
-      const monthName = monthNames[currentMonth];
-      months.push({
-        key: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
-        display: `${monthName} ${currentYear}`,
-        year: currentYear,
-        month: currentMonth + 1,
-        quarter: Math.ceil((currentMonth + 1) / 3),
-        sortOrder: currentYear * 100 + (currentMonth + 1)
-      });
-      
-      // Move to previous month
-      currentMonth--;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      }
-    }
-    
-    return months;
-  }, []);
+  // Use standard 22-month range (October 2025 to January 2024)
+  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
 
   const processedData = useMemo(() => {
     // Group by soldBy
