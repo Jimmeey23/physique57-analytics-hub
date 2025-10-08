@@ -48,31 +48,7 @@ export default defineConfig(({ mode }) => ({
           }
           
           if (id.includes('/components/dashboard/')) {
-            if (id.includes('Sales') || id.includes('Revenue')) {
-              return 'dashboard-sales';
-            }
-            if (id.includes('Client') || id.includes('Conversion')) {
-              return 'dashboard-clients';
-            }
-            if (id.includes('Trainer') || id.includes('Performance')) {
-              return 'dashboard-trainers';
-            }
-            if (id.includes('Class') || id.includes('Session')) {
-              return 'dashboard-classes';
-            }
-            if (id.includes('Discount') || id.includes('Promotion')) {
-              return 'dashboard-discounts';
-            }
-            if (id.includes('PowerCycle') || id.includes('Barre') || id.includes('Strength')) {
-              return 'dashboard-formats';
-            }
-            if (id.includes('Funnel') || id.includes('Lead')) {
-              return 'dashboard-funnel';
-            }
-            if (id.includes('Executive') || id.includes('Summary')) {
-              return 'dashboard-executive';
-            }
-            return 'dashboard-misc';
+            return 'dashboard';
           }
           
           if (id.includes('/components/ui/')) {
