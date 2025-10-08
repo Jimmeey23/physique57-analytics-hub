@@ -130,7 +130,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
       avgTransactionValue: category.totalTransactions > 0 ? category.totalRevenue / category.totalTransactions : 0,
       avgRevenuePerMember: category.uniqueMembers > 0 ? category.totalRevenue / category.uniqueMembers : 0,
       ...Object.fromEntries(
-        monthlyData.slice(-12).map(({ key }) => [
+        monthlyData.map(({ key }) => [
           `month_${key}`, category.monthlyValues[key] || 0
         ])
       )
@@ -148,7 +148,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
       { key: 'avgRevenuePerMember', header: 'Avg Revenue per Member', type: 'currency' as const }
     ];
 
-    const monthColumns = monthlyData.slice(-12).map(({ key, display }) => ({
+    const monthColumns = monthlyData.map(({ key, display }) => ({
       key: `month_${key}`,
       header: `${display}`,
       type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const
@@ -189,7 +189,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
                   </div>
                 </th>
                 
-                {monthlyData.slice(-12).map(({ key, display }) => (
+                {monthlyData.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -235,7 +235,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
                     </div>
                   </td>
                   
-                  {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                  {monthlyData.map(({ key }, monthIndex) => {
                     const current = category.monthlyValues[key] || 0;
                     const previousMonthKey = monthlyData[monthIndex + 1]?.key;
                     const previous = previousMonthKey ? (category.monthlyValues[previousMonthKey] || 0) : 0;
@@ -308,7 +308,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {monthlyData.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, category) => {
                     return sum + (category.monthlyValues[key] || 0);
                   }, 0);
@@ -347,7 +347,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
         tableData={aiTableData}
         tableColumns={aiTableColumns}
         tableName="Category Performance Analysis"
-        tableContext={`Performance analysis by product category showing ${selectedMetric} trends across ${monthlyData.slice(-12).length} months`}
+        tableContext={`Performance analysis by product category showing ${selectedMetric} trends across ${monthlyData.length} months`}
       />
     </div>
   );
