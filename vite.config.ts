@@ -39,13 +39,10 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
               return 'utils-vendor';
             }
-            if (id.includes('framer-motion')) {
-              return 'animation-vendor';
-            }
             if (id.includes('@tanstack')) {
               return 'query-vendor';
             }
-            // Keep React, React-DOM, React Router, recharts, lucide-react, and Radix UI together in vendor chunk
+            // Keep React, React-DOM, React Router, recharts, lucide-react, framer-motion, and Radix UI together in vendor chunk
             // This prevents React import resolution issues and circular dependencies
             return 'vendor';
           }
