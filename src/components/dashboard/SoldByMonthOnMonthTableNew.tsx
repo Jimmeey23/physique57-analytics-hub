@@ -164,7 +164,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                   </div>
                 </th>
                 
-                {monthlyData.slice(0, 12).map(({ key, display }) => (
+                {monthlyData.slice(-12).map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -208,7 +208,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                     </div>
                   </td>
                   
-                  {monthlyData.slice(0, 12).map(({ key }, monthIndex) => {
+                  {monthlyData.slice(-12).map(({ key }, monthIndex) => {
                     const current = seller.monthlyValues[key] || 0;
                     const previousMonthKey = monthlyData[monthIndex + 1]?.key;
                     const previous = previousMonthKey ? (seller.monthlyValues[previousMonthKey] || 0) : 0;
@@ -281,7 +281,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                   </div>
                 </td>
                 
-                {monthlyData.slice(0, 12).map(({ key }) => {
+                {monthlyData.slice(-12).map(({ key }) => {
                   const totalValue = processedData.reduce((sum, seller) => 
                     sum + (seller.monthlyValues[key] || 0), 0
                   );

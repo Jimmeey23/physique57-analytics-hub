@@ -187,7 +187,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     processedData.forEach(categoryGroup => {
       categoryGroup.products.forEach(product => {
         const monthlyEntries = Object.fromEntries(
-          monthlyData.slice(0, 12).map(({ key }) => [
+          monthlyData.slice(-12).map(({ key }) => [
             `month_${key}`, product.monthlyValues[key] || 0
           ])
         );
@@ -216,7 +216,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       { key: 'uniqueMembers', header: 'Unique Members', type: 'number' as const }
     ];
 
-    const monthColumns = monthlyData.slice(0, 12).map(({ key, display }) => ({
+    const monthColumns = monthlyData.slice(-12).map(({ key, display }) => ({
       key: `month_${key}`,
       header: display,
       type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const
@@ -268,7 +268,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                   </div>
                 </th>
                 
-                {monthlyData.slice(0, 12).map(({ key, display }) => (
+                {monthlyData.slice(-12).map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -328,7 +328,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                         </div>
                       </td>
                       
-                      {monthlyData.slice(0, 12).map(({ key }, monthIndex) => {
+                      {monthlyData.slice(-12).map(({ key }, monthIndex) => {
                         const current = categoryGroup.monthlyValues[key] || 0;
                         const previousMonthKey = monthlyData[monthIndex + 1]?.key;
                         const previous = previousMonthKey ? (categoryGroup.monthlyValues[previousMonthKey] || 0) : 0;
@@ -396,7 +396,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                             </div>
                           </td>
                           
-                          {monthlyData.slice(0, 12).map(({ key }, monthIndex) => {
+                          {monthlyData.slice(-12).map(({ key }, monthIndex) => {
                             const current = product.monthlyValues[key] || 0;
                             const previousMonthKey = monthlyData[monthIndex + 1]?.key;
                             const previous = previousMonthKey ? (product.monthlyValues[previousMonthKey] || 0) : 0;
@@ -454,7 +454,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                   </div>
                 </td>
                 
-                {monthlyData.slice(0, 12).map(({ key }) => {
+                {monthlyData.slice(-12).map(({ key }) => {
                   const totalValue = processedData.reduce((sum, categoryGroup) => 
                     sum + (categoryGroup.monthlyValues[key] || 0), 0
                   );
@@ -492,7 +492,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
         tableData={aiTableData}
         tableColumns={aiTableColumns}
         tableName="Month-on-Month Performance Analysis"
-        tableContext={`Detailed monthly performance tracking by category and product showing ${selectedMetric} trends over ${monthlyData.slice(0, 12).length} months`}
+        tableContext={`Detailed monthly performance tracking by category and product showing ${selectedMetric} trends over ${monthlyData.slice(-12).length} months`}
       />
     </div>
   );

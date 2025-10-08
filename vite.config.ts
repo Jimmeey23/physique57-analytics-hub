@@ -34,22 +34,19 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            if (id.includes('recharts')) {
-              return 'chart-vendor';
-            }
+            // Move recharts to vendor chunk to avoid circular dependency issues
+            // Keep core libraries (React, recharts, lucide-react) together
             if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
               return 'utils-vendor';
             }
-            // Keep lucide-react bundled with the main vendor chunk to ensure
-            // React exports (like forwardRef) are available when icons execute.
             if (id.includes('framer-motion')) {
               return 'animation-vendor';
             }
             if (id.includes('@tanstack')) {
               return 'query-vendor';
             }
-            // Keep React, React-DOM, React Router, and Radix UI together in vendor chunk
-            // This prevents React import resolution issues
+            // Keep React, React-DOM, React Router, recharts, lucide-react, and Radix UI together in vendor chunk
+            // This prevents React import resolution issues and circular dependencies
             return 'vendor';
           }
           

@@ -249,7 +249,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                   </div>
                 </th>
                 
-                {monthlyData.slice(0, 12).map(({ key, display }) => (
+                {monthlyData.slice(-12).map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -447,7 +447,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                   </div>
                 </td>
                 
-                {monthlyData.slice(0, 12).map(({ key }) => {
+                {monthlyData.slice(-12).map(({ key }) => {
                   const totalValue = processedData.reduce((sum, categoryGroup) => {
                     return sum + (categoryGroup.monthlyValues[key] || 0);
                   }, 0);

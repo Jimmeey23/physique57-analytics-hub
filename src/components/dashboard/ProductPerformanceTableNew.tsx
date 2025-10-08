@@ -191,7 +191,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                   </div>
                 </th>
                 
-                                {monthlyData.slice(0, 12).map(({ key, display }) => (
+                                {monthlyData.slice(-12).map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -244,7 +244,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                       </div>
                     </td>
                     
-                    {monthlyData.slice(0, 12).map(({ key }, monthIndex) => {
+                    {monthlyData.slice(-12).map(({ key }, monthIndex) => {
                       const current = categoryGroup.monthlyValues[key] || 0;
                       const previousMonthKey = monthlyData[monthIndex + 1]?.key;
                       const previous = previousMonthKey ? (categoryGroup.monthlyValues[previousMonthKey] || 0) : 0;
@@ -312,7 +312,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                           </div>
                         </td>
                         
-                        {monthlyData.slice(0, 12).map(({ key }, monthIndex) => {
+                        {monthlyData.slice(-12).map(({ key }, monthIndex) => {
                           const current = product.monthlyValues[key] || 0;
                           const previousMonthKey = monthlyData[monthIndex + 1]?.key;
                           const previous = previousMonthKey ? (product.monthlyValues[previousMonthKey] || 0) : 0;
@@ -390,7 +390,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                   </div>
                 </td>
                 
-                {monthlyData.slice(0, 12).map(({ key }) => {
+                {monthlyData.slice(-12).map(({ key }) => {
                   const totalValue = processedData.reduce((sum, categoryGroup) => {
                     return sum + (categoryGroup.monthlyValues[key] || 0);
                   }, 0);
