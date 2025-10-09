@@ -398,6 +398,7 @@ Provide exactly 5 detailed bullet points focusing EXCLUSIVELY on September 2025 
     
     return ['September 2025 analysis unavailable at this time'];
   }
+}
 
   private extractTableStatistics(data: any[], columns: any[]): any {
     return {
