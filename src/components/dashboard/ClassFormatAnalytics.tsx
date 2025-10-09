@@ -124,10 +124,10 @@ export const ClassFormatAnalytics: React.FC<ClassFormatAnalyticsProps> = ({ data
         <h4 className="font-bold text-slate-700">{title}</h4>
       </div>
       <div className="overflow-x-auto custom-scrollbar border rounded-lg">
-        <Table>
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-gradient-to-r from-slate-700 to-slate-800">
-              <TableHead className="text-white font-bold py-2 h-10">Class + Day + Time</TableHead>
+              <TableHead className="text-white font-bold py-2 h-10 min-w-[250px]">Class + Day + Time</TableHead>
               <TableHead className="text-white font-bold text-center py-2 h-10">Sessions</TableHead>
               <TableHead className="text-white font-bold text-center py-2 h-10">Attendance</TableHead>
               <TableHead className="text-white font-bold text-center py-2 h-10">Capacity</TableHead>

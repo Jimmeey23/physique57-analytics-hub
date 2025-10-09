@@ -524,8 +524,8 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="relative overflow-auto max-h-[650px] custom-scrollbar border-t border-slate-200">
-          <Table>
+        <div className="relative overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200">
+          <Table className="min-w-[1800px]">
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b-2 border-slate-700 shadow-lg">
                 <TableHead 
