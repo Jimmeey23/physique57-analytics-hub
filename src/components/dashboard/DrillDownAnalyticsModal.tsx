@@ -123,14 +123,14 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    // Top performing sessions
+    // Top performing sessions (show all, sorted by fill rate)
     const topSessions = [...sessions]
       .sort((a, b) => {
         const aFillRate = (a.capacity || 0) > 0 ? ((a.checkedInCount || 0) / (a.capacity || 0)) * 100 : 0;
         const bFillRate = (b.capacity || 0) > 0 ? ((b.checkedInCount || 0) / (b.capacity || 0)) * 100 : 0;
         return bFillRate - aFillRate;
-      })
-      .slice(0, 10);
+      });
+      // Removed .slice(0, 10) to show all sessions
 
     // Pattern analysis
     const patterns = {
@@ -375,7 +375,7 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
               <CardHeader>
                 <CardTitle>Session Details</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-h-[500px] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -391,7 +391,7 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {analytics.topSessions.slice(0, 20).map((session, index) => (
+                    {analytics.topSessions.map((session, index) => (
                       <TableRow key={index}>
                         <TableCell>{session.date}</TableCell>
                         <TableCell className="font-medium">{session.cleanedClass}</TableCell>
@@ -447,10 +447,9 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
                 <CardHeader>
                   <CardTitle className="text-sm font-medium">Time Slot Performance</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 max-h-[300px] overflow-y-auto">
                   {Object.entries(analytics.patterns.timeSlot)
                     .sort(([,a], [,b]) => (b as any).attendance - (a as any).attendance)
-                    .slice(0, 5)
                     .map(([time, stats]) => (
                     <div key={time} className="flex justify-between items-center">
                       <span className="text-sm font-medium">{time}</span>
@@ -468,10 +467,9 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
                 <CardHeader>
                   <CardTitle className="text-sm font-medium">Trainer Performance</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 max-h-[300px] overflow-y-auto">
                   {Object.entries(analytics.patterns.trainer)
                     .sort(([,a], [,b]) => (b as any).attendance - (a as any).attendance)
-                    .slice(0, 5)
                     .map(([trainer, stats]) => (
                     <div key={trainer} className="flex justify-between items-center">
                       <span className="text-sm font-medium truncate">{trainer}</span>
@@ -492,8 +490,8 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
                 <CardTitle>Performance Trends</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {analytics.timeSeries.slice(0, 10).map((point, index) => (
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  {analytics.timeSeries.map((point, index) => (
                     <div key={point.date} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Calendar className="w-4 h-4 text-slate-500" />
