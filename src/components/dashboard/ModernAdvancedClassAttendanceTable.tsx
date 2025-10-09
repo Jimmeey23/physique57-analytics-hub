@@ -426,7 +426,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
   };
 
   return (
-    <Card className="w-full bg-white shadow-lg border-0 rounded-xl">
+    <Card className="w-full bg-white shadow-lg border-0 rounded-xl overflow-visible">
       <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-6 rounded-t-xl">
         <div className="flex items-center justify-between mb-4">
           <div>
