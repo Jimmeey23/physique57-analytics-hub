@@ -426,8 +426,8 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
   };
 
   return (
-    <Card className="w-full bg-white shadow-lg border-0 rounded-xl overflow-hidden">
-      <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-6">
+    <Card className="w-full bg-white shadow-lg border-0 rounded-xl overflow-visible">
+      <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-6 rounded-t-xl">
         <div className="flex items-center justify-between mb-4">
           <div>
             <CardTitle className="text-2xl font-bold text-slate-900 mb-2">
@@ -523,8 +523,8 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
         </div>
       </CardHeader>
 
-      <CardContent className="p-0">
-        <div className="relative overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200">
+      <CardContent className="p-0 rounded-b-xl">
+        <div className="relative overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl">
           <Table className="min-w-[1800px]">
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b-2 border-slate-700 shadow-lg">

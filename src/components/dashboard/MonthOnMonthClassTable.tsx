@@ -250,7 +250,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-purple-50/30 border-0 overflow-hidden">
+      <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-purple-50/30 border-0 rounded-xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -392,12 +392,12 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
 
             {/* Month-on-Month Table */}
             <motion.div 
-              className="border border-purple-100 rounded-xl overflow-hidden bg-white shadow-xl"
+              className="border border-purple-100 rounded-xl bg-white shadow-xl overflow-visible"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar">
+              <div className="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl">
                 <Table className="min-w-full">
                   <TableHeader className={`sticky top-0 z-20 shadow-sm border-b-2 ${getTableHeaderClasses('attendance')}`}>
                     <TableRow>
