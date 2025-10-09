@@ -14,6 +14,7 @@ import { DualRankingLists } from './DualRankingLists';
 import { InteractivePerformanceAnalytics } from './InteractivePerformanceAnalytics';
 import { DrillDownAnalyticsModal } from './DrillDownAnalyticsModal';
 import { LocationTabs } from './LocationTabs';
+import { ClassFormatAnalytics } from './ClassFormatAnalytics';
 
 export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   const { data: sessionsData, loading } = useSessionsData();
@@ -131,16 +132,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="analytics" className="mt-6">
-                <Card className="bg-white border-slate-200">
-                  <CardContent className="p-8 text-center">
-                    <h3 className="text-lg font-semibold text-slate-700 mb-2">
-                      Advanced Analytics Coming Soon
-                    </h3>
-                    <p className="text-slate-500">
-                      Detailed trend analysis, predictive insights, and custom reporting features will be available here.
-                    </p>
-                  </CardContent>
-                </Card>
+                <ClassFormatAnalytics data={locationFilteredData} />
               </TabsContent>
 
               <TabsContent value="insights" className="mt-6">

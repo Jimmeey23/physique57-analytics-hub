@@ -238,8 +238,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
     { value: 'trainer', label: 'By Trainer', icon: Users },
     { value: 'class', label: 'By Class', icon: Activity },
     { value: 'location', label: 'By Location', icon: MapPin },
-    { value: 'uniqueid1', label: 'By UniqueID1 (Class Ranking)', icon: Target },
-    { value: 'uniqueid2', label: 'By UniqueID2 (With Trainer)', icon: Users },
+    { value: 'uniqueid1', label: 'Group by Class', icon: Target },
+    { value: 'uniqueid2', label: 'Group by Class & Trainer', icon: Users },
     { value: 'day_time', label: 'By Day & Time', icon: Clock },
     { value: 'trainer_class', label: 'By Trainer & Class', icon: Target }
   ];
