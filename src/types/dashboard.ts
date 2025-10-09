@@ -82,11 +82,11 @@ export interface NewClientData {
   ltv: number;
   retentionStatus: string;
   conversionStatus: string;
-  period: string;
-  unique: string;
   firstPurchase: string;
   monthYear?: string;
   conversionSpan: number;
+  // Optional fields from sheet when present
+  noOfVisits?: number;
 }
 
 export interface PayrollData {

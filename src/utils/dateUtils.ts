@@ -113,6 +113,13 @@ export const parseDate = (dateString: string): Date | null => {
   if (!dateString || dateString.trim() === '') return null;
   
   try {
+    // Handle comma-separated timestamp e.g., "2020-01-01, 17:30:00" by taking the date part
+    if (dateString.includes(',')) {
+      const datePart = dateString.split(',')[0].trim();
+      const d = new Date(datePart);
+      if (!isNaN(d.getTime())) return d;
+    }
+    
     // Handle DD/MM/YYYY format with optional time (e.g., "14/09/2025 10:00:00")
     if (dateString.includes('/')) {
       // Split by space to separate date and time, take only date part

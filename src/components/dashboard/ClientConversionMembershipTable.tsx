@@ -12,6 +12,8 @@ interface ClientConversionMembershipTableProps {
 }
 
 export const ClientConversionMembershipTable: React.FC<ClientConversionMembershipTableProps> = ({ data }) => {
+  const [sortField, setSortField] = React.useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const membershipData = React.useMemo(() => {
     const membershipStats = data.reduce((acc, client) => {
       const membership = client.membershipUsed || 'No Membership';
@@ -30,11 +32,12 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       
       acc[membership].totalMembers++;
       
-      // Count new members - only when isNew contains "New" (case sensitive)
-      if ((client.isNew || '').includes('New')) {
+      // Count new members - when isNew contains "new" (case-insensitive)
+      if ((client.isNew || '').toLowerCase().includes('new')) {
         acc[membership].newMembers++;
       }
       
+      // Strict equality per business rule
       if (client.conversionStatus === 'Converted') acc[membership].converted++;
       if (client.retentionStatus === 'Retained') acc[membership].retained++;
       acc[membership].totalLTV += client.ltv || 0;
@@ -50,7 +53,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       .map((stat: any) => ({
         ...stat,
         conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
-        retentionRate: stat.totalMembers > 0 ? (stat.retained / stat.totalMembers) * 100 : 0,
+  // Standardize retention rate: retained / newMembers
+  retentionRate: stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0,
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgVisits: stat.totalMembers > 0 ? stat.totalVisits / stat.totalMembers : 0,
         avgConversionSpan: stat.conversionSpans.length > 0 
@@ -65,67 +69,67 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     {
       key: 'membershipType' as const,
       header: 'Membership Type',
-      className: 'font-medium text-xs min-w-[200px]',
+      className: 'font-medium text-xs min-w-[240px] text-slate-900',
+      sortable: true,
       render: (value: string) => (
-        <span className="text-xs font-medium text-gray-800 truncate max-w-[200px]" title={value}>
-          {value.length > 25 ? `${value.substring(0, 25)}...` : value}
-        </span>
+        <span className="text-sm font-medium text-slate-900 truncate" title={value}>{value}</span>
       )
     },
     {
       key: 'totalMembers' as const,
       header: 'Trials',
       align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold text-blue-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'newMembers' as const,
       header: 'New Members',
       align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold text-green-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'retained' as const,
       header: 'Retained',
       align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold text-purple-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'retentionRate' as const,
       header: 'Retention %',
       align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold">{value.toFixed(1)}%</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}%</span>
     },
     {
       key: 'converted' as const,
       header: 'Converted',
       align: 'center' as const,
-      render: (value: number) => <span className="text-xs font-semibold text-green-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'conversionRate' as const,
       header: 'Conversion %',
       align: 'center' as const,
-      render: (value: number) => (
-        <div className="flex items-center justify-center gap-1">
-          {value > 50 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 20 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
-          <span className={`text-xs font-semibold ${value > 50 ? 'text-green-600' : value < 20 ? 'text-red-600' : 'text-gray-600'}`}>
-            {value.toFixed(1)}%
-          </span>
-        </div>
-      )
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}%</span>
     },
     {
       key: 'avgLTV' as const,
       header: 'Avg LTV',
       align: 'right' as const,
-      render: (value: number) => <span className="text-xs font-semibold">{formatCurrency(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
     },
     {
       key: 'totalLTV' as const,
       header: 'Total LTV',
       align: 'right' as const,
-      render: (value: number) => <span className="text-xs font-semibold text-green-600">{formatCurrency(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
     }
   ];
 
@@ -142,11 +146,28 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     avgLTV: membershipData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(membershipData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
   totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
-  totals.retentionRate = totals.totalMembers > 0 ? (totals.retained / totals.totalMembers) * 100 : 0;
+  totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+
+  const displayedData = React.useMemo(() => {
+    if (!sortField) return membershipData;
+    const arr = [...membershipData];
+    return arr.sort((a: any, b: any) => {
+      const av = a[sortField as any];
+      const bv = b[sortField as any];
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
+    });
+  }, [membershipData, sortField, sortDirection]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    else { setSortField(field); setSortDirection('desc'); }
+  };
 
   return (
     <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-800 to-indigo-800 text-white">
         <CardTitle className="flex items-center gap-2">
           <Award className="w-5 h-5" />
           Membership Type Performance Analysis
@@ -157,13 +178,39 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       </CardHeader>
       <CardContent className="p-0">
         <ModernDataTable
-          data={membershipData}
+          data={displayedData}
           columns={columns}
-          headerGradient="from-purple-600 to-indigo-600"
+          headerGradient="from-purple-800 to-indigo-800"
           showFooter={true}
           footerData={totals}
           maxHeight="500px"
+          onSort={handleSort}
+          sortField={sortField}
+          sortDirection={sortDirection}
         />
+        {/* AI Notes Footer */}
+        <div className="border-t border-slate-200 p-4 bg-slate-50">
+          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+          <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+            <li>Top membership by trials: {(() => {
+              if (membershipData.length === 0) return 'N/A';
+              const top = [...membershipData].sort((a,b) => b.totalMembers - a.totalMembers)[0];
+              return `${top.membershipType} (${formatNumber(top.totalMembers)})`;
+            })()}</li>
+            <li>Best conversion: {(() => {
+              const withNew = membershipData.filter(r => r.newMembers > 0);
+              if (withNew.length === 0) return 'N/A';
+              const top = [...withNew].sort((a,b) => b.conversionRate - a.conversionRate)[0];
+              return `${top.membershipType} at ${top.conversionRate.toFixed(1)}%`;
+            })()}</li>
+            <li>Best retention: {(() => {
+              const withNew = membershipData.filter(r => r.newMembers > 0);
+              if (withNew.length === 0) return 'N/A';
+              const top = [...withNew].sort((a,b) => b.retentionRate - a.retentionRate)[0];
+              return `${top.membershipType} at ${top.retentionRate.toFixed(1)}%`;
+            })()}</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );

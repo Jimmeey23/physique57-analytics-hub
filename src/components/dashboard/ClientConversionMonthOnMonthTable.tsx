@@ -7,6 +7,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { motion } from 'framer-motion';
+import { parseDate } from '@/utils/dateUtils';
 
 interface ClientConversionMonthOnMonthTableProps {
   data: NewClientData[];
@@ -16,6 +17,8 @@ interface ClientConversionMonthOnMonthTableProps {
 
 export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOnMonthTableProps> = ({ data, visitsSummary, onRowClick }) => {
   console.log('MonthOnMonth data:', data.length, 'records');
+  const [sortField, setSortField] = React.useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
 
   const monthlyData = React.useMemo(() => {
     // Generate all months from Jan 2024 to current month regardless of data
@@ -61,32 +64,8 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
 
     // Process actual data into the pre-initialized months
     data.forEach(client => {
-      const dateStr = client.firstVisitDate;
-      let date: Date;
-      
-      // Handle different date formats consistently
-      if (dateStr.includes('/')) {
-        const parts = dateStr.split(' ')[0].split('/');
-        if (parts.length === 3) {
-          // Try DD/MM/YYYY format first
-          const [day, month, year] = parts;
-          date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-          
-          // If invalid, try MM/DD/YYYY format
-          if (isNaN(date.getTime())) {
-            date = new Date(parseInt(year), parseInt(day) - 1, parseInt(month));
-          }
-        } else {
-          date = new Date(dateStr);
-        }
-      } else {
-        date = new Date(dateStr);
-      }
-      
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date:', dateStr);
-        return;
-      }
+      const date = parseDate(client.firstVisitDate || '');
+      if (!date) return;
       
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
@@ -95,7 +74,7 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
         monthlyStats[monthKey].totalMembers++;
         monthlyStats[monthKey].clients.push(client);
         
-        // Count new members - when isNew contains "new" (case insensitive)
+        // Count new members - case-insensitive contains 'new'
         if ((client.isNew || '').toLowerCase().includes('new')) {
           monthlyStats[monthKey].newMembers++;
         }
@@ -105,7 +84,7 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
           monthlyStats[monthKey].converted++;
         }
         
-        // Count retained - when retentionStatus is exactly "Retained"
+        // Count retained - exact equality
         if (client.retentionStatus === 'Retained') {
           monthlyStats[monthKey].retained++;
         }
@@ -162,95 +141,100 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
     {
       key: 'month',
       header: 'Month',
-      className: 'font-semibold min-w-[100px]',
+      className: 'font-semibold min-w-[100px] text-slate-900',
+      sortable: true,
       render: (value: string) => (
-        <div className="font-bold text-slate-800 bg-gradient-to-r from-blue-50 to-purple-50 px-3 py-2 rounded-lg">
-          {value}
-        </div>
+        <span className="text-sm font-medium text-slate-900">{value}</span>
       )
     },
     {
       key: 'totalMembers',
       header: 'Trials',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-blue-600">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'newMembers',
       header: 'New Members',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-green-600">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'retained',
       header: 'Retained',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-purple-600">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'retentionRate',
       header: 'Retention %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className={`text-base font-bold ${value > 70 ? 'text-purple-600' : value < 40 ? 'text-red-600' : 'text-slate-600'}`}>
-          {value.toFixed(1)}%
-        </span>
+        <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}%</span>
       )
     },
     {
       key: 'converted',
       header: 'Converted',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-emerald-600">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'conversionRate',
       header: 'Conversion %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className={`text-base font-bold ${value > 25 ? 'text-green-600' : value < 10 ? 'text-red-600' : 'text-slate-600'}`}>
-          {value.toFixed(1)}%
-        </span>
+        <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}%</span>
       )
     },
     {
       key: 'avgLTV',
       header: 'Avg LTV',
       align: 'right' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-teal-600">{formatCurrency(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
       )
     },
     {
       key: 'totalLTV',
       header: 'Total LTV',
       align: 'right' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-green-600">{formatCurrency(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
       )
     },
     {
       key: 'avgConversionInterval',
       header: 'Avg Conv Days',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-orange-600">{Math.round(value)}</span>
+        <span className="text-sm font-medium text-slate-900">{Math.round(value)}</span>
       )
     },
     {
       key: 'avgVisitsPostTrial',
       header: 'Avg Visits',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className="text-base font-bold text-blue-600">{value.toFixed(1)}</span>
+        <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}</span>
       )
     }
   ];
@@ -272,6 +256,24 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
   totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
   totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
 
+  // Sorting
+  const displayedData = React.useMemo(() => {
+    if (!sortField) return monthlyData;
+    const arr = [...monthlyData];
+    return arr.sort((a: any, b: any) => {
+      const av = a[sortField];
+      const bv = b[sortField];
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
+    });
+  }, [monthlyData, sortField, sortDirection]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    else { setSortField(field); setSortDirection('desc'); }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -279,7 +281,7 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
       transition={{ duration: 0.6 }}
     >
       <Card className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-300">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-700 to-cyan-800 text-white">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="w-5 h-5" />
           Month-on-Month Client Conversion Analysis
@@ -290,14 +292,41 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
       </CardHeader>
       <CardContent className="p-0">
         <ModernDataTable
-          data={monthlyData}
+          data={displayedData}
           columns={columns}
-          headerGradient="from-blue-600 to-cyan-600"
+          headerGradient="from-blue-700 to-cyan-800"
           showFooter={true}
           footerData={totals}
           maxHeight="600px"
           onRowClick={onRowClick}
+          onSort={handleSort}
+          sortField={sortField}
+          sortDirection={sortDirection}
         />
+        {/* AI Notes Footer */}
+        <div className="border-t border-slate-200 p-4 bg-slate-50">
+          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+          <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+            <li>Highest conversion: {(() => {
+              const withNew = monthlyData.filter(r => r.newMembers > 0);
+              if (withNew.length === 0) return 'N/A';
+              const top = [...withNew].sort((a,b) => b.conversionRate - a.conversionRate)[0];
+              return `${top.month} at ${top.conversionRate.toFixed(1)}% (${top.converted}/${top.newMembers})`;
+            })()}</li>
+            <li>Best retention: {(() => {
+              const withNew = monthlyData.filter(r => r.newMembers > 0);
+              if (withNew.length === 0) return 'N/A';
+              const top = [...withNew].sort((a,b) => b.retentionRate - a.retentionRate)[0];
+              return `${top.month} at ${top.retentionRate.toFixed(1)}% (${top.retained}/${top.newMembers})`;
+            })()}</li>
+            <li>Most trials: {(() => {
+              if (monthlyData.length === 0) return 'N/A';
+              const top = [...monthlyData].sort((a,b) => b.totalMembers - a.totalMembers)[0];
+              return `${top.month} with ${formatNumber(top.totalMembers)} trials`;
+            })()}</li>
+            <li>Avg conversion time: {Math.round(totals.avgConversionInterval)} days; Avg visits: {totals.avgVisitsPostTrial.toFixed(1)}</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
     </motion.div>

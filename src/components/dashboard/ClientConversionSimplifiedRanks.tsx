@@ -207,19 +207,18 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
       membershipStat.totalLTV += client.ltv || 0;
       membershipStat.avgVisits += client.visitsPostTrial || 0;
       
-      // Use more robust status detection
+      // Standardized status detection
       const isNewValue = (client.isNew || '').toLowerCase();
-      if (isNewValue.includes('new') || isNewValue === 'yes') {
+      if (isNewValue.includes('new')) {
         membershipStat.newMembers++;
       }
       
-      const conversionStatus = (client.conversionStatus || '').toLowerCase();
-      if (conversionStatus.includes('converted') || conversionStatus === 'yes') {
+      // Exact equality per business rule
+      if (client.conversionStatus === 'Converted') {
         membershipStat.converted++;
       }
       
-      const retentionStatus = (client.retentionStatus || '').toLowerCase();
-      if (retentionStatus.includes('retained') || retentionStatus === 'yes') {
+      if (client.retentionStatus === 'Retained') {
         membershipStat.retained++;
       }
     });

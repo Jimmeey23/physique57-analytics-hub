@@ -85,7 +85,7 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 key={column.key} 
                 className={cn(
                   "font-bold h-12 px-3 text-xs text-white border-r border-white/20 last:border-r-0",
-                  "min-w-[80px] max-w-[200px]",
+                  "min-w-[80px]",
                   column.align === 'center' && 'text-center',
                   column.align === 'right' && 'text-right',
                   column.sortable && 'cursor-pointer hover:bg-white/10 transition-colors',
@@ -126,8 +126,8 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 <TableCell 
                   key={column.key}
                   className={cn(
-                    "h-12 px-3 py-2 text-sm font-medium border-r border-slate-200/50 last:border-r-0",
-                    "min-w-[80px] max-w-[200px]",
+                    "h-12 px-3 py-2 text-sm font-medium text-slate-900 border-r border-slate-200/50 last:border-r-0",
+                    "min-w-[80px]",
                     column.align === 'center' && 'text-center',
                     column.align === 'right' && 'text-right',
                     column.className
@@ -150,17 +150,15 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
           ))}
         </TableBody>
         {showFooter && footerData && (
-          <TableFooter className="sticky bottom-0 z-10 border-t-2 border-slate-400">
+          <TableFooter className="sticky bottom-0 z-10">
             <TableRow className={cn(
-              "h-12 border-none bg-gradient-to-r",
-              headerGradient,
-              "hover:opacity-90"
+              "h-12 border-t-4 border-slate-800 bg-white"
             )}>
               {columns.map((column) => (
                 <TableCell 
                   key={column.key}
                   className={cn(
-                    "font-bold text-white h-12 px-3 py-2 text-xs border-r border-white/20 last:border-r-0",
+                    "font-bold text-slate-900 h-12 px-3 py-2 text-xs border-r border-slate-200 last:border-r-0",
                     "min-w-[80px]",
                     column.align === 'center' && 'text-center',
                     column.align === 'right' && 'text-right',

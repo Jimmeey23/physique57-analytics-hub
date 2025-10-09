@@ -13,11 +13,14 @@ interface ClientHostedClassesTableProps {
 }
 
 export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> = ({ data, onRowClick }) => {
+  const [sortField, setSortField] = React.useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
+
   // Early return if no data
   if (!data || data.length === 0) {
     return (
       <Card className="bg-white shadow-xl border-0 overflow-hidden">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-800 to-pink-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Dumbbell className="w-5 h-5" />
             Hosted Classes Performance Analysis
@@ -39,18 +42,9 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       if (!client || !client.firstVisitEntityName) return false;
       
       const className = client.firstVisitEntityName.toLowerCase();
-      
-      // Check for "host", "hosted", or "sign up" as substring matches
-      const hasHostKeywords = className.includes('host') || 
-                             className.includes('hosted') || 
-                             className.includes('sign up');
-      
-      // Check for "x" as a whole word using word boundaries
-      const hasStandaloneX = /\bx\b/.test(className);
-      
-      const isHostedClass = hasHostKeywords || hasStandaloneX;
-      
-      return isHostedClass;
+      // Hosted classes contain any of: host, hosted, p57, birthday, rugby, lrs
+      const tokens = ['host', 'hosted', 'p57', 'birthday', 'rugby', 'lrs'];
+      return tokens.some(t => className.includes(t));
     });
 
     console.log(`Hosted Classes Filter: ${data.length} total records, ${filteredData.length} hosted class records`);
@@ -142,7 +136,8 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       .map((stat: any) => ({
         ...stat,
         conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
-        retentionRate: stat.converted > 0 ? (stat.retained / stat.converted) * 100 : 0,
+  // Standardize retention rate: retained / newMembers
+  retentionRate: stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0,
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgConversionInterval: stat.conversionIntervals.length > 0 
           ? stat.conversionIntervals.reduce((a: number, b: number) => a + b, 0) / stat.conversionIntervals.length 
@@ -155,121 +150,94 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     {
       key: 'month',
       header: 'Month',
-      className: 'font-semibold min-w-[100px]',
+      className: 'font-semibold min-w-[120px] text-slate-900',
+      sortable: true,
       render: (value: string) => (
-        <div className="font-bold text-slate-800 bg-gradient-to-r from-purple-50 to-pink-50 px-3 py-2 rounded-lg">
-          {value}
-        </div>
+        <span className="text-sm font-medium text-slate-900">{value}</span>
       )
     },
     {
       key: 'className',
       header: 'Class Name',
-      className: 'font-medium min-w-[200px]',
+      className: 'font-medium min-w-[360px] max-w-none h-auto whitespace-normal',
+      sortable: true,
       render: (value: string) => (
-        <div className="font-semibold text-slate-700 truncate" title={value}>
-          {value.length > 30 ? `${value.substring(0, 30)}...` : value}
-        </div>
+        <span className="text-sm font-medium text-slate-900 whitespace-normal break-words" title={value}>{value}</span>
       )
     },
     {
       key: 'totalMembers',
       header: 'Trials',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <div className="text-center">
-          <div className="text-lg font-bold text-blue-600">{formatNumber(value)}</div>
-          <div className="text-xs text-slate-500">trials</div>
-        </div>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'newMembers',
       header: 'New Members',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <div className="text-center">
-          <div className="text-lg font-bold text-green-600">{formatNumber(value)}</div>
-          <div className="text-xs text-slate-500">new</div>
-        </div>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'retained',
       header: 'Retained',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <div className="text-center">
-          <div className="text-lg font-bold text-purple-600">{formatNumber(value)}</div>
-          <div className="text-xs text-slate-500">retained</div>
-        </div>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'retentionRate',
       header: 'Retention %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => {
         const safeValue = value ?? 0;
-        return (
-          <div className="flex items-center justify-center gap-1">
-            {safeValue > 70 ? <TrendingUp className="w-3 h-3 text-green-500" /> : safeValue < 50 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
-            <Badge className={`font-bold ${safeValue > 70 ? 'bg-green-100 text-green-800' : safeValue < 50 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-              {safeValue.toFixed(1)}%
-            </Badge>
-          </div>
-        );
+        return <span className="text-sm font-medium text-slate-900">{safeValue.toFixed(1)}%</span>;
       }
     },
     {
       key: 'converted',
       header: 'Converted',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <div className="text-center">
-          <div className="text-lg font-bold text-green-600">{formatNumber(value)}</div>
-          <div className="text-xs text-slate-500">converted</div>
-        </div>
+        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
       )
     },
     {
       key: 'conversionRate',
       header: 'Conversion %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => {
         const safeValue = value ?? 0;
-        return (
-          <div className="flex items-center justify-center gap-1">
-            {safeValue > 25 ? <TrendingUp className="w-3 h-3 text-green-500" /> : safeValue < 10 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
-            <Badge className={`font-bold ${safeValue > 25 ? 'bg-green-100 text-green-800' : safeValue < 10 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-              {safeValue.toFixed(1)}%
-            </Badge>
-          </div>
-        );
+        return <span className="text-sm font-medium text-slate-900">{safeValue.toFixed(1)}%</span>;
       }
     },
     {
       key: 'avgLTV',
       header: 'Avg LTV',
       align: 'right' as const,
+      sortable: true,
       render: (value: number) => (
-        <div className="text-right">
-          <div className="text-lg font-bold text-emerald-600">{formatCurrency(value)}</div>
-          <div className="text-xs text-slate-500">per client</div>
-        </div>
+        <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
       )
     },
     {
       key: 'avgConversionInterval',
       header: 'Avg Conv Days',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => {
         const safeValue = value ?? 0;
-        return (
-          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-bold">
-            {Math.round(safeValue)} days
-          </Badge>
-        );
+        return <span className="text-sm font-medium text-slate-900">{Math.round(safeValue)} days</span>;
       }
     }
   ];
@@ -288,6 +256,41 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
   };
   totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
 
+  // Sorting logic
+  const displayedData = React.useMemo(() => {
+    const arr = [...hostedClassData];
+    if (!sortField) return arr;
+    return arr.sort((a: any, b: any) => {
+      const av = a[sortField];
+      const bv = b[sortField];
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
+    });
+  }, [hostedClassData, sortField, sortDirection]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  // AI Notes for hosted classes
+  const aiNotes = React.useMemo(() => {
+    if (!hostedClassData || hostedClassData.length === 0) return [] as string[];
+    const topTrials = [...hostedClassData].sort((a,b) => b.totalMembers - a.totalMembers)[0];
+    const bestConv = [...hostedClassData.filter(r => r.newMembers > 0)].sort((a,b) => b.conversionRate - a.conversionRate)[0];
+    const bestRet = [...hostedClassData.filter(r => r.newMembers > 0)].sort((a,b) => b.retentionRate - a.retentionRate)[0];
+    const notes: string[] = [];
+    if (topTrials) notes.push(`${topTrials.className} (${topTrials.month}) drove the most trials (${formatNumber(topTrials.totalMembers)}).`);
+    if (bestConv) notes.push(`${bestConv.className} (${bestConv.month}) has the best conversion ${bestConv.conversionRate.toFixed(1)}% (${bestConv.converted}/${bestConv.newMembers}).`);
+    if (bestRet) notes.push(`${bestRet.className} (${bestRet.month}) leads retention ${bestRet.retentionRate.toFixed(1)}% (${bestRet.retained}/${bestRet.newMembers}).`);
+    return notes;
+  }, [hostedClassData]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -295,7 +298,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       transition={{ duration: 0.6 }}
     >
       <Card className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-300">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-800 to-pink-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Dumbbell className="w-5 h-5" />
             Hosted Classes Performance Analysis
@@ -306,14 +309,29 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
         </CardHeader>
         <CardContent className="p-0">
           <ModernDataTable
-            data={hostedClassData}
+            data={displayedData}
             columns={columns}
-            headerGradient="from-purple-600 to-pink-600"
+            headerGradient="from-purple-800 to-pink-800"
             showFooter={true}
             footerData={totals}
             maxHeight="600px"
             onRowClick={onRowClick}
+            onSort={handleSort}
+            sortField={sortField}
+            sortDirection={sortDirection}
           />
+          <div className="border-t border-slate-200 p-4 bg-slate-50">
+            <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+            {aiNotes.length > 0 ? (
+              <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+                {aiNotes.map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-sm text-slate-500">No notable patterns found for the current filters.</div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>

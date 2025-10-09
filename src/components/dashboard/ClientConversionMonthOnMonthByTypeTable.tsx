@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
+import { parseDate } from '@/utils/dateUtils';
 
 interface CheckinData {
   memberId: string;
@@ -47,6 +48,8 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
   visitsSummary,
   onRowClick 
 }: ClientConversionMonthOnMonthByTypeTableProps) => {
+  const [sortField, setSortField] = React.useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const monthlyDataByType = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -68,32 +71,8 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
 
     const monthlyStats: Record<string, MonthlyStats> = {};
     data.forEach(client => {
-      const dateStr = client.firstVisitDate;
-      if (!dateStr) return;
-      let date: Date;
-
-      // Handle different date formats consistently
-      if (dateStr.includes('/')) {
-        const parts = dateStr.split(' ')[0].split('/');
-        if (parts.length === 3) {
-          // Try DD/MM/YYYY format first
-          const [day, month, year] = parts;
-          date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-
-          // If invalid, try MM/DD/YYYY format
-          if (isNaN(date.getTime())) {
-            date = new Date(parseInt(year), parseInt(day) - 1, parseInt(month));
-          }
-        } else {
-          date = new Date(dateStr);
-        }
-      } else {
-        date = new Date(dateStr);
-      }
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date:', dateStr);
-        return;
-      }
+      const date = parseDate(client.firstVisitDate || '');
+      if (!date) return;
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = date.toLocaleDateString('en-US', {
         month: 'short',
@@ -105,8 +84,11 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
       // Create unique key for month + type combination
       const key = `${monthKey}-${clientType}`;
       if (!monthlyStats[key]) {
-        const monthYearKey = `${client.firstVisitDate?.split('T')[0].substring(0, 7)}`;
-        const visits = visitsSummary?.[monthYearKey] || 0;
+        // visitsSummary keys like "Jan 2024"; convert monthKey to that format
+        const [y, m] = monthKey.split('-');
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const summaryKey = `${monthNames[parseInt(m)-1]} ${y}`;
+        const visits = visitsSummary?.[summaryKey] || 0;
         monthlyStats[key] = {
           month: monthName,
           sortKey: monthKey,
@@ -171,7 +153,7 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
   const tableData = useMemo(() => {
     return monthlyDataByType.map(stat => {
       const conversionRate = stat.newMembers > 0 ? stat.converted / stat.newMembers * 100 : 0;
-      // Fix: Retention rate should be retained from new members as requested
+      // Retention rate standardized: retained / newMembers
       const retentionRate = stat.newMembers > 0 ? stat.retained / stat.newMembers * 100 : 0;
       const avgLTV = stat.totalTrials > 0 ? stat.totalLTV / stat.totalTrials : 0;
       const avgConversionDays = stat.conversionIntervals.length > 0 ? stat.conversionIntervals.reduce((sum, interval) => sum + interval, 0) / stat.conversionIntervals.length : 0;
@@ -187,6 +169,23 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
     });
   }, [monthlyDataByType]);
   console.log('Month-on-month by type data prepared:', tableData.length, 'entries');
+
+  const displayedData = useMemo(() => {
+    if (!sortField) return tableData;
+    const arr = [...tableData];
+    return arr.sort((a: any, b: any) => {
+      const av = a[sortField as any];
+      const bv = b[sortField as any];
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
+    });
+  }, [tableData, sortField, sortDirection]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    else { setSortField(field); setSortDirection('desc'); }
+  };
 
   // Calculate totals for the totals row
   const totals = useMemo(() => {
@@ -232,8 +231,23 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
       avgVisits
     };
   }, [totals]);
+
+  // Compute concise AI notes for summary
+  const aiNotes = useMemo(() => {
+    if (!tableData || tableData.length === 0) return [] as string[];
+    const withNew = tableData.filter(r => r.newMembers > 0);
+    const topConversion = [...withNew].sort((a,b) => (b.conversionRate||0)-(a.conversionRate||0))[0];
+    const topRetention = [...withNew].sort((a,b) => (b.retentionRate||0)-(a.retentionRate||0))[0];
+    const topVolume = [...tableData].sort((a,b) => (b.totalTrials||0)-(a.totalTrials||0))[0];
+    const notes: string[] = [];
+    if (topConversion) notes.push(`${topConversion.month} ${topConversion.type} shows the highest conversion at ${topConversion.conversionRate.toFixed(1)}% (${topConversion.converted}/${topConversion.newMembers}).`);
+    if (topRetention) notes.push(`${topRetention.month} ${topRetention.type} leads retention at ${topRetention.retentionRate.toFixed(1)}% (${topRetention.retained}/${topRetention.newMembers}).`);
+    if (topVolume) notes.push(`${topVolume.month} ${topVolume.type} had the most trials (${topVolume.totalTrials}) with avg LTV ${formatCurrency(topVolume.avgLTV)}.`);
+    if (totalsRow && totalsRow.avgConversionDays) notes.push(`Average conversion time is ${Math.round(totalsRow.avgConversionDays)} days with avg visits ${totalsRow.avgVisits.toFixed(1)}.`);
+    return notes;
+  }, [tableData, totalsRow]);
   return <Card className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-700 to-purple-900 text-white pb-4">
+  <CardHeader className="bg-gradient-to-r from-indigo-800 to-purple-900 text-white pb-4">
         <CardTitle className="text-lg font-bold flex items-center gap-2">
           <Calendar className="w-5 h-5" />
           Month-on-Month Analysis by Client Type
@@ -248,46 +262,42 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
           <Table className="w-full">
             <TableHeader className="sticky top-0 z-20">
               <TableRow className={`border-b h-12 ${getTableHeaderClasses('retention')}`}>
-                <TableHead className="font-bold text-white text-xs px-4 sticky left-0 z-10 min-w-[100px]">Month</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Type</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Trials</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[90px]">New Members</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Retained</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Retention %</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Converted</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Conversion %</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Avg LTV</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Total LTV</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Avg Conv Days</TableHead>
-                <TableHead className="font-bold text-white text-xs px-3 text-center min-w-[80px]">Avg Visits</TableHead>
+                <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 min-w-[100px]">Month</TableHead>
+                <TableHead onClick={() => handleSort('type')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Type</TableHead>
+                <TableHead onClick={() => handleSort('totalTrials')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Trials</TableHead>
+                <TableHead onClick={() => handleSort('newMembers')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[90px]">New Members</TableHead>
+                <TableHead onClick={() => handleSort('retained')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Retained</TableHead>
+                <TableHead onClick={() => handleSort('retentionRate')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Retention %</TableHead>
+                <TableHead onClick={() => handleSort('converted')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Converted</TableHead>
+                <TableHead onClick={() => handleSort('conversionRate')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Conversion %</TableHead>
+                <TableHead onClick={() => handleSort('avgLTV')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Avg LTV</TableHead>
+                <TableHead onClick={() => handleSort('totalLTV')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Total LTV</TableHead>
+                <TableHead onClick={() => handleSort('avgConversionDays')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Avg Conv Days</TableHead>
+                <TableHead onClick={() => handleSort('avgVisits')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Avg Visits</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tableData.map((row, index) => <TableRow key={`${row.month}-${row.type}`} className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 h-10" onClick={() => onRowClick?.(row)}>
-                  <TableCell className="font-semibold text-gray-900 text-xs px-4 sticky left-0 bg-slate-100 z-10 border-r">{row.month}</TableCell>
+              {displayedData.map((row, index) => <TableRow key={`${row.month}-${row.type}`} className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 h-10" onClick={() => onRowClick?.(row)}>
+                  <TableCell className="text-xs px-4 sticky left-0 bg-slate-100 z-10 border-r">
+                    <span className="text-sm font-medium text-slate-900">{row.month}</span>
+                  </TableCell>
                   <TableCell className="text-xs px-3 text-left">
-                    <Badge variant={row.type.toLowerCase().includes('new') ? 'default' : 'secondary'} className="text-xs rounded-t rounded-b py-2 min-w-52 bg-indigo-900 text-white font-medium rounded-lg">
-                      {row.type}
-                    </Badge>
+                    <span className="text-sm font-medium text-slate-900">{row.type}</span>
                   </TableCell>
-                  <TableCell className="text-xs px-3 text-center font-medium">{formatNumber(row.totalTrials)}</TableCell>
-                  <TableCell className="text-xs px-3 text-center font-medium">{formatNumber(row.newMembers)}</TableCell>
-                  <TableCell className="text-xs px-3 text-center font-medium">{formatNumber(row.retained)}</TableCell>
+                  <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{formatNumber(row.totalTrials)}</TableCell>
+                  <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{formatNumber(row.newMembers)}</TableCell>
+                  <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{formatNumber(row.retained)}</TableCell>
                   <TableCell className="text-xs px-3 text-center">
-                    <span className={`font-semibold ${row.retentionRate >= 70 ? 'text-green-600' : row.retentionRate >= 50 ? 'text-orange-600' : 'text-red-600'}`}>
-                      {row.retentionRate.toFixed(1)}%
-                    </span>
+                    <span className="text-sm font-medium text-slate-900">{row.retentionRate.toFixed(1)}%</span>
                   </TableCell>
-                  <TableCell className="text-xs px-3 text-center font-medium">{formatNumber(row.converted)}</TableCell>
+                  <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{formatNumber(row.converted)}</TableCell>
                   <TableCell className="text-xs px-3 text-center">
-                    <span className={`font-semibold ${row.conversionRate >= 50 ? 'text-green-600' : row.conversionRate >= 30 ? 'text-orange-600' : 'text-red-600'}`}>
-                      {row.conversionRate.toFixed(1)}%
-                    </span>
+                    <span className="text-sm font-medium text-slate-900">{row.conversionRate.toFixed(1)}%</span>
                   </TableCell>
-                  <TableCell className="text-xs px-3 text-right font-semibold text-emerald-600">{formatCurrency(row.avgLTV)}</TableCell>
-                  <TableCell className="text-xs px-3 text-right font-semibold text-green-600">{formatCurrency(row.totalLTV)}</TableCell>
-                  <TableCell className="text-xs px-3 text-center font-medium">{row.avgConversionDays.toFixed(0)} days</TableCell>
-                  <TableCell className="text-xs px-3 text-center font-medium">{row.avgVisits.toFixed(1)}</TableCell>
+                  <TableCell className="text-xs px-3 text-right font-medium text-slate-900">{formatCurrency(row.avgLTV)}</TableCell>
+                  <TableCell className="text-xs px-3 text-right font-medium text-slate-900">{formatCurrency(row.totalLTV)}</TableCell>
+                  <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{row.avgConversionDays.toFixed(0)} days</TableCell>
+                  <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{row.avgVisits.toFixed(1)}</TableCell>
                 </TableRow>)}
               {/* Totals Row */}
               <TableRow className="border-t-4 border-gray-800 text-gray-900">
@@ -318,6 +328,19 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
               </TableRow>
             </TableBody>
           </Table>
+        </div>
+        {/* AI Notes Footer */}
+        <div className="border-t border-slate-200 p-4 bg-slate-50">
+          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+          {aiNotes.length > 0 ? (
+            <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              {aiNotes.map((n, i) => (
+                <li key={i}>{n}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-sm text-slate-500">No notable patterns found for the current filters.</div>
+          )}
         </div>
       </CardContent>
     </Card>;

@@ -58,9 +58,10 @@ const ClientRetention = () => {
 
   // Filters state
   const [filters, setFilters] = useState<NewClientFilterOptions>(() => {
-    // Start with no date filter to show all data by default
+    // Default to previous month date range
+    const prev = getPreviousMonthDateRange();
     return {
-      dateRange: { start: '', end: '' },
+      dateRange: { start: prev.start, end: prev.end },
       location: [],
       homeLocation: [],
       trainer: [],
@@ -149,6 +150,44 @@ const ClientRetention = () => {
     console.log('Visits summary for filtered data:', summary);
     return summary;
   }, [filteredPayrollData]);
+
+  // Create visits summary without date range (for MoM tables that ignore date range)
+  const filteredPayrollDataNoDateRange = useMemo(() => {
+    if (!payrollData || payrollData.length === 0) return [];
+    let filtered = payrollData;
+
+    // Apply location filter
+    if (selectedLocation !== 'All Locations') {
+      filtered = filtered.filter(payroll => {
+        const payrollLocation = payroll.location || '';
+        if (selectedLocation === 'Kenkere House, Bengaluru') {
+          return payrollLocation.toLowerCase().includes('kenkere') ||
+            payrollLocation.toLowerCase().includes('bengaluru') ||
+            payrollLocation === 'Kenkere House';
+        }
+        return payrollLocation === selectedLocation;
+      });
+    }
+
+    // Apply trainer filter if specified
+    if (filters.trainer.length > 0) {
+      filtered = filtered.filter(payroll => filters.trainer.includes(payroll.teacherName || ''));
+    }
+
+    return filtered;
+  }, [payrollData, selectedLocation, filters.trainer]);
+
+  const visitsSummaryNoDateRange = useMemo(() => {
+    if (!filteredPayrollDataNoDateRange || filteredPayrollDataNoDateRange.length === 0) return {};
+    const summary: Record<string, number> = {};
+    filteredPayrollDataNoDateRange.forEach(payroll => {
+      if (payroll.monthYear && payroll.totalCustomers) {
+        const key = payroll.monthYear; // Expect format like "Jan 2024"
+        summary[key] = (summary[key] || 0) + payroll.totalCustomers;
+      }
+    });
+    return summary;
+  }, [filteredPayrollDataNoDateRange]);
 
   // Get unique values for filters (only 3 main locations)
   const uniqueLocations = React.useMemo(() => {
@@ -486,7 +525,7 @@ const ClientRetention = () => {
                 onClick={() => setSelectedLocation('Kenkere House, Bengaluru')} 
                 className={cn(
                   "px-6 py-3 rounded-xl transition-all duration-500 font-medium text-sm flex flex-col items-center gap-2 transform hover:scale-105",
-                  selectedLocation === 'Kenkere House' 
+                  selectedLocation === 'Kenkere House, Bengaluru' 
                     ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl" 
                     : "text-slate-800 hover:text-slate-700 hover:bg-white/20 backdrop-blur-sm"
                 )}
@@ -608,7 +647,7 @@ const ClientRetention = () => {
 
             {activeTable === 'monthonmonth' && <ClientConversionMonthOnMonthTable 
               data={filteredDataNoDateRange} 
-              visitsSummary={visitsSummary}
+              visitsSummary={visitsSummaryNoDateRange}
               onRowClick={rowData => setDrillDownModal({
             isOpen: true,
             client: null,
@@ -619,7 +658,7 @@ const ClientRetention = () => {
 
             {activeTable === 'yearonyear' && <ClientConversionYearOnYearTable 
               data={filteredDataNoDateRange} 
-              visitsSummary={visitsSummary}
+              visitsSummary={visitsSummaryNoDateRange}
               onRowClick={rowData => setDrillDownModal({
             isOpen: true,
             client: null,

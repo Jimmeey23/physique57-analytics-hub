@@ -13,6 +13,8 @@ interface ClientConversionYearOnYearTableProps {
 }
 
 export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYearTableProps> = ({ data, visitsSummary, onRowClick }) => {
+  const [sortField, setSortField] = React.useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
   const yearOnYearData = React.useMemo(() => {
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
@@ -155,68 +157,74 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
     {
       key: 'month' as const,
       header: 'Month',
-      className: 'font-semibold min-w-[80px]'
+      className: 'font-semibold min-w-[80px] text-slate-900',
+      sortable: true
     },
     {
       key: 'currentTotalMembers' as const,
       header: `${new Date().getFullYear()} Trials`,
       align: 'center' as const,
-      render: (value: number) => <span className="text-base font-bold text-blue-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'previousTotalMembers' as const,
       header: `${new Date().getFullYear() - 1} Trials`,
       align: 'center' as const,
-      render: (value: number) => <span className="text-base font-bold text-slate-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'totalMembersGrowth' as const,
       header: 'Trials Growth %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
-          {(value || 0) > 0 ? '+' : ''}{(value || 0).toFixed(1)}%
-        </span>
+        <span className="text-sm font-medium text-slate-900">{((value || 0) > 0 ? '+' : '') + (value || 0).toFixed(1)}%</span>
       )
     },
     {
       key: 'currentNewMembers' as const,
       header: `${new Date().getFullYear()} New Members`,
       align: 'center' as const,
-      render: (value: number) => <span className="text-base font-bold text-green-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'previousNewMembers' as const,
       header: `${new Date().getFullYear() - 1} New Members`,
       align: 'center' as const,
-      render: (value: number) => <span className="text-base font-bold text-slate-600">{formatNumber(value)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
     },
     {
       key: 'newMembersGrowth' as const,
       header: 'New Members Growth %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
-          {(value || 0) > 0 ? '+' : ''}{(value || 0).toFixed(1)}%
-        </span>
+        <span className="text-sm font-medium text-slate-900">{((value || 0) > 0 ? '+' : '') + (value || 0).toFixed(1)}%</span>
       )
     },
     {
       key: 'currentConversionRate' as const,
       header: `${new Date().getFullYear()} Conversion %`,
       align: 'center' as const,
-      render: (value: number) => <span className="text-base font-bold text-green-600">{(value || 0).toFixed(1)}%</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{(value || 0).toFixed(1)}%</span>
     },
     {
       key: 'previousConversionRate' as const,
       header: `${new Date().getFullYear() - 1} Conversion %`,
       align: 'center' as const,
-      render: (value: number) => <span className="text-base font-bold text-slate-600">{(value || 0).toFixed(1)}%</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{(value || 0).toFixed(1)}%</span>
     },
     {
       key: 'conversionRateGrowth' as const,
       header: 'Conv. Growth',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
         <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
           {(value || 0) > 0 ? '+' : ''}{(value || 0).toFixed(1)}pp
@@ -227,37 +235,57 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
       key: 'currentAvgLTV' as const,
       header: `${new Date().getFullYear()} Avg LTV`,
       align: 'right' as const,
-      render: (value: number) => <span className="text-base font-bold text-purple-600">{formatCurrency(value || 0)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value || 0)}</span>
     },
     {
       key: 'previousAvgLTV' as const,
       header: `${new Date().getFullYear() - 1} Avg LTV`,
       align: 'right' as const,
-      render: (value: number) => <span className="text-base font-bold text-slate-600">{formatCurrency(value || 0)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value || 0)}</span>
     },
     {
       key: 'currentTotalLTV' as const,
       header: `${new Date().getFullYear()} Total LTV`,
       align: 'right' as const,
-      render: (value: number) => <span className="text-base font-bold text-green-600">{formatCurrency(value || 0)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value || 0)}</span>
     },
     {
       key: 'previousTotalLTV' as const,
       header: `${new Date().getFullYear() - 1} Total LTV`,
       align: 'right' as const,
-      render: (value: number) => <span className="text-base font-bold text-gray-600">{formatCurrency(value || 0)}</span>
+      sortable: true,
+      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value || 0)}</span>
     },
     {
       key: 'avgLTVGrowth' as const,
       header: 'LTV Growth %',
       align: 'center' as const,
+      sortable: true,
       render: (value: number) => (
-        <span className={`text-base font-bold ${(value || 0) > 0 ? 'text-green-600' : (value || 0) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
-          {(value || 0) > 0 ? '+' : ''}{(value || 0).toFixed(1)}%
-        </span>
+        <span className="text-sm font-medium text-slate-900">{((value || 0) > 0 ? '+' : '') + (value || 0).toFixed(1)}%</span>
       )
     }
   ];
+
+  const displayedData = React.useMemo(() => {
+    if (!sortField) return yearOnYearData;
+    const arr = [...yearOnYearData];
+    return arr.sort((a: any, b: any) => {
+      const av = a[sortField as any];
+      const bv = b[sortField as any];
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
+    });
+  }, [yearOnYearData, sortField, sortDirection]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    else { setSortField(field); setSortDirection('asc'); }
+  };
 
   // Calculate totals with proper null handling
   const totals = {
@@ -288,7 +316,7 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
 
   return (
     <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-700 to-teal-800 text-white">
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
           Year-on-Year Client Conversion Comparison
@@ -299,14 +327,41 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
       </CardHeader>
       <CardContent className="p-0">
         <ModernDataTable
-          data={yearOnYearData}
+          data={displayedData}
           columns={columns}
-          headerGradient="from-emerald-600 to-teal-600"
+          headerGradient="from-emerald-700 to-teal-800"
           showFooter={true}
           footerData={totals}
           maxHeight="600px"
           onRowClick={onRowClick}
+          onSort={handleSort}
+          sortField={sortField}
+          sortDirection={sortDirection}
         />
+        {/* AI Notes Footer */}
+        <div className="border-t border-slate-200 p-4 bg-slate-50">
+          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+          <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+            <li>Largest YoY trials growth month: {(() => {
+              const withPrev = yearOnYearData.filter(r => (r.previousTotalMembers || 0) > 0);
+              if (withPrev.length === 0) return 'N/A';
+              const top = [...withPrev].sort((a,b) => (b.totalMembersGrowth||0)-(a.totalMembersGrowth||0))[0];
+              return `${top.month} at ${((top.totalMembersGrowth||0) > 0 ? '+' : '') + (top.totalMembersGrowth||0).toFixed(1)}%`;
+            })()}</li>
+            <li>Conversion rate change leader: {(() => {
+              const withPrev = yearOnYearData.filter(r => (r.previousConversionRate || 0) > 0);
+              if (withPrev.length === 0) return 'N/A';
+              const top = [...withPrev].sort((a,b) => (b.conversionRateGrowth||0)-(a.conversionRateGrowth||0))[0];
+              return `${top.month} at ${((top.conversionRateGrowth||0) > 0 ? '+' : '') + (top.conversionRateGrowth||0).toFixed(1)}pp`;
+            })()}</li>
+            <li>Avg LTV YoY improvement leader: {(() => {
+              const withPrev = yearOnYearData.filter(r => (r.previousAvgLTV || 0) > 0);
+              if (withPrev.length === 0) return 'N/A';
+              const top = [...withPrev].sort((a,b) => (b.avgLTVGrowth||0)-(a.avgLTVGrowth||0))[0];
+              return `${top.month} at ${((top.avgLTVGrowth||0) > 0 ? '+' : '') + (top.avgLTVGrowth||0).toFixed(1)}%`;
+            })()}</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );
