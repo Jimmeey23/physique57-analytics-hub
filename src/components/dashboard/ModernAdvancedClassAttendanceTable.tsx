@@ -16,6 +16,7 @@ import {
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { PersistentTableFooter } from './PersistentTableFooter';
 
 interface AdvancedClassAttendanceTableProps {
   data: SessionData[];
@@ -24,7 +25,7 @@ interface AdvancedClassAttendanceTableProps {
 }
 
 type ViewMode = 'grouped' | 'flat';
-type GroupByOption = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'class_day_time_trainer' | 'class_day_time' | 'class_time' | 'class_day' | 'trainer_time' | 'none';
+type GroupByOption = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'class_day_time_trainer' | 'class_day_time' | 'class_time' | 'class_day' | 'trainer_time' | 'uniqueid1' | 'uniqueid2' | 'none';
 
 interface ProcessedSession extends SessionData {
   period: string;
@@ -156,6 +157,14 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           groupKey = `${session.trainerName}-${session.time}`;
           groupLabel = `${session.trainerName} | ${session.time}`;
           break;
+        case 'uniqueid1':
+          groupKey = session.uniqueId1 || 'Unknown';
+          groupLabel = session.uniqueId1 || 'Unknown UniqueID1';
+          break;
+        case 'uniqueid2':
+          groupKey = session.uniqueId2 || 'Unknown';
+          groupLabel = session.uniqueId2 || 'Unknown UniqueID2';
+          break;
         default:
           groupKey = 'all';
           groupLabel = 'All Sessions';
@@ -234,6 +243,12 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           break;
         case 'trainer_class':
           groupLabel = `${primaryTrainer} - ${sessions[0]?.cleanedClass}`;
+          break;
+        case 'uniqueid1':
+          groupLabel = sessions[0]?.uniqueId1 || 'Unknown UniqueID1';
+          break;
+        case 'uniqueid2':
+          groupLabel = sessions[0]?.uniqueId2 || 'Unknown UniqueID2';
           break;
         default:
           groupLabel = 'All Sessions';
@@ -450,6 +465,8 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 <SelectItem value="trainer">Trainer</SelectItem>
                 <SelectItem value="class">Class Type</SelectItem>
                 <SelectItem value="location">Location</SelectItem>
+                <SelectItem value="uniqueid1">UniqueID1 (Class Ranking)</SelectItem>
+                <SelectItem value="uniqueid2">UniqueID2 (With Trainer)</SelectItem>
                 <SelectItem value="day_time">Day + Time</SelectItem>
                 <SelectItem value="trainer_class">Trainer + Class</SelectItem>
                 <SelectItem value="class_day_time_trainer">Class + Day + Time + Trainer</SelectItem>
@@ -507,10 +524,10 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto max-h-[600px]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar">
           <Table>
             <TableHeader className="sticky top-0 z-10">
-              <TableRow className="bg-gradient-to-r from-slate-800 to-slate-900 border-b-2 border-slate-700 shadow-lg">
+              <TableRow className="bg-gradient-to-r from-slate-800 to-slate-900 border-b-2 border-slate-700 shadow-lg h-10">{/* Max 40px row height */}
                 <TableHead 
                   className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[120px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0"
                   onClick={() => handleSort('trainer')}
@@ -1066,6 +1083,14 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           </div>
         )}
       </CardContent>
+      
+      {/* AI Notes Section */}
+      <PersistentTableFooter
+        tableId="comprehensive-class-attendance"
+        tableData={viewMode === 'grouped' ? groupedData.map(g => g.aggregatedMetrics) : processedData}
+        tableName="Comprehensive Class Attendance"
+        tableContext="Class attendance analysis with grouping and detailed metrics"
+      />
     </Card>
   );
 };

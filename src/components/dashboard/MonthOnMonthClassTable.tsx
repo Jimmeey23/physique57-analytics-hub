@@ -15,6 +15,7 @@ import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
+import { PersistentTableFooter } from './PersistentTableFooter';
 
 interface MonthOnMonthClassTableProps {
   data: SessionData[]; // This should be ALL data, ignoring current date filters
@@ -22,7 +23,7 @@ interface MonthOnMonthClassTableProps {
 }
 
 type MetricType = 'attendance' | 'sessions' | 'revenue' | 'fillRate' | 'classAverage' | 'capacity' | 'bookingRate';
-type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'overall';
+type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall';
 
 interface MonthlyData {
   month: string;
@@ -101,6 +102,12 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           break;
         case 'trainer_class':
           groupKey = `${session.trainerName || 'Unknown'} - ${session.cleanedClass || 'Unknown'}`;
+          break;
+        case 'uniqueid1':
+          groupKey = session.uniqueId1 || 'Unknown UniqueID1';
+          break;
+        case 'uniqueid2':
+          groupKey = session.uniqueId2 || 'Unknown UniqueID2';
           break;
         case 'overall':
         default:
@@ -231,6 +238,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
     { value: 'trainer', label: 'By Trainer', icon: Users },
     { value: 'class', label: 'By Class', icon: Activity },
     { value: 'location', label: 'By Location', icon: MapPin },
+    { value: 'uniqueid1', label: 'By UniqueID1 (Class Ranking)', icon: Target },
+    { value: 'uniqueid2', label: 'By UniqueID2 (With Trainer)', icon: Users },
     { value: 'day_time', label: 'By Day & Time', icon: Clock },
     { value: 'trainer_class', label: 'By Trainer & Class', icon: Target }
   ];
@@ -388,7 +397,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+              <div className="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar">
                 <Table>
                   <TableHeader className={`sticky top-0 z-20 shadow-sm border-b-2 ${getTableHeaderClasses('attendance')}`}>
                     <TableRow>
@@ -399,6 +408,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                            groupBy === 'class' ? 'Class' :
                            groupBy === 'location' ? 'Location' :
                            groupBy === 'day_time' ? 'Day & Time' :
+                           groupBy === 'uniqueid1' ? 'UniqueID1' :
+                           groupBy === 'uniqueid2' ? 'UniqueID2' :
                            groupBy === 'trainer_class' ? 'Trainer & Class' : 'Category'}
                         </div>
                   </TableHead>
@@ -615,6 +626,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   <div className="text-sm text-orange-600">
                     {groupBy === 'trainer' ? 'Trainers' : 
                      groupBy === 'class' ? 'Classes' :
+                     groupBy === 'uniqueid1' ? 'UniqueID1' :
+                     groupBy === 'uniqueid2' ? 'UniqueID2' :
                      groupBy === 'location' ? 'Locations' : 'Groups'}
                   </div>
                 </CardContent>
@@ -623,6 +636,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           </motion.div>
           </CardContent>
         </motion.div>
+        
+        {/* AI Notes Section */}
+        <PersistentTableFooter
+          tableId="month-on-month-class-attendance"
+          tableData={processedData}
+          tableName="Month-on-Month Class Attendance"
+          tableContext="Monthly class attendance trends and comparisons"
+        />
       </Card>
     </motion.div>
   );
