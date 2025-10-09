@@ -398,8 +398,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="w-full overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
-                <Table className="min-w-full w-max">
+              <div className="w-full overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
+                <Table className="w-max">
                   <TableHeader className={`sticky top-0 z-20 shadow-sm border-b-2 ${getTableHeaderClasses('attendance')}`}>
                     <TableRow>
                       <TableHead className={`min-w-[200px] sticky left-0 border-r font-bold ${getTableHeaderClasses('attendance')}`}>
