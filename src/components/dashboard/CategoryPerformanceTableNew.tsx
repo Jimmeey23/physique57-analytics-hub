@@ -3,7 +3,6 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from './PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { ChevronDown, ChevronRight, FolderOpen, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
@@ -70,8 +69,29 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     }
   };
 
-  // Use standard 22-month range (October 2025 to January 2024)
-  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
+  const monthlyData = useMemo(() => {
+    const months = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Generate last 22 months in descending order (October 2025 to January 2024)
+    for (let i = 0; i < 22; i++) {
+      const date = new Date(currentYear, currentMonth - i, 1);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const monthName = monthNames[date.getMonth()];
+      months.push({
+        key: `${year}-${String(month).padStart(2, '0')}`,
+        display: `${monthName} ${year}`,
+        year: year,
+        month: month,
+        quarter: Math.ceil(month / 3)
+      });
+    }
+    return months;
+  }, []);
 
   const processedData = useMemo(() => {
     // Group by category

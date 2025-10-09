@@ -3,7 +3,6 @@ import { SalesData, FilterOptions, YearOnYearMetricType } from '@/types/dashboar
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs } from './ModernTableWrapper';
 import { PersistentTableFooter } from './PersistentTableFooter';
 import { formatCurrency, formatNumber, formatPercentage, formatDiscount } from '@/utils/formatters';
-import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { Calendar, TrendingUp, TrendingDown, ChevronDown, ChevronRight, BarChart3, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -115,8 +114,31 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
     console.log('Quick filter applied:', filterType, value);
   }, []);
 
-  // Use standard 22-month range (October 2025 to January 2024)
-  const monthlyData = useMemo(() => generateStandardMonthRange(), []);
+  // Generate monthly data dynamically from current date backwards
+  const monthlyData = useMemo(() => {
+    const months = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    // Generate months from 22 months ago to current month (October 2025 back to January 2024)
+    for (let i = 21; i >= 0; i--) {
+      const date = new Date(currentYear, currentMonth - i, 1);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const monthName = monthNames[month];
+      const monthNum = month + 1;
+      months.push({
+        key: `${year}-${String(monthNum).padStart(2, '0')}`,
+        display: `${monthName} ${year}`,
+        year: year,
+        month: monthNum,
+        quarter: Math.ceil(monthNum / 3)
+      });
+    }
+    return months;
+  }, []);
   const processedData = useMemo(() => {
     const categoryGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
       const category = item.cleanedCategory || 'Uncategorized';
@@ -448,53 +470,52 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
                   const current = product.monthlyValues[key] || 0;
                   const previous = monthIndex > 0 ? product.monthlyValues[monthlyData[monthIndex - 1].key] || 0 : 0;
                   const growthPercentage = getGrowthPercentage(current, previous);
-                  return (
-                    <td key={key} className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors max-h-[35px] h-[35px] overflow-hidden" title={growthPercentage ? `${growthPercentage}% vs last month` : ''} onClick={e => {
-                      e.stopPropagation(); // Prevent row click
+                  return <td key={key} className="px-3 py-3 text-center text-sm text-gray-900 font-mono border-l border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors max-h-[35px] h-[35px] overflow-hidden" title={growthPercentage ? `${growthPercentage}% vs last month` : ''} onClick={e => {
+                    e.stopPropagation(); // Prevent row click
 
-                      // Filter data for this specific month and product
-                      const monthSpecificData = (product.rawData || []).filter((transaction: any) => {
-                        const itemDate = parseDate(transaction.paymentDate);
-                        if (!itemDate) return false;
-                        return itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
-                      });
-                      const monthRevenue = monthSpecificData.reduce((sum: any, transaction: any) => sum + (transaction.paymentValue || 0), 0);
-                      const monthTransactions = monthSpecificData.length;
-                      const monthCustomers = new Set(monthSpecificData.map((transaction: any) => transaction.memberId || transaction.customerEmail)).size;
-                      const enhancedCellData = {
-                        ...product,
-                        name: `${product.product} - ${display}`,
-                        totalRevenue: monthRevenue,
-                        grossRevenue: monthRevenue,
-                        netRevenue: monthRevenue,
-                        totalValue: monthRevenue,
-                        totalCurrent: monthRevenue,
-                        metricValue: monthRevenue,
-                        transactions: monthTransactions,
-                        totalTransactions: monthTransactions,
-                        uniqueMembers: monthCustomers,
-                        totalCustomers: monthCustomers,
-                        rawData: monthSpecificData,
-                        filteredTransactionData: monthSpecificData,
-                        isDynamic: true,
-                        calculatedFromFiltered: true,
-                        cellSpecific: true,
-                        month: display,
-                        monthKey: key
-                      };
-                      console.log(`Cell click: ${product.product} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
-                      onRowClick && onRowClick(enhancedCellData);
-                    }}>
-                      <div className="flex items-center justify-center">
-                        {formatMetricValue(current, selectedMetric)}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            )}
-          </React.Fragment>
-        ))}
+                    // Filter data for this specific month and product
+                    const monthSpecificData = (product.rawData || []).filter((transaction: any) => {
+                      const itemDate = parseDate(transaction.paymentDate);
+                      if (!itemDate) return false;
+                      return itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+                    });
+                    const monthRevenue = monthSpecificData.reduce((sum: any, transaction: any) => sum + (transaction.paymentValue || 0), 0);
+                    const monthTransactions = monthSpecificData.length;
+                    const monthCustomers = new Set(monthSpecificData.map((transaction: any) => transaction.memberId || transaction.customerEmail)).size;
+                    const enhancedCellData = {
+                      ...product,
+                      name: `${product.product} - ${display}`,
+                      totalRevenue: monthRevenue,
+                      grossRevenue: monthRevenue,
+                      netRevenue: monthRevenue,
+                      totalValue: monthRevenue,
+                      totalCurrent: monthRevenue,
+                      metricValue: monthRevenue,
+                      transactions: monthTransactions,
+                      totalTransactions: monthTransactions,
+                      uniqueMembers: monthCustomers,
+                      totalCustomers: monthCustomers,
+                      rawData: monthSpecificData,
+                      filteredTransactionData: monthSpecificData,
+                      isDynamic: true,
+                      calculatedFromFiltered: true,
+                      cellSpecific: true,
+                      month: display,
+                      monthKey: key
+                    };
+                    console.log(`Cell click: ${product.product} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
+                    onRowClick && onRowClick(enhancedCellData);
+                  }}>
+                            <div className="flex items-center justify-center">
+                              {formatMetricValue(current, selectedMetric)}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
               
               <tr className="bg-gradient-to-r from-blue-200 to-blue-300 border-t-4 border-gray-800 font-bold">
                 <td className="px-6 py-3 text-sm font-bold text-blue-900 sticky left-0 border-r border-blue-300 z-20 bg-slate-50 hover:bg-blue-100 cursor-pointer transition-colors" onClick={() => {
