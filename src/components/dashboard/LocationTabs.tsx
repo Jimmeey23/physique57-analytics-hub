@@ -61,7 +61,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Location Tabs */}
       <div className="rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-md p-8 shadow-lg">
         <div className="flex items-center justify-between mb-8">

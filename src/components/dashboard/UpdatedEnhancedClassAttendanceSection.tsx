@@ -40,7 +40,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-8">
       {/* Location Filter Tabs */}
       <LocationTabs 
         data={filteredData}
@@ -102,7 +102,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="comprehensive" className="mt-6">
+              <TabsContent value="comprehensive" className="mt-6 w-full overflow-x-auto">
                 <AdvancedClassAttendanceTable 
                   data={locationFilteredData}
                   location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
@@ -110,7 +110,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
                 />
               </TabsContent>
 
-              <TabsContent value="month-on-month" className="mt-6">
+              <TabsContent value="month-on-month" className="mt-6 w-full overflow-x-auto">
                 <MonthOnMonthClassTable 
                   data={sessionsData || []} // Use unfiltered data as requested
                   location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}

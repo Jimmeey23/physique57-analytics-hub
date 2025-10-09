@@ -249,6 +249,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
+      className="w-full"
     >
       <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-purple-50/30 border-0 rounded-xl">
         <motion.div
