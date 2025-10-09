@@ -172,7 +172,8 @@ export const STANDARD_METRICS = [
   { key: 'upt', label: 'UPT', icon: <BarChart3 className="w-4 h-4" /> },
   { key: 'vat', label: 'VAT', icon: <Percent className="w-4 h-4" /> },
   { key: 'discountAmount', label: 'Discount ₹', icon: <DollarSign className="w-4 h-4" /> },
-  { key: 'discountPercentage', label: 'Discount %', icon: <Percent className="w-4 h-4" /> }
+  { key: 'discountPercentage', label: 'Discount %', icon: <Percent className="w-4 h-4" /> },
+  { key: 'purchaseFrequency', label: 'Purchase Freq.', icon: <Activity className="w-4 h-4" /> }
 ];
 
 export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({

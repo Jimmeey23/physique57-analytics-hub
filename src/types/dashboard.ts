@@ -3,6 +3,8 @@ export interface SalesData {
   customerName: string;
   customerEmail: string;
   saleItemId: string;
+  salesItemId?: string;
+  itemId?: string;
   paymentCategory: string;
   membershipType: string;
   paymentDate: string;
@@ -13,6 +15,7 @@ export interface SalesData {
   paymentStatus: string;
   paymentMethod: string;
   paymentTransactionId: string;
+  transactionId?: string;
   stripeToken: string;
   soldBy: string;
   saleReference: string;
@@ -221,7 +224,9 @@ export type YearOnYearMetricType =
   | 'netRevenue'
   | 'units'
   | 'discountValue'
-  | 'discountPercentage';
+  | 'discountPercentage'
+  | 'discountAmount'
+  | 'purchaseFrequency';
 
 // Data table props interface
 export interface DataTableProps {

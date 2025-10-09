@@ -37,9 +37,45 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
     const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-    const totalTransactions = items.length;
-    const uniqueMembers = new Set(items.map(item => item.memberId)).size;
-    const totalUnits = items.length;
+    
+    // Transactions = unique count of payment transaction ID
+    const uniqueTransactionIds = new Set(items.map(item => item.paymentTransactionId || item.transactionId).filter(Boolean));
+    const totalTransactions = uniqueTransactionIds.size > 0 ? uniqueTransactionIds.size : items.length;
+    
+    // Members = unique count of member ID
+    const uniqueMembers = new Set(items.map(item => item.memberId).filter(Boolean)).size;
+    
+    // Units Sold = unique count of sales item ID
+    const uniqueSalesItemIds = new Set(items.map(item => item.salesItemId || item.itemId).filter(Boolean));
+    const totalUnits = uniqueSalesItemIds.size > 0 ? uniqueSalesItemIds.size : items.length;
+    
+    // VAT and Discount
+    const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    
+    // Calculate average discount percentage
+    const itemsWithDiscount = items.filter(item => (item.discountAmount || 0) > 0);
+    const avgDiscountPercentage = itemsWithDiscount.length > 0
+      ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
+      : 0;
+    
+    // Purchase Frequency in Days
+    const dates = items.map(item => {
+      const dateStr = item.paymentDate;
+      if (!dateStr) return null;
+      const ddmmyyyy = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyy) {
+        const [, day, month, year] = ddmmyyyy;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+      return new Date(dateStr);
+    }).filter((date): date is Date => date !== null && !isNaN(date.getTime())).sort((a, b) => a.getTime() - b.getTime());
+    
+    let purchaseFrequency = 0;
+    if (dates.length > 1) {
+      const totalDays = (dates[dates.length - 1].getTime() - dates[0].getTime()) / (1000 * 60 * 60 * 24);
+      purchaseFrequency = totalDays / (dates.length - 1);
+    }
 
     switch (metric) {
       case 'revenue': return totalRevenue;
@@ -48,7 +84,12 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
       case 'units': return totalUnits;
       case 'atv': return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'auv': return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
+      case 'asv': return uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0; // ASV = Gross Sales / Unique Members
       case 'upt': return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
+      case 'vat': return totalVat;
+      case 'discountAmount': return totalDiscount;
+      case 'discountPercentage': return avgDiscountPercentage;
+      case 'purchaseFrequency': return purchaseFrequency;
       default: return 0;
     }
   };
@@ -58,6 +99,9 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
       case 'revenue':
       case 'auv':
       case 'atv':
+      case 'asv':
+      case 'vat':
+      case 'discountAmount':
         return formatCurrency(value);
       case 'transactions':
       case 'members':
@@ -65,6 +109,10 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
         return formatNumber(value);
       case 'upt':
         return value.toFixed(2);
+      case 'discountPercentage':
+        return `${value.toFixed(1)}%`;
+      case 'purchaseFrequency':
+        return `${value.toFixed(1)} days`;
       default:
         return formatNumber(value);
     }
