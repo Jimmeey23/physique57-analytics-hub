@@ -525,16 +525,16 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
 
       <CardContent className="p-0 rounded-b-xl">
         <div className="relative w-full overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl" style={{ display: 'block' }}>
-          <Table className="min-w-[1800px] w-max">
+          <Table className="min-w-[2000px] w-max">
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b-2 border-slate-700 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[120px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[200px] bg-gradient-to-r from-slate-800 to-slate-900 sticky left-0 z-30 py-2 h-10"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    TRAINER
+                    {groupBy === 'class' ? 'CLASS TYPE' : 'TRAINER'}
                     {getSortIcon('trainer')}
                   </div>
                 </TableHead>
@@ -706,7 +706,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                       className="bg-slate-100 hover:bg-slate-200 transition-colors border-l-4 border-l-blue-500 cursor-pointer"
                       onClick={() => toggleGroup(group.groupKey)}
                     >
-                      <TableCell className="py-4">
+                      <TableCell className="py-4 sticky left-0 z-20 bg-slate-100 group-hover:bg-slate-200 transition-colors">
                         <div className="flex items-center gap-3">
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                             {group.isExpanded ? 

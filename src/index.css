@@ -802,7 +802,7 @@
 
 /* Modern table styles */
 .table-modern {
-  @apply bg-card border border-border/50 rounded-xl shadow-sm overflow-hidden backdrop-blur-sm;
+  @apply bg-card border border-border/50 rounded-xl shadow-sm backdrop-blur-sm;
 }
 
 .table-header-modern {

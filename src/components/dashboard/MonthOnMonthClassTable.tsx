@@ -398,10 +398,10 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <div className="w-full overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
-                <Table className="min-w-full w-max">
+                <Table className="min-w-[1400px] w-max">
                   <TableHeader className={`sticky top-0 z-20 shadow-sm border-b-2 ${getTableHeaderClasses('attendance')}`}>
                     <TableRow>
-                      <TableHead className={`min-w-[200px] sticky left-0 border-r font-bold ${getTableHeaderClasses('attendance')}`}>
+                      <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold ${getTableHeaderClasses('attendance')}`}>
                         <div className="flex items-center gap-2">
                           <Activity className="w-4 h-4 text-white" />
                           {groupBy === 'trainer' ? 'Trainer' : 
@@ -455,7 +455,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                           transition: { duration: 0.2 }
                         }}
                       >
-                        <TableCell className="sticky left-0 bg-inherit border-r font-medium">
+                        <TableCell className="sticky left-0 z-20 bg-white border-r font-medium">
                           <motion.div 
                             className="flex items-center gap-2"
                             whileHover={{ scale: 1.02 }}
