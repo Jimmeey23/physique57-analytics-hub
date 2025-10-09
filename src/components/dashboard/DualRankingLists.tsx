@@ -38,6 +38,8 @@ interface RankingItem {
   consistency: number;
   growth: number;
   rankValue: number;
+  emptyClasses: number;
+  nonEmptyClasses: number;
   details: {
     location?: string;
     dayOfWeek?: string;
@@ -149,6 +151,8 @@ export const DualRankingLists: React.FC<DualRankingListsProps> = ({
       const totalCapacity = sessions.reduce((sum, s) => sum + (s.capacity || 0), 0);
       const totalRevenue = sessions.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
       const totalLateCancellations = sessions.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0);
+      const emptyClasses = sessions.filter(s => (s.checkedInCount || 0) === 0).length;
+      const nonEmptyClasses = totalSessions - emptyClasses;
       
       const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
       const classAverage = totalSessions > 0 ? totalAttendance / totalSessions : 0;
@@ -231,6 +235,8 @@ export const DualRankingLists: React.FC<DualRankingListsProps> = ({
         consistency: Math.max(0, Math.min(100, consistency)),
         growth,
         rankValue,
+        emptyClasses,
+        nonEmptyClasses,
         details: {
           location: sessions[0].location,
           dayOfWeek: sessions[0].dayOfWeek,
@@ -347,14 +353,23 @@ export const DualRankingLists: React.FC<DualRankingListsProps> = ({
           )}
           
           <div className="flex flex-wrap gap-2 mt-3">
-            <Badge variant="outline" className="text-xs">
-              {item.sessions} sessions
+            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+              {item.sessions} classes
             </Badge>
-            <Badge variant="outline" className="text-xs">
-              {formatNumber(item.attendance)} attendance
+            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+              {formatNumber(item.attendance)} checked in
             </Badge>
-            <Badge variant="outline" className="text-xs">
-              {formatPercentage(item.fillRate)} fill
+            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+              {formatNumber(item.emptyClasses)} empty
+            </Badge>
+            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+              {formatNumber(item.nonEmptyClasses)} non-empty
+            </Badge>
+            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+              {formatNumber(item.classAverage)} avg/class
+            </Badge>
+            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+              {formatPercentage(item.fillRate)} fill rate
             </Badge>
           </div>
         </div>

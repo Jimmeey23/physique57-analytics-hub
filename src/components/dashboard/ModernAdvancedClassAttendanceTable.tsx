@@ -529,12 +529,23 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b-2 border-slate-700 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[200px] bg-gradient-to-r from-slate-800 to-slate-900 sticky left-0 z-30 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[200px] sticky left-0 z-30 py-2 h-10"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    {groupBy === 'class' ? 'CLASS TYPE' : 'TRAINER'}
+                    {groupBy === 'trainer' ? 'TRAINER' :
+                     groupBy === 'class' ? 'CLASS TYPE' :
+                     groupBy === 'location' ? 'LOCATION' :
+                     groupBy === 'day_time' ? 'DAY & TIME' :
+                     groupBy === 'trainer_class' ? 'TRAINER & CLASS' :
+                     groupBy === 'class_day_time_trainer' ? 'CLASS | DAY & TIME | TRAINER' :
+                     groupBy === 'class_day_time' ? 'CLASS | DAY & TIME' :
+                     groupBy === 'class_time' ? 'CLASS | TIME' :
+                     groupBy === 'class_day' ? 'CLASS | DAY' :
+                     groupBy === 'trainer_time' ? 'TRAINER | TIME' :
+                     groupBy === 'uniqueid1' ? 'GROUP BY CLASS' :
+                     groupBy === 'uniqueid2' ? 'GROUP BY CLASS & TRAINER' : 'PRIMARY'}
                     {getSortIcon('trainer')}
                   </div>
                 </TableHead>
@@ -1032,6 +1043,73 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </TableRow>
                 ))
               )}
+              {/* Totals row */}
+              <TableRow className="bg-blue-50/60 font-bold border-t-2 border-blue-200">
+                <TableCell className="sticky left-0 z-10 bg-blue-50/60">Totals</TableCell>
+                {/* Period */}
+                <TableCell></TableCell>
+                {/* Date */}
+                <TableCell></TableCell>
+                {/* Class Type */}
+                <TableCell></TableCell>
+                {/* Day */}
+                <TableCell></TableCell>
+                {/* Time */}
+                <TableCell></TableCell>
+                {/* Location */}
+                <TableCell></TableCell>
+                {/* Classes */}
+                <TableCell className="text-center">{formatNumber(processedData.length)}</TableCell>
+                {/* Empty */}
+                <TableCell className="text-center">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) === 0).length)}</TableCell>
+                {/* Non-Empty */}
+                <TableCell className="text-center">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) > 0).length)}</TableCell>
+                {/* Checked In */}
+                <TableCell className="text-center">{formatNumber(processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}</TableCell>
+                {/* Avg (All) */}
+                <TableCell className="text-center">{(() => {
+                  const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                  return (processedData.length > 0 ? (totalChecked / processedData.length).toFixed(1) : '0.0');
+                })()}</TableCell>
+                {/* Avg (Non-Empty) */}
+                <TableCell className="text-center">{(() => {
+                  const nonEmpty = processedData.filter(s => (s.checkedInCount || 0) > 0);
+                  const totalChecked = nonEmpty.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                  return (nonEmpty.length > 0 ? (totalChecked / nonEmpty.length).toFixed(1) : '0.0');
+                })()}</TableCell>
+                {/* Revenue */}
+                <TableCell className="text-center">{formatCurrency(processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}</TableCell>
+                {/* Late Cancels */}
+                <TableCell className="text-center">{formatNumber(processedData.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0))}</TableCell>
+                {/* Payout */}
+                <TableCell></TableCell>
+                {/* Tips */}
+                <TableCell></TableCell>
+                {/* Capacity */}
+                <TableCell className="text-center">{formatNumber(processedData.reduce((sum, s) => sum + (s.capacity || 0), 0))}</TableCell>
+                {/* Fill Rate */}
+                <TableCell className="text-center">{(() => {
+                  const totalCapacity = processedData.reduce((sum, s) => sum + (s.capacity || 0), 0);
+                  const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                  const pct = totalCapacity > 0 ? (totalChecked / totalCapacity) * 100 : 0;
+                  return `${pct.toFixed(1)}%`;
+                })()}</TableCell>
+                {/* Rev/Class */}
+                <TableCell className="text-center">{(() => {
+                  const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+                  return processedData.length > 0 ? formatCurrency(totalRevenue / processedData.length) : formatCurrency(0);
+                })()}</TableCell>
+                {/* Rev/Attendee */}
+                <TableCell className="text-center">{(() => {
+                  const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+                  const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                  return totalChecked > 0 ? formatCurrency(totalRevenue / totalChecked) : formatCurrency(0);
+                })()}</TableCell>
+                {/* Consistency */}
+                <TableCell></TableCell>
+                {/* Show-up % */}
+                <TableCell></TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </div>

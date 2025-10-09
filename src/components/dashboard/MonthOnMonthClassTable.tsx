@@ -16,6 +16,7 @@ import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatte
 import { cn } from '@/lib/utils';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
 import { PersistentTableFooter } from './PersistentTableFooter';
+import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 
 interface MonthOnMonthClassTableProps {
   data: SessionData[]; // This should be ALL data, ignoring current date filters
@@ -60,10 +61,37 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
   const [groupBy, setGroupBy] = useState<GroupByType>('overall');
   const [showGrowthRate, setShowGrowthRate] = useState(false);
 
+  // Apply location + non-date filters (independent of date range)
+  const { filters } = useSessionsFilters();
+
+  const workingData = useMemo(() => {
+    let d = data;
+    // Filter by selected location tab
+    if (location && location !== 'All Locations') {
+      d = d.filter(s => (s.location || '') === location);
+    }
+    // Apply other filters but ignore dateRange
+    if (filters) {
+      if (filters.trainers.length > 0) {
+        d = d.filter(s => filters.trainers.includes(s.trainerName));
+      }
+      if (filters.classTypes.length > 0) {
+        d = d.filter(s => filters.classTypes.includes(s.cleanedClass));
+      }
+      if (filters.dayOfWeek.length > 0) {
+        d = d.filter(s => filters.dayOfWeek.includes(s.dayOfWeek));
+      }
+      if (filters.timeSlots.length > 0) {
+        d = d.filter(s => filters.timeSlots.includes(s.time));
+      }
+    }
+    return d;
+  }, [data, location, filters]);
+
   // Get all unique months from the data (ignoring current filters)
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    data.forEach(session => {
+    workingData.forEach(session => {
       const date = new Date(session.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       months.add(monthKey);
@@ -78,14 +106,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
         shortLabel: `${MONTH_NAMES[monthIndex]}'${year.slice(2)}`
       };
     });
-  }, [data]);
+  }, [workingData]);
 
   // Process data by month and grouping
   const processedData = useMemo(() => {
     const groupedSessions = new Map<string, SessionData[]>();
     
     // Group sessions by the selected grouping criteria
-    data.forEach(session => {
+    workingData.forEach(session => {
       let groupKey = 'Overall';
       switch (groupBy) {
         case 'trainer':
@@ -195,7 +223,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
 
     // Sort by total attendance (descending)
     return result.sort((a, b) => b.totals.attendance - a.totals.attendance);
-  }, [data, groupBy, availableMonths]);
+  }, [workingData, groupBy, availableMonths]);
 
   const getMetricValue = (monthData: MonthlyData, metric: MetricType): string => {
     switch (metric) {
@@ -399,9 +427,9 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
             >
               <div className="w-full overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
                 <Table className="min-w-[1400px] w-max">
-                  <TableHeader className={`sticky top-0 z-20 shadow-sm border-b-2 ${getTableHeaderClasses('attendance')}`}>
-                    <TableRow>
-                      <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold ${getTableHeaderClasses('attendance')}`}>
+                  <TableHeader className="sticky top-0 z-20 shadow-sm border-b-2">
+                    <TableRow className={`${getTableHeaderClasses('attendance')}`}>
+                      <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold`}>
                         <div className="flex items-center gap-2">
                           <Activity className="w-4 h-4 text-white" />
                           {groupBy === 'trainer' ? 'Trainer' : 
@@ -415,7 +443,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   </TableHead>
                   
                   {availableMonths.map(month => (
-                    <TableHead key={month.key} className={`text-center min-w-[120px] font-bold ${getTableHeaderClasses('attendance')}`}>
+                    <TableHead key={month.key} className={`text-center min-w-[120px] font-bold`}>
                       <div className="space-y-1">
                         <div className="font-semibold">{month.shortLabel}</div>
                         {showGrowthRate && (
@@ -534,6 +562,59 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   </motion.tr>
                 ))}
                 </AnimatePresence>
+                {/* Totals row across all groups */}
+                <TableRow className="bg-blue-50/60 font-bold border-t-2 border-blue-200">
+                  <TableCell className="sticky left-0 z-10 bg-blue-50/60 border-r">Totals</TableCell>
+                  {availableMonths.map((month) => {
+                    const totalsForMonth = processedData.reduce((acc, row) => {
+                      const md = row.monthlyData[month.key];
+                      acc.sessions += md.sessions;
+                      acc.attendance += md.attendance;
+                      acc.capacity += md.capacity;
+                      acc.revenue += md.revenue;
+                      acc.lateCancellations += md.lateCancellations;
+                      return acc;
+                    }, { sessions:0, attendance:0, capacity:0, revenue:0, lateCancellations:0 });
+                    const display = getMetricValue({
+                      month: month.key,
+                      monthLabel: month.label,
+                      sessions: totalsForMonth.sessions,
+                      attendance: totalsForMonth.attendance,
+                      capacity: totalsForMonth.capacity,
+                      revenue: totalsForMonth.revenue,
+                      fillRate: totalsForMonth.capacity>0 ? (totalsForMonth.attendance/totalsForMonth.capacity)*100 : 0,
+                      classAverage: totalsForMonth.sessions>0 ? (totalsForMonth.attendance/totalsForMonth.sessions) : 0,
+                      bookingRate: totalsForMonth.capacity>0 ? (totalsForMonth.attendance/totalsForMonth.capacity)*100 : 0,
+                      lateCancellations: totalsForMonth.lateCancellations,
+                      uniqueClasses: 0,
+                      uniqueTrainers: 0
+                    }, selectedMetric);
+                    return (
+                      <TableCell key={`total-${month.key}`} className="text-center bg-blue-50/60">
+                        <div className="font-bold text-blue-800">{display}</div>
+                      </TableCell>
+                    );
+                  })}
+                  {/* Overall total (rightmost) */}
+                  <TableCell className="text-center bg-blue-100">
+                    <div className="font-bold text-blue-900">
+                      {getMetricValue({
+                        month: 'total',
+                        monthLabel: 'Total',
+                        sessions: processedData.reduce((s, r) => s + r.totals.sessions, 0),
+                        attendance: processedData.reduce((s, r) => s + r.totals.attendance, 0),
+                        capacity: processedData.reduce((s, r) => s + r.totals.capacity, 0),
+                        revenue: processedData.reduce((s, r) => s + r.totals.revenue, 0),
+                        fillRate: 0,
+                        classAverage: 0,
+                        bookingRate: 0,
+                        lateCancellations: processedData.reduce((s, r) => s + r.totals.lateCancellations, 0),
+                        uniqueClasses: 0,
+                        uniqueTrainers: 0
+                      }, selectedMetric)}
+                    </div>
+                  </TableCell>
+                </TableRow>
               </TableBody>
               </Table>
             </div>
