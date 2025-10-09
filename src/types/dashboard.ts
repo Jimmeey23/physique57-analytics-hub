@@ -201,6 +201,8 @@ export type TrainerMetricType =
   | 'classAverageInclEmpty'
   | 'retention' 
   | 'conversion' 
+  | 'retentionRate'
+  | 'conversionRate'
   | 'emptySessions' 
   | 'nonEmptySessions'
   | 'newMembers'

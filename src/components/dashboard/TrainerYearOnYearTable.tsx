@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UniformTrainerTable } from './UniformTrainerTable';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 interface TrainerYearOnYearTableProps {
   data: ProcessedTrainerData[];
@@ -13,14 +14,24 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
   data,
   onRowClick
 }) => {
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'revenueGrowth',
+    direction: 'desc'
+  });
   const yearOnYearData = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
 
     // Group data by trainer and year
     const trainerStats = data.reduce((acc, record) => {
-      const [monthName, year] = (record.monthYear || '').split(' ');
-      const yearNum = parseInt(year);
+      const label = record.monthLabel || record.monthYear || '';
+      let yearNum = NaN;
+      if (record.monthKey && record.monthKey.includes('-')) {
+        yearNum = parseInt(record.monthKey.split('-')[0]);
+      } else {
+        const parts = label.replace('-', ' ').split(' ').filter(Boolean);
+        yearNum = parseInt(parts[1]);
+      }
       const trainerKey = record.trainerName;
       if (!isNaN(yearNum) && (yearNum === currentYear || yearNum === previousYear)) {
         if (!acc[trainerKey]) {
@@ -49,7 +60,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
       }
       return acc;
     }, {} as Record<string, any>);
-    return Object.values(trainerStats).map((trainer: any) => {
+  return Object.values(trainerStats).map((trainer: any) => {
       const currentAvgClassSize = trainer.currentYear.sessions > 0 ? trainer.currentYear.customers / trainer.currentYear.sessions : 0;
       const previousAvgClassSize = trainer.previousYear.sessions > 0 ? trainer.previousYear.customers / trainer.previousYear.sessions : 0;
       const currentRevenuePerSession = trainer.currentYear.sessions > 0 ? trainer.currentYear.revenue / trainer.currentYear.sessions : 0;
@@ -77,6 +88,26 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
       };
     }).filter(trainer => trainer.currentSessions > 0 || trainer.previousSessions > 0).sort((a, b) => b.revenueGrowth - a.revenueGrowth);
   }, [data]);
+
+  const sortedYoY = useMemo(() => {
+    const rows = [...yearOnYearData];
+    const key = sortConfig.key as keyof (typeof rows)[number];
+    return rows.sort((a: any, b: any) => {
+      const av = a[key] ?? 0;
+      const bv = b[key] ?? 0;
+      if (typeof av === 'string' || typeof bv === 'string') {
+        return sortConfig.direction === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+      }
+      return sortConfig.direction === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    });
+  }, [yearOnYearData, sortConfig]);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
   const handleRowClick = (rowData: any) => {
     if (onRowClick) {
       onRowClick(rowData.trainerName, {
@@ -87,69 +118,149 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
   };
   const columns = [{
     key: 'trainerName' as const,
-    header: 'Trainer',
-    className: 'font-semibold min-w-[160px]',
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">Trainer</TooltipTrigger>
+          <TooltipContent>Trainer name</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
+    className: 'font-semibold min-w-[240px]',
+    sortable: true,
     render: (value: string, row: any) => <div>
           <div className="font-medium text-slate-800">{value}</div>
           
         </div>
   }, {
     key: 'currentSessions' as const,
-    header: `${new Date().getFullYear()} Sessions`,
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">{`${new Date().getFullYear()} Sessions`}</TooltipTrigger>
+          <TooltipContent>Total sessions conducted this year</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
-    render: (value: number) => <span className="font-semibold text-blue-600 text-sm ">{formatNumber(value)}</span>
+    sortable: true,
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm ">{formatNumber(value)}</span>
   }, {
     key: 'previousSessions' as const,
-    header: `${new Date().getFullYear() - 1} Sessions`,
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">{`${new Date().getFullYear() - 1} Sessions`}</TooltipTrigger>
+          <TooltipContent>Total sessions conducted last year</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
-    render: (value: number) => <span className="font-semibold text-gray-600 text-sm">{formatNumber(value)}</span>
+    sortable: true,
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{formatNumber(value)}</span>
   }, {
     key: 'sessionsGrowth' as const,
-    header: 'Sessions Growth',
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">Sessions Growth</TooltipTrigger>
+          <TooltipContent>Year-over-year change in sessions</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
+    sortable: true,
     render: (value: number) => <div className="flex items-center justify-center gap-1">
           {value > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
-          <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+      <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-slate-600'}`}>
             {value.toFixed(1)}%
           </span>
         </div>
   }, {
     key: 'currentRevenue' as const,
-    header: `${new Date().getFullYear()} Revenue`,
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">{`${new Date().getFullYear()} Revenue`}</TooltipTrigger>
+          <TooltipContent>Total revenue generated this year</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
-    render: (value: number) => <span className="font-semibold text-green-600 text-sm">{formatCurrency(value)}</span>
+    sortable: true,
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{formatCurrency(value)}</span>
   }, {
     key: 'previousRevenue' as const,
-    header: `${new Date().getFullYear() - 1} Revenue`,
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">{`${new Date().getFullYear() - 1} Revenue`}</TooltipTrigger>
+          <TooltipContent>Total revenue generated last year</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
-    render: (value: number) => <span className="font-semibold text-gray-600 text-sm">{formatCurrency(value)}</span>
+    sortable: true,
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{formatCurrency(value)}</span>
   }, {
     key: 'revenueGrowth' as const,
-    header: 'Revenue Growth',
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">Revenue Growth</TooltipTrigger>
+          <TooltipContent>Year-over-year change in revenue</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
+    sortable: true,
     render: (value: number) => <div className="flex items-center justify-center gap-1">
           {value > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
-          <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+      <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-slate-600'}`}>
             {value.toFixed(1)}%
           </span>
         </div>
   }, {
     key: 'currentAvgClassSize' as const,
-    header: `${new Date().getFullYear()} Avg Size`,
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">{`${new Date().getFullYear()} Avg Size`}</TooltipTrigger>
+          <TooltipContent>Average customers per session this year</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
-    render: (value: number) => <span className="font-semibold text-purple-600 text-sm">{value.toFixed(1)}</span>
+    sortable: true,
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{value.toFixed(1)}</span>
   }, {
     key: 'previousAvgClassSize' as const,
-    header: `${new Date().getFullYear() - 1} Avg Size`,
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">{`${new Date().getFullYear() - 1} Avg Size`}</TooltipTrigger>
+          <TooltipContent>Average customers per session last year</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
-    render: (value: number) => <span className="font-semibold text-gray-600 text-sm">{value.toFixed(1)}</span>
+    sortable: true,
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{value.toFixed(1)}</span>
   }, {
     key: 'classSizeGrowth' as const,
-    header: 'Size Growth',
+    header: (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="cursor-help">Size Growth</TooltipTrigger>
+          <TooltipContent>Year-over-year change in average class size</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
     align: 'center' as const,
+    sortable: true,
     render: (value: number) => <div className="flex items-center justify-center gap-1">
           {value > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
-          <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+      <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-slate-600'}`}>
             {value.toFixed(1)}%
           </span>
         </div>
@@ -189,7 +300,18 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <UniformTrainerTable data={yearOnYearData} columns={columns} onRowClick={handleRowClick} headerGradient="from-emerald-600 to-teal-600" showFooter={true} footerData={totals} stickyHeader={true} />
+        <UniformTrainerTable
+          data={sortedYoY}
+          columns={columns}
+          onRowClick={handleRowClick}
+          headerGradient="from-emerald-600 to-teal-600"
+          showFooter={true}
+          footerData={totals}
+          stickyHeader={true}
+          onSort={handleSort}
+          sortField={sortConfig.key}
+          sortDirection={sortConfig.direction}
+        />
       </CardContent>
     </Card>;
 };

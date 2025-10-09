@@ -94,25 +94,46 @@ export const DynamicTrainerDrillDownModal: React.FC<DynamicTrainerDrillDownModal
     const revenueGrowth = prevRevenue > 0 ? ((actualRevenue - prevRevenue) / prevRevenue) * 100 : 0;
     const customerGrowth = prevCustomers > 0 ? ((actualCustomers - prevCustomers) / prevCustomers) * 100 : 0;
 
-    // Create monthly trend data based on actual values
-    const monthlyData = [];
-    const currentMonth = new Date().getMonth();
-    for (let i = 5; i >= 0; i--) {
-      const month = new Date();
-      month.setMonth(currentMonth - i);
-      const monthName = month.toLocaleDateString('en-US', { month: 'short' });
-      
-      // Distribute actual data across months with some variance
-      const variance = (Math.random() - 0.5) * 0.3 + 1; // ±15% variance
-      monthlyData.push({
-        month: monthName,
-        sessions: Math.round((actualSessions / 6) * variance),
-        revenue: Math.round((actualRevenue / 6) * variance),
-        customers: Math.round((actualCustomers / 6) * variance),
-        fillRate: Math.max(50, Math.min(100, fillRate * variance)),
-        retention: Math.max(60, Math.min(95, 80 + (Math.random() - 0.5) * 20)),
-        conversion: Math.max(50, Math.min(85, 70 + (Math.random() - 0.5) * 15)),
+    // Create monthly trend data based on actual monthly records when available
+    let monthlyData: Array<{month: string; sessions: number; revenue: number; customers: number; fillRate: number; retention: number; conversion: number;}> = [];
+    if (trainerData?.monthlyData && Array.isArray(trainerData.months)) {
+      // If MonthOnMonthTrainerTable provided detailed monthlyData in drilldown
+      monthlyData = trainerData.months.map((mKey: string) => {
+        const rec = trainerData.monthlyData[mKey] || {};
+        const sessions = rec.totalSessions || rec.sessions || 0;
+        const revenue = rec.totalPaid || rec.revenue || 0;
+        const customers = rec.totalCustomers || rec.customers || 0;
+        const capacity = (rec.capacity) || sessions * 20;
+        const fr = capacity > 0 ? (customers / capacity) * 100 : 0;
+        const retention = rec.retentionRate ?? 0;
+        const conversion = rec.conversionRate ?? 0;
+        return {
+          month: (mKey.includes('-') ? new Date(mKey + '-01') : new Date()).toLocaleDateString('en-US', { month: 'short' }),
+          sessions,
+          revenue,
+          customers,
+          fillRate: fr,
+          retention,
+          conversion
+        };
       });
+    } else {
+      // Fallback: evenly distribute actual totals without randomness
+      const monthsCount = 6;
+      for (let i = monthsCount - 1; i >= 0; i--) {
+        const month = new Date();
+        month.setMonth(month.getMonth() - i);
+        const monthName = month.toLocaleDateString('en-US', { month: 'short' });
+        monthlyData.push({
+          month: monthName,
+          sessions: Math.floor(actualSessions / monthsCount),
+          revenue: Math.floor(actualRevenue / monthsCount),
+          customers: Math.floor(actualCustomers / monthsCount),
+          fillRate,
+          retention: 0,
+          conversion: 0
+        });
+      }
     }
 
     return {
@@ -177,23 +198,24 @@ export const DynamicTrainerDrillDownModal: React.FC<DynamicTrainerDrillDownModal
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'];
 
   // Dynamic format distribution based on trainer data
+  const totalSess = (trainerData?.cycleSessions || 0) + (trainerData?.barreSessions || 0) + (trainerData?.strengthSessions || 0);
   const formatDistribution = [
     { 
       name: 'Cycle', 
-      value: trainerData?.cycleSessions || Math.round((dynamicMetrics?.actualSessions || 0) * 0.4), 
-      percentage: 40,
+      value: trainerData?.cycleSessions || 0, 
+      percentage: totalSess > 0 ? Math.round(((trainerData?.cycleSessions || 0) / totalSess) * 100) : 0,
       color: '#3B82F6' 
     },
     { 
       name: 'Barre', 
-      value: trainerData?.barreSessions || Math.round((dynamicMetrics?.actualSessions || 0) * 0.35), 
-      percentage: 35,
+      value: trainerData?.barreSessions || 0, 
+      percentage: totalSess > 0 ? Math.round(((trainerData?.barreSessions || 0) / totalSess) * 100) : 0,
       color: '#10B981' 
     },
     { 
       name: 'Strength', 
-      value: trainerData?.strengthSessions || Math.round((dynamicMetrics?.actualSessions || 0) * 0.25), 
-      percentage: 25,
+      value: trainerData?.strengthSessions || 0, 
+      percentage: totalSess > 0 ? Math.round(((trainerData?.strengthSessions || 0) / totalSess) * 100) : 0,
       color: '#F59E0B' 
     }
   ];

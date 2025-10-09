@@ -4,6 +4,7 @@ import { UniformTrainerTable } from './UniformTrainerTable';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Zap, Clock, Target, TrendingUp, TrendingDown, Award } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 
 interface TrainerEfficiencyAnalysisTableProps {
@@ -77,31 +78,59 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
         ? trainer.totalCustomers / trainer.nonEmptySessions 
         : 0;
 
-      // Advanced efficiency metrics (mock realistic calculations)
+      // Data-based metrics
       trainer.revenuePerHour = trainer.totalSessions > 0 
-        ? trainer.totalRevenue / (trainer.totalSessions * 1) // Assuming 1 hour per session
+        ? trainer.totalRevenue / trainer.totalSessions // assume 1 hour per session
         : 0;
 
-      trainer.customerRetention = 75 + Math.random() * 20; // Mock 75-95%
-      trainer.timeOptimization = 80 + Math.random() * 15; // Mock 80-95%
-      trainer.resourceUtilization = trainer.capacityUtilization;
-      trainer.impactScore = 70 + Math.random() * 25; // Mock 70-95%
-      trainer.qualityIndex = 75 + Math.random() * 20; // Mock 75-95%
-      trainer.growthMomentum = Math.random() * 30 - 5; // Mock -5% to +25%
-      trainer.consistencyFactor = 70 + Math.random() * 25; // Mock 70-95%
+      // Derive customer retention from aggregated weighted rate across months for this trainer
+      const records = data.filter(r => r.trainerName === trainer.trainerName);
+      const totalNew = records.reduce((s, r) => s + (r.newMembers || 0), 0);
+      const totalRetained = records.reduce((s, r) => s + (r.retainedMembers || 0), 0);
+      trainer.customerRetention = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
 
-      // Calculate overall efficiency score
+      // Time optimization proxy: ratio of non-empty to total (same as utilization)
+      trainer.timeOptimization = trainer.capacityUtilization;
+      trainer.resourceUtilization = trainer.capacityUtilization;
+
+      // Impact/quality/consistency: compute simple scaled indices from existing metrics
+      // Impact: revenue per session relative to cohort
+      const cohort = Object.values(trainerEfficiency) as any[];
+      const rpsValues = cohort.map(t => (t.totalSessions > 0 ? t.totalRevenue / t.totalSessions : 0));
+      const rpsMax = Math.max(...rpsValues, 1);
+      trainer.impactScore = Math.min(100, (trainer.revenuePerHour / rpsMax) * 100);
+
+      // Quality: average class fill normalized to a 0–100 band assuming 20 as a practical ceiling
+      trainer.qualityIndex = Math.min(100, (trainer.avgClassFill / 20) * 100);
+
+      // Consistency: based on variability in monthly sessions
+      if (records.length > 1) {
+        const monthly = records.map(r => r.totalSessions || 0);
+        const avg = monthly.reduce((s, v) => s + v, 0) / monthly.length;
+        const variance = monthly.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / monthly.length;
+        const stddev = Math.sqrt(variance);
+        trainer.consistencyFactor = avg > 0 ? Math.max(0, 100 - (stddev / avg) * 100) : 100;
+      } else {
+        trainer.consistencyFactor = 100;
+      }
+
+      // Growth momentum: last vs previous month sessions
+      const sortedRecs = [...records].sort((a, b) => (a.monthKey || '').localeCompare(b.monthKey || ''));
+      const last = sortedRecs[sortedRecs.length - 1]?.totalSessions || 0;
+      const prev = sortedRecs[sortedRecs.length - 2]?.totalSessions || 0;
+      trainer.growthMomentum = prev > 0 ? ((last - prev) / prev) * 100 : (last > 0 ? 100 : 0);
+
+      // Overall efficiency score: weighted composite of real metrics
       trainer.efficiencyScore = (
-        trainer.capacityUtilization * 0.25 +
-        trainer.revenuePerHour * 0.01 + // Normalized
-        trainer.customerRetention * 0.2 +
-        trainer.timeOptimization * 0.15 +
-        trainer.impactScore * 0.2 +
-        trainer.qualityIndex * 0.15 +
-        trainer.consistencyFactor * 0.05
+        trainer.capacityUtilization * 0.35 +
+        trainer.revenuePerHour * 0.02 + // scale-down factor
+        trainer.customerRetention * 0.15 +
+        trainer.impactScore * 0.15 +
+        trainer.qualityIndex * 0.1 +
+        trainer.consistencyFactor * 0.13
       );
 
-      // Determine productivity rank
+  // Determine productivity rank
       if (trainer.efficiencyScore >= 90) trainer.productivityRank = 'S+';
       else if (trainer.efficiencyScore >= 85) trainer.productivityRank = 'A+';
       else if (trainer.efficiencyScore >= 80) trainer.productivityRank = 'A';
@@ -135,6 +164,7 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     {
       key: 'trainerName' as const,
       header: 'Trainer',
+      sortable: true,
       className: 'font-semibold min-w-[160px]',
       render: (value: string, row: any) => (
         <div>
@@ -155,7 +185,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'efficiencyScore' as const,
-      header: 'Efficiency Score',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Efficiency Score</TooltipTrigger>
+            <TooltipContent>Composite score from utilization, retention, impact, quality, and consistency</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex flex-col items-center">
@@ -176,7 +214,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'capacityUtilization' as const,
-      header: 'Capacity Usage',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Capacity Usage</TooltipTrigger>
+            <TooltipContent>Non-empty sessions divided by total sessions</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number, row: any) => (
         <div className="flex flex-col items-center">
@@ -207,7 +253,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'revenuePerHour' as const,
-      header: 'Revenue/Hour',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Revenue/Hour</TooltipTrigger>
+            <TooltipContent>Revenue per session (assumes 1 hour per session)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex flex-col items-center">
@@ -218,7 +272,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'avgClassFill' as const,
-      header: 'Avg Fill',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Avg Fill</TooltipTrigger>
+            <TooltipContent>Average customers per non-empty session</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex flex-col items-center">
@@ -229,7 +291,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'customerRetention' as const,
-      header: 'Retention',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Retention</TooltipTrigger>
+            <TooltipContent>Weighted retained/new members (%) across months</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex flex-col items-center">
@@ -247,7 +317,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'timeOptimization' as const,
-      header: 'Time Opt.',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Time Opt.</TooltipTrigger>
+            <TooltipContent>Proxy equals capacity usage (%)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <span className={`font-semibold ${
@@ -262,7 +340,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'qualityIndex' as const,
-      header: 'Quality Index',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Quality Index</TooltipTrigger>
+            <TooltipContent>Avg fill normalized to 0-100 (20 assumed ceiling)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex flex-col items-center">
@@ -280,7 +366,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'growthMomentum' as const,
-      header: 'Growth',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Growth</TooltipTrigger>
+            <TooltipContent>Last vs previous month sessions (%)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex items-center justify-center gap-1">
@@ -299,7 +393,15 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     },
     {
       key: 'impactScore' as const,
-      header: 'Impact',
+      header: (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-help">Impact</TooltipTrigger>
+            <TooltipContent>Revenue per session relative to cohort (0-100)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ),
+      sortable: true,
       align: 'center' as const,
       render: (value: number) => (
         <div className="flex flex-col items-center">
@@ -362,6 +464,9 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
         <UniformTrainerTable
           data={efficiencyData}
           columns={columns}
+          onSort={handleSort}
+          sortField={sortConfig.key}
+          sortDirection={sortConfig.direction}
           onRowClick={handleRowClick}
           headerGradient="from-orange-600 to-red-600"
           showFooter={false}

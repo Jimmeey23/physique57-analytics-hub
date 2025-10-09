@@ -6,6 +6,8 @@ export interface ProcessedTrainerData {
   trainerEmail: string;
   location: string;
   monthYear: string;
+  monthKey?: string; // YYYY-MM
+  monthLabel?: string; // Mon YYYY
 
   // Session breakdown
   totalSessions: number;
@@ -59,6 +61,30 @@ export interface ProcessedTrainerData {
 }
 
 export const processTrainerData = (payrollData: PayrollData[]): ProcessedTrainerData[] => {
+  const parseMonth = (monthStr: string) => {
+    if (!monthStr) return { monthKey: '', monthLabel: '' };
+    // Accept formats: "Feb-2024", "Feb 2024", "2/2024"
+    let d: Date | null = null;
+    if (monthStr.includes('/')) {
+      const [m, y] = monthStr.split('/').map(s => s.trim());
+      const mi = parseInt(m) - 1;
+      const yi = parseInt(y);
+      if (!isNaN(mi) && !isNaN(yi)) d = new Date(yi, mi, 1);
+    } else if (monthStr.includes('-') || monthStr.includes(' ')) {
+      const parts = monthStr.replace('-', ' ').split(' ').filter(Boolean);
+      const mon = parts[0];
+      const yi = parseInt(parts[1]);
+      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const mi = names.indexOf(mon);
+      if (mi >= 0 && !isNaN(yi)) d = new Date(yi, mi, 1);
+    }
+    if (!d || isNaN(d.getTime())) return { monthKey: '', monthLabel: monthStr };
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthLabel = `${names[d.getMonth()]} ${d.getFullYear()}`;
+    return { monthKey, monthLabel };
+  };
+
   return payrollData.map(record => {
     const totalSessions = record.totalSessions || 0;
     const emptySessions = record.totalEmptySessions || 0;
@@ -68,7 +94,7 @@ export const processTrainerData = (payrollData: PayrollData[]): ProcessedTrainer
 
     const cycleSessions = record.cycleSessions || 0;
     const barreSessions = record.barreSessions || 0;
-    const strengthSessions = 0; // Not available in current data
+  const strengthSessions = record.strengthSessions || 0;
 
     // Class averages
     const classAverageExclEmpty = nonEmptySessions > 0 ? totalCustomers / nonEmptySessions : 0;
@@ -83,7 +109,7 @@ export const processTrainerData = (payrollData: PayrollData[]): ProcessedTrainer
       : Number(record.retention) || 0;
 
     // Enhanced metrics calculations
-    const capacity = totalSessions * 20; // Assuming 20 capacity per session
+  const capacity = totalSessions * 20; // Approximated capacity per session
     const fillRate = capacity > 0 ? (totalCustomers / capacity) * 100 : 0;
     const utilizationRate = totalSessions > 0 ? (nonEmptySessions / totalSessions) * 100 : 0;
     
@@ -111,12 +137,15 @@ export const processTrainerData = (payrollData: PayrollData[]): ProcessedTrainer
     const growthRate = 0; // Set to 0 until historical data is available
     const consistencyScore = Math.min(100, ((nonEmptySessions / Math.max(totalSessions, 1)) * 100)); // Based on fill rate
 
+    const { monthKey, monthLabel } = parseMonth(record.monthYear || '');
     return {
       trainerId: record.teacherId,
       trainerName: record.teacherName,
       trainerEmail: record.teacherEmail,
       location: record.location,
       monthYear: record.monthYear || '',
+      monthKey,
+      monthLabel,
 
       totalSessions,
       emptySessions,
@@ -130,11 +159,11 @@ export const processTrainerData = (payrollData: PayrollData[]): ProcessedTrainer
       cycleCustomers: record.cycleCustomers || 0,
       cycleRevenue: record.cyclePaid || 0,
 
-      strengthSessions,
-      emptyStrengthSessions: 0,
-      nonEmptyStrengthSessions: 0,
-      strengthCustomers: 0,
-      strengthRevenue: 0,
+  strengthSessions,
+  emptyStrengthSessions: record.emptyStrengthSessions || 0,
+  nonEmptyStrengthSessions: record.nonEmptyStrengthSessions || 0,
+  strengthCustomers: record.strengthCustomers || 0,
+  strengthRevenue: record.strengthPaid || 0,
 
       barreSessions,
       emptyBarreSessions: record.emptyBarreSessions || 0,
@@ -156,11 +185,11 @@ export const processTrainerData = (payrollData: PayrollData[]): ProcessedTrainer
       growthRate,
       consistencyScore,
 
-      conversion: record.converted || 0,
-      retention: record.retained || 0,
+  conversion: record.converted || 0,
+  retention: record.retained || 0,
 
       uniqueKey: record.unique || '',
-      newMembers: 0,
+      newMembers: record.new || 0,
       convertedMembers: record.converted || 0,
       retainedMembers: record.retained || 0,
       conversionRate,

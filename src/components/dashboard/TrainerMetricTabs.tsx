@@ -53,14 +53,14 @@ export const TrainerMetricTabs: React.FC<TrainerMetricTabsProps> = ({
           <span className="text-[10px] opacity-80">Sessions</span>
         </TabsTrigger>
         <TabsTrigger
-          value="conversion"
+          value="conversionRate"
           className="text-xs px-3 py-3 h-auto flex-col gap-1"
         >
           <span className="font-semibold">Conversion</span>
           <span className="text-[10px] opacity-80">Rate</span>
         </TabsTrigger>
         <TabsTrigger
-          value="retention"
+          value="retentionRate"
           className="text-xs px-3 py-3 h-auto flex-col gap-1"
         >
           <span className="font-semibold">Retention</span>

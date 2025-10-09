@@ -30,7 +30,7 @@ const TrainerPerformance = () => {
           : item.location === location.key
       );
       
-      const totalSessions = locationData.reduce((sum, item) => sum + (item.cycleSessions || 0), 0);
+  const totalSessions = locationData.reduce((sum, item) => sum + (item.totalSessions || 0), 0);
       
       return {
         location: location.name,

@@ -11,6 +11,7 @@ import { DynamicTrainerDrillDownModal } from './DynamicTrainerDrillDownModal';
 import { TrainerFilterSection } from './TrainerFilterSection';
 import { TrainerMetricTabs } from './TrainerMetricTabs';
 import { EnhancedTrainerRankings } from './EnhancedTrainerRankings';
+import { PersistentTableFooter } from './PersistentTableFooter';
 import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
 import { AdvancedNotesModal } from '@/components/ui/AdvancedNotesModal';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -33,11 +34,36 @@ export const EnhancedTrainerPerformanceSection = () => {
     month: '' // Start with no month filter to show all data
   });
 
-  const processedData = useMemo(() => {
+  // Base processed data
+  const baseProcessed = useMemo(() => {
     if (!payrollData || payrollData.length === 0) return [];
-    let data = processTrainerData(payrollData);
-    
-    // Apply filters
+    return processTrainerData(payrollData);
+  }, [payrollData]);
+
+  // Data with all filters applied (including month) for cards, charts, efficiency, and detail tables
+  const processedData = useMemo(() => {
+    let data = [...baseProcessed];
+    // Apply location (tabs) and explicit location filter
+    if (selectedLocation !== 'All Locations') {
+      data = data.filter(d => d.location === selectedLocation);
+    }
+    if (filters.location) {
+      data = data.filter(d => d.location === filters.location);
+    }
+    // Apply trainer filter
+    if (filters.trainer) {
+      data = data.filter(d => d.trainerName === filters.trainer);
+    }
+    // Apply month filter
+    if (filters.month) {
+      data = data.filter(d => d.monthYear === filters.month);
+    }
+    return data;
+  }, [baseProcessed, filters, selectedLocation]);
+
+  // Data that ignores the month filter (but respects location/trainer) for MoM/YoY
+  const processedDataNoMonth = useMemo(() => {
+    let data = [...baseProcessed];
     if (selectedLocation !== 'All Locations') {
       data = data.filter(d => d.location === selectedLocation);
     }
@@ -47,12 +73,9 @@ export const EnhancedTrainerPerformanceSection = () => {
     if (filters.trainer) {
       data = data.filter(d => d.trainerName === filters.trainer);
     }
-    if (filters.month) {
-      data = data.filter(d => d.monthYear === filters.month);
-    }
-    
+    // Intentionally DO NOT apply filters.month here
     return data;
-  }, [payrollData, filters, selectedLocation]);
+  }, [baseProcessed, filters.location, filters.trainer, selectedLocation]);
 
   const handleRowClick = (trainer: string, data: any) => {
     setSelectedTrainer(trainer);
@@ -293,7 +316,7 @@ export const EnhancedTrainerPerformanceSection = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="month-on-month" className="space-y-6">
+  <TabsContent value="month-on-month" className="space-y-6">
           <div className="flex justify-end mb-4">
             <AdvancedExportButton 
               payrollData={payrollData || []}
@@ -302,10 +325,25 @@ export const EnhancedTrainerPerformanceSection = () => {
               variant="outline"
             />
           </div>
+          <div className="flex items-center gap-2 -mt-2 flex-wrap">
+            <Badge variant="outline" className="text-xs text-amber-700 border-amber-200 bg-amber-50">Ignoring Month Filter</Badge>
+            <button onClick={() => setFilters(prev => ({...prev, location: ''}))} className="rounded">
+              <Badge variant="outline" className="text-xs text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100">Location: {filters.location || selectedLocation || 'All Locations'}</Badge>
+            </button>
+            <button onClick={() => setFilters(prev => ({...prev, trainer: ''}))} className="rounded">
+              <Badge variant="outline" className="text-xs text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100">Trainer: {filters.trainer || 'All Trainers'}</Badge>
+            </button>
+          </div>
           <MonthOnMonthTrainerTable
-            data={processedData}
+            data={processedDataNoMonth}
             defaultMetric="totalSessions"
             onRowClick={handleRowClick}
+          />
+          <PersistentTableFooter
+            tableId="trainer-month-on-month"
+            tableName="Trainer Month-on-Month Analysis"
+            tableContext="Per-trainer monthly metrics and changes"
+            tableData={processedData}
           />
           <AdvancedNotesModal 
             pageId="month-on-month-trainer"
@@ -313,7 +351,7 @@ export const EnhancedTrainerPerformanceSection = () => {
           />
         </TabsContent>
 
-        <TabsContent value="year-on-year" className="space-y-6">
+  <TabsContent value="year-on-year" className="space-y-6">
           <div className="flex justify-end mb-4">
             <AdvancedExportButton 
               payrollData={payrollData || []}
@@ -322,10 +360,25 @@ export const EnhancedTrainerPerformanceSection = () => {
               variant="outline"
             />
           </div>
+          <div className="flex items-center gap-2 -mt-2 flex-wrap">
+            <Badge variant="outline" className="text-xs text-amber-700 border-amber-200 bg-amber-50">Ignoring Month Filter</Badge>
+            <button onClick={() => setFilters(prev => ({...prev, location: ''}))} className="rounded">
+              <Badge variant="outline" className="text-xs text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100">Location: {filters.location || selectedLocation || 'All Locations'}</Badge>
+            </button>
+            <button onClick={() => setFilters(prev => ({...prev, trainer: ''}))} className="rounded">
+              <Badge variant="outline" className="text-xs text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100">Trainer: {filters.trainer || 'All Trainers'}</Badge>
+            </button>
+          </div>
           
           <TrainerYearOnYearTable
-            data={processedData}
+            data={processedDataNoMonth}
             onRowClick={handleRowClick}
+          />
+          <PersistentTableFooter
+            tableId="trainer-year-on-year"
+            tableName="Trainer Year-on-Year Comparison"
+            tableContext="This compares current year vs previous year trainer performance"
+            tableData={processedData}
           />
           
           <AdvancedNotesModal 
@@ -348,6 +401,12 @@ export const EnhancedTrainerPerformanceSection = () => {
             data={processedData}
             onRowClick={handleRowClick}
           />
+          <PersistentTableFooter
+            tableId="trainer-efficiency-analysis"
+            tableName="Trainer Efficiency & Productivity"
+            tableContext="Composite efficiency score with utilization, revenue per hour, retention, impact, and quality indices"
+            tableData={processedData}
+          />
           
           <AdvancedNotesModal 
             pageId="efficiency-analysis-trainer"
@@ -368,6 +427,12 @@ export const EnhancedTrainerPerformanceSection = () => {
           <TrainerPerformanceDetailTable
             data={processedData}
             onRowClick={handleRowClick}
+          />
+          <PersistentTableFooter
+            tableId="trainer-performance-detail"
+            tableName="Trainer Performance Detail"
+            tableContext="Aggregated trainer-level sessions, customers, revenue, and derived metrics"
+            tableData={processedData}
           />
           
           <AdvancedNotesModal 

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 interface Column {
   key: string;
-  header: string;
+  header: React.ReactNode;
   render?: (value: any, row: any) => React.ReactNode;
   align?: 'left' | 'center' | 'right';
   className?: string;

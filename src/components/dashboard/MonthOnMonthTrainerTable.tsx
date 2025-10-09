@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronRight, Info, BarChart3 } from 'lucide-react';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { TrainerMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -40,20 +41,12 @@ export const MonthOnMonthTrainerTable = ({
 
     // Sort months chronologically (most recent first) - each month as individual column
     const months = Array.from(monthSet).sort((a, b) => {
-      const parseMonth = (monthStr: string) => {
-        if (monthStr.includes('/')) {
-          const [month, year] = monthStr.split('/');
-          return new Date(parseInt(year), parseInt(month) - 1);
-        } else {
-          const parts = monthStr.split('-');
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const monthIndex = monthNames.indexOf(parts[0]);
-          const year = parseInt(parts[1]);
-          return new Date(year, monthIndex);
-        }
+      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const toDate = (s: string) => {
+        if (s.includes('/')) { const [m,y] = s.split('/'); return new Date(parseInt(y), parseInt(m)-1, 1); }
+        const p = s.replace('-', ' ').split(' '); const mi = names.indexOf(p[0]); const yi = parseInt(p[1]); return new Date(yi, mi, 1);
       };
-      
-      return parseMonth(b).getTime() - parseMonth(a).getTime(); // Descending order (most recent first)
+      return toDate(b).getTime() - toDate(a).getTime();
     });
 
     return { trainerGroups, months };
@@ -65,8 +58,8 @@ export const MonthOnMonthTrainerTable = ({
       case 'cycleRevenue':
       case 'barreRevenue':
         return formatCurrency(value);
-      case 'retention':
-      case 'conversion':
+      case 'retentionRate':
+      case 'conversionRate':
         return `${value.toFixed(1)}%`;
       case 'classAverageExclEmpty':
       case 'classAverageInclEmpty':
@@ -93,11 +86,38 @@ export const MonthOnMonthTrainerTable = ({
 
   const handleRowClick = (trainer: string) => {
     const trainerData = processedData.trainerGroups[trainer];
+    const months = processedData.months;
+    const recs = Object.values(trainerData || {}) as any[];
+    const totalSessions = recs.reduce((s, r) => s + (r.totalSessions || 0), 0);
+    const totalRevenue = recs.reduce((s, r) => s + (r.totalPaid || 0), 0);
+    const totalCustomers = recs.reduce((s, r) => s + (r.totalCustomers || 0), 0);
+    const cycleSessions = recs.reduce((s, r) => s + (r.cycleSessions || 0), 0);
+    const barreSessions = recs.reduce((s, r) => s + (r.barreSessions || 0), 0);
+    const strengthSessions = recs.reduce((s, r) => s + (r.strengthSessions || 0), 0);
+  const lastRec: any = (trainerData as any)[months[0]] || {};
+  const prevRec: any = (trainerData as any)[months[1]] || {};
+  const previousSessions = (prevRec as any).totalSessions || 0;
+  const previousRevenue = (prevRec as any).totalPaid || 0;
+  const previousCustomers = (prevRec as any).totalCustomers || 0;
+  const location = (lastRec as any).location || (recs[0] as any)?.location || '';
+
     if (onRowClick) {
       onRowClick(trainer, {
         name: trainer,
+        location,
+        // Monthly mapping and order for trend charts
         monthlyData: trainerData,
-        months: processedData.months
+        months,
+        // Aggregates used by the drill-down modal
+        totalSessions,
+        totalRevenue,
+        totalCustomers,
+        previousSessions,
+        previousRevenue,
+        previousCustomers,
+        cycleSessions,
+        barreSessions,
+        strengthSessions
       });
     }
   };
@@ -142,7 +162,7 @@ export const MonthOnMonthTrainerTable = ({
 
   return (
     <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="pb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+      <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-t-lg">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -165,37 +185,51 @@ export const MonthOnMonthTrainerTable = ({
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-50 to-slate-100">
-              <TableRow className="border-b-2">
-                <TableHead className="font-bold text-slate-700 sticky left-0 bg-gradient-to-r from-slate-50 to-slate-100 z-30 min-w-[200px]">
+            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 to-slate-900">
+              <TableRow className="border-none">
+                <TableHead className="font-bold text-white sticky left-0 bg-slate-900/95 backdrop-blur-sm z-30 min-w-[240px]">
                   Trainer
                 </TableHead>
                 {processedData.months.map((month) => (
-                  <TableHead key={month} className="text-center font-bold text-slate-700 min-w-[140px]">
+                  <TableHead key={month} className="text-center font-bold text-white min-w-[140px]">
                     <div className="flex flex-col">
                       <span className="text-sm">{month.split('-')[0] || month.split('/')[0]}</span>
-                      <span className="text-slate-500 text-xs">{month.split('-')[1] || month.split('/')[1]}</span>
+                      <span className="text-slate-300 text-xs">{month.split('-')[1] || month.split('/')[1]}</span>
                     </div>
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-slate-700 min-w-[100px]">MoM Change</TableHead>
-                <TableHead className="text-center font-bold text-slate-700 min-w-[120px]">Total</TableHead>
+                <TableHead className="text-center font-bold text-white min-w-[120px]">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="cursor-help">MoM Change</TooltipTrigger>
+                      <TooltipContent>Month-over-month change for the selected metric</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead className="text-center font-bold text-white min-w-[140px]">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="cursor-help">Total</TooltipTrigger>
+                      <TooltipContent>Sum across all visible months for each trainer</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {/* Totals Row */}
-              <TableRow className="bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 font-bold">
-                <TableCell className="font-bold text-blue-800 sticky left-0 bg-gradient-to-r from-blue-50 to-purple-50 z-10">
+              <TableRow className="bg-slate-50 font-bold">
+                <TableCell className="font-bold text-slate-800 sticky left-0 bg-slate-50 z-10">
                   TOTAL
                 </TableCell>
                 {processedData.months.map((month) => (
-                  <TableCell key={`total-${month}`} className="text-center font-bold text-blue-800">
+                  <TableCell key={`total-${month}`} className="text-center font-bold text-slate-800">
                     {formatValue(monthlyTotals[month] || 0, selectedMetric)}
                   </TableCell>
                 ))}
                 <TableCell className="text-center">
                   <Badge className={cn(
-                    "flex items-center gap-1",
+                    "flex items-center gap-1 text-xs px-2 py-1",
                     summaryStats.growth >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   )}>
                     {summaryStats.growth >= 0 ? (
@@ -206,7 +240,7 @@ export const MonthOnMonthTrainerTable = ({
                     {Math.abs(summaryStats.growth).toFixed(1)}%
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center font-bold text-blue-800">
+                <TableCell className="text-center font-bold text-slate-800">
                   {formatValue(summaryStats.total, selectedMetric)}
                 </TableCell>
               </TableRow>
@@ -227,7 +261,7 @@ export const MonthOnMonthTrainerTable = ({
                       className="hover:bg-slate-50/50 transition-colors border-b cursor-pointer"
                       onClick={() => handleRowClick(trainer)}
                     >
-                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r">
+                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r min-w-[240px]">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -244,8 +278,15 @@ export const MonthOnMonthTrainerTable = ({
                         </div>
                       </TableCell>
                       {values.map((value, index) => (
-                        <TableCell key={`${trainer}-${index}`} className="text-center font-mono text-sm">
-                          {formatValue(value, selectedMetric)}
+                        <TableCell key={`${trainer}-${index}`} className="text-center text-sm font-medium text-slate-800">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="cursor-help">{formatValue(value, selectedMetric)}</TooltipTrigger>
+                              <TooltipContent>
+                                {processedData.months[index]} • {selectedMetric}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </TableCell>
                       ))}
                       <TableCell className="text-center">
@@ -317,16 +358,16 @@ export const MonthOnMonthTrainerTable = ({
                                  <h4 className="font-semibold text-blue-800 mb-3">Performance Metrics</h4>
                                  <div className="space-y-2 text-sm">
                                    <div className="flex justify-between">
-                                     <span className="text-blue-600">Fill Rate:</span>
-                                     <span className="font-bold">{(Math.random() * 30 + 70).toFixed(1)}%</span>
+                                     <span className="text-blue-600">Total:</span>
+                                     <span className="font-bold">{formatValue(trainerTotal, selectedMetric)}</span>
                                    </div>
                                    <div className="flex justify-between">
-                                     <span className="text-blue-600">Utilization:</span>
-                                     <span className="font-bold">{(Math.random() * 20 + 80).toFixed(1)}%</span>
+                                     <span className="text-blue-600">Average:</span>
+                                     <span className="font-bold">{formatValue(trainerTotal / processedData.months.length, selectedMetric)}</span>
                                    </div>
                                    <div className="flex justify-between">
-                                     <span className="text-blue-600">Revenue/Session:</span>
-                                     <span className="font-bold">${(Math.random() * 100 + 200).toFixed(0)}</span>
+                                     <span className="text-blue-600">Best:</span>
+                                     <span className="font-bold">{formatValue(Math.max(...values), selectedMetric)}</span>
                                    </div>
                                  </div>
                                </div>
@@ -334,18 +375,28 @@ export const MonthOnMonthTrainerTable = ({
                                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border">
                                  <h4 className="font-semibold text-green-800 mb-3">Class Formats</h4>
                                  <div className="space-y-2 text-sm">
-                                   <div className="flex justify-between">
-                                     <span className="text-green-600">Top Format:</span>
-                                     <span className="font-bold">Cycle</span>
-                                   </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-green-600">Cycle:</span>
-                                     <span className="font-bold">{(Math.random() * 30 + 40).toFixed(0)}%</span>
-                                   </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-green-600">Barre:</span>
-                                     <span className="font-bold">{(Math.random() * 30 + 30).toFixed(0)}%</span>
-                                   </div>
+                                   {(() => {
+                                     const recsLocal = Object.values(trainerData || {}) as any[];
+                                     const cyc = recsLocal.reduce((s, r) => s + (r.cycleSessions || 0), 0) as number;
+                                     const bar = recsLocal.reduce((s, r) => s + (r.barreSessions || 0), 0) as number;
+                                     const str = recsLocal.reduce((s, r) => s + (r.strengthSessions || 0), 0) as number;
+                                     return (
+                                       <>
+                                         <div className="flex justify-between">
+                                           <span className="text-green-600">Cycle Sessions:</span>
+                                           <span className="font-bold">{formatNumber(cyc)}</span>
+                                         </div>
+                                         <div className="flex justify-between">
+                                           <span className="text-green-600">Barre Sessions:</span>
+                                           <span className="font-bold">{formatNumber(bar)}</span>
+                                         </div>
+                                         <div className="flex justify-between">
+                                           <span className="text-green-600">Strength Sessions:</span>
+                                           <span className="font-bold">{formatNumber(str)}</span>
+                                         </div>
+                                       </>
+                                     );
+                                   })()}
                                  </div>
                                </div>
 
@@ -354,15 +405,38 @@ export const MonthOnMonthTrainerTable = ({
                                  <div className="space-y-2 text-sm">
                                    <div className="flex justify-between">
                                      <span className="text-purple-600">Retention:</span>
-                                     <span className="font-bold">{(Math.random() * 20 + 75).toFixed(1)}%</span>
+                                     <span className="font-bold">{
+                                       (() => {
+                                         const recs = Object.values(trainerData as any) as any[];
+                                         const totalNew = recs.reduce((s, r) => s + (r.newMembers || 0), 0);
+                                         const totalRetained = recs.reduce((s, r) => s + (r.retainedMembers || 0), 0);
+                                         const rate = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
+                                         return `${rate.toFixed(1)}%`;
+                                       })()
+                                     }</span>
                                    </div>
                                    <div className="flex justify-between">
                                      <span className="text-purple-600">Conversion:</span>
-                                     <span className="font-bold">{(Math.random() * 15 + 60).toFixed(1)}%</span>
+                                     <span className="font-bold">{
+                                       (() => {
+                                         const recs = Object.values(trainerData as any) as any[];
+                                         const totalNew = recs.reduce((s, r) => s + (r.newMembers || 0), 0);
+                                         const totalConverted = recs.reduce((s, r) => s + (r.convertedMembers || 0), 0);
+                                         const rate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
+                                         return `${rate.toFixed(1)}%`;
+                                       })()
+                                     }</span>
                                    </div>
                                    <div className="flex justify-between">
-                                     <span className="text-purple-600">Avg LTV:</span>
-                                     <span className="font-bold">${(Math.random() * 500 + 800).toFixed(0)}</span>
+                                     <span className="text-purple-600">Revenue/Session:</span>
+                                     <span className="font-bold">{
+                                       (() => {
+                                         const recs = Object.values(trainerData as any) as any[];
+                                         const totRev = recs.reduce((s, r) => s + (r.totalPaid || 0), 0);
+                                         const totSess = recs.reduce((s, r) => s + (r.totalSessions || 0), 0);
+                                         return formatCurrency(totSess > 0 ? totRev / totSess : 0);
+                                       })()
+                                     }</span>
                                    </div>
                                  </div>
                                </div>

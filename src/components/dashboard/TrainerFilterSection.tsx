@@ -28,6 +28,31 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
   const trainers = Array.from(new Set(data.map(item => item.teacherName))).filter(Boolean);
   const months = Array.from(new Set(data.map(item => item.monthYear))).filter(Boolean).sort().reverse();
 
+  // On first mount, default to previous month if available, but do not override user changes
+  const [didSetDefaultMonth, setDidSetDefaultMonth] = useState(false);
+  useEffect(() => {
+    if (didSetDefaultMonth) return;
+    if (!months || months.length === 0) return;
+    const now = new Date();
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthShort = prev.toLocaleDateString('en-US', { month: 'short' });
+    const monthLong = prev.toLocaleDateString('en-US', { month: 'long' });
+    const m = String(prev.getMonth() + 1).padStart(2, '0');
+    const y = String(prev.getFullYear());
+    const candidates = new Set([
+      `${monthShort}-${y}`,
+      `${monthShort} ${y}`,
+      `${parseInt(m)}/${y}`,
+      `${m}/${y}`,
+      `${monthLong} ${y}`
+    ]);
+    const match = months.find(mon => candidates.has(mon));
+    if (match) {
+      setSelectedMonth(match);
+      setDidSetDefaultMonth(true);
+    }
+  }, [months, didSetDefaultMonth]);
+
   useEffect(() => {
     onFiltersChange({
       location: selectedLocation === 'all' ? '' : selectedLocation,
