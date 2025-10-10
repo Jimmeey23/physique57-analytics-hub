@@ -119,6 +119,7 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
           variant={variant} 
           size={size} 
           className={cn("gap-2 font-semibold bg-transparent text-base rounded-xl border backdrop-blur-sm transition-all duration-300 ease-out", buttonClassName)}
+          style={{ borderColor: 'var(--hero-accent, rgba(255,255,255,0.3))' }}
         >
           <Download className="w-4 h-4" />
           {buttonLabel ?? 'Export All Data'}

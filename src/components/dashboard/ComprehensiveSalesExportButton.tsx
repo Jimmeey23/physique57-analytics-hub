@@ -684,6 +684,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
             variant={buttonVariant} 
             size={buttonSize} 
             className={cn('gap-2', buttonClassName)}
+            style={{ borderColor: 'var(--hero-accent, rgba(255,255,255,0.3))' }}
           >
             <Download className="h-4 w-4" />
             {buttonLabel ?? 'Export All Sales Data'}

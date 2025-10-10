@@ -113,23 +113,27 @@ const FloatingIcon: React.FC<FloatingIconProps> = ({
   );
 };
 
-const MetricCard: React.FC<MetricCardData & { delay?: number }> = ({ label, value, change, delay = 0 }) => (
+// Compact metric pill used in hero
+const MetricPill: React.FC<MetricCardData & { delay?: number; borderStyle?: any }> = ({ label, value, change, delay = 0, borderStyle }) => (
   <motion.div
-    initial={{ opacity: 0, y: 16 }}
+    initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.5 }}
-    className="bg-white/[0.06] border border-white/30 rounded-xl p-4 shadow-none transition-all will-change-transform hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(0,0,0,0.2)] backdrop-blur-sm"
+    transition={{ delay, duration: 0.4 }}
+    className="rounded-xl px-4 py-3 backdrop-blur-sm text-left"
+    style={{ border: borderStyle }}
   >
-    <p className="text-[10px] uppercase tracking-widest font-semibold text-white/85 mb-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-white/25 bg-white/10">
+    <div className="text-[11px] uppercase tracking-widest font-semibold text-white/85">
       {label}
-    </p>
-    <p className="text-2xl font-bold text-white mb-0.5">{value}</p>
-    {change && (
-      <div className="flex items-center gap-1 text-xs text-emerald-500">
-        <ArrowUpRight className="w-4 h-4" />
-        <span>{change}</span>
-      </div>
-    )}
+    </div>
+    <div className="flex items-center gap-2">
+      <div className="text-2xl font-bold text-white">{value}</div>
+      {change && (
+        <div className="flex items-center gap-1 text-xs text-emerald-400">
+          <ArrowUpRight className="w-4 h-4" />
+          <span>{change}</span>
+        </div>
+      )}
+    </div>
   </motion.div>
 );
 
@@ -210,6 +214,44 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
         compact ? 'py-16 min-h-[400px]' : 'py-20 min-h-[440px]'
       )}
     >
+      {/* Extreme-corner CTAs */}
+      {(primaryAction || secondaryAction || extra) && (
+        <div className="absolute inset-x-0 top-4 z-20">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center">
+              {primaryAction && (
+                <motion.button
+                  style={{ border, boxShadow: 'none' }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={primaryAction?.onClick}
+                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent px-5 py-2.5 text-gray-50 transition-colors"
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  <span>{primaryAction?.label ?? 'View Dashboard'}</span>
+                </motion.button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {secondaryAction && (
+                <motion.button
+                  style={{ border, boxShadow: 'none' }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={secondaryAction?.onClick}
+                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent px-5 py-2.5 text-gray-50 transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{secondaryAction?.label ?? 'Export Report'}</span>
+                </motion.button>
+              )}
+              {extra && (
+                <div className="flex items-center">{extra}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
         {[...iconSet, ...iconSet].map((item, index) => (
           <FloatingIcon
@@ -226,6 +268,8 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
 
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-8">
+          {/* Corner CTA bars handled above */}
+
           {/* Badge as in provided component */}
           <motion.span
             initial={{ opacity: 0, y: 12 }}
@@ -241,7 +285,7 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             transition={{ duration: 0.6 }}
             className={cn(
               'font-bold bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent mb-2',
-              compact ? 'text-5xl md:text-6xl' : 'text-5xl md:text-7xl'
+              compact ? 'text-6xl md:text-7xl' : 'text-6xl md:text-8xl'
             )}
           >
             {title}
@@ -259,41 +303,7 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             {subtitle}
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto"
-          >
-            <motion.button
-              style={{ border, boxShadow: 'none' }}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={primaryAction?.onClick}
-              className="group relative flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-transparent px-5 py-2.5 text-gray-50 transition-colors hover:border-white/50"
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span>{primaryAction?.label ?? 'View Dashboard'}</span>
-            </motion.button>
-
-            {secondaryAction && (
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={secondaryAction?.onClick}
-                className="group relative flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-transparent px-5 py-2.5 text-gray-50 transition-colors hover:border-white/50"
-              >
-                <Download className="w-5 h-5" />
-                <span>{secondaryAction?.label ?? 'Export Report'}</span>
-              </motion.button>
-            )}
-
-            {extra && (
-              <div className="sm:col-span-2 flex justify-center">
-                {extra}
-              </div>
-            )}
-          </motion.div>
+          {/* CTA grid removed in favor of left/right bar above */}
 
         </div>
 
@@ -302,11 +312,11 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.5 }}
-            className="max-w-4xl mx-auto"
+            className="max-w-5xl mx-auto"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {metrics.slice(0, 3).map((m, i) => (
-                <MetricCard key={i} label={m.label} value={m.value} change={m.change} delay={0.45 + i * 0.15} />
+                <MetricPill key={i} label={m.label} value={m.value} change={m.change} delay={0.45 + i * 0.12} borderStyle={border} />
               ))}
             </div>
           </motion.div>

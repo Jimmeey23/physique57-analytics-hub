@@ -17,6 +17,21 @@ export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, curren
   const navigate = useNavigate();
   const exportOpenRef = React.useRef<{ open: () => void }>(null);
 
+  // Make hero accent available globally so components outside the hero (like location tabs) can react.
+  React.useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.style.getPropertyValue('--hero-accent');
+    root.style.setProperty('--hero-accent', heroColor);
+    return () => {
+      // Restore previous value on unmount to avoid leaking across pages
+      if (prev) {
+        root.style.setProperty('--hero-accent', prev);
+      } else {
+        root.style.removeProperty('--hero-accent');
+      }
+    };
+  }, [heroColor]);
+
   // Select only 3 key metrics for hero section
   const metricOrder = [
     'Transactions',
