@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      jsxImportSource: 'react'
+      jsxImportSource: 'react',
+      jsxRuntime: 'automatic'
     }),
     mode === 'development' &&
     componentTagger(),
@@ -20,6 +21,10 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    // Ensure React is available globally for forwardRef
+    'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
   },
   build: {
     sourcemap: false,
@@ -44,6 +49,9 @@ export default defineConfig(({ mode }) => ({
             }
             // Keep React, React-DOM, React Router, recharts, lucide-react, framer-motion, and Radix UI together in vendor chunk
             // This prevents React import resolution issues and circular dependencies
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor';
+            }
             return 'vendor';
           }
           
