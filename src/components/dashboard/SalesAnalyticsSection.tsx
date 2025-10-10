@@ -753,7 +753,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         onRowClick={handleRowClick} 
                         collapsedGroups={collapsedGroups} 
                         // Adapter to match MonthOnMonthTableNew's onGroupToggle signature (Set<string>)
-                        onGroupToggle={(groups) => setCollapsedGroups(new Set(groups))} 
+                        onGroupToggle={React.useCallback((groups: Set<string>) => setCollapsedGroups(new Set(groups)), [])} 
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
                       />

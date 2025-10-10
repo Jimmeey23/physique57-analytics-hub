@@ -52,11 +52,19 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
 
+  // Keep local collapsed groups in sync if parent provides a controlled Set
   React.useEffect(() => {
-    if (onGroupToggle) {
-      onGroupToggle(localCollapsedGroups);
+    if (!collapsedGroups) return;
+    // Compare contents to avoid unnecessary updates
+    const isSame = (a: Set<string>, b: Set<string>) => {
+      if (a.size !== b.size) return false;
+      for (const v of a) if (!b.has(v)) return false;
+      return true;
+    };
+    if (!isSame(localCollapsedGroups, collapsedGroups)) {
+      setLocalCollapsedGroups(new Set(collapsedGroups));
     }
-  }, [localCollapsedGroups, onGroupToggle]);
+  }, [collapsedGroups]);
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -226,14 +234,17 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       } else {
         newSet.add(groupKey);
       }
+      // Inform parent immediately to avoid effect-driven loops
+      onGroupToggle?.(newSet);
       return newSet;
     });
-  }, []);
+  }, [onGroupToggle]);
 
   const handleCollapseAll = useCallback(() => {
     const allGroups = new Set(processedData.map(item => item.category));
     setLocalCollapsedGroups(allGroups);
-  }, [processedData]);
+    onGroupToggle?.(allGroups);
+  }, [processedData, onGroupToggle]);
 
   // Show the full descending range (current month back to Jan 2024)
   const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
@@ -293,8 +304,10 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
   }, [monthlyData, selectedMetric, visibleMonths]);
 
   const handleExpandAll = useCallback(() => {
-    setLocalCollapsedGroups(new Set());
-  }, []);
+    const empty = new Set<string>();
+    setLocalCollapsedGroups(empty);
+    onGroupToggle?.(empty);
+  }, [onGroupToggle]);
 
   const getGrowthPercentage = (current: number, previous: number) => {
     if (previous === 0 && current === 0) return null;
