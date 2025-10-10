@@ -78,11 +78,10 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
-    const months = [];
-    for (let month = currentMonth; month >= 1; month--) {
-      const monthName = new Date(2025, month - 1).toLocaleString('default', {
-        month: 'short'
-      });
+    const months = [] as { month: number; name: string; current: string; previous: string }[];
+    // Build months from Jan to current month for both years
+    for (let month = 1; month <= currentMonth; month++) {
+      const monthName = new Date(currentYear, month - 1).toLocaleString('default', { month: 'short' });
       months.push({
         month,
         name: monthName,
@@ -149,15 +148,10 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
-    const months = [];
-    for (let month = currentMonth; month >= 1; month--) {
-      const monthName = new Date(2025, month - 1).toLocaleString('default', {
-        month: 'short'
-      });
-      months.push({
-        month,
-        name: monthName
-      });
+    const months = [] as { month: number; name: string }[];
+    for (let month = 1; month <= currentMonth; month++) {
+      const monthName = new Date(currentYear, month - 1).toLocaleString('default', { month: 'short' });
+      months.push({ month, name: monthName });
     }
     const result: any = {
       source: 'TOTALS'
@@ -284,15 +278,10 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
-  const months = [];
-  for (let month = currentMonth; month >= 1; month--) {
-    const monthName = new Date(2025, month - 1).toLocaleString('default', {
-      month: 'short'
-    });
-    months.push({
-      month,
-      name: monthName
-    });
+  const monthsForColumns = [] as { month: number; name: string }[];
+  for (let month = 1; month <= currentMonth; month++) {
+    const monthName = new Date(currentYear, month - 1).toLocaleString('default', { month: 'short' });
+    monthsForColumns.push({ month, name: monthName });
   }
   const columns = [{
     key: 'source',
@@ -306,7 +295,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
         </div>,
     align: 'left' as const,
     className: 'min-w-[140px] sticky left-0 bg-white'
-  }, ...months.flatMap(monthInfo => [{
+  }, ...monthsForColumns.flatMap(monthInfo => [{
     key: `${monthInfo.name}_${currentYear}`,
     header: `${monthInfo.name} ${currentYear}`,
     render: (value: any, row: any) => {
@@ -423,7 +412,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
           >
             <Filter className="w-3 h-3" />
             <span>
-              Showing {processedData.length} sources across {months.length} months
+              Showing {processedData.length} sources across {monthsForColumns.length} months
             </span>
           </motion.div>
         </CardHeader>
@@ -507,6 +496,29 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                 onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
               }} 
             />
+            {/* AI Notes Footer */}
+            <div className="border-t border-slate-200 p-4 bg-slate-50 rounded-b-xl mt-2">
+              <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+              {(() => {
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+                // Pick the most recent month name we generated above
+                const recentMonthKey = monthsForColumns[monthsForColumns.length - 1]?.name;
+                if (!recentMonthKey) return <div className="text-xs text-slate-500">No data available.</div>;
+                const currField = `${recentMonthKey}_${currentYear}`;
+                const prevField = `${recentMonthKey}_${currentYear - 1}`;
+                const withCurr = processedData.filter(r => r[currField]?.[selectedMetric] > 0);
+                if (!withCurr.length) return <div className="text-xs text-slate-500">No notable points for the latest month.</div>;
+                const top = [...withCurr].sort((a,b) => (b[currField][selectedMetric] - a[currField][selectedMetric]))[0];
+                const growth = (top[currField] && top[prevField] && top[prevField][selectedMetric]) ? ((top[currField][selectedMetric] - top[prevField][selectedMetric]) / top[prevField][selectedMetric]) * 100 : 0;
+                return (
+                  <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+                    <li>Top source in {recentMonthKey} {currentYear}: <span className="font-semibold">{top.source}</span></li>
+                    <li>{selectedMetric} YoY change: {growth > 0 ? '+' : ''}{growth.toFixed(1)}%</li>
+                  </ul>
+                );
+              })()}
+            </div>
           </motion.div>
         </CardContent>
       </Card>

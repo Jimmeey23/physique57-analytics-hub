@@ -27,9 +27,8 @@ export const usePayrollData = () => {
           grant_type: 'refresh_token',
         }),
       });
-
       const tokenData = await response.json();
-      return tokenData.access_token;
+      return tokenData.access_token as string;
     } catch (error) {
       console.error('Error getting access token:', error);
       throw error;
@@ -39,7 +38,6 @@ export const usePayrollData = () => {
   const parseNumericValue = (value: string | number): number => {
     if (typeof value === 'number') return value;
     if (!value || value === '') return 0;
-
     const cleaned = value.toString().replace(/,/g, '');
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
@@ -50,13 +48,9 @@ export const usePayrollData = () => {
       console.log('Fetching payroll data from Google Sheets...');
       setIsLoading(true);
       const accessToken = await getAccessToken();
-      console.log('Access token obtained successfully');
-
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Payroll?alt=json`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
       if (!response.ok) {
@@ -64,59 +58,88 @@ export const usePayrollData = () => {
       }
 
       const result = await response.json();
-      const rows = result.values || [];
-      console.log('Payroll sheet headers:', rows[0]);
-      console.log('Total payroll rows:', rows.length);
-
+      const rows: any[] = result.values || [];
       if (rows.length < 2) {
-        console.log('No payroll data found');
         setData([]);
+        setError(null);
         return;
       }
 
-      const payrollData: PayrollData[] = rows.slice(1).map((row: any[]) => ({
-        teacherId: row[0] || '',
-        teacherName: row[1] || '',
-        teacherEmail: row[2] || '',
-        location: row[3] || '',
+      const payrollData: PayrollData[] = rows.slice(1).map((row: any[]) => {
+        const cycleSessions = parseNumericValue(row[4]);
+        const emptyCycleSessions = parseNumericValue(row[5]);
+        const nonEmptyCycleSessions = parseNumericValue(row[6]);
+        const cycleCustomers = parseNumericValue(row[7]);
+        const cyclePaid = parseNumericValue(row[8]);
 
-        cycleSessions: parseNumericValue(row[4]),
-        emptyCycleSessions: parseNumericValue(row[5]),
-        nonEmptyCycleSessions: parseNumericValue(row[6]),
-        cycleCustomers: parseNumericValue(row[7]),
-        cyclePaid: parseNumericValue(row[8]),
+        const strengthSessions = parseNumericValue(row[9]);
+        const emptyStrengthSessions = parseNumericValue(row[10]);
+        const nonEmptyStrengthSessions = parseNumericValue(row[11]);
+        const strengthCustomers = parseNumericValue(row[12]);
+        const strengthPaid = parseNumericValue(row[13]);
 
-        strengthSessions: parseNumericValue(row[9]),
-        emptyStrengthSessions: parseNumericValue(row[10]),
-        nonEmptyStrengthSessions: parseNumericValue(row[11]),
-        strengthCustomers: parseNumericValue(row[12]),
-        strengthPaid: parseNumericValue(row[13]),
+        const barreSessions = parseNumericValue(row[14]);
+        const emptyBarreSessions = parseNumericValue(row[15]);
+        const nonEmptyBarreSessions = parseNumericValue(row[16]);
+        const barreCustomers = parseNumericValue(row[17]);
+        const barrePaid = parseNumericValue(row[18]);
 
-        barreSessions: parseNumericValue(row[14]),
-        emptyBarreSessions: parseNumericValue(row[15]),
-        nonEmptyBarreSessions: parseNumericValue(row[16]),
-        barreCustomers: parseNumericValue(row[17]),
-        barrePaid: parseNumericValue(row[18]),
+        const totalSessions = parseNumericValue(row[19]);
+        const totalEmptySessions = parseNumericValue(row[20]);
+        const totalNonEmptySessions = parseNumericValue(row[21]);
+        const totalCustomers = parseNumericValue(row[22]);
+        const totalPaid = parseNumericValue(row[23]);
 
-        totalSessions: parseNumericValue(row[19]),
-        totalEmptySessions: parseNumericValue(row[20]),
-        totalNonEmptySessions: parseNumericValue(row[21]),
-        totalCustomers: parseNumericValue(row[22]),
-        totalPaid: parseNumericValue(row[23]),
+        const converted = parseNumericValue(row[26]);
+        const conversionRate = parseNumericValue(row[27]);
+        const retained = parseNumericValue(row[28]);
+        const retentionRate = parseNumericValue(row[29]);
+        const newMembers = parseNumericValue(row[30]);
 
-        monthYear: row[24] || '',
-        unique: row[25] || '',
-        converted: parseNumericValue(row[26]),
-        conversion: parseNumericValue(row[27]).toString() + '%',
-        retained: parseNumericValue(row[28]),
-        retention: parseNumericValue(row[29]).toString() + '%',
-        new: parseNumericValue(row[30]),
-        classAverageInclEmpty: parseNumericValue(row[22]) > 0 ? parseNumericValue(row[19]) / parseNumericValue(row[22]) : 0,
-        classAverageExclEmpty: parseNumericValue(row[21]) > 0 ? parseNumericValue(row[22]) / parseNumericValue(row[21]) : 0
-      }));
+        return {
+          teacherId: row[0] || '',
+          teacherName: row[1] || '',
+          teacherEmail: row[2] || '',
+          location: row[3] || '',
 
-      console.log('Transformed payroll data sample:', payrollData.slice(0, 3));
-      console.log('Total payroll records processed:', payrollData.length);
+          cycleSessions,
+          emptyCycleSessions,
+          nonEmptyCycleSessions,
+          cycleCustomers,
+          cyclePaid,
+
+          strengthSessions,
+          emptyStrengthSessions,
+          nonEmptyStrengthSessions,
+          strengthCustomers,
+          strengthPaid,
+
+          barreSessions,
+          emptyBarreSessions,
+          nonEmptyBarreSessions,
+          barreCustomers,
+          barrePaid,
+
+          totalSessions,
+          totalEmptySessions,
+          totalNonEmptySessions,
+          totalCustomers,
+          totalPaid,
+
+          monthYear: row[24] || '',
+          unique: row[25] || '',
+          converted,
+          conversion: conversionRate.toString() + '%',
+          retained,
+          retention: retentionRate.toString() + '%',
+          new: newMembers,
+          conversionRate,
+          retentionRate,
+          classAverageInclEmpty: totalSessions > 0 ? totalCustomers / totalSessions : 0,
+          classAverageExclEmpty: totalNonEmptySessions > 0 ? totalCustomers / totalNonEmptySessions : 0,
+        } as PayrollData;
+      });
+
       setData(payrollData);
       setError(null);
     } catch (err) {

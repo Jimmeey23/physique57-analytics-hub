@@ -372,17 +372,37 @@ export default function FunnelLeads() {
                   {/* Enhanced Rankings Section */}
                   <EnhancedFunnelRankings data={filteredData} />
 
-                  {/* Comprehensive Analytics Tables */}
-                  <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
+                  {/* Tables Sub-Tabs */}
+                  <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
+                    <CardContent className="p-4 w-full">
+                      <Tabs defaultValue="analytics" className="w-full">
+                        <TabsList className="flex flex-wrap gap-2 bg-slate-100 p-2 rounded-xl">
+                          <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Analytics</TabsTrigger>
+                          <TabsTrigger value="mom" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Month-on-Month</TabsTrigger>
+                          <TabsTrigger value="yoy" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Year-on-Year</TabsTrigger>
+                          <TabsTrigger value="health" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Health Metrics</TabsTrigger>
+                        </TabsList>
 
-                  {/* Month on Month Table - Uses ALL data, not filtered */}
-                  <FunnelMonthOnMonthTable data={locationFilteredData} />
+                        <TabsContent value="analytics" className="mt-4">
+                          <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
+                        </TabsContent>
 
-                  {/* Year on Year Table - Uses ALL data, not filtered */}
-                  <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
+                        <TabsContent value="mom" className="mt-4">
+                          {/* Uses ALL location data, independent from page date filters */}
+                          <FunnelMonthOnMonthTable data={locationFilteredData} />
+                        </TabsContent>
 
-                  {/* Health Metrics Table */}
-                  <FunnelHealthMetricsTable data={filteredData} />
+                        <TabsContent value="yoy" className="mt-4">
+                          {/* Uses ALL location data, independent from page date filters */}
+                          <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
+                        </TabsContent>
+
+                        <TabsContent value="health" className="mt-4">
+                          <FunnelHealthMetricsTable data={filteredData} />
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
 
                 </TabsContent>)}
             </Tabs>

@@ -80,20 +80,26 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
             "border-none h-12 bg-gradient-to-r",
             headerGradient
           )}>
-            {columns.map((column) => (
-              <TableHead 
-                key={column.key} 
-                className={cn(
-                  "font-bold h-12 px-3 text-xs text-white border-r border-white/20 last:border-r-0",
-                  "min-w-[80px]",
-                  column.align === 'center' && 'text-center',
-                  column.align === 'right' && 'text-right',
-                  column.sortable && 'cursor-pointer hover:bg-white/10 transition-colors',
-                  column.className
-                )}
-                onClick={() => handleSort(column)}
-                style={{ minWidth: '80px' }}
-              >
+            {columns.map((column) => {
+              // Strip background classes from header to preserve gradient
+              const sanitizedHeaderClass = (column.className || '')
+                .split(' ')
+                .filter(c => !c.startsWith('bg-'))
+                .join(' ');
+              return (
+                <TableHead 
+                  key={column.key} 
+                  className={cn(
+                    "font-bold h-12 px-3 text-xs text-white border-r border-white/20 last:border-r-0",
+                    "min-w-[80px] bg-transparent",
+                    column.align === 'center' && 'text-center',
+                    column.align === 'right' && 'text-right',
+                    column.sortable && 'cursor-pointer hover:bg-white/10 transition-colors',
+                    sanitizedHeaderClass
+                  )}
+                  onClick={() => handleSort(column)}
+                  style={{ minWidth: '80px' }}
+                >
                 <div className={cn(
                   "flex items-center gap-1 h-full",
                   column.align === 'center' && 'justify-center',
@@ -108,8 +114,9 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                       <ChevronDown className="w-3 h-3" />
                   )}
                 </div>
-              </TableHead>
-            ))}
+                </TableHead>
+              );
+            })}
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -94,7 +94,7 @@ export const colorThemes: Record<string, ColorTheme> = {
   powercycle: {
     name: 'PowerCycle vs Barre',
     heroGradient: 'from-zinc-900 via-cyan-900 to-zinc-800',
-    activeTabGradient: 'from-cyan-600 to-teal-700',
+    activeTabGradient: 'from-cyan-700 to-teal-800',
     accentColors: {
       primary: 'cyan-600',
       secondary: 'teal-500',
@@ -175,7 +175,7 @@ export const getThemeColors = (variant: string): ColorTheme => {
 // Helper function to get CSS classes for active tabs
 export const getActiveTabClasses = (variant: string): string => {
   const theme = getThemeColors(variant);
-  return `text-slate-600 data-[state=active]:bg-gradient-to-r data-[state=active]:${theme.activeTabGradient} data-[state=active]:text-white data-[state=active]:shadow-lg hover:text-slate-800`;
+  return `text-slate-700 data-[state=active]:bg-gradient-to-r data-[state=active]:${theme.activeTabGradient} data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:ring-1 data-[state=active]:ring-black/10 hover:text-slate-900`;
 };
 
 // Helper function to get table header classes

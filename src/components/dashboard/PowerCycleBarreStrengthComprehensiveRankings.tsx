@@ -18,6 +18,8 @@ import {
   UserCheck,
   AlertTriangle
 } from 'lucide-react';
+import { PersistentTableFooter } from './PersistentTableFooter';
+import type { TableColumn } from '@/hooks/useGeminiAnalysis';
 
 interface PowerCycleBarreStrengthComprehensiveRankingsProps {
   data: PayrollData[];
@@ -150,11 +152,34 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
 
   const currentOption = rankingOptions.find(opt => opt.key === selectedRanking);
 
+  // Prepare AI footer data for rankings
+  const aiTableData = useMemo(() => rankedData.map(tr => ({
+    trainer: tr.teacherName,
+    location: tr.location,
+    metric: currentOption?.label || selectedRanking,
+    value: tr[selectedRanking],
+    sessions: tr.totalSessions,
+    customers: tr.totalCustomers,
+    revenue: tr.totalPaid,
+    fillRate: tr.fillRate
+  })), [rankedData, selectedRanking]);
+
+  const aiTableColumns: TableColumn[] = [
+    { key: 'trainer', header: 'Trainer', type: 'text' },
+    { key: 'location', header: 'Location', type: 'text' },
+    { key: 'metric', header: 'Metric', type: 'text' },
+    { key: 'value', header: 'Value', type: 'number' },
+    { key: 'sessions', header: 'Sessions', type: 'number' },
+    { key: 'customers', header: 'Customers', type: 'number' },
+    { key: 'revenue', header: 'Revenue', type: 'currency' },
+    { key: 'fillRate', header: 'Fill Rate %', type: 'percentage' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Ranking Controls */}
-      <Card className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 border-0 shadow-xl">
-        <CardHeader>
+      <Card className="bg-gradient-to-br from-white via-cyan-50/30 to-teal-50/30 border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-cyan-700 to-teal-800 text-white">
           <CardTitle className="text-xl font-bold flex items-center gap-3">
             <Trophy className="w-6 h-6 text-yellow-500" />
             Trainer Rankings & Performance
@@ -174,7 +199,7 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
               variant={selectedFormat === 'powercycle' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedFormat('powercycle')}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className={`text-white ${selectedFormat === 'powercycle' ? 'bg-gradient-to-r from-cyan-700 to-teal-800' : 'bg-cyan-600 hover:bg-cyan-700'}`}
             >
               PowerCycle
             </Button>
@@ -182,7 +207,7 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
               variant={selectedFormat === 'barre' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedFormat('barre')}
-              className="bg-pink-500 hover:bg-pink-600 text-white"
+              className={`text-white ${selectedFormat === 'barre' ? 'bg-gradient-to-r from-pink-700 to-rose-800' : 'bg-pink-600 hover:bg-pink-700'}`}
             >
               Barre
             </Button>
@@ -190,7 +215,7 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
               variant={selectedFormat === 'strength' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedFormat('strength')}
-              className="bg-green-500 hover:bg-green-600 text-white"
+              className={`text-white ${selectedFormat === 'strength' ? 'bg-gradient-to-r from-green-700 to-emerald-800' : 'bg-green-600 hover:bg-green-700'}`}
             >
               Strength Lab
             </Button>
@@ -216,7 +241,7 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
 
       {/* Rankings Display */}
       <Card className="bg-white border border-gray-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
           <CardTitle className="text-lg font-bold flex items-center gap-3">
             {currentOption?.icon && <currentOption.icon className="w-5 h-5" />}
             {currentOption?.label} Rankings
@@ -258,7 +283,7 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-lg">
-                    {formatValue(trainer[selectedRanking] as number, selectedRanking)}
+                    {selectedRanking === 'revenue' ? `₹${formatNumber((trainer[selectedRanking] as number) || 0)}` : formatValue(trainer[selectedRanking] as number, selectedRanking)}
                   </div>
                   <div className="text-sm text-gray-500">
                     {trainer.totalSessions > 0 && `${trainer.totalSessions} sessions`}
@@ -269,6 +294,15 @@ export const PowerCycleBarreStrengthComprehensiveRankings: React.FC<PowerCycleBa
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Summary Footer for Rankings */}
+      <PersistentTableFooter
+        tableId="powercycle-rankings"
+        tableData={aiTableData}
+        tableColumns={aiTableColumns}
+        tableName="Trainer Rankings & Performance"
+        tableContext={`Ranking by ${currentOption?.label || selectedRanking} with format filter ${selectedFormat}`}
+      />
 
       {/* Top 3 Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

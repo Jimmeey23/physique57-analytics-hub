@@ -35,18 +35,19 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
   const growthIcon = (n: number) => (n > 0 ? <TrendingUp className="w-3 h-3 text-green-600" /> : n < 0 ? <TrendingDown className="w-3 h-3 text-red-600" /> : <Minus className="w-3 h-3 text-slate-400" />);
 
   const months = useMemo(() => {
-    const set = new Set<string>();
-    data.forEach(l => {
-      if (!l.createdAt) return;
-      const d = new Date(l.createdAt);
-      if (isNaN(d.getTime())) return;
-      set.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-    });
-    return Array.from(set).sort();
-  }, [data]);
+    // Full range from Jan 2024 to current month
+    const start = new Date(2024, 0, 1);
+    const now = new Date();
+    const arr: string[] = [];
+    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+    for (let d = new Date(start.getFullYear(), start.getMonth(), 1); d <= end; d.setMonth(d.getMonth() + 1)) {
+      arr.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return arr;
+  }, []);
 
-  // Limit to last 12 months for readability
-  const displayMonths = useMemo(() => months.slice(-12), [months]);
+  // Display exactly Jan 2024 up to current month
+  const displayMonths = months;
 
   const processedData = useMemo(() => {
     type Bucket = { totalLeads: number; trialsCompleted: number; trialsScheduled: number; convertedLeads: number; totalLTV: number; totalVisits: number };
@@ -217,7 +218,7 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
               });
               const footerData = { group: 'TOTALS', months: totalsMap } as any;
 
-              return (
+              const table = (
                 <ModernDataTable
                   data={processedData}
                   columns={columns}
@@ -229,6 +230,43 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
                   className="rounded-lg"
                   headerGradient="from-slate-800 to-indigo-900"
                 />
+              );
+              // Simple AI notes based on displayed metric
+              const aiNotes: string[] = [];
+              if (processedData.length > 0) {
+                const latestKey = displayMonths[displayMonths.length - 1];
+                const best = [...processedData]
+                  .map(r => ({ name: r.group, v: metricVal(r.months.get(latestKey)) }))
+                  .sort((a,b) => (b.v - a.v))[0];
+                if (best && best.v > 0) aiNotes.push(`Top ${groupKey} in the latest month: ${best.name} (${metric === 'ltv' || metric === 'avgVisits' ? best.v.toFixed(1) : formatNumber(best.v)})`);
+                if (viewMode === 'growth') {
+                  const idx = displayMonths.length - 1;
+                  const prevKey = displayMonths[idx - 1];
+                  if (prevKey) {
+                    const growths = processedData.map(r => {
+                      const curr = metricVal(r.months.get(latestKey));
+                      const prev = metricVal(r.months.get(prevKey));
+                      return { name: r.group, g: prev > 0 ? ((curr - prev) / prev) * 100 : 0 };
+                    });
+                    const topG = [...growths].sort((a,b) => b.g - a.g)[0];
+                    if (topG && (topG.g !== 0)) aiNotes.push(`Strongest MoM growth: ${topG.name} (${topG.g > 0 ? '+' : ''}${topG.g.toFixed(1)}%)`);
+                  }
+                }
+              }
+              return (
+                <div>
+                  {table}
+                  <div className="border-t border-slate-200 p-4 bg-slate-50 mt-2 rounded-b-xl">
+                    <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
+                    {aiNotes.length ? (
+                      <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+                        {aiNotes.map((n, i) => <li key={i}>{n}</li>)}
+                      </ul>
+                    ) : (
+                      <div className="text-xs text-slate-500">No notable anomalies detected in the selected view.</div>
+                    )}
+                  </div>
+                </div>
               );
             })()}
           </motion.div>
