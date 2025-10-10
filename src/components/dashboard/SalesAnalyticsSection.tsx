@@ -247,7 +247,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           const productMatches = (
             item.cleanedProduct?.toLowerCase() === criteria.product?.toLowerCase() ||
             item.paymentItem?.toLowerCase() === criteria.product?.toLowerCase() ||
-            item.membershipName?.toLowerCase().includes(criteria.product?.toLowerCase() || '') ||
+            // Removed membershipName which does not exist on SalesData
             item.paymentItem?.toLowerCase().includes(criteria.product?.toLowerCase() || '')
           );
           
@@ -255,7 +255,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           
           if (productMatches && monthMatches) {
             console.log('✅ EXACT MATCH FOUND:', {
-              product: item.cleanedProduct || item.paymentItem || item.membershipName,
+              product: item.cleanedProduct || item.paymentItem,
               date: item.paymentDate,
               itemKey,
               criteriaMonth: criteria.month,
@@ -743,7 +743,8 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         data={allHistoricData} 
                         onRowClick={handleRowClick} 
                         collapsedGroups={collapsedGroups} 
-                        onGroupToggle={handleGroupToggle} 
+                        // Adapter to match MonthOnMonthTableNew's onGroupToggle signature (Set<string>)
+                        onGroupToggle={(groups) => setCollapsedGroups(new Set(groups))} 
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
                       />

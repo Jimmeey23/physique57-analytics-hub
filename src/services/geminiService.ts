@@ -44,6 +44,17 @@ class GeminiServiceImpl {
       const prompt = this.buildJSONPrompt(options);
       const text = await this.callModelWithRetries(prompt);
 
+      // Compute default diagnostics from local data in case model omits them
+      const focus = this.resolveFocusPeriod(options.tableData, options.columns);
+      const monthSet = this.collectMonthValues(options.tableData, options.columns);
+      const diagnosticsDefault = {
+        focus: focus.label,
+        comparedAgainst: {
+          mom: monthSet.has(focus.prev) ? focus.prevLabel : 'not available',
+          yoy: monthSet.has(focus.yoy) ? focus.yoyLabel : 'not available',
+        },
+      } as any;
+
       // Strict JSON parse first
       try {
         const parsed = JSON.parse(text);
@@ -53,7 +64,7 @@ class GeminiServiceImpl {
             keyInsights: Array.isArray(parsed.keyInsights) ? parsed.keyInsights : [],
             trends: Array.isArray(parsed.trends) ? parsed.trends : [],
             recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : undefined,
-            diagnostics: parsed.diagnostics,
+            diagnostics: parsed.diagnostics ?? diagnosticsDefault,
           };
         }
       } catch {}
@@ -65,6 +76,7 @@ class GeminiServiceImpl {
         keyInsights: sections.keyInsights || this.extractBulletPoints(text).slice(0, 8),
         trends: sections.trends || this.extractBulletPoints(text).slice(0, 6),
         recommendations: sections.recommendations || undefined,
+        diagnostics: diagnosticsDefault,
       };
     } catch (error: any) {
       console.error('Gemini API error:', error);
@@ -263,6 +275,24 @@ class GeminiServiceImpl {
       yoy: fmt(yoyDate),
       yoyLabel: `${monthName(yoyDate)} ${yoyDate.getFullYear()}`,
     };
+  }
+
+  // Collect month keys present in data for MoM/YoY availability checks
+  private collectMonthValues(data: any[], columns: TableColumn[]): Set<string> {
+    const monthKeyCandidates = ['monthYear', 'month', 'period'];
+    const dateColKey = columns.find(c => c.type === 'date')?.key;
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const set = new Set<string>();
+    data.forEach(r => {
+      for (const k of monthKeyCandidates) {
+        if (r[k] && typeof r[k] === 'string') set.add(r[k]);
+      }
+      if (dateColKey && r[dateColKey]) {
+        const d = new Date(r[dateColKey]);
+        if (!isNaN(d.getTime())) set.add(fmt(new Date(d.getFullYear(), d.getMonth(), 1)));
+      }
+    });
+    return set;
   }
 
   private async callModelWithRetries(prompt: string): Promise<string> {

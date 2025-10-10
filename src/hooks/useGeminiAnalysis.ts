@@ -45,11 +45,22 @@ export const useGeminiAnalysis = () => {
     
     try {
       const insights = await geminiService.generateQuickInsights(data, columns, tableName);
+      const focus = geminiService['resolveFocusPeriod'] ? (geminiService as any)['resolveFocusPeriod'](data, columns) : null;
+      const monthSet = geminiService['collectMonthValues'] ? (geminiService as any)['collectMonthValues'](data, columns) : new Set<string>();
+      const diagnostics = focus ? {
+        focus: focus.label,
+        comparedAgainst: {
+          mom: monthSet.has(focus.prev) ? focus.prevLabel : 'not available',
+          yoy: monthSet.has(focus.yoy) ? focus.yoyLabel : 'not available'
+        }
+      } : undefined;
+
       const result = {
         summary: `Quick analysis of ${data.length} records`,
         keyInsights: insights,
         trends: [],
-        recommendations: []
+        recommendations: [],
+        diagnostics
       };
       
       setState({

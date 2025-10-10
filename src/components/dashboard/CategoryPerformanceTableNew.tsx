@@ -143,18 +143,6 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     return months;
   }, []);
 
-  // monthlyData here is built in descending order (current back); show the entire range to Jan 2024
-  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
-
-  // Notify parent when ready
-  const [readySent, setReadySent] = React.useState(false);
-  React.useEffect(() => {
-    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
-      setReadySent(true);
-      onReady?.();
-    }
-  }, [readySent, processedData, visibleMonths, onReady]);
-
   const processedData = useMemo(() => {
     // Group by category
     const categoryGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
@@ -194,6 +182,18 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
 
     return categoryData.sort((a, b) => b.totalValue - a.totalValue);
   }, [data, selectedMetric, monthlyData]);
+
+  // monthlyData here is built in descending order (current back); show the entire range to Jan 2024
+  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
+
+  // Notify parent when ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
 
   const getGrowthPercentage = (current: number, previous: number) => {
     if (previous === 0 && current === 0) return null;

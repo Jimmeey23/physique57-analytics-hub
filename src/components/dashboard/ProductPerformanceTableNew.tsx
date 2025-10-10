@@ -125,16 +125,6 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
   // generateStandardMonthRange returns oldest -> newest; use full range reversed (newest -> oldest)
   const visibleMonths = useMemo(() => [...monthlyData].reverse(), [monthlyData]);
 
-  // Notify parent when heavy computation is ready
-  const [readySent, setReadySent] = React.useState(false);
-  React.useEffect(() => {
-    // consider processedData ready when categories present and months computed
-    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
-      setReadySent(true);
-      onReady?.();
-    }
-  }, [readySent, processedData, visibleMonths, onReady]);
-
   const processedData = useMemo(() => {
     // Group by category and product
     const categoryGroups = data.reduce((acc: Record<string, Record<string, SalesData[]>>, item) => {
@@ -190,6 +180,16 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
 
     return categoryData.sort((a, b) => b.totalValue - a.totalValue);
   }, [data, selectedMetric, monthlyData]);
+
+  // Notify parent when heavy computation is ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    // consider processedData ready when categories present and months computed
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
 
   const toggleGroup = useCallback((groupKey: string) => {
     setLocalCollapsedGroups(prev => {

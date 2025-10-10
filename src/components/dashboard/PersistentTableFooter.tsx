@@ -703,7 +703,9 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-600" />
-                  <h4 className="font-semibold text-slate-700">Previous Month Performance Analysis</h4>
+                  <h4 className="font-semibold text-slate-700">
+                    Performance Analysis — {aiResult?.diagnostics?.focus || 'Previous Month'}
+                  </h4>
                   {tableName && (
                     <Badge variant="outline" className="text-xs">
                       {tableName}
