@@ -239,104 +239,56 @@ export const ComprehensiveExecutiveDashboard = () => {
       </audio>
       
       <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-700 rounded-3xl text-white shadow-2xl">
-          {/* PDF Download Button - Top Right Corner */}
-          <div className="absolute top-6 right-6 z-50">
-            <Button
-              onClick={handleDownloadPDFReports}
-              disabled={isGeneratingPDF}
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm px-6 py-3 rounded-full font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-              size="lg"
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Generating PDFs...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-5 h-5 mr-2" />
-                  Download PDF Reports
-                  <Download className="w-4 h-4 ml-2" />
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="absolute inset-0 bg-black/20" />
-          
-          {/* Animated background elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-4 -left-4 w-32 h-32 bg-white/10 rounded-full animate-pulse"></div>
-            <div className="absolute top-20 right-10 w-24 h-24 bg-indigo-300/20 rounded-full animate-bounce delay-1000"></div>
-            <div className="absolute bottom-10 left-20 w-40 h-40 bg-purple-300/10 rounded-full animate-pulse delay-500"></div>
-          </div>
-          
-          <div className="relative p-12">
-            <div className="text-center space-y-6">
-              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 border border-white/20 animate-fade-in-up">
-                <BarChart3 className="w-6 h-6" />
-                <span className="font-semibold text-lg">Executive Dashboard</span>
-              </div>
-              
-              <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-white via-indigo-100 to-purple-100 bg-clip-text text-transparent animate-fade-in-up delay-200">
-                Executive Overview
-              </h1>
-              
-              <p className="text-xl text-indigo-100 max-w-4xl mx-auto leading-relaxed animate-fade-in-up delay-300">
-                Comprehensive real-time insights across Sales, Leads, Sessions, Trainers, and Client Conversions
-                {selectedLocation && ` - ${selectedLocation}`}
-              </p>
-              
-              <div className="flex items-center justify-center gap-4 animate-fade-in-up delay-400">
-                <Badge className="bg-white/10 text-white border-white/20 px-4 py-2">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Previous Month Data
-                </Badge>
-                <Badge className="bg-green-500/20 text-green-100 border-green-400/30 px-4 py-2">
-                  <Activity className="w-4 h-4 mr-2" />
-                  Live Analytics
-                </Badge>
-                <Badge className="bg-blue-500/20 text-blue-100 border-blue-400/30 px-4 py-2">
-                  <Users className="w-4 h-4 mr-2" />
-                  {previousMonthData.sales.length + previousMonthData.sessions.length + previousMonthData.newClients.length} Records
-                </Badge>
-              </div>
-
-              {/* Dashboard Navigation Button */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 max-w-3xl mx-auto">
-                <Button 
-                  onClick={handlePlayAudio}
-                  className="rounded-xl border border-white/30 bg-transparent text-white hover:border-white/50 px-6 py-3 text-base font-semibold"
-                  variant="ghost"
-                >
-                  {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                  {isPlaying ? 'Pause' : 'Play'}
-                </Button>
-                <AdvancedExportButton 
-                  salesData={previousMonthData.sales}
-                  sessionsData={previousMonthData.sessions}
-                  newClientData={previousMonthData.newClients}
-                  payrollData={previousMonthData.payroll}
-                  lateCancellationsData={[]}
-                  discountData={previousMonthData.discounts}
-                  defaultFileName="executive-dashboard-export"
-                  size="sm"
-                  variant="ghost"
-                  buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
-                />
-                <Button 
-                  onClick={() => window.location.href = '/'}
-                  className="rounded-xl border border-white/30 bg-transparent text-white hover:border-white/50 px-6 py-3 text-base font-semibold"
-                  variant="ghost"
-                >
-                  <Home className="w-5 h-5 mr-2" />
-                  Back to Main Dashboard
-                </Button>
-              </div>
-            </div>
-          </div>
+        {/* Hidden toolbar so hero can trigger actions without duplicating UI */}
+        <div className="hidden items-center justify-end gap-3">
+          <Button 
+            onClick={handlePlayAudio}
+            className="rounded-xl border border-slate-300/60 bg-transparent text-slate-800 hover:border-slate-500/60 px-5 py-2.5 text-sm font-semibold"
+            variant="ghost"
+          >
+            {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
+            {isPlaying ? 'Pause' : 'Play'}
+          </Button>
+          <AdvancedExportButton 
+            salesData={previousMonthData.sales}
+            sessionsData={previousMonthData.sessions}
+            newClientData={previousMonthData.newClients}
+            payrollData={previousMonthData.payroll}
+            lateCancellationsData={[]}
+            discountData={previousMonthData.discounts}
+            defaultFileName="executive-dashboard-export"
+            size="sm"
+            variant="ghost"
+            buttonClassName="rounded-xl border border-slate-300/60 text-slate-800 hover:border-slate-500/60"
+          />
+          <Button
+            id="exec-pdf-trigger"
+            onClick={handleDownloadPDFReports}
+            disabled={isGeneratingPDF}
+            className="rounded-xl border border-slate-300/60 bg-transparent text-slate-800 hover:border-slate-500/60 px-5 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="ghost"
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating PDFs...
+              </>
+            ) : (
+              <>
+                <FileText className="w-4 h-4 mr-2" />
+                Download PDF Reports
+                <Download className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+          <Button 
+            onClick={() => window.location.href = '/'}
+            className="rounded-xl border border-slate-300/60 bg-transparent text-slate-800 hover:border-slate-500/60 px-5 py-2.5 text-sm font-semibold"
+            variant="ghost"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Back to Main Dashboard
+          </Button>
         </div>
 
         {/* Filter Section with Location Selector */}

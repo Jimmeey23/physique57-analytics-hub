@@ -25,6 +25,8 @@ interface AdvancedExportButtonProps {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   buttonClassName?: string;
   buttonLabel?: string;
+  openRef?: React.RefObject<{ open: () => void; close: () => void }>;
+  renderTrigger?: boolean;
 }
 export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   salesData = [],
@@ -39,12 +41,27 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   variant = 'outline',
   buttonClassName,
   buttonLabel,
+  openRef,
+  renderTrigger = true,
 }) => {
   const {
     exportAllData,
     isExporting
   } = useAdvancedExport();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  React.useEffect(() => {
+    if (!openRef) return;
+    // Expose imperative open/close controls
+    (openRef as any).current = {
+      open: () => setIsDialogOpen(true),
+      close: () => setIsDialogOpen(false)
+    };
+    return () => {
+      if ((openRef as any).current) {
+        (openRef as any).current = null;
+      }
+    };
+  }, [openRef]);
   const [exportFormat, setExportFormat] = useState<'pdf' | 'csv'>('pdf');
   const [fileName, setFileName] = useState(defaultFileName || `dashboard-export-${format(new Date(), 'yyyy-MM-dd')}`);
   const [includeCharts, setIncludeCharts] = useState(false);
@@ -114,17 +131,19 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
     return total;
   };
   return <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          variant={variant} 
-          size={size} 
-          className={cn("gap-2 font-semibold bg-transparent text-base rounded-xl border backdrop-blur-sm transition-all duration-300 ease-out", buttonClassName)}
-          style={{ borderColor: 'var(--hero-accent, rgba(255,255,255,0.3))' }}
-        >
-          <Download className="w-4 h-4" />
-          {buttonLabel ?? 'Export All Data'}
-        </Button>
-      </DialogTrigger>
+      {renderTrigger && (
+        <DialogTrigger asChild>
+          <Button 
+            variant={variant} 
+            size={size} 
+            className={cn("gap-2 font-semibold bg-transparent text-base rounded-xl border backdrop-blur-sm transition-all duration-300 ease-out", buttonClassName)}
+            style={{ borderColor: 'var(--hero-accent, rgba(255,255,255,0.3))' }}
+          >
+            <Download className="w-4 h-4" />
+            {buttonLabel ?? 'Export All Data'}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
