@@ -673,18 +673,25 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
           <div className="flex justify-center mb-8">
             <TabsList className="premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full max-w-7xl min-h-24 overflow-hidden">
-              {locations.map(location => (
-                <TabsTrigger 
-                  key={location.id}
-                  value={location.id} 
-                  className="premium-tab-trigger group"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <span className="hidden sm:inline">{location.name}</span>
-                    <span className="sm:hidden">{location.name.replace(',','').split(' ')[0]}</span>
-                  </span>
-                </TabsTrigger>
-              ))}
+              {locations.map(location => {
+                const parts = location.name.split(',').map(s => s.trim());
+                const mainName = parts[0] || location.name;
+                const subName = parts[1] || '';
+                return (
+                  <TabsTrigger 
+                    key={location.id}
+                    value={location.id} 
+                    className="premium-tab-trigger group"
+                  >
+                    <span className="relative z-10 flex flex-col items-center leading-tight">
+                      <span className="font-extrabold text-base sm:text-lg">{mainName}</span>
+                      {subName && (
+                        <span className="text-xs sm:text-sm opacity-90">{subName}</span>
+                      )}
+                    </span>
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </div>
 
