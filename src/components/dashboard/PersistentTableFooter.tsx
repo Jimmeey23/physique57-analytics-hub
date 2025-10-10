@@ -74,6 +74,32 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
   const { isLoading: isAiLoading, result: aiResult, error: aiError, generateSummary, generateQuickInsights, reset: resetAi } = useGeminiAnalysis();
   const [showAiSummary, setShowAiSummary] = useState(false);
   const [aiSummaryType, setAiSummaryType] = useState<'comprehensive' | 'insights' | 'trends' | 'brief'>('comprehensive');
+
+  // Diagnostics adapter: format focus and comparison availability for display
+  const renderDiagnostics = () => {
+    if (!aiResult || !aiResult.diagnostics) return null;
+    const mom = aiResult.diagnostics.comparedAgainst?.mom ?? 'not available';
+    const yoy = aiResult.diagnostics.comparedAgainst?.yoy ?? 'not available';
+    const badgeClass = 'text-[10px] md:text-xs px-2 py-1 rounded-full border shadow-sm';
+    const unavailable = 'not available';
+    return (
+      <div className="flex flex-wrap items-center gap-2 mt-1">
+        <Badge variant="outline" className="text-[10px] md:text-xs">
+          Focus: {aiResult.diagnostics.focus || 'Previous Month'}
+        </Badge>
+        <span className="text-[10px] md:text-xs text-slate-400">•</span>
+        <span className={cn(badgeClass, mom === unavailable ? 'border-slate-300 text-slate-400 bg-white' : 'border-blue-200 text-blue-700 bg-blue-50')}
+          title="Month-over-month comparison">
+          MoM: {mom}
+        </span>
+        <span className="text-[10px] md:text-xs text-slate-400">•</span>
+        <span className={cn(badgeClass, yoy === unavailable ? 'border-slate-300 text-slate-400 bg-white' : 'border-emerald-200 text-emerald-700 bg-emerald-50')}
+          title="Year-over-year comparison">
+          YoY: {yoy}
+        </span>
+      </div>
+    );
+  };
   
   // Real-time formatting with immediate application and preview update
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -684,6 +710,8 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                     </Badge>
                   )}
                 </div>
+                {/* Diagnostics: Focus/MoM/YoY */}
+                {renderDiagnostics()}
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
