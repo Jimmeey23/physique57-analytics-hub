@@ -65,14 +65,22 @@ const safeGet = (row: any[], index: number): string => {
 };
 
 const safeGetNumber = (row: any[], index: number): number => {
-  const value = safeGet(row, index);
+  let value = safeGet(row, index);
+  if (!value) return 0;
+  // Guard against date-like and non-numeric strings in numeric fields
+  if (value.includes('/') || value.includes('-')) return 0;
+  // Strip currency symbols/commas
+  value = value.replace(/[₹$,]/g, '');
   const parsed = parseFloat(value);
   return isNaN(parsed) ? 0 : parsed;
 };
 
 const safeGetInt = (row: any[], index: number): number => {
   const value = safeGet(row, index);
-  const parsed = parseInt(value);
+  if (!value) return 0;
+  // Date-like string should not be parsed as int
+  if (value.includes('/') || value.includes('-')) return 0;
+  const parsed = parseInt(value, 10);
   return isNaN(parsed) ? 0 : parsed;
 };
 
@@ -120,8 +128,9 @@ export const useLeadsData = () => {
       
       const accessToken = await getAccessToken();
       
+      const sheetName = encodeURIComponent('◉ Leads');
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/◉ Leads?alt=json`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?alt=json`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,

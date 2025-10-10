@@ -47,8 +47,10 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
       }
       
       acc[source].totalLeads += 1;
-      if (lead.stage?.includes('Trial')) acc[source].trialsScheduled += 1;
-      if (lead.stage === 'Trial Completed') acc[source].trialsCompleted += 1;
+  const ts = (lead.trialStatus || '').toLowerCase();
+  const st = (lead.stage || '').toLowerCase();
+  if ((ts.includes('trial') && !ts.includes('completed')) || (st.includes('trial') && !st.includes('completed'))) acc[source].trialsScheduled += 1;
+  if (lead.trialStatus === 'Trial Completed' || lead.stage === 'Trial Completed') acc[source].trialsCompleted += 1;
       if (lead.conversionStatus === 'Converted') acc[source].converted += 1;
       if (lead.stage?.includes('Proximity')) acc[source].proximityIssues += 1;
       acc[source].totalLTV += lead.ltv || 0;
@@ -75,7 +77,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   // Conversion by Stage Analytics
   const conversionByStage = useMemo(() => {
     const stageStats = data.reduce((acc, lead) => {
-      const stage = lead.stage || 'Unknown';
+  const stage = lead.stage || 'Unknown';
       if (!acc[stage]) {
         acc[stage] = {
           totalLeads: 0,
@@ -169,26 +171,27 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
   // Most Common Stage Analytics
   const mostCommonStages = useMemo(() => {
+    const total = data.length || 1;
     const stageCounts = data.reduce((acc, lead) => {
-      const stage = lead.stage || 'Unknown';
-      if (!acc[stage]) {
-        acc[stage] = { count: 0, converted: 0, avgLTV: 0, totalLTV: 0 };
+      const key = lead.stage || 'Unknown';
+      if (!acc[key]) {
+        acc[key] = { count: 0, converted: 0, totalLTV: 0 };
       }
-      acc[stage].count += 1;
-      if (lead.conversionStatus === 'Converted') acc[stage].converted += 1;
-      acc[stage].totalLTV += lead.ltv || 0;
+      acc[key].count += 1;
+      if (lead.conversionStatus === 'Converted') acc[key].converted += 1;
+      acc[key].totalLTV += lead.ltv || 0;
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, { count: number; converted: number; totalLTV: number }>);
 
     return Object.entries(stageCounts)
-      .map(([stage, data]) => ({
+      .map(([stage, s]) => ({
         stage,
-        leadCount: data.count,
-        percentage: (data.count / data.length) * 100,
-        converted: data.converted,
-        conversionRate: data.count > 0 ? (data.converted / data.count) * 100 : 0,
-        avgLTV: data.count > 0 ? data.totalLTV / data.count : 0,
-        stagePopularity: (data.count / data.length) * 100
+        leadCount: s.count,
+        percentage: (s.count / total) * 100,
+        converted: s.converted,
+        conversionRate: s.count > 0 ? (s.converted / s.count) * 100 : 0,
+        avgLTV: s.count > 0 ? s.totalLTV / s.count : 0,
+        stagePopularity: (s.count / total) * 100
       }))
       .sort((a, b) => b.leadCount - a.leadCount)
       .slice(0, 10);

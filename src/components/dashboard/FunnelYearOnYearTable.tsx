@@ -7,6 +7,7 @@ import { Calendar, BarChart3, TrendingUp, TrendingDown, Filter } from 'lucide-re
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 interface FunnelYearOnYearTableProps {
   allData: LeadsData[]; // Use all data, not filtered
   onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
@@ -17,11 +18,12 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   onDrillDown
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('totalLeads');
+  const [viewMode, setViewMode] = useState<'values' | 'growth'>('values');
 
   const tableVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: { duration: 0.6 }
     }
@@ -29,10 +31,10 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
 
   const headerVariants = {
     hidden: { opacity: 0, y: -10 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
-      transition: { duration: 0.4, delay: 0.2 }
+      transition: { duration: 0.4 }
     }
   };
   const processedData = useMemo(() => {
@@ -60,9 +62,11 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
         }
         const yearMonthData = acc[source][yearMonthKey];
         yearMonthData.totalLeads += 1;
-        if (lead.stage === 'Trial Completed') yearMonthData.trialsCompleted += 1;
-        if (lead.stage?.includes('Trial')) yearMonthData.trialsScheduled += 1;
-        if (lead.stage === 'Proximity Issues') yearMonthData.proximityIssues += 1;
+  const ts = (lead.trialStatus || '').toLowerCase();
+  const st = (lead.stage || '').toLowerCase();
+  if (lead.trialStatus === 'Trial Completed' || lead.stage === 'Trial Completed') yearMonthData.trialsCompleted += 1;
+  if ((ts.includes('trial') && !ts.includes('completed')) || (st.includes('trial') && !st.includes('completed'))) yearMonthData.trialsScheduled += 1;
+  if (st.includes('proximity') || (lead.remarks || '').toLowerCase().includes('proximity')) yearMonthData.proximityIssues += 1;
         if (lead.conversionStatus === 'Converted') yearMonthData.convertedLeads += 1;
         yearMonthData.totalLTV += lead.ltv || 0;
         yearMonthData.totalVisits += lead.visits || 0;
@@ -295,7 +299,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     header: 'Lead Source',
     render: (value: string) => <div className="font-semibold text-slate-800 min-w-[120px] truncate">
           {value === 'TOTALS' ? (
-            <span className="text-white font-bold uppercase tracking-wide">TOTALS</span>
+            <span className="text-slate-900 font-extrabold uppercase tracking-wide">TOTALS</span>
           ) : (
             value
           )}
@@ -305,9 +309,44 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   }, ...months.flatMap(monthInfo => [{
     key: `${monthInfo.name}_${currentYear}`,
     header: `${monthInfo.name} ${currentYear}`,
-    render: (value: any) => <div className="text-center font-medium text-xs">
-            {formatValue(value, selectedMetric)}
-          </div>,
+    render: (value: any, row: any) => {
+      // If growth view, show YoY growth vs previous year in the current year column
+      if (viewMode === 'growth') {
+        const currentValue = value;
+        const previousValue = row[`${monthInfo.name}_${currentYear - 1}`];
+        let growth: number | null = null;
+        let growthDisplay = '';
+        if (currentValue && previousValue && typeof currentValue === 'object' && typeof previousValue === 'object') {
+          const current = currentValue[selectedMetric];
+          const previous = previousValue[selectedMetric];
+          if (current !== undefined && previous !== undefined && previous !== 0) {
+            growth = ((current - previous) / previous) * 100;
+            if (Math.abs(growth) > 0.1) {
+              growthDisplay = growth > 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+            } else {
+              growthDisplay = '0.0%';
+            }
+          }
+        }
+        return (
+          <div className="text-center text-xs font-semibold">
+            {growthDisplay ? (
+              <span className={cn(growth && growth > 0 ? 'text-green-600' : 'text-red-600')}>
+                {growthDisplay}
+              </span>
+            ) : (
+              <span className="text-slate-400">-</span>
+            )}
+          </div>
+        );
+      }
+      // Values view: show the metric value
+      return (
+        <div className="text-center font-medium text-xs">
+          {formatValue(value, selectedMetric)}
+        </div>
+      );
+    },
     align: 'center' as const,
     className: 'min-w-[90px]'
   }, {
@@ -316,33 +355,34 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     render: (value: any, row: any) => {
       const currentValue = row[`${monthInfo.name}_${currentYear}`];
       const previousValue = value;
-      let growth = null;
-      let growthDisplay = '';
-      
-      if (currentValue && previousValue && typeof currentValue === 'object' && typeof previousValue === 'object') {
-        const current = currentValue[selectedMetric];
-        const previous = previousValue[selectedMetric];
-        if (current !== undefined && previous !== undefined && previous !== 0) {
-          growth = ((current - previous) / previous) * 100;
-          if (Math.abs(growth) > 0.1) {
-            growthDisplay = growth > 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+      if (viewMode === 'growth') {
+        // Show only growth % (rendered in current-year column), keep baseline column minimal
+        let growth: number | null = null;
+        let growthDisplay = '';
+        if (currentValue && previousValue && typeof currentValue === 'object' && typeof previousValue === 'object') {
+          const current = currentValue[selectedMetric];
+          const previous = previousValue[selectedMetric];
+          if (current !== undefined && previous !== undefined && previous !== 0) {
+            growth = ((current - previous) / previous) * 100;
+            if (Math.abs(growth) > 0.1) {
+              growthDisplay = growth > 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+            } else {
+              growthDisplay = '0.0%';
+            }
           }
         }
+        return (
+          <div className="text-center text-xs text-slate-400">—</div>
+        );
       }
-      
-      return <div className="text-center">
+      // Values view: show the previous year's value only
+      return (
+        <div className="text-center">
           <div className="font-medium text-slate-600 text-xs">
             {formatValue(value, selectedMetric)}
           </div>
-          {growthDisplay && (
-            <div className={cn(
-              "text-xs font-semibold mt-0.5",
-              growth && growth > 0 ? "text-green-600" : "text-red-600"
-            )}>
-              {growthDisplay}
-            </div>
-          )}
-        </div>;
+        </div>
+      );
     },
     align: 'center' as const,
     className: 'min-w-[90px]'
@@ -410,7 +450,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
               </TabsList>
             </Tabs>
             
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
               <Badge 
                 variant="outline" 
                 className="bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-700 border-red-300/50"
@@ -418,6 +458,30 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                 <BarChart3 className="w-3 h-3 mr-1" />
                 {metricTabs.find(t => t.value === selectedMetric)?.label}
               </Badge>
+
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-[11px] text-slate-600">View:</span>
+                <div className="inline-flex rounded-md overflow-hidden border border-red-200/60 bg-white/70 backdrop-blur px-0.5">
+                  <button
+                    className={cn(
+                      'px-2 py-1 text-[11px] font-medium transition-colors',
+                      viewMode === 'values' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' : 'text-slate-700'
+                    )}
+                    onClick={() => setViewMode('values')}
+                  >
+                    Values
+                  </button>
+                  <button
+                    className={cn(
+                      'px-2 py-1 text-[11px] font-medium transition-colors',
+                      viewMode === 'growth' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' : 'text-slate-700'
+                    )}
+                    onClick={() => setViewMode('growth')}
+                  >
+                    % Growth
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -437,7 +501,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
               footerData={totals} 
               maxHeight="400px" 
               className="rounded-lg" 
-              headerGradient="from-red-500 to-red-600" 
+              headerGradient="from-slate-800 to-indigo-900" 
               onRowClick={(row) => {
                 const filteredData = allData.filter(lead => lead.source === row.source);
                 onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');

@@ -48,8 +48,18 @@ export const FunnelMetricCards: React.FC<FunnelMetricCardsProps> = ({ data, onCa
     }
 
     const leadsReceived = data.length;
-    const trialsCompleted = data.filter(lead => lead.stage === 'Trial Completed').length;
-    const trialsScheduled = data.filter(lead => lead.stage?.includes('Trial')).length;
+    // Prefer trialStatus over stage to avoid double-counting
+    const trialsCompleted = data.filter(
+      lead => lead.trialStatus === 'Trial Completed' || lead.stage === 'Trial Completed'
+    ).length;
+    const trialsScheduled = data.filter(lead => {
+      const ts = (lead.trialStatus || '').toLowerCase();
+      const st = (lead.stage || '').toLowerCase();
+      // Count scheduled/booked trials but exclude completed
+      const statusSuggestsTrial = ts.includes('trial') && !ts.includes('completed');
+      const stageSuggestsTrial = st.includes('trial') && !st.includes('completed');
+      return statusSuggestsTrial || stageSuggestsTrial;
+    }).length;
     const proximityIssues = data.filter(lead => lead.stage?.includes('Proximity') || lead.remarks?.toLowerCase().includes('proximity')).length;
     const convertedLeads = data.filter(lead => lead.conversionStatus === 'Converted').length;
     
