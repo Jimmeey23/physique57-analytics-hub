@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
+import { useToast } from '@/hooks/use-toast';
 import { 
   TrendingUp, 
   Users, 
@@ -22,7 +23,10 @@ import {
   Clock,
   Home,
   Play,
-  Pause
+  Pause,
+  FileText,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { ExecutiveLocationSelector } from './ExecutiveLocationSelector';
 import { ExecutiveMetricCardsGrid } from './ExecutiveMetricCardsGrid';
@@ -41,14 +45,17 @@ import { useNewClientData } from '@/hooks/useNewClientData';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { generateLocationReports } from '@/services/executivePDFService';
 
 export const ComprehensiveExecutiveDashboard = () => {
   const [showSourceData, setShowSourceData] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { filters } = useGlobalFilters();
   const { setLoading } = useGlobalLoading();
+  const { toast } = useToast();
 
   // Load real data from hooks
   const { data: salesData, loading: salesLoading } = useSalesData();
@@ -178,6 +185,51 @@ export const ComprehensiveExecutiveDashboard = () => {
     }
   };
 
+  const handleDownloadPDFReports = async () => {
+    setIsGeneratingPDF(true);
+    
+    try {
+      toast({
+        title: "Generating PDF Reports",
+        description: "Creating comprehensive reports for all locations...",
+      });
+
+      const now = new Date();
+      const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const monthYear = previousMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      // Prepare all data
+      const reportData = {
+        sales: salesData || [],
+        sessions: sessionsData || [],
+        payroll: payrollData || [],
+        newClients: newClientsData || [],
+        leads: leadsData || [],
+        discounts: discountData || [],
+        lateCancellations: []
+      };
+
+      // Generate reports for all locations
+      const locationsToGenerate = availableLocations.length > 0 ? availableLocations : ['All Locations'];
+      
+      await generateLocationReports(reportData as any, locationsToGenerate, monthYear);
+
+      toast({
+        title: "Success!",
+        description: `Generated ${locationsToGenerate.length} PDF report(s)`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF reports:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF reports. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 p-6">
       {/* Hidden audio element */}
@@ -189,6 +241,29 @@ export const ComprehensiveExecutiveDashboard = () => {
       <div className="max-w-[1600px] mx-auto space-y-8">
         {/* Header */}
         <div className="relative overflow-hidden bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-700 rounded-3xl text-white shadow-2xl">
+          {/* PDF Download Button - Top Right Corner */}
+          <div className="absolute top-6 right-6 z-50">
+            <Button
+              onClick={handleDownloadPDFReports}
+              disabled={isGeneratingPDF}
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm px-6 py-3 rounded-full font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              size="lg"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Generating PDFs...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-5 h-5 mr-2" />
+                  Download PDF Reports
+                  <Download className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+
           <div className="absolute inset-0 bg-black/20" />
           
           {/* Animated background elements */}
