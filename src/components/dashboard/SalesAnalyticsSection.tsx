@@ -672,15 +672,17 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       <div className="container mx-auto px-6 space-y-6">
         <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
           <div className="flex justify-center mb-8">
-            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-4 w-full max-w-7xl min-h-24 overflow-hidden">
+            <TabsList className="premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full max-w-7xl min-h-24 overflow-hidden">
               {locations.map(location => (
-                                <TabsTrigger 
+                <TabsTrigger 
                   key={location.id}
                   value={location.id} 
-                  className="relative px-6 py-3 font-semibold transition-all duration-300 rounded-full overflow-hidden group data-[state=active]:text-white"
+                  className="premium-tab-trigger group"
                 >
-                  <span className="relative z-10">{location.name}</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300 rounded-full" />
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <span className="hidden sm:inline">{location.name}</span>
+                    <span className="sm:hidden">{location.name.replace(',','').split(' ')[0]}</span>
+                  </span>
                 </TabsTrigger>
               ))}
             </TabsList>
