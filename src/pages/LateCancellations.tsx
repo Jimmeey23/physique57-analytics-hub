@@ -396,16 +396,28 @@ const LateCancellations = () => {
           {/* Location Tabs */}
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full mb-8">
             <div className="flex justify-center mb-8">
-              <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid w-full max-w-4xl min-h-16 overflow-hidden" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
-                {locations.map(location => (
-                  <TabsTrigger 
-                    key={location.id} 
-                    value={location.id} 
-                    className="relative px-4 py-3 font-semibold text-gray-800 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 text-sm rounded-xl"
-                  >
-                    {location.name}
-                  </TabsTrigger>
-                ))}
+              <TabsList className="location-tabs grid w-full max-w-4xl overflow-visible" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
+                {locations.map(location => {
+                  const parts = location.name.split(',').map(s => s.trim());
+                  const mainName = parts[0] || location.name;
+                  const subName = parts[1] || '';
+                  return (
+                    <TabsTrigger
+                      key={location.id}
+                      value={location.id}
+                      className="location-tab-trigger group data-[state=active]:[--tab-accent:var(--hero-accent)]"
+                    >
+                      <span className="relative z-10 flex flex-col items-center leading-tight">
+                        <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">
+                          {mainName}
+                        </span>
+                        {subName && (
+                          <span className="text-xs sm:text-sm opacity-90">{subName}</span>
+                        )}
+                      </span>
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
             </div>
 

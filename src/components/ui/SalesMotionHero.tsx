@@ -211,13 +211,13 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
       onMouseMove={handleMouseMove}
       className={cn(
         'relative overflow-hidden bg-gray-950 text-gray-200 px-4',
-        compact ? 'py-16 min-h-[400px]' : 'py-20 min-h-[440px]'
+        compact ? 'py-24 min-h-[460px]' : 'py-24 min-h-[400px]'
       )}
     >
       {/* Extreme-corner CTAs */}
       {(primaryAction || secondaryAction || extra) && (
         <div className="absolute inset-x-0 top-4 z-20">
-          <div className="flex items-center justify-between px-2">
+          <div className="flex items-center justify-between px-6">
             <div className="flex items-center">
               {primaryAction && (
                 <motion.button

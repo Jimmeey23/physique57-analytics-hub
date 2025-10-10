@@ -217,13 +217,21 @@ export default function FunnelLeads() {
         <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 overflow-hidden">
           <CardContent className="p-2">
             <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-2 rounded-2xl h-auto gap-2">
-                {locations.map(location => <TabsTrigger key={location.id} value={location.id} className="rounded-xl px-6 py-4 font-semibold text-sm transition-all duration-300">
-                    <div className="text-center">
-                      <div className="font-bold">{location.name}</div>
-                      <div className="text-xs opacity-75">{location.fullName}</div>
-                    </div>
-                  </TabsTrigger>)}
+              <TabsList className="location-tabs grid w-full grid-cols-4 gap-2 overflow-visible">
+                {locations.map(location => (
+                  <TabsTrigger
+                    key={location.id}
+                    value={location.id}
+                    className="location-tab-trigger group data-[state=active]:[--tab-accent:var(--hero-accent)]"
+                  >
+                    <span className="relative z-10 flex flex-col items-center leading-tight">
+                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">
+                        {location.name}
+                      </span>
+                      <span className="text-xs sm:text-sm opacity-90">{location.fullName}</span>
+                    </span>
+                  </TabsTrigger>
+                ))}
               </TabsList>
 
               {/* Tab Content */}

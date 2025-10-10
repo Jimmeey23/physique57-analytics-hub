@@ -460,7 +460,7 @@ const ClientRetention = () => {
           <DashboardMotionHero 
             title="Client Conversion & Retention" 
             subtitle="Comprehensive client acquisition and retention analysis across all customer touchpoints" 
-            metrics={heroMetrics} 
+            metrics={heroMetrics}
             extra={exportButton}
           />
         </div>
@@ -472,75 +472,31 @@ const ClientRetention = () => {
               <EnhancedClientConversionFilterSection filters={filters} onFiltersChange={setFilters} locations={uniqueLocations} trainers={uniqueTrainers} membershipTypes={uniqueMembershipTypes} />
             </div>
 
-            {/* Enhanced Location Tabs */}
+            {/* Enhanced Location Tabs - unified styling */}
             <div className="flex justify-center mb-8">
-              <div className="glass-card glow-pulse p-2 rounded-2xl shadow-lg border border-white/30 grid grid-cols-4 w-full max-w-4xl">
-                <button 
-                  onClick={() => setSelectedLocation('All Locations')} 
-                  className={cn(
-                    "px-6 py-3 rounded-xl transition-all duration-500 font-medium text-sm flex flex-col items-center gap-2 transform hover:scale-105",
-                    selectedLocation === 'All Locations' 
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl" 
-                      : "text-slate-800 hover:text-slate-700 hover:bg-white/20 backdrop-blur-sm"
-                  )}
-                >
-                  <Users className="w-6 h-6" />
-                  <div className="text-center">
-                    <div className="font-bold">All Locations</div>
-                    <div className="text-xs opacity-80">({data.length})</div>
-                  </div>
-                </button>
-              <button 
-                onClick={() => setSelectedLocation('Kwality House, Kemps Corner')} 
-                className={cn(
-                  "px-6 py-3 rounded-xl transition-all duration-500 font-medium text-sm flex flex-col items-center gap-2 transform hover:scale-105",
-                  selectedLocation === 'Kwality House, Kemps Corner' 
-                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl" 
-                    : "text-slate-800 hover:text-slate-700 hover:bg-white/20 backdrop-blur-sm"
-                )}
-              >
-                <Users className="w-6 h-6" />
-                <div className="text-center">
-                  <div className="font-bold">Kwality House</div>
-                  <div className="text-xs opacity-80">Kemps Corner ({data.filter(client => client.firstVisitLocation === 'Kwality House, Kemps Corner' || client.homeLocation === 'Kwality House, Kemps Corner').length})</div>
+              <div className="w-full max-w-4xl">
+                <div className="grid grid-cols-4 location-tabs">
+                  {[
+                    { id: 'All Locations', name: 'All Locations', sub: `(${data.length})` },
+                    { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${data.filter(client => client.firstVisitLocation === 'Kwality House, Kemps Corner' || client.homeLocation === 'Kwality House, Kemps Corner').length})` },
+                    { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${data.filter(client => client.firstVisitLocation === 'Supreme HQ, Bandra' || client.homeLocation === 'Supreme HQ, Bandra').length})` },
+                    { id: 'Kenkere House, Bengaluru', name: 'Kenkere House', sub: `Bengaluru (${data.filter(client => (client.firstVisitLocation?.includes('Kenkere') || client.homeLocation?.includes('Kenkere'))).length})` },
+                  ].map(loc => (
+                    <button
+                      key={loc.id}
+                      onClick={() => setSelectedLocation(loc.id)}
+                      className={`location-tab-trigger group ${selectedLocation === loc.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                      data-state={selectedLocation === loc.id ? 'active' : 'inactive'}
+                    >
+                      <span className="relative z-10 flex flex-col items-center leading-tight">
+                        <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{loc.name}</span>
+                        <span className="text-xs sm:text-sm opacity-90">{loc.sub}</span>
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              </button>
-              <button 
-                onClick={() => setSelectedLocation('Supreme HQ, Bandra')} 
-                className={cn(
-                  "px-6 py-3 rounded-xl transition-all duration-500 font-medium text-sm flex flex-col items-center gap-2 transform hover:scale-105",
-                  selectedLocation === 'Supreme HQ, Bandra' 
-                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl" 
-                    : "text-slate-800 hover:text-slate-700 hover:bg-white/20 backdrop-blur-sm"
-                )}
-              >
-                <Users className="w-6 h-6" />
-                <div className="text-center">
-                  <div className="font-bold">Supreme HQ</div>
-                  <div className="text-xs opacity-80">Bandra ({data.filter(client => client.firstVisitLocation === 'Supreme HQ, Bandra' || client.homeLocation === 'Supreme HQ, Bandra').length})</div>
-                </div>
-              </button>
-              <button 
-                onClick={() => setSelectedLocation('Kenkere House, Bengaluru')} 
-                className={cn(
-                  "px-6 py-3 rounded-xl transition-all duration-500 font-medium text-sm flex flex-col items-center gap-2 transform hover:scale-105",
-                  selectedLocation === 'Kenkere House, Bengaluru' 
-                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl" 
-                    : "text-slate-800 hover:text-slate-700 hover:bg-white/20 backdrop-blur-sm"
-                )}
-              >
-                <Users className="w-6 h-6" />
-                <div className="text-center">
-                  <div className="font-bold">Kenkere House</div>
-                  <div className="text-xs opacity-80">Bengaluru ({data.filter(client => {
-                    const firstLoc = (client.firstVisitLocation || '').toLowerCase();
-                    const homeLoc = (client.homeLocation || '').toLowerCase();
-                    return firstLoc.includes('kenkere') || homeLoc.includes('kenkere') || firstLoc.includes('bengaluru') || homeLoc.includes('bengaluru') || client.firstVisitLocation === 'Kenkere House' || client.homeLocation === 'Kenkere House';
-                  }).length})</div>
-                </div>
-              </button>
+              </div>
             </div>
-          </div>
 
           {/* Enhanced Metric Cards */}
           <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2">
