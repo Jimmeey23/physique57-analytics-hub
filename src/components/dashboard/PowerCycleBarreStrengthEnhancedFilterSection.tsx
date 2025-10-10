@@ -20,6 +20,7 @@ import {
   Dumbbell
 } from 'lucide-react';
 import { PayrollData } from '@/types/dashboard';
+import { getPreviousMonthPeriod } from '@/utils/dateUtils';
 
 interface PowerCycleBarreStrengthEnhancedFilterSectionProps {
   data: PayrollData[];
@@ -57,6 +58,16 @@ export const PowerCycleBarreStrengthEnhancedFilterSection: React.FC<PowerCycleBa
       label: monthYear
     }))
   ];
+
+  // Default period to previous month if not set and available
+  React.useEffect(() => {
+    if (selectedPeriod !== 'all') return;
+    if (!filterOptions.monthYears || filterOptions.monthYears.length === 0) return;
+    const prev = getPreviousMonthPeriod();
+    if (filterOptions.monthYears.includes(prev)) {
+      onPeriodChange(prev);
+    }
+  }, [filterOptions.monthYears, selectedPeriod, onPeriodChange]);
 
   const hasActiveFilters = selectedLocation !== 'all' || 
     selectedPeriod !== 'all' || 

@@ -13,7 +13,7 @@ import { PowerCycleBarreStrengthInsightsSection } from './PowerCycleBarreStrengt
 import { PowerCycleBarreStrengthDrillDownModal } from './PowerCycleBarreStrengthDrillDownModal';
 import { PayrollData } from '@/types/dashboard';
 import { getThemeColors, getActiveTabClasses } from '@/utils/colorThemes';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getPreviousMonthDateRange, getPreviousMonthPeriod } from '@/utils/dateUtils';
 import { 
   BarChart3, 
   Activity, 
@@ -35,12 +35,27 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
+  const [didSetDefaultPeriod, setDidSetDefaultPeriod] = useState(false);
   
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Get powercycle theme colors
   const theme = getThemeColors('powercycle');
+
+  // On first mount/data load, default period to previous month if available
+  React.useEffect(() => {
+    if (didSetDefaultPeriod) return;
+    if (!data || data.length === 0) return;
+    if (selectedPeriod !== 'all') return;
+
+    const prev = getPreviousMonthPeriod(); // 'YYYY-MM'
+    const hasPrev = new Set(data.map(d => d.monthYear)).has(prev);
+    if (hasPrev) {
+      setSelectedPeriod(prev);
+      setDidSetDefaultPeriod(true);
+    }
+  }, [data, selectedPeriod, didSetDefaultPeriod]);
 
   // Filter data based on selected filters
   const filteredData = useMemo(() => {

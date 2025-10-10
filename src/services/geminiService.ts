@@ -1,463 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getPreviousMonthPeriod } from '@/utils/dateUtils';
 
-export class GeminiService {
-  private model: any;
-
-  constructor(model: any) {
-    this.model = model;
-  }
-
-  /**
-   * Generate AI summary of table data using Gemini
-   */
-  async generateTableSummary(options: TableSummaryOptions): Promise<GeminiSummaryResult> {
-  try {
-    if (!options.tableData || options.tableData.length === 0) {
-      return {
-        summary: 'No data available for analysis.',
-        keyInsights: ['No data to analyze'],
-        trends: ['Insufficient data for trend analysis'],
-        error: 'No data provided'
-      };
-    }
-
-    const prompt = this.createAnalysisPrompt(options);
-    
-    const result = await this.model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse the structured response
-    const sections = this.parseGeminiResponse(text);
-
-    return {
-      summary: sections.summary || text.slice(0, 1000) + (text.length > 1000 ? '...' : ''),
-      keyInsights: sections.keyInsights || this.extractBulletPoints(text).slice(0, 8),
-      trends: sections.trends || this.extractBulletPoints(text).slice(0, 6),
-      recommendations: sections.recommendations || undefined
-    };
-    
-  } catch (error: any) {
-    console.error('Gemini API error:', error);
-    
-    // Provide more specific error messages
-    let errorMessage = 'AI analysis temporarily unavailable. Please try again later.';
-    if (error?.status === 404) {
-      errorMessage = 'Model not found. Please check the Gemini model configuration.';
-    } else if (error?.status === 429) {
-      errorMessage = 'Rate limit exceeded. Please try again in a few moments.';
-    } else if (error?.status === 403) {
-      errorMessage = 'API access denied. Please check your API key.';
-    }
-    
-    return {
-      summary: errorMessage,
-      keyInsights: ['AI service encountered an error'],
-      trends: ['Unable to analyze trends at this time'],
-      error: error?.message || error?.status || 'Unknown error occurred'
-    };
-  }
-}
-
-/**
- * Create an enhanced, detailed prompt for Gemini with comprehensive month-over-month analysis
- */
-private createAnalysisPrompt(options: TableSummaryOptions): string {
-  const { tableData, columns, tableName, context, summaryType, includeRecommendations, maxRows } = options;
-  const stats = this.extractTableStatistics(tableData, columns);
-  const limitedData = maxRows ? tableData.slice(0, maxRows) : tableData;
-
-  // Detect if data has time-based information for temporal analysis
-  const hasDateColumn = columns.some(col => col.type === 'date');
-  const dateColumns = columns.filter(col => col.type === 'date');
-  
-  // Group data by time periods if date columns exist
-  let timeBasedAnalysis = '';
-  if (hasDateColumn && dateColumns.length > 0) {
-    timeBasedAnalysis = this.generateTimeBasedContext(tableData, dateColumns[0]);
-  }
-
-  let prompt = `You are a senior business intelligence analyst with expertise in the fitness and wellness industry, specializing in Indian market dynamics, member behavior analysis, and revenue optimization. Your task is to perform a comprehensive, data-driven analysis that executives can use for strategic decision-making.
-
-**CRITICAL REQUIREMENT: THE ENTIRE ANALYSIS MUST FOCUS SPECIFICALLY ON SEPTEMBER 2025 PERFORMANCE. Every section, insight, and recommendation must directly relate to September 2025 data and performance metrics.**
-
-═══════════════════════════════════════════════════════════════════════════════
-📊 DATA CONTEXT & OVERVIEW - SEPTEMBER 2025 FOCUS
-═══════════════════════════════════════════════════════════════════════════════
-
-**Business Entity**: ${tableName || 'Business Performance Analytics'}
-**Primary Analysis Focus**: **SEPTEMBER 2025 PERFORMANCE ASSESSMENT**
-**Context**: ${context || 'September 2025 business performance tracking and optimization'}
-**Dataset Size**: ${stats.totalRows} total records
-**Analysis Framework**: ${summaryType || 'comprehensive'} deep-dive analysis of September 2025
-**Currency**: All financial figures in Indian Rupees (₹), presented in lakhs for amounts ≥ ₹1,00,000
-
-**SEPTEMBER 2025 ANALYSIS PRIORITY:**
-- Primary focus on September 2025 performance metrics
-- Compare September 2025 vs August 2025 (month-over-month)
-- Compare September 2025 vs September 2024 (year-over-year)
-- Analyze September 2025 trends and patterns
-- Identify September 2025 specific opportunities and challenges
-
-═══════════════════════════════════════════════════════════════════════════════
-📋 DATA STRUCTURE & SCHEMA
-═══════════════════════════════════════════════════════════════════════════════
-
-**Columns Available for September 2025 Analysis:**
-${columns.map((col, idx) => `${idx + 1}. **${col.header}** (${col.key})
-   - Data Type: ${col.type || 'text'}
-   - Purpose: ${this.getColumnPurpose(col)}`).join('\n')}
-
-═══════════════════════════════════════════════════════════════════════════════
-📈 SEPTEMBER 2025 STATISTICAL FOUNDATION
-═══════════════════════════════════════════════════════════════════════════════
-`;
-
-  // Enhanced Numeric Metrics Section
-  if (Object.keys(stats.numericColumns).length > 0) {
-    prompt += '\n**SEPTEMBER 2025 QUANTITATIVE METRICS & FINANCIAL INDICATORS:**\n\n';
-    Object.entries(stats.numericColumns).forEach(([, stat]: [string, any]) => {
-      const formatValue = (val: number) => {
-        if (stat.type === 'currency') return this.formatCurrency(val);
-        if (stat.type === 'percentage') return `${val.toFixed(1)}%`;
-        return this.formatNumber(val);
-      };
-      
-      const range = stat.max - stat.min;
-      const variance = range / stat.average * 100;
-      
-      prompt += `📊 **${stat.header} - September 2025 Performance**
-   • September 2025 Total: ${formatValue(stat.sum)}
-   • September 2025 Average: ${formatValue(stat.average)}
-   • September 2025 Range: ${formatValue(stat.min)} → ${formatValue(stat.max)}
-   • September 2025 Variance: ${variance.toFixed(1)}%
-   • September 2025 Sample Size: ${stat.count} data points
-\n`;
-    });
-  }
-
-  // Enhanced Categorical Analysis
-  if (Object.keys(stats.textColumns).length > 0) {
-    prompt += '\n**SEPTEMBER 2025 CATEGORICAL DISTRIBUTION & SEGMENTATION:**\n\n';
-    Object.entries(stats.textColumns).forEach(([, stat]: [string, any]) => {
-      const dominancePercentage = ((stat.mostCommon.count / stats.totalRows) * 100).toFixed(1);
-      prompt += `🏷️ **${stat.header} - September 2025 Analysis**
-   • September 2025 Categories: ${stat.uniqueCount}
-   • September 2025 Leader: "${stat.mostCommon.value}" (${dominancePercentage}% share)
-   • September 2025 Distribution: ${stat.examples.join(', ')}
-\n`;
-    });
-  }
-
-  // Enhanced Time Period Analysis
-  if (Object.keys(stats.dateColumns).length > 0) {
-    prompt += '\n**SEPTEMBER 2025 TEMPORAL SCOPE & TIME-SERIES CONTEXT:**\n\n';
-    Object.entries(stats.dateColumns).forEach(([, stat]: [string, any]) => {
-      prompt += `📅 **${stat.header} - September 2025 Focus**
-   • September 2025 Analysis Period: Focus on September 1-30, 2025 data
-   • Data Coverage: ${stat.count} September 2025 records
-   • September 2025 Granularity: Daily/weekly performance within the month
-\n`;
-    });
-  }
-
-  // Add time-based grouping if available
-  if (timeBasedAnalysis) {
-    prompt += '\n**SEPTEMBER 2025 PERIOD-OVER-PERIOD BREAKDOWN:**\n\n';
-    prompt += timeBasedAnalysis;
-  }
-
-  // Enhanced Sample Data Presentation
-  if (limitedData.length > 0) {
-    prompt += '\n═══════════════════════════════════════════════════════════════════════════════\n';
-    prompt += '📋 SEPTEMBER 2025 SAMPLE DATA EXTRACT\n';
-    prompt += '═══════════════════════════════════════════════════════════════════════════════\n\n';
-    
-    const sampleData = limitedData.slice(0, 10);
-    const headers = columns.map(col => col.header).join(' | ');
-    prompt += `${headers}\n`;
-    prompt += '─'.repeat(headers.length) + '\n';
-    
-    sampleData.forEach((row, idx) => {
-      const rowData = columns.map(col => {
-        const value = row[col.key];
-        if (value === null || value === undefined) return 'N/A';
-        if (col.type === 'currency' && typeof value === 'number') return this.formatCurrency(value);
-        if (col.type === 'number' && typeof value === 'number') return this.formatNumber(value);
-        if (col.type === 'date' && value) return new Date(value).toLocaleDateString('en-IN');
-        return String(value);
-      }).join(' | ');
-      prompt += `${idx + 1}. ${rowData}\n`;
-    });
-  }
-
-  prompt += `\n\n═══════════════════════════════════════════════════════════════════════════════
-🎯 SEPTEMBER 2025 COMPREHENSIVE ANALYSIS REQUIREMENTS
-═══════════════════════════════════════════════════════════════════════════════
-
-**MANDATORY FOCUS: Every section below MUST specifically analyze SEPTEMBER 2025 performance. Do not provide generic analysis - focus exclusively on September 2025 data, trends, and insights.**
-
-───────────────────────────────────────────────────────────────────────────────
-1️⃣ SEPTEMBER 2025 EXECUTIVE SUMMARY (Minimum 6-8 sentences)
-───────────────────────────────────────────────────────────────────────────────
-
-Provide a compelling narrative overview specifically about September 2025 that answers:
-• How did September 2025 perform compared to August 2025? (specific ₹ amounts and % changes)
-• What were the 3-4 most critical September 2025 findings that leadership must know?
-• What is September 2025's overall performance status? (Excellent/Good/Fair/Concerning)
-• What is the primary business narrative emerging from September 2025 data?
-• Include specific September 2025 KPIs, growth rates, and financial metrics
-• How does September 2025 rank among recent months?
-
-**Writing Style**: Professional, confident, data-driven. Write as if presenting September 2025 results to the CEO and CFO.
-
-───────────────────────────────────────────────────────────────────────────────
-2️⃣ SEPTEMBER 2025 PERFORMANCE ANALYSIS (Critical Priority)
-───────────────────────────────────────────────────────────────────────────────
-
-**SEPTEMBER 2025 DETAILED PERFORMANCE BREAKDOWN:**
-
-📊 **September 2025 Key Metrics:**
-   • **September 2025 Revenue**: ₹X lakhs (±Y% vs August 2025, ±Z% vs September 2024)
-   • **September 2025 Volume**: X transactions/members (±Y% vs August 2025)
-   • **September 2025 Average Values**: ₹X per transaction (±Y% vs August 2025)
-   • **September 2025 Daily Average**: ₹X lakhs per day
-   • **September 2025 Weekly Trends**: Week 1 vs Week 2 vs Week 3 vs Week 4 performance
-
-🔍 **September 2025 Comparative Analysis:**
-   • How did September 2025 rank among the last 6 months?
-   • What made September 2025 unique compared to other months?
-   • September 2025 vs August 2025: Detailed month-over-month comparison
-   • September 2025 vs September 2024: Year-over-year growth analysis
-   • September 2025 momentum: Growing/Stable/Declining trajectory
-
-**Required September 2025 Metrics:**
-   • Absolute September 2025 performance numbers
-   • September 2025 vs August 2025 change (₹X lakhs increase/decrease, ±Y%)
-   • September 2025 vs September 2024 change if available
-   • September 2025 daily/weekly performance patterns
-   • September 2025 market position and competitive performance
-
-───────────────────────────────────────────────────────────────────────────────
-3️⃣ SEPTEMBER 2025 KEY BUSINESS INSIGHTS (Minimum 8-10 detailed insights)
-───────────────────────────────────────────────────────────────────────────────
-
-**EVERY INSIGHT MUST BE SPECIFICALLY ABOUT SEPTEMBER 2025 PERFORMANCE**
-
-Each insight must follow this structure:
-
-**September 2025 Insight #X: [Clear, Action-Oriented Title]**
-   • **September 2025 Finding**: What the September 2025 data shows (with specific numbers)
-   • **September 2025 Context**: Why this September 2025 result matters to the business
-   • **September 2025 Impact**: Financial or operational implications of September 2025 performance
-   • **September 2025 vs Benchmark**: How September 2025 compares to previous months/years
-   • **September 2025 Evidence**: Supporting September 2025 data points or calculations
-
-**Required September 2025 Focus Areas:**
-   ✓ September 2025 revenue performance and drivers
-   ✓ September 2025 customer/member behavior patterns
-   ✓ September 2025 service/product mix performance
-   ✓ September 2025 efficiency and productivity metrics
-   ✓ September 2025 growth trajectory and momentum
-   ✓ September 2025 market positioning results
-   ✓ September 2025 risk factors identified
-   ✓ September 2025 optimization opportunities discovered
-
-───────────────────────────────────────────────────────────────────────────────
-4️⃣ SEPTEMBER 2025 TREND ANALYSIS & PATTERN RECOGNITION (Minimum 6-8 trends)
-───────────────────────────────────────────────────────────────────────────────
-
-Identify and explain September 2025 specific patterns:
-
-**September 2025 Growth Trends:**
-   • September 2025 month-over-month growth rate vs August 2025
-   • September 2025 weekly progression (Week 1 → Week 4 trajectory)
-   • September 2025 daily patterns and peak performance days
-
-**September 2025 Seasonal Patterns:**
-   • How did September 2025 perform vs typical September expectations?
-   • September 2025 post-monsoon recovery patterns (if applicable)
-   • September 2025 festival season preparation impact
-
-**September 2025 Anomalies & Standout Events:**
-   • Unexpected September 2025 spikes or drops (with ±% quantification)
-   • September 2025 one-time events vs systematic changes
-   • September 2025 performance outliers and explanations
-
-**September 2025 Momentum Indicators:**
-   • September 2025 leading indicators for October 2025 forecast
-   • September 2025 customer behavior shifts observed
-   • September 2025 operational efficiency changes
-
-${includeRecommendations ? `
-───────────────────────────────────────────────────────────────────────────────
-5️⃣ SEPTEMBER 2025 STRATEGIC RECOMMENDATIONS & ACTION PLAN (7-10 recommendations)
-───────────────────────────────────────────────────────────────────────────────
-
-**EVERY RECOMMENDATION MUST BE BASED ON SEPTEMBER 2025 PERFORMANCE DATA**
-
-Each recommendation must be structured as:
-
-**September 2025 Recommendation #X: [Clear Action Title Based on September 2025 Insights]**
-   • **Objective**: What this aims to achieve based on September 2025 learnings
-   • **September 2025 Rationale**: Why September 2025 data supports this action
-   • **Action Steps**: 3-5 specific steps to implement for October 2025 and beyond
-   • **Expected Impact**: Quantified outcome based on September 2025 patterns
-   • **Timeline**: Implementation period starting October 2025
-   • **September 2025 Success Pattern**: Reference to what worked well in September 2025
-   • **Priority**: Based on September 2025 performance gaps and opportunities
-
-**Categories Based on September 2025 Analysis:**
-   • Revenue optimization opportunities identified in September 2025
-   • Cost reduction insights from September 2025 efficiency analysis
-   • Customer experience improvements suggested by September 2025 behavior
-   • Risk mitigation based on September 2025 vulnerability assessment
-   • Growth acceleration initiatives inspired by September 2025 successes
-   • Operational improvements needed based on September 2025 bottlenecks
-` : ''}
-
-───────────────────────────────────────────────────────────────────────────────
-6️⃣ SEPTEMBER 2025 OUTLOOK & OCTOBER 2025 PROJECTIONS
-───────────────────────────────────────────────────────────────────────────────
-
-Based on September 2025 performance trends:
-
-**October 2025 Forecast Based on September 2025 Momentum:**
-   • Expected October 2025 trajectory if September 2025 trends continue
-   • Optimistic October 2025 scenario (if September 2025 improvements are sustained)
-   • Conservative October 2025 scenario (if September 2025 challenges persist)
-
-**Key Questions for Leadership Based on September 2025 Results:**
-   • What decisions need to be made based on September 2025 performance?
-   • Where should October 2025 investment focus based on September 2025 learnings?
-   • What September 2025 successes should be scaled in October 2025?
-
-═══════════════════════════════════════════════════════════════════════════════
-📝 CRITICAL FORMATTING & QUALITY REQUIREMENTS FOR SEPTEMBER 2025 ANALYSIS
-═══════════════════════════════════════════════════════════════════════════════
-
-**Mandatory Standards for September 2025 Focus:**
-✅ Every claim must reference September 2025 specifically with numbers from the data
-✅ Use "September 2025" explicitly in headings and key statements
-✅ Compare September 2025 to August 2025 and September 2024 where possible
-✅ Include September 2025 percentages alongside absolute numbers
-✅ Focus on September 2025 daily/weekly patterns within the month
-✅ Highlight September 2025's ranking among recent months
-✅ Provide September 2025 context for all numbers and comparisons
-✅ Use September 2025-specific insights, not generic business advice
-
-**Prohibited in September 2025 Analysis:**
-❌ Generic insights that don't specifically reference September 2025
-❌ Vague statements about "recent performance" without September 2025 specificity
-❌ Analysis of other months without connecting back to September 2025
-❌ Unsupported claims not backed by September 2025 data
-
-**YOUR SEPTEMBER 2025 ANALYSIS BEGINS BELOW:**`;
-
-  return prompt;
-}
-
-/**
- * Quick insight generation specifically focused on September 2025
- */
-async generateQuickInsights(data: any[], columns: TableColumn[], tableName?: string): Promise<string[]> {
-  try {
-    const stats = this.extractTableStatistics(data, columns);
-    
-    const prompt = `Analyze this ${tableName || 'business'} data with EXCLUSIVE FOCUS on SEPTEMBER 2025 performance and provide 5 detailed key insights:
-
-**CRITICAL REQUIREMENT: ALL INSIGHTS MUST SPECIFICALLY ANALYZE SEPTEMBER 2025 PERFORMANCE**
-
-Data: ${data.length} rows
-Key metrics: ${Object.values(stats.numericColumns).map((stat: any) => `${stat.header}: ${this.formatCurrency(stat.sum)}`).join(', ')}
-
-SEPTEMBER 2025 FOCUS REQUIREMENTS for insights:
-1. Start each insight with "September 2025:" when referring to performance data
-2. Include September 2025 vs August 2025 comparisons (month-over-month)
-3. Show how September 2025 ranks against other months in the dataset
-4. Highlight September 2025 specific performance metrics and achievements
-5. Compare September 2025 to historical averages and identify trends
-
-Note: All currency figures are in Indian Rupees (₹) and large amounts should be presented in lakhs.
-
-Provide exactly 5 detailed bullet points focusing EXCLUSIVELY on September 2025 performance with specific numbers, percentages, and month-over-month comparisons for the Indian fitness/wellness market:`;
-
-    const result = await this.model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    return this.extractBulletPoints(text, 5);
-  } catch (error: any) {
-    console.error('Quick insights error:', error);
-    
-    if (error?.status === 404) {
-      return ['September 2025 analysis unavailable at this time'];
-    } else if (error?.status === 403) {
-      return ['September 2025 analysis access denied - check configuration'];
-    }
-    
-    return ['September 2025 analysis unavailable at this time'];
-  }
-}
-
-  private extractTableStatistics(data: any[], columns: any[]): any {
-    return {
-      totalRows: data.length,
-      numericColumns: {},
-      textColumns: {},
-      dateColumns: {}
-    };
-  }
-
-  private parseGeminiResponse(text: string): any {
-    return {
-      summary: '',
-      keyInsights: [],
-      trends: [],
-      recommendations: undefined
-    };
-  }
-
-  private extractBulletPoints(text: string, count?: number): string[] {
-    const lines = text.split('\n').filter(line => line.trim().startsWith('•') || line.trim().startsWith('-'));
-    return count ? lines.slice(0, count) : lines;
-  }
-
-  private generateTimeBasedContext(data: any[], dateColumn: any): string {
-    return '';
-  }
-
-  private getColumnPurpose(col: any): string {
-    return 'Analysis column';
-  }
-
-  public formatCurrency(value: number): string {
-    return `₹${value.toLocaleString('en-IN')}`;
-  }
-
-  public formatNumber(value: number): string {
-    return value.toLocaleString('en-IN');
-  }
-
-  async testConnection(): Promise<{ success: boolean; model?: string; error?: string }> {
-    try {
-      const result = await this.model.generateContent("Hello, please respond with 'Connection successful'");
-      const response = await result.response;
-      return {
-        success: true,
-        model: this.model.model || 'gemini-model',
-      };
-    } catch (error: any) {
-      console.error('Connection test failed:', error);
-      return {
-        success: false,
-        error: error?.message || 'Connection failed'
-      };
-    }
-  }
-}
-
-// Add missing type definitions
+// Types
 export interface TableSummaryOptions {
   tableData: any[];
   columns: TableColumn[];
@@ -471,7 +15,7 @@ export interface TableSummaryOptions {
 export interface TableColumn {
   header: string;
   key: string;
-  type?: string;
+  type?: string; // 'number' | 'currency' | 'percentage' | 'date' | 'text'
 }
 
 export interface GeminiSummaryResult {
@@ -479,24 +23,280 @@ export interface GeminiSummaryResult {
   keyInsights: string[];
   trends: string[];
   recommendations?: string[];
+  diagnostics?: { focus?: string; comparedAgainst?: { mom?: string | 'not available'; yoy?: string | 'not available' } };
   error?: string;
 }
 
-// Initialize Google Generative AI and export singleton instance
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSy-REDACTED_GEMINI_KEY';
-const genAI = new GoogleGenerativeAI(apiKey);
+class GeminiServiceImpl {
+  constructor(private model: any) {}
 
-// Create model instance with fallback model names
-let model;
-try {
-  model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-} catch {
-  try {
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  } catch {
-    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  async generateTableSummary(options: TableSummaryOptions): Promise<GeminiSummaryResult> {
+    try {
+      const { tableData } = options;
+      if (!tableData || tableData.length === 0) {
+        return {
+          summary: 'No data available for analysis.',
+          keyInsights: ['No data to analyze'],
+          trends: ['Insufficient data for trend analysis'],
+        };
+      }
+
+      const prompt = this.buildJSONPrompt(options);
+      const text = await this.callModelWithRetries(prompt);
+
+      // Strict JSON parse first
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            summary: parsed.summary || 'No summary generated.',
+            keyInsights: Array.isArray(parsed.keyInsights) ? parsed.keyInsights : [],
+            trends: Array.isArray(parsed.trends) ? parsed.trends : [],
+            recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : undefined,
+            diagnostics: parsed.diagnostics,
+          };
+        }
+      } catch {}
+
+      // Fallback: loose parsing
+      const sections = this.parseGeminiResponse(text);
+      return {
+        summary: sections.summary || text.slice(0, 1000) + (text.length > 1000 ? '...' : ''),
+        keyInsights: sections.keyInsights || this.extractBulletPoints(text).slice(0, 8),
+        trends: sections.trends || this.extractBulletPoints(text).slice(0, 6),
+        recommendations: sections.recommendations || undefined,
+      };
+    } catch (error: any) {
+      console.error('Gemini API error:', error);
+      let errorMessage = 'AI analysis temporarily unavailable. Please try again later.';
+      if (error?.status === 404) errorMessage = 'Model not found. Please check the Gemini model configuration.';
+      else if (error?.status === 429) errorMessage = 'Rate limit exceeded. Please try again in a few moments.';
+      else if (error?.status === 403) errorMessage = 'API access denied. Please check your API key.';
+
+      return {
+        summary: errorMessage,
+        keyInsights: ['AI service encountered an error'],
+        trends: ['Unable to analyze trends at this time'],
+        error: error?.message || error?.status || 'Unknown error occurred',
+      };
+    }
   }
+
+  async generateQuickInsights(data: any[], columns: TableColumn[], tableName?: string): Promise<string[]> {
+    try {
+      if (!data || data.length === 0) return ['No data available'];
+      const stats = this.extractTableStatistics(data, columns);
+      const { label, prevLabel } = this.resolveFocusPeriod(data, columns);
+
+      const prompt = `Analyze this ${tableName || 'business'} data with EXCLUSIVE FOCUS on ${label} performance and provide 5 detailed key insights:\n\nData: ${data.length} rows\nKey metrics: ${Object.values(stats.numericColumns).map((stat: any) => `${stat.header}: ${this.formatCurrency(stat.sum)}`).join(', ')}\n\n${label} FOCUS REQUIREMENTS for insights:\n1. Start each insight with "${label}:" when referring to performance data\n2. Include ${label} vs ${prevLabel} comparisons (month-over-month) if available\n3. Show how ${label} ranks against other months in the dataset\n4. Highlight ${label} specific performance metrics and achievements\n5. Compare ${label} to historical averages and identify trends\n\nProvide exactly 5 detailed bullet points focusing EXCLUSIVELY on ${label} performance with specific numbers, percentages, and month-over-month comparisons for the Indian fitness/wellness market:`;
+
+      const text = await this.callModelWithRetries(prompt);
+      return this.extractBulletPoints(text, 5);
+    } catch (error: any) {
+      console.error('Quick insights error:', error);
+      return ['Insights unavailable at this time'];
+    }
+  }
+
+  // Prompt builder
+  private buildJSONPrompt(options: TableSummaryOptions): string {
+    const { tableData, columns, tableName, context, summaryType, includeRecommendations, maxRows } = options;
+    const stats = this.extractTableStatistics(tableData, columns);
+    const limitedData = maxRows ? tableData.slice(0, Math.min(maxRows, 5)) : tableData.slice(0, 5);
+
+    const focus = this.resolveFocusPeriod(tableData, columns);
+    const { label: focusLabel, prevLabel, yoyLabel } = focus;
+
+    let prompt = `You are a senior business intelligence analyst for fitness/wellness (India). Produce JSON ONLY, no prose outside JSON.\n\nFOCUS: Entire analysis must focus on ${focusLabel}. Where comparisons are requested, compare ${focusLabel} vs ${prevLabel} (MoM) and vs ${yoyLabel} (YoY) ONLY if those periods exist in the data; otherwise state \"not available\".\n\n📊 DATA CONTEXT & OVERVIEW - ${focusLabel} FOCUS\n**Business Entity**: ${tableName || 'Business Performance Analytics'}\n**Primary Analysis Focus**: **${focusLabel} PERFORMANCE ASSESSMENT**\n**Context**: ${context || `${focusLabel} business performance tracking and optimization`}\n**Dataset Size**: ${stats.totalRows} total records\n**Analysis Framework**: ${summaryType || 'comprehensive'} deep-dive analysis of ${focusLabel}\n**Currency**: All financial figures in Indian Rupees (₹)\n`;
+
+    // Numeric metrics
+    if (Object.keys(stats.numericColumns).length > 0) {
+      prompt += `\n**${focusLabel} QUANTITATIVE METRICS & FINANCIAL INDICATORS:**\n\n`;
+      Object.entries(stats.numericColumns).forEach(([, stat]: [string, any]) => {
+        const formatValue = (val: number) => {
+          if (stat.type === 'currency') return this.formatCurrency(val);
+          if (stat.type === 'percentage') return `${val.toFixed(1)}%`;
+          return this.formatNumber(val);
+        };
+        const range = stat.max - stat.min;
+        const variance = (stat.average !== 0 ? (range / Math.max(1e-6, stat.average)) * 100 : 0);
+        prompt += `📊 **${stat.header} - ${focusLabel} Performance**\n` +
+                  `• ${focusLabel} Total: ${formatValue(stat.sum)}\n` +
+                  `• ${focusLabel} Average: ${formatValue(stat.average)}\n` +
+                  `• ${focusLabel} Range: ${formatValue(stat.min)} → ${formatValue(stat.max)}\n` +
+                  `• ${focusLabel} Variance: ${variance.toFixed(1)}%\n` +
+                  `• ${focusLabel} Sample Size: ${stat.count} data points\n\n`;
+      });
+    }
+
+    // Categorical metrics
+    if (Object.keys(stats.textColumns).length > 0) {
+      prompt += `\n**${focusLabel} CATEGORICAL DISTRIBUTION & SEGMENTATION:**\n\n`;
+      Object.entries(stats.textColumns).forEach(([, stat]: [string, any]) => {
+        const dominancePercentage = ((stat.mostCommon.count / Math.max(1, stats.totalRows)) * 100).toFixed(1);
+        prompt += `🏷️ **${stat.header} - ${focusLabel} Analysis**\n` +
+                  `• ${focusLabel} Categories: ${stat.uniqueCount}\n` +
+                  `• ${focusLabel} Leader: "${stat.mostCommon.value}" (${dominancePercentage}% share)\n` +
+                  `• ${focusLabel} Distribution: ${stat.examples.join(', ')}\n\n`;
+      });
+    }
+
+    // Dates
+    if (Object.keys(stats.dateColumns).length > 0) {
+      prompt += `\n**${focusLabel} TEMPORAL SCOPE & TIME-SERIES CONTEXT:**\n\n`;
+      Object.entries(stats.dateColumns).forEach(([, stat]: [string, any]) => {
+        prompt += `📅 **${stat.header} - ${focusLabel} Focus**\n` +
+                  `• ${focusLabel} Analysis Period: Focus on ${focusLabel}\n` +
+                  `• Data Coverage: ${stat.count} ${focusLabel} records\n` +
+                  `• ${focusLabel} Granularity: Daily/weekly performance within the month\n\n`;
+      });
+    }
+
+    // Sample rows
+    const limited = Array.isArray(limitedData) ? limitedData : [];
+    if (limited.length > 0) {
+      prompt += `\n═══════════════════════════════════════════════════════════════════════════════\n`;
+      prompt += `📋 ${focusLabel} SAMPLE DATA EXTRACT\n`;
+      prompt += `═══════════════════════════════════════════════════════════════════════════════\n\n`;
+      const headers = columns.map(c => c.header).join(' | ');
+      prompt += `${headers}\n`;
+      prompt += `${'─'.repeat(headers.length)}\n`;
+      limited.slice(0, 5).forEach((row, idx) => {
+        const rowData = columns.map(col => {
+          const value = row[col.key];
+          if (value === null || value === undefined) return 'N/A';
+          if (col.type === 'currency' && typeof value === 'number') return this.formatCurrency(value);
+          if (col.type === 'number' && typeof value === 'number') return this.formatNumber(value);
+          if (col.type === 'date' && value) return new Date(value).toLocaleDateString('en-IN');
+          return String(value);
+        }).join(' | ');
+        prompt += `${idx + 1}. ${rowData}\n`;
+      });
+    }
+
+    // Requirements and JSON schema
+    prompt += `\n\n═══════════════════════════════════════════════════════════════════════════════\n` +
+              `🎯 ${focusLabel} COMPREHENSIVE ANALYSIS REQUIREMENTS\n` +
+              `═══════════════════════════════════════════════════════════════════════════════\n\n` +
+              `**MANDATORY FOCUS: Every section must specifically analyze ${focusLabel} performance. If a requested comparison period doesn't exist in the data, clearly say \"not available\".**\n\n` +
+              `OUTPUT REQUIREMENT: Respond ONLY with valid JSON matching this schema (no prose outside JSON):\n` +
+              `{\"summary\": string, \"keyInsights\": string[], \"trends\": string[], \"recommendations\": string[] | null, \"diagnostics\": {\"focus\": string, \"comparedAgainst\": {\"mom\": string | \"not available\", \"yoy\": string | \"not available\"}}}\n\n` +
+              `YOUR ANALYSIS BEGINS BELOW AS JSON ONLY:`;
+
+    return prompt;
+  }
+
+  // Utilities
+  private extractTableStatistics(data: any[], columns: TableColumn[]): any {
+    const result: any = { totalRows: data.length, numericColumns: {}, textColumns: {}, dateColumns: {} };
+    const isNumber = (v: any) => typeof v === 'number' && isFinite(v);
+    const isString = (v: any) => typeof v === 'string' && v.trim() !== '';
+
+    // Numeric
+    columns.forEach(col => {
+      let count = 0, sum = 0, min = Infinity, max = -Infinity;
+      for (const row of data) {
+        const v = row[col.key];
+        if (isNumber(v)) {
+          count++; sum += v; if (v < min) min = v; if (v > max) max = v;
+        }
+      }
+      if (count > 0) {
+        result.numericColumns[col.key] = { header: col.header, key: col.key, count, sum, average: sum / count, min, max, type: col.type || 'number' };
+      }
+    });
+
+    // Text
+    columns.forEach(col => {
+      const freq: Record<string, number> = {};
+      for (const row of data) {
+        const v = row[col.key];
+        if (isString(v)) freq[v] = (freq[v] || 0) + 1;
+      }
+      const entries = Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+      if (entries.length > 0) {
+        result.textColumns[col.key] = { header: col.header, key: col.key, uniqueCount: entries.length, mostCommon: { value: entries[0][0], count: entries[0][1] }, examples: entries.slice(0, 5).map(e=>`${e[0]} (${e[1]})`) };
+      }
+    });
+
+    // Date
+    columns.filter(c => c.type === 'date').forEach(col => {
+      let count = 0; for (const row of data) { if (row[col.key]) count++; }
+      result.dateColumns[col.key] = { header: col.header, key: col.key, count };
+    });
+
+    return result;
+  }
+
+  private parseGeminiResponse(text: string): any { return { summary: '', keyInsights: [], trends: [], recommendations: undefined }; }
+  private extractBulletPoints(text: string, count?: number): string[] { const lines = text.split('\n').filter(l => l.trim().startsWith('•') || l.trim().startsWith('-')); return count ? lines.slice(0, count) : lines; }
+
+  private resolveFocusPeriod(data: any[], columns: TableColumn[]) {
+    const monthKeyCandidates = ['monthYear', 'month', 'period'];
+    const dateColKey = columns.find(c => c.type === 'date')?.key;
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const nowPrev = getPreviousMonthPeriod();
+
+    const monthValues = new Set<string>();
+    data.forEach(r => {
+      for (const k of monthKeyCandidates) {
+        if (r[k] && typeof r[k] === 'string') monthValues.add(r[k]);
+      }
+      if (dateColKey && r[dateColKey]) {
+        const d = new Date(r[dateColKey]); if (!isNaN(d.getTime())) monthValues.add(fmt(new Date(d.getFullYear(), d.getMonth(), 1)));
+      }
+    });
+
+    const months = Array.from(monthValues).sort();
+    const focus = months.includes(nowPrev) ? nowPrev : (months[months.length-1] || nowPrev);
+    const [fy, fm] = focus.split('-').map(Number);
+    const focusDate = new Date(fy, fm - 1, 1);
+    const prevDate = new Date(focusDate.getFullYear(), focusDate.getMonth() - 1, 1);
+    const yoyDate = new Date(focusDate.getFullYear() - 1, focusDate.getMonth(), 1);
+
+    const monthName = (d: Date) => d.toLocaleDateString('en-US', { month: 'long' });
+    return {
+      value: focus,
+      label: `${monthName(focusDate)} ${focusDate.getFullYear()}`,
+      prev: fmt(prevDate),
+      prevLabel: `${monthName(prevDate)} ${prevDate.getFullYear()}`,
+      yoy: fmt(yoyDate),
+      yoyLabel: `${monthName(yoyDate)} ${yoyDate.getFullYear()}`,
+    };
+  }
+
+  private async callModelWithRetries(prompt: string): Promise<string> {
+    const maxRetries = 2;
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    let attempt = 0; let lastError: any = null;
+    while (attempt <= maxRetries) {
+      try {
+        const result = await this.model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }]}],
+          generationConfig: { temperature: 0.2, topP: 0.9, topK: 40, maxOutputTokens: 2048 },
+          safetySettings: []
+        });
+        const response = await result.response; return response.text();
+      } catch (error: any) {
+        lastError = error;
+        if (error?.status === 429 || (error?.status >= 500 && error?.status < 600)) { attempt++; if (attempt > maxRetries) break; await delay(500 * attempt * attempt); continue; }
+        throw error;
+      }
+    }
+    throw lastError || new Error('AI generation failed');
+  }
+
+  public formatCurrency(value: number): string { return `₹${value.toLocaleString('en-IN')}`; }
+  public formatNumber(value: number): string { return value.toLocaleString('en-IN'); }
 }
 
-// Export singleton instance
-export const geminiService = new GeminiService(model);
+// Initialize Google Generative AI and export singleton instance
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+if (!apiKey) { console.error('Gemini API key missing. Set VITE_GEMINI_API_KEY in environment.'); }
+const genAI = new GoogleGenerativeAI(apiKey);
+
+let model: any;
+try { model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); }
+catch { try { model = genAI.getGenerativeModel({ model: 'gemini-pro' }); } catch { model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' }); } }
+
+export const geminiService = new GeminiServiceImpl(model);
