@@ -11,8 +11,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      jsxImportSource: 'react',
-      jsxRuntime: 'automatic'
+      jsxImportSource: 'react'
     }),
     mode === 'development' &&
     componentTagger(),
@@ -108,4 +107,5 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : [],
     treeShaking: true,
   }
+}));
 }));
