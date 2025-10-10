@@ -114,6 +114,24 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
       return acc;
     }, {} as Record<string, any>);
 
+    // Staff (soldBy) breakdown
+    const staffBreakdown = data.reduce((acc, item) => {
+      const staff = item.soldBy || 'Unknown';
+      if (!acc[staff]) {
+        acc[staff] = {
+          discountAmount: 0,
+          revenue: 0,
+          units: 0,
+          customers: new Set()
+        };
+      }
+      acc[staff].discountAmount += item.discountAmount || 0;
+      acc[staff].revenue += item.paymentValue || 0;
+      acc[staff].units += 1;
+      acc[staff].customers.add(item.customerEmail);
+      return acc;
+    }, {} as Record<string, any>);
+
     // Monthly trend
     const monthlyTrend = data.reduce((acc, item) => {
       if (!item.paymentDate) return acc;
@@ -124,6 +142,7 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
       if (!acc[monthKey]) {
         acc[monthKey] = {
           month: monthName,
+          monthKey,
           discountAmount: 0,
           revenue: 0,
           units: 0,
@@ -164,12 +183,13 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
       productBreakdown: processBreakdown(productBreakdown),
       locationBreakdown: processBreakdown(locationBreakdown),
       paymentBreakdown: processBreakdown(paymentBreakdown),
+      staffBreakdown: processBreakdown(staffBreakdown),
       monthlyTrend: Object.values(monthlyTrend).map((data: any) => ({
         ...data,
         customers: data.customers.size,
         avgDiscount: data.units > 0 ? data.discountAmount / data.units : 0,
         discountRate: data.revenue > 0 ? (data.discountAmount / data.revenue) * 100 : 0
-      })).sort((a: any, b: any) => a.month.localeCompare(b.month))
+      })).sort((a: any, b: any) => a.monthKey.localeCompare(b.monthKey))
     };
   }, [data]);
 
@@ -295,8 +315,30 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
           { key: 'discountRate', label: 'Discount Rate', format: (v: number) => `${v.toFixed(1)}%` }
         ];
         break;
+      case 'product-discount':
+        tableData = analysisData.productBreakdown;
+        columns = [
+          { key: 'name', label: 'Product', icon: Package },
+          { key: 'discountAmount', label: 'Discount Amount', format: formatCurrency },
+          { key: 'revenue', label: 'Revenue', format: formatCurrency },
+          { key: 'units', label: 'Units Sold', format: formatNumber },
+          { key: 'customers', label: 'Customers', format: formatNumber },
+          { key: 'discountRate', label: 'Discount Rate', format: (v: number) => `${v.toFixed(1)}%` }
+        ];
+        break;
       
       case 'locations':
+        tableData = analysisData.locationBreakdown;
+        columns = [
+          { key: 'name', label: 'Location', icon: MapPin },
+          { key: 'discountAmount', label: 'Discount Amount', format: formatCurrency },
+          { key: 'revenue', label: 'Revenue', format: formatCurrency },
+          { key: 'units', label: 'Units Sold', format: formatNumber },
+          { key: 'customers', label: 'Customers', format: formatNumber },
+          { key: 'discountRate', label: 'Discount Rate', format: (v: number) => `${v.toFixed(1)}%` }
+        ];
+        break;
+      case 'location-discount':
         tableData = analysisData.locationBreakdown;
         columns = [
           { key: 'name', label: 'Location', icon: MapPin },
@@ -312,6 +354,17 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
         tableData = analysisData.paymentBreakdown;
         columns = [
           { key: 'name', label: 'Payment Method', icon: CreditCard },
+          { key: 'discountAmount', label: 'Discount Amount', format: formatCurrency },
+          { key: 'revenue', label: 'Revenue', format: formatCurrency },
+          { key: 'units', label: 'Units Sold', format: formatNumber },
+          { key: 'customers', label: 'Customers', format: formatNumber },
+          { key: 'discountRate', label: 'Discount Rate', format: (v: number) => `${v.toFixed(1)}%` }
+        ];
+        break;
+      case 'staff-discount':
+        tableData = analysisData.staffBreakdown;
+        columns = [
+          { key: 'name', label: 'Staff', icon: Users },
           { key: 'discountAmount', label: 'Discount Amount', format: formatCurrency },
           { key: 'revenue', label: 'Revenue', format: formatCurrency },
           { key: 'units', label: 'Units Sold', format: formatNumber },

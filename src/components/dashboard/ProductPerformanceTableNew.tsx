@@ -12,12 +12,14 @@ interface ProductPerformanceTableNewProps {
   data: SalesData[];
   onRowClick: (row: any) => void;
   selectedMetric?: YearOnYearMetricType;
+  onReady?: () => void;
 }
 
 export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProps> = ({
   data,
   onRowClick,
-  selectedMetric: initialMetric = 'revenue'
+  selectedMetric: initialMetric = 'revenue',
+  onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
@@ -120,6 +122,18 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
 
   // Use standard 22-month range (October 2025 to January 2024)
   const monthlyData = useMemo(() => generateStandardMonthRange(), []);
+  // generateStandardMonthRange returns oldest -> newest; use full range reversed (newest -> oldest)
+  const visibleMonths = useMemo(() => [...monthlyData].reverse(), [monthlyData]);
+
+  // Notify parent when heavy computation is ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    // consider processedData ready when categories present and months computed
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
 
   const processedData = useMemo(() => {
     // Group by category and product
@@ -239,7 +253,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                   </div>
                 </th>
                 
-                                {monthlyData.slice(-12).map(({ key, display }) => (
+                                {visibleMonths.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -292,11 +306,11 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                       </div>
                     </td>
                     
-                    {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                    {visibleMonths.map(({ key }, monthIndex) => {
                       const current = categoryGroup.monthlyValues[key] || 0;
-                      const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                      const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                       const previous = previousMonthKey ? (categoryGroup.monthlyValues[previousMonthKey] || 0) : 0;
-                      const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                      const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                       
                       return (
                         <td 
@@ -360,11 +374,11 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                           </div>
                         </td>
                         
-                        {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                        {visibleMonths.map(({ key }, monthIndex) => {
                           const current = product.monthlyValues[key] || 0;
-                          const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                          const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                           const previous = previousMonthKey ? (product.monthlyValues[previousMonthKey] || 0) : 0;
-                          const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                          const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                           
                           return (
                             <td 
@@ -438,7 +452,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {visibleMonths.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, categoryGroup) => {
                     return sum + (categoryGroup.monthlyValues[key] || 0);
                   }, 0);

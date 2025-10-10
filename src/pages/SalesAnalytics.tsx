@@ -3,9 +3,15 @@ import { SalesAnalyticsSection } from '@/components/dashboard/SalesAnalyticsSect
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 const SalesAnalytics = () => {
   const { data } = useGoogleSheets();
+  const { setLoading } = useGlobalLoading();
+  const handleReady = React.useCallback(() => {
+    // Hide any global loader immediately when content is ready
+    setLoading(false);
+  }, [setLoading]);
 
   return (
     <GlobalFiltersProvider>
@@ -18,7 +24,7 @@ const SalesAnalytics = () => {
         </div>
         
         <div className="relative z-10 slide-in-from-left">
-          <SalesAnalyticsSection data={data} />
+          <SalesAnalyticsSection data={data} onReady={handleReady} />
         </div>
         <Footer />
       </div>

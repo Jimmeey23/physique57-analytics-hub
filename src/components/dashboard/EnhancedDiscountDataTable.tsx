@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Search, Download, Filter, TrendingUp, TrendingDown, Percent, DollarSign, Eye } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
+import { PersistentTableFooter } from './PersistentTableFooter';
 interface EnhancedDiscountDataTableProps {
   data: SalesData[];
   onRowClick?: (title: string, data: any[], type: string) => void;
@@ -87,6 +88,19 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
     if (percentage >= 25) return 'secondary';
     return 'default';
   };
+  // Columns definition for AI analysis footer
+  const footerColumns = [
+    { header: 'Date', key: 'paymentDate', type: 'date' },
+    { header: 'Customer', key: 'customerName', type: 'text' },
+    { header: 'Product', key: 'cleanedProduct', type: 'text' },
+    { header: 'Category', key: 'cleanedCategory', type: 'text' },
+    { header: 'MRP (Post Tax)', key: 'mrpPostTax', type: 'currency' },
+    { header: 'Discount Amount', key: 'discountAmount', type: 'currency' },
+    { header: 'Discount %', key: 'discountPercentage', type: 'percentage' },
+    { header: 'Final Amount', key: 'paymentValue', type: 'currency' },
+    { header: 'Location', key: 'calculatedLocation', type: 'text' },
+    { header: 'Sold By', key: 'soldBy', type: 'text' }
+  ];
   return <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
       <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -271,5 +285,14 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
             </div>
           </div>}
       </CardContent>
+        {/* AI Notes Footer */}
+        <PersistentTableFooter
+          tableId="discounts-detailed-table"
+          tableName="Detailed Discount Analysis"
+          tableContext="Transaction-level discounts and revenue performance"
+          tableData={filteredAndSortedData}
+          tableColumns={footerColumns as any}
+          className="rounded-b-lg"
+        />
     </Card>;
 };

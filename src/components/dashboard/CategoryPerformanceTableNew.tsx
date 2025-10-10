@@ -11,12 +11,14 @@ interface CategoryPerformanceTableNewProps {
   data: SalesData[];
   onRowClick: (row: any) => void;
   selectedMetric?: YearOnYearMetricType;
+  onReady?: () => void;
 }
 
 export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewProps> = ({
   data,
   onRowClick,
-  selectedMetric: initialMetric = 'revenue'
+  selectedMetric: initialMetric = 'revenue',
+  onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
@@ -141,6 +143,18 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     return months;
   }, []);
 
+  // monthlyData here is built in descending order (current back); show the entire range to Jan 2024
+  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
+
+  // Notify parent when ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
+
   const processedData = useMemo(() => {
     // Group by category
     const categoryGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
@@ -198,12 +212,12 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
       avgTransactionValue: category.totalTransactions > 0 ? category.totalRevenue / category.totalTransactions : 0,
       avgRevenuePerMember: category.uniqueMembers > 0 ? category.totalRevenue / category.uniqueMembers : 0,
       ...Object.fromEntries(
-        monthlyData.slice(-12).map(({ key }) => [
+        visibleMonths.map(({ key }) => [
           `month_${key}`, category.monthlyValues[key] || 0
         ])
       )
     }));
-  }, [processedData, monthlyData]);
+  }, [processedData, monthlyData, visibleMonths]);
 
   const aiTableColumns = useMemo(() => {
     const baseColumns = [
@@ -216,14 +230,14 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
       { key: 'avgRevenuePerMember', header: 'Avg Revenue per Member', type: 'currency' as const }
     ];
 
-    const monthColumns = monthlyData.slice(-12).map(({ key, display }) => ({
+    const monthColumns = visibleMonths.map(({ key, display }) => ({
       key: `month_${key}`,
       header: `${display}`,
       type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const
     }));
 
     return [...baseColumns, ...monthColumns];
-  }, [monthlyData, selectedMetric]);
+  }, [monthlyData, selectedMetric, visibleMonths]);
 
 
 
@@ -257,7 +271,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
                   </div>
                 </th>
                 
-                {monthlyData.slice(-12).map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -303,11 +317,11 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
                     </div>
                   </td>
                   
-                  {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                  {visibleMonths.map(({ key }, monthIndex) => {
                     const current = category.monthlyValues[key] || 0;
-                    const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                    const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                     const previous = previousMonthKey ? (category.monthlyValues[previousMonthKey] || 0) : 0;
-                    const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                    const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                     
                     return (
                       <td 
@@ -376,7 +390,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {visibleMonths.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, category) => {
                     return sum + (category.monthlyValues[key] || 0);
                   }, 0);
@@ -415,7 +429,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
         tableData={aiTableData}
         tableColumns={aiTableColumns}
         tableName="Category Performance Analysis"
-        tableContext={`Performance analysis by product category showing ${selectedMetric} trends across ${monthlyData.slice(-12).length} months`}
+        tableContext={`Performance analysis by product category showing ${selectedMetric} trends across ${visibleMonths.length} months`}
       />
     </div>
   );

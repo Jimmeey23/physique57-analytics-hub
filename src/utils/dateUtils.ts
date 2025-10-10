@@ -53,32 +53,31 @@ export const getDateRangeForMonths = (monthsBack: number) => {
 };
 
 /**
- * Generate standard month range from current month (October 2025) back to January 2024
+ * Generate a standard month range ending at the current month.
+ * Returns 22 months in ascending order (oldest -> newest), with fields:
+ * { key: 'YYYY-MM', display: 'Mon YYYY', year, month, quarter, sortOrder }
  */
 export const generateStandardMonthRange = () => {
-  const months = [];
+  const months = [] as Array<{ key: string; display: string; year: number; month: number; quarter: number; sortOrder: number }>;
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
-  // Start from January 2024 up to October 2025 (oldest -> newest)
-  const startDate = new Date(2024, 0, 1);   // January 2024 (0-indexed)
-  const currentDate = new Date(2025, 9, 1); // October 2025 (0-indexed)
 
-  let iterYear = startDate.getFullYear();
-  let iterMonth = startDate.getMonth();
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), 1); // current month
+  const start = new Date(end.getFullYear(), end.getMonth() - 21, 1); // 21 months before -> 22 total
 
-  while (iterYear < currentDate.getFullYear() ||
-         (iterYear === currentDate.getFullYear() && iterMonth <= currentDate.getMonth())) {
-    const monthName = monthNames[iterMonth];
+  let iterYear = start.getFullYear();
+  let iterMonth = start.getMonth();
+
+  while (iterYear < end.getFullYear() || (iterYear === end.getFullYear() && iterMonth <= end.getMonth())) {
     months.push({
       key: `${iterYear}-${String(iterMonth + 1).padStart(2, '0')}`,
-      display: `${monthName} ${iterYear}`,
+      display: `${monthNames[iterMonth]} ${iterYear}`,
       year: iterYear,
       month: iterMonth + 1,
       quarter: Math.ceil((iterMonth + 1) / 3),
       sortOrder: iterYear * 100 + (iterMonth + 1)
     });
 
-    // Move to next month
     iterMonth++;
     if (iterMonth > 11) {
       iterMonth = 0;

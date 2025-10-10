@@ -11,12 +11,14 @@ interface PaymentMethodMonthOnMonthTableNewProps {
   data: SalesData[];
   onRowClick?: (row: any) => void;
   selectedMetric?: YearOnYearMetricType;
+  onReady?: () => void;
 }
 
 export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMonthTableNewProps> = ({
   data,
   onRowClick,
-  selectedMetric: initialMetric = 'revenue'
+  selectedMetric: initialMetric = 'revenue',
+  onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
@@ -79,6 +81,10 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
 
   // Use standard 22-month range (October 2025 to January 2024)
   const monthlyData = useMemo(() => generateStandardMonthRange(), []);
+  // generateStandardMonthRange returns oldest -> newest; convert to newest -> oldest for the full range
+  const visibleMonths = useMemo(() => [...monthlyData].reverse(), [monthlyData]);
+
+  // Notify parent when ready (effect placed after processedData declaration)
 
   const processedData = useMemo(() => {
     // Group by payment method
@@ -116,6 +122,15 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
     return methodData.sort((a, b) => b.totalValue - a.totalValue);
   }, [data, selectedMetric, monthlyData]);
 
+  // Notify parent when ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
+
   const getGrowthPercentage = (current: number, previous: number) => {
     if (previous === 0 && current === 0) return null;
     if (previous === 0) return '+100';
@@ -152,7 +167,7 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
                   </div>
                 </th>
                 
-                {monthlyData.slice(-12).map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -196,11 +211,11 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
                     </div>
                   </td>
                   
-                  {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                  {visibleMonths.map(({ key }, monthIndex) => {
                     const current = method.monthlyValues[key] || 0;
-                    const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                    const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                     const previous = previousMonthKey ? (method.monthlyValues[previousMonthKey] || 0) : 0;
-                    const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                    const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                     
                     return (
                       <td 
@@ -269,7 +284,7 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {visibleMonths.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, method) => 
                     sum + (method.monthlyValues[key] || 0), 0
                   );

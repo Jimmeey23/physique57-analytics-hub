@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { LateCancellationsData } from '@/types/dashboard';
 import { formatNumber } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PersistentTableFooter } from './PersistentTableFooter';
 
 interface EnhancedLateCancellationsDataTablesProps {
   data: LateCancellationsData[];
@@ -18,6 +19,7 @@ const ITEMS_PER_PAGE = 100;
 export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data, onDrillDown }) => {
   const [activeTab, setActiveTab] = useState('multiple-day');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDescending, setIsDescending] = useState(true);
 
   // Members cancelling more than 1 class per day
   const multipleCancellationsPerDay = useMemo(() => {
@@ -58,16 +60,16 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       return acc;
     }, {} as Record<string, any>);
     
-    return Object.values(memberDayGroups)
+    const arr = Object.values(memberDayGroups)
       .filter((group: any) => group.count > 1)
       .map((group: any) => ({
         ...group,
         uniqueLocations: group.locations.size,
         uniqueClasses: group.classes.size,
         uniqueTrainers: group.trainers.size
-      }))
-      .sort((a: any, b: any) => b.count - a.count);
-  }, [data]);
+      }));
+    return arr.sort((a: any, b: any) => isDescending ? b.count - a.count : a.count - b.count);
+  }, [data, isDescending]);
 
   // Enhanced checkins per day calculation
   const multipleCheckinsPerDay = useMemo(() => {
@@ -104,10 +106,10 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       return acc;
     }, {} as Record<string, any>);
     
-    return Object.values(memberDayStats)
-      .filter((member: any) => member.totalSessions > 1)
-      .sort((a: any, b: any) => b.totalSessions - a.totalSessions);
-  }, [data]);
+    const arr = Object.values(memberDayStats)
+      .filter((member: any) => member.totalSessions > 1);
+    return arr.sort((a: any, b: any) => isDescending ? b.totalSessions - a.totalSessions : a.totalSessions - b.totalSessions);
+  }, [data, isDescending]);
 
   // Cancellations by class type with enhanced analytics
   const cancellationsByClass = useMemo(() => {
@@ -153,7 +155,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       return acc;
     }, {} as Record<string, any>);
     
-    return Object.values(classGroups)
+    const arr = Object.values(classGroups)
       .map((group: any) => {
         const peakTime = Object.entries(group.peakTimes).reduce((a, b) => 
           group.peakTimes[a[0]] > group.peakTimes[b[0]] ? a : b, ['N/A', 0]
@@ -173,9 +175,9 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           peakTime,
           peakDay
         };
-      })
-      .sort((a: any, b: any) => b.count - a.count);
-  }, [data]);
+      });
+    return arr.sort((a: any, b: any) => isDescending ? b.count - a.count : a.count - b.count);
+  }, [data, isDescending]);
 
   // Enhanced cancellations by membership type
   const cancellationsByMembership = useMemo(() => {
@@ -206,7 +208,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       return acc;
     }, {} as Record<string, any>);
     
-    return Object.values(membershipGroups)
+    const arr = Object.values(membershipGroups)
       .map((group: any) => ({
         ...group,
         uniqueMembers: group.members.size,
@@ -214,9 +216,50 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         uniqueClasses: group.classes.size,
         avgRevenuePerCancellation: group.count > 0 ? group.revenue / group.count : 0,
         avgCancellationsPerMember: group.uniqueMembers > 0 ? group.count / group.uniqueMembers : 0
-      }))
-      .sort((a: any, b: any) => b.count - a.count);
-  }, [data]);
+      }));
+    return arr.sort((a: any, b: any) => isDescending ? b.count - a.count : a.count - b.count);
+  }, [data, isDescending]);
+
+  // New: Top cancellers across the selected timeframe (not per-day)
+  const topCancellersByMember = useMemo(() => {
+    if (!data || data.length === 0) return [] as any[];
+    const map = data.reduce((acc, item) => {
+      const id = item.memberId || item.email || 'unknown';
+      if (!acc[id]) {
+        acc[id] = {
+          memberId: item.memberId,
+          memberName: `${item.firstName || ''} ${item.lastName || ''}`.trim(),
+          email: item.email,
+          date: 'Multiple',
+          count: 0,
+          cancellations: [],
+          locations: new Set<string>(),
+          classes: new Set<string>(),
+          trainers: new Set<string>()
+        };
+      }
+      acc[id].count += 1;
+      acc[id].cancellations.length < 10 && acc[id].cancellations.push({
+        sessionName: item.sessionName,
+        time: item.time,
+        location: item.location,
+        teacherName: item.teacherName,
+        cleanedClass: item.cleanedClass,
+        cleanedProduct: item.cleanedProduct
+      });
+      acc[id].locations.add(item.location || '');
+      acc[id].classes.add(item.cleanedClass || '');
+      acc[id].trainers.add(item.teacherName || '');
+      return acc;
+    }, {} as Record<string, any>);
+    const arr = Object.values(map).map((g: any) => ({
+      ...g,
+      uniqueLocations: g.locations.size,
+      uniqueClasses: g.classes.size,
+      uniqueTrainers: g.trainers.size
+    }));
+    return arr.sort((a: any, b: any) => isDescending ? b.count - a.count : a.count - b.count);
+  }, [data, isDescending]);
 
   // Pagination logic
   const getPaginatedData = (tableData: any[]) => {
@@ -239,6 +282,8 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         return cancellationsByClass;
       case 'by-membership':
         return cancellationsByMembership;
+      case 'top-cancellers':
+        return topCancellersByMember;
       default:
         return [];
     }
@@ -315,6 +360,12 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           <Badge variant="outline" className="bg-orange-50 text-orange-700">
             {currentData.length} total members
           </Badge>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-gray-500">Sort by count</span>
+          <Button size="sm" variant="outline" onClick={() => setIsDescending(prev => !prev)}>
+            {isDescending ? 'Desc' : 'Asc'}
+          </Button>
         </div>
       </div>
       
@@ -402,6 +453,18 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableBody>
           </Table>
           <PaginationControls />
+          <PersistentTableFooter
+            tableId={`late-cancel-${tabType}`}
+            tableName={title}
+            tableContext="Members with multiple same-day cancellations/check-ins"
+            tableData={tableData}
+            tableColumns={[
+              { header: 'Member', key: 'memberName', type: 'text' },
+              { header: 'Email', key: 'email', type: 'text' },
+              { header: 'Date', key: 'date', type: 'date' },
+              { header: 'Count', key: 'count', type: 'number' }
+            ] as any}
+          />
         </>
       ) : (
         <p className="text-gray-500 text-center py-8">No data available</p>
@@ -481,6 +544,22 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
             </TableBody>
           </Table>
           <PaginationControls />
+          <PersistentTableFooter
+            tableId="late-cancel-by-class"
+            tableName="Cancellations by Class Type"
+            tableContext="Late cancellations grouped by class type and category"
+            tableData={paginatedData}
+            tableColumns={[
+              { header: 'Class Type', key: 'className', type: 'text' },
+              { header: 'Category', key: 'category', type: 'text' },
+              { header: 'Cancellations', key: 'count', type: 'number' },
+              { header: 'Members', key: 'uniqueMembers', type: 'number' },
+              { header: 'Locations', key: 'uniqueLocations', type: 'number' },
+              { header: 'Peak Time', key: 'peakTime', type: 'text' },
+              { header: 'Peak Day', key: 'peakDay', type: 'text' },
+              { header: 'Avg Duration', key: 'avgDuration', type: 'number' }
+            ] as any}
+          />
         </>
       ) : (
         <p className="text-gray-500 text-center py-8">No class type data available</p>
@@ -520,8 +599,18 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                   key={index} 
                   className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => {
-                    // Drill-down functionality - show membership details
-                    console.log('Membership type clicked:', membership);
+                    try {
+                      if (onDrillDown && membership) {
+                        onDrillDown({
+                          type: 'membership',
+                          title: `Membership: ${membership.membershipType || 'Unknown'}`,
+                          data: membership,
+                          rawData: data.filter(item => item.cleanedProduct === membership.membershipType) || []
+                        });
+                      }
+                    } catch (e) {
+                      console.error('Error in membership drilldown', e);
+                    }
                   }}
                 >
                   <TableCell className="font-medium h-[35px] py-2">
@@ -549,7 +638,22 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               ))}
             </TableBody>
           </Table>
-          <PaginationControls />
+            <PaginationControls />
+            <PersistentTableFooter
+              tableId="late-cancel-by-membership"
+              tableName="Cancellations by Membership Type"
+              tableContext="Late cancellations grouped by membership type"
+              tableData={paginatedData}
+              tableColumns={[
+                { header: 'Membership Type', key: 'membershipType', type: 'text' },
+                { header: 'Category', key: 'category', type: 'text' },
+                { header: 'Cancellations', key: 'count', type: 'number' },
+                { header: 'Members', key: 'uniqueMembers', type: 'number' },
+                { header: 'Locations', key: 'uniqueLocations', type: 'number' },
+                { header: 'Avg per Member', key: 'avgCancellationsPerMember', type: 'number' },
+                { header: 'Revenue Impact', key: 'revenue', type: 'currency' }
+              ] as any}
+            />
         </>
       ) : (
         <p className="text-gray-500 text-center py-8">No membership type data available</p>
@@ -629,7 +733,24 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableHeader>
               <TableBody>
                 {paginatedTrainerData.map((trainer, index) => (
-                  <TableRow key={index} className="h-[35px] max-h-[35px]">
+                  <TableRow 
+                    key={index} 
+                    className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer"
+                    onClick={() => {
+                      try {
+                        if (onDrillDown && trainer) {
+                          onDrillDown({
+                            type: 'trainer',
+                            title: `Trainer: ${trainer.trainerName}`,
+                            data: trainer,
+                            rawData: data.filter(item => item.teacherName === trainer.trainerName) || []
+                          });
+                        }
+                      } catch (e) {
+                        console.error('Error in trainer drilldown', e);
+                      }
+                    }}
+                  >
                     <TableCell className="font-medium h-[35px] py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -657,6 +778,21 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableBody>
             </Table>
             <PaginationControls />
+            <PersistentTableFooter
+              tableId="late-cancel-by-trainer"
+              tableName="Cancellations by Trainer"
+              tableContext="Late cancellations grouped by trainer with member and class counts"
+              tableData={paginatedTrainerData}
+              tableColumns={[
+                { header: 'Trainer', key: 'trainerName', type: 'text' },
+                { header: 'Cancellations', key: 'count', type: 'number' },
+                { header: 'Members', key: 'uniqueMembers', type: 'number' },
+                { header: 'Classes', key: 'uniqueClasses', type: 'number' },
+                { header: 'Locations', key: 'uniqueLocations', type: 'number' },
+                { header: 'Revenue Impact', key: 'revenue', type: 'currency' },
+                { header: 'Avg per Session', key: 'avgCancellationsPerSession', type: 'number' }
+              ] as any}
+            />
           </>
         ) : (
           <p className="text-gray-500 text-center py-8">No trainer data available</p>
@@ -758,7 +894,24 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableHeader>
               <TableBody>
                 {paginatedLocationData.map((location, index) => (
-                  <TableRow key={index} className="h-[35px] max-h-[35px]">
+                  <TableRow 
+                    key={index} 
+                    className="h-[35px] max-h-[35px] hover:bg-gray-50 cursor-pointer"
+                    onClick={() => {
+                      try {
+                        if (onDrillDown && location) {
+                          onDrillDown({
+                            type: 'location',
+                            title: `Location: ${location.locationName}`,
+                            data: location,
+                            rawData: data.filter(item => item.location === location.locationName) || []
+                          });
+                        }
+                      } catch (e) {
+                        console.error('Error in location drilldown', e);
+                      }
+                    }}
+                  >
                     <TableCell className="font-medium h-[35px] py-2">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-indigo-600" />
@@ -785,6 +938,22 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               </TableBody>
             </Table>
             <PaginationControls />
+            <PersistentTableFooter
+              tableId="late-cancel-by-location"
+              tableName="Cancellations by Location"
+              tableContext="Late cancellations grouped by studio location"
+              tableData={paginatedLocationData}
+              tableColumns={[
+                { header: 'Location', key: 'locationName', type: 'text' },
+                { header: 'Cancellations', key: 'count', type: 'number' },
+                { header: 'Members', key: 'uniqueMembers', type: 'number' },
+                { header: 'Trainers', key: 'uniqueTrainers', type: 'number' },
+                { header: 'Classes', key: 'uniqueClasses', type: 'number' },
+                { header: 'Peak Day', key: 'peakDay', type: 'text' },
+                { header: 'Peak Time', key: 'peakTime', type: 'text' },
+                { header: 'Revenue Impact', key: 'revenue', type: 'currency' }
+              ] as any}
+            />
           </>
         ) : (
           <p className="text-gray-500 text-center py-8">No location data available</p>
@@ -807,7 +976,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="px-6">
-            <TabsList className="grid grid-cols-6 w-full mb-6">
+            <TabsList className="grid grid-cols-8 w-full mb-6">
               <TabsTrigger value="multiple-day" className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Multiple/Day
@@ -831,6 +1000,14 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               <TabsTrigger value="by-location" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 By Location
+              </TabsTrigger>
+              <TabsTrigger value="top-cancellers" className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Top Cancellers
+              </TabsTrigger>
+              <TabsTrigger value="visit-frequency" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Visit Frequency
               </TabsTrigger>
             </TabsList>
           </div>
@@ -857,6 +1034,72 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
 
           <TabsContent value="by-location" className="mt-0">
             {renderLocationAnalysisTable()}
+          </TabsContent>
+
+          {/* New: Top/Bottom cancellers and visit frequency buckets */}
+          <TabsContent value="top-cancellers" className="mt-0">
+            {renderMultipleCancellationsTable(paginatedData, 'Top Repeat Cancellers (Members)', 'top-cancellers')}
+          </TabsContent>
+
+          <TabsContent value="visit-frequency" className="mt-0">
+            {(() => {
+              // Build visit frequency buckets from member-level totals in dataset
+              const memberTotals = data.reduce((acc, item) => {
+                const id = item.memberId || item.email || 'unknown';
+                acc[id] = (acc[id] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>);
+              const buckets = [
+                { label: '1', min: 1, max: 1 },
+                { label: '2–3', min: 2, max: 3 },
+                { label: '4–7', min: 4, max: 7 },
+                { label: '8–15', min: 8, max: 15 },
+                { label: '16+', min: 16, max: Infinity }
+              ];
+              const rows = buckets.map(b => {
+                const count = Object.values(memberTotals).filter(v => v >= b.min && v <= b.max).length;
+                return { bucket: b.label, members: count };
+              });
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 justify-between px-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-slate-600" />
+                      <h3 className="text-lg font-semibold">Visit Frequency Buckets</h3>
+                      <Badge variant="outline" className="bg-slate-50 text-slate-700">
+                        {rows.reduce((s, r) => s + r.members, 0)} members
+                      </Badge>
+                    </div>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Visits (per period)</TableHead>
+                        <TableHead>Members</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((r, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-medium">{r.bucket}</TableCell>
+                          <TableCell>{formatNumber(r.members)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <PersistentTableFooter
+                    tableId="late-cancel-visit-frequency"
+                    tableName="Visit Frequency Buckets"
+                    tableContext="Distribution of member late cancellations by visit count within the selected timeframe"
+                    tableData={rows}
+                    tableColumns={[
+                      { header: 'Bucket', key: 'bucket', type: 'text' },
+                      { header: 'Members', key: 'members', type: 'number' }
+                    ] as any}
+                  />
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </CardContent>

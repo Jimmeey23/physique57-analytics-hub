@@ -22,7 +22,7 @@ const groupDataByCategory = (data: SalesData[]) => {
   }, {});
 };
 
-export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> = ({
+export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps & { onReady?: () => void }> = ({
   data,
   filters = {
     dateRange: { start: '', end: '' },
@@ -35,7 +35,8 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
   onRowClick,
   collapsedGroups = new Set(),
   onGroupToggle = () => {},
-  selectedMetric: initialMetric = 'revenue'
+  selectedMetric: initialMetric = 'revenue',
+  onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
@@ -160,35 +161,35 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
     });
   }, [data, filters]);
 
-  // Generate monthly data with 2024/2025 grouping in descending order
+  // Generate YoY month pairs with 2025 first then 2024, newest month first
   const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    // Create alternating pattern: Dec-2024, Dec-2025, Nov-2024, Nov-2025, etc.
-    for (let i = 11; i >= 0; i--) {
-      // Dec to Jan (descending)
-      const monthName = monthNames[i];
-      const monthNum = i + 1;
-
-      // Add 2024 first, then 2025
+    const months: { key: string; display: string; year: number; month: number }[] = [];
+    const now = new Date();
+    // Build from current month back 12 months
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = d.getMonth() + 1;
+      const monthName = d.toLocaleDateString('en-US', { month: 'short' });
+      // Current year entry first
       months.push({
-        key: `2024-${String(monthNum).padStart(2, '0')}`,
-        display: `${monthName} 2024`,
-        year: 2024,
-        month: monthNum,
-        sortOrder: (11 - i) * 2
+        key: `${d.getFullYear()}-${String(month).padStart(2, '0')}`,
+        display: `${monthName} ${d.getFullYear()}`,
+        year: d.getFullYear(),
+        month
       });
+      // Previous year same month
+      const prevYear = d.getFullYear() - 1;
       months.push({
-        key: `2025-${String(monthNum).padStart(2, '0')}`,
-        display: `${monthName} 2025`,
-        year: 2025,
-        month: monthNum,
-        sortOrder: (11 - i) * 2 + 1
+        key: `${prevYear}-${String(month).padStart(2, '0')}`,
+        display: `${monthName} ${prevYear}`,
+        year: prevYear,
+        month
       });
     }
-    return months.reverse(); // Current year/month first
+    return months; // already newest pair first
   }, []);
+
+  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
 
   const processedData = useMemo(() => {
     const grouped = groupDataByCategory(allHistoricData);
@@ -262,6 +263,14 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
   const handleExpandAll = useCallback(() => {
     setLocalCollapsedGroups(new Set());
   }, []);
+  // Notify parent when ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    if (!readySent && processedData.length > 0 && monthlyData.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, monthlyData, onReady]);
 
 
 
@@ -299,7 +308,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                   </div>
                 </th>
                 
-                {monthlyData.slice(-12).map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -352,12 +361,12 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                       </div>
                     </td>
                     
-                    {monthlyData.map(({ key }, monthIndex) => {
+                    {visibleMonths.map(({ key }, monthIndex) => {
                       const current = categoryGroup.monthlyValues[key] || 0;
-                      // For YoY, compare with same month previous year
-                      const previousYearKey = key.includes('2025') ? 
-                        key.replace('2025', '2024') : 
-                        key.replace('2024', '2023');
+                      // For YoY, compare with same month previous year (dynamic)
+                      const [yearStr, monthStr] = key.split('-');
+                      const prevYear = String(Number(yearStr) - 1);
+                      const previousYearKey = `${prevYear}-${monthStr}`;
                       const previous = categoryGroup.monthlyValues[previousYearKey] || 0;
                       const growthPercentage = getGrowthPercentage(current, previous);
                       
@@ -425,11 +434,11 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                           </div>
                         </td>
                         
-                        {monthlyData.map(({ key }, monthIndex) => {
+                        {visibleMonths.map(({ key }, monthIndex) => {
                           const current = product.monthlyValues[key] || 0;
-                          const previousYearKey = key.includes('2025') ? 
-                            key.replace('2025', '2024') : 
-                            key.replace('2024', '2023');
+                          const [yearStr, monthStr] = key.split('-');
+                          const prevYear = String(Number(yearStr) - 1);
+                          const previousYearKey = `${prevYear}-${monthStr}`;
                           const previous = product.monthlyValues[previousYearKey] || 0;
                           const growthPercentage = getGrowthPercentage(current, previous);
                           
@@ -497,7 +506,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps> 
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {visibleMonths.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, categoryGroup) => {
                     return sum + (categoryGroup.monthlyValues[key] || 0);
                   }, 0);

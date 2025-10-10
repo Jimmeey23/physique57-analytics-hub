@@ -29,6 +29,7 @@ import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton
 
 interface SalesAnalyticsSectionProps {
   data: SalesData[];
+  onReady?: () => void;
 }
 
 const locations = [{
@@ -49,7 +50,7 @@ const locations = [{
   fullName: 'Kenkere House'
 }];
 
-export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data }) => {
+export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data, onReady }) => {
   const [activeLocation, setActiveLocation] = useState('all');
   const [currentTheme, setCurrentTheme] = useState('classic');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -57,6 +58,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   const [drillDownType, setDrillDownType] = useState<'metric' | 'product' | 'category' | 'member' | 'soldBy' | 'paymentMethod'>('metric');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeYoyMetric, setActiveYoyMetric] = useState<YearOnYearMetricType>('revenue');
+  const [isReady, setIsReady] = useState(false);
+  const markReady = React.useCallback(() => setIsReady(true), []);
+
+  React.useEffect(() => {
+    if (isReady) {
+      onReady?.();
+    }
+  }, [isReady, onReady]);
 
   // Initialize filters with previous month as default
   const [filters, setFilters] = useState<FilterOptions>(() => {
@@ -736,6 +745,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         collapsedGroups={collapsedGroups} 
                         onGroupToggle={handleGroupToggle} 
                         selectedMetric={activeYoyMetric} 
+                        onReady={markReady}
                       />
                     </section>
                   </TabsContent>
@@ -747,6 +757,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         data={allHistoricData} 
                         onRowClick={handleRowClick} 
                         selectedMetric={activeYoyMetric} 
+                        onReady={markReady}
                       />
                     </section>
                   </TabsContent>
@@ -758,6 +769,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
                     />
                   </section>
                 </TabsContent>
@@ -769,6 +781,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
                     />
                   </section>
                 </TabsContent>
@@ -780,6 +793,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
                     />
                   </section>
                 </TabsContent>
@@ -791,6 +805,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
                     />
                   </section>
                 </TabsContent>

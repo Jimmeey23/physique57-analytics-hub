@@ -11,12 +11,14 @@ interface SoldByMonthOnMonthTableNewProps {
   data: SalesData[];
   onRowClick?: (row: any) => void;
   selectedMetric?: YearOnYearMetricType;
+  onReady?: () => void;
 }
 
 export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProps> = ({
   data,
   onRowClick,
-  selectedMetric: initialMetric = 'revenue'
+  selectedMetric: initialMetric = 'revenue',
+  onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
@@ -123,6 +125,18 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
     return months;
   }, []);
 
+  // monthlyData here is descending (current back). Use full range to Jan 2024.
+  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
+
+  // Notify parent when ready
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
+
   const processedData = useMemo(() => {
     // Group by soldBy
     const soldByGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
@@ -195,7 +209,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                   </div>
                 </th>
                 
-                {monthlyData.slice(-12).map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -239,11 +253,11 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                     </div>
                   </td>
                   
-                  {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                  {visibleMonths.map(({ key }, monthIndex) => {
                     const current = seller.monthlyValues[key] || 0;
-                    const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                    const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                     const previous = previousMonthKey ? (seller.monthlyValues[previousMonthKey] || 0) : 0;
-                    const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                    const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                     
                     return (
                       <td 
@@ -312,7 +326,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {visibleMonths.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, seller) => 
                     sum + (seller.monthlyValues[key] || 0), 0
                   );

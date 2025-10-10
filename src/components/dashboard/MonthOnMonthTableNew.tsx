@@ -14,6 +14,7 @@ interface MonthOnMonthTableNewProps {
   collapsedGroups?: Set<string>;
   onGroupToggle?: (groups: Set<string>) => void;
   selectedMetric?: YearOnYearMetricType;
+  onReady?: () => void;
 }
 
 const groupDataByCategory = (data: SalesData[]) => {
@@ -44,7 +45,8 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
   },
   collapsedGroups = new Set(),
   onGroupToggle = () => {},
-  selectedMetric: initialMetric = 'revenue'
+  selectedMetric: initialMetric = 'revenue',
+  onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
@@ -155,7 +157,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate last 22 months in descending order (October 2025 to January 2024)
+    // Generate last 22 months in descending order (current month back)
     for (let i = 0; i < 22; i++) {
       const date = new Date(currentYear, currentMonth - i, 1);
       const year = date.getFullYear();
@@ -233,13 +235,26 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     setLocalCollapsedGroups(allGroups);
   }, [processedData]);
 
+  // Show the full descending range (current month back to Jan 2024)
+  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
+
+  // Notify parent when ready (once)
+  const [readySent, setReadySent] = React.useState(false);
+  React.useEffect(() => {
+    if (!readySent && processedData.length > 0 && visibleMonths.length > 0) {
+      setReadySent(true);
+      onReady?.();
+    }
+  }, [readySent, processedData, visibleMonths, onReady]);
+
   // Prepare data for AI analysis
   const aiTableData = useMemo(() => {
     const flatData: any[] = [];
     processedData.forEach(categoryGroup => {
       categoryGroup.products.forEach(product => {
         const monthlyEntries = Object.fromEntries(
-          monthlyData.slice(-12).map(({ key }) => [
+          // Use the entire range from current month back to Jan 2024
+          visibleMonths.map(({ key }) => [
             `month_${key}`, product.monthlyValues[key] || 0
           ])
         );
@@ -256,7 +271,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       });
     });
     return flatData;
-  }, [processedData, monthlyData]);
+  }, [processedData, monthlyData, visibleMonths]);
 
   const aiTableColumns = useMemo(() => {
     const baseColumns = [
@@ -268,14 +283,14 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       { key: 'uniqueMembers', header: 'Unique Members', type: 'number' as const }
     ];
 
-    const monthColumns = monthlyData.slice(-12).map(({ key, display }) => ({
+    const monthColumns = visibleMonths.map(({ key, display }) => ({
       key: `month_${key}`,
       header: display,
       type: selectedMetric === 'revenue' || selectedMetric === 'atv' || selectedMetric === 'auv' ? 'currency' as const : 'number' as const
     }));
 
     return [...baseColumns, ...monthColumns];
-  }, [monthlyData, selectedMetric]);
+  }, [monthlyData, selectedMetric, visibleMonths]);
 
   const handleExpandAll = useCallback(() => {
     setLocalCollapsedGroups(new Set());
@@ -287,6 +302,8 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
+  // visibleMonths already defined above
+
   return (
     <div className="space-y-4">
       {/* Modern Metric Selector */}
@@ -296,7 +313,6 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
         onMetricChange={(metric) => setSelectedMetric(metric as YearOnYearMetricType)}
         className="mb-4"
       />
-
       <ModernTableWrapper
         title="Month-on-Month Analysis"
         description="Comprehensive monthly performance comparison across categories and products"
@@ -320,7 +336,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                   </div>
                 </th>
                 
-                {monthlyData.slice(-12).map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => (
                   <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
@@ -380,11 +396,11 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                         </div>
                       </td>
                       
-                      {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                      {visibleMonths.map(({ key }, monthIndex) => {
                         const current = categoryGroup.monthlyValues[key] || 0;
-                        const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                        const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                         const previous = previousMonthKey ? (categoryGroup.monthlyValues[previousMonthKey] || 0) : 0;
-                        const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                        const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                         
                         return (
                           <td 
@@ -448,11 +464,11 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                             </div>
                           </td>
                           
-                          {monthlyData.slice(-12).map(({ key }, monthIndex) => {
+                          {visibleMonths.map(({ key }, monthIndex) => {
                             const current = product.monthlyValues[key] || 0;
-                            const previousMonthKey = monthlyData[monthIndex + 1]?.key;
+                            const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
                             const previous = previousMonthKey ? (product.monthlyValues[previousMonthKey] || 0) : 0;
-                            const growthPercentage = monthIndex < monthlyData.length - 1 ? getGrowthPercentage(current, previous) : null;
+                            const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
                             
                             return (
                               <td 
@@ -506,7 +522,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                   </div>
                 </td>
                 
-                {monthlyData.slice(-12).map(({ key }) => {
+                {visibleMonths.map(({ key }) => {
                   const totalValue = processedData.reduce((sum, categoryGroup) => 
                     sum + (categoryGroup.monthlyValues[key] || 0), 0
                   );
@@ -544,7 +560,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
         tableData={aiTableData}
         tableColumns={aiTableColumns}
         tableName="Month-on-Month Performance Analysis"
-        tableContext={`Detailed monthly performance tracking by category and product showing ${selectedMetric} trends over ${monthlyData.slice(-12).length} months`}
+        tableContext={`Detailed monthly performance tracking by category and product showing ${selectedMetric} trends over ${visibleMonths.length} months`}
       />
     </div>
   );

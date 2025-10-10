@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
+import { PersistentTableFooter } from './PersistentTableFooter';
 
 interface EnhancedDiscountBreakdownTablesProps {
   data: SalesData[];
@@ -247,6 +248,21 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
           </div>
         </CardContent>
       </Card>
+      {/* Product AI Footer */}
+      <PersistentTableFooter
+        tableId="discounts-product-breakdown"
+        tableName="Product-wise Discount Breakdown"
+        tableContext="Discounts grouped by product and category with impact metrics"
+        tableData={productBreakdown}
+        tableColumns={[
+          { header: 'Product', key: 'product', type: 'text' },
+          { header: 'Category', key: 'category', type: 'text' },
+          { header: 'Transactions', key: 'transactions', type: 'number' },
+          { header: 'Total Discount', key: 'totalDiscount', type: 'currency' },
+          { header: 'Avg Discount %', key: 'avgDiscountPercentage', type: 'percentage' },
+          { header: 'Total Revenue', key: 'totalRevenue', type: 'currency' }
+        ] as any}
+      />
 
       {/* Location Breakdown */}
       <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20">
@@ -357,6 +373,22 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
           </div>
         </CardContent>
       </Card>
+      {/* Location AI Footer */}
+      <PersistentTableFooter
+        tableId="discounts-location-breakdown"
+        tableName="Location-wise Discount Breakdown"
+        tableContext="Discounts grouped by studio location with customer counts and impact"
+        tableData={locationBreakdown}
+        tableColumns={[
+          { header: 'Location', key: 'location', type: 'text' },
+          { header: 'Transactions', key: 'transactions', type: 'number' },
+          { header: 'Customers', key: 'uniqueCustomers', type: 'number' },
+          { header: 'Total Discount', key: 'totalDiscount', type: 'currency' },
+          { header: 'Avg Discount %', key: 'avgDiscountPercentage', type: 'percentage' },
+          { header: 'Avg per Txn', key: 'avgDiscountPerTransaction', type: 'currency' },
+          { header: 'Revenue', key: 'totalRevenue', type: 'currency' }
+        ] as any}
+      />
 
       {/* Staff Breakdown */}
       <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20">
@@ -464,6 +496,21 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
           </div>
         </CardContent>
       </Card>
+      {/* Staff AI Footer */}
+      <PersistentTableFooter
+        tableId="discounts-staff-breakdown"
+        tableName="Staff-wise Discount Breakdown"
+        tableContext="Discount authorization and revenue by staff member"
+        tableData={staffBreakdown}
+        tableColumns={[
+          { header: 'Staff', key: 'staff', type: 'text' },
+          { header: 'Transactions', key: 'transactions', type: 'number' },
+          { header: 'Total Discount', key: 'totalDiscount', type: 'currency' },
+          { header: 'Avg Discount %', key: 'avgDiscountPercentage', type: 'percentage' },
+          { header: 'Discount per Sale', key: 'discountRate', type: 'currency' },
+          { header: 'Revenue', key: 'totalRevenue', type: 'currency' }
+        ] as any}
+      />
     </div>
   );
 };
