@@ -338,7 +338,7 @@ export default function FunnelLeads() {
         <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 overflow-hidden">
           <CardContent className="p-2">
             <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-              <TabsList className="premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full">
+              <TabsList className="theme-tabs premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full" data-theme="funnel">
                 {locations.map(location => {
                   const parts = location.name.split(',').map(s => s.trim());
                   const mainName = parts[0] || location.name;
@@ -346,8 +346,8 @@ export default function FunnelLeads() {
                   return (
                     <TabsTrigger key={location.id} value={location.id} className="premium-tab-trigger">
                       <span className="relative z-10 flex flex-col items-center leading-tight">
-                        <span className="font-extrabold text-base sm:text-lg">{mainName}</span>
-                        {subName && <span className="text-xs sm:text-sm opacity-90">{subName}</span>}
+                        <span className="font-extrabold text-base sm:text-lg">{location.name}</span>
+                        <span className="text-[11px] sm:text-xs opacity-95 mt-0.5">Total Leads • Trials • Conversion</span>
                       </span>
                     </TabsTrigger>
                   );

@@ -410,7 +410,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, var(--tab-grad-start, #4f46e5), var(--tab-grad-mid, #7c3aed), var(--tab-grad-end, #ec4899));
   background-size: 200% 200%;
   animation: premium-gradient-move 6s ease infinite;
   opacity: 0;
@@ -445,6 +445,89 @@
 
 .premium-tab-trigger[data-state="active"]::after {
   transform: scaleX(1);
+}
+
+/* Theme container provides gradient variables to match hero backgrounds */
+.theme-tabs {
+  --tab-grad-start: #4f46e5; /* default indigo */
+  --tab-grad-mid: #7c3aed;   /* default purple */
+  --tab-grad-end: #ec4899;   /* default pink */
+}
+
+/* Sales: deep blues to sky */
+.theme-tabs[data-theme="sales"] {
+  --tab-grad-start: #1d4ed8; /* blue-700 */
+  --tab-grad-mid: #1e40af;   /* indigo-800 */
+  --tab-grad-end: #0ea5e9;   /* sky-500 */
+}
+
+/* Funnel: violets */
+.theme-tabs[data-theme="funnel"] {
+  --tab-grad-start: #6d28d9; /* violet-700 */
+  --tab-grad-mid: #7c3aed;   /* violet-600 */
+  --tab-grad-end: #a78bfa;   /* violet-300 */
+}
+
+/* Attendance: emeralds */
+.theme-tabs[data-theme="attendance"] {
+  --tab-grad-start: #059669; /* emerald-600 */
+  --tab-grad-mid: #047857;   /* emerald-700 */
+  --tab-grad-end: #10b981;   /* emerald-500 */
+}
+
+/* Discounts: ambers */
+.theme-tabs[data-theme="discounts"] {
+  --tab-grad-start: #b45309; /* amber-700 */
+  --tab-grad-mid: #92400e;   /* amber-800 */
+  --tab-grad-end: #f59e0b;   /* amber-500 */
+}
+
+/* Sessions: oranges */
+.theme-tabs[data-theme="sessions"] {
+  --tab-grad-start: #c2410c; /* orange-700 */
+  --tab-grad-mid: #9a3412;   /* orange-800 */
+  --tab-grad-end: #fb923c;   /* orange-400 */
+}
+
+/* Trainer: indigos */
+.theme-tabs[data-theme="trainer"] {
+  --tab-grad-start: #4338ca; /* indigo-700 */
+  --tab-grad-mid: #3730a3;   /* indigo-800 */
+  --tab-grad-end: #818cf8;   /* indigo-300 */
+}
+
+/* PowerCycle: cyans */
+.theme-tabs[data-theme="powercycle"] {
+  --tab-grad-start: #0e7490; /* cyan-700 */
+  --tab-grad-mid: #155e75;   /* cyan-800 */
+  --tab-grad-end: #06b6d4;   /* cyan-500 */
+}
+
+/* Expiration: reds */
+.theme-tabs[data-theme="expiration"] {
+  --tab-grad-start: #b91c1c; /* red-700 */
+  --tab-grad-mid: #991b1b;   /* red-800 */
+  --tab-grad-end: #ef4444;   /* red-500 */
+}
+
+/* Cancellations: rose */
+.theme-tabs[data-theme="cancellations"] {
+  --tab-grad-start: #be123c; /* rose-700 */
+  --tab-grad-mid: #9f1239;   /* rose-800 */
+  --tab-grad-end: #f43f5e;   /* rose-500 */
+}
+
+/* Summary: teals */
+.theme-tabs[data-theme="summary"] {
+  --tab-grad-start: #0f766e; /* teal-700 */
+  --tab-grad-mid: #115e59;   /* teal-800 */
+  --tab-grad-end: #14b8a6;   /* teal-500 */
+}
+
+/* Make modern-tab triggers honor theme too */
+.theme-tabs .modern-tab-trigger[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-grad-start), var(--tab-grad-mid));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--tab-grad-mid) 40%, transparent);
 }
 
 @tailwind base;

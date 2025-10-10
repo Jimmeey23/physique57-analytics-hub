@@ -78,7 +78,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
         </div>
 
         <Tabs value={selectedLocation} onValueChange={onLocationChange} className="w-full">
-          <TabsList className="premium-tabs grid w-full gap-2" style={{
+          <TabsList className="theme-tabs premium-tabs grid w-full gap-2" data-theme="attendance" style={{
             gridTemplateColumns: `repeat(${Math.min(locationStats.length + 1, 6)}, 1fr)`
           }}>
             {/* All Locations Tab */}
@@ -104,8 +104,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
                 className={cn("premium-tab-trigger")}
               >
                 <div className="flex flex-col items-center leading-tight">
-                  <span className="font-extrabold text-base sm:text-lg truncate max-w-[160px]">{stat.location.split(',')[0]}</span>
-                  <span className="text-xs sm:text-sm opacity-90 truncate max-w-[160px]">{stat.location.split(',')[1]?.trim() || ''}</span>
+                  <span className="font-extrabold text-base sm:text-lg truncate max-w-[180px]">{stat.location}</span>
                   <div className="flex items-center gap-2 text-[10px] opacity-90 mt-1">
                     <Badge variant="secondary" className="text-[10px] px-1 py-0">{stat.count}</Badge>
                     <Users className="w-3 h-3" />
