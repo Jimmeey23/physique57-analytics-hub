@@ -54,13 +54,13 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
   const [isExporting, setIsExporting] = useState(false);
   const [exportConfig, setExportConfig] = useState<ExportConfig>({
     currentView: true,
-    monthOnMonth: false,
-    yearOnYear: false,
-    productPerformance: false,
-    categoryPerformance: false,
-    soldByAnalysis: false,
-    paymentMethodAnalysis: false,
-    allTabs: false
+    monthOnMonth: true,
+    yearOnYear: true,
+    productPerformance: true,
+    categoryPerformance: true,
+    soldByAnalysis: true,
+    paymentMethodAnalysis: true,
+    allTabs: true
   });
 
   // Get current tab information
@@ -152,12 +152,12 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     };
   };
 
-  // Extract data from visible tables
+  // Extract data from visible tables within the currently active content
   const extractAllTableData = (): TableExportData[] => {
     const tables: TableExportData[] = [];
     
     // Get the currently active tab content
-    const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"], [data-state="active"]');
+    const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"], [data-state="active"][role="tabpanel"], [data-state="active"]');
     if (!activeTabContent) {
       console.warn('No active tab content found');
       return tables;
@@ -221,6 +221,93 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     return tables;
   };
 
+  // Metric labels used by ModernMetricTabs across tables. We will iterate these to export per-metric variants.
+  const METRIC_LABELS = [
+    'Revenue',
+    'Units Sold',
+    'Transactions',
+    'Members',
+    'AUV',
+    'ATV',
+    'ASV',
+    'UPT',
+    'VAT',
+    'Discount ₹',
+    'Discount %',
+    'Purchase Freq.'
+  ];
+
+  // Click helper
+  const clickElement = async (el: Element | null, waitMs = 300) => {
+    if (el instanceof HTMLElement) {
+      try {
+        el.scrollIntoView({ block: 'center' });
+        el.click();
+        await new Promise(r => setTimeout(r, waitMs));
+      } catch (e) {
+        console.warn('Failed to click element', e);
+      }
+    }
+  };
+
+  // Export tables for each metric in the currently active analysis section
+  const exportMetricVariantsForActiveSection = async (locationSuffix: string, timestamp: string, sectionTag: string) => {
+    // Find metric buttons inside the active panel by matching known labels
+    const activePanel = document.querySelector('[role="tabpanel"][data-state="active"], [data-state="active"][role="tabpanel"], [data-state="active"]') as HTMLElement | null;
+    if (!activePanel) return;
+
+    // Collect unique buttons by their text content
+    const metricButtons: HTMLElement[] = [];
+    METRIC_LABELS.forEach(label => {
+      const btn = Array.from(activePanel.querySelectorAll('button'))
+        .find(b => (b.textContent || '').trim() === label) as HTMLElement | undefined;
+      if (btn && !metricButtons.includes(btn)) metricButtons.push(btn);
+    });
+
+    if (metricButtons.length === 0) return; // No metric toggles in this section
+
+    for (const btn of metricButtons) {
+      const metricLabel = (btn.textContent || '').trim();
+      await clickElement(btn, 350);
+
+      // After toggling metric, extract current visible tables
+      const perMetricTables = extractAllTableData();
+      for (const table of perMetricTables) {
+        let csvContent = '';
+        // Optional metadata header
+        csvContent += `# Sales Analytics Export\n`;
+        csvContent += `# Section: ${sectionTag}\n`;
+        csvContent += `# Metric: ${metricLabel}\n`;
+        csvContent += `# Location: ${locationSuffix}\n`;
+        csvContent += `# Export Time: ${new Date().toLocaleString()}\n`;
+        csvContent += `# Table: ${table.name}\n\n`;
+
+        if (table.headers.length > 0) {
+          csvContent += table.headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+        }
+        table.rows.forEach(row => {
+          csvContent += row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',') + '\n';
+        });
+
+        const cleanSection = sectionTag.replace(/[^a-zA-Z0-9\-]/g, '-');
+        const cleanMetric = metricLabel.replace(/[^a-zA-Z0-9\-]/g, '-');
+        const cleanTableName = table.name.replace(/[^a-zA-Z0-9\-\s]/g, '').replace(/\s+/g, '-');
+        const fileName = `${cleanSection}-${cleanMetric}-${cleanTableName}-${locationSuffix}-${timestamp}.csv`;
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    }
+  };
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -235,7 +322,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
         return;
       }
 
-      // Export each table as a separate CSV file
+      // Export each table as a separate CSV file (current view)
       for (const table of tableData) {
         let csvContent = '';
         
@@ -265,10 +352,14 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
         await new Promise(resolve => setTimeout(resolve, 200));
       }
 
+      // Also export per-metric variants for the current active section
+      const currentTab = document.querySelector('[role="tab"][data-state="active"]');
+      const currentTabText = (currentTab?.textContent || '').trim() || 'current-view';
+      await exportMetricVariantsForActiveSection(locationSuffix, timestamp, currentTabText);
+
       // Also export all tabs if the user wants comprehensive data
       if (exportConfig.yearOnYear || exportConfig.monthOnMonth || exportConfig.productPerformance || 
-          exportConfig.categoryPerformance || exportConfig.soldByAnalysis || exportConfig.paymentMethodAnalysis) {
-        
+          exportConfig.categoryPerformance || exportConfig.soldByAnalysis || exportConfig.paymentMethodAnalysis || exportConfig.allTabs) {
         await exportAllTabsData(locationSuffix, timestamp);
       }
 
@@ -299,8 +390,11 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     
     for (const trigger of tabTriggers) {
       if (trigger instanceof HTMLElement) {
-        const tabValue = trigger.getAttribute('data-value') || trigger.textContent?.trim()?.replace(/\s+/g, '-').toLowerCase() || 'unknown';
-        
+        const tabLabel = trigger.textContent?.trim() || '';
+        const normalizedLabel = tabLabel.replace(/\s+/g, '-').toLowerCase();
+        const dataValue = trigger.getAttribute('data-value') || '';
+        const tabValue = (dataValue || normalizedLabel || 'unknown');
+
         // Determine if this tab should be exported
         let shouldExport = exportConfig.allTabs;
         
@@ -311,7 +405,8 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
               if (mappedValues.some(mapped => 
                 tabValue.includes(mapped) || 
                 mapped.includes(tabValue) ||
-                tabValue.toLowerCase().includes(mapped.toLowerCase())
+                tabValue.toLowerCase().includes(mapped.toLowerCase()) ||
+                normalizedLabel.includes(mapped)
               )) {
                 shouldExport = true;
                 break;
@@ -335,6 +430,8 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
         
         if (tabTableData.length === 0) {
           console.warn(`No table data found in tab: ${tabValue}`);
+          // Try metric variants anyway in case content is metric-driven
+          await exportMetricVariantsForActiveSection(locationSuffix, timestamp, tabLabel || tabValue);
           continue;
         }
         
@@ -344,7 +441,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
           
           // Add metadata header
           csvContent += `# Sales Analytics Export\n`;
-          csvContent += `# Tab: ${tabValue}\n`;
+          csvContent += `# Tab: ${tabLabel || tabValue}\n`;
           csvContent += `# Location: ${locationSuffix}\n`;
           csvContent += `# Export Time: ${new Date().toLocaleString()}\n`;
           csvContent += `# Table: ${table.name}\n\n`;
@@ -360,7 +457,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
           });
 
           // Create and download file
-          const cleanTabValue = tabValue.replace(/[^a-zA-Z0-9\-]/g, '-');
+          const cleanTabValue = (tabLabel || tabValue).replace(/[^a-zA-Z0-9\-]/g, '-');
           const cleanTableName = table.name.replace(/[^a-zA-Z0-9\-\s]/g, '').replace(/\s+/g, '-');
           const fileName = `${cleanTabValue}-${cleanTableName}-${locationSuffix}-${timestamp}.csv`;
           
@@ -377,6 +474,9 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
           // Add delay between downloads
           await new Promise(resolve => setTimeout(resolve, 400));
         }
+
+        // After exporting base tables for this tab, export per-metric variants as well
+        await exportMetricVariantsForActiveSection(locationSuffix, timestamp, tabLabel || tabValue);
       }
     }
     
