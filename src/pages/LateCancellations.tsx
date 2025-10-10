@@ -17,7 +17,7 @@ import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
 import { formatNumber } from '@/utils/formatters';
 
 const LateCancellations = () => {
-  const { data: lateCancellationsData, loading } = useLateCancellationsData();
+  const { data: lateCancellationsData, allCheckins, loading } = useLateCancellationsData();
   const { isLoading, setLoading } = useGlobalLoading();
   const navigate = useNavigate();
   
@@ -231,6 +231,116 @@ const LateCancellations = () => {
     return filtered;
   }, [lateCancellationsData, activeLocation, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot]);
 
+  // Apply the same filters to allCheckins for global consistency, including timeframe
+  const filteredCheckins = useMemo(() => {
+    if (!Array.isArray(allCheckins)) return [] as any[];
+    let filtered: any[] = allCheckins;
+
+    // Location filter
+    if (activeLocation !== 'all') {
+      filtered = filtered.filter(item => {
+        const location = item?.location || '';
+        return activeLocation === 'kwality' ? location.includes('Kwality') :
+               activeLocation === 'supreme' ? location.includes('Supreme') :
+               activeLocation === 'kenkere' ? location.includes('Kenkere') : true;
+      });
+    }
+
+    // Trainer filter
+    if (selectedTrainer !== 'all') {
+      filtered = filtered.filter(item => item?.teacherName === selectedTrainer);
+    }
+
+    // Class filter
+    if (selectedClass !== 'all') {
+      filtered = filtered.filter(item => item?.cleanedClass === selectedClass);
+    }
+
+    // Product filter
+    if (selectedProduct !== 'all') {
+      filtered = filtered.filter(item => item?.cleanedProduct === selectedProduct);
+    }
+
+    // Time slot filter
+    if (selectedTimeSlot !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item?.time) return false;
+        const hour = parseInt(item.time.split(':')[0]);
+        switch (selectedTimeSlot) {
+          case 'morning':
+            return hour >= 6 && hour < 12;
+          case 'afternoon':
+            return hour >= 12 && hour < 17;
+          case 'evening':
+            return hour >= 17 && hour < 22;
+          case 'late':
+            return hour >= 22 || hour < 6;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Timeframe filter mirrors cancellations
+    if (selectedTimeframe !== 'all') {
+      const now = new Date();
+      let startDate = new Date();
+      let endDate = new Date();
+      switch (selectedTimeframe) {
+        case '1w':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case '2w':
+          startDate.setDate(now.getDate() - 14);
+          break;
+        case '1m':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'prev-month': {
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+          startDate = lastMonth;
+          endDate = lastMonthEnd;
+          filtered = filtered.filter(item => {
+            if (!item?.dateIST) return false;
+            const itemDate = new Date(item.dateIST);
+            return itemDate >= startDate && itemDate <= endDate;
+          });
+          return filtered;
+        }
+        case '3m':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case '6m':
+          startDate.setMonth(now.getMonth() - 6);
+          break;
+        case '1y':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        case 'custom': {
+          if (dateRange.start || dateRange.end) {
+            const customStart = dateRange.start ? new Date(dateRange.start) : new Date('2020-01-01');
+            const customEnd = dateRange.end ? new Date(dateRange.end) : now;
+            filtered = filtered.filter(item => {
+              if (!item?.dateIST) return false;
+              const itemDate = new Date(item.dateIST);
+              return itemDate >= customStart && itemDate <= customEnd;
+            });
+          }
+          return filtered;
+        }
+        default:
+          break;
+      }
+      filtered = filtered.filter(item => {
+        if (!item?.dateIST) return false;
+        const itemDate = new Date(item.dateIST);
+        return itemDate >= startDate && itemDate <= now;
+      });
+    }
+    return filtered;
+  }, [allCheckins, activeLocation, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, selectedTimeframe, dateRange]);
+
   const heroMetrics = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return [];
 
@@ -332,7 +442,7 @@ const LateCancellations = () => {
                   <EnhancedLateCancellationsTopBottomLists data={filteredData} />
                   
                   {/* Enhanced Detailed Data Tables with Pagination */}
-                  <EnhancedLateCancellationsDataTables data={filteredData} onDrillDown={handleDrillDownClick} />
+                  <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownClick} />
                 </div>
               </TabsContent>
             ))}

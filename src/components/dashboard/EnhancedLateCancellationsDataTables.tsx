@@ -5,18 +5,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LateCancellationsData } from '@/types/dashboard';
-import { formatNumber } from '@/utils/formatters';
+import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PersistentTableFooter } from './PersistentTableFooter';
 
 interface EnhancedLateCancellationsDataTablesProps {
   data: LateCancellationsData[];
+  // New: all checkins (unfiltered) to compute true check-ins and bookings per day
+  allCheckins?: any[];
   onDrillDown?: (data: any) => void;
 }
 
 const ITEMS_PER_PAGE = 100;
 
-export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data, onDrillDown }) => {
+export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data, allCheckins = [], onDrillDown }) => {
+  // Shared table card wrapper to match Sales tab styling
+  const TableContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      {children}
+    </div>
+  );
   const [activeTab, setActiveTab] = useState('multiple-day');
   const [currentPage, setCurrentPage] = useState(1);
   const [isDescending, setIsDescending] = useState(true);
@@ -39,7 +47,8 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           cancellations: [],
           count: 0,
           locations: new Set(),
-          classes: new Set(),
+          classes: new Set(), // formats bucket
+          specificClasses: new Set(), // class + day + time
           trainers: new Set()
         };
       }
@@ -55,6 +64,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       acc[key].count += 1;
       acc[key].locations.add(item.location);
       acc[key].classes.add(item.cleanedClass);
+      acc[key].specificClasses.add(`${item.cleanedClass || 'Unknown'}|${item.dayOfWeek || 'Unknown'}|${item.time || 'Unknown'}`);
       acc[key].trainers.add(item.teacherName);
       
       return acc;
@@ -66,18 +76,21 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         ...group,
         uniqueLocations: group.locations.size,
         uniqueClasses: group.classes.size,
-        uniqueTrainers: group.trainers.size
+        uniqueTrainers: group.trainers.size,
+        uniqueSpecificClasses: group.specificClasses.size
       }));
     return arr.sort((a: any, b: any) => isDescending ? b.count - a.count : a.count - b.count);
   }, [data, isDescending]);
 
   // Enhanced checkins per day calculation
   const multipleCheckinsPerDay = useMemo(() => {
-    if (!data || data.length === 0) return [];
+    if (!allCheckins || allCheckins.length === 0) return [];
     
-    // Group by member and date to find multiple cancellations
-    const memberDayStats = data.reduce((acc, item) => {
+    // Group by member and date and only count rows with Checked in = TRUE
+    const memberDayStats = allCheckins.reduce((acc, item) => {
       if (!item.dateIST || !item.memberId) return acc;
+      const isCheckedIn = (item.checkedIn || '').toString().toUpperCase() === 'TRUE';
+      if (!isCheckedIn) return acc;
       
       const key = `${item.memberId}-${item.dateIST}`;
       
@@ -88,19 +101,18 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           email: item.email,
           date: item.dateIST,
           totalSessions: 0,
-          cancellations: 0,
+          cancellations: 0, // tracked separately if needed
           sessionDetails: []
         };
       }
       
-      acc[key].cancellations += 1;
-      acc[key].totalSessions += 1; // Assuming cancellations = booked sessions
+      acc[key].totalSessions += 1; // true check-ins
       acc[key].sessionDetails.push({
         sessionName: item.sessionName,
         time: item.time,
         location: item.location,
         teacherName: item.teacherName,
-        status: 'cancelled'
+        status: 'checked-in'
       });
       
       return acc;
@@ -109,7 +121,223 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
     const arr = Object.values(memberDayStats)
       .filter((member: any) => member.totalSessions > 1);
     return arr.sort((a: any, b: any) => isDescending ? b.totalSessions - a.totalSessions : a.totalSessions - b.totalSessions);
-  }, [data, isDescending]);
+  }, [allCheckins, isDescending]);
+
+  // New: Bookings per day irrespective of checked-in (TRUE or FALSE)
+  const multipleBookingsPerDay = useMemo(() => {
+    if (!allCheckins || allCheckins.length === 0) return [];
+    const memberDayStats = allCheckins.reduce((acc, item) => {
+      if (!item.dateIST || !item.memberId) return acc;
+      const key = `${item.memberId}-${item.dateIST}`;
+      if (!acc[key]) {
+        acc[key] = {
+          memberId: item.memberId,
+          memberName: `${item.firstName || ''} ${item.lastName || ''}`.trim(),
+          email: item.email,
+          date: item.dateIST,
+          totalBookings: 0,
+          sessionDetails: []
+        };
+      }
+      acc[key].totalBookings += 1;
+      acc[key].sessionDetails.push({
+        sessionName: item.sessionName,
+        time: item.time,
+        location: item.location,
+        teacherName: item.teacherName,
+        status: (item.checkedIn || '').toString().toUpperCase() === 'TRUE' ? 'checked-in' : 'booked'
+      });
+      return acc;
+    }, {} as Record<string, any>);
+    const arr = Object.values(memberDayStats).filter((member: any) => member.totalBookings > 1);
+    return arr.sort((a: any, b: any) => isDescending ? b.totalBookings - a.totalBookings : a.totalBookings - b.totalBookings);
+  }, [allCheckins, isDescending]);
+
+  // Daily aggregates: Check-ins per day (all members), grouped by date
+  const checkinsPerDay = useMemo(() => {
+    if (!allCheckins || allCheckins.length === 0) return [] as any[];
+    const map = allCheckins.reduce((acc, item) => {
+      const isCheckedIn = (item.checkedIn || '').toString().toUpperCase() === 'TRUE';
+      if (!isCheckedIn) return acc;
+      const day = item.dateIST ? new Date(item.dateIST).toISOString().slice(0, 10) : 'Unknown';
+      if (!acc[day]) {
+        acc[day] = {
+          date: day,
+          count: 0,
+          members: new Set<string>(),
+          locations: new Set<string>(),
+          formats: new Set<string>(),
+          revenue: 0
+        };
+      }
+      acc[day].count += 1;
+      item.memberId && acc[day].members.add(item.memberId);
+      item.location && acc[day].locations.add(item.location);
+      item.cleanedClass && acc[day].formats.add(item.cleanedClass);
+      acc[day].revenue += item.paidAmount || 0;
+      return acc;
+    }, {} as Record<string, any>);
+    return Object.values(map)
+      .map((g: any) => ({
+        ...g,
+        uniqueMembers: g.members.size,
+        uniqueLocations: g.locations.size,
+        uniqueFormats: g.formats.size
+      }))
+      .sort((a: any, b: any) => (a.date < b.date ? 1 : -1));
+  }, [allCheckins]);
+
+  // Daily aggregates: Bookings per day (regardless of checked-in), grouped by date
+  const bookingsPerDay = useMemo(() => {
+    if (!allCheckins || allCheckins.length === 0) return [] as any[];
+    const map = allCheckins.reduce((acc, item) => {
+      const day = item.dateIST ? new Date(item.dateIST).toISOString().slice(0, 10) : 'Unknown';
+      if (!acc[day]) {
+        acc[day] = {
+          date: day,
+          count: 0,
+          members: new Set<string>(),
+          locations: new Set<string>(),
+          formats: new Set<string>(),
+          revenue: 0
+        };
+      }
+      acc[day].count += 1;
+      item.memberId && acc[day].members.add(item.memberId);
+      item.location && acc[day].locations.add(item.location);
+      item.cleanedClass && acc[day].formats.add(item.cleanedClass);
+      acc[day].revenue += item.paidAmount || 0;
+      return acc;
+    }, {} as Record<string, any>);
+    return Object.values(map)
+      .map((g: any) => ({
+        ...g,
+        uniqueMembers: g.members.size,
+        uniqueLocations: g.locations.size,
+        uniqueFormats: g.formats.size
+      }))
+      .sort((a: any, b: any) => (a.date < b.date ? 1 : -1));
+  }, [allCheckins]);
+
+  const renderDailyAggregationTable = (rows: any[], title: string, tableId: string) => {
+    const pageRows = getPaginatedData(rows);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 justify-between px-4">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-slate-600" />
+            <h3 className="text-lg font-semibold">{title}</h3>
+            <Badge variant="outline" className="bg-slate-50 text-slate-700 min-w-[120px] justify-center">{formatNumber(rows.length)} days</Badge>
+          </div>
+        </div>
+        {pageRows.length > 0 ? (
+          <>
+            <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow className="h-[35px]">
+                  <TableHead>Date</TableHead>
+                  <TableHead>Sessions</TableHead>
+                  <TableHead>Members</TableHead>
+                  <TableHead>Locations</TableHead>
+                  <TableHead>Formats</TableHead>
+                  <TableHead>Revenue</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pageRows.map((r: any, idx: number) => (
+                  <TableRow key={idx} className="h-[35px] hover:bg-gray-50">
+                    <TableCell className="font-medium">{(() => { const d = new Date(r.date); return isNaN(d.getTime()) ? '—' : d.toLocaleDateString(); })()}</TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.count)}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.uniqueMembers)}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.uniqueLocations)}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.uniqueFormats)}</Badge></TableCell>
+                    <TableCell className="text-slate-700">{formatCurrency(r.revenue)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            </TableContainer>
+            <PaginationControls />
+            <PersistentTableFooter
+              tableId={tableId}
+              tableName={title}
+              tableContext={`${title} within selected filters`}
+              tableData={pageRows}
+              tableColumns={[
+                { header: 'Date', key: 'date', type: 'date' },
+                { header: 'Sessions', key: 'count', type: 'number' },
+                { header: 'Members', key: 'uniqueMembers', type: 'number' },
+                { header: 'Locations', key: 'uniqueLocations', type: 'number' },
+                { header: 'Formats', key: 'uniqueFormats', type: 'number' },
+                { header: 'Revenue', key: 'revenue', type: 'currency' }
+              ] as any}
+            />
+          </>
+        ) : (
+          <p className="text-gray-500 text-center py-8">No data available</p>
+        )}
+      </div>
+    );
+  };
+
+  // Enhanced Visit Frequency by membership and format
+  const visitFrequencyBreakdowns = useMemo(() => {
+    if (!data || data.length === 0) return { byFormat: [], byMembership: [] } as any;
+    // per member total visits
+    const memberTotals = data.reduce((acc, item) => {
+      const id = item.memberId || item.email || 'unknown';
+      acc[id] = (acc[id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Buckets
+    const buckets = [
+      { label: '1', min: 1, max: 1 },
+      { label: '2–3', min: 2, max: 3 },
+      { label: '4–7', min: 4, max: 7 },
+      { label: '8–15', min: 8, max: 15 },
+      { label: '16+', min: 16, max: Infinity }
+    ];
+
+    const byFormatMap: Record<string, any> = {};
+    const byMembershipMap: Record<string, any> = {};
+
+    Object.entries(memberTotals).forEach(([memberId, total]) => {
+      const memberRows = data.filter(r => (r.memberId || r.email || 'unknown') === memberId);
+      const formats = new Set(memberRows.map(r => r.cleanedClass || 'Unknown'));
+      const products = new Set(memberRows.map(r => r.cleanedProduct || 'Unknown'));
+      const revenue = memberRows.reduce((s, r) => s + (r.paidAmount || 0), 0);
+      const bucket = buckets.find(b => total >= b.min && total <= b.max)?.label || '1';
+
+      formats.forEach(fmt => {
+        byFormatMap[fmt] = byFormatMap[fmt] || { format: fmt, buckets: {}, members: 0, revenue: 0 };
+        byFormatMap[fmt].buckets[bucket] = (byFormatMap[fmt].buckets[bucket] || 0) + 1;
+        byFormatMap[fmt].members += 1;
+        byFormatMap[fmt].revenue += revenue;
+      });
+
+      products.forEach(prod => {
+        byMembershipMap[prod] = byMembershipMap[prod] || { membership: prod, buckets: {}, members: 0, revenue: 0 };
+        byMembershipMap[prod].buckets[bucket] = (byMembershipMap[prod].buckets[bucket] || 0) + 1;
+        byMembershipMap[prod].members += 1;
+        byMembershipMap[prod].revenue += revenue;
+      });
+    });
+
+    const toRows = (obj: Record<string, any>, key: 'format' | 'membership') => Object.values(obj).map((v: any) => ({
+      [key]: v[key],
+      members: v.members,
+      revenue: v.revenue,
+      ...buckets.reduce((acc, b) => ({ ...acc, [b.label]: v.buckets[b.label] || 0 }), {})
+    }));
+
+    return {
+      byFormat: toRows(byFormatMap, 'format'),
+      byMembership: toRows(byMembershipMap, 'membership'),
+      buckets
+    };
+  }, [data]);
 
   // Cancellations by class type with enhanced analytics
   const cancellationsByClass = useMemo(() => {
@@ -278,6 +506,8 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         return multipleCancellationsPerDay;
       case 'multiple-checkins':
         return multipleCheckinsPerDay;
+      case 'multiple-bookings':
+        return multipleBookingsPerDay;
       case 'by-class':
         return cancellationsByClass;
       case 'by-membership':
@@ -357,7 +587,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-orange-500" />
           <h3 className="text-lg font-semibold">{title}</h3>
-          <Badge variant="outline" className="bg-orange-50 text-orange-700">
+          <Badge variant="outline" className="bg-orange-50 text-orange-700 min-w-[90px] justify-center">
             {currentData.length} total members
           </Badge>
         </div>
@@ -371,6 +601,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       
       {Array.isArray(tableData) && tableData.length > 0 ? (
         <>
+          <TableContainer>
           <Table>
             <TableHeader>
               <TableRow>
@@ -417,25 +648,33 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     <span className="text-sm truncate max-w-[200px] block">{member.email}</span>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">
-                    <Badge variant="outline" className="text-xs">
-                      {new Date(member.date).toLocaleDateString()}
+                    <Badge variant="outline" className="text-xs min-w-[90px] justify-center">
+                      {(() => {
+                        const d = new Date(member.date);
+                        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+                      })()}
                     </Badge>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">
-                    <Badge variant="destructive" className="text-xs">
-                      {member.count} {tabType === 'multiple-day' ? 'cancellations' : 'sessions'}
+                    <Badge variant="destructive" className="text-xs min-w-[70px] justify-center">
+                      {(tabType === 'multiple-day' ? member.count : tabType === 'multiple-checkins' ? member.totalSessions : member.totalBookings)} {tabType === 'multiple-day' ? 'cancellations' : 'sessions'}
                     </Badge>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">
                     <div className="flex gap-1">
                       {member.uniqueLocations && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs min-w-[60px] justify-center">
                           {member.uniqueLocations} loc
                         </Badge>
                       )}
                       {member.uniqueClasses && (
-                        <Badge variant="outline" className="text-xs">
-                          {member.uniqueClasses} classes
+                        <Badge variant="outline" className="text-xs min-w-[80px] justify-center">
+                          {member.uniqueClasses} formats
+                        </Badge>
+                      )}
+                      {member.uniqueSpecificClasses && (
+                        <Badge variant="outline" className="text-xs min-w-[100px] justify-center">
+                          {member.uniqueSpecificClasses} classes
                         </Badge>
                       )}
                     </div>
@@ -452,17 +691,18 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
               ))}
             </TableBody>
           </Table>
+          </TableContainer>
           <PaginationControls />
           <PersistentTableFooter
             tableId={`late-cancel-${tabType}`}
             tableName={title}
-            tableContext="Members with multiple same-day cancellations/check-ins"
+            tableContext={tabType === 'multiple-day' ? 'Members with multiple same-day late cancellations' : tabType === 'multiple-checkins' ? 'Members with multiple same-day check-ins' : 'Members with multiple same-day bookings'}
             tableData={tableData}
             tableColumns={[
               { header: 'Member', key: 'memberName', type: 'text' },
               { header: 'Email', key: 'email', type: 'text' },
               { header: 'Date', key: 'date', type: 'date' },
-              { header: 'Count', key: 'count', type: 'number' }
+              { header: 'Count', key: (tabType === 'multiple-day' ? 'count' : tabType === 'multiple-checkins' ? 'totalSessions' : 'totalBookings') as any, type: 'number' }
             ] as any}
           />
         </>
@@ -477,8 +717,8 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       <div className="flex items-center gap-2 justify-between px-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-blue-500" />
-          <h3 className="text-lg font-semibold">Cancellations by Class Type</h3>
-          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <h3 className="text-lg font-semibold">Cancellations by Format</h3>
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 min-w-[90px] justify-center">
             {currentData.length} class types
           </Badge>
         </div>
@@ -486,10 +726,11 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       
       {paginatedData.length > 0 ? (
         <>
+          <TableContainer>
           <Table>
             <TableHeader>
               <TableRow className="h-[35px]">
-                <TableHead>Class Type</TableHead>
+                <TableHead>Format</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Cancellations</TableHead>
                 <TableHead>Members</TableHead>
@@ -509,7 +750,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     if (onDrillDown && classType) {
                       onDrillDown({
                         type: 'class',
-                        title: `Class Type: ${classType.className || 'Unknown'}`,
+                        title: `Format: ${classType.className || 'Unknown'}`,
                         data: classType,
                         rawData: data.filter(item => item.cleanedClass === classType.className) || []
                       });
@@ -526,23 +767,24 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     <Badge variant="secondary">{classType.category}</Badge>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">
-                    <Badge variant="destructive">
+                    <Badge variant="destructive" className="min-w-[70px] justify-center">
                       {formatNumber(classType.count)}
                     </Badge>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">{formatNumber(classType.uniqueMembers)}</TableCell>
                   <TableCell className="h-[35px] py-2">{formatNumber(classType.uniqueLocations)}</TableCell>
                   <TableCell className="h-[35px] py-2">
-                    <Badge variant="outline">{classType.peakTime}</Badge>
+                    <Badge variant="outline" className="min-w-[70px] justify-center">{classType.peakTime}</Badge>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">
-                    <Badge variant="outline">{classType.peakDay}</Badge>
+                    <Badge variant="outline" className="min-w-[70px] justify-center">{classType.peakDay}</Badge>
                   </TableCell>
                   <TableCell className="h-[35px] py-2">{classType.avgDuration} min</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          </TableContainer>
           <PaginationControls />
           <PersistentTableFooter
             tableId="late-cancel-by-class"
@@ -567,6 +809,100 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
     </div>
   );
 
+  // New: Separate By Class table (combined class/day/time)
+  const renderBySpecificClassTable = () => {
+    const rows = useMemo(() => {
+      if (!data || data.length === 0) return [] as any[];
+      const map = data.reduce((acc, item) => {
+        const key = `${item.cleanedClass || 'Unknown'}|${item.dayOfWeek || 'Unknown'}|${item.time || 'Unknown'}`;
+        if (!acc[key]) {
+          acc[key] = {
+            classKey: key,
+            className: item.cleanedClass || 'Unknown',
+            dayOfWeek: item.dayOfWeek || 'Unknown',
+            time: item.time || 'Unknown',
+            count: 0,
+            locations: new Set<string>(),
+            trainers: new Set<string>()
+          };
+        }
+        acc[key].count += 1;
+        item.location && acc[key].locations.add(item.location);
+        item.teacherName && acc[key].trainers.add(item.teacherName);
+        return acc;
+      }, {} as Record<string, any>);
+      return Object.values(map)
+        .map((g: any) => ({
+          ...g,
+          uniqueLocations: g.locations.size,
+          uniqueTrainers: g.trainers.size
+        }))
+        .sort((a: any, b: any) => isDescending ? b.count - a.count : a.count - b.count);
+    }, [data, isDescending]);
+
+    const pageRows = getPaginatedData(rows);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 justify-between px-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-slate-600" />
+            <h3 className="text-lg font-semibold">Cancellations by Class (Specific)</h3>
+            <Badge variant="outline" className="bg-slate-50 text-slate-700 min-w-[90px] justify-center">{rows.length} classes</Badge>
+          </div>
+        </div>
+        {pageRows.length > 0 ? (
+          <>
+            <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow className="h-[35px]">
+                  <TableHead>Class</TableHead>
+                  <TableHead>Day</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Cancellations</TableHead>
+                  <TableHead>Locations</TableHead>
+                  <TableHead>Trainers</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pageRows.map((r: any, idx: number) => (
+                  <TableRow key={idx} className="h-[35px] hover:bg-gray-50">
+                    <TableCell className="font-medium">{r.className}</TableCell>
+                    <TableCell>{r.dayOfWeek}</TableCell>
+                    <TableCell>{r.time}</TableCell>
+                    <TableCell>
+                      <Badge variant="destructive" className="min-w-[70px] justify-center">{formatNumber(r.count)}</Badge>
+                    </TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[60px] justify-center">{r.uniqueLocations}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[60px] justify-center">{r.uniqueTrainers}</Badge></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            </TableContainer>
+            <PaginationControls />
+            <PersistentTableFooter
+              tableId="late-cancel-by-specific-class"
+              tableName="Cancellations by Specific Class"
+              tableContext="Late cancellations grouped by specific class (class + day + time)"
+              tableData={pageRows}
+              tableColumns={[
+                { header: 'Class', key: 'className', type: 'text' },
+                { header: 'Day', key: 'dayOfWeek', type: 'text' },
+                { header: 'Time', key: 'time', type: 'text' },
+                { header: 'Cancellations', key: 'count', type: 'number' },
+                { header: 'Locations', key: 'uniqueLocations', type: 'number' },
+                { header: 'Trainers', key: 'uniqueTrainers', type: 'number' }
+              ] as any}
+            />
+          </>
+        ) : (
+          <p className="text-gray-500 text-center py-8">No specific class data</p>
+        )}
+      </div>
+    );
+  };
+
   const renderMembershipTypeTable = () => (
     <div className="space-y-4">
       <div className="flex items-center gap-2 justify-between px-4">
@@ -581,6 +917,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       
       {paginatedData.length > 0 ? (
         <>
+          <TableContainer>
           <Table>
             <TableHeader>
               <TableRow className="h-[35px]">
@@ -631,13 +968,12 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                       {(membership.avgCancellationsPerMember || 0).toFixed(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="h-[35px] py-2">
-                    ₹{(membership.revenue || 0).toFixed(2)}
-                  </TableCell>
+                  <TableCell className="h-[35px] py-2">{formatCurrency(membership.revenue || 0)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          </TableContainer>
             <PaginationControls />
             <PersistentTableFooter
               tableId="late-cancel-by-membership"
@@ -719,6 +1055,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         
         {paginatedTrainerData.length > 0 ? (
           <>
+            <TableContainer>
             <Table>
               <TableHeader>
                 <TableRow className="h-[35px]">
@@ -767,7 +1104,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     <TableCell className="h-[35px] py-2">{formatNumber(trainer.uniqueMembers)}</TableCell>
                     <TableCell className="h-[35px] py-2">{formatNumber(trainer.uniqueClasses)}</TableCell>
                     <TableCell className="h-[35px] py-2">{formatNumber(trainer.uniqueLocations)}</TableCell>
-                    <TableCell className="h-[35px] py-2">₹{trainer.revenue.toFixed(2)}</TableCell>
+                    <TableCell className="h-[35px] py-2">{formatCurrency(trainer.revenue || 0)}</TableCell>
                     <TableCell className="h-[35px] py-2">
                       <Badge variant="outline">
                         {trainer.avgCancellationsPerSession.toFixed(2)}
@@ -777,6 +1114,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                 ))}
               </TableBody>
             </Table>
+            </TableContainer>
             <PaginationControls />
             <PersistentTableFooter
               tableId="late-cancel-by-trainer"
@@ -879,6 +1217,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         
         {paginatedLocationData.length > 0 ? (
           <>
+            <TableContainer>
             <Table>
               <TableHeader>
                 <TableRow className="h-[35px]">
@@ -932,11 +1271,12 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     <TableCell className="h-[35px] py-2">
                       <Badge variant="outline">{location.peakTime}</Badge>
                     </TableCell>
-                    <TableCell className="h-[35px] py-2">₹{location.revenue.toFixed(2)}</TableCell>
+                    <TableCell className="h-[35px] py-2">{formatCurrency(location.revenue || 0)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </TableContainer>
             <PaginationControls />
             <PersistentTableFooter
               tableId="late-cancel-by-location"
@@ -968,7 +1308,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Users className="w-5 h-5 text-red-600" />
           Enhanced Late Cancellations Analysis
-          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 min-w-[180px] justify-center">
             Multiple analysis views with 35px row height
           </Badge>
         </CardTitle>
@@ -976,7 +1316,8 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="px-6">
-            <TabsList className="grid grid-cols-8 w-full mb-6">
+            {/* Match Sales tabs style */}
+            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-9 w-full max-w-7xl min-h-16 overflow-hidden mb-6">
               <TabsTrigger value="multiple-day" className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Multiple/Day
@@ -985,9 +1326,13 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                 <Users className="h-4 w-4" />
                 Check-ins/Day
               </TabsTrigger>
+              <TabsTrigger value="multiple-bookings" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Bookings/Day
+              </TabsTrigger>
               <TabsTrigger value="by-class" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                By Class
+                By Format
               </TabsTrigger>
               <TabsTrigger value="by-membership" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
@@ -1009,6 +1354,10 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                 <Users className="h-4 w-4" />
                 Visit Frequency
               </TabsTrigger>
+              <TabsTrigger value="by-specific-class" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                By Class (Specific)
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -1017,7 +1366,11 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           </TabsContent>
 
           <TabsContent value="multiple-checkins" className="mt-0">
-            {renderMultipleCancellationsTable(paginatedData, "Members with Multiple Check-ins per Day", "multiple-checkins")}
+            {renderDailyAggregationTable(checkinsPerDay, 'Check-ins per Day', 'late-cancel-checkins-per-day')}
+          </TabsContent>
+
+          <TabsContent value="multiple-bookings" className="mt-0">
+            {renderDailyAggregationTable(bookingsPerDay, 'Bookings per Day', 'late-cancel-bookings-per-day')}
           </TabsContent>
 
           <TabsContent value="by-class" className="mt-0">
@@ -1043,63 +1396,150 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
 
           <TabsContent value="visit-frequency" className="mt-0">
             {(() => {
-              // Build visit frequency buckets from member-level totals in dataset
-              const memberTotals = data.reduce((acc, item) => {
-                const id = item.memberId || item.email || 'unknown';
-                acc[id] = (acc[id] || 0) + 1;
-                return acc;
-              }, {} as Record<string, number>);
-              const buckets = [
-                { label: '1', min: 1, max: 1 },
-                { label: '2–3', min: 2, max: 3 },
-                { label: '4–7', min: 4, max: 7 },
-                { label: '8–15', min: 8, max: 15 },
-                { label: '16+', min: 16, max: Infinity }
-              ];
-              const rows = buckets.map(b => {
-                const count = Object.values(memberTotals).filter(v => v >= b.min && v <= b.max).length;
-                return { bucket: b.label, members: count };
-              });
+              const { buckets = [], byFormat = [], byMembership = [] } = visitFrequencyBreakdowns || {};
+              const totalMembers = (list: any[]) => list.reduce((s, r) => s + r.members, 0);
               return (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 justify-between px-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-slate-600" />
-                      <h3 className="text-lg font-semibold">Visit Frequency Buckets</h3>
-                      <Badge variant="outline" className="bg-slate-50 text-slate-700">
-                        {rows.reduce((s, r) => s + r.members, 0)} members
-                      </Badge>
+                <div className="space-y-10">
+                  {/* Overall Buckets */}
+                  {(() => {
+                    const memberTotals = data.reduce((acc, item) => {
+                      const id = item.memberId || item.email || 'unknown';
+                      acc[id] = (acc[id] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    const rows = buckets.map(b => ({
+                      bucket: b.label,
+                      members: Object.values(memberTotals).filter(v => v >= b.min && v <= b.max).length
+                    }));
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 justify-between px-4">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-5 h-5 text-slate-600" />
+                            <h3 className="text-lg font-semibold">Visit Frequency Buckets</h3>
+                            <Badge variant="outline" className="bg-slate-50 text-slate-700 min-w-[140px] justify-center">
+                              {rows.reduce((s, r) => s + r.members, 0)} members
+                            </Badge>
+                          </div>
+                        </div>
+                        <TableContainer>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Visits (per period)</TableHead>
+                              <TableHead>Members</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rows.map((r, idx) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">{r.bucket}</TableCell>
+                                <TableCell>{formatNumber(r.members)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        </TableContainer>
+                        <PersistentTableFooter
+                          tableId="late-cancel-visit-frequency"
+                          tableName="Visit Frequency Buckets"
+                          tableContext="Distribution of member late cancellations by visit count within the selected timeframe"
+                          tableData={rows}
+                          tableColumns={[
+                            { header: 'Bucket', key: 'bucket', type: 'text' },
+                            { header: 'Members', key: 'members', type: 'number' }
+                          ] as any}
+                        />
+                      </div>
+                    );
+                  })()}
+
+                  {/* Breakdown by Format */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 justify-between px-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-blue-500" />
+                        <h3 className="text-lg font-semibold">Visit Frequency by Format</h3>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 min-w-[140px] justify-center">{totalMembers(byFormat)} members</Badge>
+                      </div>
                     </div>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Visits (per period)</TableHead>
-                        <TableHead>Members</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rows.map((r, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-medium">{r.bucket}</TableCell>
-                          <TableCell>{formatNumber(r.members)}</TableCell>
+                    <TableContainer>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Format</TableHead>
+                          {buckets.map(b => (<TableHead key={b.label}>{b.label}</TableHead>))}
+                          <TableHead>Total Members</TableHead>
+                          <TableHead>Total Revenue</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <PersistentTableFooter
-                    tableId="late-cancel-visit-frequency"
-                    tableName="Visit Frequency Buckets"
-                    tableContext="Distribution of member late cancellations by visit count within the selected timeframe"
-                    tableData={rows}
-                    tableColumns={[
-                      { header: 'Bucket', key: 'bucket', type: 'text' },
-                      { header: 'Members', key: 'members', type: 'number' }
-                    ] as any}
-                  />
+                      </TableHeader>
+                      <TableBody>
+                        {byFormat.map((r: any, idx: number) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium">{r.format}</TableCell>
+                            {buckets.map(b => (<TableCell key={b.label}>{formatNumber(r[b.label] || 0)}</TableCell>))}
+                            <TableCell>{formatNumber(r.members)}</TableCell>
+                            <TableCell>{formatCurrency(r.revenue || 0)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    </TableContainer>
+                    <PersistentTableFooter
+                      tableId="late-cancel-visit-frequency-format"
+                      tableName="Visit Frequency by Format"
+                      tableContext="Members bucketed by visit frequency grouped by class format"
+                      tableData={byFormat}
+                      tableColumns={[{ header: 'Format', key: 'format', type: 'text' }, ...buckets.map(b => ({ header: b.label, key: b.label, type: 'number' })), { header: 'Members', key: 'members', type: 'number' }, { header: 'Revenue', key: 'revenue', type: 'currency' }] as any}
+                    />
+                  </div>
+
+                  {/* Breakdown by Membership */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 justify-between px-4">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-purple-500" />
+                        <h3 className="text-lg font-semibold">Visit Frequency by Membership</h3>
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 min-w-[140px] justify-center">{totalMembers(byMembership)} members</Badge>
+                      </div>
+                    </div>
+                    <TableContainer>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Membership</TableHead>
+                          {buckets.map(b => (<TableHead key={b.label}>{b.label}</TableHead>))}
+                          <TableHead>Total Members</TableHead>
+                          <TableHead>Total Revenue</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {byMembership.map((r: any, idx: number) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium">{r.membership}</TableCell>
+                            {buckets.map(b => (<TableCell key={b.label}>{formatNumber(r[b.label] || 0)}</TableCell>))}
+                            <TableCell>{formatNumber(r.members)}</TableCell>
+                            <TableCell>{formatCurrency(r.revenue || 0)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    </TableContainer>
+                    <PersistentTableFooter
+                      tableId="late-cancel-visit-frequency-membership"
+                      tableName="Visit Frequency by Membership"
+                      tableContext="Members bucketed by visit frequency grouped by membership type"
+                      tableData={byMembership}
+                      tableColumns={[{ header: 'Membership', key: 'membership', type: 'text' }, ...buckets.map(b => ({ header: b.label, key: b.label, type: 'number' })), { header: 'Members', key: 'members', type: 'number' }, { header: 'Revenue', key: 'revenue', type: 'currency' }] as any}
+                    />
+                  </div>
                 </div>
               );
             })()}
+          </TabsContent>
+
+          <TabsContent value="by-specific-class" className="mt-0">
+            {renderBySpecificClassTable()}
           </TabsContent>
         </Tabs>
       </CardContent>

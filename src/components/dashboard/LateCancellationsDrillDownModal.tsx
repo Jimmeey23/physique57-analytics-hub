@@ -426,9 +426,10 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
           {dataType === 'membership' && renderMembershipDetails()}
           {dataType === 'trainer' && renderTrainerDetails()}
           {dataType === 'location' && renderLocationDetails()}
-          {!['member', 'class', 'metric'].includes(dataType) && (
+          {/* Gracefully handle unknown types without crash */}
+          {['member','class','metric','membership','trainer','location'].includes(dataType) ? null : (
             <div className="text-center py-8">
-              <p className="text-gray-500">Unable to display drill-down data</p>
+              <p className="text-gray-500">No specific view for this selection</p>
               <p className="text-sm text-gray-400">Data type: {dataType}</p>
             </div>
           )}

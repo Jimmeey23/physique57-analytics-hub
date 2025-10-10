@@ -12,6 +12,8 @@ const SPREADSHEET_ID = "149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI";
 
 export const useLateCancellationsData = () => {
   const [data, setData] = useState<LateCancellationsData[]>([]);
+  // New: retain all raw checkins (unfiltered) for additional analytics
+  const [allCheckins, setAllCheckins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,8 +84,9 @@ export const useLateCancellationsData = () => {
         return;
       }
 
-      // Process the Checkins data and filter for late cancellations
-      const processedData: LateCancellationsData[] = [];
+  // Process the Checkins data: build both raw checkins and late cancellations subsets
+  const processedData: LateCancellationsData[] = [];
+  const rawCheckins: any[] = [];
       
       if (rows.length < 2) {
         setData([]);
@@ -91,7 +94,8 @@ export const useLateCancellationsData = () => {
       }
 
       const headers = rows[0];
-      const lateCancelledIndex = headers.findIndex((h: string) => h === 'Is Late Cancelled');
+  const lateCancelledIndex = headers.findIndex((h: string) => h === 'Is Late Cancelled');
+  const checkedInIndex = headers.findIndex((h: string) => h === 'Checked in');
       
       if (lateCancelledIndex === -1) {
         console.error('Is Late Cancelled column not found');
@@ -105,6 +109,33 @@ export const useLateCancellationsData = () => {
         
         // Skip empty rows
         if (!row || row.length === 0) continue;
+        
+        // Build raw checkin row (unfiltered)
+        const rawRow = {
+          memberId: row[headers.findIndex((h: string) => h === 'Member ID')] || '',
+          firstName: row[headers.findIndex((h: string) => h === 'First Name')] || '',
+          lastName: row[headers.findIndex((h: string) => h === 'Last Name')] || '',
+          email: row[headers.findIndex((h: string) => h === 'Email')] || '',
+          location: row[headers.findIndex((h: string) => h === 'Location')] || '',
+          sessionName: row[headers.findIndex((h: string) => h === 'Session Name')] || '',
+          teacherName: row[headers.findIndex((h: string) => h === 'Teacher Name')] || '',
+          cleanedProduct: row[headers.findIndex((h: string) => h === 'Cleaned Product')] || '',
+          cleanedCategory: row[headers.findIndex((h: string) => h === 'Cleaned Category')] || '',
+          cleanedClass: row[headers.findIndex((h: string) => h === 'Cleaned Class')] || '',
+          paymentMethodName: row[headers.findIndex((h: string) => h === 'Payment Method Name')] || '',
+          dateIST: row[headers.findIndex((h: string) => h === 'Date (IST)')] || '',
+          dayOfWeek: row[headers.findIndex((h: string) => h === 'Day of Week')] || '',
+          time: row[headers.findIndex((h: string) => h === 'Time')] || '',
+          duration: parseNumericValue(row[headers.findIndex((h: string) => h === 'Duration (Minutes)')] || '0'),
+          capacity: parseNumericValue(row[headers.findIndex((h: string) => h === 'Capacity')] || '0'),
+          month: row[headers.findIndex((h: string) => h === 'Month')] || '',
+          year: parseNumericValue(row[headers.findIndex((h: string) => h === 'Year')] || '0'),
+          paidAmount: parseNumericValue(row[headers.findIndex((h: string) => h === 'Paid')] || '0'),
+          isNew: row[headers.findIndex((h: string) => h === 'Is New')] || '',
+          checkedIn: checkedInIndex >= 0 ? row[checkedInIndex] : '',
+          isLateCancelled: lateCancelledIndex >= 0 ? row[lateCancelledIndex] : '',
+        };
+        rawCheckins.push(rawRow);
         
         // Only include rows where Is Late Cancelled = TRUE
         if (row[lateCancelledIndex] !== 'TRUE') continue;
@@ -138,13 +169,16 @@ export const useLateCancellationsData = () => {
 
       console.log('Processed late cancellations data sample:', processedData.slice(0, 5));
       console.log('Total late cancellations records:', processedData.length);
+      console.log('Total raw checkins rows:', rawCheckins.length);
       
       setData(processedData);
+      setAllCheckins(rawCheckins);
       setError(null);
     } catch (err) {
       console.error('Error fetching late cancellations data:', err);
       setError('Failed to load late cancellations data');
       setData([]); // Clear data on error - no mock data as per requirements
+      setAllCheckins([]);
     } finally {
       setLoading(false);
     }
@@ -154,5 +188,5 @@ export const useLateCancellationsData = () => {
     fetchLateCancellationsData();
   }, []);
 
-  return { data, loading, error, refetch: fetchLateCancellationsData };
+  return { data, allCheckins, loading, error, refetch: fetchLateCancellationsData };
 };

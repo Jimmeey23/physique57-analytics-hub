@@ -147,11 +147,11 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
 
   if (metrics.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
         {[...Array(6)].map((_, index) => (
-          <Card key={index} className="bg-gray-100 animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-20 bg-gray-200 rounded"></div>
+          <Card key={index} className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm animate-pulse">
+            <CardContent className="p-5">
+              <div className="h-16 bg-slate-100 rounded-xl"></div>
             </CardContent>
           </Card>
         ))}
@@ -160,7 +160,7 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
       {metrics.map((metric, index) => {
         const IconComponent = metric.icon;
         const isPositive = metric.change > 0;
@@ -170,61 +170,41 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
           <Card 
             key={index} 
             className={cn(
-              "bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-500 group cursor-pointer",
-              "hover:scale-105 transform"
+              "bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 group cursor-pointer",
+              "hover:shadow-lg"
             )}
             onClick={() => handleMetricClick(metric)}
             style={{ animationDelay: `${index * 150}ms` }}
           >
-            <CardContent className="p-0">
-              <div className={`bg-gradient-to-r ${
-                metric.color === 'red' ? 'from-red-500 to-red-600' :
-                metric.color === 'orange' ? 'from-orange-500 to-orange-600' :
-                metric.color === 'blue' ? 'from-blue-500 to-indigo-600' :
-                metric.color === 'purple' ? 'from-purple-500 to-violet-600' :
-                metric.color === 'green' ? 'from-green-500 to-teal-600' :
-                'from-cyan-500 to-blue-600'
-              } p-6 text-white relative overflow-hidden`}>
-                
-                {/* Background decorative icon */}
-                <div className="absolute top-0 right-0 w-20 h-20 transform translate-x-8 -translate-y-8 opacity-20">
-                  <IconComponent className="w-20 h-20" />
-                </div>
-                
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <IconComponent className="w-6 h-6" />
-                    </div>
-                    <h3 className="font-semibold text-sm">{metric.title}</h3>
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center text-white",
+                    metric.color === 'red' && 'bg-red-500',
+                    metric.color === 'orange' && 'bg-orange-500',
+                    metric.color === 'blue' && 'bg-blue-500',
+                    metric.color === 'purple' && 'bg-purple-500',
+                    metric.color === 'green' && 'bg-green-500',
+                    metric.color === 'cyan' && 'bg-cyan-500'
+                  )}>
+                    <IconComponent className="w-5 h-5" />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <p className="text-3xl font-bold">{metric.value}</p>
-                    
-                    {showChange && (
-                      <div className="flex items-center gap-2">
-                        {isPositive ? (
-                          <TrendingUp className="w-4 h-4 text-green-200" />
-                        ) : (
-                          <TrendingDown className="w-4 h-4 text-red-200" />
-                        )}
-                        <span className={`text-sm font-medium ${
-                          isPositive ? 'text-green-200' : 'text-red-200'
-                        }`}>
-                          {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
-                        </span>
-                        <span className="text-sm text-white/80">vs last period</span>
-                      </div>
-                    )}
+                  <div>
+                    <h3 className="font-semibold text-slate-700 text-sm">{metric.title}</h3>
+                    <p className="text-2xl font-bold text-slate-900 leading-tight">{metric.value}</p>
                   </div>
                 </div>
+                {showChange && (
+                  <div className={cn(
+                    "text-xs font-medium px-2 py-1 rounded-md",
+                    isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  )}>
+                    {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
+                  </div>
+                )}
               </div>
-              
-              {/* Description section */}
-              <div className="p-4 bg-gray-50">
-                <p className="text-sm text-gray-600">{metric.description}</p>
-              </div>
+              <p className="mt-3 text-xs text-slate-500">{metric.description}</p>
             </CardContent>
           </Card>
         );
