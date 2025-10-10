@@ -108,7 +108,16 @@ export class ExecutivePDFReportGenerator {
         isInPeriod(s.date) && matchesLocation(s.location)
       ),
       payroll: allData.payroll.filter(p => {
-        const monthMatch = p.monthYear === this.config.monthYear;
+        // Parse payroll monthYear like "Sep 2025" or "September 2025" and compare to target period's month/year
+        let payrollDate: Date | null = null;
+        if (p.monthYear) {
+          const d = new Date(p.monthYear);
+          if (!isNaN(d.getTime())) payrollDate = d;
+        }
+
+        const targetMonth = this.config.periodStart.getMonth();
+        const targetYear = this.config.periodStart.getFullYear();
+        const monthMatch = payrollDate ? (payrollDate.getMonth() === targetMonth && payrollDate.getFullYear() === targetYear) : false;
         return monthMatch && matchesLocation(p.location);
       }),
       newClients: allData.newClients.filter(n => 
@@ -624,7 +633,7 @@ export class ExecutivePDFReportGenerator {
       body: funnelData,
       theme: 'grid',
       headStyles: {
-        fillColor: COLORS.primary,
+        fillColor: COLORS.brandPrimary,
         textColor: COLORS.white,
         fontSize: 11,
         fontStyle: 'bold'
@@ -635,7 +644,7 @@ export class ExecutivePDFReportGenerator {
       },
       columnStyles: {
         0: { cellWidth: 100, fontStyle: 'bold' },
-        1: { cellWidth: 40, halign: 'right', fontStyle: 'bold', textColor: COLORS.primary },
+  1: { cellWidth: 40, halign: 'right', fontStyle: 'bold', textColor: COLORS.brandPrimary },
         2: { cellWidth: 35, halign: 'right', textColor: COLORS.success }
       },
       margin: { left: this.margin, right: this.margin }
@@ -681,7 +690,7 @@ export class ExecutivePDFReportGenerator {
       body: sourceData,
       theme: 'striped',
       headStyles: {
-        fillColor: COLORS.secondary,
+        fillColor: COLORS.brandSecondary,
         textColor: COLORS.white,
         fontSize: 10
       },
@@ -744,7 +753,7 @@ export class ExecutivePDFReportGenerator {
       bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 110, fontStyle: 'bold' },
-        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.primary }
+  1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.brandPrimary }
       },
       margin: { left: this.margin, right: this.margin }
     });
@@ -794,7 +803,7 @@ export class ExecutivePDFReportGenerator {
       bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 110, fontStyle: 'bold' },
-        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.primary }
+  1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.brandPrimary }
       },
       margin: { left: this.margin, right: this.margin }
     });
@@ -912,7 +921,7 @@ export class ExecutivePDFReportGenerator {
       bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 110, fontStyle: 'bold' },
-        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.primary }
+        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.brandPrimary }
       },
       margin: { left: this.margin, right: this.margin }
     });
@@ -944,7 +953,7 @@ export class ExecutivePDFReportGenerator {
       bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 110, fontStyle: 'bold' },
-        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.primary }
+        1: { cellWidth: 65, halign: 'right', fontStyle: 'bold', textColor: COLORS.brandPrimary }
       },
       margin: { left: this.margin, right: this.margin }
     });
@@ -991,12 +1000,12 @@ export class ExecutivePDFReportGenerator {
       head: [['Metric', 'PowerCycle', 'Barre', 'Strength']],
       body: comparisonData,
       theme: 'grid',
-      headStyles: { fillColor: COLORS.secondary, textColor: COLORS.white, fontSize: 11 },
+      headStyles: { fillColor: COLORS.brandSecondary, textColor: COLORS.white, fontSize: 11 },
       bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 50, fontStyle: 'bold' },
-        1: { cellWidth: 40, halign: 'right', textColor: COLORS.primary },
-        2: { cellWidth: 42, halign: 'right', textColor: COLORS.secondary },
+        1: { cellWidth: 40, halign: 'right', textColor: COLORS.brandPrimary },
+        2: { cellWidth: 42, halign: 'right', textColor: COLORS.brandSecondary },
         3: { cellWidth: 43, halign: 'right', textColor: COLORS.success }
       },
       margin: { left: this.margin, right: this.margin }
@@ -1027,7 +1036,7 @@ export class ExecutivePDFReportGenerator {
       head: [['#', 'Trainer', 'Sessions', 'Customers', 'Revenue', 'Retention']],
       body: topTrainers,
       theme: 'striped',
-      headStyles: { fillColor: COLORS.secondary, textColor: COLORS.white, fontSize: 10 },
+  headStyles: { fillColor: COLORS.brandSecondary, textColor: COLORS.white, fontSize: 10 },
       bodyStyles: { fontSize: 9 },
       columnStyles: {
         0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
@@ -1061,10 +1070,10 @@ export class ExecutivePDFReportGenerator {
     recommendations.forEach((rec, idx) => {
       if (this.checkPageBreak(15)) this.addNewPage();
       
-      this.doc.setFillColor(...COLORS.secondary, 0.1);
+  this.doc.setFillColor(...COLORS.brandSecondary, 0.1);
       this.doc.roundedRect(this.margin, this.currentY - 3, this.pageWidth - 2 * this.margin, 11, 2, 2, 'F');
       
-      this.doc.setTextColor(...COLORS.secondary);
+  this.doc.setTextColor(...COLORS.brandSecondary);
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(10);
       this.doc.text(`${idx + 1}.`, this.margin + 3, this.currentY + 3);
