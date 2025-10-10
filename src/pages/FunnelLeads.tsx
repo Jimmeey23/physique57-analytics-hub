@@ -338,20 +338,13 @@ export default function FunnelLeads() {
         <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 overflow-hidden">
           <CardContent className="p-2">
             <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-              <TabsList className="theme-tabs premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full" data-theme="funnel">
-                {locations.map(location => {
-                  const parts = location.name.split(',').map(s => s.trim());
-                  const mainName = parts[0] || location.name;
-                  const subName = parts[1] || '';
-                  return (
-                    <TabsTrigger key={location.id} value={location.id} className="premium-tab-trigger">
-                      <span className="relative z-10 flex flex-col items-center leading-tight">
-                        <span className="font-extrabold text-base sm:text-lg">{location.name}</span>
-                        <span className="text-[11px] sm:text-xs opacity-95 mt-0.5">Total Leads • Trials • Conversion</span>
-                      </span>
-                    </TabsTrigger>
-                  );
-                })}
+              <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-2 rounded-2xl h-auto gap-2">
+                {locations.map(location => <TabsTrigger key={location.id} value={location.id} className="rounded-xl px-6 py-4 font-semibold text-sm transition-all duration-300">
+                    <div className="text-center">
+                      <div className="font-bold">{location.name}</div>
+                      <div className="text-xs opacity-75">{location.fullName}</div>
+                    </div>
+                  </TabsTrigger>)}
               </TabsList>
 
               {/* Tab Content */}

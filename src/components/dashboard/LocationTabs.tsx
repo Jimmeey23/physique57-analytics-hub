@@ -78,18 +78,25 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
         </div>
 
         <Tabs value={selectedLocation} onValueChange={onLocationChange} className="w-full">
-          <TabsList className="theme-tabs premium-tabs grid w-full gap-2" data-theme="attendance" style={{
+          <TabsList className="grid w-full bg-slate-100/70 p-3 rounded-xl shadow-inner border border-slate-200/70" style={{
             gridTemplateColumns: `repeat(${Math.min(locationStats.length + 1, 6)}, 1fr)`
           }}>
             {/* All Locations Tab */}
             <TabsTrigger 
               value="all"
-              className={cn("premium-tab-trigger")}
+              className={cn(
+                "flex items-center gap-2 px-5 py-3 text-base font-semibold rounded-lg transition-all",
+                "data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg",
+                "data-[state=inactive]:text-slate-700 data-[state=inactive]:hover:text-slate-900"
+              )}
             >
-              <div className="flex flex-col items-center leading-tight">
-                <span className="font-extrabold text-base sm:text-lg">All Locations</span>
-                <div className="flex items-center gap-2 text-xs opacity-90 mt-0.5">
-                  <Badge variant="secondary" className="text-[10px] px-1 py-0">{totalSessions}</Badge>
+              <Globe className="w-5 h-5" />
+              <div className="flex flex-col items-start">
+                <span>All Locations</span>
+                <div className="flex items-center gap-2 text-xs opacity-75">
+                  <Badge variant="secondary" className="text-xs px-1 py-0">
+                    {totalSessions}
+                  </Badge>
                   <Users className="w-3 h-3" />
                   <span>{totalAttendance}</span>
                 </div>
@@ -101,12 +108,19 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
               <TabsTrigger
                 key={stat.location}
                 value={stat.location}
-                className={cn("premium-tab-trigger")}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-3 text-base font-semibold rounded-lg transition-all",
+                  "data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg",
+                  "data-[state=inactive]:text-slate-700 data-[state=inactive]:hover:text-slate-900"
+                )}
               >
-                <div className="flex flex-col items-center leading-tight">
-                  <span className="font-extrabold text-base sm:text-lg truncate max-w-[180px]">{stat.location}</span>
-                  <div className="flex items-center gap-2 text-[10px] opacity-90 mt-1">
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{stat.count}</Badge>
+                {getLocationIcon(stat.location)}
+                <div className="flex flex-col items-start">
+                  <span className="truncate max-w-[140px]">{stat.location}</span>
+                  <div className="flex items-center gap-2 text-xs opacity-75">
+                    <Badge variant="secondary" className="text-xs px-1 py-0">
+                      {stat.count}
+                    </Badge>
                     <Users className="w-3 h-3" />
                     <span>{stat.attendance}</span>
                   </div>

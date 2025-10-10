@@ -672,7 +672,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       <div className="container mx-auto px-6 space-y-6">
         <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
           <div className="flex justify-center mb-8">
-            <TabsList className="theme-tabs premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full max-w-7xl min-h-24 overflow-hidden" data-theme="sales">
+            <TabsList className="premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full max-w-7xl min-h-24 overflow-hidden">
               {locations.map(location => {
                 const parts = location.name.split(',').map(s => s.trim());
                 const mainName = parts[0] || location.name;
@@ -684,12 +684,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     className="premium-tab-trigger group"
                   >
                     <span className="relative z-10 flex flex-col items-center leading-tight">
-                      <span className="font-extrabold text-base sm:text-lg">{location.name}</span>
-                      {/* Metrics row for Sales: Transactions • Revenue • Members - optional summary */}
-                      <span className="text-[11px] sm:text-xs opacity-95 mt-0.5">
-                        {/* Placeholder summary; could be wired to real quick stats if desired */}
-                        Transactions • Revenue • Members
-                      </span>
+                      <span className="font-extrabold text-base sm:text-lg">{mainName}</span>
+                      {subName && (
+                        <span className="text-xs sm:text-sm opacity-90">{subName}</span>
+                      )}
                     </span>
                   </TabsTrigger>
                 );
