@@ -241,9 +241,6 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
         case 'trainer_time':
           groupLabel = `${primaryTrainer} | ${sessions[0]?.time}`;
           break;
-        case 'trainer_class':
-          groupLabel = `${primaryTrainer} - ${sessions[0]?.cleanedClass}`;
-          break;
         case 'uniqueid1':
           groupLabel = sessions[0]?.uniqueId1 || 'Unknown UniqueID1';
           break;
