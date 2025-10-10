@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Calendar } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 
 const ExpirationAnalytics = () => {
   const { data, loading, error } = useExpirationsData();
@@ -50,11 +50,14 @@ const ExpirationAnalytics = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
-      <ModernHeroSection 
+      <DashboardMotionHero 
         title="Expirations & Churn"
         subtitle="Comprehensive analysis of membership expirations and customer retention insights"
-        variant="expiration"
-        onExport={() => console.log('Exporting expiration data...')}
+        metrics={[]}
+        onDashboardClick={() => {
+          const main = document.querySelector('main, .container');
+          if (main) (main as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+        }}
       />
 
       <div className="container mx-auto px-6 py-8">

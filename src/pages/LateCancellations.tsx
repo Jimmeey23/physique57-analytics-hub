@@ -13,7 +13,7 @@ import { Home, XCircle } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber } from '@/utils/formatters';
 
 const LateCancellations = () => {
@@ -377,17 +377,17 @@ const LateCancellations = () => {
       defaultFileName={`late-cancellations-${activeLocation}`}
       size="sm"
       variant="ghost"
+      buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
     />
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
-      <ModernHeroSection 
+      <DashboardMotionHero 
         title="Late Cancellations"
         subtitle="Comprehensive analysis of late cancellation patterns across locations, classes, trainers, and products"
-        variant="cancellations"
         metrics={heroMetrics}
-        exportButton={exportButton}
+        extra={exportButton}
       />
 
       {/* Main Content */}

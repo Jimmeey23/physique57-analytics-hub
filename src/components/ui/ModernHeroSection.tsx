@@ -9,6 +9,7 @@ interface MetricData {
   location: string;
   change?: number;
   trend?: 'strong' | 'moderate' | 'weak';
+  icon?: React.ComponentType<any>;
 }
 export interface ModernHeroSectionProps {
   title: string;
@@ -174,7 +175,7 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
   return <div className={cn(
     "relative overflow-hidden bg-gradient-to-br text-white",
     gradientVariants[variant],
-    compact ? "min-h-[320px]" : "min-h-[420px]"
+    compact ? "min-h-[240px]" : "min-h-[360px]"
   )}>
       {/* Hidden audio element */}
       <audio 
@@ -201,13 +202,13 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
         Your browser does not support the audio element.
       </audio>
       {/* Background overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
+  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10" />
       
       {/* Animated floating elements */}
       {/* Subtle background accents for a leaner look */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-10 -left-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/5 blur-2xl" />
+        <div className="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute top-10 right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
       </div>
       
       {/* Corner buttons - More compact layout */}
@@ -260,27 +261,27 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
       {/* Content */}
       <div className={cn(
         "relative z-10 flex items-center justify-center px-6",
-        compact ? "min-h-[320px] py-8" : "min-h-[420px] py-10"
+        compact ? "min-h-[240px] py-6" : "min-h-[360px] py-8"
       )}>
         <div className="text-center max-w-7xl mx-auto w-full">
           <h1 className={cn(
-            "font-black mb-3 animate-fade-in bg-gradient-to-r from-white via-white to-white/90 bg-clip-text text-transparent drop-shadow-2xl tracking-tight",
-            compact ? "text-4xl md:text-5xl" : "text-5xl md:text-6xl"
+            "font-black mb-2 animate-fade-in bg-gradient-to-r from-white via-white to-white/90 bg-clip-text text-transparent drop-shadow-2xl tracking-tight",
+            compact ? "text-3xl md:text-4xl" : "text-4xl md:text-5xl"
           )}>
             {title}
           </h1>
           <p className={cn(
             "text-white/90 animate-slide-up delay-200 max-w-3xl mx-auto leading-relaxed font-medium",
-            compact ? "text-base md:text-lg mb-6" : "text-lg md:text-xl mb-8"
+            compact ? "text-sm md:text-base mb-4" : "text-base md:text-lg mb-6"
           )}>
             {subtitle}
           </p>
           
           {/* Metrics Display - Enhanced 3-metric layout with better animations */}
           {metrics.length > 0 && (
-            <div className={cn("max-w-6xl mx-auto", compact ? "mt-6" : "mt-8")}> 
+            <div className={cn("max-w-6xl mx-auto", compact ? "mt-4" : "mt-6")}> 
               {/* 3-metric premium layout with advanced animations */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {metrics.slice(0, 3).map((metric, index) => {
                   const isCenter = index === 1;
                   const change = metric.change || 0;
@@ -290,39 +291,44 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
                     <div
                       key={index}
                       className={cn(
-                        "group relative rounded-2xl p-4 border transition-all duration-500 ease-out",
-                        "bg-white/5 backdrop-blur-xl",
-                        "hover:bg-white/10",
-                        "shadow-[0_6px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.25)]",
-                        "hover:scale-[1.02]",
+                        "group relative rounded-xl p-3 border transition-all duration-300 ease-out",
+                        "bg-transparent backdrop-blur-0",
+                        "hover:bg-white/5",
+                        "shadow-none hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)]",
+                        "hover:scale-[1.01]",
                         "animate-fade-in cursor-pointer",
                         "overflow-hidden",
                         isCenter 
-                          ? "border-white/30 bg-white/10 md:scale-[1.02] ring-1 ring-white/20"
-                          : "border-white/15 hover:border-white/30"
+                          ? "border-white/25 md:scale-[1.01]"
+                          : "border-white/10 hover:border-white/25"
                       )}
                       style={{
                         animationDelay: `${index * 200}ms`,
                         animationFillMode: 'both'
                       }}
                     >
-                      {/* Subtle top accent */}
+                      {/* Subtle top accent (leaner) */}
                       <div className={cn(
-                        "absolute inset-x-0 top-0 h-1 rounded-t-2xl transition-all duration-700",
-                        "bg-gradient-to-r from-blue-400/30 via-cyan-400/50 to-blue-400/30",
-                        "group-hover:from-blue-300/50 group-hover:via-cyan-300/70 group-hover:to-blue-300/50",
-                        "group-hover:h-1.5"
+                        "absolute inset-x-0 top-0 h-[2px] rounded-t-xl transition-all duration-500",
+                        "bg-gradient-to-r from-blue-400/20 via-cyan-400/30 to-blue-400/20",
+                        "group-hover:from-blue-300/30 group-hover:via-cyan-300/40 group-hover:to-blue-300/30"
                       )} />
-                      
-                      {/* Floating glow effect */}
-                      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-700 -z-10" />
                       
                       {/* Content container */}
                       <div className="relative z-10 space-y-3">
+                        {/* Optional Icon (transparent, lean) */}
+                        {metric.icon && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-white/80">
+                              <metric.icon className="w-4 h-4 opacity-90" />
+                              <span className="sr-only">metric icon</span>
+                            </div>
+                          </div>
+                        )}
                         {/* Label with fade-in animation */}
                         <div className="flex items-center justify-between">
                           <div className={cn(
-                            "text-[10px] uppercase tracking-widest font-bold transition-all duration-500",
+                            "text-[10px] uppercase tracking-widest font-semibold transition-all duration-300",
                             "text-white/70 group-hover:text-white/90 group-hover:tracking-[0.2em]"
                           )}>
                             {metric.location}
@@ -346,27 +352,26 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
                         
                         {/* Value with scale animation */}
                         <div className={cn(
-                          "font-black text-white drop-shadow-2xl transition-all duration-500",
-                          "group-hover:scale-105 group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]",
-                          isCenter ? "text-3xl" : "text-2xl"
+                          "font-extrabold text-white drop-shadow-xl transition-all duration-300",
+                          "group-hover:scale-105",
+                          isCenter ? "text-2xl" : "text-xl"
                         )}>
                           {metric.value}
                         </div>
                         
                         {/* Description with slide animation */}
                         <div className={cn(
-                          "text-xs text-white/80 font-medium leading-relaxed",
-                          "group-hover:text-white/95 transition-all duration-500"
+                          "text-[11px] text-white/80 font-medium leading-relaxed",
+                          "group-hover:text-white/95 transition-all duration-300"
                         )}>
                           {metric.label}
                         </div>
                         
-                        {/* Decorative shimmer line */}
-                        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:via-white/40 transition-all duration-500" />
+                        {/* Decorative shimmer line (lighter) */}
+                        <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:via-white/30 transition-all duration-300" />
                       </div>
                       
-                      {/* Corner accent */}
-                      <div className="absolute top-2 right-2 w-12 h-12 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      {/* Removed large corner accent for leaner look */}
                     </div>
                   );
                 })}
@@ -376,7 +381,7 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
         </div>
       </div>
       
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
+      {/* Bottom gradient fade (shorter) */}
+      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
     </div>;
 };

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { UpdatedEnhancedClassAttendanceSection } from '@/components/dashboard/UpdatedEnhancedClassAttendanceSection';
 import { Footer } from '@/components/ui/footer';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
@@ -58,12 +58,11 @@ const ClassAttendanceContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
-      <ModernHeroSection 
+      <DashboardMotionHero 
         title="Class Attendance Analytics"
         subtitle="Comprehensive class utilization and attendance trend analysis across all sessions"
-        variant="attendance"
         metrics={heroMetrics}
-        onExport={() => console.log('Exporting attendance data...')}
+        onExportClick={() => console.log('Exporting attendance data...')}
       />
 
       <div className="container mx-auto px-6 py-8">

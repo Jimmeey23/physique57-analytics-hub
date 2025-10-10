@@ -305,10 +305,11 @@ export const ComprehensiveExecutiveDashboard = () => {
               </div>
 
               {/* Dashboard Navigation Button */}
-              <div className="flex justify-center gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 max-w-3xl mx-auto">
                 <Button 
                   onClick={handlePlayAudio}
-                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm px-6 py-3 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                  className="rounded-xl border border-white/30 bg-transparent text-white hover:border-white/50 px-6 py-3 text-base font-semibold"
+                  variant="ghost"
                 >
                   {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
                   {isPlaying ? 'Pause' : 'Play'}
@@ -321,12 +322,14 @@ export const ComprehensiveExecutiveDashboard = () => {
                   lateCancellationsData={[]}
                   discountData={previousMonthData.discounts}
                   defaultFileName="executive-dashboard-export"
-                  size="lg"
-                  variant="outline"
+                  size="sm"
+                  variant="ghost"
+                  buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
                 />
                 <Button 
                   onClick={() => window.location.href = '/'}
-                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm px-6 py-3 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                  className="rounded-xl border border-white/30 bg-transparent text-white hover:border-white/50 px-6 py-3 text-base font-semibold"
+                  variant="ghost"
                 >
                   <Home className="w-5 h-5 mr-2" />
                   Back to Main Dashboard

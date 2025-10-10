@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedDiscountsDashboardV2 } from '@/components/dashboard/EnhancedDiscountsDashboardV2';
-import { DiscountsHeroSection } from '@/components/dashboard/DiscountsHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
@@ -121,12 +121,18 @@ const DiscountsPromotions: React.FC = () => {
       defaultFileName="discounts-promotions-export"
       size="sm"
       variant="ghost"
+      buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
     />
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-amber-50/20">
-      <DiscountsHeroSection data={discountData} />
+      <DashboardMotionHero 
+        title="Discounts & Promotions"
+        subtitle="Comprehensive analysis of discount strategies, promotional effectiveness, and customer savings patterns"
+        metrics={heroMetrics}
+        extra={exportButton}
+      />
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">

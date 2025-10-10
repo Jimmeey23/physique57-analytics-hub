@@ -3,7 +3,7 @@ import React, { useMemo, useEffect } from 'react';
 import { SessionsSection } from '@/components/dashboard/SessionsSection';
 import { Footer } from '@/components/ui/footer';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { formatNumber } from '@/utils/formatters';
@@ -45,12 +45,11 @@ const Sessions = () => {
   return (
     <SessionsFiltersProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-red-50/20">
-        <ModernHeroSection 
+        <DashboardMotionHero 
           title="Sessions Analytics"
           subtitle="Comprehensive analysis of class sessions, attendance patterns, and performance insights"
-          variant="sessions"
           metrics={heroMetrics}
-          onExport={() => console.log('Exporting sessions data...')}
+          onExportClick={() => console.log('Exporting sessions data...')}
         />
         <main>
           <SessionsSection />

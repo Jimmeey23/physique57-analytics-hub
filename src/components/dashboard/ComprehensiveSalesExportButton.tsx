@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,14 @@ interface ComprehensiveSalesExportButtonProps {
   categoryPerformanceTableRef?: React.RefObject<any>;
   soldByTableRef?: React.RefObject<any>;
   paymentMethodTableRef?: React.RefObject<any>;
+  buttonVariant?: ButtonProps['variant'];
+  buttonSize?: ButtonProps['size'];
+  buttonClassName?: string;
+  buttonLabel?: string;
+  /** When provided, the component will assign an open() method to this ref so parents can programmatically open the dialog */
+  openRef?: React.RefObject<{ open: () => void }>;
+  /** If false, hides the default trigger button and only renders the dialog content. */
+  renderTrigger?: boolean;
 }
 
 interface ExportConfig {
@@ -48,9 +57,23 @@ const LOCATION_MAPPING: Record<string, string> = {
 export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportButtonProps> = ({
   data,
   currentLocation,
-  locationName
+  locationName,
+  buttonVariant = 'outline',
+  buttonSize = 'sm',
+  buttonClassName,
+  buttonLabel,
+  openRef,
+  renderTrigger = true,
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Expose programmatic open
+  useEffect(() => {
+    if (openRef) {
+      openRef.current = {
+        open: () => setIsDialogOpen(true),
+      };
+    }
+  }, [openRef]);
   const [isExporting, setIsExporting] = useState(false);
   const [exportConfig, setExportConfig] = useState<ExportConfig>({
     currentView: true,
@@ -655,12 +678,18 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Download className="h-4 w-4" />
-          Export All Sales Data
-        </Button>
-      </DialogTrigger>
+      {renderTrigger !== false && (
+        <DialogTrigger asChild>
+          <Button 
+            variant={buttonVariant} 
+            size={buttonSize} 
+            className={cn('gap-2', buttonClassName)}
+          >
+            <Download className="h-4 w-4" />
+            {buttonLabel ?? 'Export All Sales Data'}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

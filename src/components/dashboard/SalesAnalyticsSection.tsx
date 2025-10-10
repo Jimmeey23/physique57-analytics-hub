@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, Building2, Landmark, Building } from 'lucide-react';
 import { AutoCloseFilterSection } from './AutoCloseFilterSection';
 import { MetricCard } from './MetricCard';
 import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
@@ -34,8 +35,8 @@ interface SalesAnalyticsSectionProps {
 
 const locations = [{
   id: 'all',
-  name: 'All Locations',
-  fullName: 'All Locations'
+  name: 'All Locations, ',
+  fullName: 'All Studio Locations'
 }, {
   id: 'kwality',
   name: 'Kwality House, Kemps Corner',
@@ -46,8 +47,8 @@ const locations = [{
   fullName: 'Supreme HQ, Bandra'
 }, {
   id: 'kenkere',
-  name: 'Kenkere House',
-  fullName: 'Kenkere House'
+  name: 'Kenkere House, Bengaluru',
+  fullName: 'Kenkere House, Bengaluru'
 }];
 
 export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data, onReady }) => {
@@ -661,7 +662,11 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   return (
     <div className="space-y-8">
       {/* Hero Section with Dynamic Metrics */}
-      <SalesHeroSection data={filteredData} />
+      <SalesHeroSection 
+        data={filteredData} 
+        currentLocation={activeLocation}
+        locationName={locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations'}
+      />
 
       {/* Note Taker Component */}
       <div className="container mx-auto px-6">
@@ -672,19 +677,23 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       <div className="container mx-auto px-6 space-y-6">
         <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
           <div className="flex justify-center mb-8">
-            <TabsList className="premium-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full max-w-7xl min-h-24 overflow-hidden">
+            <TabsList className="location-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-7xl overflow-visible">
               {locations.map(location => {
                 const parts = location.name.split(',').map(s => s.trim());
                 const mainName = parts[0] || location.name;
                 const subName = parts[1] || '';
+                const Icon = location.id === 'all' ? MapPin : location.id === 'kwality' ? Building2 : location.id === 'supreme' ? Landmark : Building;
                 return (
                   <TabsTrigger 
                     key={location.id}
                     value={location.id} 
-                    className="premium-tab-trigger group"
+                    className="location-tab-trigger group data-[state=active]:[--tab-accent:var(--hero-accent)]"
                   >
                     <span className="relative z-10 flex flex-col items-center leading-tight">
-                      <span className="font-extrabold text-base sm:text-lg">{mainName}</span>
+                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">
+                        <Icon className="w-4 h-4 opacity-80" />
+                        {mainName}
+                      </span>
                       {subName && (
                         <span className="text-xs sm:text-sm opacity-90">{subName}</span>
                       )}

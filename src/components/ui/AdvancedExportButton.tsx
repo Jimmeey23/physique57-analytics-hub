@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,8 @@ interface AdvancedExportButtonProps {
   defaultFileName?: string;
   size?: 'sm' | 'default' | 'lg';
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  buttonClassName?: string;
+  buttonLabel?: string;
 }
 export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   salesData = [],
@@ -33,7 +36,9 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   additionalData = {},
   defaultFileName,
   size = 'default',
-  variant = 'outline'
+  variant = 'outline',
+  buttonClassName,
+  buttonLabel,
 }) => {
   const {
     exportAllData,
@@ -110,9 +115,13 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   };
   return <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size} className="gap-2 font-semibold bg-transparent hover:bg-white/10 text-base rounded-2xl text-purple-300 hover:text-purple-200 border border-purple-300/30 hover:border-purple-200/50 backdrop-blur-sm transition-all duration-300 ease-out hover:shadow-lg hover:shadow-purple-500/20">
+        <Button 
+          variant={variant} 
+          size={size} 
+          className={cn("gap-2 font-semibold bg-transparent text-base rounded-xl border backdrop-blur-sm transition-all duration-300 ease-out", buttonClassName)}
+        >
           <Download className="w-4 h-4" />
-          Export All Data
+          {buttonLabel ?? 'Export All Data'}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

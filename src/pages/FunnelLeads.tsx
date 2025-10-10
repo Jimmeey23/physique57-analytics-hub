@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Users, Target, TrendingUp, Home, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { useNavigate } from 'react-router-dom';
@@ -202,136 +202,15 @@ export default function FunnelLeads() {
       </div>;
   }
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Animated Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-red-900 via-red-800 to-red-700 text-white">
-        <div className="absolute inset-0 bg-black/30" />
-        
-        {/* Animated glittery funnel-related icons */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Glittery Users Icons */}
-          <div className="absolute top-12 left-12 animate-float animate-pulse-neon" style={{
-          animationDuration: '6s',
-          animationDelay: '0s'
-        }}>
-            <Users className="w-8 h-8 text-yellow-300/80 neon-glow" />
-          </div>
-          <div className="absolute top-32 right-20 animate-float animate-pulse-neon" style={{
-          animationDuration: '5s',
-          animationDelay: '2s'
-        }}>
-            <Users className="w-6 h-6 text-amber-200/70 neon-glow" />
-          </div>
-          <div className="absolute bottom-24 left-32 animate-float animate-pulse-neon" style={{
-          animationDuration: '7s',
-          animationDelay: '1s'
-        }}>
-            <Users className="w-10 h-10 text-yellow-400/60 neon-glow" />
-          </div>
-          
-          {/* Glittery Target/Funnel Icons */}
-          <div className="absolute top-20 left-1/3 animate-bounce animate-pulse-neon" style={{
-          animationDuration: '4s',
-          animationDelay: '1s'
-        }}>
-            <Target className="w-12 h-12 text-orange-300/80 neon-glow" />
-          </div>
-          <div className="absolute bottom-32 right-32 animate-float animate-pulse-neon" style={{
-          animationDuration: '6s',
-          animationDelay: '3s'
-        }}>
-            <Target className="w-8 h-8 text-yellow-200/70 neon-glow" />
-          </div>
-          
-          {/* Glittery Trending Up Icons for Conversion */}
-          <div className="absolute top-28 right-12 animate-pulse animate-pulse-neon" style={{
-          animationDuration: '3s'
-        }}>
-            <TrendingUp className="w-10 h-10 text-emerald-300/80 neon-glow" />
-          </div>
-          <div className="absolute bottom-16 left-16 animate-bounce animate-pulse-neon" style={{
-          animationDuration: '5s',
-          animationDelay: '2.5s'
-        }}>
-            <TrendingUp className="w-6 h-6 text-green-200/70 neon-glow" />
-          </div>
-          
-          {/* Additional glittery icons scattered around */}
-          <div className="absolute top-16 right-1/3 animate-float animate-pulse-neon" style={{
-          animationDuration: '4.5s',
-          animationDelay: '0.5s'
-        }}>
-            <Users className="w-7 h-7 text-orange-200/60 neon-glow" />
-          </div>
-          <div className="absolute bottom-40 left-1/4 animate-pulse animate-pulse-neon" style={{
-          animationDuration: '3.5s',
-          animationDelay: '1.5s'
-        }}>
-            <Target className="w-9 h-9 text-yellow-300/70 neon-glow" />
-          </div>
-          <div className="absolute top-2/3 right-1/4 animate-float animate-pulse-neon" style={{
-          animationDuration: '5.5s',
-          animationDelay: '2.8s'
-        }}>
-            <TrendingUp className="w-8 h-8 text-amber-300/60 neon-glow" />
-          </div>
-          
-          {/* Gradient orbs for depth */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-red-500/30 to-orange-500/20 rounded-full blur-3xl animate-pulse" style={{
-          animationDuration: '8s'
-        }}></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-red-600/25 to-red-700/15 rounded-full blur-3xl animate-pulse" style={{
-          animationDuration: '10s',
-          animationDelay: '3s'
-        }}></div>
-        </div>
-        
-        <div className="relative px-8 py-12">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <Button onClick={() => navigate('/')} variant="outline" size="sm" className="gap-2 bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 hover:border-white/30 transition-all duration-200">
-                <Home className="w-4 h-4" />
-                Dashboard
-              </Button>
-            </div>
-            
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-2 border border-white/20 animate-fade-in-up">
-                <Target className="w-5 h-5" />
-                <span className="font-medium">Lead Funnel Analysis</span>
-              </div>
-              
-              <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent animate-fade-in-up delay-200">
-                Funnel & Leads
-              </h1>
-              
-              <p className="text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed animate-fade-in-up delay-300">
-                Comprehensive lead funnel analysis and conversion tracking
-              </p>
-              
-              <div className="flex items-center justify-center gap-8 mt-8 animate-fade-in-up delay-500">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white">{filteredData.length.toLocaleString()}</div>
-                  <div className="text-sm text-blue-200">Total Leads</div>
-                </div>
-                <div className="w-px h-12 bg-white/30" />
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white">
-                    {filteredData.filter(lead => lead.conversionStatus === 'Converted').length}
-                  </div>
-                  <div className="text-sm text-blue-200">Converted</div>
-                </div>
-                <div className="w-px h-12 bg-white/30" />
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white">
-                    {(filteredData.filter(lead => lead.conversionStatus === 'Converted').length / filteredData.length * 100).toFixed(1)}%
-                  </div>
-                  <div className="text-sm text-blue-200">Conversion Rate</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <DashboardMotionHero
+        title="Funnel & Leads Analytics"
+        subtitle="Analyze your marketing funnel, lead quality, source effectiveness, and conversion patterns to improve acquisition and retention."
+        metrics={[
+          { label: 'Total Leads', value: filteredData.length.toLocaleString() },
+          { label: 'Converted', value: filteredData.filter(lead => lead.conversionStatus === 'Converted').length.toString() },
+          { label: 'Conversion Rate', value: `${(filteredData.length ? (filteredData.filter(lead => lead.conversionStatus === 'Converted').length / filteredData.length * 100) : 0).toFixed(1)}%` },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Location Tabs */}
@@ -415,47 +294,5 @@ export default function FunnelLeads() {
       ...prev,
       isOpen: false
     }))} title={drillDownModal.title} data={drillDownModal.data} type={drillDownModal.type} />
-
-      <style>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-15px);
-          }
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-        }
-        
-        .animate-float {
-          animation: float ease-in-out infinite;
-        }
-        
-        .delay-200 {
-          animation-delay: 0.2s;
-        }
-        
-        .delay-300 {
-          animation-delay: 0.3s;
-        }
-        
-        .delay-500 {
-          animation-delay: 0.5s;
-        }
-      `}</style>
     </div>;
 }

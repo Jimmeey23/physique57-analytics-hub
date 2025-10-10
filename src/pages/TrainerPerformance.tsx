@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedTrainerPerformanceSection } from '@/components/dashboard/EnhancedTrainerPerformanceSection';
 import { Footer } from '@/components/ui/footer';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency } from '@/utils/formatters';
 
@@ -46,12 +46,11 @@ const TrainerPerformance = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
-      <ModernHeroSection 
+      <DashboardMotionHero 
         title="Trainer Performance Analytics"
         subtitle="Comprehensive trainer performance metrics, insights, and development opportunities"
-        variant="trainer"
         metrics={heroMetrics}
-        onExport={() => console.log('Exporting trainer data...')}
+        onExportClick={() => console.log('Exporting trainer data...')}
       />
 
       <div className="container mx-auto px-6 py-8">

@@ -43,11 +43,11 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
             key={metric.title}
             className={cn(
               "group relative overflow-hidden cursor-pointer transition-all duration-700",
-              "bg-white hover:bg-gradient-to-br hover:from-slate-800 hover:via-slate-700 hover:to-slate-900",
-              index % 4 === 0 && "border-t-4 border-emerald-700 hover:border-emerald-500 shadow-lg",
-              index % 4 === 1 && "border-t-4 border-blue-700 hover:border-blue-500 shadow-lg",
-              index % 4 === 2 && "border-t-4 border-cyan-700 hover:border-cyan-500 shadow-lg", 
-              index % 4 === 3 && "border-t-4 border-orange-700 hover:border-orange-500 shadow-lg",
+              "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+              index % 4 === 0 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+              index % 4 === 1 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+              index % 4 === 2 && "border-t-4 border-pink-700 hover:border-pink-700 shadow-lg", 
+              index % 4 === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
               "hover:shadow-2xl hover:shadow-slate-900/30",
               "hover:-translate-y-2 hover:scale-[1.02]",
               onMetricClick && "hover:cursor-pointer"
@@ -63,29 +63,29 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
               <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
                 <IconComponent className={cn(
                   "w-12 h-12 transition-all duration-700",
-                  index % 4 === 0 && "text-emerald-700",
+                  index % 4 === 0 && "text-green-700",
                   index % 4 === 1 && "text-blue-700",
-                  index % 4 === 2 && "text-cyan-700",
-                  index % 4 === 3 && "text-orange-700",
+                  index % 4 === 2 && "text-pink-700",
+                  index % 4 === 3 && "text-red-700",
                   "group-hover:text-white/40"
                 )} />
               </div>
               
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-6">
                     <div className={cn(
-                      "p-4 rounded-2xl transition-all duration-700 border-2 shadow-lg",
-                      index % 4 === 0 && "bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-300 text-white shadow-emerald-200",
-                      index % 4 === 1 && "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-300 text-white shadow-blue-200",
-                      index % 4 === 2 && "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-300 text-white shadow-cyan-200",
-                      index % 4 === 3 && "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-300 text-white shadow-orange-200",
+                      "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                      index % 4 === 0 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                      index % 4 === 1 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                      index % 4 === 2 && "bg-gradient-to-br from-pink-700 to-pink-600 border-pink-900 text-white shadow-pink-200",
+                      index % 4 === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
                       "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
                     )}>
                       <IconComponent className="w-6 h-6 drop-shadow-sm" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-sm text-slate-700 group-hover:text-white/95 transition-colors duration-700">
+                      <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
                         {metric.title}
                       </h3>
                     </div>
@@ -94,7 +94,7 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                   <div className={cn(
                     "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
                     isPositive
-                      ? "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-400/30 group-hover:text-emerald-100"
+                      ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
                       : isNegative
                       ? "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
                       : "bg-blue-50 text-blue-700 group-hover:bg-blue-400/30 group-hover:text-blue-100"
@@ -109,7 +109,7 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
 
                 <div className="space-y-3">
                   <p className={cn(
-                    "text-3xl font-light transition-all duration-700 text-slate-900 group-hover:text-white"
+                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
                   )}>
                     {metric.value}
                   </p>
@@ -119,12 +119,12 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
               <div className={cn(
                 "mt-4 p-3 border-t border-l-4 transition-all duration-700",
                 "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
-                index % 4 === 0 && "border-l-emerald-400",
-                index % 4 === 1 && "border-l-blue-500",
-                index % 4 === 2 && "border-l-cyan-400",
-                index % 4 === 3 && "border-l-orange-400"
+                index % 4 === 0 && "border-l-green-700",
+                index % 4 === 1 && "border-l-blue-700",
+                index % 4 === 2 && "border-l-pink-700",
+                index % 4 === 3 && "border-l-red-700"
               )}>
-                <p className="text-xs text-slate-600 group-hover:text-slate-100 transition-colors duration-700">
+                <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
                   {metric.description}
                 </p>
               </div>

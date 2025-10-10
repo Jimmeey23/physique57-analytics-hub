@@ -10,7 +10,7 @@ import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { NewClientFilterOptions } from '@/types/dashboard';
-import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber } from '@/utils/formatters';
 import { getPreviousMonthDateRange, getCurrentMonthDateRange, parseDate } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
@@ -446,7 +446,7 @@ const ClientRetention = () => {
   
   // Remove individual loader - rely on global loader only
   console.log('Rendering ClientRetention with data:', data.length, 'records, filtered:', filteredData.length);
-  const exportButton = <AdvancedExportButton newClientData={filteredData} defaultFileName={`client-conversion-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" />;
+  const exportButton = <AdvancedExportButton newClientData={filteredData} defaultFileName={`client-conversion-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" />;
   return <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -457,12 +457,11 @@ const ClientRetention = () => {
 
       <div className="relative z-10">
         <div className="bg-white text-slate-800 slide-in-from-left">
-          <ModernHeroSection 
+          <DashboardMotionHero 
             title="Client Conversion & Retention" 
             subtitle="Comprehensive client acquisition and retention analysis across all customer touchpoints" 
-            variant="client" 
             metrics={heroMetrics} 
-            exportButton={exportButton}
+            extra={exportButton}
           />
         </div>
 
