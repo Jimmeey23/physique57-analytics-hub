@@ -19,7 +19,7 @@ export interface ModernHeroSectionProps {
   metrics?: MetricData[];
   exportButton?: React.ReactNode;
   location?: string; // Add location prop for audio selection
-  compact?: boolean; // Add compact mode for shorter hero section
+  compact?: boolean; // Compact mode for shorter hero section
 }
 const gradientVariants = {
   sales: 'from-slate-900 via-blue-900 to-slate-800',
@@ -111,7 +111,7 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
   metrics = [],
   exportButton,
   location,
-  compact = false
+  compact = true
 }) => {
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -174,7 +174,7 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
   return <div className={cn(
     "relative overflow-hidden bg-gradient-to-br text-white",
     gradientVariants[variant],
-    compact ? "min-h-[420px]" : "min-h-[588px]"
+    compact ? "min-h-[320px]" : "min-h-[420px]"
   )}>
       {/* Hidden audio element */}
       <audio 
@@ -204,7 +204,11 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
       
       {/* Animated floating elements */}
-      <AnimatedFloatingElements variant={variant} />
+      {/* Subtle background accents for a leaner look */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-10 -left-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/5 blur-2xl" />
+      </div>
       
       {/* Corner buttons - More compact layout */}
       <div className="absolute top-4 left-4 z-20">
@@ -219,7 +223,7 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
           </Button>}
       </div>
       
-      <div className="absolute top-4 right-4 z-20 flex gap-2">
+  <div className="absolute top-4 right-4 z-20 flex gap-2">
         {/* Audio Play Button */}
         <Button 
           variant="ghost" 
@@ -256,27 +260,27 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
       {/* Content */}
       <div className={cn(
         "relative z-10 flex items-center justify-center px-6",
-        compact ? "min-h-[420px] py-8" : "min-h-[588px] py-12"
+        compact ? "min-h-[320px] py-8" : "min-h-[420px] py-10"
       )}>
         <div className="text-center max-w-7xl mx-auto w-full">
           <h1 className={cn(
-            "font-black mb-4 animate-fade-in bg-gradient-to-r from-white via-white to-white/90 bg-clip-text text-transparent drop-shadow-2xl tracking-tight",
-            compact ? "text-5xl md:text-7xl" : "text-4xl md:text-6xl"
+            "font-black mb-3 animate-fade-in bg-gradient-to-r from-white via-white to-white/90 bg-clip-text text-transparent drop-shadow-2xl tracking-tight",
+            compact ? "text-4xl md:text-5xl" : "text-5xl md:text-6xl"
           )}>
             {title}
           </h1>
           <p className={cn(
-            "text-white/95 animate-slide-up delay-200 max-w-3xl mx-auto leading-relaxed font-medium",
-            compact ? "text-xl md:text-2xl mb-8" : "text-lg md:text-xl mb-8"
+            "text-white/90 animate-slide-up delay-200 max-w-3xl mx-auto leading-relaxed font-medium",
+            compact ? "text-base md:text-lg mb-6" : "text-lg md:text-xl mb-8"
           )}>
             {subtitle}
           </p>
           
           {/* Metrics Display - Enhanced 3-metric layout with better animations */}
           {metrics.length > 0 && (
-            <div className={cn("max-w-6xl mx-auto", compact ? "mt-8" : "mt-10")}>
+            <div className={cn("max-w-6xl mx-auto", compact ? "mt-6" : "mt-8")}> 
               {/* 3-metric premium layout with advanced animations */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {metrics.slice(0, 3).map((metric, index) => {
                   const isCenter = index === 1;
                   const change = metric.change || 0;
@@ -286,15 +290,15 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
                     <div
                       key={index}
                       className={cn(
-                        "group relative rounded-2xl p-6 border transition-all duration-700 ease-out",
+                        "group relative rounded-2xl p-4 border transition-all duration-500 ease-out",
                         "bg-white/5 backdrop-blur-xl",
                         "hover:bg-white/10",
-                        "shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]",
-                        "hover:scale-105 hover:-translate-y-2",
+                        "shadow-[0_6px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.25)]",
+                        "hover:scale-[1.02]",
                         "animate-fade-in cursor-pointer",
                         "overflow-hidden",
                         isCenter 
-                          ? "border-white/30 bg-white/10 md:scale-105 ring-1 ring-white/20"
+                          ? "border-white/30 bg-white/10 md:scale-[1.02] ring-1 ring-white/20"
                           : "border-white/15 hover:border-white/30"
                       )}
                       style={{
@@ -302,7 +306,7 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
                         animationFillMode: 'both'
                       }}
                     >
-                      {/* Animated gradient border accent */}
+                      {/* Subtle top accent */}
                       <div className={cn(
                         "absolute inset-x-0 top-0 h-1 rounded-t-2xl transition-all duration-700",
                         "bg-gradient-to-r from-blue-400/30 via-cyan-400/50 to-blue-400/30",
@@ -342,9 +346,9 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
                         
                         {/* Value with scale animation */}
                         <div className={cn(
-                          "font-black text-white drop-shadow-2xl transition-all duration-700",
+                          "font-black text-white drop-shadow-2xl transition-all duration-500",
                           "group-hover:scale-105 group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]",
-                          isCenter ? "text-4xl" : "text-3xl"
+                          isCenter ? "text-3xl" : "text-2xl"
                         )}>
                           {metric.value}
                         </div>
@@ -358,18 +362,11 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
                         </div>
                         
                         {/* Decorative shimmer line */}
-                        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:via-white/40 transition-all duration-700" />
+                        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:via-white/40 transition-all duration-500" />
                       </div>
                       
-                      {/* Animated pulse for center card */}
-                      {isCenter && (
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent animate-pulse pointer-events-none" 
-                          style={{ animationDuration: '4s' }} 
-                        />
-                      )}
-                      
                       {/* Corner accent */}
-                      <div className="absolute top-2 right-2 w-16 h-16 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      <div className="absolute top-2 right-2 w-12 h-12 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
                   );
                 })}
@@ -380,6 +377,6 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
       </div>
       
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
     </div>;
 };
