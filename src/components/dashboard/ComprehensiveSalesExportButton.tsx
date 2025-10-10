@@ -85,10 +85,12 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
       // Find the table with most rows (likely the main data table)
       let maxRows = 0;
       tableElements.forEach(table => {
-        const rowCount = table.querySelectorAll('tr').length;
-        if (rowCount > maxRows) {
+        const el = table as HTMLTableElement;
+        const isVisible = (el as any).offsetParent !== null;
+        const rowCount = el.querySelectorAll('tr').length;
+        if ((isVisible && maxRows === 0) || rowCount > maxRows) {
           maxRows = rowCount;
-          tableElement = table as HTMLTableElement;
+          tableElement = el;
         }
       });
     }
@@ -152,71 +154,78 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     };
   };
 
-  // Extract data from visible tables within the currently active content
-  const extractAllTableData = (): TableExportData[] => {
-    const tables: TableExportData[] = [];
-    
-    // Get the currently active tab content
-    const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"], [data-state="active"][role="tabpanel"], [data-state="active"]');
-    if (!activeTabContent) {
-      console.warn('No active tab content found');
-      return tables;
+  // Lower-level: extract a single table element to data
+  const extractTableFromElement = (tableElement: HTMLTableElement, tableName: string): TableExportData => {
+    const headers: string[] = [];
+    const rows: string[][] = [];
+
+    let headerRow = tableElement.querySelector('thead tr');
+    if (!headerRow) headerRow = tableElement.querySelector('tr:has(th)');
+    if (!headerRow) headerRow = tableElement.querySelector('tr');
+
+    if (headerRow) {
+      const headerCells = headerRow.querySelectorAll('th, td');
+      headerCells.forEach(cell => {
+        let text = cell.textContent?.trim() || '';
+        text = text.replace(/[↑↓▲▼]/g, '').trim();
+        headers.push(text);
+      });
     }
 
-    // Look for different types of table structures
-    const tableQueries = [
-      // Standard HTML tables
-      { selector: 'table', name: 'Main Data Table' },
-      // Card-based layouts that might contain tabular data
-      { selector: '[class*="table"], [class*="grid"]', name: 'Grid Layout Data' },
-      // Specific component tables
-      { selector: '[class*="Table"], [class*="DataTable"]', name: 'Component Table' }
-    ];
-
-    let tableCount = 0;
-    tableQueries.forEach(({ selector, name }) => {
-      // Search within active tab content
-      const fullSelector = selector;
-      const tablesInActive = activeTabContent.querySelectorAll(fullSelector);
-      
-      tablesInActive.forEach((tableEl, index) => {
-        if (tableEl instanceof HTMLElement) {
-          const tableName = tablesInActive.length > 1 ? `${name} ${index + 1}` : name;
-          
-          // Check if this element contains tabular data
-          const rows = tableEl.querySelectorAll('tr');
-          if (rows.length > 0) {
-            const tableData = extractTableData(`[data-state="active"] ${selector}`, tableName);
-            if (tableData && tableData.rows.length > 0) {
-              tableCount++;
-              tableData.name = `${tableName} (${tableCount})`;
-              tables.push(tableData);
-            }
-          }
+    const allRows = tableElement.querySelectorAll('tr');
+    allRows.forEach(row => {
+      if (headerRow && row === headerRow) return;
+      const cells = row.querySelectorAll('td, th');
+      if (cells.length === 0) return;
+      const rowData: string[] = [];
+      cells.forEach(cell => {
+        let text = cell.textContent?.trim() || '';
+        if (cell.querySelector('button')) {
+          const buttonText = cell.querySelector('button')?.textContent?.trim();
+          text = buttonText || text;
         }
+        text = text.replace(/[↑↓▲▼]/g, '').trim();
+        rowData.push(text);
+      });
+      if (rowData.some(cell => cell.length > 0 && cell !== '—' && cell !== '-')) {
+        rows.push(rowData);
+      }
+    });
+
+    return { name: tableName, headers, rows };
+  };
+
+  // Extract data from visible tables within all active tabpanels
+  const extractAllTableData = (): TableExportData[] => {
+    const tables: TableExportData[] = [];
+    const activePanels = document.querySelectorAll('[role="tabpanel"][data-state="active"]');
+    const visibleTables: HTMLTableElement[] = [];
+
+    activePanels.forEach(panel => {
+      const tablesInPanel = panel.querySelectorAll('table');
+      tablesInPanel.forEach(t => {
+        const el = t as HTMLTableElement;
+        const style = window.getComputedStyle(el);
+        const isVisible = (el as any).offsetParent !== null && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        if (isVisible) visibleTables.push(el);
       });
     });
 
-    // If no standard tables found, try to extract from card/div based layouts
-    if (tables.length === 0) {
-      const cardLayouts = activeTabContent.querySelectorAll('[class*="card"], [class*="row"], .grid');
-      cardLayouts.forEach((layout, index) => {
-        if (layout instanceof HTMLElement) {
-          const textContent = layout.textContent?.trim();
-          if (textContent && textContent.length > 50) { // Has substantial content
-            // Try to parse as table-like structure
-            const lines = textContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            if (lines.length > 2) { // At least header + some data
-              tables.push({
-                name: `Card Layout Data ${index + 1}`,
-                headers: [lines[0]], // First line as header
-                rows: lines.slice(1).map(line => [line]) // Rest as single-column data
-              });
-            }
-          }
-        }
+    // Fallback: any visible table in document
+    if (visibleTables.length === 0) {
+      document.querySelectorAll('table').forEach(t => {
+        const el = t as HTMLTableElement;
+        const style = window.getComputedStyle(el);
+        const isVisible = (el as any).offsetParent !== null && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        if (isVisible) visibleTables.push(el);
       });
     }
+
+    visibleTables.forEach((el, idx) => {
+      const name = `Data Table ${idx + 1}`;
+      const data = extractTableFromElement(el, name);
+      if (data.rows.length > 0) tables.push(data);
+    });
 
     return tables;
   };
@@ -367,6 +376,155 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     } catch (error) {
       console.error('Export failed:', error);
       alert('Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Build a consolidated printable HTML string from table data
+  const buildPrintableHtml = (title: string, sections: Array<{ heading: string; subtitle?: string; tables: TableExportData[] }>) => {
+    const styles = `
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; color: #0f172a; }
+        h1 { font-size: 20px; margin: 0 0 16px; }
+        h2 { font-size: 16px; margin: 24px 0 8px; color: #334155; }
+        h3 { font-size: 14px; margin: 12px 0 8px; color: #475569; }
+        .meta { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+        table { border-collapse: collapse; width: 100%; margin: 8px 0 24px; font-size: 12px; }
+        th, td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; }
+        thead th { background: #0f172a; color: white; position: sticky; top: 0; }
+        .page-break { page-break-after: always; height: 0; }
+      </style>
+    `;
+    let html = `<!doctype html><html><head><meta charset="utf-8" />${styles}<title>${title}</title></head><body>`;
+    html += `<h1>${title}</h1>`;
+    html += `<div class="meta">Generated: ${new Date().toLocaleString()} | Location: ${locationName}</div>`;
+    sections.forEach((sec, sIdx) => {
+      html += `<h2>${sec.heading}</h2>`;
+      if (sec.subtitle) html += `<div class="meta">${sec.subtitle}</div>`;
+      sec.tables.forEach((t, tIdx) => {
+        html += `<h3>${t.name}</h3>`;
+        if (t.headers.length || t.rows.length) {
+          html += '<table><thead><tr>' + (t.headers.map(h => `<th>${h}</th>`).join('')) + '</tr></thead><tbody>';
+          t.rows.forEach(r => {
+            html += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>';
+          });
+          html += '</tbody></table>';
+        }
+      });
+      if (sIdx < sections.length - 1) html += '<div class="page-break"></div>';
+    });
+    html += '</body></html>';
+    return html;
+  };
+
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const sections: Array<{ heading: string; subtitle?: string; tables: TableExportData[] }> = [];
+
+      // Current view
+      if (exportConfig.currentView) {
+        const currentTables = extractAllTableData();
+        if (currentTables.length > 0) {
+          const { tabText } = getCurrentTabInfo();
+          sections.push({ heading: `Current View – ${tabText}`, subtitle: 'Filtered tables as displayed', tables: currentTables });
+        }
+      }
+
+      // All configured tabs
+      if (exportConfig.allTabs || exportConfig.monthOnMonth || exportConfig.yearOnYear || exportConfig.productPerformance || exportConfig.categoryPerformance || exportConfig.soldByAnalysis || exportConfig.paymentMethodAnalysis) {
+        const tabTriggers = document.querySelectorAll('[role="tab"]');
+        const originalActiveTab = document.querySelector('[role="tab"][data-state="active"]');
+        const tabMapping: Record<keyof ExportConfig, string[]> = {
+          currentView: [],
+          monthOnMonth: ['monthOnMonth', 'month-on-month'],
+          yearOnYear: ['yearOnYear', 'year-on-year'],
+          productPerformance: ['productPerformance', 'product-performance'],
+          categoryPerformance: ['categoryPerformance', 'category-performance'],
+          soldByAnalysis: ['soldByAnalysis', 'sold-by', 'soldBy'],
+          paymentMethodAnalysis: ['paymentMethodAnalysis', 'payment-method', 'paymentMethod'],
+          allTabs: []
+        };
+
+        for (const trigger of tabTriggers) {
+          if (!(trigger instanceof HTMLElement)) continue;
+          const tabLabel = trigger.textContent?.trim() || '';
+          const normalizedLabel = tabLabel.replace(/\s+/g, '-').toLowerCase();
+          const dataValue = trigger.getAttribute('data-value') || '';
+          const tabValue = (dataValue || normalizedLabel || 'unknown');
+
+          let shouldExport = exportConfig.allTabs;
+          if (!shouldExport) {
+            for (const [configKey, configValue] of Object.entries(exportConfig)) {
+              if (configValue && configKey !== 'currentView' && configKey !== 'allTabs') {
+                const mappedValues = tabMapping[configKey as keyof ExportConfig] || [];
+                if (mappedValues.some(mapped => tabValue.includes(mapped) || mapped.includes(tabValue) || normalizedLabel.includes(mapped))) {
+                  shouldExport = true; break;
+                }
+              }
+            }
+          }
+          if (!shouldExport) continue;
+
+          trigger.click();
+          await new Promise(r => setTimeout(r, 800));
+
+          const baseTables = extractAllTableData();
+          if (baseTables.length > 0) {
+            sections.push({ heading: `Tab – ${tabLabel || tabValue}`, subtitle: 'Base metric', tables: baseTables });
+          }
+
+          // Per-metric variants in PDF too
+          const activePanel = document.querySelector('[role="tabpanel"][data-state="active"]') as HTMLElement | null;
+          if (activePanel) {
+            const metricButtons: HTMLElement[] = [];
+            METRIC_LABELS.forEach(label => {
+              const btn = Array.from(activePanel.querySelectorAll('button')).find(b => (b.textContent || '').trim() === label) as HTMLElement | undefined;
+              if (btn && !metricButtons.includes(btn)) metricButtons.push(btn);
+            });
+            for (const btn of metricButtons) {
+              const metricLabel = (btn.textContent || '').trim();
+              btn.click();
+              await new Promise(r => setTimeout(r, 400));
+              const metricTables = extractAllTableData();
+              if (metricTables.length > 0) {
+                sections.push({ heading: `Tab – ${tabLabel || tabValue} (${metricLabel})`, tables: metricTables });
+              }
+            }
+          }
+        }
+
+        // Restore original active tab
+        if (originalActiveTab instanceof HTMLElement) {
+          originalActiveTab.click();
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      if (sections.length === 0) {
+        alert('No table data found to export for PDF. Please ensure tables are loaded and visible.');
+        return;
+      }
+
+      const title = `Sales Analytics – ${locationName}`;
+      const html = buildPrintableHtml(title, sections);
+      const w = window.open('', '_blank');
+      if (!w) {
+        alert('Popup blocked. Please allow popups to view the PDF.');
+        return;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      // Give the browser a moment to render before printing
+      setTimeout(() => {
+        w.focus();
+        w.print();
+      }, 300);
+    } catch (e) {
+      console.error('PDF export failed', e);
+      alert('PDF export failed. Please try again.');
     } finally {
       setIsExporting(false);
     }
@@ -584,6 +742,24 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
               disabled={isExporting}
             >
               Cancel
+            </Button>
+            <Button 
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              variant="secondary"
+              className="gap-2"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Building PDF...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Export PDF
+                </>
+              )}
             </Button>
             <Button 
               onClick={handleExport}
