@@ -14,7 +14,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
+    react({
+      jsxImportSource: 'react'
+    }),
     mode === 'development' &&
     componentTagger(),
     // Local API middleware to handle /api/notes in development
@@ -68,14 +70,11 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      'react': 'react',
-      'react-dom': 'react-dom'
     },
   },
   define: {
     // Ensure React is available globally for forwardRef
     'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
-    global: 'globalThis',
   },
   build: {
     sourcemap: false,
@@ -139,7 +138,6 @@ export default defineConfig(({ mode }) => ({
       'react',
       'react-dom',
       'react/jsx-runtime',
-      'react/jsx-dev-runtime',
       'react-router-dom',
       'recharts',
       'date-fns',
