@@ -1,7 +1,11 @@
-import { defineConfig } from "vite";
+import { defineConfig, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+// Local import of the serverless API handler for dev middleware
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import notesHandler from "./api/notes.js";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -15,6 +19,53 @@ export default defineConfig(({ mode }) => ({
     }),
     mode === 'development' &&
     componentTagger(),
+    // Local API middleware to handle /api/notes in development
+    mode === 'development' && {
+      name: 'local-api-notes',
+  configureServer(server: ViteDevServer) {
+        server.middlewares.use('/api/notes', (req: any, res: any, next: any) => {
+          // Only handle GET/POST we use; pass through others
+          if (!['GET', 'POST'].includes(req.method)) return next();
+
+          // Parse query params
+          try {
+            const url = new URL(req.url || '', 'http://localhost');
+            (req as any).query = Object.fromEntries(url.searchParams.entries());
+          } catch {
+            (req as any).query = {};
+          }
+
+          // Parse JSON body for POST
+          if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk: any) => { body += chunk; });
+            req.on('end', async () => {
+              try { (req as any).body = body ? JSON.parse(body) : {}; } catch { (req as any).body = {}; }
+              // Wrap res with status/json helpers
+              const wrapped = Object.assign(res, {
+                status(code: number) { res.statusCode = code; return wrapped; },
+                json(obj: any) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(obj)); }
+              });
+              Promise.resolve(notesHandler(req, wrapped)).catch((err: any) => {
+                console.error('Local /api/notes error', err);
+                wrapped.status(500).json({ error: 'Internal server error' });
+              });
+            });
+            return;
+          }
+
+          // For GET requests
+          const wrapped = Object.assign(res, {
+            status(code: number) { res.statusCode = code; return wrapped; },
+            json(obj: any) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(obj)); }
+          });
+          Promise.resolve(notesHandler(req, wrapped)).catch((err: any) => {
+            console.error('Local /api/notes error', err);
+            wrapped.status(500).json({ error: 'Internal server error' });
+          });
+        });
+      }
+    }
   ].filter(Boolean),
   resolve: {
     alias: {

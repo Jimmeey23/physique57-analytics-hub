@@ -265,6 +265,48 @@
   animation: gradient-x 3s ease infinite;
 }
 
+/* AI Notes Rendering Styles */
+.ai-notes-render .ai-image-bullets {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+.ai-notes-render .ai-image-bullets li {
+  position: relative;
+  padding-left: 28px;
+  margin: 6px 0;
+}
+.ai-notes-render .ai-image-bullets li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  background-image: url('/lovable-uploads/2ff13f7c-20bd-4e82-848c-601b777bbc76.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.15));
+}
+.ai-notes-render .ai-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.95rem;
+}
+.ai-notes-render .ai-table th,
+.ai-notes-render .ai-table td {
+  border: 1px solid #e2e8f0; /* slate-200 */
+  padding: 8px 10px;
+  text-align: left;
+}
+.ai-notes-render .ai-table thead th {
+  background: #f8fafc; /* slate-50 */
+  font-weight: 700;
+}
+.ai-notes-render .ai-table tbody tr:nth-child(even) { background: #f9fbff; }
+.ai-notes-render h3 { margin-top: 10px; margin-bottom: 6px; font-weight: 700; font-size: 1rem; }
+
 /* Advanced Button Styles */
 .btn-glass {
   background: rgba(255, 255, 255, 0.1);

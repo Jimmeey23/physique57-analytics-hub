@@ -175,7 +175,7 @@ const ClassFormatsComparison: React.FC = () => {
         const targetClassType = map[formatKey];
 
         const sessionsFiltered = filteredByLocation.filter(s => {
-          const trainerOk = trainerName ? (s.trainerName === trainerName || s.instructor === trainerName) : true;
+          const trainerOk = trainerName ? (s.trainerName === trainerName || (s as any).instructor === trainerName) : true;
           const classOk = targetClassType ? (s.classType === targetClassType || s.cleanedClass === targetClassType) : true;
           return trainerOk && classOk;
         });

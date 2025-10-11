@@ -16,6 +16,8 @@ import {
   Zap
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface EnhancedExecutiveDataTablesProps {
   data: {
@@ -32,6 +34,8 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
   data, 
   selectedLocation 
 }) => {
+  const { filters } = useGlobalFilters();
+  const periodId = useMemo(() => `${filters.dateRange.start}:${filters.dateRange.end}`, [filters.dateRange.start, filters.dateRange.end]);
   // Process sales by product and category
   const salesByProduct = useMemo(() => {
     const productGroups = data.sales.reduce((acc, sale) => {
@@ -246,7 +250,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
             ))}
           </div>
         </CardContent>
-      </Card>
+  </Card>
 
       {/* Leads by Source */}
       <Card className="bg-gradient-to-br from-white via-green-50/30 to-white border-0 shadow-lg">
@@ -278,7 +282,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
             ))}
           </div>
         </CardContent>
-      </Card>
+  </Card>
 
       {/* New Clients by Class */}
       <Card className="bg-gradient-to-br from-white via-purple-50/30 to-white border-0 shadow-lg">
@@ -310,7 +314,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
             ))}
           </div>
         </CardContent>
-      </Card>
+  </Card>
 
       {/* Top & Bottom Performing Classes */}
       <Card className="bg-gradient-to-br from-white via-orange-50/30 to-white border-0 shadow-lg">
@@ -359,7 +363,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
             </div>
           </div>
         </CardContent>
-      </Card>
+  </Card>
 
       {/* PowerCycle vs Barre */}
       <Card className="bg-gradient-to-br from-white via-indigo-50/30 to-white border-0 shadow-lg lg:col-span-2">
@@ -480,6 +484,16 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Notes & Summary saved globally for this table and period/location */}
+      <div className="lg:col-span-2">
+        <AiNotes 
+          tableKey="executive:enhancedDataTables"
+          location={selectedLocation}
+          period={periodId}
+          sectionId="executive-tables"
+        />
+      </div>
     </div>
   );
 };

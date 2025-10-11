@@ -20,6 +20,8 @@ import {
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface UltimateClassAttendanceTableProps {
   data: SessionData[];
@@ -51,6 +53,8 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
   data, 
   location 
 }) => {
+  const { filters } = useGlobalFilters();
+  const periodId = `${filters.dateRange.start}:${filters.dateRange.end}`;
   // State Management
   const [viewType, setViewType] = useState<ViewType>('detailed');
   const [groupingType, setGroupingType] = useState<GroupingType>('none');
@@ -306,6 +310,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
   ];
 
   return (
+    <>
     <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="flex items-center justify-between">
@@ -750,5 +755,14 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         </div>
       </CardContent>
     </Card>
+    <div className="mt-4">
+      <AiNotes
+        tableKey="sessions:ultimateAttendance"
+        location={location}
+        period={periodId}
+        sectionId="attendance-table"
+      />
+    </div>
+    </>
   );
 };

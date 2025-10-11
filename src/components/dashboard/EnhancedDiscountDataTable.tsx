@@ -8,6 +8,8 @@ import { Search, Download, Filter, TrendingUp, TrendingDown, Percent, DollarSign
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
 import { PersistentTableFooter } from './PersistentTableFooter';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 interface EnhancedDiscountDataTableProps {
   data: SalesData[];
   onRowClick?: (title: string, data: any[], type: string) => void;
@@ -16,6 +18,8 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
   data,
   onRowClick
 }) => {
+  const { filters } = useGlobalFilters();
+  const periodId = `${filters.dateRange.start}:${filters.dateRange.end}`;
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string>('paymentDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -110,6 +114,15 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
             </div>
             <div>
               <CardTitle className="text-2xl font-bold">Detailed Discount Analysis</CardTitle>
+
+          <div className="p-6 border-t">
+            <AiNotes
+              tableKey="discounts:enhancedDataTable"
+              location={filters.location[0]}
+              period={periodId}
+              sectionId="discounts-table"
+            />
+          </div>
               <p className="text-slate-200 mt-1">
                 Comprehensive transaction-level discount data with advanced filtering
               </p>

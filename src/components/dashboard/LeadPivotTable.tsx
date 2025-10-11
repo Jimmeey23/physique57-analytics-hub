@@ -7,6 +7,8 @@ import { ChevronDown, ChevronUp, Grid3X3, Filter, Eye, Edit3, Save, X } from 'lu
 import { LeadMetricTabs } from './LeadMetricTabs';
 import { LeadsMetricType } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 interface LeadPivotTableProps {
   data: Record<string, Record<string, number>>;
   rowLabels: string[];
@@ -21,6 +23,8 @@ export const LeadPivotTable: React.FC<LeadPivotTableProps> = ({
   activeMetric,
   onMetricChange
 }) => {
+  const { filters } = useGlobalFilters();
+  const periodId = `${filters.dateRange.start}:${filters.dateRange.end}`;
   const [sortField, setSortField] = useState<string>('row');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [quickFilter, setQuickFilter] = useState<'all' | 'top' | 'bottom'>('all');
@@ -235,5 +239,14 @@ export const LeadPivotTable: React.FC<LeadPivotTableProps> = ({
             </div>}
         </div>
       </CardContent>
+
+      <div className="p-4 border-t">
+        <AiNotes
+          tableKey="leads:pivotTable"
+          location={filters.location[0]}
+          period={periodId}
+          sectionId="leads-table"
+        />
+      </div>
     </Card>;
 };

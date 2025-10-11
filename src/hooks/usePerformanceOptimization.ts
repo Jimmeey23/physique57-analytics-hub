@@ -2,6 +2,9 @@ import { useEffect } from 'react';
 
 export const usePerformanceOptimization = () => {
   useEffect(() => {
+    const disableLongTaskLogs = (import.meta as any)?.env?.VITE_DISABLE_LONGTASK_LOGS === 'true';
+    const LONG_TASK_THRESHOLD = 200; // ms (raised from 100ms to reduce noise)
+    let lastLogTime = 0;
     // Warm up critical page bundles for faster navigation by dynamically importing
     // the page modules instead of prefetching the route URLs (which triggers
     // browser requests to those paths and can produce 404s on some servers).
@@ -38,12 +41,17 @@ export const usePerformanceOptimization = () => {
     let performanceObserver: PerformanceObserver | null = null;
     const intersectionObservers: IntersectionObserver[] = [];
     
-    if ('PerformanceObserver' in window) {
+    if ('PerformanceObserver' in window && !disableLongTaskLogs) {
       performanceObserver = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
           // Log long tasks for debugging (reduced threshold for better detection)
-          if (entry.entryType === 'longtask' && entry.duration > 100) {
-            console.warn('Long task detected:', entry.duration + 'ms', 'at', entry.startTime);
+          if (entry.entryType === 'longtask' && entry.duration > LONG_TASK_THRESHOLD) {
+            // Throttle logs to at most once per 1000ms
+            const now = performance.now();
+            if (now - lastLogTime > 1000) {
+              lastLogTime = now;
+              console.warn('Long task detected:', Math.round(entry.duration) + 'ms', 'at', Math.round(entry.startTime));
+            }
           }
         });
       });

@@ -27,6 +27,8 @@ import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface SalesAnalyticsSectionProps {
   data: SalesData[];
@@ -52,6 +54,10 @@ const locations = [{
 }];
 
 export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data, onReady }) => {
+  const { filters: globalFilters } = useGlobalFilters();
+  const periodId = globalFilters?.dateRange
+    ? `${globalFilters.dateRange.start}:${globalFilters.dateRange.end}`
+    : 'all-time';
   const [activeLocation, setActiveLocation] = useState('all');
   const [currentTheme, setCurrentTheme] = useState('classic');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -757,6 +763,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
                       />
+                      <div className="mt-3">
+                        <AiNotes tableKey="sales:monthOnMonth" location={filters.location[0]} period={periodId} sectionId="sales-mom" />
+                      </div>
                     </section>
                   </TabsContent>
 
@@ -769,6 +778,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
                       />
+                      <div className="mt-3">
+                        <AiNotes tableKey="sales:yoy" location={filters.location[0]} period={periodId} sectionId="sales-yoy" />
+                      </div>
                     </section>
                   </TabsContent>
 
@@ -781,6 +793,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
                     />
+                    <div className="mt-3">
+                      <AiNotes tableKey="sales:productPerformance" location={filters.location[0]} period={periodId} sectionId="sales-product" />
+                    </div>
                   </section>
                 </TabsContent>
 
@@ -793,6 +808,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
                     />
+                    <div className="mt-3">
+                      <AiNotes tableKey="sales:categoryPerformance" location={filters.location[0]} period={periodId} sectionId="sales-category" />
+                    </div>
                   </section>
                 </TabsContent>
 
@@ -805,6 +823,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
                     />
+                    <div className="mt-3">
+                      <AiNotes tableKey="sales:soldBy" location={filters.location[0]} period={periodId} sectionId="sales-soldby" />
+                    </div>
                   </section>
                 </TabsContent>
 
@@ -817,6 +838,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
                     />
+                    <div className="mt-3">
+                      <AiNotes tableKey="sales:paymentMethod" location={filters.location[0]} period={periodId} sectionId="sales-payment" />
+                    </div>
                   </section>
                 </TabsContent>
               </Tabs>

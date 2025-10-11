@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatPercentage, formatNumber } from '@/utils/formatters';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface EnhancedPayrollTableProps {
   data: any[];
@@ -42,6 +44,8 @@ type SortColumn = 'trainerName' | 'totalSessions' | 'totalPayroll' | 'avgPerSess
 type ViewMode = 'summary' | 'detailed' | 'hourly';
 
 export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data, sessionsData, location }) => {
+  const { filters } = useGlobalFilters();
+  const periodId = `${filters.dateRange.start}:${filters.dateRange.end}`;
   const [sortColumn, setSortColumn] = useState<SortColumn>('totalPayroll');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<ViewMode>('detailed');
@@ -501,6 +505,16 @@ export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data
         Showing {Math.min(showTopN, processedData.length)} of {processedData.length} trainers • 
         {displayMonths.length} months displayed •
         Data sorted by {sortColumn} ({sortDirection === 'desc' ? 'highest first' : 'lowest first'})
+      </div>
+
+      {/* AI Notes under payroll table */}
+      <div className="mt-4">
+        <AiNotes
+          tableKey="payroll:enhancedPayrollTable"
+          location={location}
+          period={periodId}
+          sectionId="payroll-table"
+        />
       </div>
     </div>
   );

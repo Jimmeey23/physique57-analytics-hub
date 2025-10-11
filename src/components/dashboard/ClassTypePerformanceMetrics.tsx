@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 type GroupKey = 'classType' | 'cleanedClass' | 'trainerName' | 'location' | 'uniqueId1' | 'uniqueId2';
 
@@ -24,6 +26,8 @@ export const ClassTypePerformanceMetrics: React.FC<ClassTypePerformanceMetricsPr
   title = 'Class Type Performance Metrics',
 }) => {
   const [groupBy, setGroupBy] = useState<GroupKey>(defaultGroupBy);
+  const { filters } = useGlobalFilters();
+  const periodId = `${filters.dateRange.start}:${filters.dateRange.end}`;
 
   const groups = useMemo(() => {
     const by: Record<string, SessionData[]> = {};
@@ -192,6 +196,7 @@ export const ClassTypePerformanceMetrics: React.FC<ClassTypePerformanceMetricsPr
   }, [groups]);
 
   return (
+    <>
     <Card className="bg-white shadow-sm border border-gray-200">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -339,6 +344,15 @@ export const ClassTypePerformanceMetrics: React.FC<ClassTypePerformanceMetricsPr
         </div>
       </CardContent>
     </Card>
+    <div className="mt-4">
+      <AiNotes
+        tableKey="sessions:classTypePerformance"
+        location={filters.location[0]}
+        period={periodId}
+        sectionId="class-type-performance-table"
+      />
+    </div>
+    </>
   );
 };
 
