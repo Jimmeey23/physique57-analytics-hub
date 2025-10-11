@@ -7,8 +7,14 @@ import { useSectionNavigation } from "@/contexts/SectionNavigationContext";
 export default function HashJumpOnLoad() {
   const { hash } = useLocation();
   const { jumpTo } = useSectionNavigation();
+  const didMount = React.useRef(false);
 
   React.useEffect(() => {
+    // Skip automatic jump on the very first mount to avoid unintended deep-linking from stale hashes
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
     if (!hash || hash.length < 2) return;
     const id = decodeURIComponent(hash.slice(1));
     let cancelled = false;

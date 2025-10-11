@@ -45,7 +45,8 @@ export function SectionNavigationProvider({ children }: { children: React.ReactN
     setSectionsMap(new Map());
   }, [location.pathname]);
 
-  const jumpTo = React.useCallback(async (id: string, updateHash: boolean = true) => {
+  // Default to not mutating the hash to avoid external listeners and browser re-scroll
+  const jumpTo = React.useCallback(async (id: string, updateHash: boolean = false) => {
     const entry = sectionsMap.get(id);
     if (!entry) return false;
     try {

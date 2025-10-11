@@ -22,6 +22,7 @@ export function SectionTimelineNav({
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [adaptiveDark, setAdaptiveDark] = React.useState<boolean | null>(null);
   const { resolvedTheme } = useTheme();
+  const scrollSpyEnabled = React.useRef(false);
 
   // Compute background luminance from CSS variable --background (shadcn uses hsl(var(--background)))
   React.useEffect(() => {
@@ -97,6 +98,7 @@ export function SectionTimelineNav({
       .filter((x): x is { id: string; el: HTMLElement } => !!x.el);
 
     const onScroll = () => {
+      if (!scrollSpyEnabled.current) return;
       const viewportTop = 0;
       const candidates = elements
         .map(({ id, el }) => ({ id, rect: el.getBoundingClientRect() }))
@@ -113,10 +115,15 @@ export function SectionTimelineNav({
       setActiveId(current);
     };
 
-    onScroll();
+    // Defer enabling scrollspy to avoid auto-selecting last section on initial layout
+    const enableTimer = setTimeout(() => {
+      scrollSpyEnabled.current = true;
+      onScroll();
+    }, 250);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
+      clearTimeout(enableTimer);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };

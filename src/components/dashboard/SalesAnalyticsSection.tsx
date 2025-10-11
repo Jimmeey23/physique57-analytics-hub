@@ -20,7 +20,6 @@ import { SoldByMonthOnMonthTableNew } from './SoldByMonthOnMonthTableNew';
 import { PaymentMethodMonthOnMonthTableNew } from './PaymentMethodMonthOnMonthTableNew';
 import { SalesHeroSection } from './SalesHeroSection';
 import QuickSections from '@/components/ui/QuickSections';
-import SectionTimelineNav from '@/components/ui/SectionTimelineNav';
 import SectionAnchor from '@/components/ui/SectionAnchor';
 import { useSectionNavigation } from '@/contexts/SectionNavigationContext';
 import { ModernSalesTable } from './ModernSalesTable';
@@ -683,8 +682,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
 
       {/* Note Taker removed as requested; AI Notes remain elsewhere */}
 
-      {/* Vertical timeline navigation (scrollspy) */}
-      <SectionTimelineNav position="right" title="Sales sections" />
+  {/* Timeline is provided globally in App; avoid per-page duplicates */}
 
       {/* Filter and Location Tabs */}
       <div className="container mx-auto px-6 space-y-6">
@@ -727,6 +725,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 />
               </SectionAnchor>
 
+              {/* Checkpoint 1: Metrics (overview cards) */}
               <SectionAnchor id="sales-metrics" label="Metrics">
                 <SalesAnimatedMetricCards 
                   data={filteredData} 
@@ -734,10 +733,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 />
               </SectionAnchor>
 
+              {/* Checkpoint 2: Charts block */}
               <SectionAnchor id="sales-charts" label="Charts">
                 <SalesInteractiveCharts data={allHistoricData} />
               </SectionAnchor>
 
+              {/* Checkpoint 3: Top & Bottom Sellers */}
               <SectionAnchor id="sales-sellers" label="Top & Bottom Sellers">
                 <UnifiedTopBottomSellers data={filteredData} />
               </SectionAnchor>
@@ -767,6 +768,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                   </TabsTrigger>
                 </TabsList>
 
+                  {/* Checkpoint 4: Month-on-Month within Analytics Tabs */}
                   <TabsContent value="monthOnMonth" className="mt-8">
                     <SectionAnchor id="sales-mom" label="Month-on-Month" activate={() => {
                       const trigger = document.querySelector("[role='tab'][data-state='active'][data-value='monthOnMonth']") as HTMLElement | null;
@@ -791,6 +793,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     </SectionAnchor>
                   </TabsContent>
 
+                  {/* Checkpoint 5: Year-on-Year within Analytics Tabs */}
                   <TabsContent value="yearOnYear" className="mt-8">
                     <SectionAnchor id="sales-yoy" label="Year-on-Year" activate={() => {
                       const trigger = document.querySelector("[role='tab'][data-state='active'][data-value='yearOnYear']") as HTMLElement | null;
@@ -812,6 +815,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     </SectionAnchor>
                   </TabsContent>
 
+                {/* Checkpoint 6: Product Performance */}
                 <TabsContent value="productPerformance" className="mt-8">
                   <SectionAnchor id="sales-product" label="Products" activate={() => {
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
@@ -830,6 +834,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                   </SectionAnchor>
                 </TabsContent>
 
+                {/* Non-checkpoint sections (not registered) */}
                 <TabsContent value="categoryPerformance" className="mt-8">
                   <SectionAnchor id="sales-category" label="Categories" activate={() => {
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
