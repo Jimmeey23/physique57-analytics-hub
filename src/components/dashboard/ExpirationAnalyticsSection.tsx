@@ -5,7 +5,6 @@ import { AutoCloseFilterSection } from './AutoCloseFilterSection';
 import { ExpirationMetricCards } from './ExpirationMetricCards';
 import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
 import { ModernDrillDownModal } from './ModernDrillDownModal';
-import { NoteTaker } from '@/components/ui/NoteTaker';
 import { ExpirationChartsGrid } from './ExpirationChartsGrid';
 import { ExpirationDataTables } from './ExpirationDataTables';
 import { ExpirationAdditionalAnalytics } from './ExpirationAdditionalAnalytics';
@@ -216,7 +215,7 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
                 additionalData={{ expirations: filteredData }}
                 defaultFileName="expirations-analysis"
               />
-              <NoteTaker />
+              {/* NoteTaker removed as per request */}
             </div>
           </div>
 

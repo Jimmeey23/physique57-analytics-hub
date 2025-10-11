@@ -19,7 +19,10 @@ import { SalesInteractiveCharts } from './SalesInteractiveCharts';
 import { SoldByMonthOnMonthTableNew } from './SoldByMonthOnMonthTableNew';
 import { PaymentMethodMonthOnMonthTableNew } from './PaymentMethodMonthOnMonthTableNew';
 import { SalesHeroSection } from './SalesHeroSection';
-import { NoteTaker } from '@/components/ui/NoteTaker';
+import QuickSections from '@/components/ui/QuickSections';
+import SectionTimelineNav from '@/components/ui/SectionTimelineNav';
+import SectionAnchor from '@/components/ui/SectionAnchor';
+import { useSectionNavigation } from '@/contexts/SectionNavigationContext';
 import { ModernSalesTable } from './ModernSalesTable';
 import { SalesData, FilterOptions, MetricCardData, YearOnYearMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage, formatDiscount } from '@/utils/formatters';
@@ -68,6 +71,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   const [activeYoyMetric, setActiveYoyMetric] = useState<YearOnYearMetricType>('revenue');
   const [isReady, setIsReady] = useState(false);
   const markReady = React.useCallback(() => setIsReady(true), []);
+  const { addSection, removeSection } = useSectionNavigation();
 
   React.useEffect(() => {
     if (isReady) {
@@ -669,16 +673,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   return (
     <div className="space-y-8">
       {/* Hero Section with Dynamic Metrics */}
-      <SalesHeroSection 
-        data={filteredData} 
-        currentLocation={activeLocation}
-        locationName={locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations'}
-      />
+      <SectionAnchor id="sales-overview" label="Overview">
+        <SalesHeroSection 
+          data={filteredData} 
+          currentLocation={activeLocation}
+          locationName={locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations'}
+        />
+      </SectionAnchor>
 
-      {/* Note Taker Component */}
-      <div className="container mx-auto px-6">
-        <NoteTaker />
-      </div>
+      {/* Note Taker removed as requested; AI Notes remain elsewhere */}
+
+      {/* Vertical timeline navigation (scrollspy) */}
+      <SectionTimelineNav position="right" title="Sales sections" />
 
       {/* Filter and Location Tabs */}
       <div className="container mx-auto px-6 space-y-6">
@@ -713,22 +719,28 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
 
           {locations.map(location => (
             <TabsContent key={location.id} value={location.id} className="space-y-8">
-              <div className="w-full space-y-4">
+              <SectionAnchor id="sales-filters" label="Filters" className="w-full space-y-4">
                 <AutoCloseFilterSection
                   filters={filters} 
                   onFiltersChange={setFilters} 
                   onReset={resetFilters} 
                 />
-              </div>
+              </SectionAnchor>
 
-              <SalesAnimatedMetricCards 
-                data={filteredData} 
-                onMetricClick={handleMetricClick}
-              />
+              <SectionAnchor id="sales-metrics" label="Metrics">
+                <SalesAnimatedMetricCards 
+                  data={filteredData} 
+                  onMetricClick={handleMetricClick}
+                />
+              </SectionAnchor>
 
-              <SalesInteractiveCharts data={allHistoricData} />
+              <SectionAnchor id="sales-charts" label="Charts">
+                <SalesInteractiveCharts data={allHistoricData} />
+              </SectionAnchor>
 
-              <UnifiedTopBottomSellers data={filteredData} />
+              <SectionAnchor id="sales-sellers" label="Top & Bottom Sellers">
+                <UnifiedTopBottomSellers data={filteredData} />
+              </SectionAnchor>
 
                 <Tabs defaultValue="monthOnMonth" className="w-full">
                   <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-7 w-full max-w-7xl mx-auto overflow-hidden">
@@ -756,7 +768,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 </TabsList>
 
                   <TabsContent value="monthOnMonth" className="mt-8">
-                    <section className="space-y-4">
+                    <SectionAnchor id="sales-mom" label="Month-on-Month" activate={() => {
+                      const trigger = document.querySelector("[role='tab'][data-state='active'][data-value='monthOnMonth']") as HTMLElement | null;
+                      if (!trigger) {
+                        const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                        t.find(el => el.getAttribute('data-value') === 'monthOnMonth')?.click();
+                      }
+                    }} className="space-y-4">
                       <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
                       <MonthOnMonthTableNew 
                         data={allHistoricData} 
@@ -770,11 +788,17 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       <div className="mt-3">
                         <AiNotes tableKey="sales:monthOnMonth" location={filters.location[0]} period={periodId} sectionId="sales-mom" />
                       </div>
-                    </section>
+                    </SectionAnchor>
                   </TabsContent>
 
                   <TabsContent value="yearOnYear" className="mt-8">
-                    <section className="space-y-4">
+                    <SectionAnchor id="sales-yoy" label="Year-on-Year" activate={() => {
+                      const trigger = document.querySelector("[role='tab'][data-state='active'][data-value='yearOnYear']") as HTMLElement | null;
+                      if (!trigger) {
+                        const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                        t.find(el => el.getAttribute('data-value') === 'yearOnYear')?.click();
+                      }
+                    }} className="space-y-4">
                       <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
                       <EnhancedYearOnYearTableNew 
                         data={allHistoricData} 
@@ -785,11 +809,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       <div className="mt-3">
                         <AiNotes tableKey="sales:yoy" location={filters.location[0]} period={periodId} sectionId="sales-yoy" />
                       </div>
-                    </section>
+                    </SectionAnchor>
                   </TabsContent>
 
                 <TabsContent value="productPerformance" className="mt-8">
-                  <section className="space-y-4">
+                  <SectionAnchor id="sales-product" label="Products" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'productPerformance')?.click();
+                  }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
                     <ProductPerformanceTableNew 
                       data={allHistoricData} 
@@ -800,11 +827,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="mt-3">
                       <AiNotes tableKey="sales:productPerformance" location={filters.location[0]} period={periodId} sectionId="sales-product" />
                     </div>
-                  </section>
+                  </SectionAnchor>
                 </TabsContent>
 
                 <TabsContent value="categoryPerformance" className="mt-8">
-                  <section className="space-y-4">
+                  <SectionAnchor id="sales-category" label="Categories" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'categoryPerformance')?.click();
+                  }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Category Performance Analysis</h2>
                     <CategoryPerformanceTableNew 
                       data={allHistoricData} 
@@ -815,11 +845,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="mt-3">
                       <AiNotes tableKey="sales:categoryPerformance" location={filters.location[0]} period={periodId} sectionId="sales-category" />
                     </div>
-                  </section>
+                  </SectionAnchor>
                 </TabsContent>
 
                 <TabsContent value="soldByAnalysis" className="mt-8">
-                  <section className="space-y-4">
+                  <SectionAnchor id="sales-soldby" label="Sold By" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'soldByAnalysis')?.click();
+                  }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Sold By Analysis</h2>
                     <SoldByMonthOnMonthTableNew 
                       data={allHistoricData} 
@@ -830,11 +863,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="mt-3">
                       <AiNotes tableKey="sales:soldBy" location={filters.location[0]} period={periodId} sectionId="sales-soldby" />
                     </div>
-                  </section>
+                  </SectionAnchor>
                 </TabsContent>
 
                 <TabsContent value="paymentMethodAnalysis" className="mt-8">
-                  <section className="space-y-4">
+                  <SectionAnchor id="sales-payment" label="Payment Methods" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'paymentMethodAnalysis')?.click();
+                  }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Payment Method Analysis</h2>
                     <PaymentMethodMonthOnMonthTableNew 
                       data={allHistoricData} 
@@ -845,13 +881,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="mt-3">
                       <AiNotes tableKey="sales:paymentMethod" location={filters.location[0]} period={periodId} sectionId="sales-payment" />
                     </div>
-                  </section>
+                  </SectionAnchor>
                 </TabsContent>
 
                 <TabsContent value="customerBehavior" className="space-y-6">
+                  <SectionAnchor id="sales-customer" label="Customer Behavior" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'customerBehavior')?.click();
+                  }}>
                     {/* Use allHistoricData to make this tab independent from the date filters */}
                     <CustomerBehaviorMonthOnMonthTable data={allHistoricData} onReady={markReady} onRowClick={handleRowClick} />
-                  </TabsContent>
+                  </SectionAnchor>
+                </TabsContent>
               </Tabs>
             </TabsContent>
           ))}

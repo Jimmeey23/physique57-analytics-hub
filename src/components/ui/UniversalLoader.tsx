@@ -6,28 +6,35 @@ interface UniversalLoaderProps {
   title?: string;
   subtitle?: string;
   variant?: 'sales' | 'discounts' | 'funnel' | 'retention' | 'attendance' | 'analytics' | 'default';
+  onComplete?: () => void; // called when progress hits 100 once
 }
 
 export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
   title = "Physique 57 Analytics",
   subtitle,
-  variant = 'default'
+  variant = 'default',
+  onComplete,
 }) => {
   const [progress, setProgress] = useState(0);
   const [dots, setDots] = useState('');
 
   useEffect(() => {
-    // Smooth progress animation
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 85) {
-          return 15; // Reset for continuous animation
-        }
-        return prev + 3;
-      });
-    }, 80);
+    // One-shot smooth progress animation from 0 -> 100
+    let rafId = 0;
+    const start = performance.now();
+    const duration = 1400; // ms
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-    // Animated dots
+    const step = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = easeOutCubic(t);
+      const value = Math.round(eased * 100);
+      setProgress(value);
+      if (t < 1) rafId = requestAnimationFrame(step);
+      else if (value >= 100 && onComplete) onComplete();
+    };
+    rafId = requestAnimationFrame(step);
+
     const dotsInterval = setInterval(() => {
       setDots(prev => {
         if (prev.length >= 3) return '';
@@ -36,7 +43,7 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
     }, 500);
 
     return () => {
-      clearInterval(progressInterval);
+      cancelAnimationFrame(rafId);
       clearInterval(dotsInterval);
     };
   }, []);
@@ -128,10 +135,10 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
         {/* Progress Bar */}
         <div className="w-full max-w-xs">
           <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div 
-              className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-300 ease-out`}
+            <div
+              className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-200 ease-out`}
               style={{ width: `${progress}%` }}
-            ></div>
+            />
           </div>
         </div>
 

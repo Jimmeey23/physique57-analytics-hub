@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DiscountsAnimatedMetricCards } from './DiscountsAnimatedMetricCards';
 import { AutoCloseFilterSection } from './AutoCloseFilterSection';
-import { NoteTaker } from '@/components/ui/NoteTaker';
 import { DiscountInteractiveCharts } from './DiscountInteractiveCharts';
 import { DiscountInteractiveTopBottomLists } from './DiscountInteractiveTopBottomLists';
 import { EnhancedDiscountDataTable } from './EnhancedDiscountDataTable';
@@ -232,7 +231,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     <div className="space-y-8">
       {/* Note Taker Component */}
       <div className="container mx-auto px-6">
-        <NoteTaker />
+  {/* NoteTaker removed as per request */}
       </div>
 
       {/* Filter and Location Tabs */}

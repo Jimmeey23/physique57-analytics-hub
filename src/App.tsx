@@ -5,11 +5,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { GlobalNoteTaker } from "@/components/ui/GlobalNoteTaker";
 import { UniversalLoader } from "@/components/ui/UniversalLoader";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { GlobalCommandPalette } from "@/components/ui/GlobalCommandPalette";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
+import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
+import PrefetchOnIdle from "@/components/perf/PrefetchOnIdle";
+import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
+import InitialLoadGate, { useInitialLoad } from "@/components/perf/InitialLoadGate";
 
 // Lazy load pages for better performance
 const Index = React.lazy(() => import("./pages/Index"));
@@ -30,7 +34,17 @@ const GeminiAIDemoPage = React.lazy(() => import("./pages/GeminiAIDemo"));
 const GeminiEnhancementTest = React.lazy(() => import("./components/test/GeminiEnhancementTest"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000,   // 30 minutes
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => {
   usePerformanceOptimization();
@@ -42,10 +56,15 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <GlobalFiltersProvider>
-          <GlobalNoteTaker />
+          <SectionNavigationProvider>
+          <PrefetchOnIdle />
+          <HashJumpOnLoad />
           <GlobalLoader />
-          <React.Suspense fallback={<UniversalLoader variant="default" subtitle="Loading page..." />}>
-            <Routes>
+          <GlobalCommandPalette />
+          <InitialLoadGate>
+            <React.Suspense fallback={<div />}> {/* Minimal fallback; we show InitialLoadGate overlay */}
+              <FirstRouteReady>
+                <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/executive-summary" element={<ExecutiveSummary />} />
               <Route path="/sales-analytics" element={<SalesAnalytics />} />
@@ -64,8 +83,11 @@ const App = () => {
               <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </React.Suspense>
+                </Routes>
+              </FirstRouteReady>
+            </React.Suspense>
+          </InitialLoadGate>
+          </SectionNavigationProvider>
         </GlobalFiltersProvider>
       </BrowserRouter>
     </TooltipProvider>
@@ -74,3 +96,13 @@ const App = () => {
 };
 
 export default App;
+
+function FirstRouteReady({ children }: { children: React.ReactNode }) {
+  const { markRouteReady } = useInitialLoad();
+  React.useEffect(() => {
+    // Signal that our first route content tree has mounted
+    const t = setTimeout(() => markRouteReady(), 0);
+    return () => clearTimeout(t);
+  }, [markRouteReady]);
+  return <>{children}</>;
+}
