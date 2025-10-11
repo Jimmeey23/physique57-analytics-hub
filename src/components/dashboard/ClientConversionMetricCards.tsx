@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight, Percent } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 
@@ -173,58 +173,32 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => (
-        <Card 
-          key={metric.title} 
-          className="group relative overflow-hidden bg-white border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+        <Card
+          key={metric.title}
+          className="group relative overflow-hidden cursor-pointer transition-all duration-500 bg-white border border-slate-200/60 hover:border-slate-300 hover:shadow-xl"
           onClick={() => onCardClick?.(metric.title, metric.filterData(), metric.metricType)}
-          style={{ backgroundColor: 'white' }} // Force white background
         >
-          {/* Clean white background with subtle gradient accent */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-3 group-hover:opacity-8 transition-opacity duration-300`}></div>
-          
-          <CardContent className="relative p-6 z-10 bg-white" style={{ backgroundColor: 'white', color: '#1e293b' }}>
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                <metric.icon className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-slate-900 text-white shadow-sm">
+                  <metric.icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-base text-slate-900">{metric.title}</h3>
               </div>
               <div className="text-right">
-                <Badge 
-                  className={`text-xs px-3 py-1 font-medium transition-all duration-300 mb-1 ${
-                    metric.isPositive 
-                      ? 'bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200' 
-                      : 'bg-red-100 text-red-800 border-red-200 group-hover:bg-red-200'
-                  }`}
-                >
-                  {metric.isPositive ? '+' : ''}{metric.change}
-                </Badge>
-                {metric.previousValue && (
-                  <div className="text-xs text-slate-500 mt-1">
-                    <div>From: {metric.previousValue}</div>
-                    <div className="text-xs opacity-75">{metric.period}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700 group-hover:text-slate-800 transition-colors" style={{ color: '#334155' }}>
-                {metric.title}
-              </h3>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-slate-900 group-hover:text-slate-800 transition-colors" style={{ color: '#0f172a' }}>
-                  {metric.value}
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${metric.isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                  {metric.isPositive ? '▲' : '▼'} {metric.change}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors leading-relaxed" style={{ color: '#64748b' }}>
-                {metric.description}
-              </p>
-              
-              <div className="pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <div className={`flex-1 h-1 bg-gradient-to-r ${metric.gradient} rounded-full opacity-30 group-hover:opacity-50 transition-opacity`} />
-                  <ArrowRight className="w-4 h-4 text-slate-400 ml-3 group-hover:text-slate-600 transition-colors" />
-                </div>
-              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-3xl font-bold text-slate-900">{metric.value}</div>
+              <p className="text-xs text-slate-500">{metric.description}</p>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+              <div className="text-xs text-slate-500">{metric.previousValue ? `From ${metric.previousValue} ${metric.period}` : ''}</div>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
             </div>
           </CardContent>
         </Card>

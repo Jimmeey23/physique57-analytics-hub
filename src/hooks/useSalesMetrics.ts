@@ -230,14 +230,14 @@ export const useSalesMetrics = (data: SalesData[]) => {
       },
       {
         title: "Discount Percentage",
-        value: formatPercentage(currentDiscountPercentage / 100),
+        value: formatPercentage(currentDiscountPercentage),
         rawValue: currentDiscountPercentage,
         change: discountPercentageGrowth.rate,
         changeDetails: discountPercentageGrowth,
         icon: "ArrowDownRight",
         color: "amber",
         description: "Average discount rate applied",
-        previousValue: formatPercentage(prevDiscountPercentage / 100),
+        previousValue: formatPercentage(prevDiscountPercentage),
         previousRawValue: prevDiscountPercentage,
         comparison: {
           current: currentDiscountPercentage,

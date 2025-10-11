@@ -40,10 +40,17 @@ export const useGoogleSheets = () => {
   };
 
   const parseNumericValue = (value: string | number): number => {
-    if (typeof value === 'number') return value;
+    // Robust parser: handles currency symbols, commas, spaces, and percent signs
+    if (typeof value === 'number') return isNaN(value) ? 0 : value;
     if (!value || value === '') return 0;
-    
-    const cleaned = value.toString().replace(/,/g, '');
+
+    const cleaned = value
+      .toString()
+      .trim()
+      // Remove currency symbols and thousand separators
+      .replace(/[₹,\s]/g, '')
+      // Allow parseFloat to stop at non-numeric (e.g., %), so no need to strip % explicitly
+      ;
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   };
@@ -138,8 +145,50 @@ export const useGoogleSheets = () => {
               rawItem['discount_percentage'] || rawItem['discountPercentage'] || rawItem['DiscountPercentage'] ||
               rawItem['Discount_Percentage'] || rawItem['Discount %'] || rawItem['Discount_Percent'] || 0
             ),
-            hostId: rawItem['Host Id'] || rawItem['Host ID'] || rawItem['hostId'] || ''
+            hostId: rawItem['Host Id'] || rawItem['Host ID'] || rawItem['hostId'] || '',
+            // Secondary (Sec.) fields for behavior analytics
+            secMembershipStartDate: rawItem['Sec. Membership Start Date'] || rawItem['Sec Membership Start Date'] || '',
+            secMembershipEndDate: rawItem['Sec. Membership End Date'] || rawItem['Sec Membership End Date'] || '',
+            secMembershipTotalClasses: parseNumericValue(rawItem['Sec. Membership Total Classes'] || 0),
+            secMembershipClassesLeft: parseNumericValue(rawItem['Sec. Membership Classes Left'] || 0),
+            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || 0)
           };
+
+          // Compute fallback discount metrics when missing
+          const mrp = transformedItem.mrpPostTax && transformedItem.mrpPostTax > 0
+            ? transformedItem.mrpPostTax
+            : (transformedItem.mrpPreTax || 0);
+
+          // Fallback: derive discountAmount from MRP vs payment when column is missing/0
+          if ((transformedItem.discountAmount || 0) <= 0 && mrp > 0 && (transformedItem.paymentValue || 0) > 0 && mrp > (transformedItem.paymentValue || 0)) {
+            transformedItem.discountAmount = mrp - (transformedItem.paymentValue || 0);
+          }
+
+          // Additional fallback: if still 0 but explicit percentage exists, compute amount
+          if ((transformedItem.discountAmount || 0) <= 0 && (transformedItem.discountPercentage || 0) > 0 && mrp > 0) {
+            transformedItem.discountAmount = (mrp * (transformedItem.discountPercentage || 0)) / 100;
+          }
+
+          // Fallback: derive discountPercentage if missing/0
+          if ((transformedItem.discountPercentage || 0) <= 0) {
+            if (mrp > 0 && (transformedItem.discountAmount || 0) > 0) {
+              transformedItem.discountPercentage = (transformedItem.discountAmount! / mrp) * 100;
+            } else if (mrp > 0 && (transformedItem.paymentValue || 0) > 0 && mrp > (transformedItem.paymentValue || 0)) {
+              transformedItem.discountPercentage = ((mrp - (transformedItem.paymentValue || 0)) / mrp) * 100;
+            } else if ((transformedItem.discountAmount || 0) > 0 && (transformedItem.paymentValue || 0) > 0) {
+              // Assume effective MRP = payment + discount when MRP is not available
+              const effectiveMrp = (transformedItem.paymentValue || 0) + (transformedItem.discountAmount || 0);
+              transformedItem.discountPercentage = effectiveMrp > 0 ? ((transformedItem.discountAmount || 0) / effectiveMrp) * 100 : 0;
+            }
+          }
+
+          // Normalize rounding
+          if (typeof transformedItem.discountAmount === 'number') {
+            transformedItem.discountAmount = Math.round(transformedItem.discountAmount * 100) / 100;
+          }
+          if (typeof transformedItem.discountPercentage === 'number') {
+            transformedItem.discountPercentage = Math.round(transformedItem.discountPercentage * 100) / 100;
+          }
 
           return transformedItem;
         });

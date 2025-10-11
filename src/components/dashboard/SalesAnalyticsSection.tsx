@@ -29,6 +29,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
 import { AiNotes } from '@/components/ui/AiNotes';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
+import { CustomerBehaviorMonthOnMonthTable } from './CustomerBehaviorMonthOnMonthTable';
 
 interface SalesAnalyticsSectionProps {
   data: SalesData[];
@@ -730,12 +731,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               <UnifiedTopBottomSellers data={filteredData} />
 
                 <Tabs defaultValue="monthOnMonth" className="w-full">
-                  <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-6 w-full max-w-6xl mx-auto overflow-hidden">
+                  <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-7 w-full max-w-7xl mx-auto overflow-hidden">
                     <TabsTrigger value="monthOnMonth" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-                      Month-on-Month
+                      Month on Month
                     </TabsTrigger>
                     <TabsTrigger value="yearOnYear" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-                      Year-on-Year
+                      Year on Year
                     </TabsTrigger>
                   <TabsTrigger value="productPerformance" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Product Performance
@@ -744,10 +745,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     Category Performance
                   </TabsTrigger>
                   <TabsTrigger value="soldByAnalysis" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-                    Sold By Analysis
+                    Sold By
                   </TabsTrigger>
                   <TabsTrigger value="paymentMethodAnalysis" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Payment Methods
+                  </TabsTrigger>
+                  <TabsTrigger value="customerBehavior" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                    Customer Behavior
                   </TabsTrigger>
                 </TabsList>
 
@@ -843,6 +847,11 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     </div>
                   </section>
                 </TabsContent>
+
+                <TabsContent value="customerBehavior" className="space-y-6">
+                    {/* Use allHistoricData to make this tab independent from the date filters */}
+                    <CustomerBehaviorMonthOnMonthTable data={allHistoricData} onReady={markReady} onRowClick={handleRowClick} />
+                  </TabsContent>
               </Tabs>
             </TabsContent>
           ))}

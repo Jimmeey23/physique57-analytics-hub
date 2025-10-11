@@ -219,8 +219,13 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
 
       // Calculate category totals for each month
       const categoryMonthlyValues: Record<string, number> = {};
-      monthlyData.forEach(({ key }) => {
-        categoryMonthlyValues[key] = categoryData.products.reduce((sum, p) => sum + (p.monthlyValues[key] || 0), 0);
+      monthlyData.forEach(({ key, year, month }) => {
+        // Compute from raw items for averaging metrics correctness
+        const monthItems = (categoryData as any).products.flatMap((p: any) => p.rawData as SalesData[]).filter((item: SalesData) => {
+          const itemDate = parseDate(item.paymentDate);
+          return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+        });
+        categoryMonthlyValues[key] = getMetricValue(monthItems, selectedMetric);
       });
       
       return {
@@ -353,11 +358,13 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
                           }
                         </Button>
                         <span className="font-bold text-lg text-slate-800">#{categoryIndex + 1} {categoryGroup.category}</span>
-                        <ModernGroupBadge 
-                          count={categoryGroup.products.length} 
-                          label="products" 
-                          variant="info"
-                        />
+                        <div className="inline-flex items-center gap-2 shrink-0">
+                          <ModernGroupBadge 
+                            count={categoryGroup.products.length} 
+                            label="products" 
+                            variant="info"
+                          />
+                        </div>
                       </div>
                     </td>
                     
@@ -506,10 +513,13 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
                   </div>
                 </td>
                 
-                {visibleMonths.map(({ key }) => {
-                  const totalValue = processedData.reduce((sum, categoryGroup) => {
-                    return sum + (categoryGroup.monthlyValues[key] || 0);
-                  }, 0);
+                {visibleMonths.map(({ key, year, month }) => {
+                  // Use allHistoricData filtered by month to compute totals, preserving averaging
+                  const monthItems = allHistoricData.filter(item => {
+                    const itemDate = parseDate(item.paymentDate);
+                    return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+                  });
+                  const totalValue = getMetricValue(monthItems, selectedMetric);
                   
                   return (
                     <td 

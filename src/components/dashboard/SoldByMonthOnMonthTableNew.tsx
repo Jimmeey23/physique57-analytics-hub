@@ -137,7 +137,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
     }, {});
 
     const sellerData = Object.entries(soldByGroups).map(([seller, items]) => {
-      const monthlyValues: Record<string, number> = {};
+  const monthlyValues: Record<string, number> = {};
       
       monthlyData.forEach(({ key, year, month }) => {
         const monthItems = items.filter(item => {
@@ -326,10 +326,12 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
                   </div>
                 </td>
                 
-                {visibleMonths.map(({ key }) => {
-                  const totalValue = processedData.reduce((sum, seller) => 
-                    sum + (seller.monthlyValues[key] || 0), 0
-                  );
+                {visibleMonths.map(({ key, year, month }) => {
+                  const monthItems = (data as SalesData[]).filter(item => {
+                    const itemDate = parseDate(item.paymentDate);
+                    return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+                  });
+                  const totalValue = getMetricValue(monthItems, selectedMetric);
                   
                   return (
                     <td 

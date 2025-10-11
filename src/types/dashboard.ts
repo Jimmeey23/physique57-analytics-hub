@@ -34,6 +34,12 @@ export interface SalesData {
   discountType?: string;
   isPromotional?: boolean;
   hostId?: string;
+  // Secondary (Sec.) fields for membership/session usage behavior
+  secMembershipStartDate?: string;
+  secMembershipEndDate?: string;
+  secMembershipTotalClasses?: number;
+  secMembershipClassesLeft?: number;
+  secMembershipUsedSessions?: number;
 }
 
 export interface SessionData {

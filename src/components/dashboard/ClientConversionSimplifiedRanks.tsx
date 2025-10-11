@@ -377,11 +377,23 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
                       <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
                         {formatNumber(item.totalSessions || 0)} classes
                       </Badge>
+                      <Badge variant="outline" className="text-xs border-slate-200 text-slate-700">
+                        Empty: {formatNumber(item.totalEmptySessions || 0)}
+                      </Badge>
                       <Badge variant="outline" className="text-xs border-green-200 text-green-700">
                         Avg: {(item.classAverage || 0).toFixed(1)}
                       </Badge>
                       <Badge variant="outline" className="text-xs border-orange-200 text-orange-700">
                         Empty: {(item.emptyClassRate || 0).toFixed(1)}%
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-emerald-200 text-emerald-700">
+                        Converted: {formatNumber(item.totalConverted || 0)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-violet-200 text-violet-700">
+                        Retained: {formatNumber(item.totalRetained || 0)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-blue-200 text-blue-700">
+                        New: {formatNumber(item.totalNew || 0)}
                       </Badge>
                     </>
                   )}
@@ -392,6 +404,18 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
                       </Badge>
                       <Badge variant="outline" className="text-xs border-green-200 text-green-700">
                         Avg: {(item.classAverage || 0).toFixed(1)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-slate-200 text-slate-700">
+                        Empty: {formatNumber(item.totalEmptySessions || 0)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-emerald-200 text-emerald-700">
+                        Converted: {formatNumber(item.totalConverted || 0)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-violet-200 text-violet-700">
+                        Retained: {formatNumber(item.totalRetained || 0)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-blue-200 text-blue-700">
+                        New: {formatNumber(item.totalNew || 0)}
                       </Badge>
                     </>
                   )}

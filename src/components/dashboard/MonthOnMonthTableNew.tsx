@@ -208,8 +208,13 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
       };
 
       const categoryMonthlyValues: Record<string, number> = {};
-      monthlyData.forEach(({ key }) => {
-        categoryMonthlyValues[key] = categoryData.products.reduce((sum, p) => sum + (p.monthlyValues[key] || 0), 0);
+      monthlyData.forEach(({ key, year, month }) => {
+        // Compute from raw items to ensure averages (ATV/AUV/ASV/UPT/Discount %) are correct
+        const monthItems = (categoryData.products.flatMap(p => p.rawData) as SalesData[]).filter(item => {
+          const itemDate = parseDate(item.paymentDate);
+          return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+        });
+        categoryMonthlyValues[key] = getMetricValue(monthItems, selectedMetric);
       });
       
       return {
@@ -535,10 +540,13 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
                   </div>
                 </td>
                 
-                {visibleMonths.map(({ key }) => {
-                  const totalValue = processedData.reduce((sum, categoryGroup) => 
-                    sum + (categoryGroup.monthlyValues[key] || 0), 0
-                  );
+                {visibleMonths.map(({ key, year, month }) => {
+                  // Derive from all data in the month so average-type metrics are correct
+                  const monthItems = (data as SalesData[]).filter(item => {
+                    const itemDate = parseDate(item.paymentDate);
+                    return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+                  });
+                  const totalValue = getMetricValue(monthItems, selectedMetric);
                   
                   return (
                     <td 

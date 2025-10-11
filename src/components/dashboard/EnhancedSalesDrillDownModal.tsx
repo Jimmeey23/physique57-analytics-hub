@@ -28,6 +28,7 @@ import {
   Download
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { useAdvancedExport } from '@/hooks/useAdvancedExport';
 
 interface EnhancedSalesDrillDownModalProps {
   isOpen: boolean;
@@ -43,6 +44,8 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
   type
 }) => {
   if (!data) return null;
+
+  const { exportAllData, isExporting } = useAdvancedExport();
 
   // Enhanced data processing with deeper analytics
   const enhancedData = useMemo(() => {
@@ -161,6 +164,99 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
       customerAnalysis
     };
   }, [data]);
+
+  // Build a per-member behavior summary specifically for Customer Behavior context
+  const behaviorSummary = useMemo(() => {
+    const tx = enhancedData.filteredTransactionData || enhancedData.rawData || [];
+    if (!tx.length) return [] as any[];
+
+    const parseDate = (dateStr: string): Date | null => {
+      if (!dateStr) return null;
+      const ddmmyyyy = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyy) {
+        const [, day, month, year] = ddmmyyyy as any;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    const byMember = new Map<string, any[]>();
+    tx.forEach((t: any) => {
+      const id = t.memberId || t.customerEmail || 'unknown';
+      if (!byMember.has(id)) byMember.set(id, []);
+      byMember.get(id)!.push(t);
+    });
+
+    const rows: any[] = [];
+    byMember.forEach((list, memberId) => {
+      const sorted = list
+        .map((l: any) => ({ ...l, _date: parseDate(l.paymentDate) }))
+        .filter((l: any) => !!l._date)
+        .sort((a: any, b: any) => a._date.getTime() - b._date.getTime());
+      const totalSpent = list.reduce((s: number, i: any) => s + (i.paymentValue || 0), 0);
+      const transactions = list.length;
+      const discountedTx = list.filter((i: any) => (i.discountAmount || 0) > 0).length;
+      const usedSessions = list.reduce((s: number, i: any) => s + (i.secMembershipUsedSessions || 0), 0);
+      let purchaseFrequencyDays = 0;
+      let lifespanDays = 0;
+      let daysToSecondPurchase = 0;
+      if (sorted.length > 1) {
+        const first = sorted[0]._date as Date;
+        const last = sorted[sorted.length - 1]._date as Date;
+        lifespanDays = (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24);
+        purchaseFrequencyDays = lifespanDays / (sorted.length - 1);
+        daysToSecondPurchase = ((sorted[1]._date as Date).getTime() - first.getTime()) / (1000 * 60 * 60 * 24);
+      }
+      rows.push({
+        memberId,
+        email: list[0]?.customerEmail || '',
+        transactions,
+        totalSpent,
+        avgSpend: transactions ? totalSpent / transactions : 0,
+        discountedTx,
+        percentDiscounted: transactions ? (discountedTx / transactions) * 100 : 0,
+        usedSessions,
+        avgSessionsPerTx: transactions ? usedSessions / transactions : 0,
+        purchaseFrequencyDays,
+        lifespanDays,
+        daysToSecondPurchase,
+        firstPurchase: sorted[0]?._date ? (sorted[0]._date as Date).toISOString().slice(0, 10) : '',
+        lastPurchase: sorted[sorted.length - 1]?._date ? (sorted[sorted.length - 1]._date as Date).toISOString().slice(0, 10) : '',
+      });
+    });
+
+    return rows.sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [enhancedData]);
+
+  const handleExport = async () => {
+    const tx = (enhancedData.filteredTransactionData || enhancedData.rawData || []).map((t: any) => ({
+      paymentDate: t.paymentDate,
+      customerEmail: t.customerEmail,
+      memberId: t.memberId,
+      cleanedCategory: t.cleanedCategory,
+      cleanedProduct: t.cleanedProduct || t.paymentItem,
+      paymentValue: t.paymentValue,
+      discountAmount: t.discountAmount,
+      discountPercentage: t.discountPercentage,
+      paymentMethod: t.paymentMethod,
+      soldBy: t.soldBy,
+      calculatedLocation: t.calculatedLocation,
+    }));
+
+    await exportAllData(
+      {
+        additionalData: {
+          'Transactions': tx,
+          'Per-Member Behavior Summary': behaviorSummary,
+        },
+      },
+      {
+        format: 'csv',
+        fileName: `${(data.clickedItemName || 'drilldown').toString().replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0,10)}`,
+      }
+    );
+  };
 
   // Chart colors
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
@@ -553,6 +649,16 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
                 <Activity className="w-4 h-4" />
                 Live Analytics
               </Badge>
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                onClick={handleExport}
+                disabled={isExporting}
+                title="Export transactions and per-member behavior summary"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={onClose}
