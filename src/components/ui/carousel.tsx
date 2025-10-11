@@ -40,7 +40,7 @@ function useCarousel() {
   return context
 }
 
-const Carousel = forwardRef<
+const Carousel = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & CarouselProps
 >(
@@ -148,7 +148,7 @@ const Carousel = forwardRef<
 )
 Carousel.displayName = "Carousel"
 
-const CarouselContent = forwardRef<
+const CarouselContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
@@ -170,7 +170,7 @@ const CarouselContent = forwardRef<
 })
 CarouselContent.displayName = "CarouselContent"
 
-const CarouselItem = forwardRef<
+const CarouselItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
@@ -192,7 +192,7 @@ const CarouselItem = forwardRef<
 })
 CarouselItem.displayName = "CarouselItem"
 
-const CarouselPrevious = forwardRef<
+const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
 >(({ className, variant = "outline", size = "icon", ...props }, ref) => {
@@ -221,7 +221,7 @@ const CarouselPrevious = forwardRef<
 })
 CarouselPrevious.displayName = "CarouselPrevious"
 
-const CarouselNext = forwardRef<
+const CarouselNext = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
 >(({ className, variant = "outline", size = "icon", ...props }, ref) => {
