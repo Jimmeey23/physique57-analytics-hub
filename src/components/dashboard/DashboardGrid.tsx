@@ -84,6 +84,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) =
       hoverColor: 'hover:from-cyan-600 hover:to-cyan-700'
     },
     {
+      id: 'class-formats',
+      title: 'Class Formats Comparison',
+      description: 'PowerCycle vs Barre vs Strength head-to-head metrics',
+      icon: BarChart3,
+      color: 'from-cyan-500 to-cyan-600',
+      hoverColor: 'hover:from-cyan-600 hover:to-cyan-700'
+    },
+    {
       id: 'late-cancellations',
       title: 'Late Cancellations',
       description: 'Analysis of late cancellations and no-shows',

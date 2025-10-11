@@ -30,25 +30,42 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
   onCompareWithTrainerChange
 }) => {
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
-  const [metric, setMetric] = useState<'attendance' | 'revenue' | 'fillRate' | 'conversion' | 'retention'>('attendance');
+  const [groupBy, setGroupBy] = useState<'format' | 'classType'>('format');
+  const [metric, setMetric] = useState<'attendance' | 'revenue' | 'fillRate' | 'conversion' | 'retention' | 'cancellation'>('attendance');
   const [activeTab, setActiveTab] = useState<'charts' | 'table' | 'comparison'>('charts');
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showDrillDown, setShowDrillDown] = useState(false);
 
   const availableFormats = useMemo(() => {
     if (!data) return [];
-    return [...new Set(data.map(session => session.cleanedClass || session.classType).filter(Boolean))];
-  }, [data]);
+    const arr = data.map(session => groupBy === 'format' ? (session.cleanedClass || session.classType) : (session.classType || session.cleanedClass)).filter(Boolean) as string[];
+    return [...new Set(arr)];
+  }, [data, groupBy]);
+
+  // Ensure selected formats remain valid on groupBy change
+  React.useEffect(() => {
+    if (!selectedFormats || selectedFormats.length === 0) return;
+    const set = new Set(availableFormats);
+    const next = selectedFormats.filter(f => set.has(f));
+    if (next.length !== selectedFormats.length) {
+      onFormatsChange(next.length > 0 ? next : availableFormats.slice(0, 3));
+    }
+  }, [groupBy, availableFormats]);
 
   const comparisonData = useMemo(() => {
     if (!data || selectedFormats.length === 0) return [];
 
+    const getKey = (session: SessionData) => {
+      const base = groupBy === 'format' ? (session.cleanedClass || session.classType || 'Unknown') : (session.classType || session.cleanedClass || 'Unknown');
+      return base;
+    };
+
     if (compareWithTrainer) {
       // Group by format and trainer
       const grouped = data
-        .filter(session => selectedFormats.includes(session.cleanedClass || session.classType || ''))
+        .filter(session => selectedFormats.includes(getKey(session)))
         .reduce((acc, session) => {
-          const format = session.cleanedClass || session.classType || 'Unknown';
+          const format = getKey(session);
           const trainer = session.trainerName || 'Unknown';
           const key = `${format} • ${trainer}`;
 
@@ -98,6 +115,7 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
           totalAttendance: item.totalAttendance,
           revenue: avgRevenue,
           totalRevenue: item.totalRevenue,
+          totalCapacity: item.totalCapacity,
           fillRate,
           conversion: conversionRate,
           retention: retentionRate,
@@ -107,11 +125,11 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
         };
       });
     } else {
-      // Group by format only
+      // Group by selection (format or class type)
       const grouped = data
-        .filter(session => selectedFormats.includes(session.cleanedClass || session.classType || ''))
+        .filter(session => selectedFormats.includes(getKey(session)))
         .reduce((acc, session) => {
-          const format = session.cleanedClass || session.classType || 'Unknown';
+          const format = getKey(session);
 
           if (!acc[format]) {
             acc[format] = {
@@ -155,6 +173,7 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
           totalAttendance: item.totalAttendance,
           revenue: avgRevenue,
           totalRevenue: item.totalRevenue,
+          totalCapacity: item.totalCapacity,
           fillRate,
           conversion: conversionRate,
           retention: retentionRate,
@@ -186,6 +205,8 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
         return dataKey === 'value' ? 'revenue' : 'Avg Revenue (₹)';
       case 'fillRate':
         return dataKey === 'value' ? 'fillRate' : 'Fill Rate (%)';
+      case 'cancellation':
+        return dataKey === 'value' ? 'cancellation' : 'Cancellation Rate (%)';
       case 'conversion':
         return dataKey === 'value' ? 'conversion' : 'Conversion Rate (%)';
       case 'retention':
@@ -231,11 +252,27 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
       )
     },
     {
+      key: 'totalAttendance' as const,
+      header: 'Total Check-ins',
+      align: 'center' as const,
+      render: (value: number) => (
+        <div className="text-slate-800">{value.toLocaleString()}</div>
+      )
+    },
+    {
       key: 'revenue' as const,
       header: 'Avg Revenue',
       align: 'right' as const,
       render: (value: number) => (
         <div className="font-semibold text-green-600">₹{value.toLocaleString()}</div>
+      )
+    },
+    {
+      key: 'totalRevenue' as const,
+      header: 'Total Revenue',
+      align: 'right' as const,
+      render: (value: number) => (
+        <div className="text-slate-800">₹{value.toLocaleString()}</div>
       )
     },
     {
@@ -246,6 +283,14 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
         <Badge variant={value >= 80 ? 'default' : value >= 60 ? 'secondary' : 'outline'}>
           {value}%
         </Badge>
+      )
+    },
+    {
+      key: 'sessions' as const,
+      header: 'Capacity',
+      align: 'center' as const,
+      render: (_: number, item: any) => (
+        <div className="text-slate-800">{item.totalCapacity?.toLocaleString?.() ?? '-'}</div>
       )
     },
     {
@@ -311,6 +356,19 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
                 </Button>
               ))}
             </div>
+            {/* Group by selector */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xs font-medium text-slate-600">Group by:</span>
+              <Select value={groupBy} onValueChange={(v: any) => setGroupBy(v)}>
+                <SelectTrigger className="w-40 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="format">Format (Cleaned Class)</SelectItem>
+                  <SelectItem value="classType">Class Type</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             {/* Selected formats display */}
             {selectedFormats.length > 0 && (
@@ -362,6 +420,7 @@ export const ComprehensiveClassFormatComparison: React.FC<ComprehensiveClassForm
                         <Target className="w-4 h-4 mr-2 inline" />
                         Fill Rate
                       </SelectItem>
+                      <SelectItem value="cancellation">🛑 Cancellation Rate</SelectItem>
                       <SelectItem value="conversion">
                         <TrendingUp className="w-4 h-4 mr-2 inline" />
                         Conversion

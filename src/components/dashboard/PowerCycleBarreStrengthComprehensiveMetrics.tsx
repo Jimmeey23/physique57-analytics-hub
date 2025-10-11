@@ -115,24 +115,24 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
       title: 'PowerCycle Sessions',
       value: formatNumber(metrics.powerCycle.totalSessions),
       icon: Zap,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'from-blue-50 to-blue-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'powercycle', metric: 'sessions', value: metrics.powerCycle.totalSessions }
     },
     {
       title: 'PowerCycle Revenue',
       value: `₹${formatNumber(metrics.powerCycle.totalRevenue)}`,
       icon: DollarSign,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'from-blue-50 to-blue-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'powercycle', metric: 'revenue', value: metrics.powerCycle.totalRevenue }
     },
     {
       title: 'PowerCycle Fill Rate',
       value: `${metrics.fillRates.powerCycle.toFixed(1)}%`,
       icon: Target,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'from-blue-50 to-blue-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'powercycle', metric: 'fillRate', value: metrics.fillRates.powerCycle }
     },
     
@@ -141,24 +141,24 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
       title: 'Barre Sessions',
       value: formatNumber(metrics.barre.totalSessions),
       icon: Activity,
-      color: 'from-pink-500 to-pink-600',
-      bgColor: 'from-pink-50 to-pink-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'barre', metric: 'sessions', value: metrics.barre.totalSessions }
     },
     {
       title: 'Barre Revenue',
       value: `₹${formatNumber(metrics.barre.totalRevenue)}`,
       icon: DollarSign,
-      color: 'from-pink-500 to-pink-600',
-      bgColor: 'from-pink-50 to-pink-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'barre', metric: 'revenue', value: metrics.barre.totalRevenue }
     },
     {
       title: 'Barre Fill Rate',
       value: `${metrics.fillRates.barre.toFixed(1)}%`,
       icon: Target,
-      color: 'from-pink-500 to-pink-600',
-      bgColor: 'from-pink-50 to-pink-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'barre', metric: 'fillRate', value: metrics.fillRates.barre }
     },
 
@@ -167,24 +167,24 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
       title: 'Strength Sessions',
       value: formatNumber(metrics.strength.totalSessions),
       icon: Dumbbell,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'from-green-50 to-green-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'strength', metric: 'sessions', value: metrics.strength.totalSessions }
     },
     {
       title: 'Strength Revenue',
       value: `₹${formatNumber(metrics.strength.totalRevenue)}`,
       icon: DollarSign,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'from-green-50 to-green-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'strength', metric: 'revenue', value: metrics.strength.totalRevenue }
     },
     {
       title: 'Strength Fill Rate',
       value: `${metrics.fillRates.strength.toFixed(1)}%`,
       icon: Target,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'from-green-50 to-green-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'strength', metric: 'fillRate', value: metrics.fillRates.strength }
     },
 
@@ -193,24 +193,24 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
       title: 'Total New Members',
       value: formatNumber(metrics.totals.new),
       icon: UserPlus,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'from-purple-50 to-purple-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'overall', metric: 'new', value: metrics.totals.new }
     },
     {
       title: 'Total Converted',
       value: formatNumber(metrics.totals.converted),
       icon: UserCheck,
-      color: 'from-indigo-500 to-indigo-600',
-      bgColor: 'from-indigo-50 to-indigo-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'overall', metric: 'converted', value: metrics.totals.converted }
     },
     {
       title: 'Total Retained',
       value: formatNumber(metrics.totals.retained),
       icon: Users,
-      color: 'from-teal-500 to-teal-600',
-      bgColor: 'from-teal-50 to-teal-100',
+      color: 'from-cyan-600 to-cyan-700',
+      bgColor: 'from-white to-slate-50',
       data: { type: 'overall', metric: 'retained', value: metrics.totals.retained }
     }
   ];
@@ -221,12 +221,13 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
         {metricCards.map((card, index) => (
           <Card 
             key={index}
-            className={`bg-gradient-to-br ${card.bgColor} border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group`}
+            className={`bg-gradient-to-br ${card.bgColor} border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group`}
             onClick={() => onItemClick(card.data)}
           >
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                     style={{ border: '1px solid var(--hero-accent, rgba(255,255,255,0.35))' }}>
                   <card.icon className="w-6 h-6 text-white" />
                 </div>
                 <Badge variant="secondary" className="bg-white/50 text-gray-700">
@@ -243,76 +244,76 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
       </div>
 
       {/* Summary Comparison Card */}
-      <Card className="bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20 border-0 shadow-xl">
+      <Card className="bg-gradient-to-br from-white via-gray-50/30 to-slate-50/20 border-0 shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl font-bold flex items-center gap-3">
-            <Activity className="w-6 h-6 text-blue-600" />
+            <Activity className="w-6 h-6 text-cyan-600" />
             Format Performance Summary
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* PowerCycle Summary */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+            <div className="bg-gradient-to-br from-white to-slate-50 rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3 mb-3">
-                <Zap className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">PowerCycle</h4>
+                <Zap className="w-5 h-5 text-cyan-600" />
+                <h4 className="font-semibold text-gray-900">PowerCycle</h4>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Sessions:</span>
+                  <span className="text-gray-600">Sessions:</span>
                   <span className="font-medium">{formatNumber(metrics.powerCycle.totalSessions)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Revenue:</span>
+                  <span className="text-gray-600">Revenue:</span>
                   <span className="font-medium">₹{formatNumber(metrics.powerCycle.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Avg/Session:</span>
+                  <span className="text-gray-600">Avg/Session:</span>
                   <span className="font-medium">{metrics.averages.powerCycle.toFixed(1)}</span>
                 </div>
               </div>
             </div>
 
             {/* Barre Summary */}
-            <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 border border-pink-200">
+            <div className="bg-gradient-to-br from-white to-slate-50 rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3 mb-3">
-                <Activity className="w-5 h-5 text-pink-600" />
-                <h4 className="font-semibold text-pink-900">Barre</h4>
+                <Activity className="w-5 h-5 text-cyan-600" />
+                <h4 className="font-semibold text-gray-900">Barre</h4>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-pink-700">Sessions:</span>
+                  <span className="text-gray-600">Sessions:</span>
                   <span className="font-medium">{formatNumber(metrics.barre.totalSessions)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-pink-700">Revenue:</span>
+                  <span className="text-gray-600">Revenue:</span>
                   <span className="font-medium">₹{formatNumber(metrics.barre.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-pink-700">Avg/Session:</span>
+                  <span className="text-gray-600">Avg/Session:</span>
                   <span className="font-medium">{metrics.averages.barre.toFixed(1)}</span>
                 </div>
               </div>
             </div>
 
             {/* Strength Summary */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+            <div className="bg-gradient-to-br from-white to-slate-50 rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3 mb-3">
-                <Dumbbell className="w-5 h-5 text-green-600" />
-                <h4 className="font-semibold text-green-900">Strength Lab</h4>
+                <Dumbbell className="w-5 h-5 text-cyan-600" />
+                <h4 className="font-semibold text-gray-900">Strength Lab</h4>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-green-700">Sessions:</span>
+                  <span className="text-gray-600">Sessions:</span>
                   <span className="font-medium">{formatNumber(metrics.strength.totalSessions)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-green-700">Revenue:</span>
+                  <span className="text-gray-600">Revenue:</span>
                   <span className="font-medium">₹{formatNumber(metrics.strength.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-green-700">Avg/Session:</span>
+                  <span className="text-gray-600">Avg/Session:</span>
                   <span className="font-medium">{metrics.averages.strength.toFixed(1)}</span>
                 </div>
               </div>

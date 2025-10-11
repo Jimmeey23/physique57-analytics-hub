@@ -94,7 +94,7 @@ export const colorThemes: Record<string, ColorTheme> = {
   powercycle: {
     name: 'PowerCycle vs Barre',
     heroGradient: 'from-zinc-900 via-cyan-900 to-zinc-800',
-    activeTabGradient: 'from-cyan-700 to-teal-800',
+    activeTabGradient: 'from-cyan-800 to-teal-900',
     accentColors: {
       primary: 'cyan-600',
       secondary: 'teal-500',

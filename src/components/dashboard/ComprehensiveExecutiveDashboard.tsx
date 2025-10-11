@@ -35,6 +35,7 @@ import { EnhancedExecutiveDataTables } from './EnhancedExecutiveDataTables';
 import { ExecutiveTopPerformersGrid } from './ExecutiveTopPerformersGrid';
 import { ExecutiveDiscountsTab } from './ExecutiveDiscountsTab';
 import { ExecutiveFilterSection } from './ExecutiveFilterSection';
+import { ExecutiveLocationTabs } from './ExecutiveLocationTabs';
 import { PowerCycleBarreStrengthComparison } from './PowerCycleBarreStrengthComparison';
 import { SourceDataModal } from '@/components/ui/SourceDataModal';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
@@ -45,7 +46,7 @@ import { useNewClientData } from '@/hooks/useNewClientData';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { generateLocationReports } from '@/services/executivePDFService';
+import { generateLocationPDFReport, generateAllLocationReports } from '@/services/screenshotPDFService';
 
 export const ComprehensiveExecutiveDashboard = () => {
   const [showSourceData, setShowSourceData] = useState(false);
@@ -53,7 +54,7 @@ export const ComprehensiveExecutiveDashboard = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { filters } = useGlobalFilters();
+  const { filters, updateFilters } = useGlobalFilters();
   const { setLoading } = useGlobalLoading();
   const { toast } = useToast();
 
@@ -101,6 +102,7 @@ export const ComprehensiveExecutiveDashboard = () => {
     const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const filterByPreviousMonth = (dateStr: string) => {
+      if (!dateStr) return false;
       const date = new Date(dateStr);
       return date >= previousMonth && date < currentMonth;
     };
@@ -121,11 +123,12 @@ export const ComprehensiveExecutiveDashboard = () => {
       'location'
     );
 
+    // Fix date parsing for payroll - use ISO format instead of toLocaleDateString
+    const prevMonthStr = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
     const filteredPayroll = filterByLocation(
       payrollData?.filter(item => {
         const monthYear = item.monthYear;
-        const prevMonthStr = previousMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        return monthYear === prevMonthStr;
+        return monthYear?.startsWith(prevMonthStr) || false;
       }) || [],
       'location'
     );
@@ -135,7 +138,7 @@ export const ComprehensiveExecutiveDashboard = () => {
       'homeLocation'
     );
 
-    const prevPeriod = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
+    const prevPeriod = prevMonthStr;
 
     const filteredLeads = filterByLocation(
       (leadsData?.filter(item => {
@@ -158,6 +161,63 @@ export const ComprehensiveExecutiveDashboard = () => {
       newClients: filteredNewClients,
       leads: filteredLeads,
       discounts: filteredDiscounts
+    };
+  }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, filters.location]);
+
+  // All data for last 3 months (for MoM comparison calculations)
+  const allDataLast3Months = useMemo(() => {
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+
+    const filterByLast3Months = (dateStr: string) => {
+      if (!dateStr) return false;
+      const date = new Date(dateStr);
+      return date >= threeMonthsAgo;
+    };
+
+    const filterByLocation = (items: any[], locationKey: string) => {
+      if (!filters.location || filters.location.length === 0) return items;
+      const locationFilter = Array.isArray(filters.location) ? filters.location[0] : filters.location;
+      return items.filter(item => item[locationKey] === locationFilter);
+    };
+
+    const allSales = filterByLocation(
+      salesData?.filter(item => filterByLast3Months(item.paymentDate)) || [],
+      'calculatedLocation'
+    );
+
+    const allSessions = filterByLocation(
+      sessionsData?.filter(item => filterByLast3Months(item.date)) || [],
+      'location'
+    );
+
+    const allPayroll = filterByLocation(
+      payrollData || [],
+      'location'
+    );
+
+    const allNewClients = filterByLocation(
+      newClientsData?.filter(item => filterByLast3Months(item.firstVisitDate)) || [],
+      'homeLocation'
+    );
+
+    const allLeads = filterByLocation(
+      leadsData?.filter(item => filterByLast3Months(item.createdAt || '')) || [],
+      'center'
+    );
+
+    const allDiscounts = filterByLocation(
+      discountData?.filter(item => filterByLast3Months(item.paymentDate)) || [],
+      'location'
+    );
+
+    return {
+      sales: allSales,
+      sessions: allSessions,
+      payroll: allPayroll,
+      newClients: allNewClients,
+      leads: allLeads,
+      discounts: allDiscounts
     };
   }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, filters.location]);
 
@@ -189,34 +249,38 @@ export const ComprehensiveExecutiveDashboard = () => {
     setIsGeneratingPDF(true);
     
     try {
+      const locationsToGenerate = availableLocations.length > 0 ? availableLocations : ['All Locations'];
+      
       toast({
         title: "Generating PDF Reports",
-        description: "Creating comprehensive reports for all locations...",
+        description: `Creating screenshot-based reports for ${locationsToGenerate.length} location(s)...`,
       });
 
-      const now = new Date();
-      const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const monthYear = previousMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      // Function to update location filter
+      const updateLocationFilter = (location: string) => {
+        if (location === 'all' || location === 'All Locations') {
+          updateFilters({ location: [] });
+        } else {
+          updateFilters({ location: [location] });
+        }
+      };
 
-      // Prepare all data
-      const reportData = {
-        sales: salesData || [],
-        sessions: sessionsData || [],
-        payroll: payrollData || [],
-        newClients: newClientsData || [],
-        leads: leadsData || [],
-        discounts: discountData || [],
-        lateCancellations: []
+      // Progress callback
+      const onProgress = (message: string) => {
+        console.log(`PDF Generation: ${message}`);
       };
 
       // Generate reports for all locations
-      const locationsToGenerate = availableLocations.length > 0 ? availableLocations : ['All Locations'];
-      
-      await generateLocationReports(reportData as any, locationsToGenerate, monthYear);
+      await generateAllLocationReports(
+        locationsToGenerate,
+        updateLocationFilter,
+        onProgress
+      );
 
       toast({
         title: "Success!",
-        description: `Generated ${locationsToGenerate.length} PDF report(s)`,
+        description: `Generated ${locationsToGenerate.length} PDF report(s) with screenshots`,
+        duration: 5000,
       });
     } catch (error) {
       console.error('Error generating PDF reports:', error);
@@ -291,17 +355,24 @@ export const ComprehensiveExecutiveDashboard = () => {
           </Button>
         </div>
 
+        {/* Location Tabs - Easy Switching Between Locations */}
+        <ExecutiveLocationTabs availableLocations={availableLocations} />
+
         {/* Filter Section with Location Selector */}
         <ExecutiveFilterSection availableLocations={availableLocations} />
 
         {/* Key Performance Metrics - 12 Cards with real data */}
-        <ExecutiveMetricCardsGrid data={previousMonthData} />
+        <div id="executive-metrics">
+          <ExecutiveMetricCardsGrid data={previousMonthData} />
+        </div>
 
         {/* Interactive Charts Section - 4 Charts with real data */}
-        <ExecutiveChartsGrid data={previousMonthData} />
+        <div id="executive-charts">
+          <ExecutiveChartsGrid data={previousMonthData} />
+        </div>
 
         {/* Main Content Sections */}
-        <Card className="bg-white/90 backdrop-blur-sm shadow-2xl border-0 overflow-hidden">
+        <Card className="bg-white/90 backdrop-blur-sm shadow-2xl border-0 overflow-hidden" id="executive-tables">
           <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-900 to-purple-900 text-white border-0">
             <CardTitle className="text-2xl font-bold flex items-center gap-4">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -360,7 +431,9 @@ export const ComprehensiveExecutiveDashboard = () => {
                 </TabsContent>
 
                 <TabsContent value="performers" className="space-y-6 mt-0">
-                  <ExecutiveTopPerformersGrid data={previousMonthData} />
+                  <div id="executive-performance">
+                    <ExecutiveTopPerformersGrid data={previousMonthData} />
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="trends" className="space-y-6 mt-0">

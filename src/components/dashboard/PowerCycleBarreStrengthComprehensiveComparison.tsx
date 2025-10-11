@@ -125,8 +125,8 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
   return (
     <div className="space-y-6">
       {/* Overall Winner Card */}
-      <Card className="bg-gradient-to-br from-white via-yellow-50/30 to-amber-50/20 border-0 shadow-xl">
-        <CardHeader className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
+      <Card className="bg-gradient-to-br from-white via-gray-50/30 to-slate-50/20 border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-slate-900/80 to-slate-700/80 text-white">
           <CardTitle className="text-xl font-bold flex items-center gap-3">
             <TrendingUp className="w-6 h-6" />
             Performance Comparison Dashboard
@@ -138,22 +138,14 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
             {Object.entries(comparisonData).map(([format, data]) => (
               <div 
                 key={format}
-                className={`bg-gradient-to-br ${
-                  format === 'powerCycle' ? 'from-blue-50 to-blue-100 border-blue-200' :
-                  format === 'barre' ? 'from-pink-50 to-pink-100 border-pink-200' :
-                  'from-green-50 to-green-100 border-green-200'
-                } rounded-xl p-4 border cursor-pointer hover:shadow-lg transition-all duration-300`}
+                className={`bg-gradient-to-br from-white to-slate-50 rounded-xl p-4 border border-white/30 cursor-pointer hover:shadow-lg transition-all duration-300`}
                 onClick={() => onItemClick({ type: 'format', format, data })}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  {format === 'powerCycle' && <Zap className="w-6 h-6 text-blue-600" />}
-                  {format === 'barre' && <Activity className="w-6 h-6 text-pink-600" />}
-                  {format === 'strength' && <Dumbbell className="w-6 h-6 text-green-600" />}
-                  <h3 className={`font-bold text-lg ${
-                    format === 'powerCycle' ? 'text-blue-900' :
-                    format === 'barre' ? 'text-pink-900' :
-                    'text-green-900'
-                  }`}>
+                  {format === 'powerCycle' && <Zap className="w-6 h-6 text-cyan-600" />}
+                  {format === 'barre' && <Activity className="w-6 h-6 text-cyan-600" />}
+                  {format === 'strength' && <Dumbbell className="w-6 h-6 text-cyan-600" />}
+                  <h3 className={`font-bold text-lg text-gray-900`}>
                     {format === 'powerCycle' ? 'PowerCycle' : 
                      format === 'barre' ? 'Barre' : 'Strength Lab'}
                   </h3>
@@ -200,7 +192,7 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
                   {/* PowerCycle */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-cyan-600 rounded-full"></div>
                       <span className="text-sm text-gray-600">PowerCycle</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -208,7 +200,7 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
                         {formatValue(comparisonData.powerCycle[metric.key as keyof typeof comparisonData.powerCycle] as number, metric.type)}
                       </span>
                       {winner === 'powerCycle' && (
-                        <Badge className="bg-green-100 text-green-800 text-xs">
+                        <Badge className="bg-white/60 text-gray-900 text-xs border" style={{ borderColor: 'var(--hero-accent, rgba(0,0,0,0.15))' }}>
                           <TrendingUp className="w-3 h-3 mr-1" />
                           Winner
                         </Badge>
@@ -219,7 +211,7 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
                   {/* Barre */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
                       <span className="text-sm text-gray-600">Barre</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -227,7 +219,7 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
                         {formatValue(comparisonData.barre[metric.key as keyof typeof comparisonData.barre] as number, metric.type)}
                       </span>
                       {winner === 'barre' && (
-                        <Badge className="bg-green-100 text-green-800 text-xs">
+                        <Badge className="bg-white/60 text-gray-900 text-xs border" style={{ borderColor: 'var(--hero-accent, rgba(0,0,0,0.15))' }}>
                           <TrendingUp className="w-3 h-3 mr-1" />
                           Winner
                         </Badge>
@@ -238,7 +230,7 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
                   {/* Strength */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
                       <span className="text-sm text-gray-600">Strength</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -246,7 +238,7 @@ export const PowerCycleBarreStrengthComprehensiveComparison: React.FC<PowerCycle
                         {formatValue(comparisonData.strength[metric.key as keyof typeof comparisonData.strength] as number, metric.type)}
                       </span>
                       {winner === 'strength' && (
-                        <Badge className="bg-green-100 text-green-800 text-xs">
+                        <Badge className="bg-white/60 text-gray-900 text-xs border" style={{ borderColor: 'var(--hero-accent, rgba(0,0,0,0.15))' }}>
                           <TrendingUp className="w-3 h-3 mr-1" />
                           Winner
                         </Badge>

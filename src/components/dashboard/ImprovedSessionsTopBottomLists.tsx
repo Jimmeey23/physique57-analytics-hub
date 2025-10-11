@@ -17,7 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 interface ImprovedSessionsTopBottomListsProps {
   data: SessionData[];
   title: string;
-  type: 'classes' | 'trainers';
+  type: 'classes' | 'trainers' | 'classTypes';
   variant: 'top' | 'bottom';
   initialCount?: number;
 }
@@ -33,7 +33,7 @@ export const ImprovedSessionsTopBottomLists: React.FC<ImprovedSessionsTopBottomL
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('classAverage');
   const [showCount, setShowCount] = useState(initialCount);
-  const [viewType, setViewType] = useState<'classes' | 'trainers'>(type);
+  const [viewType, setViewType] = useState<'classes' | 'trainers' | 'classTypes'>(type);
   const [includeTrainer, setIncludeTrainer] = useState(false);
 
   const processedData = useMemo(() => {
@@ -61,6 +61,8 @@ export const ImprovedSessionsTopBottomLists: React.FC<ImprovedSessionsTopBottomL
         } else {
           key = `${session.cleanedClass}|${session.dayOfWeek}|${session.time}|${session.location}`;
         }
+      } else if (viewType === 'classTypes') {
+        key = session.classType || session.cleanedClass || '';
       } else {
         // For trainers view, always group by trainer
         key = session.trainerName;
@@ -105,6 +107,8 @@ export const ImprovedSessionsTopBottomLists: React.FC<ImprovedSessionsTopBottomL
                    s.time === item.time && 
                    s.location === item.location;
           }
+        } else if (viewType === 'classTypes') {
+          return (s.classType || s.cleanedClass) === (item.cleanedClass || item.name);
         } else {
           return s.trainerName === item.trainerName;
         }
@@ -233,12 +237,15 @@ export const ImprovedSessionsTopBottomLists: React.FC<ImprovedSessionsTopBottomL
         
         {/* Toggle between Classes and Trainers */}
         <div className="flex justify-center mb-4">
-          <ToggleGroup type="single" value={viewType} onValueChange={(value) => value && setViewType(value as 'classes' | 'trainers')}>
+          <ToggleGroup type="single" value={viewType} onValueChange={(value) => value && setViewType(value as any)}>
             <ToggleGroupItem value="classes" aria-label="Classes view">
               Classes
             </ToggleGroupItem>
             <ToggleGroupItem value="trainers" aria-label="Trainers view">
               Trainers
+            </ToggleGroupItem>
+            <ToggleGroupItem value="classTypes" aria-label="Class Types view">
+              Class Types
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
