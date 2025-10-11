@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,7 @@ export const SimplePresenterMode: React.FC<SimplePresenterModeProps> = ({ isOpen
   const [showControls, setShowControls] = useState(true);
 
   // Calculate totals for presentation
-  const totals = React.useMemo(() => {
+  const totals = useMemo(() => {
     if (!payrollData || payrollData.length === 0) {
       return {
         cycle: { sessions: 0, revenue: 0, visits: 0, fillRate: 0 },
@@ -77,7 +77,7 @@ export const SimplePresenterMode: React.FC<SimplePresenterModeProps> = ({ isOpen
   };
 
   // Keyboard shortcuts
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (!isOpen) return;
 
