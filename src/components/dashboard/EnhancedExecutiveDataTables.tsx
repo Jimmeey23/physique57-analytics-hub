@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { NotesBlock } from '@/components/ui/NotesBlock';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface EnhancedExecutiveDataTablesProps {
@@ -251,6 +252,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
   </Card>
+      <NotesBlock tableKey="executive:top-products" sectionId="exec-top-products" locationOverride={selectedLocation} />
 
       {/* Leads by Source */}
       <Card className="bg-gradient-to-br from-white via-green-50/30 to-white border-0 shadow-lg">
@@ -283,6 +285,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
   </Card>
+      <NotesBlock tableKey="executive:lead-sources" sectionId="exec-lead-sources" locationOverride={selectedLocation} />
 
       {/* New Clients by Class */}
       <Card className="bg-gradient-to-br from-white via-purple-50/30 to-white border-0 shadow-lg">
@@ -315,6 +318,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
   </Card>
+      <NotesBlock tableKey="executive:new-clients-by-class" sectionId="exec-new-clients-class" locationOverride={selectedLocation} />
 
       {/* Top & Bottom Performing Classes */}
       <Card className="bg-gradient-to-br from-white via-orange-50/30 to-white border-0 shadow-lg">
@@ -364,6 +368,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
   </Card>
+      <NotesBlock tableKey="executive:class-performance" sectionId="exec-class-performance" locationOverride={selectedLocation} />
 
       {/* PowerCycle vs Barre */}
       <Card className="bg-gradient-to-br from-white via-indigo-50/30 to-white border-0 shadow-lg lg:col-span-2">
@@ -419,6 +424,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
       </Card>
+    <NotesBlock tableKey="executive:powercycle-vs-barre" sectionId="exec-pc-vs-barre" locationOverride={selectedLocation} />
 
       {/* Top Trainers */}
       <Card className="bg-gradient-to-br from-white via-teal-50/30 to-white border-0 shadow-lg lg:col-span-2">
@@ -484,6 +490,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
           </div>
         </CardContent>
       </Card>
+    <NotesBlock tableKey="executive:trainer-performance" sectionId="exec-trainer-performance" locationOverride={selectedLocation} />
 
       {/* AI Notes & Summary saved globally for this table and period/location */}
       <div className="lg:col-span-2">

@@ -7,6 +7,7 @@ import { ExpirationData } from '@/types/dashboard';
 import { formatNumber } from '@/utils/formatters';
 import { Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NotesBlock } from '@/components/ui/NotesBlock';
 
 interface ExpirationDataTablesProps {
   data: ExpirationData[];
@@ -116,6 +117,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
           </div>
         </CardContent>
       </Card>
+      <NotesBlock tableKey="expirations:churned" sectionId="expirations-churned" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Table 1: Churned Memberships */}
@@ -161,6 +163,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
             </div>
           </CardContent>
         </Card>
+        <NotesBlock tableKey="expirations:frozen" sectionId="expirations-frozen" />
 
         {/* Table 2: Frozen Memberships */}
         <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -205,6 +208,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
             </div>
           </CardContent>
         </Card>
+        <NotesBlock tableKey="expirations:active" sectionId="expirations-active" />
 
         {/* Table 3: Active Memberships */}
         <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -249,6 +253,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
             </div>
           </CardContent>
         </Card>
+        <NotesBlock tableKey="expirations:summary" sectionId="expirations-summary" />
 
         {/* Table 4: Membership Summary */}
         <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
