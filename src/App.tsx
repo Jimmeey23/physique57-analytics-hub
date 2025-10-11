@@ -15,9 +15,6 @@ import PrefetchOnIdle from "@/components/perf/PrefetchOnIdle";
 import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
 import InitialLoadGate, { useInitialLoad } from "@/components/perf/InitialLoadGate";
 import ForceTopOnLoad from "@/components/perf/ForceTopOnLoad";
-import GlobalTabShortcuts from "@/components/perf/GlobalTabShortcuts";
-import SectionTimelineNav from "@/components/ui/SectionTimelineNav";
-import AutoRegisterHeadings from "@/components/ui/AutoRegisterHeadings";
 
 // Lazy load pages for better performance
 const Index = React.lazy(() => import("./pages/Index"));
@@ -64,17 +61,12 @@ const App = () => {
           <ForceTopOnLoad />
           <PrefetchOnIdle />
           <HashJumpOnLoad />
-          <GlobalTabShortcuts />
           <GlobalLoader />
           <GlobalCommandPalette />
           <InitialLoadGate>
             <React.Suspense fallback={<div />}> {/* Minimal fallback; we show InitialLoadGate overlay */}
               <FirstRouteReady>
-                <div className="relative">
-                  {/* Global timeline; renders only when sections are registered on a page */}
-                  <AutoRegisterHeadings />
-                  <SectionTimelineNav position="right" />
-                  <Routes>
+                <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/executive-summary" element={<ExecutiveSummary />} />
               <Route path="/sales-analytics" element={<SalesAnalytics />} />
@@ -93,8 +85,7 @@ const App = () => {
               <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
+                </Routes>
               </FirstRouteReady>
             </React.Suspense>
           </InitialLoadGate>
