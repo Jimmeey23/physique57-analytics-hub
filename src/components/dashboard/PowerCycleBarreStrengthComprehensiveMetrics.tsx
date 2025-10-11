@@ -109,6 +109,46 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
 
   if (!metrics) return null;
 
+  // Feature cards (full-width, one per format)
+  const featureCards = [
+    {
+      label: 'PowerCycle',
+      icon: Zap,
+      gradient: 'from-cyan-600 to-indigo-600',
+      stats: [
+        { k: 'Sessions', v: formatNumber(metrics.powerCycle.totalSessions) },
+        { k: 'Revenue', v: `₹${formatNumber(metrics.powerCycle.totalRevenue)}` },
+        { k: 'Fill', v: `${metrics.fillRates.powerCycle.toFixed(1)}%` },
+        { k: 'Avg/Session', v: metrics.averages.powerCycle.toFixed(1) },
+      ],
+      click: { type: 'powercycle', metric: 'overview' }
+    },
+    {
+      label: 'Barre',
+      icon: Activity,
+      gradient: 'from-rose-500 to-pink-600',
+      stats: [
+        { k: 'Sessions', v: formatNumber(metrics.barre.totalSessions) },
+        { k: 'Revenue', v: `₹${formatNumber(metrics.barre.totalRevenue)}` },
+        { k: 'Fill', v: `${metrics.fillRates.barre.toFixed(1)}%` },
+        { k: 'Avg/Session', v: metrics.averages.barre.toFixed(1) },
+      ],
+      click: { type: 'barre', metric: 'overview' }
+    },
+    {
+      label: 'Strength Lab',
+      icon: Dumbbell,
+      gradient: 'from-emerald-600 to-green-600',
+      stats: [
+        { k: 'Sessions', v: formatNumber(metrics.strength.totalSessions) },
+        { k: 'Revenue', v: `₹${formatNumber(metrics.strength.totalRevenue)}` },
+        { k: 'Fill', v: `${metrics.fillRates.strength.toFixed(1)}%` },
+        { k: 'Avg/Session', v: metrics.averages.strength.toFixed(1) },
+      ],
+      click: { type: 'strength', metric: 'overview' }
+    }
+  ];
+
   const metricCards = [
     // PowerCycle Metrics
     {
@@ -217,6 +257,39 @@ export const PowerCycleBarreStrengthComprehensiveMetrics: React.FC<PowerCycleBar
 
   return (
     <div className="space-y-6">
+      {/* Full-width feature cards */}
+      <div className="space-y-4">
+        {featureCards.map((c, idx) => (
+          <Card
+            key={idx}
+            className={`bg-gradient-to-r ${c.gradient} text-white shadow-xl border-0 overflow-hidden cursor-pointer`}
+            onClick={() => onItemClick(c.click)}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <c.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">{c.label}</h3>
+                    <p className="text-white/80 text-sm">Performance overview</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {c.stats.map((s, i) => (
+                    <div key={i} className="text-right">
+                      <div className="text-xs text-white/80">{s.k}</div>
+                      <div className="text-xl font-bold">{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {metricCards.map((card, index) => (
           <Card 

@@ -26,6 +26,8 @@ const BEHAVIOR_METRICS = [
 
 export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRowClick, onReady }) => {
   const [selectedMetric, setSelectedMetric] = useState<string>('purchaseFrequency');
+  const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -190,6 +192,12 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
     if (processed.length) onReady?.();
   }, [processed, onReady]);
 
+  const getGrowthPercentage = (current: number, previous: number) => {
+    if (previous === 0) return null;
+    const growth = ((current - previous) / previous) * 100;
+    return `${growth.toFixed(1)}%`;
+  };
+
   // AI footer data (flattened rows for current metric)
   const aiTableColumns = [
     { header: 'Category', key: 'category', type: 'text' },
@@ -217,12 +225,22 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
         title="Customer Purchase Behavior (All Dates)"
         description="Month-on-month behavior metrics by category and product (ignores date filters)"
         icon={<Activity className="w-5 h-5 text-white" />}
+        showCollapseControls={true}
+        onCollapseAll={() => {
+          const all = new Set<string>();
+          processed.forEach(c => all.add(c.category));
+          setCollapsedCategories(all);
+        }}
+        onExpandAll={() => setCollapsedCategories(new Set())}
+        showDisplayToggle={true}
+        displayMode={displayMode}
+        onDisplayModeChange={setDisplayMode}
       >
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                <th className="w-96 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20">
+                <th className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20">
                   Category / Product
                 </th>
                 {monthKeys.map(({ key, display }) => (
@@ -241,7 +259,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                 <React.Fragment key={cat.category}>
                   <tr className="bg-slate-100 border-b border-slate-300 font-semibold">
                     <td
-                      className="w-96 px-6 py-3 text-left sticky left-0 bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-r border-slate-300 z-20 cursor-pointer hover:underline"
+                      className="w-[30rem] px-6 py-3 text-left sticky left-0 bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-r border-slate-300 z-20 cursor-pointer hover:underline"
                       onClick={() =>
                         onRowClick?.({
                           category: cat.category,
@@ -259,34 +277,46 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                     >
                       <span className="text-slate-800 font-bold">{cat.category}</span>
                     </td>
-                    {monthKeys.map(({ key }) => (
-                      <td
-                        key={key}
-                        className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 cursor-pointer hover:bg-blue-100/60"
-                        onClick={() =>
-                          onRowClick?.({
-                            category: cat.category,
-                            name: cat.category,
-                            filterCriteria: { month: key, category: cat.category },
-                            drillDownContext: {
-                              source: 'customerBehavior',
-                              level: 'category',
-                              metric: selectedMetric,
+                    {monthKeys.map(({ key }, idx) => {
+                      const current = cat.monthlyValues[key] || 0;
+                      const prevKey = monthKeys[idx + 1]?.key;
+                      const previous = prevKey ? (cat.monthlyValues[prevKey] || 0) : 0;
+                      const growth = prevKey ? getGrowthPercentage(current, previous) : null;
+                      return (
+                        <td
+                          key={key}
+                          className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 cursor-pointer hover:bg-blue-100/60"
+                          onClick={() =>
+                            onRowClick?.({
                               category: cat.category,
-                              month: key,
-                            },
-                          })
-                        }
-                        title={`View ${cat.category} transactions for ${key}`}
-                      >
-                        {formatValue(cat.monthlyValues[key] || 0, selectedMetric)}
-                      </td>
-                    ))}
+                              name: cat.category,
+                              filterCriteria: { month: key, category: cat.category },
+                              drillDownContext: {
+                                source: 'customerBehavior',
+                                level: 'category',
+                                metric: selectedMetric,
+                                category: cat.category,
+                                month: key,
+                              },
+                            })
+                          }
+                          title={`View ${cat.category} transactions for ${key}`}
+                        >
+                          {displayMode === 'values' ? (
+                            formatValue(current, selectedMetric)
+                          ) : (
+                            <span className={growth ? (parseFloat(growth) > 0 ? 'text-emerald-600' : 'text-red-500') : ''}>
+                              {growth ?? '—'}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
-                  {cat.products.map(prod => (
+                  {!collapsedCategories.has(cat.category) && cat.products.map(prod => (
                     <tr key={`${cat.category}-${prod.product}`} className="bg-white hover:bg-blue-50 border-b border-gray-200 transition-all">
                       <td
-                        className="w-96 px-10 py-2 text-left sticky left-0 bg-white border-r border-gray-200 z-10 cursor-pointer hover:underline"
+                        className="w-[30rem] px-10 py-2 text-left sticky left-0 bg-white border-r border-gray-200 z-10 cursor-pointer hover:underline"
                         onClick={() =>
                           onRowClick?.({
                             product: prod.product,
@@ -305,30 +335,42 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                       >
                         <span className="text-slate-700 font-medium">{prod.product}</span>
                       </td>
-                      {monthKeys.map(({ key }) => (
-                        <td
-                          key={key}
-                          className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 cursor-pointer hover:bg-blue-100/60"
-                          onClick={() =>
-                            onRowClick?.({
-                              product: prod.product,
-                              name: prod.product,
-                              filterCriteria: { month: key, product: prod.product },
-                              drillDownContext: {
-                                source: 'customerBehavior',
-                                level: 'product',
-                                metric: selectedMetric,
-                                category: cat.category,
+                      {monthKeys.map(({ key }, idx) => {
+                        const current = prod.monthlyValues[key] || 0;
+                        const prevKey = monthKeys[idx + 1]?.key;
+                        const previous = prevKey ? (prod.monthlyValues[prevKey] || 0) : 0;
+                        const growth = prevKey ? getGrowthPercentage(current, previous) : null;
+                        return (
+                          <td
+                            key={key}
+                            className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 cursor-pointer hover:bg-blue-100/60"
+                            onClick={() =>
+                              onRowClick?.({
                                 product: prod.product,
-                                month: key,
-                              },
-                            })
-                          }
-                          title={`View ${prod.product} transactions for ${key}`}
-                        >
-                          {formatValue(prod.monthlyValues[key] || 0, selectedMetric)}
-                        </td>
-                      ))}
+                                name: prod.product,
+                                filterCriteria: { month: key, product: prod.product },
+                                drillDownContext: {
+                                  source: 'customerBehavior',
+                                  level: 'product',
+                                  metric: selectedMetric,
+                                  category: cat.category,
+                                  product: prod.product,
+                                  month: key,
+                                },
+                              })
+                            }
+                            title={`View ${prod.product} transactions for ${key}`}
+                          >
+                            {displayMode === 'values' ? (
+                              formatValue(current, selectedMetric)
+                            ) : (
+                              <span className={growth ? (parseFloat(growth) > 0 ? 'text-emerald-600' : 'text-red-500') : ''}>
+                                {growth ?? '—'}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </React.Fragment>
@@ -337,7 +379,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
               {/* Totals row across all categories/products per month */}
               <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400">
                 <td
-                  className="w-96 px-6 py-2 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20 cursor-pointer hover:underline"
+                  className="w-[30rem] px-6 py-2 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20 cursor-pointer hover:underline"
                   onClick={() =>
                     onRowClick?.({
                       name: 'TOTALS',
@@ -353,12 +395,22 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                 >
                   TOTALS
                 </td>
-                {monthKeys.map(({ key, year, month }) => {
+                {monthKeys.map(({ key, year, month }, idx) => {
                   const monthItems = data.filter(it => {
                     const d = parseDate(it.paymentDate);
                     return d && d.getFullYear() === year && d.getMonth() + 1 === month;
                   });
                   const totalVal = getMetricValue(monthItems, selectedMetric);
+                  const prevMonth = monthKeys[idx + 1];
+                  let growth: string | null = null;
+                  if (prevMonth) {
+                    const prevItems = data.filter(it => {
+                      const d = parseDate(it.paymentDate);
+                      return d && d.getFullYear() === prevMonth.year && d.getMonth() + 1 === prevMonth.month;
+                    });
+                    const prevVal = getMetricValue(prevItems, selectedMetric);
+                    growth = getGrowthPercentage(totalVal, prevVal);
+                  }
                   return (
                     <td
                       key={key}
@@ -377,7 +429,13 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                       }
                       title={`View all transactions for ${key}`}
                     >
-                      {formatValue(totalVal, selectedMetric)}
+                      {displayMode === 'values' ? (
+                        formatValue(totalVal, selectedMetric)
+                      ) : (
+                        <span className={growth ? (parseFloat(growth) > 0 ? 'text-emerald-300' : 'text-red-300') : ''}>
+                          {growth ?? '—'}
+                        </span>
+                      )}
                     </td>
                   );
                 })}

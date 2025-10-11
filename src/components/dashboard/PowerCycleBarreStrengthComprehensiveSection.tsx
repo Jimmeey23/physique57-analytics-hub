@@ -38,6 +38,7 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
   const [didSetDefaultPeriod, setDidSetDefaultPeriod] = useState(false);
   
   const [drillDownData, setDrillDownData] = useState<any>(null);
+  // Default collapsed per request
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Get powercycle theme colors

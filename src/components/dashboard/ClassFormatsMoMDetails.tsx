@@ -4,6 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
   sessions: SessionData[];
@@ -42,16 +45,21 @@ const toYYYYMM = (input?: string): string | null => {
 type GroupBy = 'classType' | 'uniqueId1' | 'uniqueId2';
 
 const ClassFormatsMoMDetails: React.FC<Props> = ({ sessions }) => {
+  const { filters } = useSessionsFilters();
   const [groupBy, setGroupBy] = useState<GroupBy>('classType');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Compute months present (respecting the SessionsFiltersProvider dateRange via pre-filtered sessions)
   const months = useMemo(() => {
     const set = new Set<string>();
-    sessions.forEach((s) => {
+    (sessions || []).forEach((s) => {
       const ym = toYYYYMM(s.date);
       if (ym) set.add(ym);
     });
     const arr = Array.from(set);
     arr.sort();
-    return arr.slice(-6);
+    return arr; // Do not truncate; respect selected date range
   }, [sessions]);
 
   const rows = useMemo(() => {
@@ -93,22 +101,71 @@ const ClassFormatsMoMDetails: React.FC<Props> = ({ sessions }) => {
     return Object.values(byKey).sort((a, b) => a.group.localeCompare(b.group) || b.checkins - a.checkins);
   }, [sessions, months, groupBy]);
 
+  const totalRows = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, totalRows);
+  const paginatedRows = rows.slice(startIdx, endIdx);
+
+  const formatMonthLabel = (ym?: string | null) => {
+    if (!ym) return '';
+    const [y, m] = ym.split('-');
+    const date = new Date(Number(y), Number(m) - 1, 1);
+    return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  };
+
+  const monthsLabel = useMemo(() => {
+    if (!months.length) return 'No months';
+    const first = months[0];
+    const last = months[months.length - 1];
+    return `${formatMonthLabel(first)} → ${formatMonthLabel(last)}`;
+  }, [months]);
+
   return (
     <Card className="bg-white shadow-sm border border-gray-200">
-      <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="text-lg font-semibold text-gray-800">MoM Per-Class Details (last 6 months)</CardTitle>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Group</span>
-          <Select value={groupBy} onValueChange={(v: any) => setGroupBy(v)}>
-            <SelectTrigger className="h-8 w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="classType">Class Type</SelectItem>
-              <SelectItem value="uniqueId1">Unique ID 1</SelectItem>
-              <SelectItem value="uniqueId2">Unique ID 2</SelectItem>
-            </SelectContent>
-          </Select>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="text-lg font-semibold text-gray-800">MoM Per-Class Details</CardTitle>
+          <div className="text-sm text-gray-600">{monthsLabel}</div>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Group</span>
+            <Select value={groupBy} onValueChange={(v: any) => { setGroupBy(v); setPage(1); }}>
+              <SelectTrigger className="h-8 w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="classType">Class Type</SelectItem>
+                <SelectItem value="uniqueId1">Unique ID 1</SelectItem>
+                <SelectItem value="uniqueId2">Unique ID 2</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Rows</span>
+            <Select value={String(pageSize)} onValueChange={(v: any) => { setPageSize(Number(v)); setPage(1); }}>
+              <SelectTrigger className="h-8 w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-gray-600">{startIdx + 1}–{endIdx} of {totalRows}</span>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -159,7 +216,7 @@ const ClassFormatsMoMDetails: React.FC<Props> = ({ sessions }) => {
                   gSess = gChk = gLate = gCap = gRev = gEmpty = 0;
                 };
 
-                rows.forEach((r, idx) => {
+                paginatedRows.forEach((r, idx) => {
                   if (currentGroup !== r.group) {
                     // flush previous group
                     pushSubtotal();
@@ -167,7 +224,7 @@ const ClassFormatsMoMDetails: React.FC<Props> = ({ sessions }) => {
                   }
                   const fill = r.cap > 0 ? (r.checkins / r.cap) * 100 : 0;
                   out.push(
-                    <TableRow key={`${r.group}-${idx}`}>
+                    <TableRow key={`${r.group}-${startIdx + idx}`}>
                       <TableCell>{r.group}</TableCell>
                       <TableCell>{r.day}</TableCell>
                       <TableCell>{r.time}</TableCell>
