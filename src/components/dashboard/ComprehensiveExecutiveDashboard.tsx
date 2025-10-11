@@ -303,6 +303,28 @@ export const ComprehensiveExecutiveDashboard = () => {
       </audio>
       
       <div className="max-w-[1600px] mx-auto space-y-8">
+        {/* Visible Action Toolbar */}
+        <div className="flex items-center justify-end gap-3 mb-6">
+          <Button
+            onClick={handleDownloadPDFReports}
+            disabled={isGeneratingPDF}
+            className="rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 px-6 py-3 text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating PDFs...
+              </>
+            ) : (
+              <>
+                <FileText className="w-4 h-4 mr-2" />
+                Download PDF Reports
+                <Download className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </div>
+
         {/* Hidden toolbar so hero can trigger actions without duplicating UI */}
         <div className="hidden items-center justify-end gap-3">
           <Button 

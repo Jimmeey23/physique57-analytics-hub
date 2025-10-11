@@ -14,9 +14,10 @@ import { useLeadsData } from '@/hooks/useLeadsData';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { useDynamicHeroMetrics } from '@/hooks/useDynamicHeroMetrics';
 
-const ExecutiveSummary = () => {
-  // Gather data for export
+// Inner component that has access to GlobalFilters context
+const ExecutiveSummaryContent = () => {
   const { data: salesData = [] } = useSalesData();
   const { data: sessionsData = [] } = useSessionsData();
   const { data: payrollData = [] } = usePayrollData();
@@ -26,43 +27,20 @@ const ExecutiveSummary = () => {
   const exportRef = React.useRef<{ open: () => void }>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
 
-  // Calculate hero metrics from last month's data
-  const heroMetrics = React.useMemo(() => {
-    // Filter to previous month
-    const now = new Date();
-    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const isInPreviousMonth = (dateStr: string) => {
-      const date = new Date(dateStr);
-      return date >= previousMonth && date < currentMonth;
-    };
-
-    const lastMonthSales = salesData.filter(s => isInPreviousMonth(s.paymentDate));
-    const lastMonthSessions = sessionsData.filter(s => isInPreviousMonth(s.date));
-    const lastMonthLeads = leadsData.filter(l => l.createdAt && isInPreviousMonth(l.createdAt));
-
-    const totalRevenue = lastMonthSales.reduce((sum, sale) => sum + (sale.paymentValue || 0), 0);
-    const activeMembers = new Set(lastMonthSales.map(s => s.memberId)).size;
-    const totalAttendance = lastMonthSessions.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
-    const convertedLeads = lastMonthLeads.filter(l => l.conversionStatus === 'Converted').length;
-    const conversionRate = lastMonthLeads.length > 0 ? (convertedLeads / lastMonthLeads.length) * 100 : 0;
-
-    return [
-      { label: 'Total Revenue', value: formatCurrency(totalRevenue), trend: null },
-      { label: 'Active Members', value: formatNumber(activeMembers), trend: null },
-      { label: 'Session Attendance', value: formatNumber(totalAttendance), trend: null },
-      { label: 'Lead Conversion', value: `${conversionRate.toFixed(1)}%`, trend: null }
-    ];
-  }, [salesData, sessionsData, leadsData]);
+  // Get dynamic hero metrics that update with location filter
+  const heroMetrics = useDynamicHeroMetrics({
+    salesData,
+    sessionsData,
+    leadsData,
+    newClientsData: newClientData
+  });
 
   return (
-    <GlobalFiltersProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
-        <DashboardMotionHero
-          title="Executive Overview"
-          subtitle="A concise, high-level view of revenue, attendance, and growth trends across all locations."
-          metrics={heroMetrics}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
+      <DashboardMotionHero
+        title="Executive Overview"
+        subtitle="A concise, high-level view of revenue, attendance, and growth trends across all locations."
+        metrics={heroMetrics}
           extra={
             <div className="flex items-center gap-2">
               <Button 
@@ -118,6 +96,14 @@ const ExecutiveSummary = () => {
         </div>
         <Footer />
       </div>
+  );
+};
+
+// Outer wrapper component
+const ExecutiveSummary = () => {
+  return (
+    <GlobalFiltersProvider>
+      <ExecutiveSummaryContent />
     </GlobalFiltersProvider>
   );
 };

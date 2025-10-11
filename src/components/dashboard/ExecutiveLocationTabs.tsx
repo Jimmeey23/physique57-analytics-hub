@@ -7,6 +7,13 @@ interface ExecutiveLocationTabsProps {
   availableLocations: string[];
 }
 
+// Fixed location mapping like Sessions tab
+const LOCATION_MAP = [
+  { key: 'Kwality House, Kemps Corner', display: 'Kwality', icon: '🏢' },
+  { key: 'Supreme HQ, Bandra', display: 'Supreme', icon: '🏛️' },
+  { key: 'Kenkere House', display: 'Kenkere', icon: '🏰' }
+];
+
 export const ExecutiveLocationTabs: React.FC<ExecutiveLocationTabsProps> = ({ 
   availableLocations 
 }) => {
@@ -24,14 +31,23 @@ export const ExecutiveLocationTabs: React.FC<ExecutiveLocationTabsProps> = ({
     }
   };
 
+  // Filter to show only the 3 main locations
+  const displayLocations = LOCATION_MAP.filter(loc => 
+    availableLocations.some(available => 
+      available.includes(loc.key) || 
+      available.includes(loc.display) ||
+      loc.key.includes(available)
+    )
+  );
+
   return (
-    <div className="mb-8">
+    <div className="mb-8 w-full flex justify-center">
       <Tabs 
         value={selectedLocation || 'all'} 
         onValueChange={handleLocationChange}
         className="w-full"
       >
-        <TabsList className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 inline-flex gap-2 h-auto">
+        <TabsList className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 flex justify-center gap-2 h-auto w-full max-w-4xl mx-auto">
           <TabsTrigger 
             value="all"
             className="px-6 py-3 rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 data-[state=active]:shadow-lg flex items-center gap-2"
@@ -40,14 +56,14 @@ export const ExecutiveLocationTabs: React.FC<ExecutiveLocationTabsProps> = ({
             All Locations
           </TabsTrigger>
           
-          {availableLocations.map(location => (
+          {LOCATION_MAP.map(location => (
             <TabsTrigger 
-              key={location}
-              value={location}
+              key={location.key}
+              value={location.key}
               className="px-6 py-3 rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 data-[state=active]:shadow-lg flex items-center gap-2"
             >
-              <MapPin className="w-4 h-4" />
-              {location}
+              <span className="text-lg">{location.icon}</span>
+              {location.display}
             </TabsTrigger>
           ))}
         </TabsList>
