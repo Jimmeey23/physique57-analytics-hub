@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
@@ -8,11 +8,15 @@ import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { SimplePresenterMode } from '@/components/presentation/SimplePresenterMode';
+import { Button } from '@/components/ui/button';
+import { Presentation } from 'lucide-react';
 
 const PowerCycleVsBarre = () => {
   const { data: payrollData, isLoading: loading } = usePayrollData();
   const { isLoading, setLoading } = useGlobalLoading();
   const exportRef = React.useRef<{ open: () => void }>(null);
+  const [isPresenterMode, setIsPresenterMode] = useState(false);
 
   useEffect(() => {
     if (loading !== undefined) {
@@ -48,6 +52,15 @@ const PowerCycleVsBarre = () => {
           if (main) (main as HTMLElement).scrollIntoView({ behavior: 'smooth' });
         }}
         onExportClick={() => exportRef.current?.open()}
+        extra={
+          <Button
+            onClick={() => setIsPresenterMode(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+          >
+            <Presentation className="w-5 h-5" />
+            Presenter Mode
+          </Button>
+        }
       />
 
       {/* Hidden export dialog controlled from the hero */}
@@ -67,6 +80,12 @@ const PowerCycleVsBarre = () => {
       </div>
       
       <Footer />
+      
+      {/* Presenter Mode */}
+      <SimplePresenterMode 
+        isOpen={isPresenterMode}
+        onClose={() => setIsPresenterMode(false)}
+      />
     </div>
   );
 };

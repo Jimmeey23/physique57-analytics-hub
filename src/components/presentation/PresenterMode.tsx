@@ -49,19 +49,20 @@ export const PresenterMode: React.FC<PresenterModeProps> = ({
   initialTab = 'overview',
   initialFilters
 }) => {
-  const { data: payrollData, loading, error, refetch } = usePayrollData();
+  const { data: payrollData, isLoading: loading, error, refetch } = usePayrollData();
   
   const [presenterState, setPresenterState] = useState<PresenterState>({
     currentTab: initialTab,
     filters: initialFilters || {
       dateRange: {
-        start: new Date(new Date().getFullYear(), 0, 1),
-        end: new Date(),
-        preset: 'ytd'
+        start: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0],
+        period: 'ytd'
       },
       locations: [],
       formats: ['cycle', 'barre', 'strength'],
-      comparisonType: 'absolute'
+      compareBy: 'format',
+      showEmpty: true
     },
     autoRefresh: true,
     refreshInterval: 30000, // 30 seconds
@@ -93,7 +94,7 @@ export const PresenterMode: React.FC<PresenterModeProps> = ({
       tab: presenterState.currentTab,
       formats: presenterState.filters.formats.join(','),
       locations: presenterState.filters.locations.join(','),
-      datePreset: presenterState.filters.dateRange.preset,
+      datePreset: presenterState.filters.dateRange.period,
       autoRefresh: presenterState.autoRefresh.toString()
     });
     
@@ -316,9 +317,6 @@ export const PresenterMode: React.FC<PresenterModeProps> = ({
             <div className="h-full">
               <FormatMetricsAnalysis 
                 data={payrollData || []}
-                initialFilters={presenterState.filters}
-                onFiltersChange={updateFilters}
-                presenterMode={true}
               />
             </div>
           )}
