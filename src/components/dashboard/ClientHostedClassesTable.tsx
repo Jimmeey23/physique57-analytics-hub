@@ -47,8 +47,6 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       return tokens.some(t => className.includes(t));
     });
 
-    console.log(`Hosted Classes Filter: ${data.length} total records, ${filteredData.length} hosted class records`);
-
     const classStats = filteredData.reduce((acc, client) => {
       // Safety checks for client data
       if (!client) return acc;
@@ -72,7 +70,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
             month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
           }
         } catch (error) {
-          console.warn('Error parsing date:', client.firstVisitDate, error);
+          // Silently fail on date parsing errors
         }
       }
       
@@ -125,7 +123,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
             }
           }
         } catch (error) {
-          console.warn('Error calculating conversion interval:', error);
+          // Silently fail on conversion interval calculation errors
         }
       }
       
@@ -153,7 +151,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       className: 'font-semibold min-w-[120px] text-slate-900',
       sortable: true,
       render: (value: string) => (
-        <span className="text-sm font-medium text-slate-900">{value}</span>
+        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{value}</span>
       )
     },
     {
@@ -171,7 +169,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{formatNumber(value)}</span>
       )
     },
     {
@@ -180,7 +178,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{formatNumber(value)}</span>
       )
     },
     {
@@ -189,7 +187,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{formatNumber(value)}</span>
       )
     },
     {

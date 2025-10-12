@@ -3,6 +3,7 @@ import { useNewClientData } from '@/hooks/useNewClientData';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
+import { useSectionNavigation } from '@/contexts/SectionNavigationContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Users } from 'lucide-react';
@@ -11,7 +12,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { formatNumber } from '@/utils/formatters';
+import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getPreviousMonthDateRange, getCurrentMonthDateRange, parseDate } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 
@@ -21,15 +22,14 @@ import { ClientConversionMetricCards } from '@/components/dashboard/ClientConver
 import { ClientConversionSimplifiedRanks } from '@/components/dashboard/ClientConversionSimplifiedRanks';
 import { ClientConversionEnhancedCharts } from '@/components/dashboard/ClientConversionEnhancedCharts';
 import { ClientConversionDataTableSelector } from '@/components/dashboard/ClientConversionDataTableSelector';
-import { ClientConversionMonthOnMonthTable } from '@/components/dashboard/ClientConversionMonthOnMonthTable';
 import { ClientConversionMonthOnMonthByTypeTable } from '@/components/dashboard/ClientConversionMonthOnMonthByTypeTable';
-import { ClientConversionYearOnYearTable } from '@/components/dashboard/ClientConversionYearOnYearTable';
 import { ClientRetentionMonthByTypePivot } from '@/components/dashboard/ClientRetentionMonthByTypePivot';
-import { ClientRetentionYearOnYearPivot } from '@/components/dashboard/ClientRetentionYearOnYearPivot';
+import ClientRetentionYearOnYearPivot from '@/components/dashboard/ClientRetentionYearOnYearPivotNew';
 import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
 import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
 import { ClientConversionDrillDownModalV3 } from '@/components/dashboard/ClientConversionDrillDownModalV3';
 import NotesBlock from '@/components/ui/NotesBlock';
+import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
 const ClientRetention = () => {
   const {
     data,
@@ -133,7 +133,6 @@ const ClientRetention = () => {
       filtered = filtered.filter(payroll => filters.trainer.includes(payroll.teacherName || ''));
     }
     
-    console.log(`Filtered payroll data: ${payrollData.length} -> ${filtered.length} records`);
     return filtered;
   }, [payrollData, selectedLocation, filters]);
 
@@ -150,7 +149,6 @@ const ClientRetention = () => {
       }
     });
     
-    console.log('Visits summary for filtered data:', summary);
     return summary;
   }, [filteredPayrollData]);
 
@@ -223,71 +221,27 @@ const ClientRetention = () => {
 
   // Filter data by selected location and filters
   const filteredData = React.useMemo(() => {
-    console.log('Filtering data. Total records:', data.length, 'Selected location:', selectedLocation);
-    console.log('Current filters:', filters);
     let filtered = data;
-
-    // TEMPORARY: Show sample of raw data for debugging
-    if (data.length > 0) {
-      console.log('Sample client data for debugging:', {
-        firstFewClients: data.slice(0, 3),
-        dateFormats: data.slice(0, 10).map(c => c.firstVisitDate),
-        dateRange: filters.dateRange
-      });
-    }
 
     // Apply date range filter FIRST - only if both start and end dates are provided
     if (filters.dateRange.start && filters.dateRange.end) {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start + 'T00:00:00') : null;
       const endDate = filters.dateRange.end ? new Date(filters.dateRange.end + 'T23:59:59') : null;
-      console.log('Date filter range:', {
-        start: startDate,
-        end: endDate
-      });
       
       filtered = filtered.filter(client => {
-        if (!client.firstVisitDate) {
-          console.log('Client has no firstVisitDate:', client.memberId);
-          return false;
-        }
+        if (!client.firstVisitDate) return false;
         
         const clientDate = parseDate(client.firstVisitDate);
-        if (!clientDate) {
-          console.warn('Invalid client date:', client.firstVisitDate, 'for client:', client.memberId);
-          return false;
-        }
+        if (!clientDate) return false;
 
         // Set client date to start of day for comparison
         clientDate.setHours(0, 0, 0, 0);
-        const withinRange = (!startDate || clientDate >= startDate) && (!endDate || clientDate <= endDate);
-        
-        if (!withinRange) {
-          console.log('Client filtered out by date:', {
-            clientId: client.memberId,
-            clientDate: clientDate.toISOString().split('T')[0],
-            originalDate: client.firstVisitDate,
-            startDate: startDate?.toISOString().split('T')[0],
-            endDate: endDate?.toISOString().split('T')[0]
-          });
-        }
-        return withinRange;
+        return (!startDate || clientDate >= startDate) && (!endDate || clientDate <= endDate);
       });
-      console.log(`Date filter applied: ${data.length} -> ${filtered.length} records`);
-    } else {
-      console.log('No date filter applied - showing all data:', filtered.length, 'records');
     }
 
     // Apply location filter - check both firstVisitLocation and homeLocation
     if (selectedLocation !== 'All Locations') {
-      const beforeLocationFilter = filtered.length;
-
-      // Debug: Check all unique locations for Kenkere House
-      if (selectedLocation === 'Kenkere House, Bengaluru') {
-        const uniqueFirstLocations = [...new Set(filtered.map(c => c.firstVisitLocation).filter(Boolean))];
-        const uniqueHomeLocations = [...new Set(filtered.map(c => c.homeLocation).filter(Boolean))];
-        console.log('All unique first visit locations:', uniqueFirstLocations.filter(loc => loc.includes('Kenkere') || loc.includes('Bengaluru')));
-        console.log('All unique home locations:', uniqueHomeLocations.filter(loc => loc.includes('Kenkere') || loc.includes('Bengaluru')));
-      }
       filtered = filtered.filter(client => {
         const firstLocation = client.firstVisitLocation || '';
         const homeLocation = client.homeLocation || '';
@@ -302,7 +256,6 @@ const ClientRetention = () => {
         // For other locations, use exact match
         return firstLocation === selectedLocation || homeLocation === selectedLocation;
       });
-      console.log(`Location filter ${selectedLocation}: ${beforeLocationFilter} -> ${filtered.length} records`);
     }
 
     // Apply additional filters
@@ -333,23 +286,6 @@ const ClientRetention = () => {
     }
     if (filters.maxLTV !== undefined) {
       filtered = filtered.filter(client => (client.ltv || 0) <= filters.maxLTV!);
-    }
-    console.log('Final filtered data for metric cards:', filtered.length, 'records');
-    
-    // Log sample of final filtered data for debugging
-    if (filtered.length > 0) {
-      console.log('Sample filtered data:', {
-        count: filtered.length,
-        firstFew: filtered.slice(0, 2).map(c => ({
-          memberId: c.memberId,
-          isNew: c.isNew,
-          conversionStatus: c.conversionStatus,
-          retentionStatus: c.retentionStatus,
-          ltv: c.ltv
-        }))
-      });
-    } else {
-      console.warn('No data remaining after filtering!');
     }
     
     return filtered;
@@ -419,13 +355,10 @@ const ClientRetention = () => {
 
   // Special filtered data for month-on-month and year-on-year tables - ignores date range but applies location filter
   const filteredDataNoDateRange = React.useMemo(() => {
-    console.log('Creating filtered data without date range for month/year tables');
     let filtered = data;
 
     // Apply location filter - check both firstVisitLocation and homeLocation
     if (selectedLocation !== 'All Locations') {
-      const beforeLocationFilter = filtered.length;
-
       filtered = filtered.filter(client => {
         const firstLocation = client.firstVisitLocation || '';
         const homeLocation = client.homeLocation || '';
@@ -440,7 +373,6 @@ const ClientRetention = () => {
         // For other locations, use exact match
         return firstLocation === selectedLocation || homeLocation === selectedLocation;
       });
-      console.log(`Location filter for month/year tables ${selectedLocation}: ${beforeLocationFilter} -> ${filtered.length} records`);
     }
 
     // Apply additional filters (but NOT date range)
@@ -472,63 +404,92 @@ const ClientRetention = () => {
     if (filters.maxLTV !== undefined) {
       filtered = filtered.filter(client => (client.ltv || 0) <= filters.maxLTV!);
     }
-    console.log('Filtered data without date range:', filtered.length, 'records');
+    
     return filtered;
   }, [data, selectedLocation, filters]);
   const heroMetrics = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return [];
-    const locations = [{
-      key: 'Kwality House, Kemps Corner',
-      name: 'Kwality'
-    }, {
-      key: 'Supreme HQ, Bandra',
-      name: 'Supreme'
-    }, {
-      key: 'Kenkere House, Bengaluru',
-      name: 'Kenkere'
-    }];
-    return locations.map(location => {
-      const locationData = filteredData.filter(item => {
-        const firstLocation = item.firstVisitLocation || '';
-        const homeLocation = item.homeLocation || '';
-
-        // For Kenkere House, use flexible matching
-        if (location.key === 'Kenkere House, Bengaluru') {
-          return firstLocation.toLowerCase().includes('kenkere') || firstLocation.toLowerCase().includes('bengaluru') || firstLocation === 'Kenkere House' || homeLocation.toLowerCase().includes('kenkere') || homeLocation.toLowerCase().includes('bengaluru') || homeLocation === 'Kenkere House';
-        }
-
-        // For other locations, use exact match
-        return firstLocation === location.key || homeLocation === location.key;
-      });
-      const totalClients = locationData.length;
-      return {
-        location: location.name,
-        label: 'Filtered Clients',
-        value: formatNumber(totalClients)
-      };
-    });
+    
+    const totalTrials = filteredData.length;
+    const newMembers = filteredData.filter(c => String(c.isNew || '').toLowerCase().includes('new')).length;
+    const converted = filteredData.filter(c => c.conversionStatus === 'Converted').length;
+    const retained = filteredData.filter(c => c.retentionStatus === 'Retained').length;
+    const conversionRate = newMembers > 0 ? (converted / newMembers) * 100 : 0;
+    const retentionRate = newMembers > 0 ? (retained / newMembers) * 100 : 0;
+    const totalLTV = filteredData.reduce((sum, c) => sum + (c.ltv || 0), 0);
+    const avgLTV = totalTrials > 0 ? totalLTV / totalTrials : 0;
+    
+    return [
+      {
+        location: 'Overview',
+        label: 'Total Trials',
+        value: formatNumber(totalTrials),
+        subtext: `${formatNumber(newMembers)} new members`
+      },
+      {
+        location: 'Conversion',
+        label: 'Conversion Rate',
+        value: formatPercentage(conversionRate),
+        subtext: `${formatNumber(converted)} converted`
+      },
+      {
+        location: 'Retention',
+        label: 'Retention Rate',
+        value: formatPercentage(retentionRate),
+        subtext: `${formatNumber(retained)} retained`
+      },
+      {
+        location: 'LTV',
+        label: 'Avg LTV',
+        value: formatCurrency(avgLTV),
+        subtext: `${formatCurrency(totalLTV)} total`
+      }
+    ];
   }, [filteredData]);
   
-  // Remove individual loader - rely on global loader only
-  console.log('Rendering ClientRetention with data:', data.length, 'records, filtered:', filteredData.length);
   // Build section-wise processed export maps (not raw sheet rows)
   const exportAdditionalData = React.useMemo(() => {
-    // Provide compact, processed rows suitable for export (limit columns for readability)
-    const safeMap = (arr: any[], pick: string[]) => arr.map(row => pick.reduce((obj, key) => { obj[key] = row[key]; return obj; }, {} as any));
+    // Export visible pivot table data
+    const momByTypeExport: any[] = [];
+    const yoyExport: any[] = [];
+    const membershipExport: any[] = [];
+    const hostedClassesExport: any[] = [];
+    
+    // For Month on Month by Type - build from client types
+    const clientTypes = [...new Set(filteredDataNoDateRange.map(c => c.isNew || 'Unknown'))];
+    clientTypes.forEach(type => {
+      const typeData = filteredDataNoDateRange.filter(c => (c.isNew || 'Unknown') === type);
+      momByTypeExport.push({
+        'Client Type': type,
+        'Total Trials': typeData.length,
+        'New Members': typeData.filter(c => String(c.isNew || '').toLowerCase().includes('new')).length,
+        'Converted': typeData.filter(c => c.conversionStatus === 'Converted').length,
+        'Retained': typeData.filter(c => c.retentionStatus === 'Retained').length,
+        'Total LTV': formatCurrency(typeData.reduce((s, c) => s + (c.ltv || 0), 0))
+      });
+    });
 
-    // Month on Month by Type: recompute via filteredData and visitsSummary from existing memos by leveraging the MoM-by-type table would be ideal; for now, export the drillable rows from displayed table by approximating with first-level fields.
-    const momByType: any[] = []; // Placeholder for brevity; can be wired to table-level memo later
-    const mom: any[] = []; // idem
-    const yoy: any[] = []; // idem
-    const hosted: any[] = []; // idem
+    // For Year on Year - build from membership types
+    const membershipTypes = [...new Set(filteredDataNoDateRange.map(c => c.membershipUsed || 'Unknown'))];
+    membershipTypes.forEach(type => {
+      const typeData = filteredDataNoDateRange.filter(c => (c.membershipUsed || 'Unknown') === type);
+      yoyExport.push({
+        'Membership Type': type,
+        'Total Trials': typeData.length,
+        'New Members': typeData.filter(c => String(c.isNew || '').toLowerCase().includes('new')).length,
+        'Converted': typeData.filter(c => c.conversionStatus === 'Converted').length,
+        'Retained': typeData.filter(c => c.retentionStatus === 'Retained').length,
+        'Total LTV': formatCurrency(typeData.reduce((s, c) => s + (c.ltv || 0), 0))
+      });
+    });
 
     return {
-      'Client Retention • MoM by Type': momByType,
-      'Client Retention • MoM': mom,
-      'Client Retention • YoY': yoy,
-      'Client Retention • Hosted Classes': hosted
+      'Client Retention • Month on Month by Type': momByTypeExport,
+      'Client Retention • Year on Year': yoyExport,
+      'Client Retention • Memberships': membershipExport,
+      'Client Retention • Hosted Classes': hostedClassesExport
     };
-  }, [filteredData, filteredDataNoDateRange, visitsSummary, visitsSummaryNoDateRange]);
+  }, [filteredDataNoDateRange]);
 
   const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" />;
   return <div className="min-h-screen bg-white relative overflow-hidden">
@@ -551,8 +512,11 @@ const ClientRetention = () => {
 
         <div className="container mx-auto px-6 py-8 bg-white min-h-screen">
           <main className="space-y-8 slide-in-from-right stagger-1">
+            {/* Section Navigation */}
+            <SectionTimelineNav />
+            
             {/* Enhanced Location Tabs - unified styling (moved above filters) */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-8" id="location-tabs">
               <div className="w-full max-w-4xl">
                 <div className="grid grid-cols-4 location-tabs">
                   {[
@@ -578,12 +542,12 @@ const ClientRetention = () => {
             </div>
 
             {/* Enhanced Filter Section */}
-            <div className="glass-card modern-card-hover p-6 rounded-2xl">
+            <div className="glass-card modern-card-hover p-6 rounded-2xl" id="filters">
               <EnhancedClientConversionFilterSection filters={filters} onFiltersChange={setFilters} locations={uniqueLocations} trainers={uniqueTrainers} membershipTypes={uniqueMembershipTypes} />
             </div>
 
           {/* Enhanced Metric Cards */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2">
+          <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
             <ClientConversionMetricCards 
               data={filteredData}
               historicalData={data}
@@ -602,7 +566,7 @@ const ClientRetention = () => {
           </div>
 
           {/* Enhanced Simplified Ranking System */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-3">
+          <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-3" id="rankings">
             <ClientConversionSimplifiedRanks 
               data={filteredData} 
               payrollData={filteredPayrollData}
@@ -612,7 +576,7 @@ const ClientRetention = () => {
               dateRange={filters.dateRange}
               selectedMetric={selectedMetric}
               onDrillDown={(type, item, metric) => {
-                // Enhanced filtering with debugging
+                // Enhanced filtering
                 const relatedClients = filteredData.filter(client => {
                   let match = false;
                   if (type === 'trainer') {
@@ -629,15 +593,6 @@ const ClientRetention = () => {
                   if (type === 'trainer') return payroll.teacherName === item.name;
                   if (type === 'location') return payroll.location === item.name;
                   return false;
-                });
-
-                // Debug logging - simplified
-                console.log('✅ Drill Down Initiated:', {
-                  type,
-                  itemName: item.name,
-                  metric,
-                  relatedClientsCount: relatedClients.length,
-                  relatedPayrollCount: relatedPayroll.length
                 });
 
                 setDrillDownModal({
@@ -658,7 +613,7 @@ const ClientRetention = () => {
           </div>
 
           {/* Enhanced Interactive Charts - Collapsed by default */}
-          <div className="space-y-4 slide-in-left stagger-4">
+          <div className="space-y-4 slide-in-left stagger-4" id="charts">
             <div className="glass-card rounded-2xl border-0 shadow-lg">
               <details className="group">
                 <summary className="cursor-pointer p-6 font-semibold text-slate-800 border-b border-white/20 group-open:bg-gradient-to-r group-open:from-purple-50/50 group-open:to-pink-50/50 rounded-t-2xl transition-all duration-300">
@@ -672,74 +627,80 @@ const ClientRetention = () => {
           </div>
 
           {/* Enhanced Data Table Selector */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-5">
+          <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-5" id="table-selector">
             <ClientConversionDataTableSelector activeTable={activeTable} onTableChange={setActiveTable} dataLength={filteredData.length} />
           </div>
 
           {/* Selected Data Table */}
           <div className="space-y-8">
             {activeTable === 'monthonmonthbytype' && <>
-              <ClientConversionMonthOnMonthByTypeTable 
-              data={filteredData} 
-              visitsSummary={visitsSummary}
-              onRowClick={rowData => setDrillDownModal({
-            isOpen: true,
-            client: null,
-            title: `${rowData.month} - ${rowData.type} Analysis`,
-            data: rowData,
-            type: 'month'
-          })} />
+              <div id="monthonmonthbytype-table">
+                <ClientConversionMonthOnMonthByTypeTable 
+                data={filteredData} 
+                visitsSummary={visitsSummary}
+                onRowClick={rowData => setDrillDownModal({
+              isOpen: true,
+              client: null,
+              title: `${rowData.month} - ${rowData.type} Analysis`,
+              data: rowData,
+              type: 'month'
+            })} />
+              </div>
               <NotesBlock tableKey="clientRetention:monthOnMonthByType" sectionId="retention-mom-by-type" />
             </>}
 
             {activeTable === 'monthonmonth' && <>
-              {/* Pivoted MoM by Client Type with months as columns, independent from date range */}
-              <ClientRetentionMonthByTypePivot
-                data={filteredDataNoDateRange}
-                visitsSummary={visitsSummaryNoDateRange}
-              />
-              <ClientConversionMonthOnMonthTable 
-              data={filteredDataNoDateRange} 
-              visitsSummary={visitsSummaryNoDateRange}
-              onRowClick={rowData => setDrillDownModal({
-            isOpen: true,
-            client: null,
-            title: `${rowData.month} Analysis`,
-            data: rowData,
-            type: 'month'
-          })} />
+              <div id="monthonmonth-table">
+                {/* Pivoted MoM by Client Type with months as columns, independent from date range */}
+                <ClientRetentionMonthByTypePivot
+                  data={filteredDataNoDateRange}
+                  visitsSummary={visitsSummaryNoDateRange}
+                  onRowClick={rowData => setDrillDownModal({
+                    isOpen: true,
+                    client: null,
+                    title: `${rowData.type} - Analysis`,
+                    data: rowData,
+                    type: 'month'
+                  })}
+                />
+              </div>
               <NotesBlock tableKey="clientRetention:monthOnMonth" sectionId="retention-mom" />
             </>}
 
             {activeTable === 'yearonyear' && <>
-              {/* Pivoted YoY with months as columns and prev/curr values */}
-              <ClientRetentionYearOnYearPivot data={filteredDataNoDateRange} />
-              <ClientConversionYearOnYearTable 
-              data={filteredDataNoDateRange} 
-              visitsSummary={visitsSummaryNoDateRange}
-              onRowClick={rowData => setDrillDownModal({
-            isOpen: true,
-            client: null,
-            title: `${rowData.month} Year Comparison`,
-            data: rowData,
-            type: 'year'
-          })} />
+              <div id="yearonyear-table">
+                {/* Pivoted YoY with months as columns and prev/curr values */}
+                <ClientRetentionYearOnYearPivot 
+                  data={filteredDataNoDateRange}
+                  onRowClick={rowData => setDrillDownModal({
+                    isOpen: true,
+                    client: null,
+                    title: `${rowData.rowKey} - Year Comparison`,
+                    data: rowData,
+                    type: 'year'
+                  })}
+                />
+              </div>
               <NotesBlock tableKey="clientRetention:yearOnYear" sectionId="retention-yoy" />
             </>}
 
             {activeTable === 'hostedclasses' && <>
-              <ClientHostedClassesTable data={filteredData} onRowClick={rowData => setDrillDownModal({
-            isOpen: true,
-            client: null,
-            title: `${rowData.className} - ${rowData.month}`,
-            data: rowData,
-            type: 'class'
-          })} />
+              <div id="hostedclasses-table">
+                <ClientHostedClassesTable data={filteredData} onRowClick={rowData => setDrillDownModal({
+              isOpen: true,
+              client: null,
+              title: `${rowData.className} - ${rowData.month}`,
+              data: rowData,
+              type: 'class'
+            })} />
+              </div>
               <NotesBlock tableKey="clientRetention:hostedClasses" sectionId="retention-hosted-classes" />
             </>}
 
             {activeTable === 'memberships' && <>
-              <ClientConversionMembershipTable data={filteredData} />
+              <div id="memberships-table">
+                <ClientConversionMembershipTable data={filteredData} />
+              </div>
               <NotesBlock tableKey="clientRetention:memberships" sectionId="retention-memberships" />
             </>}
           </div>
