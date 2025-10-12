@@ -39,8 +39,9 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
   const storageKeyNotes = useMemo(() => `ai-notes-pin:notes:${tableKey}:${location || 'all'}:${period || 'all'}:${sectionId || 'default'}`, [tableKey, location, period, sectionId]);
   const [summaryPinned, setSummaryPinned] = useState<boolean>(() => { try { return localStorage.getItem(storageKeySummary) === '1'; } catch { return false; } });
   const [notesPinned, setNotesPinned] = useState<boolean>(() => { try { return localStorage.getItem(storageKeyNotes) === '1'; } catch { return false; } });
-  const [summaryOpen, setSummaryOpen] = useState<boolean>(() => summaryPinned || false);
-  const [notesOpen, setNotesOpen] = useState<boolean>(() => notesPinned || false);
+  // Always start collapsed by default; pinning won't auto-open on load
+  const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
+  const [notesOpen, setNotesOpen] = useState<boolean>(false);
 
   const modules = {
     toolbar: [
@@ -180,8 +181,12 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
     // sanitize HTML
     const summary = DOMPurify.sanitize(rawSummary, { USE_PROFILES: { html: true } });
     const note = DOMPurify.sanitize(rawNote, { USE_PROFILES: { html: true } });
-    await save({ note, summary, author });
+    const ok = await save({ note, summary, author });
     setNoteHtml('');
+    if (ok) {
+      if (!summaryPinned) setSummaryOpen(false);
+      if (!notesPinned) setNotesOpen(false);
+    }
   };
 
   const cleanAndBeautify = () => {
@@ -407,7 +412,8 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
                 onClick={async () => {
                   const summary = DOMPurify.sanitize(summaryHtml, { USE_PROFILES: { html: true } });
                   const note = DOMPurify.sanitize(noteHtml || latest?.note || '', { USE_PROFILES: { html: true } });
-                  await save({ summary, note, author });
+                  const ok = await save({ summary, note, author });
+                  if (ok && !summaryPinned) setSummaryOpen(false);
                 }}
                 disabled={loading}
               >
@@ -439,7 +445,11 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
                 onClick={async () => {
                   const note = DOMPurify.sanitize(noteHtml, { USE_PROFILES: { html: true } });
                   const summary = DOMPurify.sanitize(summaryHtml || latest?.summary || '', { USE_PROFILES: { html: true } });
-                  await save({ summary, note, author });
+                  const ok = await save({ summary, note, author });
+                  if (ok) {
+                    setNoteHtml('');
+                    if (!notesPinned) setNotesOpen(false);
+                  }
                 }}
                 disabled={loading}
               >
