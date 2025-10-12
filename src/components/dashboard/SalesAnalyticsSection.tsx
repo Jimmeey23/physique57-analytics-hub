@@ -761,26 +761,27 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </SectionAnchor>
 
                 <Tabs defaultValue="monthOnMonth" className="w-full">
-                  <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-7 w-full max-w-7xl mx-auto overflow-hidden">
-                    <TabsTrigger value="monthOnMonth" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                  <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 w-full max-w-7xl mx-auto">
+                    {/** Uniform trigger styling for consistent size/width/spacing across tabs */}
+                    <TabsTrigger value="monthOnMonth" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                       Month on Month
                     </TabsTrigger>
-                    <TabsTrigger value="yearOnYear" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                    <TabsTrigger value="yearOnYear" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                       Year on Year
                     </TabsTrigger>
-                  <TabsTrigger value="productPerformance" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                  <TabsTrigger value="productPerformance" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Product Performance
                   </TabsTrigger>
-                  <TabsTrigger value="categoryPerformance" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                  <TabsTrigger value="categoryPerformance" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Category Performance
                   </TabsTrigger>
-                  <TabsTrigger value="soldByAnalysis" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                  <TabsTrigger value="soldByAnalysis" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Sold By
                   </TabsTrigger>
-                  <TabsTrigger value="paymentMethodAnalysis" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                  <TabsTrigger value="paymentMethodAnalysis" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Payment Methods
                   </TabsTrigger>
-                  <TabsTrigger value="customerBehavior" className="relative rounded-xl px-5 py-4 font-semibold text-sm md:text-base transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
+                  <TabsTrigger value="customerBehavior" className="relative rounded-xl px-5 py-3 font-semibold text-sm md:text-base w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
                     Customer Behavior
                   </TabsTrigger>
                 </TabsList>

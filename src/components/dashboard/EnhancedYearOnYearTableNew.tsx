@@ -42,6 +42,8 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
+  const [sortKey, setSortKey] = useState<string>('total');
+  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -241,12 +243,27 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
       setIsInitialized(true);
     }
     
-    return categories.sort((a, b) => {
-      const aTotalValue = Object.values(a.monthlyValues).reduce((sum, val) => sum + val, 0);
-      const bTotalValue = Object.values(b.monthlyValues).reduce((sum, val) => sum + val, 0);
-      return bTotalValue - aTotalValue;
-    });
-  }, [allHistoricData, selectedMetric, monthlyData, isInitialized]);
+    const comparator = (a: any, b: any) => {
+      const byMonth = (obj: any, key: string) => obj.monthlyValues?.[key] || 0;
+      let av: number, bv: number;
+      if (sortKey === 'total') {
+        const sumVals = (obj: any): number => {
+          const vals = Object.values(obj?.monthlyValues ?? {}) as number[];
+          return vals.reduce((sum: number, val: number) => {
+            const n = typeof val === 'number' ? val : Number(val || 0);
+            return sum + (isNaN(n) ? 0 : n);
+          }, 0);
+        };
+        av = sumVals(a);
+        bv = sumVals(b);
+      } else {
+        av = byMonth(a, sortKey);
+        bv = byMonth(b, sortKey);
+      }
+      return sortDir === 'desc' ? bv - av : av - bv;
+    };
+    return categories.sort(comparator);
+  }, [allHistoricData, selectedMetric, monthlyData, isInitialized, sortKey, sortDir]);
 
   const toggleGroup = useCallback((groupKey: string) => {
     setLocalCollapsedGroups(prev => {
@@ -306,7 +323,14 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
           <table className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                <th className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20">
+                <th
+                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
+                  onClick={() => {
+                    if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
+                    else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                  }}
+                  title={`Sort by total (${sortDir})`}
+                >
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-white" />
                     <span>Category / Product</span>
@@ -314,7 +338,15 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
                 </th>
                 
                 {visibleMonths.map(({ key, display }) => (
-                  <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
+                  <th
+                    key={key}
+                    className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                    onClick={() => {
+                      if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
+                      else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                    }}
+                    title={`Sort by ${display} (${sortDir})`}
+                  >
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
