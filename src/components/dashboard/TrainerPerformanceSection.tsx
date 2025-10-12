@@ -7,6 +7,7 @@ import { MonthOnMonthTrainerTable } from './MonthOnMonthTrainerTable';
 import { TrainerDrillDownModal } from './TrainerDrillDownModal';
 import { processTrainerData } from './TrainerDataProcessor';
 import { Users, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 export const TrainerPerformanceSection = () => {
   const { data: payrollData, isLoading, error } = usePayrollData();
@@ -34,8 +35,8 @@ export const TrainerPerformanceSection = () => {
       <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-slate-600">Loading trainer performance data...</span>
+            <BrandSpinner size="sm" />
+            <span className="text-slate-700 font-medium">Loading trainer performance data...</span>
           </div>
         </CardContent>
       </Card>

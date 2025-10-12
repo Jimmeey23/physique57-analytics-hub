@@ -17,6 +17,7 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
 }) => {
   const [progress, setProgress] = useState(0);
   const [dots, setDots] = useState('');
+  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
     // One-shot smooth progress animation from 0 -> 100
@@ -118,14 +119,23 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
       </div>
 
       {/* Main Loader Content */}
-      <div className="relative z-10 flex flex-col items-center space-y-8 max-w-md text-center px-6">
-        {/* Main Icon */}
+  <div className="relative z-10 flex flex-col items-center space-y-8 max-w-md text-center px-6">
+        {/* Main Icon (replaced with brand logo, with graceful fallback) */}
         <div className="relative">
-          <div className={`w-20 h-20 bg-gradient-to-br ${config.gradient} rounded-2xl flex items-center justify-center shadow-2xl`}>
-            <Icon className="w-10 h-10 text-white animate-pulse" />
+          <div className={`w-24 h-24 bg-white/80 backdrop-blur rounded-2xl flex items-center justify-center shadow-2xl ring-1 ring-black/5`}>
+            {!imgFailed ? (
+              <img
+                src="/physique57-logo.png"
+                alt="Physique 57"
+                className="w-14 h-14 object-contain animate-pulse"
+                onError={() => setImgFailed(true)}
+              />
+            ) : (
+              <Icon className="w-10 h-10 text-slate-700 animate-pulse" />
+            )}
           </div>
           {/* Orbital animation */}
-          <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/50 to-purple-500/50 animate-spin" style={{ animationDuration: '3s' }}>
+          <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/40 to-purple-500/40 animate-spin" style={{ animationDuration: '3.5s' }}>
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <div className={`w-2 h-2 ${config.accentColor} rounded-full`}></div>
             </div>
@@ -134,7 +144,7 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
 
         {/* Progress Bar */}
         <div className="w-full max-w-xs">
-          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-white/60 rounded-full overflow-hidden shadow-inner">
             <div
               className={`h-full bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-200 ease-out`}
               style={{ width: `${progress}%` }}
@@ -147,7 +157,7 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
           <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
             {title}
           </h2>
-          <p className="text-slate-600 text-base leading-relaxed">
+          <p className="text-slate-700 text-base leading-relaxed">
             {finalSubtitle}{dots}
           </p>
         </div>

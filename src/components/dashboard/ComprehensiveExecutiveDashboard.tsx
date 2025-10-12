@@ -28,6 +28,7 @@ import {
   Download,
   Loader2
 } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { ExecutiveLocationSelector } from './ExecutiveLocationSelector';
 import { ExecutiveMetricCardsGrid } from './ExecutiveMetricCardsGrid';
 import { ExecutiveChartsGrid } from './ExecutiveChartsGrid';
@@ -312,7 +313,7 @@ export const ComprehensiveExecutiveDashboard = () => {
           >
             {isGeneratingPDF ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <BrandSpinner size="xs" className="mr-2" />
                 Generating PDFs...
               </>
             ) : (
@@ -356,7 +357,7 @@ export const ComprehensiveExecutiveDashboard = () => {
           >
             {isGeneratingPDF ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <BrandSpinner size="xs" className="mr-2" />
                 Generating PDFs...
               </>
             ) : (

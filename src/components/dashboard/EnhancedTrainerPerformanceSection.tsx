@@ -18,6 +18,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Users, Calendar, TrendingUp, AlertCircle, Award, Target, DollarSign, Activity, FileDown } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
@@ -160,7 +161,7 @@ export const EnhancedTrainerPerformanceSection = () => {
       <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                 <BrandSpinner size="sm" />
             <span className="text-slate-600">Loading trainer performance data...</span>
           </div>
         </CardContent>

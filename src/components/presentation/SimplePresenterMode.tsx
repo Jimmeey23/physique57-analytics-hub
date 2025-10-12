@@ -16,6 +16,7 @@ import {
   BarChart3,
   DollarSign
 } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 
@@ -177,7 +178,7 @@ export const SimplePresenterMode: React.FC<SimplePresenterModeProps> = ({ isOpen
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-white">
-              <RefreshCw className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-400" />
+              <BrandSpinner size="lg" className="mx-auto mb-4" ringClassName="border-white/70" />
               <p className="text-2xl">Loading presentation data...</p>
             </div>
           </div>

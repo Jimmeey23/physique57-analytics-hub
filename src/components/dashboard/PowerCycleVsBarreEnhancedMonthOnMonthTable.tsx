@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Zap, Bike } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { usePayrollData } from '@/hooks/usePayrollData';
 
@@ -151,7 +152,7 @@ export const PowerCycleVsBarreEnhancedMonthOnMonthTable: React.FC<PowerCycleVsBa
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <BrandSpinner size="md" />
       </div>
     );
   }

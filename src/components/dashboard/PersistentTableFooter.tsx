@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Edit3, Save, X, FileText, Clock, Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Palette, Type, Eye, Users, CheckSquare, Zap, Calendar, Hash, Sparkles, Brain, TrendingUp, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { useGeminiAnalysis, type TableColumn } from '@/hooks/useGeminiAnalysis';
 
 interface PersistentTableFooterProps {
@@ -539,7 +540,7 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
               >
                 {isSaving ? (
                   <>
-                    <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <BrandSpinner size="xs" ringOnly className="mr-1" ringClassName="border-white/70" />
                     Saving...
                   </>
                 ) : (
@@ -626,7 +627,7 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                   className="gap-1 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:border-purple-300"
                 >
                   {isAiLoading ? (
-                    <div className="w-3 h-3 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                    <BrandSpinner size="xs" ringOnly ringClassName="border-purple-500/70" />
                   ) : (
                     <Sparkles className="w-3 h-3 text-purple-600" />
                   )}
@@ -641,7 +642,7 @@ export const PersistentTableFooter: React.FC<PersistentTableFooterProps> = ({
                   className="gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:border-blue-300"
                 >
                   {isAiLoading ? (
-                    <div className="w-3 h-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                    <BrandSpinner size="xs" ringOnly ringClassName="border-blue-500/70" />
                   ) : (
                     <Brain className="w-3 h-3 text-blue-600" />
                   )}

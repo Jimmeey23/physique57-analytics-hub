@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronDown, ChevronRight, Loader2, Pin, PinOff, Save, Wand2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pin, PinOff, Save, Wand2 } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import DOMPurify from 'dompurify';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -357,7 +358,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
                         </div>
                         <div className="flex gap-2">
                           <Button type="button" size="sm" onClick={onSaveEdit} disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
+                            {loading ? <BrandSpinner size="xs" className="mr-2" /> : <Save className="mr-2 h-4 w-4"/>}
                             Save
                           </Button>
                           <Button type="button" size="sm" variant="outline" onClick={onCancelEdit}>Cancel</Button>
@@ -417,7 +418,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
                 }}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
+                {loading ? <BrandSpinner size="xs" className="mr-2" /> : <Save className="mr-2 h-4 w-4"/>}
                 Save Summary
               </Button>
             </div>
@@ -453,7 +454,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
                 }}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
+                {loading ? <BrandSpinner size="xs" className="mr-2" /> : <Save className="mr-2 h-4 w-4"/>}
                 Save Notes
               </Button>
             </div>

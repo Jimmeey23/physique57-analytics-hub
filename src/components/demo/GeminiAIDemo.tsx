@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { geminiService } from '@/services/geminiService';
 import { directGeminiService } from '@/services/directGeminiService';
-import { AlertCircle, CheckCircle, Loader2, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle, Zap } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 // Sample data for testing
 const demoTableData = [
@@ -76,7 +77,7 @@ export const GeminiAIDemo: React.FC = () => {
       const service = useDirect ? directGeminiService : geminiService;
       const serviceName = useDirect ? 'Direct API' : 'SDK';
       
-      const result = await service.testConnection();
+  const result = await (service as any).testConnection();
       if (result.success) {
         setConnectionTest({ 
           status: 'success', 
@@ -116,7 +117,7 @@ export const GeminiAIDemo: React.FC = () => {
               variant="outline"
               size="sm"
             >
-              {connectionTest.status === 'testing' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {connectionTest.status === 'testing' && <BrandSpinner size="xs" className="mr-2" />}
               Test SDK Connection
             </Button>
             
@@ -126,7 +127,7 @@ export const GeminiAIDemo: React.FC = () => {
               variant="outline"
               size="sm"
             >
-              {connectionTest.status === 'testing' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {connectionTest.status === 'testing' && <BrandSpinner size="xs" className="mr-2" />}
               <Zap className="w-4 h-4 mr-1" />
               Test Direct API
             </Button>

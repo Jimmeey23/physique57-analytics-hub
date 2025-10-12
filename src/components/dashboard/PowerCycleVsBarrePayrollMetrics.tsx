@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 export const PowerCycleVsBarrePayrollMetrics: React.FC = () => {
   const { data: payrollData, isLoading } = usePayrollData();
@@ -187,7 +188,7 @@ export const PowerCycleVsBarrePayrollMetrics: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <BrandSpinner size="md" />
       </div>
     );
   }

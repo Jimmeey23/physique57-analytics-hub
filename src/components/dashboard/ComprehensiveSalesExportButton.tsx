@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Download, FileSpreadsheet, Loader2, TrendingUp } from 'lucide-react';
+import { Download, FileSpreadsheet, TrendingUp } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 
@@ -781,7 +782,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
             >
               {isExporting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <BrandSpinner size="xs" />
                   Building PDF...
                 </>
               ) : (
@@ -798,7 +799,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
             >
               {isExporting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <BrandSpinner size="xs" />
                   Exporting...
                 </>
               ) : (

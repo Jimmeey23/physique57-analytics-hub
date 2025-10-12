@@ -25,6 +25,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('all');
+  const [activeTab, setActiveTab] = useState<string>('comprehensive');
 
   const handleDrillDown = (data: any) => {
     setDrillDownData(data);
@@ -59,11 +60,13 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
               />
             </div>
 
-            {/* Filter Section */}
-            <EnhancedClassAttendanceFilterSection data={locationFilteredData} />
+            {/* Filter Section - hidden on Analytics tab to avoid duplicate filters */}
+            {activeTab !== 'analytics' && (
+              <EnhancedClassAttendanceFilterSection data={locationFilteredData} />
+            )}
 
             {/* Main Analytics Tabs */}
-            <Tabs defaultValue="comprehensive" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="modern-tabs grid grid-cols-6 w-full">
                 <TabsTrigger 
                   value="comprehensive" 

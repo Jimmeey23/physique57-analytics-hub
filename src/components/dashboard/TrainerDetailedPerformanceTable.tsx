@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { OptimizedTable } from '@/components/ui/OptimizedTable';
 import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Target, Award, Activity, Eye, BarChart3, Zap } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 

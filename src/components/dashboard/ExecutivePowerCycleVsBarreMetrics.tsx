@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Zap, Bike, TrendingUp, Users, Target } from 'lucide-react';
 import { useSessionsData } from '@/hooks/useSessionsData';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { formatNumber } from '@/utils/formatters';
 
 export const ExecutivePowerCycleVsBarreMetrics: React.FC = () => {
@@ -12,7 +13,7 @@ export const ExecutivePowerCycleVsBarreMetrics: React.FC = () => {
   if (loading || !sessionData) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <BrandSpinner size="md" />
       </div>
     );
   }

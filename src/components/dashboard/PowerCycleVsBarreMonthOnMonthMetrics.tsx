@@ -5,6 +5,7 @@ import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Calendar, Target, Users } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { usePayrollData } from '@/hooks/usePayrollData';
 
 export const PowerCycleVsBarreMonthOnMonthMetrics: React.FC = () => {
@@ -166,7 +167,7 @@ export const PowerCycleVsBarreMonthOnMonthMetrics: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <BrandSpinner size="md" />
       </div>
     );
   }

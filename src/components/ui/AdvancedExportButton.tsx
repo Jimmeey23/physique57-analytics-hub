@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
-import { Download, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { useAdvancedExport } from '@/hooks/useAdvancedExport';
 import { format } from 'date-fns';
 import { SalesData, SessionData, NewClientData, PayrollData, LateCancellationsData, DiscountAnalysisData } from '@/types/dashboard';
@@ -296,7 +297,7 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
           </Button>
           <Button onClick={handleExport} disabled={isExporting || getTotalRecords() === 0} className="gap-2">
             {isExporting ? <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <BrandSpinner size="xs" />
                 Exporting...
               </> : <>
                 <Download className="w-4 h-4" />

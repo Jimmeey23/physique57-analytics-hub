@@ -2,6 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 interface Column {
   key: string;
   header: React.ReactNode;
@@ -43,7 +44,7 @@ export const UniformTrainerTable: React.FC<UniformTrainerTableProps> = ({
 }) => {
   if (loading) {
     return <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <BrandSpinner size="md" />
       </div>;
   }
   const handleSort = (column: Column) => {
