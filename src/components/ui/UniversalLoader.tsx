@@ -18,6 +18,8 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
   const [progress, setProgress] = useState(0);
   const [dots, setDots] = useState('');
   const [imgFailed, setImgFailed] = useState(false);
+  const [srcIndex, setSrcIndex] = useState(0);
+  const logoSrcs = ['/physique57-logo.png', '/placeholder.svg'];
 
   useEffect(() => {
     // One-shot smooth progress animation from 0 -> 100
@@ -125,10 +127,16 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
           <div className={`w-24 h-24 bg-white/80 backdrop-blur rounded-2xl flex items-center justify-center shadow-2xl ring-1 ring-black/5`}>
             {!imgFailed ? (
               <img
-                src="/physique57-logo.png"
+                src={logoSrcs[srcIndex]}
                 alt="Physique 57"
                 className="w-14 h-14 object-contain animate-pulse"
-                onError={() => setImgFailed(true)}
+                onError={() => {
+                  if (srcIndex < logoSrcs.length - 1) {
+                    setSrcIndex(srcIndex + 1);
+                  } else {
+                    setImgFailed(true);
+                  }
+                }}
               />
             ) : (
               <Icon className="w-10 h-10 text-slate-700 animate-pulse" />

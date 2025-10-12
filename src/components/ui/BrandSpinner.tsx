@@ -11,6 +11,8 @@ interface BrandSpinnerProps {
   ariaLabel?: string;
   /** Tailwind classes to customize the ring border color/opacity */
   ringClassName?: string;
+  /** One or more image sources to attempt (in order) for the center logo */
+  srcs?: string[];
 }
 
 const sizeMap: Record<SpinnerSize, { box: string; img: string; ring: string; border: string }> = {
@@ -26,18 +28,26 @@ export const BrandSpinner: React.FC<BrandSpinnerProps> = ({
   ringOnly = false,
   ariaLabel = 'Loading',
   ringClassName = 'border-blue-500/50',
+  srcs = ['/physique57-logo.png', '/placeholder.svg'],
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
+  const [srcIndex, setSrcIndex] = useState(0);
   const sz = sizeMap[size];
 
   return (
     <div className={`relative inline-flex items-center justify-center ${sz.box} ${className}`} role="status" aria-label={ariaLabel}>
       {!ringOnly && !imgFailed && (
         <img
-          src="/physique57-logo.png"
+          src={srcs[srcIndex]}
           alt="Physique 57"
           className={`${sz.img} object-contain animate-pulse`}
-          onError={() => setImgFailed(true)}
+          onError={() => {
+            if (srcIndex < srcs.length - 1) {
+              setSrcIndex(srcIndex + 1);
+            } else {
+              setImgFailed(true);
+            }
+          }}
         />
       )}
       {!ringOnly && imgFailed && (
