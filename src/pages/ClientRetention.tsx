@@ -24,6 +24,8 @@ import { ClientConversionDataTableSelector } from '@/components/dashboard/Client
 import { ClientConversionMonthOnMonthTable } from '@/components/dashboard/ClientConversionMonthOnMonthTable';
 import { ClientConversionMonthOnMonthByTypeTable } from '@/components/dashboard/ClientConversionMonthOnMonthByTypeTable';
 import { ClientConversionYearOnYearTable } from '@/components/dashboard/ClientConversionYearOnYearTable';
+import { ClientRetentionMonthByTypePivot } from '@/components/dashboard/ClientRetentionMonthByTypePivot';
+import { ClientRetentionYearOnYearPivot } from '@/components/dashboard/ClientRetentionYearOnYearPivot';
 import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
 import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
 import { ClientConversionDrillDownModalV3 } from '@/components/dashboard/ClientConversionDrillDownModalV3';
@@ -691,6 +693,11 @@ const ClientRetention = () => {
             </>}
 
             {activeTable === 'monthonmonth' && <>
+              {/* Pivoted MoM by Client Type with months as columns, independent from date range */}
+              <ClientRetentionMonthByTypePivot
+                data={filteredDataNoDateRange}
+                visitsSummary={visitsSummaryNoDateRange}
+              />
               <ClientConversionMonthOnMonthTable 
               data={filteredDataNoDateRange} 
               visitsSummary={visitsSummaryNoDateRange}
@@ -705,6 +712,8 @@ const ClientRetention = () => {
             </>}
 
             {activeTable === 'yearonyear' && <>
+              {/* Pivoted YoY with months as columns and prev/curr values */}
+              <ClientRetentionYearOnYearPivot data={filteredDataNoDateRange} />
               <ClientConversionYearOnYearTable 
               data={filteredDataNoDateRange} 
               visitsSummary={visitsSummaryNoDateRange}

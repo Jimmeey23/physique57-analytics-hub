@@ -52,13 +52,15 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
       {metricCards.map((metric, index) => (
         <Card
           key={metric.title}
-          className="group relative overflow-hidden cursor-pointer transition-all duration-500 bg-white border border-slate-200/60 hover:border-slate-300 hover:shadow-xl"
+          className="group relative overflow-hidden cursor-pointer transition-all duration-300 bg-white border border-slate-200/60 hover:border-slate-300 hover:shadow-2xl hover:-translate-y-0.5"
           onClick={() => onCardClick?.(metric.title, metric.filterData(), metric.metricType)}
         >
+          {/* Top colored border */}
+          <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-500" />
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-slate-900 text-white shadow-sm">
+                <div className="p-3 rounded-xl bg-slate-900 text-white shadow-md group-hover:shadow-lg transition-shadow">
                   <metric.icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-semibold text-base text-slate-900">{metric.title}</h3>
@@ -72,7 +74,7 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
               </div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-slate-900">{metric.value}</div>
+              <div className="text-3xl font-extrabold text-slate-900 tracking-tight">{metric.value}</div>
               <p className="text-xs text-slate-500">{metric.description}</p>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
