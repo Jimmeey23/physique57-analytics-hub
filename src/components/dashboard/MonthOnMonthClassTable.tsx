@@ -39,6 +39,7 @@ interface MonthlyData {
   lateCancellations: number;
   uniqueClasses: number;
   uniqueTrainers: number;
+  booked?: number;
 }
 
 interface GroupedRow {
@@ -167,7 +168,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           bookingRate: 0,
           lateCancellations: 0,
           uniqueClasses: 0,
-          uniqueTrainers: 0
+          uniqueTrainers: 0,
+          booked: 0
         };
       });
 
@@ -183,6 +185,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           monthData.capacity += session.capacity || 0;
           monthData.revenue += session.totalPaid || 0;
           monthData.lateCancellations += session.lateCancelledCount || 0;
+          monthData.booked = (monthData.booked || 0) + (session.bookedCount || 0);
         }
       });
 
@@ -190,7 +193,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       Object.values(monthlyData).forEach(monthData => {
         monthData.fillRate = monthData.capacity > 0 ? (monthData.attendance / monthData.capacity) * 100 : 0;
         monthData.classAverage = monthData.sessions > 0 ? monthData.attendance / monthData.sessions : 0;
-        monthData.bookingRate = monthData.capacity > 0 ? (monthData.attendance / monthData.capacity) * 100 : 0;
+        // Booking rate = booked seats / capacity
+        monthData.bookingRate = monthData.capacity > 0 ? (((monthData.booked || 0) as number) / monthData.capacity) * 100 : 0;
       });
 
       // Calculate totals
@@ -206,7 +210,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
         classAverage: 0,
         bookingRate: 0,
         uniqueClasses: 0,
-        uniqueTrainers: 0
+        uniqueTrainers: 0,
+        booked: Object.values(monthlyData).reduce((sum, m) => sum + (m.booked || 0), 0)
       };
 
       totals.fillRate = totals.capacity > 0 ? (totals.attendance / totals.capacity) * 100 : 0;
@@ -508,22 +513,22 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                     {availableMonths.map((month, index) => {
                       const monthData = row.monthlyData[month.key];
                       const prevMonthData = index > 0 ? row.monthlyData[availableMonths[index - 1].key] : null;
-                      
-                      const getCurrentValue = (metric: MetricType): number => {
+
+                      const getMetricNumeric = (md: MonthlyData, metric: MetricType): number => {
                         switch (metric) {
-                          case 'attendance': return monthData.attendance;
-                          case 'sessions': return monthData.sessions;
-                          case 'revenue': return monthData.revenue;
-                          case 'fillRate': return monthData.fillRate;
-                          case 'classAverage': return monthData.classAverage;
-                          case 'capacity': return monthData.capacity;
-                          case 'bookingRate': return monthData.bookingRate;
-                          default: return monthData.attendance;
+                          case 'attendance': return md.attendance;
+                          case 'sessions': return md.sessions;
+                          case 'revenue': return md.revenue;
+                          case 'fillRate': return md.fillRate;
+                          case 'classAverage': return md.classAverage;
+                          case 'capacity': return md.capacity;
+                          case 'bookingRate': return md.bookingRate;
+                          default: return md.attendance;
                         }
                       };
 
-                      const currentValue = getCurrentValue(selectedMetric);
-                      const previousValue = prevMonthData ? getCurrentValue(selectedMetric) : 0;
+                      const currentValue = getMetricNumeric(monthData, selectedMetric);
+                      const previousValue = prevMonthData ? getMetricNumeric(prevMonthData, selectedMetric) : 0;
                       const growthRate = prevMonthData ? getGrowthRate(currentValue, previousValue) : 0;
 
                       return (
@@ -573,8 +578,9 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                       acc.capacity += md.capacity;
                       acc.revenue += md.revenue;
                       acc.lateCancellations += md.lateCancellations;
+                      acc.booked += (md.booked || 0);
                       return acc;
-                    }, { sessions:0, attendance:0, capacity:0, revenue:0, lateCancellations:0 });
+                    }, { sessions:0, attendance:0, capacity:0, revenue:0, lateCancellations:0, booked:0 });
                     const display = getMetricValue({
                       month: month.key,
                       monthLabel: month.label,
@@ -584,10 +590,11 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                       revenue: totalsForMonth.revenue,
                       fillRate: totalsForMonth.capacity>0 ? (totalsForMonth.attendance/totalsForMonth.capacity)*100 : 0,
                       classAverage: totalsForMonth.sessions>0 ? (totalsForMonth.attendance/totalsForMonth.sessions) : 0,
-                      bookingRate: totalsForMonth.capacity>0 ? (totalsForMonth.attendance/totalsForMonth.capacity)*100 : 0,
+                      bookingRate: totalsForMonth.capacity>0 ? ((totalsForMonth.booked)/totalsForMonth.capacity)*100 : 0,
                       lateCancellations: totalsForMonth.lateCancellations,
                       uniqueClasses: 0,
-                      uniqueTrainers: 0
+                      uniqueTrainers: 0,
+                      booked: totalsForMonth.booked
                     }, selectedMetric);
                     return (
                       <TableCell key={`total-${month.key}`} className="text-center bg-blue-50/60">

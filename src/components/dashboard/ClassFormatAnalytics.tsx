@@ -148,16 +148,16 @@ export const ClassFormatAnalytics: React.FC<ClassFormatAnalyticsProps> = ({ data
                   </div>
                 </TableCell>
                 <TableCell className="text-center py-2">
-                  <Badge variant="outline" className="h-6">{cls.sessions}</Badge>
+                  <Badge variant="outline" className="metric-badge badge-soft-slate">{cls.sessions}</Badge>
                 </TableCell>
                 <TableCell className="text-center py-2 font-semibold text-blue-700">{cls.attendance}</TableCell>
                 <TableCell className="text-center py-2 text-slate-600">{cls.capacity}</TableCell>
                 <TableCell className="text-center py-2">
                   <Badge 
-                    className={`h-6 ${
-                      cls.fillRate >= 80 ? 'bg-green-100 text-green-800' :
-                      cls.fillRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
+                    className={`metric-badge ${
+                      cls.fillRate >= 80 ? 'badge-soft-green' :
+                      cls.fillRate >= 60 ? 'badge-soft-yellow' :
+                      'badge-soft-red'
                     }`}
                   >
                     {cls.fillRate.toFixed(1)}%

@@ -486,7 +486,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
         </div>
       </CardHeader>
       <CardContent className="p-0">
-  <div className="overflow-x-auto max-h-[600px] relative">
+  <div className="overflow-x-auto max-h-[900px] relative">
           <table className="min-w-full relative">
             <thead>
               <tr className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white sticky top-0 z-10">

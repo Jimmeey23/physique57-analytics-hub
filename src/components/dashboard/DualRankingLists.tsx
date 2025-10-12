@@ -353,22 +353,22 @@ export const DualRankingLists: React.FC<DualRankingListsProps> = ({
           )}
           
           <div className="flex flex-wrap gap-2 mt-3">
-            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+            <Badge variant="outline" className="metric-badge badge-soft-slate">
               {item.sessions} classes
             </Badge>
-            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+            <Badge variant="outline" className="metric-badge badge-soft-blue">
               {formatNumber(item.attendance)} checked in
             </Badge>
-            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+            <Badge variant="outline" className="metric-badge badge-soft-red">
               {formatNumber(item.emptyClasses)} empty
             </Badge>
-            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+            <Badge variant="outline" className="metric-badge badge-soft-green">
               {formatNumber(item.nonEmptyClasses)} non-empty
             </Badge>
-            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+            <Badge variant="outline" className="metric-badge badge-soft-purple">
               {formatNumber(item.classAverage)} avg/class
             </Badge>
-            <Badge variant="outline" className="text-xs h-6 leading-6 px-2">
+            <Badge variant="outline" className="metric-badge badge-soft-yellow">
               {formatPercentage(item.fillRate)} fill rate
             </Badge>
           </div>

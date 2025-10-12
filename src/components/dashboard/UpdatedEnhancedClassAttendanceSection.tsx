@@ -15,6 +15,7 @@ import { InteractivePerformanceAnalytics } from './InteractivePerformanceAnalyti
 import { DrillDownAnalyticsModal } from './DrillDownAnalyticsModal';
 import { LocationTabs } from './LocationTabs';
 import { ClassFormatAnalytics } from './ClassFormatAnalytics';
+import { FormatFocusedAnalytics } from './FormatFocusedAnalytics';
 
 export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   const { data: sessionsData, loading } = useSessionsData();
@@ -132,7 +133,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="analytics" className="mt-6">
-                <ClassFormatAnalytics data={locationFilteredData} />
+                <FormatFocusedAnalytics data={locationFilteredData} />
               </TabsContent>
 
               <TabsContent value="insights" className="mt-6">

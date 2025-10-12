@@ -212,9 +212,11 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
                     <TableCell className="text-center">
                       <Badge 
                         className={
-                          row.fillRate >= 80 ? 'bg-green-100 text-green-800' :
-                          row.fillRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                          `metric-badge ${
+                            row.fillRate >= 80 ? 'badge-soft-green' :
+                            row.fillRate >= 60 ? 'badge-soft-yellow' :
+                            'badge-soft-red'
+                          }`
                         }
                       >
                         {formatPercentage(row.fillRate)}
@@ -223,9 +225,11 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
                     <TableCell className="text-center">
                       <Badge 
                         className={
-                          row.utilizationRate >= 90 ? 'bg-green-100 text-green-800' :
-                          row.utilizationRate >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                          `metric-badge ${
+                            row.utilizationRate >= 90 ? 'badge-soft-green' :
+                            row.utilizationRate >= 70 ? 'badge-soft-yellow' :
+                            'badge-soft-red'
+                          }`
                         }
                       >
                         {formatPercentage(row.utilizationRate)}

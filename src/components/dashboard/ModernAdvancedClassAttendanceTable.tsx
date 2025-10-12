@@ -752,17 +752,17 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         Multiple locations
                       </TableCell>
                       <TableCell className="py-4 text-center">
-                        <Badge className="bg-blue-100 text-blue-800 font-bold">
+                        <Badge className="metric-badge badge-soft-blue">
                           {group.aggregatedMetrics.totalClasses}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4 text-center">
-                        <Badge className="bg-red-100 text-red-800 font-bold">
+                        <Badge className="metric-badge badge-soft-red">
                           {group.aggregatedMetrics.emptyClasses}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4 text-center">
-                        <Badge className="bg-green-100 text-green-800 font-bold">
+                        <Badge className="metric-badge badge-soft-green">
                           {group.aggregatedMetrics.nonEmptyClasses}
                         </Badge>
                       </TableCell>
@@ -804,10 +804,10 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                       </TableCell>
                       <TableCell className="py-4 text-center">
                         <Badge className={cn(
-                          "font-medium px-2 py-1",
-                          group.aggregatedMetrics.fillRate >= 80 ? "bg-green-100 text-green-800" :
-                          group.aggregatedMetrics.fillRate >= 60 ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
+                          "metric-badge",
+                          group.aggregatedMetrics.fillRate >= 80 ? "badge-soft-green" :
+                          group.aggregatedMetrics.fillRate >= 60 ? "badge-soft-yellow" :
+                          "badge-soft-red"
                         )}>
                           {group.aggregatedMetrics.fillRate.toFixed(1)}%
                         </Badge>
@@ -824,20 +824,20 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                       </TableCell>
                       <TableCell className="py-4 text-center">
                         <Badge className={cn(
-                          "font-medium px-2 py-1",
-                          group.aggregatedMetrics.consistency >= 80 ? "bg-green-100 text-green-800" :
-                          group.aggregatedMetrics.consistency >= 60 ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
+                          "metric-badge",
+                          group.aggregatedMetrics.consistency >= 80 ? "badge-soft-green" :
+                          group.aggregatedMetrics.consistency >= 60 ? "badge-soft-yellow" :
+                          "badge-soft-red"
                         )}>
                           {group.aggregatedMetrics.consistency.toFixed(1)}%
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4 text-center">
                         <Badge className={cn(
-                          "font-medium px-2 py-1",
-                          group.aggregatedMetrics.showUpRate >= 90 ? "bg-green-100 text-green-800" :
-                          group.aggregatedMetrics.showUpRate >= 75 ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
+                          "metric-badge",
+                          group.aggregatedMetrics.showUpRate >= 90 ? "badge-soft-green" :
+                          group.aggregatedMetrics.showUpRate >= 75 ? "badge-soft-yellow" :
+                          "badge-soft-red"
                         )}>
                           {group.aggregatedMetrics.showUpRate.toFixed(1)}%
                         </Badge>
@@ -893,16 +893,16 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         </TableCell>
                         <TableCell className="py-3 text-center">
                           <Badge className={cn(
-                            "text-xs font-medium",
-                            session.emptyClasses > 0 ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-600"
+                            "metric-badge",
+                            session.emptyClasses > 0 ? "badge-soft-red" : "badge-soft-slate"
                           )}>
                             {session.emptyClasses}
                           </Badge>
                         </TableCell>
                         <TableCell className="py-3 text-center">
                           <Badge className={cn(
-                            "text-xs font-medium",
-                            session.nonEmptyClasses > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                            "metric-badge",
+                            session.nonEmptyClasses > 0 ? "badge-soft-green" : "badge-soft-slate"
                           )}>
                             {session.nonEmptyClasses}
                           </Badge>
