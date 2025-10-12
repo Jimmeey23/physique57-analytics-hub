@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UniversalLoader } from '@/components/ui/UniversalLoader';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 export const GlobalLoader: React.FC = () => {
-  const { isLoading, loadingMessage } = useGlobalLoading();
+  const { isLoading, loadingMessage, progress } = useGlobalLoading();
+  const [visible, setVisible] = useState(false);
 
-  if (!isLoading) return null;
+  // Smooth enter/exit visibility with a tiny delay on exit to show 100%
+  useEffect(() => {
+    let t: any;
+    if (isLoading) {
+      setVisible(true);
+    } else {
+      // allow last frame to reach 100% visually
+      t = setTimeout(() => setVisible(false), 150);
+    }
+    return () => clearTimeout(t);
+  }, [isLoading]);
+
+  if (!visible) return null;
 
   // Extract variant from loading message or default to 'default'
   const getVariantFromMessage = (message: string): 'sales' | 'discounts' | 'funnel' | 'retention' | 'attendance' | 'analytics' | 'default' => {
@@ -26,6 +39,7 @@ export const GlobalLoader: React.FC = () => {
       <UniversalLoader 
         variant={variant}
         subtitle={loadingMessage}
+        progress={progress}
       />
     </div>
   );
