@@ -385,7 +385,7 @@ export const ComprehensiveExecutiveDashboard = () => {
 
         {/* Key Performance Metrics - 12 Cards with real data */}
         <div id="executive-metrics">
-          <ExecutiveMetricCardsGrid data={previousMonthData} />
+          <ExecutiveMetricCardsGrid data={previousMonthData} historical={allDataLast3Months} />
         </div>
 
         {/* Interactive Charts Section - 4 Charts with real data */}

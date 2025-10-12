@@ -8,6 +8,8 @@ import { useSalesMetrics } from '@/hooks/useSalesMetrics';
 
 interface SalesAnimatedMetricCardsProps {
   data: SalesData[];
+  historicalData?: SalesData[];
+  dateRange?: { start: string | Date; end: string | Date };
   onMetricClick?: (metricData: any) => void;
 }
 
@@ -23,10 +25,12 @@ const iconMap = {
 };
 
 export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> = ({ 
-  data, 
+  data,
+  historicalData,
+  dateRange,
   onMetricClick 
 }) => {
-  const { metrics } = useSalesMetrics(data);
+  const { metrics } = useSalesMetrics(data, historicalData, { dateRange });
 
   // Take the first 8 metrics for the cards (was 4, now 8)
   const displayMetrics = metrics.slice(0, 8);
@@ -107,11 +111,22 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <p className={cn(
                     "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
                   )}>
                     {metric.value}
+                  </p>
+                  <p className={cn(
+                    "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+                  )}>
+                    {metric.periodLabel ? (
+                      <>
+                        {metric.periodLabel}: <span className="font-medium">{metric.previousValue}</span>
+                      </>
+                    ) : (
+                      <>vs previous month: <span className="font-medium">{metric.previousValue}</span></>
+                    )}
                   </p>
                 </div>
               </div>

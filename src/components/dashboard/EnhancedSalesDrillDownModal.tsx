@@ -629,7 +629,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-2xl">
+      <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] xl:w-[1200px] max-w-[95vw] max-h-[85vh] overflow-hidden bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-2xl">
         <DialogHeader className="pb-6 border-b border-slate-200 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white -m-6 mb-6 p-6 rounded-t-lg shadow-xl">
           <div className="flex items-center justify-between">
             <div>
@@ -668,7 +668,8 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
               </Button>
             </div>
           </div>
-        </DialogHeader>
+  </DialogHeader>
+  <div className="overflow-auto pr-1" style={{ maxHeight: 'calc(85vh - 140px)' }}>
         
         <div className="overflow-y-auto max-h-[calc(95vh-120px)] space-y-8 p-1">
           {/* Enhanced Metric Cards */}
@@ -890,6 +891,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
               </div>
             </TabsContent>
           </Tabs>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

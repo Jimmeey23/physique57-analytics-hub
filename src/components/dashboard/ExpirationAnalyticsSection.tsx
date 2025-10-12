@@ -265,6 +265,8 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
                     {/* Metric Cards */}
                     <ExpirationMetricCards
                       data={filteredData}
+                      historicalData={data || []}
+                      dateRange={filters.dateRange}
                       onMetricClick={(data, type) => handleRowClick(data, 'expiration')}
                     />
 

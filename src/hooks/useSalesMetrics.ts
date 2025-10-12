@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { parseDate as robustParseDate } from '@/utils/dateUtils';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 export interface SalesMetric {
@@ -23,53 +24,151 @@ export interface SalesMetric {
     previous: number;
     difference: number;
   };
+  periodLabel?: string; // e.g., "Sep 2025 vs Aug 2025"
 }
 
-export const useSalesMetrics = (data: SalesData[]) => {
+type UseSalesMetricsOptions = {
+  /**
+   * Comparison mode. 'previousPeriod' compares the selected date range to the immediately preceding
+   * same-length range. Fallback to data-derived ranges if filters are absent.
+   */
+  compareMode?: 'previousMonth' | 'previousPeriod';
+  /** Optional explicit date range to define the current period. If omitted, derives from currentData. */
+  dateRange?: { start: string | Date; end: string | Date };
+};
+
+export const useSalesMetrics = (
+  currentData: SalesData[],
+  historicalData?: SalesData[],
+  options: UseSalesMetricsOptions = { compareMode: 'previousMonth' }
+) => {
   const { filters } = useGlobalFilters();
   
   const metrics = useMemo(() => {
-    if (!data || data.length === 0) {
+    const compareMode: 'previousMonth' | 'previousPeriod' = options?.compareMode ?? 'previousMonth';
+    if (!currentData || currentData.length === 0) {
       console.log('No data available for sales metrics calculation');
       return [];
     }
 
-    console.log('Calculating sales metrics for', data.length, 'records');
-    
-    // Use the filtered data directly - parent component handles filtering
-    const currentPeriodData = data;
-    
-    // For comparison, split data into recent vs older periods (simple approach)
-    const totalDataCount = data.length;
-    const halfPoint = Math.floor(totalDataCount / 2);
-    const recentData = currentPeriodData.slice(0, halfPoint);
-    const olderData = currentPeriodData.slice(halfPoint);
-    
-    console.log('Current period:', currentPeriodData.length, 'Recent:', recentData.length, 'Older:', olderData.length);
+    console.log('Calculating sales metrics for', currentData.length, 'records');
 
+    // Helper: robustly parse a payment date (handles DD/MM/YYYY and more)
+    const parseDate = (d: any): Date | null => robustParseDate(typeof d === 'string' ? d : String(d));
+
+    // Determine comparison ranges
+  // Base dataset for both current and previous months: should not be limited by the current date filter,
+  // only by the location context. Caller passes location-only historical data when possible.
+  const base = historicalData && historicalData.length ? historicalData : currentData;
+
+    const getFirstAndLast = (arr: SalesData[]) => {
+      const dates = arr
+        .map(it => parseDate((it as any).paymentDate))
+        .filter((d): d is Date => !!d)
+        .sort((a,b) => a.getTime() - b.getTime());
+      return { first: dates[0], last: dates[dates.length - 1] };
+    };
+
+    // Prefer explicit dateRange; otherwise infer anchor date from base data
+    let explicitStart: Date | null = null;
+    let explicitEnd: Date | null = null;
+    if (options?.dateRange?.start && options?.dateRange?.end) {
+      explicitStart = new Date(options.dateRange.start);
+      explicitEnd = new Date(options.dateRange.end);
+      explicitEnd.setHours(23,59,59,999);
+    } else if (filters?.dateRange?.start && filters?.dateRange?.end) {
+      explicitStart = new Date(filters.dateRange.start);
+      explicitEnd = new Date(filters.dateRange.end);
+      explicitEnd.setHours(23,59,59,999);
+    }
+
+    // Anchor: for 'previousMonth' we use the selected period's end date month if provided; otherwise today.
+    // For 'previousPeriod' we fall back to explicitEnd or data-derived last date.
+    const anchorDate = compareMode === 'previousMonth'
+      ? (explicitEnd || new Date())
+      : (explicitEnd || getFirstAndLast(base).last || new Date());
+
+    const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
+    const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    let currentStart: Date;
+    let currentEnd: Date;
+    let prevStart: Date;
+    let prevEnd: Date;
+
+    let currentPeriodLabel: string | undefined;
+    let previousPeriodLabel: string | undefined;
+
+  if (compareMode === 'previousMonth') {
+      currentStart = monthStart(anchorDate);
+      currentEnd = monthEnd(anchorDate);
+      const prevAnchor = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 15);
+      prevStart = monthStart(prevAnchor);
+      prevEnd = monthEnd(prevAnchor);
+      const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      currentPeriodLabel = fmt(currentStart);
+      previousPeriodLabel = fmt(prevStart);
+    } else {
+      // previousPeriod: same-length window
+      // If explicit range given, respect it; else infer from base data
+      const inferred = getFirstAndLast(currentData);
+      const rangeStart = explicitStart || inferred.first || anchorDate;
+      const rangeEnd = explicitEnd || inferred.last || anchorDate;
+      currentStart = rangeStart;
+      currentEnd = rangeEnd;
+      const periodMs = Math.max(1, currentEnd.getTime() - currentStart.getTime() + 1);
+      prevEnd = new Date(currentStart.getTime() - 1);
+      prevStart = new Date(prevEnd.getTime() - periodMs + 1);
+    }
+
+    // Build datasets from base (prefer historicalData) so both months are computed consistently
+    console.log('[SalesMetrics] Base records for MoM (location-only expected):', base.length);
+    const currentPeriodData = base.filter((it) => {
+      const d = parseDate((it as any).paymentDate);
+      return d && d >= currentStart && d <= currentEnd;
+    });
+
+    const previousPeriodData = base.filter((it) => {
+      const d = parseDate((it as any).paymentDate);
+      return d && d >= prevStart && d <= prevEnd;
+    });
+
+  console.log('[SalesMetrics] Mode:', compareMode, 'Anchor:', anchorDate.toISOString());
+  console.log('Current range:', currentStart?.toISOString(), 'to', currentEnd?.toISOString(), 'Current count:', currentPeriodData.length);
+  console.log('Previous range:', prevStart.toISOString(), 'to', prevEnd.toISOString(), 'Prev count:', previousPeriodData.length);
+
+    // Helper to coerce numeric fields (handles numeric strings)
+    const num = (v: any): number => {
+      if (typeof v === 'number') return isFinite(v) ? v : 0;
+      if (typeof v === 'string') {
+        const n = parseFloat(v.replace(/[,\s]/g, ''));
+        return isNaN(n) ? 0 : n;
+      }
+      return 0;
+    };
     // Calculate current period metrics
-    const currentRevenue = currentPeriodData.reduce((sum, item) => sum + (typeof item.paymentValue === 'number' ? item.paymentValue : 0), 0);
-    const currentDiscount = currentPeriodData.reduce((sum, item) => sum + (typeof item.discountAmount === 'number' ? item.discountAmount : 0), 0);
-    const currentVAT = currentPeriodData.reduce((sum, item) => sum + (typeof item.paymentVAT === 'number' ? item.paymentVAT : (typeof item.vat === 'number' ? item.vat : 0)), 0);
+    const currentRevenue = currentPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+    const currentDiscount = currentPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
+    const currentVAT = currentPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
     const currentTransactions = currentPeriodData.length;
     const currentMembers = new Set(currentPeriodData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
     const currentUnits = currentPeriodData.length; // Use transaction count as units since each transaction represents units sold
     const currentATV = currentTransactions > 0 ? currentRevenue / currentTransactions : 0;
     const currentASV = currentMembers > 0 ? currentRevenue / currentMembers : 0;
     const currentDiscountPercentage = currentPeriodData.length > 0 ? 
-      currentPeriodData.reduce((sum, item) => sum + (typeof item.discountPercentage === 'number' ? item.discountPercentage : 0), 0) / currentPeriodData.length : 0;
+      currentPeriodData.reduce((sum, item) => sum + num((item as any).discountPercentage), 0) / currentPeriodData.length : 0;
 
-    // Calculate comparison period metrics (using recent data as comparison)
-    const prevRevenue = recentData.reduce((sum, item) => sum + (typeof item.paymentValue === 'number' ? item.paymentValue : 0), 0);
-    const prevDiscount = recentData.reduce((sum, item) => sum + (typeof item.discountAmount === 'number' ? item.discountAmount : 0), 0);
-    const prevVAT = recentData.reduce((sum, item) => sum + (typeof item.paymentVAT === 'number' ? item.paymentVAT : (typeof item.vat === 'number' ? item.vat : 0)), 0);
-    const prevTransactions = recentData.length;
-    const prevMembers = new Set(recentData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
-    const prevUnits = recentData.length; // Use transaction count as units
+    // Calculate comparison period metrics (true previous period)
+  const prevRevenue = previousPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+  const prevDiscount = previousPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
+  const prevVAT = previousPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
+    const prevTransactions = previousPeriodData.length;
+    const prevMembers = new Set(previousPeriodData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
+    const prevUnits = previousPeriodData.length; // Use transaction count as units
     const prevATV = prevTransactions > 0 ? prevRevenue / prevTransactions : 0;
     const prevASV = prevMembers > 0 ? prevRevenue / prevMembers : 0;
-    const prevDiscountPercentage = recentData.length > 0 ? 
-      recentData.reduce((sum, item) => sum + (typeof item.discountPercentage === 'number' ? item.discountPercentage : 0), 0) / recentData.length : 0;
+    const prevDiscountPercentage = previousPeriodData.length > 0 ? 
+      previousPeriodData.reduce((sum, item) => sum + num((item as any).discountPercentage), 0) / previousPeriodData.length : 0;
 
     console.log('Current calculations:', {
       revenue: currentRevenue,
@@ -91,7 +190,7 @@ export const useSalesMetrics = (data: SalesData[]) => {
 
     // Calculate growth rates
     const calculateGrowth = (current: number, previous: number): { rate: number; isSignificant: boolean; trend: 'strong' | 'moderate' | 'weak' } => {
-      if (previous === 0) return { rate: current > 0 ? 100 : 0, isSignificant: current > 0, trend: 'moderate' };
+      if (previous === 0) return { rate: current > 0 ? 100 : 0, isSignificant: current > 0, trend: current > 0 ? 'moderate' : 'weak' };
       const rate = ((current - previous) / previous) * 100;
       const isSignificant = Math.abs(rate) >= 5;
       const trend = Math.abs(rate) >= 20 ? 'strong' : Math.abs(rate) >= 10 ? 'moderate' : 'weak';
@@ -99,6 +198,12 @@ export const useSalesMetrics = (data: SalesData[]) => {
     };
 
     const revenueGrowth = calculateGrowth(currentRevenue, prevRevenue);
+    console.log('[SalesMetrics] Revenue MoM:', {
+      currentRevenue,
+      prevRevenue,
+      change: currentRevenue - prevRevenue,
+      percent: revenueGrowth.rate
+    });
     const transactionGrowth = calculateGrowth(currentTransactions, prevTransactions);
     const memberGrowth = calculateGrowth(currentMembers, prevMembers);
     const unitsGrowth = calculateGrowth(currentUnits, prevUnits);
@@ -124,7 +229,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentRevenue,
           previous: prevRevenue,
           difference: currentRevenue - prevRevenue
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Units Sold",
@@ -141,7 +247,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentUnits,
           previous: prevUnits,
           difference: currentUnits - prevUnits
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Transactions",
@@ -158,7 +265,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentTransactions,
           previous: prevTransactions,
           difference: currentTransactions - prevTransactions
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Unique Members",
@@ -175,7 +283,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentMembers,
           previous: prevMembers,
           difference: currentMembers - prevMembers
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Avg Transaction Value",
@@ -192,7 +301,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentATV,
           previous: prevATV,
           difference: currentATV - prevATV
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Avg Spend per Member",
@@ -209,7 +319,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentASV,
           previous: prevASV,
           difference: currentASV - prevASV
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Discount Value",
@@ -226,7 +337,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentDiscount,
           previous: prevDiscount,
           difference: currentDiscount - prevDiscount
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "Discount Percentage",
@@ -243,7 +355,8 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentDiscountPercentage,
           previous: prevDiscountPercentage,
           difference: currentDiscountPercentage - prevDiscountPercentage
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       },
       {
         title: "VAT Amount",
@@ -260,14 +373,15 @@ export const useSalesMetrics = (data: SalesData[]) => {
           current: currentVAT,
           previous: prevVAT,
           difference: currentVAT - prevVAT
-        }
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
       }
     ];
 
     console.log('Final calculated sales metrics:', calculatedMetrics.map(m => ({ title: m.title, value: m.value, change: m.change })));
 
     return calculatedMetrics;
-  }, [data, filters.dateRange]);
+  }, [currentData, historicalData, options?.dateRange?.start, options?.dateRange?.end, filters?.dateRange?.start, filters?.dateRange?.end, options?.compareMode]);
 
   return { metrics };
 };

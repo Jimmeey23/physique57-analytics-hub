@@ -65,6 +65,18 @@ async function ensureHeaderAndSheet(accessToken) {
 
 function nowISO() { return new Date().toISOString(); }
 
+async function getSheetId(accessToken) {
+  // Fetch spreadsheet metadata to find sheetId for NOTES_SHEET_NAME
+  const metaResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId%2Ctitle))`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  if (!metaResp.ok) throw new Error(await metaResp.text());
+  const meta = await metaResp.json();
+  const sheet = (meta.sheets || []).map(s => s.properties).find(p => p.title === NOTES_SHEET_NAME);
+  if (!sheet) throw new Error(`Sheet '${NOTES_SHEET_NAME}' not found`);
+  return sheet.sheetId;
+}
+
 export default async function handler(req, res) {
   try {
     const accessToken = await getAccessToken();
@@ -79,7 +91,9 @@ export default async function handler(req, res) {
       if (!getResp.ok) throw new Error(await getResp.text());
       const json = await getResp.json();
       const rows = json.values || [];
-      const items = rows.map(r => ({
+      const items = rows.map((r, idx) => ({
+        // A2 corresponds to sheet row 2 (1-based). So rowNumber is idx + 2
+        rowNumber: idx + 2,
         timestamp: r[0], tableKey: r[1], location: r[2], period: r[3], sectionId: r[4], author: r[5], note: r[6], summary: r[7], version: r[8]
       })).filter(x => (!tableKey || x.tableKey === tableKey) && (!location || x.location === location) && (!period || x.period === period) && (!sectionId || x.sectionId === sectionId));
       return res.status(200).json({ notes: items });
@@ -110,6 +124,36 @@ export default async function handler(req, res) {
         if (!appendResp.ok) throw new Error(await appendResp.text());
         return res.status(200).json({ ok: true, appended: true });
       }
+    }
+
+    if (req.method === 'DELETE') {
+      // Delete a specific row (1-based). Accept from query or body. Prevent deleting header row.
+      const rowParam = (req.query && (req.query.row || req.query.rowNumber)) ?? (req.body && (req.body.row || req.body.rowNumber));
+      const row = Number(rowParam);
+      if (!row || Number.isNaN(row) || row <= 1) {
+        return res.status(400).json({ error: 'Valid row number (>1) required' });
+      }
+      const sheetId = await getSheetId(accessToken);
+      const batchResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: 'ROWS',
+                  startIndex: row - 1, // inclusive (0-based). Row 1 is header, row 2 -> index 1
+                  endIndex: row // exclusive
+                }
+              }
+            }
+          ]
+        })
+      });
+      if (!batchResp.ok) throw new Error(await batchResp.text());
+      return res.status(200).json({ ok: true, deleted: true, row });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

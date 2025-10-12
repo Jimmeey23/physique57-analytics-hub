@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 export type NoteRecord = {
+  rowNumber?: number;
   timestamp: string;
   tableKey: string;
   location?: string;
@@ -61,7 +62,45 @@ export function useNotes(params: { tableKey: string; location?: string; period?:
     }
   };
 
+  const updateByRow = async (rowNumber: number, payload: { author?: string; note?: string; summary?: string }) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...params, ...payload, row: rowNumber })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await reload();
+      return true;
+    } catch (e: any) {
+      setError(e.message || 'Failed to update note');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteByRow = async (rowNumber: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`/api/notes?row=${encodeURIComponent(String(rowNumber))}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await reload();
+      return true;
+    } catch (e: any) {
+      setError(e.message || 'Failed to delete note');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => { reload(); }, [query]);
 
-  return { notes, loading, error, reload, save };
+  return { notes, loading, error, reload, save, updateByRow, deleteByRow };
 }

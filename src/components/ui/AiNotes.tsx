@@ -17,7 +17,7 @@ interface AiNotesProps {
 }
 
 export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, sectionId, initialSummary, author }) => {
-  const { notes, loading, error, save } = useNotes({ tableKey, location, period, sectionId });
+  const { notes, loading, error, save, updateByRow, deleteByRow } = useNotes({ tableKey, location, period, sectionId });
   const latest = useMemo(() => notes[notes.length - 1], [notes]);
 
   // Contenteditable for rich text (HTML)
@@ -25,6 +25,15 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
   const noteRef = useRef<ReactQuill | null>(null);
   const [summaryHtml, setSummaryHtml] = useState(initialSummary || '');
   const [noteHtml, setNoteHtml] = useState('');
+
+  // When a latest version exists, allow loading it into editors for editing
+  useEffect(() => {
+    if (latest) {
+      if (!summaryHtml) setSummaryHtml(latest.summary || '');
+      if (!noteHtml) setNoteHtml(latest.note || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latest?.timestamp]);
   // Per-section pins and toggles
   const storageKeySummary = useMemo(() => `ai-notes-pin:summary:${tableKey}:${location || 'all'}:${period || 'all'}:${sectionId || 'default'}`, [tableKey, location, period, sectionId]);
   const storageKeyNotes = useMemo(() => `ai-notes-pin:notes:${tableKey}:${location || 'all'}:${period || 'all'}:${sectionId || 'default'}`, [tableKey, location, period, sectionId]);
@@ -198,6 +207,41 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
     await save({ note: restoredNote, summary: restoredSummary, author });
   };
 
+  // Inline edit state for history items
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [editSummary, setEditSummary] = useState<string>('');
+  const [editNote, setEditNote] = useState<string>('');
+  const onStartEdit = (idx: number) => {
+    const item = notes[idx];
+    if (!item) return;
+    setEditIndex(idx);
+    setEditSummary(item.summary || '');
+    setEditNote(item.note || '');
+  };
+  const onCancelEdit = () => {
+    setEditIndex(null);
+    setEditSummary('');
+    setEditNote('');
+  };
+  const onSaveEdit = async () => {
+    if (editIndex === null) return;
+    const item = notes[editIndex];
+    if (!item || !item.rowNumber) return;
+    const summary = DOMPurify.sanitize(editSummary, { USE_PROFILES: { html: true } });
+    const note = DOMPurify.sanitize(editNote, { USE_PROFILES: { html: true } });
+    await updateByRow(item.rowNumber, { summary, note, author });
+    onCancelEdit();
+  };
+  const onDelete = async (idx: number) => {
+    const item = notes[idx];
+    if (!item || !item.rowNumber) return;
+    // Confirm delete
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm('Delete this saved note/summary entry? This cannot be undone.');
+    if (!ok) return;
+    await deleteByRow(item.rowNumber);
+  };
+
   const toggleSummaryPin = () => {
     const next = !summaryPinned;
     setSummaryPinned(next);
@@ -276,18 +320,65 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
               <div className="mt-2 space-y-3 max-h-64 overflow-y-auto border-t pt-2">
                 {notes.map((n, idx) => (
                   <div key={idx} className="border rounded p-2 bg-white">
-                    <div className="text-xs text-slate-500 mb-1">{n.timestamp} • {n.author || 'Unknown'}</div>
-                    {n.summary && (
-                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.summary) }} />
-                    )}
-                    {n.note && (
-                      <div className="prose prose-sm max-w-none mt-1" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.note) }} />
-                    )}
-                    <div className="mt-2">
-                      <Button type="button" size="sm" variant="secondary" onClick={() => restoreVersion(idx)}>
-                        Restore this version
-                      </Button>
+                    <div className="text-xs text-slate-500 mb-2 flex items-center justify-between">
+                      <span>{n.timestamp} • {n.author || 'Unknown'}</span>
+                      <span className="text-[10px] text-slate-400">Row {n.rowNumber || '?'}</span>
                     </div>
+                    {editIndex === idx ? (
+                      <div className="space-y-2">
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">Summary</div>
+                          <div className="prose prose-sm max-w-none">
+                            <div
+                              className="border rounded p-2 bg-white"
+                              contentEditable
+                              suppressContentEditableWarning
+                              onInput={(e) => setEditSummary((e.target as HTMLElement).innerHTML)}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editSummary) }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">Note</div>
+                          <div className="prose prose-sm max-w-none">
+                            <div
+                              className="border rounded p-2 bg-white"
+                              contentEditable
+                              suppressContentEditableWarning
+                              onInput={(e) => setEditNote((e.target as HTMLElement).innerHTML)}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editNote) }}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" size="sm" onClick={onSaveEdit} disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
+                            Save
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={onCancelEdit}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {n.summary && (
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.summary) }} />
+                        )}
+                        {n.note && (
+                          <div className="prose prose-sm max-w-none mt-1" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.note) }} />
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Button type="button" size="sm" variant="secondary" onClick={() => restoreVersion(idx)}>
+                            Restore this version
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => onStartEdit(idx)}>
+                            Edit
+                          </Button>
+                          <Button type="button" size="sm" variant="destructive" onClick={() => onDelete(idx)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

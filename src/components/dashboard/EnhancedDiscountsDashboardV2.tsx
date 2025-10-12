@@ -266,7 +266,9 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
 
               {/* Modern Animated Metric Cards */}
               <DiscountsAnimatedMetricCards 
-                data={discountAnalysisData} 
+                data={discountAnalysisData}
+                historicalData={allHistoricData}
+                dateRange={filters.dateRange}
                 onMetricClick={handleMetricClick}
               />
 

@@ -582,7 +582,11 @@ const ClientRetention = () => {
 
           {/* Enhanced Metric Cards */}
           <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2">
-            <ClientConversionMetricCards data={filteredData} onCardClick={(title, data, metricType) => setDrillDownModal({
+            <ClientConversionMetricCards 
+              data={filteredData}
+              historicalData={data}
+              dateRange={filters.dateRange}
+              onCardClick={(title, data, metricType) => setDrillDownModal({
               isOpen: true,
               client: null,
               title: `${title} - Detailed Analysis`,
@@ -591,7 +595,8 @@ const ClientRetention = () => {
                 metricType
               },
               type: 'metric'
-            })} />
+            })}
+            />
           </div>
 
           {/* Enhanced Simplified Ranking System */}

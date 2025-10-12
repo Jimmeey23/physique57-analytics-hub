@@ -208,6 +208,20 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
 
   const filteredData = useMemo(() => applyFilters(data), [data, filters, activeLocation]);
   const allHistoricData = useMemo(() => applyFilters(data, true), [data, activeLocation]);
+  // Location-only historical dataset for MoM metrics (ignore non-date filters to reflect total sales at location)
+  const metricsHistoricData = useMemo(() => {
+    let filtered = [...data];
+    if (activeLocation !== 'all') {
+      filtered = filtered.filter(item => {
+        const loc = (item.calculatedLocation || '').toString().toLowerCase();
+        if (activeLocation === 'kwality') return loc.includes('kwality');
+        if (activeLocation === 'supreme') return loc.includes('supreme');
+        // kenkere
+        return loc.includes('kenkere') || loc.includes('bengaluru');
+      });
+    }
+    return filtered;
+  }, [data, activeLocation]);
 
   const handleRowClick = (rowData: any) => {
     console.log('Row clicked with data:', rowData);
@@ -676,6 +690,8 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       <SectionAnchor id="sales-overview" label="Overview">
         <SalesHeroSection 
           data={filteredData} 
+          historicalData={metricsHistoricData}
+          dateRange={filters.dateRange}
           currentLocation={activeLocation}
           locationName={locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations'}
         />
@@ -730,6 +746,8 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               <SectionAnchor id="sales-metrics" label="Metrics">
                 <SalesAnimatedMetricCards 
                   data={filteredData} 
+                  historicalData={metricsHistoricData}
+                  dateRange={filters.dateRange}
                   onMetricClick={handleMetricClick}
                 />
               </SectionAnchor>

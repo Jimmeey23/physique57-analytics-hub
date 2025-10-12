@@ -5,9 +5,12 @@ import { TrendingUp, TrendingDown, Percent, ShoppingCart, CreditCard, DollarSign
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { useDiscountMetrics } from '@/hooks/useDiscountMetrics';
 
 interface DiscountsAnimatedMetricCardsProps {
   data: SalesData[];
+  historicalData?: SalesData[];
+  dateRange?: { start?: string | Date; end?: string | Date };
   onMetricClick?: (metricData: any) => void;
 }
 
@@ -23,12 +26,15 @@ const iconMap = {
 };
 
 export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCardsProps> = ({ 
-  data, 
+  data,
+  historicalData,
+  dateRange,
   onMetricClick 
 }) => {
-  // Memoize expensive calculations to prevent recalculation on every render
-  const calculatedMetrics = useMemo(() => {
-    // Calculate discount-specific metrics
+  const { metrics } = useDiscountMetrics(data, historicalData, { dateRange });
+
+  // For drill down context, compute some derived totals from current period subset of data
+  const calculatedContext = useMemo(() => {
     const totalDiscounts = data.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     const totalRevenue = data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
     const totalTransactions = data.length;
@@ -38,83 +44,12 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
       data.filter(item => (item.discountAmount || 0) > 0)
           .map(item => item.memberId || item.customerEmail)
     ).size;
-    
-    const discountRate = totalRevenue > 0 ? (totalDiscounts / (totalRevenue + totalDiscounts)) * 100 : 0;
     const discountPenetration = totalTransactions > 0 ? (discountedTransactions / totalTransactions) * 100 : 0;
-    const customerDiscountPenetration = uniqueCustomers > 0 ? (customersWithDiscounts / uniqueCustomers) * 100 : 0;
-    const avgDiscountPerTransaction = discountedTransactions > 0 ? totalDiscounts / discountedTransactions : 0;
-    const avgDiscountPerCustomer = customersWithDiscounts > 0 ? totalDiscounts / customersWithDiscounts : 0;
+    const discountRate = totalRevenue + totalDiscounts > 0 ? (totalDiscounts / (totalRevenue + totalDiscounts)) * 100 : 0;
+    return { totalDiscounts, totalRevenue, totalTransactions, discountedTransactions, uniqueCustomers, customersWithDiscounts, discountPenetration, discountRate };
+  }, [data]);
 
-    return {
-      metrics: [
-    {
-      title: 'Total Discounts',
-      value: formatCurrency(totalDiscounts),
-      description: 'Total amount saved by customers',
-      icon: 'DollarSign',
-      change: null, // You can add comparison logic here
-      trend: 'neutral' as 'up' | 'down' | 'neutral',
-      color: 'orange'
-    },
-    {
-      title: 'Discount Rate',
-      value: formatPercentage(discountRate),
-      description: 'Percentage of gross revenue',
-      icon: 'Percent',
-      change: null,
-      trend: 'neutral' as 'up' | 'down' | 'neutral',
-      color: 'orange'
-    },
-    {
-      title: 'Transactions with Discounts',
-      value: formatNumber(discountedTransactions),
-      description: `${formatPercentage(discountPenetration)} of all transactions`,
-      icon: 'ShoppingCart',
-      change: null,
-      trend: 'neutral' as 'up' | 'down' | 'neutral',
-      color: 'orange'
-    },
-    {
-      title: 'Customers with Discounts',
-      value: formatNumber(customersWithDiscounts),
-      description: `${formatPercentage(customerDiscountPenetration)} of all customers`,
-      icon: 'Users',
-      change: null,
-      trend: 'neutral' as 'up' | 'down' | 'neutral',
-      color: 'orange'
-    },
-    {
-      title: 'Avg Discount per Transaction',
-      value: formatCurrency(avgDiscountPerTransaction),
-      description: 'Average savings per discounted purchase',
-      icon: 'Target',
-      change: null,
-      trend: 'neutral' as 'up' | 'down' | 'neutral',
-      color: 'orange'
-    },
-    {
-      title: 'Avg Discount per Customer',
-      value: formatCurrency(avgDiscountPerCustomer),
-      description: 'Average savings per customer',
-      icon: 'Activity',
-      change: null,
-      trend: 'neutral' as 'up' | 'down' | 'neutral',
-      color: 'orange'
-    }
-      ],
-      // Return the calculated values for use in handleMetricClick
-      totalRevenue,
-      totalDiscounts,
-      totalTransactions,
-      discountedTransactions,
-      uniqueCustomers,
-      customersWithDiscounts,
-      discountRate,
-      discountPenetration
-    };
-  }, [data]); // Add dependency array for useMemo
-
-  const { metrics, totalRevenue, totalDiscounts, totalTransactions, discountedTransactions, uniqueCustomers, customersWithDiscounts, discountRate, discountPenetration } = calculatedMetrics;
+  const { totalRevenue, totalDiscounts, totalTransactions, discountedTransactions, uniqueCustomers, customersWithDiscounts, discountPenetration, discountRate } = calculatedContext;
 
   const handleMetricClick = (metric: any) => {
     if (onMetricClick) {
@@ -185,20 +120,20 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
                     <IconComponent className="w-5 h-5" />
                   </div>
                   
-                  {metric.change && (
+                  {typeof metric.change === 'number' && (
                     <Badge 
                       className={cn(
                         "text-xs font-medium px-2 py-1",
-                        metric.trend === 'up' 
+                        metric.change > 0
                           ? "bg-green-100 text-green-700 border-green-200" 
-                          : metric.trend === 'down'
+                          : metric.change < 0
                           ? "bg-red-100 text-red-700 border-red-200"
                           : "bg-gray-100 text-gray-700 border-gray-200"
                       )}
                     >
-                      {metric.trend === 'up' && <ArrowUpRight className="w-3 h-3 mr-1" />}
-                      {metric.trend === 'down' && <ArrowDownRight className="w-3 h-3 mr-1" />}
-                      {metric.change}
+                      {metric.change > 0 && <ArrowUpRight className="w-3 h-3 mr-1" />}
+                      {metric.change < 0 && <ArrowDownRight className="w-3 h-3 mr-1" />}
+                      {`${metric.change > 0 ? '+' : ''}${metric.change.toFixed(1)}%`}
                     </Badge>
                   )}
                 </div>
@@ -206,6 +141,12 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
               
               {/* Bottom accent line */}
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              {/* Period label and previous value */}
+              {metric.periodLabel && (
+                <div className="mt-3 text-xs text-gray-500">
+                  {metric.periodLabel}: <span className="font-medium">{metric.previousValue}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         );

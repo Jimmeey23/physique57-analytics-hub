@@ -1,89 +1,26 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ExpirationData, MetricCardData } from '@/types/dashboard';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { Users, AlertTriangle, Clock, CheckCircle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useExpirationMetrics } from '@/hooks/useExpirationMetrics';
 
 interface ExpirationMetricCardsProps {
   data: ExpirationData[];
+  historicalData?: ExpirationData[];
+  dateRange?: { start?: string | Date; end?: string | Date };
   onMetricClick?: (data: ExpirationData[], type: string) => void;
 }
 
 export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({ 
-  data, 
+  data,
+  historicalData,
+  dateRange,
   onMetricClick 
 }) => {
-  const calculateMetrics = (data: ExpirationData[]): MetricCardData[] => {
-    const totalMemberships = data.length;
-    const activeCount = data.filter(item => item.status === 'Active').length;
-    const churnedCount = data.filter(item => item.status === 'Churned').length;
-    const frozenCount = data.filter(item => item.status === 'Frozen').length;
-
-    const churnRate = totalMemberships > 0 ? (churnedCount / totalMemberships) * 100 : 0;
-    const activeRate = totalMemberships > 0 ? (activeCount / totalMemberships) * 100 : 0;
-    const frozenRate = totalMemberships > 0 ? (frozenCount / totalMemberships) * 100 : 0;
-
-    // Calculate revenue impact from churned members
-    const paidChurnedMembers = data.filter(item => item.status === 'Churned' && item.paid && item.paid !== '-');
-    const churnedRevenueLoss = paidChurnedMembers.length > 0 
-      ? paidChurnedMembers.reduce((sum, member) => {
-          const paid = parseFloat(member.paid?.toString().replace(/[^0-9.-]/g, '') || '0');
-          return sum + (isNaN(paid) ? 0 : paid);
-        }, 0)
-      : 0;
-
-    return [
-      {
-        title: 'Total Memberships',
-        value: formatNumber(totalMemberships),
-        change: 0,
-        description: 'All tracked membership records',
-        calculation: 'Count of all membership records',
-        icon: 'Users',
-        rawValue: totalMemberships
-      },
-      {
-        title: 'Active Members',
-        value: formatNumber(activeCount),
-        change: 0,
-        description: `${formatPercentage(activeRate)} of total memberships`,
-        calculation: 'Count of active status',
-        icon: 'CheckCircle',
-        rawValue: activeCount
-      },
-      {
-        title: 'Churned Members',
-        value: formatNumber(churnedCount),
-        change: 0,
-        description: `${formatPercentage(churnRate)} churn rate`,
-        calculation: 'Count of churned status',
-        icon: 'AlertTriangle',
-        rawValue: churnedCount
-      },
-      {
-        title: 'Frozen Members',
-        value: formatNumber(frozenCount),
-        change: 0,
-        description: `${formatPercentage(frozenRate)} of total memberships`,
-        calculation: 'Count of frozen status',
-        icon: 'Clock',
-        rawValue: frozenCount
-      },
-      {
-        title: 'Revenue Impact',
-        value: `₹${formatNumber(churnedRevenueLoss)}`,
-        change: 0,
-        description: `Loss from ${paidChurnedMembers.length} churned members`,
-        calculation: 'Sum of paid amounts for churned members',
-        icon: 'TrendingUp',
-        rawValue: churnedRevenueLoss
-      }
-    ];
-  };
-
-  const metrics = calculateMetrics(data);
+  const { metrics } = useExpirationMetrics(data, historicalData, { dateRange });
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
@@ -95,7 +32,7 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
     }
   };
 
-  const getCardVariant = (metric: MetricCardData, index: number) => {
+  const getCardVariant = (metric: any, index: number) => {
     const variants = [
       'from-blue-500 to-blue-600',
       'from-green-500 to-green-600',
@@ -106,7 +43,7 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
     return variants[index] || 'from-slate-500 to-slate-600';
   };
 
-  const getFilteredData = (metric: MetricCardData) => {
+  const getFilteredData = (metric: any) => {
     if (metric.title === 'Active Members') return data.filter(item => item.status === 'Active');
     if (metric.title === 'Churned Members') return data.filter(item => item.status === 'Churned');
     if (metric.title === 'Frozen Members') return data.filter(item => item.status === 'Frozen');
@@ -137,9 +74,11 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
                 <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                   <IconComponent className="w-6 h-6 text-white" />
                 </div>
-                <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
-                  {index === 0 ? 'Total' : index === 1 ? 'Active' : index === 2 ? 'Churned' : index === 3 ? 'Frozen' : 'Revenue'}
-                </Badge>
+                {typeof (metrics[index] as any)?.change === 'number' && (
+                  <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
+                    {`${(metrics[index] as any).change > 0 ? '+' : ''}${(metrics[index] as any).change.toFixed(1)}%`}
+                  </Badge>
+                )}
               </div>
 
               {/* Main Value */}
@@ -157,6 +96,12 @@ export const ExpirationMetricCards: React.FC<ExpirationMetricCardsProps> = ({
                 <div className="text-white/70 text-sm">
                   {metric.description}
                 </div>
+                {/* Period label with previous value */}
+                {(metric as any).periodLabel && (
+                  <div className="text-white/70 text-xs mt-1">
+                    {(metric as any).periodLabel}: <span className="font-medium">{(metric as any).previousValue}</span>
+                  </div>
+                )}
               </div>
 
               {/* Background decoration */}
