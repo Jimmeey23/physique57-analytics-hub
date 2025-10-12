@@ -81,7 +81,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
       totalLTV: 0, 
       conversionIntervals: [] as number[],
       visitsPostTrial: [] as number[],
-      clients: [] as NewClientData[] 
+      clients: [] as NewClientData[] // Store actual client data for drill-down
     });
     const map: Record<string, { current: Record<string, any>; previous: Record<string, any> }> = {};
     
@@ -109,7 +109,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
       if (c.conversionStatus === 'Converted') bucket.converted += 1;
       if (c.retentionStatus === 'Retained') bucket.retained += 1;
       bucket.totalLTV += c.ltv || 0;
-      bucket.clients.push(c);
+      bucket.clients.push(c); // Add client to bucket
       
       // Add conversion interval and visits tracking
       if (c.conversionSpan !== undefined && c.conversionSpan !== null) {
@@ -229,6 +229,94 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
     );
   };
 
+  // Render value with white text for totals row
+  const renderValueWhite = (current: any, previous: any) => {
+    let currVal = 0, prevVal = 0;
+    
+    switch (metric) {
+      case 'trials':
+        currVal = current.trials || 0;
+        prevVal = previous.trials || 0;
+        break;
+      case 'newMembers':
+        currVal = current.newMembers || 0;
+        prevVal = previous.newMembers || 0;
+        break;
+      case 'converted':
+        currVal = current.converted || 0;
+        prevVal = previous.converted || 0;
+        break;
+      case 'retained':
+        currVal = current.retained || 0;
+        prevVal = previous.retained || 0;
+        break;
+      case 'conversionRate':
+        currVal = current.conversionRate || 0;
+        prevVal = previous.conversionRate || 0;
+        break;
+      case 'retentionRate':
+        currVal = current.retentionRate || 0;
+        prevVal = previous.retentionRate || 0;
+        break;
+      case 'avgLTV':
+        currVal = current.avgLTV || 0;
+        prevVal = previous.avgLTV || 0;
+        break;
+      case 'totalLTV':
+        currVal = current.totalLTV || 0;
+        prevVal = previous.totalLTV || 0;
+        break;
+      case 'avgConversionDays':
+        currVal = current.avgConversionDays || 0;
+        prevVal = previous.avgConversionDays || 0;
+        break;
+      case 'avgVisits':
+        currVal = current.avgVisits || 0;
+        prevVal = previous.avgVisits || 0;
+        break;
+    }
+
+    if (displayMode === 'growth') {
+      const growth = prevVal !== 0 ? ((currVal - prevVal) / prevVal) * 100 : 0;
+      const isPositive = growth >= 0;
+      return (
+        <span className="text-xs font-semibold text-white">
+          {isPositive ? '▲' : '▼'} {Math.abs(growth).toFixed(1)}%
+        </span>
+      );
+    }
+
+    // Values mode: show prev | curr with white text
+    const format = (val: number) => {
+      switch (metric) {
+        case 'trials':
+        case 'newMembers':
+        case 'converted':
+        case 'retained':
+          return formatNumber(val);
+        case 'conversionRate':
+        case 'retentionRate':
+          return `${val.toFixed(1)}%`;
+        case 'avgLTV':
+        case 'totalLTV':
+          return formatCurrency(val);
+        case 'avgConversionDays':
+          return `${val.toFixed(0)} days`;
+        case 'avgVisits':
+          return `${val.toFixed(1)}`;
+        default:
+          return String(val);
+      }
+    };
+
+    return (
+      <div className="flex flex-col gap-0.5 text-xs">
+        <span className="text-white/70">{format(prevVal)}</span>
+        <span className="font-bold text-white">{format(currVal)}</span>
+      </div>
+    );
+  };
+
   const sortedRowKeys = useMemo(() => {
     if (!sortColumn) return rowKeys;
     
@@ -275,7 +363,16 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
     const totals: { current: Record<string, any>; previous: Record<string, any> } = { current: {}, previous: {} };
     
     months.forEach(m => {
-      const initCell = () => ({ trials: 0, newMembers: 0, converted: 0, retained: 0, totalLTV: 0 });
+      const initCell = () => ({ 
+        trials: 0, 
+        newMembers: 0, 
+        converted: 0, 
+        retained: 0, 
+        totalLTV: 0,
+        conversionIntervals: [] as number[],
+        visitsPostTrial: [] as number[],
+        clients: [] as NewClientData[]
+      });
       totals.current[m.key] = initCell();
       totals.previous[m.key] = initCell();
       
@@ -289,6 +386,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
           totals.current[m.key].converted += curr.converted || 0;
           totals.current[m.key].retained += curr.retained || 0;
           totals.current[m.key].totalLTV += curr.totalLTV || 0;
+          totals.current[m.key].conversionIntervals.push(...(curr.conversionIntervals || []));
+          totals.current[m.key].visitsPostTrial.push(...(curr.visitsPostTrial || []));
+          totals.current[m.key].clients.push(...(curr.clients || []));
         }
         
         if (prev) {
@@ -297,6 +397,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
           totals.previous[m.key].converted += prev.converted || 0;
           totals.previous[m.key].retained += prev.retained || 0;
           totals.previous[m.key].totalLTV += prev.totalLTV || 0;
+          totals.previous[m.key].conversionIntervals.push(...(prev.conversionIntervals || []));
+          totals.previous[m.key].visitsPostTrial.push(...(prev.visitsPostTrial || []));
+          totals.previous[m.key].clients.push(...(prev.clients || []));
         }
       });
       
@@ -304,6 +407,12 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
         b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
         b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
         b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+        b.avgConversionDays = b.conversionIntervals.length > 0 
+          ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
+          : 0;
+        b.avgVisits = b.visitsPostTrial.length > 0
+          ? b.visitsPostTrial.reduce((sum: number, val: number) => sum + val, 0) / b.visitsPostTrial.length
+          : 0;
       };
       derive(totals.current[m.key]);
       derive(totals.previous[m.key]);
@@ -377,12 +486,12 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto max-h-[600px]">
-          <table className="min-w-full">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white">
+  <div className="overflow-x-auto max-h-[600px] relative">
+          <table className="min-w-full relative">
+            <thead>
+              <tr className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white sticky top-0 z-10">
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-20 bg-emerald-700 font-bold text-xs uppercase tracking-wide cursor-pointer hover:bg-emerald-600 select-none"
+                  className="px-4 py-3 text-left sticky left-0 z-20 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-emerald-700"
                   onClick={() => handleSort('row')}
                 >
                   <div className="flex items-center gap-1">
@@ -393,7 +502,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 {months.map(m => (
                   <th 
                     key={m.key} 
-                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[100px] border-l border-white/20 cursor-pointer hover:bg-emerald-600/50 select-none"
+                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[100px] border-l border-white/20 cursor-pointer hover:bg-emerald-600/50 select-none sticky top-0"
                     onClick={() => handleSort(m.key)}
                   >
                     <div className="flex flex-col items-center gap-0.5">
@@ -414,11 +523,40 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 <tr 
                   key={rk} 
                   className="border-b border-slate-100 hover:bg-emerald-50 cursor-pointer transition-colors"
-                  onClick={() => onRowClick?.({ rowKey: rk, rowType, data: pivot[rk], metric })}
+                  onClick={() => {
+                    // Aggregate clients from all months for this row
+                    const allCurrentClients = months.flatMap(m => pivot[rk]?.current[m.key]?.clients || []);
+                    const allPreviousClients = months.flatMap(m => pivot[rk]?.previous[m.key]?.clients || []);
+                    const allClients = [...allCurrentClients, ...allPreviousClients];
+                    onRowClick?.({ 
+                      rowKey: rk, 
+                      rowType, 
+                      data: pivot[rk], 
+                      metric,
+                      clients: allClients
+                    });
+                  }}
                 >
                   <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white hover:bg-emerald-50 z-10 border-r">{rk}</td>
                   {months.map((m) => (
-                    <td key={m.key} className="px-2 py-2 text-center border-l">
+                    <td 
+                      key={m.key} 
+                      className="px-2 py-2 text-center border-l"
+                      onClick={(e) => {
+                        // Allow clicking individual cells for month-specific drill-down
+                        e.stopPropagation();
+                        const currentClients = pivot[rk]?.current[m.key]?.clients || [];
+                        const previousClients = pivot[rk]?.previous[m.key]?.clients || [];
+                        onRowClick?.({ 
+                          rowKey: rk, 
+                          rowType,
+                          month: m.key,
+                          data: { current: pivot[rk].current[m.key], previous: pivot[rk].previous[m.key] },
+                          metric,
+                          clients: [...currentClients, ...previousClients]
+                        });
+                      }}
+                    >
                       {renderValue(pivot[rk].current[m.key], pivot[rk].previous[m.key])}
                     </td>
                   ))}
@@ -428,8 +566,24 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
               <tr className="bg-slate-800 font-bold border-t-4 border-slate-600">
                 <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-10 border-r">TOTALS</td>
                 {months.map((m) => (
-                  <td key={m.key} className="px-2 py-2 text-center border-l text-white">
-                    {renderValue(totalsRow.current[m.key], totalsRow.previous[m.key])}
+                  <td 
+                    key={m.key} 
+                    className="px-2 py-2 text-center border-l cursor-pointer hover:bg-slate-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentClients = totalsRow.current[m.key]?.clients || [];
+                      const previousClients = totalsRow.previous[m.key]?.clients || [];
+                      onRowClick?.({ 
+                        rowKey: 'TOTALS', 
+                        rowType,
+                        month: m.key,
+                        data: { current: totalsRow.current[m.key], previous: totalsRow.previous[m.key] },
+                        metric,
+                        clients: [...currentClients, ...previousClients]
+                      });
+                    }}
+                  >
+                    {renderValueWhite(totalsRow.current[m.key], totalsRow.previous[m.key])}
                   </td>
                 ))}
               </tr>

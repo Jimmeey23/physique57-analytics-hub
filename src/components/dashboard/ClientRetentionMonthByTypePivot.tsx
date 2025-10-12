@@ -88,6 +88,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
           visitsPostTrial: [] as number[],
           visits: visitsSummary?.[summaryKey] || 0,
           previous: idx < months.length - 1 ? null : undefined, // will link to prev month
+          clients: [] as NewClientData[], // Store actual client data for drill-down
         };
       });
     });
@@ -108,6 +109,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       cell.totalLTV += c.ltv || 0;
       if (c.conversionSpan && c.conversionSpan > 0) cell.conversionIntervals.push(c.conversionSpan);
       if (c.visitsPostTrial && c.visitsPostTrial > 0) cell.visitsPostTrial.push(c.visitsPostTrial);
+      cell.clients.push(c); // Add client to the cell's client array
     });
 
     // Compute derived metrics and link previous
@@ -190,6 +192,54 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
     return <span className="text-sm font-medium text-slate-800">{value}</span>;
   };
 
+  // Render value with white text for totals row
+  const renderValueWhite = (cell: any, monthIdx: number) => {
+    let value: string;
+    switch (metric) {
+      case 'trials': value = formatNumber(cell.trials || 0); break;
+      case 'newMembers': value = formatNumber(cell.newMembers || 0); break;
+      case 'converted': value = formatNumber(cell.converted || 0); break;
+      case 'retained': value = formatNumber(cell.retained || 0); break;
+      case 'retentionRate': value = `${(cell.retentionRate || 0).toFixed(1)}%`; break;
+      case 'conversionRate': value = `${(cell.conversionRate || 0).toFixed(1)}%`; break;
+      case 'avgLTV': value = formatCurrency(cell.avgLTV || 0); break;
+      case 'totalLTV': value = formatCurrency(cell.totalLTV || 0); break;
+      case 'avgConversionDays': value = `${Math.round(cell.avgConversionDays || 0)}`; break;
+      case 'avgVisits': value = (cell.avgVisits || 0).toFixed(1); break;
+      default: value = '0';
+    }
+
+    if (displayMode === 'growth' && monthIdx < months.length - 1) {
+      const prevCell = cell.previous;
+      if (!prevCell) return <span className="text-white/60 text-xs">—</span>;
+      
+      let current = 0, previous = 0;
+      switch (metric) {
+        case 'trials': current = cell.trials || 0; previous = prevCell.trials || 0; break;
+        case 'newMembers': current = cell.newMembers || 0; previous = prevCell.newMembers || 0; break;
+        case 'converted': current = cell.converted || 0; previous = prevCell.converted || 0; break;
+        case 'retained': current = cell.retained || 0; previous = prevCell.retained || 0; break;
+        case 'retentionRate': current = cell.retentionRate || 0; previous = prevCell.retentionRate || 0; break;
+        case 'conversionRate': current = cell.conversionRate || 0; previous = prevCell.conversionRate || 0; break;
+        case 'avgLTV': current = cell.avgLTV || 0; previous = prevCell.avgLTV || 0; break;
+        case 'totalLTV': current = cell.totalLTV || 0; previous = prevCell.totalLTV || 0; break;
+        case 'avgConversionDays': current = cell.avgConversionDays || 0; previous = prevCell.avgConversionDays || 0; break;
+        case 'avgVisits': current = cell.avgVisits || 0; previous = prevCell.avgVisits || 0; break;
+      }
+
+      const growth = previous !== 0 ? ((current - previous) / previous) * 100 : 0;
+      const isPositive = growth >= 0;
+      
+      return (
+        <span className="text-xs font-semibold text-white">
+          {isPositive ? '▲' : '▼'} {Math.abs(growth).toFixed(1)}%
+        </span>
+      );
+    }
+
+    return <span className="text-sm font-medium text-white">{value}</span>;
+  };
+
   // Build sortable data
   const sortedTypes = useMemo(() => {
     if (!sortColumn) return clientTypes;
@@ -242,6 +292,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         totalLTV: 0,
         conversionIntervals: [] as number[],
         visitsPostTrial: [] as number[],
+        clients: [] as NewClientData[], // Aggregate clients for drill-down
       };
       
       clientTypes.forEach(t => {
@@ -254,6 +305,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         aggregated.totalLTV += cell.totalLTV || 0;
         aggregated.conversionIntervals.push(...(cell.conversionIntervals || []));
         aggregated.visitsPostTrial.push(...(cell.visitsPostTrial || []));
+        aggregated.clients.push(...(cell.clients || [])); // Add all clients from this cell
       });
 
       const avgLTV = aggregated.trials > 0 ? aggregated.totalLTV / aggregated.trials : 0;
@@ -323,12 +375,12 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto max-h-[600px]">
-          <table className="min-w-full">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-gradient-to-r from-indigo-700 to-purple-800 text-white">
+  <div className="overflow-x-auto max-h-[900px] relative">
+          <table className="min-w-full relative">
+            <thead>
+              <tr className="bg-gradient-to-r from-indigo-700 to-purple-800 text-white sticky top-0 z-10">
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-20 bg-indigo-700 font-bold text-xs uppercase tracking-wide cursor-pointer hover:bg-indigo-600 select-none"
+                  className="px-4 py-3 text-left sticky left-0 z-30 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-indigo-700"
                   onClick={() => handleSort('type')}
                 >
                   <div className="flex items-center gap-1">
@@ -339,7 +391,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 {months.map(m => (
                   <th 
                     key={m.key} 
-                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[90px] border-l border-white/20 cursor-pointer hover:bg-indigo-600/50 select-none"
+                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[90px] border-l border-white/20 cursor-pointer hover:bg-indigo-600/50 select-none sticky top-0"
                     onClick={() => handleSort(m.key)}
                   >
                     <div className="flex flex-col items-center gap-0.5">
@@ -358,13 +410,32 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 <tr 
                   key={t} 
                   className="border-b border-slate-100 hover:bg-indigo-50 cursor-pointer transition-colors"
-                  onClick={() => onRowClick?.({ type: t, data: pivot[t], metric })}
+                  onClick={() => {
+                    // Aggregate all clients for this type across all months
+                    const allMonthsData = months.map(m => pivot[t]?.[m.key]).filter(Boolean);
+                    const allClients = allMonthsData.flatMap(cell => cell.clients || []);
+                    onRowClick?.({ type: t, data: pivot[t], metric, clients: allClients });
+                  }}
                 >
-                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white hover:bg-indigo-50 z-10 border-r">{t}</td>
+                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white z-20 border-r">{t}</td>
                   {months.map((m, idx) => {
                     const cell = pivot[t]?.[m.key] || {};
                     return (
-                      <td key={m.key} className="px-2 py-2 text-center border-l">
+                      <td 
+                        key={m.key} 
+                        className="px-2 py-2 text-center border-l"
+                        onClick={(e) => {
+                          // Allow clicking individual cells for month-specific drill-down
+                          e.stopPropagation();
+                          onRowClick?.({ 
+                            type: t, 
+                            month: m.label, 
+                            data: cell, 
+                            metric,
+                            clients: cell.clients || []
+                          });
+                        }}
+                      >
                         {renderValue(cell, idx)}
                       </td>
                     );
@@ -373,12 +444,25 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               ))}
               {/* Totals Row */}
               <tr className="bg-slate-800 font-bold border-t-4 border-slate-600">
-                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-10 border-r">TOTALS</td>
+                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-20 border-r">TOTALS</td>
                 {months.map((m, idx) => {
                   const cell = totalsRow[m.key] || {};
                   return (
-                    <td key={m.key} className="px-2 py-2 text-center border-l text-white">
-                      {renderValue(cell, idx)}
+                    <td 
+                      key={m.key} 
+                      className="px-2 py-2 text-center border-l cursor-pointer hover:bg-slate-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRowClick?.({ 
+                          type: 'TOTALS', 
+                          month: m.label, 
+                          data: cell, 
+                          metric,
+                          clients: cell.clients || []
+                        });
+                      }}
+                    >
+                      {renderValueWhite(cell, idx)}
                     </td>
                   );
                 })}
