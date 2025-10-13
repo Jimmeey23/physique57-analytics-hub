@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { Activity, BarChart3, Columns, GitCompare, Search, Target, ArrowUpDown } from 'lucide-react';
 
 type Grouping =
+  | 'none'
   | 'classTrainer'
   | 'class'
   | 'trainer'
@@ -57,6 +58,62 @@ interface GroupRow {
 }
 
 const groupSessions = (data: SessionData[], grouping: Grouping): GroupRow[] => {
+  // Special case for 'none' - return individual sessions
+  if (grouping === 'none') {
+    return data.map((s, index) => {
+      const attendance = s.checkedInCount || 0;
+      const capacity = s.capacity || 0;
+      const booked = s.bookedCount || 0;
+      const lateCancelled = s.lateCancelledCount || 0;
+      const revenue = s.totalPaid || 0;
+      const empty = attendance === 0 ? 1 : 0;
+      const nonEmpty = 1 - empty;
+      const fill = capacity > 0 ? (attendance / capacity) * 100 : 0;
+      const avg = attendance; // For single session, average = attendance
+      const bookingRate = capacity > 0 ? (booked / capacity) * 100 : 0;
+      const showUpRate = booked > 0 ? (attendance / booked) * 100 : 0;
+      const noShow = Math.max(booked - attendance - lateCancelled, 0);
+      const noShowRate = booked > 0 ? (noShow / booked) * 100 : 0;
+      const lateCancelRate = booked > 0 ? (lateCancelled / booked) * 100 : 0;
+      const revenuePerClass = revenue; // For single session
+      const revenuePerAttendee = attendance > 0 ? revenue / attendance : 0;
+      const avgCapacity = capacity;
+      const consistency = 100; // Single session, so 100% consistent
+
+      // Format datetime if available
+      const dateTime = s.date && s.time ? `${s.date} ${s.time}` : s.date || s.time || 'Unknown DateTime';
+      const label = `${s.cleanedClass || 'Class'} | ${dateTime} | ${s.trainerName || 'Unknown Trainer'} | ${s.location || 'Unknown Location'}`;
+
+      return {
+        id: `session-${index}-${s.date}-${s.time}-${s.cleanedClass}`,
+        label,
+        sessions: 1,
+        attendance,
+        capacity,
+        booked,
+        lateCancelled,
+        revenue,
+        emptyClasses: empty,
+        nonEmptyClasses: nonEmpty,
+        fillRate: fill,
+        classAverage: avg,
+        bookingRate,
+        showUpRate,
+        noShowRate,
+        lateCancelRate,
+        revenuePerClass,
+        revenuePerAttendee,
+        avgCapacity,
+        consistency,
+      };
+    }).sort((a, b) => {
+      // Sort by date first, then by time
+      const dateA = new Date(a.label.split(' | ')[1] || '');
+      const dateB = new Date(b.label.split(' | ')[1] || '');
+      return dateB.getTime() - dateA.getTime(); // Most recent first
+    });
+  }
+
   const map = new Map<string, SessionData[]>();
   for (const s of data) {
     let key = '';
@@ -722,6 +779,7 @@ export const FormatFocusedAnalytics: React.FC<FormatFocusedAnalyticsProps> = ({ 
                   <SelectItem value="uniqueId1">Unique ID 1</SelectItem>
                   <SelectItem value="uniqueId2">Unique ID 2</SelectItem>
                   <SelectItem value="sessionName">Session Name</SelectItem>
+                  <SelectItem value="none">No Grouping - Individual Classes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
