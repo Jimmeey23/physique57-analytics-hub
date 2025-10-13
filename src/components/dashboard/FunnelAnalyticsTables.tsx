@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
@@ -18,16 +18,23 @@ import {
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface FunnelAnalyticsTablesProps {
   data: LeadsData[];
   onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
 }
 
-export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({ 
-  data, 
-  onDrillDown 
+export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
+  data,
+  onDrillDown
 }) => {
+  const sourceTableRef = useRef<HTMLDivElement>(null);
+  const stageTableRef = useRef<HTMLDivElement>(null);
+  const spanTableRef = useRef<HTMLDivElement>(null);
+  const ltvTableRef = useRef<HTMLDivElement>(null);
+  const topStagesTableRef = useRef<HTMLDivElement>(null);
+  const proximityTableRef = useRef<HTMLDivElement>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   // Conversion by Source Analytics
@@ -297,14 +304,22 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         </TabsList>
 
         <TabsContent value="source" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
             <CardHeader className="bg-gradient-to-r from-red-600 via-red-700 to-red-800">
-              <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                <Target className="w-5 h-5" />
-                Conversion by Source
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
+                  <Target className="w-5 h-5" />
+                  Conversion by Source
+                </CardTitle>
+                <CopyTableButton 
+                  tableRef={sourceTableRef}
+                  tableName="Conversion by Source"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                />
+              </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0" ref={sourceTableRef}>
               <ModernDataTable
                 data={conversionBySource}
                 showFooter={true}
@@ -397,12 +412,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         </TabsContent>
 
         <TabsContent value="stage" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={stageTableRef}>
             <CardHeader className="bg-gradient-to-r from-red-700 via-red-800 to-orange-700">
-              <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                <Activity className="w-5 h-5" />
-                Conversion by Stage
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
+                  <Activity className="w-5 h-5" />
+                  Conversion by Stage
+                </CardTitle>
+                <CopyTableButton 
+                  tableRef={stageTableRef}
+                  tableName="Conversion by Stage"
+                />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ModernDataTable
@@ -471,12 +492,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         </TabsContent>
 
         <TabsContent value="span" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={spanTableRef}>
             <CardHeader className="bg-gradient-to-r from-orange-600 via-red-600 to-pink-600">
-              <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                <Clock className="w-5 h-5" />
-                Conversion Span Analysis
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
+                  <Clock className="w-5 h-5" />
+                  Conversion Span Analysis
+                </CardTitle>
+                <CopyTableButton 
+                  tableRef={spanTableRef}
+                  tableName="Conversion Span Analysis"
+                />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ModernDataTable
@@ -524,12 +551,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         </TabsContent>
 
         <TabsContent value="ltv" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={ltvTableRef}>
             <CardHeader className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600">
-              <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                <DollarSign className="w-5 h-5" />
-                LTV Analysis
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
+                  <DollarSign className="w-5 h-5" />
+                  LTV Analysis
+                </CardTitle>
+                <CopyTableButton 
+                  tableRef={ltvTableRef}
+                  tableName="LTV Analysis"
+                />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ModernDataTable
@@ -578,12 +611,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         </TabsContent>
 
         <TabsContent value="stages" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={topStagesTableRef}>
             <CardHeader className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600">
-              <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                <BarChart3 className="w-5 h-5" />
-                Most Common Stages
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
+                  <BarChart3 className="w-5 h-5" />
+                  Most Common Stages
+                </CardTitle>
+                <CopyTableButton 
+                  tableRef={topStagesTableRef}
+                  tableName="Most Common Stages"
+                />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ModernDataTable
@@ -631,12 +670,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         </TabsContent>
 
         <TabsContent value="proximity" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={proximityTableRef}>
             <CardHeader className="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600">
-              <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                <AlertTriangle className="w-5 h-5" />
-                Proximity Issues Analysis
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
+                  <AlertTriangle className="w-5 h-5" />
+                  Proximity Issues Analysis
+                </CardTitle>
+                <CopyTableButton 
+                  tableRef={proximityTableRef}
+                  tableName="Proximity Issues Analysis"
+                />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ModernDataTable

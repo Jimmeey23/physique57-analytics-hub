@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from './PersistentTableFooter';
@@ -21,6 +21,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
   onReady
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
+  const tableRef = useRef<HTMLTableElement>(null);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
@@ -268,9 +269,11 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         className="animate-in slide-in-from-bottom-8 fade-in duration-1000"
+        tableRef={tableRef}
+        showCopyButton={true}
       >
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+          <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th

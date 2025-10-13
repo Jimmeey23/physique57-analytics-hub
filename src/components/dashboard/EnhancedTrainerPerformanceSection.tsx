@@ -46,7 +46,15 @@ export const EnhancedTrainerPerformanceSection = () => {
     let data = [...baseProcessed];
     // Apply location (tabs) and explicit location filter
     if (selectedLocation !== 'All Locations') {
-      data = data.filter(d => d.location === selectedLocation);
+      data = data.filter(d => {
+        const location = d.location || '';
+        // For Kenkere House, use flexible matching like Client Retention
+        if (selectedLocation === 'Kenkere House') {
+          return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
+        }
+        // For other locations, use exact match
+        return location === selectedLocation;
+      });
     }
     if (filters.location) {
       data = data.filter(d => d.location === filters.location);
@@ -66,7 +74,15 @@ export const EnhancedTrainerPerformanceSection = () => {
   const processedDataNoMonth = useMemo(() => {
     let data = [...baseProcessed];
     if (selectedLocation !== 'All Locations') {
-      data = data.filter(d => d.location === selectedLocation);
+      data = data.filter(d => {
+        const location = d.location || '';
+        // For Kenkere House, use flexible matching
+        if (selectedLocation === 'Kenkere House') {
+          return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
+        }
+        // For other locations, use exact match
+        return location === selectedLocation;
+      });
     }
     if (filters.location) {
       data = data.filter(d => d.location === filters.location);
@@ -210,10 +226,10 @@ export const EnhancedTrainerPerformanceSection = () => {
         <div className="w-full max-w-4xl">
           <div className="grid grid-cols-4 location-tabs">
             {[
-              { id: 'All Locations', name: 'All Locations', sub: `(${processedData.length} trainers)` },
-              { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${processedData.filter(d => d.location === 'Kwality House, Kemps Corner').length})` },
-              { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${processedData.filter(d => d.location === 'Supreme HQ, Bandra').length})` },
-              { id: 'Kenkere House', name: 'Kenkere House', sub: `Bengaluru (${processedData.filter(d => d.location === 'Kenkere House').length})` },
+              { id: 'All Locations', name: 'All Locations', sub: `(${new Set(processedData.map(d => d.trainerName)).size} trainers)` },
+              { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${new Set(processedData.filter(d => d.location === 'Kwality House, Kemps Corner').map(d => d.trainerName)).size})` },
+              { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${new Set(processedData.filter(d => d.location === 'Supreme HQ, Bandra').map(d => d.trainerName)).size})` },
+              { id: 'Kenkere House', name: 'Kenkere House', sub: `Bengaluru (${new Set(processedData.filter(d => d.location.includes('Kenkere')).map(d => d.trainerName)).size})` },
             ].map(loc => (
               <button
                 key={loc.id}

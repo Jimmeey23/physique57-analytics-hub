@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { SalesData, FilterOptions, YearOnYearMetricType, EnhancedYearOnYearTableProps } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from './PersistentTableFooter';
@@ -38,6 +38,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
   selectedMetric: initialMetric = 'revenue',
   onReady
 }) => {
+  const tableRef = useRef<HTMLTableElement>(null);
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -318,9 +319,11 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         className="animate-in slide-in-from-bottom-8 fade-in duration-1000"
+        tableRef={tableRef}
+        showCopyButton={true}
       >
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+          <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th

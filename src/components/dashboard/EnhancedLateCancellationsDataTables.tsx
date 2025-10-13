@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { LateCancellationsData } from '@/types/dashboard';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PersistentTableFooter } from './PersistentTableFooter';
+import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface EnhancedLateCancellationsDataTablesProps {
   data: LateCancellationsData[];
@@ -19,9 +20,20 @@ interface EnhancedLateCancellationsDataTablesProps {
 const ITEMS_PER_PAGE = 100;
 
 export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data, allCheckins = [], onDrillDown }) => {
+  // Refs for each table tab
+  const multipleDayTableRef = useRef<HTMLDivElement>(null);
+  const membersTableRef = useRef<HTMLDivElement>(null);
+  const checkinsTableRef = useRef<HTMLDivElement>(null);
+  const bookingsTableRef = useRef<HTMLDivElement>(null);
+  const classTableRef = useRef<HTMLDivElement>(null);
+  const membershipTableRef = useRef<HTMLDivElement>(null);
+  const trainerTableRef = useRef<HTMLDivElement>(null);
+  const locationTableRef = useRef<HTMLDivElement>(null);
+  const topCancellersTableRef = useRef<HTMLDivElement>(null);
+
   // Shared table card wrapper to match Sales tab styling
-  const TableContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+  const TableContainer: React.FC<{ children: React.ReactNode; tableRef?: React.RefObject<HTMLDivElement> }> = ({ children, tableRef }) => (
+    <div ref={tableRef} className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       {children}
     </div>
   );

@@ -227,6 +227,25 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     });
   };
 
+  // Calculate tab counts for location tabs using filtered data
+  const tabCounts = useMemo(() => {
+    const counts = { all: 0, kwality: 0, supreme: 0, kenkere: 0 };
+    
+    discountAnalysisData.forEach(item => {
+      counts.all++;
+      const loc = (item.calculatedLocation || '').toString().toLowerCase();
+      if (loc.includes('kwality')) {
+        counts.kwality++;
+      } else if (loc.includes('supreme')) {
+        counts.supreme++;
+      } else if (loc.includes('kenkere') || loc.includes('bengaluru')) {
+        counts.kenkere++;
+      }
+    });
+    
+    return counts;
+  }, [discountAnalysisData]);
+
   return (
     <div className="space-y-8">
       {/* Note Taker Component */}
@@ -234,91 +253,96 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   {/* NoteTaker removed as per request */}
       </div>
 
-      {/* Filter and Location Tabs */}
+      {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
       <div className="container mx-auto px-6 space-y-6">
-        <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-          <div className="flex justify-center mb-8">
-            <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-4 w-full max-w-7xl min-h-24 overflow-hidden">
-              {locations.map(location => (
-                <TabsTrigger 
-                  key={location.id} 
-                  value={location.id} 
-                  className="relative px-6 py-4 font-semibold text-gray-800 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 text-2xl rounded-2xl"
-                >
-                  <div className="relative z-10 text-center">
-                    <div className="font-bold">{location.name.split(',')[0]}</div>
-                    <div className="text-xs opacity-80">{location.name.split(',')[1]?.trim()}</div>
-                  </div>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        <div className="flex justify-center mb-8" id="location-tabs">
+          <div className="w-full max-w-4xl">
+            <div className="grid grid-cols-4 location-tabs">
+              {locations.map(location => {
+                const parts = location.name.split(',').map(s => s.trim());
+                const mainName = parts[0] || location.name;
+                const subName = parts[1] || '';
+                const count = tabCounts[location.id as keyof typeof tabCounts] || 0;
+                
+                return (
+                  <button
+                    key={location.id}
+                    onClick={() => setActiveLocation(location.id)}
+                    className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                    data-state={activeLocation === location.id ? 'active' : 'inactive'}
+                  >
+                    <span className="relative z-10 flex flex-col items-center leading-tight">
+                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{mainName}</span>
+                      <span className="text-xs sm:text-sm opacity-90">{subName} ({count})</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        </div>
 
-          {locations.map(location => (
-            <TabsContent key={location.id} value={location.id} className="space-y-8">
-              <div className="w-full">
-                <AutoCloseFilterSection
-                  filters={filters} 
-                  onFiltersChange={setFilters} 
-                  onReset={resetFilters} 
-                />
-              </div>
+        {/* Content Sections */}
+        <div className="space-y-8">
+        <div className="w-full">
+          <AutoCloseFilterSection
+            filters={filters} 
+            onFiltersChange={setFilters} 
+            onReset={resetFilters} 
+          />
+        </div>
 
-              {/* Modern Animated Metric Cards */}
-              <DiscountsAnimatedMetricCards 
+        {/* Modern Animated Metric Cards */}
+        <DiscountsAnimatedMetricCards 
+          data={discountAnalysisData}
+          historicalData={allHistoricData}
+          dateRange={filters.dateRange}
+          onMetricClick={handleMetricClick}
+        />
+
+        <DiscountInteractiveCharts data={allHistoricData} />
+
+        <DiscountInteractiveTopBottomLists 
+          data={discountAnalysisData} 
+          onDrillDown={handleDrillDown}
+        />
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="detailed" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-orange-100 via-amber-100 to-yellow-100 p-1 rounded-xl shadow-lg border border-orange-200/50">
+            <TabsTrigger value="detailed" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+              Data Tables
+            </TabsTrigger>
+            <TabsTrigger value="breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+              Breakdowns
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <DiscountInteractiveCharts data={discountAnalysisData} />
+          </TabsContent>
+
+          <TabsContent value="detailed" className="space-y-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-orange-200/50">
+              <EnhancedDiscountDataTable 
                 data={discountAnalysisData}
-                historicalData={allHistoricData}
-                dateRange={filters.dateRange}
-                onMetricClick={handleMetricClick}
+                onRowClick={(title, data, type) => handleDrillDown(title, data, type)}
               />
+            </div>
+          </TabsContent>
 
-              <DiscountInteractiveCharts data={allHistoricData} />
-
-              <DiscountInteractiveTopBottomLists 
-                data={discountAnalysisData} 
-                onDrillDown={handleDrillDown}
-              />
-
-              {/* Main Content Tabs */}
-              <Tabs defaultValue="detailed" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-orange-100 via-amber-100 to-yellow-100 p-1 rounded-xl shadow-lg border border-orange-200/50">
-                  <TabsTrigger value="detailed" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
-                    Data Tables
-                  </TabsTrigger>
-                  <TabsTrigger value="breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
-                    Breakdowns
-                  </TabsTrigger>
-                  <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
-                    Analytics
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="analytics" className="space-y-6">
-                  <DiscountInteractiveCharts data={discountAnalysisData} />
-                </TabsContent>
-
-                <TabsContent value="detailed" className="space-y-6">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-orange-200/50">
-                    <EnhancedDiscountDataTable 
-                      data={discountAnalysisData}
-                      onRowClick={(title, data, type) => handleDrillDown(title, data, type)}
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="breakdown" className="space-y-6">
-                  <EnhancedDiscountBreakdownTables 
-                    data={discountAnalysisData}
-                    onDrillDown={handleDrillDown}
-                  />
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-          ))}
+          <TabsContent value="breakdown" className="space-y-6">
+            <EnhancedDiscountBreakdownTables 
+              data={discountAnalysisData}
+              onDrillDown={handleDrillDown}
+            />
+          </TabsContent>
         </Tabs>
       </div>
-
-      {/* Drill Down Modal */}
+    </div>      {/* Drill Down Modal */}
       <DiscountDrillDownModal
         isOpen={drillDownData.isOpen}
         onClose={() => setDrillDownData({ isOpen: false, title: '', data: [], type: '' })}

@@ -21,15 +21,15 @@ const SalesAnalytics = () => {
 
   return (
     <GlobalFiltersProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 relative overflow-hidden">
+      <div className="min-h-screen bg-white relative overflow-hidden">
         {/* Enhanced Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-purple-200/20 to-pink-200/20 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-blue-200/15 to-cyan-200/15 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-gradient-to-r from-emerald-200/20 to-teal-200/20 rounded-full morph-shape stagger-2"></div>
+          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
+          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
+          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
         </div>
         
-        <div className="relative z-10 slide-in-from-left">
+        <div className="relative z-10">
           {loading ? (
             <div className="container mx-auto px-6 py-10">
               <LoadingSkeleton type="full-page" />
@@ -48,7 +48,9 @@ const SalesAnalytics = () => {
               </div>
             </div>
           ) : (
-            <SalesAnalyticsSection data={data} onReady={handleReady} />
+            <div className="bg-white text-slate-800 slide-in-from-left">
+              <SalesAnalyticsSection data={data} onReady={handleReady} />
+            </div>
           )}
         </div>
         <Footer />

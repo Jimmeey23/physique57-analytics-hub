@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, TrendingUp, BarChart3, DollarSign, Users, ShoppingCart, Target, Package, Activity, Percent, Trophy, Medal, Award, Crown, Star, Eye, Percent as PercentIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface ModernTableWrapperProps {
   title: string;
@@ -21,6 +22,8 @@ interface ModernTableWrapperProps {
   showDisplayToggle?: boolean;
   displayMode?: 'values' | 'growth';
   onDisplayModeChange?: (mode: 'values' | 'growth') => void;
+  showCopyButton?: boolean;
+  tableRef?: React.RefObject<HTMLTableElement>;
 }
 
 export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
@@ -38,8 +41,11 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
   showCollapseControls = true,
   showDisplayToggle = false,
   displayMode = 'values',
-  onDisplayModeChange
+  onDisplayModeChange,
+  showCopyButton = true,
+  tableRef
 }) => {
+  const internalTableRef = useRef<HTMLDivElement>(null);
   return (
     <Card className={cn(
       "w-full shadow-lg border border-slate-300 bg-white",
@@ -117,11 +123,23 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
                 </Button>
               </div>
             )}
+
+            {/* Copy Table Button */}
+            {showCopyButton && (
+              <CopyTableButton 
+                tableRef={tableRef || internalTableRef}
+                tableName={title}
+                size="sm"
+                className="text-white hover:bg-white/20"
+              />
+            )}
+
+            {headerControls}
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="p-0">
+      <CardContent className="p-0" ref={internalTableRef}>
         {children}
       </CardContent>
     </Card>

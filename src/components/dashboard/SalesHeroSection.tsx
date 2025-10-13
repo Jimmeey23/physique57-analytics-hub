@@ -24,6 +24,7 @@ export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, histor
     const root = document.documentElement;
     const prev = root.style.getPropertyValue('--hero-accent');
     root.style.setProperty('--hero-accent', heroColor);
+    console.log('Sales: Setting --hero-accent to:', heroColor);
     return () => {
       // Restore previous value on unmount to avoid leaking across pages
       if (prev) {

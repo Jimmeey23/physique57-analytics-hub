@@ -69,6 +69,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   const [drillDownType, setDrillDownType] = useState<'metric' | 'product' | 'category' | 'member' | 'soldBy' | 'paymentMethod'>('metric');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeYoyMetric, setActiveYoyMetric] = useState<YearOnYearMetricType>('revenue');
+
+  // Debug CSS variables
+  React.useEffect(() => {
+    const root = document.documentElement;
+    const heroAccent = root.style.getPropertyValue('--hero-accent') || getComputedStyle(root).getPropertyValue('--hero-accent');
+    console.log('Sales Section: Current --hero-accent:', heroAccent);
+    console.log('Sales Section: Active location:', activeLocation);
+  }, [activeLocation]);
   const [isReady, setIsReady] = useState(false);
   const markReady = React.useCallback(() => setIsReady(true), []);
   const { addSection, removeSection } = useSectionNavigation();
@@ -684,6 +692,26 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     });
   };
 
+  // Calculate tab counts for location tabs using filtered data
+  const tabCounts = useMemo(() => {
+    const counts = { all: 0, kwality: 0, supreme: 0, kenkere: 0 };
+    
+    // Use filtered data instead of raw data to reflect current filters
+    filteredData.forEach(item => {
+      counts.all++;
+      const loc = (item.calculatedLocation || '').toString().toLowerCase();
+      if (loc.includes('kwality')) {
+        counts.kwality++;
+      } else if (loc.includes('supreme')) {
+        counts.supreme++;
+      } else if (loc.includes('kenkere') || loc.includes('bengaluru')) {
+        counts.kenkere++;
+      }
+    });
+    
+    return counts;
+  }, [filteredData]);
+
   return (
     <div className="space-y-8">
       {/* Hero Section with Dynamic Metrics */}
@@ -702,55 +730,56 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       {/* Vertical timeline navigation (scrollspy) */}
       <SectionTimelineNav position="right" title="Sales sections" />
 
-      {/* Filter and Location Tabs */}
+      {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
       <div className="container mx-auto px-6 space-y-6">
-        <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-          <div className="flex justify-center mb-8">
-            <TabsList className="location-tabs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-7xl overflow-visible">
+        <div className="flex justify-center mb-8" id="location-tabs">
+          <div className="w-full max-w-4xl">
+            <div className="grid grid-cols-4 location-tabs">
               {locations.map(location => {
                 const parts = location.name.split(',').map(s => s.trim());
                 const mainName = parts[0] || location.name;
                 const subName = parts[1] || '';
-                const Icon = location.id === 'all' ? MapPin : location.id === 'kwality' ? Building2 : location.id === 'supreme' ? Landmark : Building;
+                // Map location.id to the correct tabCounts key
+                const countKey = location.id === 'kenkere' ? 'kenkere' : location.id as keyof typeof tabCounts;
+                const count = tabCounts[countKey] || 0;
+                
                 return (
-                  <TabsTrigger 
+                  <button
                     key={location.id}
-                    value={location.id} 
-                    className="location-tab-trigger group data-[state=active]:[--tab-accent:var(--hero-accent)]"
+                    onClick={() => setActiveLocation(location.id)}
+                    className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                    data-state={activeLocation === location.id ? 'active' : 'inactive'}
+                    style={activeLocation === location.id ? { '--tab-accent': 'var(--hero-accent, #3b82f6)' } as React.CSSProperties : undefined}
                   >
                     <span className="relative z-10 flex flex-col items-center leading-tight">
-                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">
-                        <Icon className="w-4 h-4 opacity-80" />
-                        {mainName}
-                      </span>
-                      {subName && (
-                        <span className="text-xs sm:text-sm opacity-90">{subName}</span>
-                      )}
+                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{mainName}</span>
+                      <span className="text-xs sm:text-sm opacity-90">{subName} ({count})</span>
                     </span>
-                  </TabsTrigger>
+                  </button>
                 );
               })}
-            </TabsList>
+            </div>
           </div>
+        </div>
 
-          {locations.map(location => (
-            <TabsContent key={location.id} value={location.id} className="space-y-8">
-              <SectionAnchor id="sales-filters" label="Filters" className="w-full space-y-4">
-                <AutoCloseFilterSection
-                  filters={filters} 
-                  onFiltersChange={setFilters} 
-                  onReset={resetFilters} 
-                />
-              </SectionAnchor>
+        {/* Content Sections */}
+        <div className="space-y-8">
+          <SectionAnchor id="sales-filters" label="Filters" className="w-full space-y-4">
+            <AutoCloseFilterSection
+              filters={filters} 
+              onFiltersChange={setFilters} 
+              onReset={resetFilters} 
+            />
+          </SectionAnchor>
 
-              <SectionAnchor id="sales-metrics" label="Metrics">
-                <SalesAnimatedMetricCards 
-                  data={filteredData} 
-                  historicalData={metricsHistoricData}
-                  dateRange={filters.dateRange}
-                  onMetricClick={handleMetricClick}
-                />
-              </SectionAnchor>
+          <SectionAnchor id="sales-metrics" label="Metrics">
+            <SalesAnimatedMetricCards 
+              data={filteredData} 
+              historicalData={metricsHistoricData}
+              dateRange={filters.dateRange}
+              onMetricClick={handleMetricClick}
+            />
+          </SectionAnchor>
 
               <SectionAnchor id="sales-charts" label="Charts">
                 <SalesInteractiveCharts data={allHistoricData} />
@@ -913,9 +942,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                   </SectionAnchor>
                 </TabsContent>
               </Tabs>
-            </TabsContent>
-          ))}
-        </Tabs>
+        </div>
       </div>
 
       {/* Modal */}

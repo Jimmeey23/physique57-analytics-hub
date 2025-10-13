@@ -174,6 +174,27 @@ export default function FunnelLeads() {
       retentionStatuses: [...new Set(allLeadsData.map(lead => lead.retentionStatus).filter(Boolean))]
     };
   }, [allLeadsData]);
+
+  // Calculate tab counts for location tabs using filtered data
+  const tabCounts = useMemo(() => {
+    const counts = { all: 0, kwality: 0, supreme: 0, kenkere: 0 };
+    
+    const dataToCount = filteredData || allLeadsData || [];
+    dataToCount.forEach(lead => {
+      counts.all++;
+      const leadCenter = lead.center?.toLowerCase() || '';
+      if (leadCenter.includes('kwality') || leadCenter.includes('kemps')) {
+        counts.kwality++;
+      } else if (leadCenter.includes('supreme') || leadCenter.includes('bandra')) {
+        counts.supreme++;
+      } else if (leadCenter.includes('kenkere')) {
+        counts.kenkere++;
+      }
+    });
+    
+    return counts;
+  }, [filteredData, allLeadsData]);
+
   const handleFiltersChange = (newFilters: LeadsFilterOptions) => {
     setFilters(newFilters);
   };
@@ -213,29 +234,33 @@ export default function FunnelLeads() {
       />
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Location Tabs */}
-        <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 overflow-hidden">
-          <CardContent className="p-2">
-            <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-              <TabsList className="location-tabs grid w-full grid-cols-4 gap-2 overflow-visible">
-                {locations.map(location => (
-                  <TabsTrigger
+        {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
+        <div className="flex justify-center mb-8" id="location-tabs">
+          <div className="w-full max-w-4xl">
+            <div className="grid grid-cols-4 location-tabs">
+              {locations.map(location => {
+                const count = tabCounts[location.id as keyof typeof tabCounts] || 0;
+                
+                return (
+                  <button
                     key={location.id}
-                    value={location.id}
-                    className="location-tab-trigger group data-[state=active]:[--tab-accent:var(--hero-accent)]"
+                    onClick={() => setActiveLocation(location.id)}
+                    className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                    data-state={activeLocation === location.id ? 'active' : 'inactive'}
                   >
                     <span className="relative z-10 flex flex-col items-center leading-tight">
-                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">
-                        {location.name}
-                      </span>
-                      <span className="text-xs sm:text-sm opacity-90">{location.fullName}</span>
+                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{location.name}</span>
+                      <span className="text-xs sm:text-sm opacity-90">{location.fullName} ({count})</span>
                     </span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
-              {/* Tab Content */}
-              {locations.map(location => <TabsContent key={location.id} value={location.id} className="space-y-8 mt-8">
+        {/* Content Sections */}
+        <div className="space-y-8">
                   {/* Collapsible Filters Section */}
                   <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
                     <CardContent className="p-6 w-full">
@@ -260,41 +285,37 @@ export default function FunnelLeads() {
                   <EnhancedFunnelRankings data={filteredData} />
 
                   {/* Tables Sub-Tabs */}
-                  <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
-                    <CardContent className="p-4 w-full">
-                      <Tabs defaultValue="analytics" className="w-full">
-                        <TabsList className="flex flex-wrap gap-2 bg-slate-100 p-2 rounded-xl">
-                          <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Analytics</TabsTrigger>
-                          <TabsTrigger value="mom" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Month-on-Month</TabsTrigger>
-                          <TabsTrigger value="yoy" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Year-on-Year</TabsTrigger>
-                          <TabsTrigger value="health" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Health Metrics</TabsTrigger>
-                        </TabsList>
+          <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
+            <CardContent className="p-4 w-full">
+              <Tabs defaultValue="analytics" className="w-full">
+                <TabsList className="flex flex-wrap gap-2 bg-slate-100 p-2 rounded-xl">
+                  <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Analytics</TabsTrigger>
+                  <TabsTrigger value="mom" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Month-on-Month</TabsTrigger>
+                  <TabsTrigger value="yoy" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Year-on-Year</TabsTrigger>
+                  <TabsTrigger value="health" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Health Metrics</TabsTrigger>
+                </TabsList>
 
-                        <TabsContent value="analytics" className="mt-4">
-                          <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
-                        </TabsContent>
+                <TabsContent value="analytics" className="mt-4">
+                  <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
+                </TabsContent>
 
-                        <TabsContent value="mom" className="mt-4">
-                          {/* Uses ALL location data, independent from page date filters */}
-                          <FunnelMonthOnMonthTable data={locationFilteredData} />
-                        </TabsContent>
+                <TabsContent value="mom" className="mt-4">
+                  {/* Uses ALL location data, independent from page date filters */}
+                  <FunnelMonthOnMonthTable data={locationFilteredData} />
+                </TabsContent>
 
-                        <TabsContent value="yoy" className="mt-4">
-                          {/* Uses ALL location data, independent from page date filters */}
-                          <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
-                        </TabsContent>
+                <TabsContent value="yoy" className="mt-4">
+                  {/* Uses ALL location data, independent from page date filters */}
+                  <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
+                </TabsContent>
 
-                        <TabsContent value="health" className="mt-4">
-                          <FunnelHealthMetricsTable data={filteredData} />
-                        </TabsContent>
-                      </Tabs>
-                    </CardContent>
-                  </Card>
-
-                </TabsContent>)}
-            </Tabs>
-          </CardContent>
-        </Card>
+                <TabsContent value="health" className="mt-4">
+                  <FunnelHealthMetricsTable data={filteredData} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Drill Down Modal */}

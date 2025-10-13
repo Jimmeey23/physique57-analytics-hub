@@ -60,6 +60,13 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
     return <MapPin className="w-4 h-4" />;
   };
 
+  const getLocationShortName = (location: string) => {
+    if (location.toLowerCase().includes('kwality')) return 'Kwality House';
+    if (location.toLowerCase().includes('supreme')) return 'Supreme HQ';
+    if (location.toLowerCase().includes('kenkere')) return 'Kenkere House';
+    return location.split(',')[0] || location; // Take first part before comma
+  };
+
   return (
     <div className="space-y-6">
       {/* Location Tabs */}
@@ -77,81 +84,44 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
           </div>
         </div>
 
-        <Tabs value={selectedLocation} onValueChange={onLocationChange} className="w-full">
-          <TabsList className="grid w-full bg-slate-100/70 p-3 rounded-xl shadow-inner border border-slate-200/70" style={{
-            gridTemplateColumns: `repeat(${Math.min(locationStats.length + 1, 6)}, 1fr)`
-          }}>
-            {/* All Locations Tab */}
-            <TabsTrigger 
-              value="all"
-              className={cn(
-                "flex items-center gap-2 px-5 py-3 text-base font-semibold rounded-lg transition-all",
-                "data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg",
-                "data-[state=inactive]:text-slate-700 data-[state=inactive]:hover:text-slate-900"
-              )}
-            >
-              <Globe className="w-5 h-5" />
-              <div className="flex flex-col items-start">
-                <span>All Locations</span>
-                <div className="flex items-center gap-2 text-xs opacity-75">
-                  <Badge variant="secondary" className="text-xs px-1 py-0">
-                    {totalSessions}
-                  </Badge>
-                  <Users className="w-3 h-3" />
-                  <span>{totalAttendance}</span>
-                </div>
-              </div>
-            </TabsTrigger>
-
-            {/* Individual Location Tabs */}
-            {locationStats.slice(0, 5).map((stat) => (
-              <TabsTrigger
-                key={stat.location}
-                value={stat.location}
-                className={cn(
-                  "flex items-center gap-2 px-5 py-3 text-base font-semibold rounded-lg transition-all",
-                  "data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg",
-                  "data-[state=inactive]:text-slate-700 data-[state=inactive]:hover:text-slate-900"
-                )}
+        {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
+        <div className="flex justify-center mb-8" id="location-tabs">
+          <div className="w-full max-w-4xl">
+            <div className="grid grid-cols-4 location-tabs">
+              {/* All Locations Tab */}
+              <button
+                onClick={() => onLocationChange('all')}
+                className={`location-tab-trigger group ${selectedLocation === 'all' ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                data-state={selectedLocation === 'all' ? 'active' : 'inactive'}
               >
-                {getLocationIcon(stat.location)}
-                <div className="flex flex-col items-start">
-                  <span className="truncate max-w-[140px]">{stat.location}</span>
-                  <div className="flex items-center gap-2 text-xs opacity-75">
-                    <Badge variant="secondary" className="text-xs px-1 py-0">
-                      {stat.count}
-                    </Badge>
-                    <Users className="w-3 h-3" />
-                    <span>{stat.attendance}</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-            ))}
+                <span className="relative z-10 flex flex-col items-center leading-tight">
+                  <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">All Locations</span>
+                  <span className="text-xs sm:text-sm opacity-90">({totalSessions} sessions)</span>
+                </span>
+              </button>
 
-            {/* Show More Locations if needed */}
-            {locationStats.length > 5 && (
-              <TabsTrigger 
-                value="more"
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md"
-                disabled
-              >
-                <span>+{locationStats.length - 5} more</span>
-              </TabsTrigger>
-            )}
-          </TabsList>
+              {/* Individual Location Tabs - Top 3 */}
+              {locationStats.slice(0, 3).map((stat) => (
+                <button
+                  key={stat.location}
+                  onClick={() => onLocationChange(stat.location)}
+                  className={`location-tab-trigger group ${selectedLocation === stat.location ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                  data-state={selectedLocation === stat.location ? 'active' : 'inactive'}
+                >
+                  <span className="relative z-10 flex flex-col items-center leading-tight">
+                    <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{getLocationShortName(stat.location)}</span>
+                    <span className="text-xs sm:text-sm opacity-90">({stat.count} sessions)</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
-          {/* Tab Content - All Locations */}
-          <TabsContent value="all" className="mt-6">
-            {children(filteredData)}
-          </TabsContent>
-
-          {/* Tab Content - Individual Locations */}
-          {locationStats.map((stat) => (
-            <TabsContent key={stat.location} value={stat.location} className="mt-6">
-              {children(filteredData)}
-            </TabsContent>
-          ))}
-        </Tabs>
+        {/* Content Section */}
+        <div className="mt-6">
+          {children(filteredData)}
+        </div>
       </div>
 
       {/* Additional Location Stats Summary */}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage, formatDate } from '@/utils/formatters';
 import { RecurringSessionData } from '@/hooks/useRecurringSessionsData';
+import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface ComprehensiveSessionsDataTableProps {
   data: RecurringSessionData[];
@@ -32,6 +33,7 @@ export const ComprehensiveSessionsDataTable: React.FC<ComprehensiveSessionsDataT
   onItemClick
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const tableRef = useRef<HTMLDivElement>(null);
   const [sortField, setSortField] = useState('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -293,6 +295,12 @@ export const ComprehensiveSessionsDataTable: React.FC<ComprehensiveSessionsDataT
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
+            <CopyTableButton 
+              tableRef={tableRef}
+              tableName="Comprehensive Sessions Analysis"
+              size="sm"
+              className="text-white hover:bg-white/20"
+            />
             <Button variant="outline" size="sm" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
               <Download className="w-4 h-4 mr-1" />
               Export
@@ -354,7 +362,7 @@ export const ComprehensiveSessionsDataTable: React.FC<ComprehensiveSessionsDataT
         </div>
       </div>
 
-      <CardContent className="p-0">
+      <CardContent className="p-0" ref={tableRef}>
         <ModernDataTable
           data={filteredAndSortedData}
           columns={columns}

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
@@ -14,6 +14,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface ExecutiveDataTablesGridProps {
   data: {
@@ -26,6 +27,10 @@ interface ExecutiveDataTablesGridProps {
 }
 
 export const ExecutiveDataTablesGrid: React.FC<ExecutiveDataTablesGridProps> = ({ data }) => {
+  const salesTableRef = useRef<HTMLDivElement>(null);
+  const sessionsTableRef = useRef<HTMLDivElement>(null);
+  const newClientsTableRef = useRef<HTMLDivElement>(null);
+  const leadsTableRef = useRef<HTMLDivElement>(null);
   // Sales Performance Table
   const salesColumns = [
     { key: 'customerName', header: 'Customer', align: 'left' as const },
@@ -175,13 +180,21 @@ export const ExecutiveDataTablesGrid: React.FC<ExecutiveDataTablesGridProps> = (
       {/* Sales Performance */}
       <Card className="shadow-xl border-0">
         <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            Top Sales Transactions
-            <Badge className="bg-white/20 text-white">{data.sales.length} total</Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Top Sales Transactions
+              <Badge className="bg-white/20 text-white">{data.sales.length} total</Badge>
+            </CardTitle>
+            <CopyTableButton 
+              tableRef={salesTableRef}
+              tableName="Top Sales Transactions"
+              size="sm"
+              className="text-white hover:bg-white/20"
+            />
+          </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0" ref={salesTableRef}>
           <ModernDataTable
             data={data.sales.slice(0, 8)}
             columns={salesColumns}
@@ -194,13 +207,21 @@ export const ExecutiveDataTablesGrid: React.FC<ExecutiveDataTablesGridProps> = (
       {/* Sessions Performance */}
       <Card className="shadow-xl border-0">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            Recent Sessions
-            <Badge className="bg-white/20 text-white">{data.sessions.length} total</Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Recent Sessions
+              <Badge className="bg-white/20 text-white">{data.sessions.length} total</Badge>
+            </CardTitle>
+            <CopyTableButton 
+              tableRef={sessionsTableRef}
+              tableName="Recent Sessions"
+              size="sm"
+              className="text-white hover:bg-white/20"
+            />
+          </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0" ref={sessionsTableRef}>
           <ModernDataTable
             data={data.sessions.slice(0, 8)}
             columns={sessionsColumns}
