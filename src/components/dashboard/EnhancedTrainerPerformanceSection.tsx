@@ -79,8 +79,19 @@ export const EnhancedTrainerPerformanceSection = () => {
   }, [baseProcessed, filters.location, filters.trainer, selectedLocation]);
 
   const handleRowClick = (trainer: string, data: any) => {
+    // Get individual session data for this trainer
+    const trainerSessions = payrollData?.filter(session => 
+      session.teacherName === trainer && 
+      (!filters.location || session.location === filters.location) &&
+      (!filters.month || session.monthYear === filters.month)
+    ) || [];
+    
     setSelectedTrainer(trainer);
-    setDrillDownData(data);
+    setDrillDownData({
+      ...data,
+      individualSessions: trainerSessions,
+      trainerName: trainer
+    });
   };
 
   const closeDrillDown = () => {
@@ -194,33 +205,34 @@ export const EnhancedTrainerPerformanceSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Location Tabs and Filter Section */}
-      <div className="space-y-4">
-        <Card className="bg-white shadow-xl border-0">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Location Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {['All Locations', ...Array.from(new Set(processedData.map(d => d.location)))].map((location) => (
-                <button
-                  key={location}
-                  onClick={() => setSelectedLocation(location)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    selectedLocation === location
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {location}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Enhanced Location Tabs - matching Client Retention styling */}
+      <div className="flex justify-center mb-8" id="location-tabs">
+        <div className="w-full max-w-4xl">
+          <div className="grid grid-cols-4 location-tabs">
+            {[
+              { id: 'All Locations', name: 'All Locations', sub: `(${processedData.length} trainers)` },
+              { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${processedData.filter(d => d.location === 'Kwality House, Kemps Corner').length})` },
+              { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${processedData.filter(d => d.location === 'Supreme HQ, Bandra').length})` },
+              { id: 'Kenkere House', name: 'Kenkere House', sub: `Bengaluru (${processedData.filter(d => d.location === 'Kenkere House').length})` },
+            ].map(loc => (
+              <button
+                key={loc.id}
+                onClick={() => setSelectedLocation(loc.id)}
+                className={`location-tab-trigger group ${selectedLocation === loc.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                data-state={selectedLocation === loc.id ? 'active' : 'inactive'}
+              >
+                <span className="relative z-10 flex flex-col items-center leading-tight">
+                  <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{loc.name}</span>
+                  <span className="text-xs sm:text-sm opacity-90">{loc.sub}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Section */}
+      <div className="glass-card modern-card-hover p-6 rounded-2xl mb-6" id="filters">
 
         <TrainerFilterSection
           data={payrollData || []}
@@ -230,8 +242,17 @@ export const EnhancedTrainerPerformanceSection = () => {
         />
       </div>
 
-      {/* Enhanced Metric Cards */}
-      <EnhancedTrainerMetricCards data={processedData} />
+      {/* Enhanced Metric Cards - matching Sales styling */}
+      <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+        <EnhancedTrainerMetricCards 
+          data={processedData} 
+          onCardClick={(title, data) => {
+            // Open drill-down modal with trainer data
+            setSelectedTrainer(title);
+            setDrillDownData(data);
+          }}
+        />
+      </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

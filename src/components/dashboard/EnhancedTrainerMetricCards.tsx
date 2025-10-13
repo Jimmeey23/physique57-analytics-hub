@@ -19,9 +19,10 @@ import { cn } from '@/lib/utils';
 
 interface EnhancedTrainerMetricCardsProps {
   data: ProcessedTrainerData[];
+  onCardClick?: (title: string, data: any) => void;
 }
 
-export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProps> = ({ data }) => {
+export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProps> = ({ data, onCardClick }) => {
   const summaryStats = React.useMemo(() => {
     if (!data.length) return null;
 
@@ -155,96 +156,108 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {metricCards.map((card, index) => {
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {metricCards.slice(0, 8).map((card, index) => {
         const Icon = card.icon;
         return (
-          <Card 
+          <div
             key={card.title}
+            onClick={() => onCardClick?.(card.title, { metric: card.title, data: summaryStats })}
             className={cn(
-              "group relative overflow-hidden bg-gradient-to-br border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] cursor-pointer",
-              card.bgGradient,
-              card.borderColor
+              "group relative rounded-2xl p-6 transition-all duration-500 ease-out",
+              "bg-gradient-to-br from-white via-white to-slate-50/50",
+              "border border-slate-200/60 hover:border-slate-300",
+              "shadow-lg hover:shadow-2xl",
+              "hover:scale-[1.03] hover:-translate-y-1",
+              "cursor-pointer overflow-hidden",
+              "animate-fade-in"
             )}
             style={{
-              animationDelay: `${index * 100}ms`,
-              animation: 'fade-in-up 0.6s ease-out forwards'
+              animationDelay: `${index * 80}ms`,
+              animationFillMode: 'both'
             }}
           >
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent"></div>
-              <div className="absolute -top-10 -right-10 w-20 h-20 bg-white/20 rounded-full"></div>
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full"></div>
-            </div>
+            {/* Top gradient accent */}
+            <div className={cn(
+              "absolute inset-x-0 top-0 h-1 transition-all duration-500",
+              "bg-gradient-to-r",
+              index % 4 === 0 && "from-blue-500 via-blue-600 to-blue-500",
+              index % 4 === 1 && "from-emerald-500 via-emerald-600 to-emerald-500",
+              index % 4 === 2 && "from-purple-500 via-purple-600 to-purple-500",
+              index % 4 === 3 && "from-amber-500 via-amber-600 to-amber-500",
+              "group-hover:h-1.5"
+            )} />
+            
+            {/* Background glow on hover */}
+            <div className={cn(
+              "absolute -inset-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10",
+              "bg-gradient-to-br",
+              index % 4 === 0 && "from-blue-500/20 to-cyan-500/20",
+              index % 4 === 1 && "from-emerald-500/20 to-teal-500/20",
+              index % 4 === 2 && "from-purple-500/20 to-pink-500/20",
+              index % 4 === 3 && "from-amber-500/20 to-orange-500/20"
+            )} />
 
-            <CardHeader className="relative pb-2">
-              <div className="flex items-center justify-between">
+            <div className="space-y-4">
+              {/* Header with icon and change badge */}
+              <div className="flex items-start justify-between">
                 <div className={cn(
-                  "p-3 rounded-xl bg-gradient-to-br shadow-lg transform group-hover:scale-110 transition-transform duration-300",
-                  card.gradient
+                  "p-3 rounded-xl transition-all duration-500",
+                  "bg-gradient-to-br group-hover:scale-110 group-hover:rotate-3",
+                  index % 4 === 0 && "from-blue-100 to-blue-200 text-blue-600",
+                  index % 4 === 1 && "from-emerald-100 to-emerald-200 text-emerald-600",
+                  index % 4 === 2 && "from-purple-100 to-purple-200 text-purple-600",
+                  index % 4 === 3 && "from-amber-100 to-amber-200 text-amber-600"
                 )}>
-                  <Icon className="w-6 h-6 text-white" />
+                  <Icon className="w-6 h-6" />
                 </div>
-                <Badge 
-                  className={cn(
-                    "flex items-center gap-1 bg-white/80 backdrop-blur-sm border-0 shadow-sm",
-                    card.changeType === 'positive' ? 'text-green-700' : 'text-red-700'
-                  )}
-                >
-                  {card.changeType === 'positive' ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  {card.change}
-                </Badge>
-              </div>
-              <CardTitle className="text-sm font-medium text-gray-600 mt-4">
-                {card.title}
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className="relative">
-              <div className="space-y-4">
-                <div>
-                  <div className="text-3xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors">
-                    {card.value}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">{card.subtitle}</p>
-                </div>
-
-                {/* Additional Details */}
-                <div className="space-y-2 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-                  {card.details.map((detail, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">{detail.label}:</span>
-                      <span className="font-semibold text-gray-700">{detail.value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Progress Bar */}
-                <div className="relative">
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                    <div 
-                      className={cn(
-                        "h-full bg-gradient-to-r rounded-full transition-all duration-1000 ease-out",
-                        card.gradient
-                      )}
-                      style={{
-                        width: `${Math.min(90, Math.random() * 40 + 50)}%`,
-                        animationDelay: `${index * 200 + 500}ms`
-                      }}
-                    />
-                  </div>
+                
+                <div className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
+                  "backdrop-blur-sm transition-all duration-500 group-hover:scale-110",
+                  card.changeType === 'positive' 
+                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200" 
+                    : "bg-red-100 text-red-700 border border-red-200"
+                )}>
+                  {card.changeType === 'positive' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  <span>{card.change}</span>
                 </div>
               </div>
-            </CardContent>
 
-            {/* Hover Effect Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-          </Card>
+              {/* Metric title */}
+              <div>
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  {card.title}
+                </p>
+                <p className={cn(
+                  "text-3xl font-black transition-all duration-500",
+                  "bg-gradient-to-br bg-clip-text text-transparent",
+                  "group-hover:scale-105 transform-gpu",
+                  index % 4 === 0 && "from-blue-600 to-blue-800",
+                  index % 4 === 1 && "from-emerald-600 to-emerald-800",
+                  index % 4 === 2 && "from-purple-600 to-purple-800",
+                  index % 4 === 3 && "from-amber-600 to-amber-800"
+                )}>
+                  {card.value}
+                </p>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                {card.subtitle}
+              </p>
+
+              {/* Details */}
+              <div className="space-y-1 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
+                {card.details.map((detail, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">{detail.label}</span>
+                    <span className="font-semibold text-slate-700">{detail.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         );
       })}
     </div>

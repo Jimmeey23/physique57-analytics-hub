@@ -3,7 +3,7 @@ import { UniversalLoader } from '@/components/ui/UniversalLoader';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 export const GlobalLoader: React.FC = () => {
-  const { isLoading, loadingMessage, progress } = useGlobalLoading();
+  const { isLoading, loadingMessage, progress, steps, currentStepId } = useGlobalLoading();
   const [visible, setVisible] = useState(false);
 
   // Smooth enter/exit visibility with a tiny delay on exit to show 100%
@@ -33,6 +33,7 @@ export const GlobalLoader: React.FC = () => {
   };
 
   const variant = getVariantFromMessage(loadingMessage);
+  const currentStep = currentStepId ? steps.find(s => s.id === currentStepId)?.name : undefined;
 
   return (
     <div className="fixed inset-0 z-50 bg-white">
@@ -40,6 +41,8 @@ export const GlobalLoader: React.FC = () => {
         variant={variant}
         subtitle={loadingMessage}
         progress={progress}
+        showSteps={steps.length > 0}
+        currentStep={currentStep}
       />
     </div>
   );

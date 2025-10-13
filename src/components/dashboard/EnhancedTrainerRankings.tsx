@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal, Award, Crown, Star, TrendingUp, Users, Target, Activity, DollarSign, Zap } from 'lucide-react';
+import { Trophy, Medal, Award, Crown, Star, TrendingUp, Users, Target, Activity, DollarSign, Zap, SortAsc, SortDesc, ArrowUpDown } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { cn } from '@/lib/utils';

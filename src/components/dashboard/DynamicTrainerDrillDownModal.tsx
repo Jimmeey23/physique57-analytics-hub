@@ -41,6 +41,7 @@ import {
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { SourceDataModal } from '@/components/ui/SourceDataModal';
+import { IndividualSessionsTable } from './IndividualSessionsTable';
 import { motion } from 'framer-motion';
 
 interface DynamicTrainerDrillDownModalProps {
@@ -266,10 +267,11 @@ export const DynamicTrainerDrillDownModal: React.FC<DynamicTrainerDrillDownModal
           </DialogHeader>
 
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-slate-100">
+            <TabsList className="grid w-full grid-cols-5 bg-slate-100">
               <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Overview</TabsTrigger>
               <TabsTrigger value="performance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Performance</TabsTrigger>
               <TabsTrigger value="trends" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Trends</TabsTrigger>
+              <TabsTrigger value="sessions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Individual Sessions</TabsTrigger>
               <TabsTrigger value="insights" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Insights</TabsTrigger>
             </TabsList>
 
@@ -489,6 +491,19 @@ export const DynamicTrainerDrillDownModal: React.FC<DynamicTrainerDrillDownModal
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="sessions" className="space-y-6 mt-6">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <IndividualSessionsTable
+                  sessions={trainerData?.individualSessions || []}
+                  trainerName={trainerName}
+                />
+              </motion.div>
             </TabsContent>
 
             <TabsContent value="insights" className="space-y-6 mt-6">
