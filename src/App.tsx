@@ -16,33 +16,71 @@ import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
 import InitialLoadGate, { useInitialLoad } from "@/components/perf/InitialLoadGate";
 import ForceTopOnLoad from "@/components/perf/ForceTopOnLoad";
 
-// Lazy load pages for better performance
-const Index = React.lazy(() => import("./pages/Index"));
-const ExecutiveSummary = React.lazy(() => import("./pages/ExecutiveSummary"));
-const SalesAnalytics = React.lazy(() => import("./pages/SalesAnalytics"));
-const FunnelLeads = React.lazy(() => import("./pages/FunnelLeads"));
-const ClientRetention = React.lazy(() => import("./pages/ClientRetention"));
-const TrainerPerformance = React.lazy(() => import("./pages/TrainerPerformance"));
-const ClassAttendance = React.lazy(() => import("./pages/ClassAttendance"));
-const ClassFormatsComparison = React.lazy(() => import("./pages/ClassFormatsComparison"));
-const DiscountsPromotions = React.lazy(() => import("./pages/DiscountsPromotions"));
-const Sessions = React.lazy(() => import("./pages/Sessions"));
-const PowerCycleVsBarre = React.lazy(() => import("./pages/PowerCycleVsBarre"));
-const ExpirationAnalytics = React.lazy(() => import("./pages/ExpirationAnalytics"));
-const LateCancellations = React.lazy(() => import("./pages/LateCancellations"));
-const HeroDemo = React.lazy(() => import("./pages/HeroDemo"));
-const GeminiAIDemoPage = React.lazy(() => import("./pages/GeminiAIDemo"));
-const GeminiEnhancementTest = React.lazy(() => import("./components/test/GeminiEnhancementTest"));
-const NotFound = React.lazy(() => import("./pages/NotFound"));
+// Optimized lazy loading with preloading for critical pages
+const Index = React.lazy(() => 
+  import("./pages/Index").then(module => ({ default: module.default }))
+);
+const ExecutiveSummary = React.lazy(() => 
+  import("./pages/ExecutiveSummary").then(module => ({ default: module.default }))
+);
+const SalesAnalytics = React.lazy(() => 
+  import("./pages/SalesAnalytics").then(module => ({ default: module.default }))
+);
+const FunnelLeads = React.lazy(() => 
+  import("./pages/FunnelLeads").then(module => ({ default: module.default }))
+);
+const ClientRetention = React.lazy(() => 
+  import("./pages/ClientRetention").then(module => ({ default: module.default }))
+);
+const TrainerPerformance = React.lazy(() => 
+  import("./pages/TrainerPerformance").then(module => ({ default: module.default }))
+);
+const ClassAttendance = React.lazy(() => 
+  import("./pages/ClassAttendance").then(module => ({ default: module.default }))
+);
+const ClassFormatsComparison = React.lazy(() => 
+  import("./pages/ClassFormatsComparison").then(module => ({ default: module.default }))
+);
+const DiscountsPromotions = React.lazy(() => 
+  import("./pages/DiscountsPromotions").then(module => ({ default: module.default }))
+);
+const Sessions = React.lazy(() => 
+  import("./pages/Sessions").then(module => ({ default: module.default }))
+);
+const ExpirationAnalytics = React.lazy(() => 
+  import("./pages/ExpirationAnalytics").then(module => ({ default: module.default }))
+);
+const LateCancellations = React.lazy(() => 
+  import("./pages/LateCancellations").then(module => ({ default: module.default }))
+);
+const HeroDemo = React.lazy(() => 
+  import("./pages/HeroDemo").then(module => ({ default: module.default }))
+);
+const GeminiAIDemoPage = React.lazy(() => 
+  import("./pages/GeminiAIDemo").then(module => ({ default: module.default }))
+);
+const GeminiEnhancementTest = React.lazy(() => 
+  import("./components/test/GeminiEnhancementTest").then(module => ({ default: module.default }))
+);
+const NotFound = React.lazy(() => 
+  import("./pages/NotFound").then(module => ({ default: module.default }))
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 30 * 60 * 1000,   // 30 minutes
+      staleTime: 10 * 60 * 1000, // 10 minutes (increased for better caching)
+      gcTime: 60 * 60 * 1000,    // 60 minutes (increased cache retention)
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
       retry: 1,
+      networkMode: 'online',
+      refetchInterval: false,
+      refetchIntervalInBackground: false,
+    },
+    mutations: {
+      retry: 1,
+      networkMode: 'online',
     },
   },
 });
@@ -75,9 +113,9 @@ const App = () => {
               <Route path="/trainer-performance" element={<TrainerPerformance />} />
               <Route path="/class-attendance" element={<ClassAttendance />} />
               <Route path="/class-formats" element={<ClassFormatsComparison />} />
+              <Route path="/powercycle-vs-barre" element={<ClassFormatsComparison />} />
               <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
               <Route path="/sessions" element={<Sessions />} />
-              <Route path="/powercycle-vs-barre" element={<PowerCycleVsBarre />} />
               <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
               <Route path="/late-cancellations" element={<LateCancellations />} />
               <Route path="/hero-demo" element={<HeroDemo />} />

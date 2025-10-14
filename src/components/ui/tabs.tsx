@@ -13,9 +13,12 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-14 items-center justify-center rounded-2xl glass-card p-2 text-muted-foreground shadow-lg border backdrop-blur-md transition-all duration-500 hover:shadow-xl hover:scale-[1.02]",
+      "inline-flex h-16 items-center justify-center rounded-2xl bg-white/80 backdrop-blur-xl border border-white/30 p-2 text-muted-foreground shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]",
       className
     )}
+    style={{
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+    }}
     {...props}
   />
 ))
@@ -28,12 +31,12 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-300 ease-out relative overflow-hidden group",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-400 ease-out relative overflow-hidden group backdrop-blur-sm",
       "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50",
-      "text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:scale-105",
-      "data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25",
-      "before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/10 before:to-accent/10 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100",
+      "text-slate-600 hover:text-slate-800 hover:bg-white/60 hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg border border-transparent hover:border-white/50",
+      "data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-purple-500/30 data-[state=active]:border-white/20 data-[state=active]:scale-105 data-[state=active]:-translate-y-1",
+      "before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/20 before:via-white/40 before:to-white/20 before:opacity-0 before:transition-all before:duration-500 before:-skew-x-12 hover:before:opacity-100 data-[state=active]:before:opacity-30",
       className
     )}
     {...props}

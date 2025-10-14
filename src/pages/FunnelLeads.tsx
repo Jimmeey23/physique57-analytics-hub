@@ -20,6 +20,7 @@ import { FunnelAnalyticsTables } from '@/components/dashboard/FunnelAnalyticsTab
 import { FunnelDrillDownModal } from '@/components/dashboard/FunnelDrillDownModal';
 import { LeadsFilterOptions } from '@/types/leads';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { AiNotes } from '@/components/ui/AiNotes';
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -277,12 +278,39 @@ export default function FunnelLeads() {
 
                   {/* Metric Cards */}
                   <FunnelMetricCards data={filteredData} onCardClick={handleDrillDown} />
+                  
+                  {/* AI Notes for Metrics */}
+                  <AiNotes 
+                    tableKey="funnelLeads:metrics" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-metrics" 
+                    author="Funnel Analyst" 
+                  />
 
                   {/* Interactive Charts */}
                   <FunnelInteractiveCharts data={filteredData} />
+                  
+                  {/* AI Notes for Charts */}
+                  <AiNotes 
+                    tableKey="funnelLeads:charts" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-charts" 
+                    author="Funnel Analyst" 
+                  />
 
                   {/* Enhanced Rankings Section */}
                   <EnhancedFunnelRankings data={filteredData} />
+                  
+                  {/* AI Notes for Rankings */}
+                  <AiNotes 
+                    tableKey="funnelLeads:rankings" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-rankings" 
+                    author="Funnel Analyst" 
+                  />
 
                   {/* Tables Sub-Tabs */}
           <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
@@ -297,20 +325,56 @@ export default function FunnelLeads() {
 
                 <TabsContent value="analytics" className="mt-4">
                   <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
+                  
+                  {/* AI Notes for Analytics Tables */}
+                  <AiNotes 
+                    tableKey="funnelLeads:analytics" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-analytics" 
+                    author="Funnel Analyst" 
+                  />
                 </TabsContent>
 
                 <TabsContent value="mom" className="mt-4">
                   {/* Uses ALL location data, independent from page date filters */}
                   <FunnelMonthOnMonthTable data={locationFilteredData} />
+                  
+                  {/* AI Notes for Month-on-Month */}
+                  <AiNotes 
+                    tableKey="funnelLeads:monthOnMonth" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-mom" 
+                    author="Funnel Analyst" 
+                  />
                 </TabsContent>
 
                 <TabsContent value="yoy" className="mt-4">
                   {/* Uses ALL location data, independent from page date filters */}
                   <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
+                  
+                  {/* AI Notes for Year-on-Year */}
+                  <AiNotes 
+                    tableKey="funnelLeads:yearOnYear" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-yoy" 
+                    author="Funnel Analyst" 
+                  />
                 </TabsContent>
 
                 <TabsContent value="health" className="mt-4">
                   <FunnelHealthMetricsTable data={filteredData} />
+                  
+                  {/* AI Notes for Health Metrics */}
+                  <AiNotes 
+                    tableKey="funnelLeads:healthMetrics" 
+                    location={activeLocation} 
+                    period="current" 
+                    sectionId="funnel-health" 
+                    author="Funnel Analyst" 
+                  />
                 </TabsContent>
               </Tabs>
             </CardContent>

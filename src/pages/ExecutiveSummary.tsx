@@ -15,6 +15,7 @@ import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { useDynamicHeroMetrics } from '@/hooks/useDynamicHeroMetrics';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 // Inner component that has access to GlobalFilters context
 const ExecutiveSummaryContent = () => {
@@ -78,7 +79,19 @@ const ExecutiveSummaryContent = () => {
             </div>
           }
         />
-        <ExecutiveSummarySection />
+        
+        <div className="container mx-auto px-6 py-8">
+          <ExecutiveSummarySection />
+          
+          <div className="mt-8">
+            <AiNotes 
+              location="executive-summary"
+              sectionId="executive-overview" 
+              tableKey="executive-summary-main"
+              author="Executive Analyst"
+            />
+          </div>
+        </div>
 
         {/* Hidden export dialog wired for programmatic open */}
         <div className="hidden">

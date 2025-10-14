@@ -7,6 +7,7 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { formatNumber } from '@/utils/formatters';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const Sessions = () => {
   const { data, loading } = useSessionsData();
@@ -53,6 +54,15 @@ const Sessions = () => {
         />
         <main>
           <SessionsSection />
+          
+          <div className="container mx-auto px-6 pb-8">
+            <AiNotes 
+              location="sessions"
+              sectionId="sessions-overview" 
+              tableKey="sessions-main"
+              author="Sessions Analyst"
+            />
+          </div>
         </main>
         <Footer />
       </div>

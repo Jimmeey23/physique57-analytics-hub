@@ -5,6 +5,7 @@ import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const SalesAnalytics = () => {
   const { data, loading, error, refetch } = useGoogleSheets();
@@ -50,6 +51,15 @@ const SalesAnalytics = () => {
           ) : (
             <div className="bg-white text-slate-800 slide-in-from-left">
               <SalesAnalyticsSection data={data} onReady={handleReady} />
+              
+              <div className="container mx-auto px-6 pb-8">
+                <AiNotes 
+                  location="sales-analytics"
+                  sectionId="analytics" 
+                  tableKey="sales-analytics-main"
+                  author="Sales Analytics Specialist"
+                />
+              </div>
             </div>
           )}
         </div>

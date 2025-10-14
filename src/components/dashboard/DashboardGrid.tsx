@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,8 +17,8 @@ interface DashboardGridProps {
   onButtonClick: (sectionId: string) => void;
 }
 
-export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) => {
-  const dashboardSections = [
+export const DashboardGrid: React.FC<DashboardGridProps> = memo(({ onButtonClick }) => {
+  const dashboardSections = useMemo(() => [
     {
       id: 'executive-summary',
       title: 'Executive Summary',
@@ -76,17 +76,9 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) =
       hoverColor: 'hover:from-indigo-600 hover:to-indigo-700'
     },
     {
-      id: 'class-performance-series',
-      title: 'Class Performance Series',
-      description: 'Detailed class format performance analysis',
-      icon: Calendar,
-      color: 'from-cyan-500 to-cyan-600',
-      hoverColor: 'hover:from-cyan-600 hover:to-cyan-700'
-    },
-    {
       id: 'class-formats',
-      title: 'Class Formats Comparison',
-      description: 'PowerCycle vs Barre vs Strength head-to-head metrics',
+      title: 'Class Formats & Performance',
+      description: 'Comprehensive PowerCycle vs Barre vs Strength analysis and comparison metrics',
       icon: BarChart3,
       color: 'from-cyan-500 to-cyan-600',
       hoverColor: 'hover:from-cyan-600 hover:to-cyan-700'
@@ -100,14 +92,6 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) =
       hoverColor: 'hover:from-red-600 hover:to-red-700'
     },
     {
-      id: 'powercycle-vs-barre',
-      title: 'powerCycle Vs Barre Vs Strength',
-      description: 'Comparative analysis of PowerCycle, Barre, and Strength classes',
-      icon: Activity,
-      color: 'from-violet-500 to-violet-600',
-      hoverColor: 'hover:from-violet-600 hover:to-violet-700'
-    },
-    {
       id: 'expiration-analytics',
       title: 'Expirations & Churn',
       description: 'Membership expirations and customer retention analysis',
@@ -115,7 +99,11 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) =
       color: 'from-amber-500 to-amber-600',
       hoverColor: 'hover:from-amber-600 hover:to-amber-700'
     }
-  ];
+  ], []);
+
+  const handleCardClick = useCallback((sectionId: string) => {
+    onButtonClick(sectionId);
+  }, [onButtonClick]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-2">
@@ -124,22 +112,34 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) =
         return (
           <Card 
             key={section.id}
-            className="group cursor-pointer relative overflow-hidden bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 ease-out hover:-translate-y-3 hover:rotate-1 transform-gpu"
-            onClick={() => onButtonClick(section.id)}
+            className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-white/95 via-white/90 to-white/85 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-700 ease-out hover:-translate-y-4 hover:scale-105 transform-gpu"
+            onClick={() => handleCardClick(section.id)}
+            style={{
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+            }}
           >
-            {/* Animated Background Gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-10 transition-opacity duration-700`} />
+            {/* Modern Animated Background Gradient */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-15 transition-all duration-700 rounded-2xl`} />
             
-            {/* Subtle Border Animation */}
-            <div className={`absolute inset-0 rounded-lg bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500 -z-10`} />
+            {/* Enhanced Glow Effect */}
+            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-25 blur-2xl transition-all duration-700 -z-10 scale-110`} />
+            
+            {/* Shimmer Effect */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shimmer" />
+            </div>
             
             <CardHeader className="pb-4 relative z-10">
-              {/* Icon Container with Advanced Animation */}
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${section.color} ${section.hoverColor} flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 shadow-lg group-hover:shadow-2xl`}>
-                <IconComponent className="w-7 h-7 text-white transition-transform duration-300 group-hover:scale-110" />
+              {/* Enhanced Icon Container with Modern Animation */}
+              <div className={`relative w-16 h-16 rounded-3xl bg-gradient-to-br ${section.color} ${section.hoverColor} flex items-center justify-center mb-6 transition-all duration-700 group-hover:scale-125 group-hover:rotate-12 shadow-xl group-hover:shadow-2xl`}
+                style={{
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                }}>
+                <IconComponent className="w-8 h-8 text-white transition-transform duration-500 group-hover:scale-110 drop-shadow-sm" />
                 
-                {/* Animated Ring */}
-                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-30 animate-ping`} />
+                {/* Enhanced Animated Rings */}
+                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-40 animate-ping scale-110`} />
+                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-20 animate-pulse scale-125`} />
               </div>
               
               {/* Title with Gradient Text Animation */}
@@ -184,4 +184,4 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onButtonClick }) =
       })}
     </div>
   );
-};
+});

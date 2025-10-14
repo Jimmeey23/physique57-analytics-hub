@@ -11,6 +11,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { SimplePresenterMode } from '@/components/presentation/SimplePresenterMode';
 import { Button } from '@/components/ui/button';
 import { Presentation } from 'lucide-react';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const PowerCycleVsBarre = () => {
   const { data: payrollData, isLoading: loading } = usePayrollData();
@@ -38,7 +39,9 @@ const PowerCycleVsBarre = () => {
   }, [payrollData]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-purple-50/20">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-purple-50/40 to-pink-50/30 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-white/30 backdrop-blur-[0.5px]"></div>
+      <div className="relative z-10">
       <DashboardMotionHero 
         title="PowerCycle vs Barre vs Strength"
         subtitle="Comprehensive analysis of PowerCycle, Barre, and Strength Lab class performance"
@@ -76,6 +79,15 @@ const PowerCycleVsBarre = () => {
           <SessionsFiltersProvider>
             <PowerCycleVsBarreSection data={payrollData || []} />
           </SessionsFiltersProvider>
+          
+          <div className="mt-8">
+            <AiNotes 
+              location="powercycle-vs-barre"
+              sectionId="comparison-analytics" 
+              tableKey="powercycle-barre-strength-main"
+              author="Format Comparison Analyst"
+            />
+          </div>
         </main>
       </div>
       
@@ -86,6 +98,7 @@ const PowerCycleVsBarre = () => {
         isOpen={isPresenterMode}
         onClose={() => setIsPresenterMode(false)}
       />
+      </div>
     </div>
   );
 };

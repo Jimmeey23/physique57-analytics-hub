@@ -6,6 +6,7 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const ClassAttendanceContent = () => {
   const { data } = useSessionsData();
@@ -57,7 +58,9 @@ const ClassAttendanceContent = () => {
   }, [filteredData]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-purple-50/30 to-pink-50/20 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-white/40 backdrop-blur-[0.5px]"></div>
+      <div className="relative z-10">
       <DashboardMotionHero 
         title="Class Attendance Analytics"
         subtitle="Comprehensive class utilization and attendance trend analysis across all sessions"
@@ -67,9 +70,19 @@ const ClassAttendanceContent = () => {
 
       <div className="container mx-auto px-6 py-8">
         <UpdatedEnhancedClassAttendanceSection />
+        
+        <div className="mt-8">
+          <AiNotes 
+            location="class-attendance"
+            sectionId="analytics" 
+            tableKey="class-attendance-main"
+            author="Class Attendance Analyst"
+          />
+        </div>
       </div>
       
       <Footer />
+      </div>
     </div>
   );
 };

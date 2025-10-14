@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Home, Calendar } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const ExpirationAnalytics = () => {
   const { data, loading, error } = useExpirationsData();
@@ -63,6 +64,15 @@ const ExpirationAnalytics = () => {
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
           <ExpirationAnalyticsSection data={data || []} />
+          
+          <div className="mt-8">
+            <AiNotes 
+              location="expiration-analytics"
+              sectionId="analytics" 
+              tableKey="expiration-analytics-main"
+              author="Expiration Analytics Specialist"
+            />
+          </div>
         </main>
       </div>
       

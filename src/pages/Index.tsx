@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect } from 'react';
+import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
@@ -8,6 +8,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 // Memoized stats card component
 const StatsCard = memo(({
@@ -24,7 +25,7 @@ const StatsCard = memo(({
     </div>
     <div className="absolute top-2 right-2 w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60 animate-pulse"></div>
   </div>);
-const Index = () => {
+const Index = memo(() => {
   const navigate = useNavigate();
   const { setLoading } = useGlobalLoading();
   const {
@@ -34,9 +35,12 @@ const Index = () => {
     refetch
   } = useGoogleSheets();
 
+  const memoizedData = useMemo(() => data, [data]);
+
   useEffect(() => {
     setLoading(loading, 'Loading dashboard overview...');
   }, [loading, setLoading]);
+  
   const handleSectionClick = useCallback((sectionId: string) => {
     if (sectionId === 'class-performance-series') {
       window.open('https://class-performance-series-001.vercel.app/', '_blank');
@@ -46,6 +50,7 @@ const Index = () => {
       navigate(`/${sectionId}`);
     }
   }, [navigate]);
+  
   const handleRetry = useCallback(() => {
     refetch();
   }, [refetch]);
@@ -70,20 +75,23 @@ const Index = () => {
         </Card>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
-      {/* Enhanced Animated Background */}
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/20 to-pink-50/10 relative overflow-hidden">
+      {/* Modern Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-rose-50/20 via-purple-50/10 to-pink-50/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-100/30 via-purple-50/20 to-pink-100/20"></div>
         
-        {/* Primary Floating Elements */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-purple-200/20 to-pink-200/20 rounded-full floating-animation stagger-1"></div>
-        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-r from-blue-200/15 to-cyan-200/15 rounded-full floating-animation stagger-3"></div>
-        <div className="absolute bottom-20 left-1/3 w-64 h-64 bg-gradient-to-r from-emerald-200/20 to-teal-200/20 rounded-full floating-animation stagger-5"></div>
+        {/* Glassmorphism overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-white/20 backdrop-blur-[1px]"></div>
         
-        {/* Gentle Floating Orbs */}
-        <div className="absolute top-32 right-1/4 w-24 h-24 bg-gradient-to-r from-violet-300/30 to-purple-300/30 rounded-full float-gentle stagger-2"></div>
-        <div className="absolute bottom-40 right-16 w-32 h-32 bg-gradient-to-r from-cyan-300/25 to-blue-300/25 rounded-full float-gentle stagger-4"></div>
-        <div className="absolute top-3/4 left-20 w-20 h-20 bg-gradient-to-r from-rose-300/35 to-pink-300/35 rounded-full float-gentle stagger-6"></div>
+        {/* Modern Floating Elements with Glassmorphism */}
+        <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-br from-purple-400/10 to-pink-400/8 rounded-full floating-animation stagger-1 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
+        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-br from-blue-400/8 to-cyan-400/10 rounded-full floating-animation stagger-3 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
+        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-emerald-400/12 to-teal-400/8 rounded-full floating-animation stagger-5 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
+        
+        {/* Modern Floating Orbs with Enhanced Aesthetics */}
+        <div className="absolute top-32 right-1/4 w-28 h-28 bg-gradient-to-br from-violet-400/20 to-purple-500/15 rounded-full float-gentle stagger-2 backdrop-blur-md border border-white/20 shadow-lg"></div>
+        <div className="absolute bottom-40 right-16 w-36 h-36 bg-gradient-to-br from-cyan-400/18 to-blue-500/12 rounded-full float-gentle stagger-4 backdrop-blur-md border border-white/20 shadow-lg"></div>
+        <div className="absolute top-3/4 left-20 w-24 h-24 bg-gradient-to-br from-rose-400/25 to-pink-500/20 rounded-full float-gentle stagger-6 backdrop-blur-md border border-white/20 shadow-lg"></div>
         
         {/* Pulsing Elements */}
         <div className="absolute top-1/4 left-3/4 w-16 h-16 bg-gradient-to-r from-amber-300/40 to-orange-300/40 rounded-full pulse-gentle stagger-1"></div>
@@ -138,16 +146,17 @@ const Index = () => {
               <DashboardGrid onButtonClick={handleSectionClick} />
             </div>
             
-            {/* AI Demo Link */}
-            <div className="mt-6 text-center">
-              <Button
-                onClick={() => navigate('/gemini-ai-demo')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
-              >
-                🤖 Try Gemini AI Table Analysis Demo
-              </Button>
-            </div>
+
           </main>
+          
+          <div className="mt-8">
+            <AiNotes 
+              location="dashboard-overview"
+              sectionId="main-dashboard" 
+              tableKey="main-dashboard"
+              author="Dashboard Analyst"
+            />
+          </div>
         </div>
       </div>
       
@@ -167,5 +176,6 @@ const Index = () => {
         }
       `}</style>
     </div>;
-};
+});
+
 export default Index;

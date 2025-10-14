@@ -7,6 +7,7 @@ import { LateCancellationsInteractiveCharts } from '@/components/dashboard/LateC
 import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/EnhancedLateCancellationsTopBottomLists';
 import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/EnhancedLateCancellationsDataTables';
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
+import { LateCancellationsMonthOnMonthTable } from '@/components/dashboard/LateCancellationsMonthOnMonthTable';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Home, XCircle } from 'lucide-react';
@@ -14,6 +15,7 @@ import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { AiNotes } from '@/components/ui/AiNotes';
 import { formatNumber } from '@/utils/formatters';
 
 const LateCancellations = () => {
@@ -447,14 +449,65 @@ const LateCancellations = () => {
                   {/* Metric Cards */}
                   <LateCancellationsMetricCards data={filteredData} onMetricClick={handleDrillDownClick} />
                   
+                  {/* AI Notes for Metrics */}
+                  <AiNotes 
+                    tableKey="lateCancellations:metrics" 
+                    location={location.id} 
+                    period={selectedTimeframe} 
+                    sectionId="late-cancellations-metrics" 
+                    author="Analytics Team" 
+                  />
+                  
                   {/* Interactive Charts */}
                   <LateCancellationsInteractiveCharts data={chartData} />
+                  
+                  {/* AI Notes for Charts */}
+                  <AiNotes 
+                    tableKey="lateCancellations:charts" 
+                    location={location.id} 
+                    period={selectedTimeframe} 
+                    sectionId="late-cancellations-charts" 
+                    author="Analytics Team" 
+                  />
                   
                   {/* Enhanced Top/Bottom Lists (Side by Side) */}
                   <EnhancedLateCancellationsTopBottomLists data={filteredData} />
                   
+                  {/* AI Notes for Top/Bottom Lists */}
+                  <AiNotes 
+                    tableKey="lateCancellations:rankings" 
+                    location={location.id} 
+                    period={selectedTimeframe} 
+                    sectionId="late-cancellations-rankings" 
+                    author="Analytics Team" 
+                  />
+                  
+                  {/* Month on Month Analysis Table */}
+                  <LateCancellationsMonthOnMonthTable 
+                    data={chartData} 
+                    onRowClick={handleDrillDownClick} 
+                  />
+                  
+                  {/* AI Notes for Month on Month Analysis */}
+                  <AiNotes 
+                    tableKey="lateCancellations:monthOnMonth" 
+                    location={location.id} 
+                    period={selectedTimeframe} 
+                    sectionId="late-cancellations-mom" 
+                    author="Analytics Team" 
+                  />
+                  
                   {/* Enhanced Detailed Data Tables with Pagination */}
                   <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownClick} />
+                  
+                  {/* AI Notes for Detailed Tables */}
+                  <AiNotes 
+                    tableKey="lateCancellations:detailedTables" 
+                    location={location.id} 
+                    period={selectedTimeframe} 
+                    sectionId="late-cancellations-details" 
+                    author="Analytics Team" 
+                  />
                 </div>
               </TabsContent>
             ))}

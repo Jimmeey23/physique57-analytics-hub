@@ -97,8 +97,11 @@ const FloatingIcon: React.FC<FloatingIconProps> = ({
       className={cn('absolute pointer-events-none transition-opacity', className)}
     >
       <motion.div
-        className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 p-2 rounded-2xl bg-transparent border border-white/10"
-        style={{ filter: `blur(${blurPx}px)` }}
+        className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 p-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg"
+        style={{ 
+          filter: `blur(${blurPx}px)`,
+          boxShadow: `0 8px 32px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)`
+        }}
         animate={{
           y: [0, -amp, 0, amp, 0],
           x: [0, amp * 0.8, 0, -amp * 0.8, 0],
@@ -207,11 +210,15 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
 
   return (
     <motion.section
-      style={{ backgroundImage }}
+      style={{ 
+        backgroundImage,
+        backdropFilter: 'blur(20px)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 20px 40px rgba(0, 0, 0, 0.1)'
+      }}
       onMouseMove={handleMouseMove}
       className={cn(
-        'relative overflow-hidden bg-gray-950 text-gray-200 px-4',
-        compact ? 'py-24 min-h-[460px]' : 'py-24 min-h-[400px]'
+        'relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-slate-900/95 text-gray-100 px-4 border-b border-white/10',
+        compact ? 'py-24 min-h-[480px]' : 'py-24 min-h-[420px]'
       )}
     >
       {/* Extreme-corner CTAs */}
@@ -221,11 +228,11 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             <div className="flex items-center">
               {primaryAction && (
                 <motion.button
-                  style={{ border, boxShadow: 'none' }}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  style={{ border, boxShadow: '0 8px 24px rgba(139, 92, 246, 0.3)' }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={primaryAction?.onClick}
-                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent px-5 py-2.5 text-gray-50 transition-colors"
+                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm px-6 py-3 text-white font-semibold transition-all duration-300 hover:from-purple-500 hover:to-blue-500 shadow-lg"
                 >
                   <LayoutDashboard className="w-5 h-5" />
                   <span>{primaryAction?.label ?? 'View Dashboard'}</span>
@@ -235,11 +242,11 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             <div className="flex items-center gap-3">
               {secondaryAction && (
                 <motion.button
-                  style={{ border, boxShadow: 'none' }}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  style={{ border, boxShadow: '0 4px 16px rgba(255, 255, 255, 0.1)' }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={secondaryAction?.onClick}
-                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent px-5 py-2.5 text-gray-50 transition-colors"
+                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-3 text-gray-100 font-semibold transition-all duration-300 hover:bg-white/20 hover:border-white/30"
                 >
                   <Download className="w-5 h-5" />
                   <span>{secondaryAction?.label ?? 'Export Report'}</span>

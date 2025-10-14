@@ -36,14 +36,17 @@ export const GlobalLoader: React.FC = () => {
   const currentStep = currentStepId ? steps.find(s => s.id === currentStepId)?.name : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white">
-      <UniversalLoader 
-        variant={variant}
-        subtitle={loadingMessage}
-        progress={progress}
-        showSteps={steps.length > 0}
-        currentStep={currentStep}
-      />
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-violet-100/90 via-purple-50/80 to-pink-100/70 backdrop-blur-sm">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-white/40 to-white/30"></div>
+      <div className="relative z-10">
+        <UniversalLoader 
+          variant={variant}
+          subtitle={loadingMessage}
+          progress={progress}
+          showSteps={steps.length > 0}
+          currentStep={currentStep}
+        />
+      </div>
     </div>
   );
 };

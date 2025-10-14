@@ -7,6 +7,7 @@ import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const DiscountsPromotions: React.FC = () => {
   const navigate = useNavigate();
@@ -138,6 +139,15 @@ const DiscountsPromotions: React.FC = () => {
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
           <EnhancedDiscountsDashboardV2 data={discountData} />
+          
+          {/* AI Notes for Discounts Analysis */}
+          <AiNotes 
+            tableKey="discounts:analysis" 
+            location="all" 
+            period="current" 
+            sectionId="discounts-main" 
+            author="Discounts Analyst" 
+          />
         </main>
       </div>
       

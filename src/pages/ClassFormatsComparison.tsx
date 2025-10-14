@@ -23,6 +23,8 @@ import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModal';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { PowerCycleBarreStrengthDetailedAnalytics } from '@/components/dashboard/PowerCycleBarreStrengthDetailedAnalytics';
+import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const locations = [
   { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
@@ -233,8 +235,8 @@ const ClassFormatsComparison: React.FC = () => {
     return (
       <>
         <DashboardMotionHero 
-          title="Class Formats: PowerCycle vs Barre vs Strength"
-          subtitle="Head-to-head analysis of key metrics across formats, locations, and trainers"
+          title="Class Formats & Performance Analysis"
+          subtitle="Comprehensive PowerCycle vs Barre vs Strength comparison with performance metrics and analytics"
           metrics={[
             { label: 'Total Sessions', value: heroTotals.sessions.toLocaleString() },
             { label: 'Avg Fill', value: `${heroTotals.fill.toFixed(1)}%` },
@@ -277,9 +279,10 @@ const ClassFormatsComparison: React.FC = () => {
                 {/* Sub-tabs: Overview | Trends | Detailed */}
                 <Tabs defaultValue="overview" className="w-full">
                   <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-3">
+                    <TabsList className="grid w-full max-w-3xl grid-cols-4">
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="trends">Trends</TabsTrigger>
+                      <TabsTrigger value="performance">Performance</TabsTrigger>
                       <TabsTrigger value="detailed">Detailed</TabsTrigger>
                     </TabsList>
                   </div>
@@ -305,6 +308,15 @@ const ClassFormatsComparison: React.FC = () => {
                       data={filteredByLocation as any}
                       defaultGroupBy="classType"
                     />
+                    
+                    <div className="mt-8">
+                      <AiNotes 
+                        location="class-formats-overview"
+                        sectionId="overview-analytics" 
+                        tableKey={`class-formats-overview-${location.id}`}
+                        author="Class Format Analyst"
+                      />
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="trends" className="space-y-8 mt-6">
@@ -346,6 +358,28 @@ const ClassFormatsComparison: React.FC = () => {
                         initialCount={10}
                       />
                     </div>
+                    
+                    <div className="mt-8">
+                      <AiNotes 
+                        location="class-formats-trends"
+                        sectionId="trends-analytics" 
+                        tableKey={`class-formats-trends-${location.id}`}
+                        author="Class Format Analyst"
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="performance" className="space-y-8 mt-6">
+                    <PowerCycleVsBarreSection data={filteredPayrollByLocation as any} />
+                    
+                    <div className="mt-8">
+                      <AiNotes 
+                        location="class-formats-performance"
+                        sectionId="performance-analytics" 
+                        tableKey={`class-formats-performance-${location.id}`}
+                        author="Class Format Performance Analyst"
+                      />
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="detailed" className="space-y-8 mt-6">
@@ -353,6 +387,15 @@ const ClassFormatsComparison: React.FC = () => {
                       data={filteredPayrollByLocation as any}
                       onItemClick={(item) => setDrill({ scope: 'detailed-format', item })}
                     />
+                    
+                    <div className="mt-8">
+                      <AiNotes 
+                        location="class-formats-detailed"
+                        sectionId="detailed-analytics" 
+                        tableKey={`class-formats-detailed-${location.id}`}
+                        author="Class Format Analyst"
+                      />
+                    </div>
                   </TabsContent>
                 </Tabs>
               </TabsContent>
@@ -372,11 +415,14 @@ const ClassFormatsComparison: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/30 to-slate-50/20">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50/40 via-blue-50/30 to-purple-50/20 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-transparent to-white/50 backdrop-blur-[0.5px]"></div>
+      <div className="relative z-10">
       <SessionsFiltersProvider>
         <ClassFormatsBody sessions={data || []} allCheckins={allCheckins || []} />
       </SessionsFiltersProvider>
       <Footer />
+      </div>
     </div>
   );
 };

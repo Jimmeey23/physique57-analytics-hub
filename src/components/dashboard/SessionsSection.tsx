@@ -17,6 +17,7 @@ import { SourceDataModal } from '@/components/ui/SourceDataModal';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { SessionsFilterSection } from './SessionsFilterSection';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 const locations = [
   { id: 'all', name: 'All Locations', fullName: 'All Locations' },
@@ -270,8 +271,37 @@ export const SessionsSection: React.FC = () => {
                   </div>
                   
                   <SessionsAttendanceAnalytics data={filteredData} />
+                  
+                  {/* AI Notes for Attendance Analytics */}
+                  <AiNotes 
+                    tableKey="sessions:attendanceAnalytics" 
+                    location={location.id} 
+                    period="current" 
+                    sectionId="sessions-attendance" 
+                    author="Sessions Analyst" 
+                  />
+                  
                   <ClassFormatAnalysis data={filteredData} />
+                  
+                  {/* AI Notes for Class Format Analysis */}
+                  <AiNotes 
+                    tableKey="sessions:classFormatAnalysis" 
+                    location={location.id} 
+                    period="current" 
+                    sectionId="sessions-class-format" 
+                    author="Sessions Analyst" 
+                  />
+                  
                   <SessionsGroupedTable data={filteredData} />
+                  
+                  {/* AI Notes for Sessions Grouped Table */}
+                  <AiNotes 
+                    tableKey="sessions:groupedTable" 
+                    location={location.id} 
+                    period="current" 
+                    sectionId="sessions-grouped" 
+                    author="Sessions Analyst" 
+                  />
                 </TabsContent>
               ))}
             </Tabs>

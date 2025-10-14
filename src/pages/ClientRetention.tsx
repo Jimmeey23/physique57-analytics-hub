@@ -15,6 +15,7 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getPreviousMonthDateRange, getCurrentMonthDateRange, parseDate } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
+import { AiNotes } from '@/components/ui/AiNotes';
 
 // Import new components for rebuilt client conversion tab
 import { EnhancedClientConversionFilterSection } from '@/components/dashboard/EnhancedClientConversionFilterSection';
@@ -703,6 +704,15 @@ const ClientRetention = () => {
               </div>
               <NotesBlock tableKey="clientRetention:memberships" sectionId="retention-memberships" />
             </>}
+            
+            <div className="mt-8">
+              <AiNotes 
+                location="client-retention"
+                sectionId="retention-analytics" 
+                tableKey={`client-retention-${activeTable}`}
+                author="Client Retention Analyst"
+              />
+            </div>
           </div>
         </main>
 
