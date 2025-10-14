@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Users, Calendar, BarChart3, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Users, Calendar, BarChart3, Info, Grid3x3, LayoutGrid } from 'lucide-react';
 import { useCheckinsData } from '@/hooks/useCheckinsData';
 import { formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -12,11 +12,14 @@ import { InfoPopover } from '@/components/ui/InfoPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HeroSection } from '@/components/ui/HeroSection';
 
+type GroupByOption = 'product' | 'category' | 'teacher';
+
 export const PatternsAndTrends = () => {
   const { data: checkinsData, loading, error } = useCheckinsData();
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [groupBy, setGroupBy] = useState<GroupByOption>('product');
   
   // Filter states
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -93,7 +96,7 @@ export const PatternsAndTrends = () => {
     return data;
   }, [checkinsData, selectedLocation, selectedProducts, selectedCategories, selectedTeachers, selectedMemberStatus, selectedMonths]);
 
-  // Process data: month-on-month breakdown by product
+  // Process data: month-on-month breakdown by product/category/teacher
   const monthlyProductData = useMemo(() => {
     const grouped: Record<string, Record<string, { visits: number; uniqueMembers: Set<string> }>> = {};
     const monthsSet = new Set<string>();
@@ -101,19 +104,28 @@ export const PatternsAndTrends = () => {
     filteredData.forEach(item => {
       if (!item.checkedIn) return; // Only count actual check-ins
       
-      const product = item.cleanedProduct || 'Unknown';
+      // Determine grouping key based on selected option
+      let groupKey = '';
+      if (groupBy === 'product') {
+        groupKey = item.cleanedProduct || 'Unknown';
+      } else if (groupBy === 'category') {
+        groupKey = item.cleanedCategory || 'Unknown';
+      } else if (groupBy === 'teacher') {
+        groupKey = item.teacherName || 'Unknown';
+      }
+      
       const monthYear = `${item.month} ${item.year}`;
       
-      if (!grouped[product]) grouped[product] = {};
-      if (!grouped[product][monthYear]) {
-        grouped[product][monthYear] = {
+      if (!grouped[groupKey]) grouped[groupKey] = {};
+      if (!grouped[groupKey][monthYear]) {
+        grouped[groupKey][monthYear] = {
           visits: 0,
           uniqueMembers: new Set()
         };
       }
       
-      grouped[product][monthYear].visits += 1;
-      grouped[product][monthYear].uniqueMembers.add(item.memberId);
+      grouped[groupKey][monthYear].visits += 1;
+      grouped[groupKey][monthYear].uniqueMembers.add(item.memberId);
       monthsSet.add(monthYear);
     });
 
@@ -149,8 +161,34 @@ export const PatternsAndTrends = () => {
       };
     }).sort((a, b) => b.totalVisits - a.totalVisits);
 
-    return { products, months };
-  }, [filteredData]);
+    // Calculate totals row
+    const totalsRow = {
+      product: 'TOTAL',
+      monthlyBreakdown: months.map(month => {
+        const monthVisits = products.reduce((sum, p) => {
+          const monthData = p.monthlyBreakdown.find(m => m.month === month);
+          return sum + (monthData?.visits || 0);
+        }, 0);
+        
+        const monthUniqueMembers = new Set<string>();
+        filteredData.forEach(item => {
+          if (item.checkedIn && `${item.month} ${item.year}` === month) {
+            monthUniqueMembers.add(item.memberId);
+          }
+        });
+        
+        return {
+          month,
+          visits: monthVisits,
+          uniqueMembers: monthUniqueMembers.size
+        };
+      }),
+      totalVisits: products.reduce((sum, p) => sum + p.totalVisits, 0),
+      totalUniqueMembers: new Set(filteredData.filter(d => d.checkedIn).map(d => d.memberId)).size
+    };
+
+    return { products, months, totalsRow };
+  }, [filteredData, groupBy]);
 
   const toggleProductExpansion = (product: string) => {
     const newExpanded = new Set(expandedProducts);
@@ -496,20 +534,76 @@ export const PatternsAndTrends = () => {
           )}
         </Card>
 
+        {/* Grouping Options */}
+        <Card className="glass-card modern-card-hover rounded-2xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <LayoutGrid className="w-5 h-5 text-indigo-600" />
+              Group Data By
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button
+                variant={groupBy === 'product' ? 'default' : 'outline'}
+                onClick={() => {
+                  setGroupBy('product');
+                  setExpandedProducts(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-2",
+                  groupBy === 'product' ? 'bg-indigo-600 hover:bg-indigo-700' : ''
+                )}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Product
+              </Button>
+              <Button
+                variant={groupBy === 'category' ? 'default' : 'outline'}
+                onClick={() => {
+                  setGroupBy('category');
+                  setExpandedProducts(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-2",
+                  groupBy === 'category' ? 'bg-purple-600 hover:bg-purple-700' : ''
+                )}
+              >
+                <Grid3x3 className="w-4 h-4" />
+                Category
+              </Button>
+              <Button
+                variant={groupBy === 'teacher' ? 'default' : 'outline'}
+                onClick={() => {
+                  setGroupBy('teacher');
+                  setExpandedProducts(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-2",
+                  groupBy === 'teacher' ? 'bg-pink-600 hover:bg-pink-700' : ''
+                )}
+              >
+                <Users className="w-4 h-4" />
+                Teacher
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Month-on-Month Product Breakdown Table */}
         <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
           <CardHeader className="pb-4 bg-gradient-to-r from-indigo-800 to-purple-900 text-white rounded-t-lg">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
                 <Calendar className="w-6 h-6" />
-                Member Visits by Product - Month on Month
+                Member Visits by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month
               </CardTitle>
               <Badge className="bg-white/20 text-white border-white/30">
-                {monthlyProductData.products.length} Products
+                {monthlyProductData.products.length} {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}s
               </Badge>
             </div>
             <p className="text-indigo-100 text-sm mt-2">
-              Track member check-in patterns across products and time periods
+              Track member check-in patterns across {groupBy}s and time periods
             </p>
           </CardHeader>
 
@@ -519,7 +613,7 @@ export const PatternsAndTrends = () => {
                 <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-900">
                   <TableRow className="border-none">
                     <TableHead className="font-bold text-white sticky left-0 bg-indigo-900/95 backdrop-blur-sm z-30 min-w-[240px]">
-                      Product / Membership
+                      {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
                     </TableHead>
                     {monthlyProductData.months.map((month) => (
                       <TableHead key={month} className="text-center font-bold text-white min-w-[140px]">
@@ -618,6 +712,37 @@ export const PatternsAndTrends = () => {
                       </React.Fragment>
                     );
                   })}
+
+                  {/* Totals Row */}
+                  <TableRow className="bg-gradient-to-r from-emerald-50 to-green-50 border-t-2 border-emerald-600 font-bold">
+                    <TableCell className="sticky left-0 bg-gradient-to-r from-emerald-100 to-green-100 z-10 border-r">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6" /> {/* Spacer for alignment */}
+                        <span className="text-emerald-800 font-bold text-sm">TOTAL (All {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}s)</span>
+                      </div>
+                    </TableCell>
+                    {monthlyProductData.totalsRow.monthlyBreakdown.map((monthData) => (
+                      <TableCell key={monthData.month} className="text-center font-bold text-emerald-800">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="cursor-help">{formatNumber(monthData.visits)}</TooltipTrigger>
+                            <TooltipContent>
+                              {monthData.month} • {monthData.uniqueMembers} unique members total
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center font-bold text-emerald-800 text-base">
+                      {formatNumber(monthlyProductData.totalsRow.totalVisits)}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-emerald-800 text-base">
+                      <div className="flex items-center justify-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {formatNumber(monthlyProductData.totalsRow.totalUniqueMembers)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
