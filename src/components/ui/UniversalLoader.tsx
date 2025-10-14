@@ -146,40 +146,47 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
     : 'text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-white">
       <style>{`
-        @keyframes floaty { 0% { transform: translateY(0) translateX(0) scale(1) rotate(0deg) } 33% { transform: translateY(-12px) translateX(8px) scale(1.03) rotate(1deg) } 66% { transform: translateY(-6px) translateX(-8px) scale(1.01) rotate(-1deg) } 100% { transform: translateY(0) translateX(0) scale(1) rotate(0deg) } }
-        @keyframes sheen { 0% { transform: translateX(-100%) skewX(-15deg) } 100% { transform: translateX(200%) skewX(-15deg) } }
-        @keyframes glowPulse { 0%, 100% { opacity: .6; filter: blur(20px) } 50% { opacity: .95; filter: blur(24px) } }
-        @keyframes barber { 0% { background-position: 0 0 } 100% { background-position: 32px 0 } }
-        @keyframes shimmer { 0% { transform: translateX(-100%) rotate(45deg) } 100% { transform: translateX(200%) rotate(45deg) } }
-        @keyframes breathe { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.05) } }
-        @keyframes orbit { 0% { transform: rotate(0deg) translateX(40px) rotate(0deg) } 100% { transform: rotate(360deg) translateX(40px) rotate(-360deg) } }
-        @keyframes fadeInUp { 0% { opacity: 0; transform: translateY(20px) } 100% { opacity: 1; transform: translateY(0) } }
-        @keyframes dotPulse { 0%, 100% { transform: scale(0.8); opacity: 0.5 } 50% { transform: scale(1.2); opacity: 1 } }
+        @keyframes floatSoft { 0%, 100% { transform: translateY(0px) } 50% { transform: translateY(-15px) } }
+        @keyframes shimmerWave { 0% { transform: translateX(-100%) } 100% { transform: translateX(200%) } }
+        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; transform: scale(1) } 50% { opacity: 0.6; transform: scale(1.05) } }
+        @keyframes spinSlow { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
+        @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.95) translateY(10px) } 100% { opacity: 1; transform: scale(1) translateY(0) } }
+        @keyframes progressShine { 0% { left: -100% } 100% { left: 200% } }
+        @keyframes dotBounce { 0%, 100% { transform: translateY(0) scale(1) } 50% { transform: translateY(-6px) scale(1.1) } }
+        @keyframes rippleOut { 0% { transform: scale(0.9); opacity: 0.4 } 100% { transform: scale(1.8); opacity: 0 } }
       `}</style>
 
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-[48rem] h-[48rem] bg-gradient-to-br from-blue-400/25 via-indigo-400/15 to-purple-400/20 rounded-full" style={{ animation: 'floaty 18s ease-in-out infinite, glowPulse 8s ease-in-out infinite' }} />
-        <div className="absolute -bottom-32 -right-32 w-[52rem] h-[52rem] bg-gradient-to-tr from-violet-400/20 via-fuchsia-400/15 to-cyan-400/15 rounded-full" style={{ animation: 'floaty 22s ease-in-out infinite 2s, glowPulse 10s ease-in-out infinite 1s' as any }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-gradient-to-br from-sky-400/12 via-blue-400/8 to-indigo-400/12 rounded-full" style={{ animation: 'breathe 12s ease-in-out infinite' }} />
-        
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-white/20 to-slate-50/40" />
-        
-        <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.4) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-        
-        <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-blue-300/30 rounded-full blur-sm" style={{ animation: 'orbit 15s linear infinite' }} />
-        <div className="absolute bottom-1/3 right-1/4 w-2 h-2 bg-purple-300/30 rounded-full blur-sm" style={{ animation: 'orbit 20s linear infinite reverse' }} />
+      {/* Modern minimalist background with white base */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Subtle gradient orbs */}
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-blue-100/30 to-indigo-100/20 rounded-full blur-3xl" style={{ animation: 'floatSoft 18s ease-in-out infinite' }} />
+        <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-gradient-to-br from-purple-100/30 to-pink-100/20 rounded-full blur-3xl" style={{ animation: 'floatSoft 22s ease-in-out infinite 4s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-cyan-50/25 to-blue-50/15 rounded-full blur-3xl" style={{ animation: 'pulseGlow 14s ease-in-out infinite' }} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md text-center px-6 py-8" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md text-center px-6 py-8" style={{ animation: 'fadeInScale 0.7s cubic-bezier(0.34, 1.4, 0.64, 1)' }}>
         <div className="relative" aria-label="Loading brand">
-          <div className={`w-32 h-32 bg-white backdrop-blur-2xl rounded-3xl flex items-center justify-center shadow-2xl ring-1 ring-slate-200/50 border border-slate-100`} style={{ animation: 'floaty 8s ease-in-out infinite, breathe 6s ease-in-out infinite' }}>
+          {/* Animated decorative rings */}
+          <div className="absolute inset-0 -m-8">
+            <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${config.gradient} opacity-10`} style={{ animation: 'spinSlow 25s linear infinite' }} />
+            <div className="absolute inset-0 rounded-full border-2 border-dashed border-slate-200" style={{ animation: 'spinSlow 20s linear infinite reverse' }} />
+          </div>
+
+          {/* Ripple effects */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`absolute w-28 h-28 rounded-full bg-gradient-to-r ${config.gradient} opacity-15`} style={{ animation: 'rippleOut 3s ease-out infinite' }} />
+            <div className={`absolute w-28 h-28 rounded-full bg-gradient-to-r ${config.gradient} opacity-15`} style={{ animation: 'rippleOut 3s ease-out infinite 1.5s' }} />
+          </div>
+
+          {/* Logo container with glass morphism */}
+          <div className={`relative w-36 h-36 bg-white/90 backdrop-blur-xl rounded-3xl flex items-center justify-center shadow-2xl border border-slate-100 overflow-hidden`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
             {!imgFailed ? (
               <img
                 src={logoSrcs[srcIndex]}
                 alt="Physique 57"
-                className="w-20 h-20 object-contain drop-shadow-lg"
+                className="w-24 h-24 object-contain relative z-10"
                 onError={() => {
                   if (srcIndex < logoSrcs.length - 1) {
                     setSrcIndex(srcIndex + 1);
@@ -189,76 +196,78 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
                 }}
               />
             ) : (
-              <Icon className="w-12 h-12 text-slate-700 drop-shadow-md" />
+              <Icon className="w-14 h-14 text-slate-700 relative z-10" />
             )}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent" style={{ animation: 'shimmer 3s ease-in-out infinite' }} />
+            
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" style={{ animation: 'shimmerWave 3.5s ease-in-out infinite' }} />
             </div>
-          </div>
-          <div className="absolute inset-0 -z-10 rounded-3xl">
-            <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${config.gradient} opacity-40`} style={{ filter: 'blur(24px)', animation: 'glowPulse 4s ease-in-out infinite' }} />
-            <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${config.gradient} opacity-25`} style={{ filter: 'blur(40px)', animation: 'glowPulse 6s ease-in-out infinite 0.5s' }} />
-            <div className={`absolute inset-[-4px] rounded-3xl border border-transparent bg-gradient-to-r ${config.gradient} opacity-20 animate-spin`} style={{ animationDuration: '8s', maskImage: 'linear-gradient(white, white)', WebkitMaskImage: 'linear-gradient(white, white)' }} />
+
+            {/* Bottom gradient accent */}
+            <div className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t ${config.gradient} opacity-8`} />
           </div>
         </div>
 
-        <div className="w-full max-w-sm">
-          <div className="relative h-4 rounded-full overflow-hidden bg-slate-100/80 backdrop-blur-xl ring-1 ring-slate-200/60 shadow-lg border border-white/60">
+        {/* Modern progress bar */}
+        <div className="w-full max-w-sm space-y-4">
+          <div className="relative h-2.5 rounded-full overflow-hidden bg-slate-100 shadow-inner border border-slate-200/50">
             <div
-              className={`absolute inset-y-0 left-0 bg-gradient-to-r ${config.gradient} rounded-full transition-all duration-300 ease-out shadow-[0_0_16px_rgba(59,130,246,0.4)]`}
+              className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${config.gradient} transition-all duration-500 ease-out relative`}
               style={{ 
-                width: progressValue > 0 ? `max(${progressValue}%, 10px)` : '0%',
-                boxShadow: `0 0 16px rgba(59, 130, 246, 0.4), inset 0 1px 1px rgba(255,255,255,0.3)`
+                width: progressValue > 0 ? `${progressValue}%` : '0%',
+                boxShadow: '0 0 18px rgba(99, 102, 241, 0.35)'
               }}
-            />
-            <div
-              className="absolute inset-y-0 left-0 overflow-hidden rounded-full pointer-events-none"
-              style={{ width: progressValue > 0 ? `max(${progressValue}%, 10px)` : '0%' }}
             >
-              <div
-                className="h-full w-full"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent 100%)',
-                  backgroundSize: '32px 32px',
-                  animation: 'barber 1.2s linear infinite'
-                }}
-              />
+              {/* Animated shine */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent" style={{ animation: 'progressShine 2.5s ease-in-out infinite' }} />
             </div>
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-white/0 via-white/60 to-white/0 w-1/3" style={{ animation: 'sheen 2.5s ease-in-out infinite' }} />
-            {progressValue > 2 && (
+            
+            {/* Glow on right edge */}
+            {progressValue > 8 && (
               <div
-                className="absolute top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-gradient-to-br from-white to-blue-50 shadow-lg ring-2 ring-white transition-all duration-300"
-                style={{ 
-                  left: `calc(${progressValue}% - 10px)`,
-                  boxShadow: '0 0 12px rgba(59,130,246,0.5), 0 4px 8px rgba(0,0,0,0.15)'
-                }}
+                className="absolute top-0 bottom-0 w-10 blur-md bg-gradient-to-r from-transparent to-indigo-300/30 transition-all duration-500"
+                style={{ left: `${Math.max(0, progressValue - 8)}%` }}
               />
             )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-xs font-bold tracking-wide ${percentTextClass}`} style={{ textShadow: isCenterFilled ? '0 2px 4px rgba(0,0,0,0.3)' : '0 1px 2px rgba(255,255,255,0.9)' }}>
-                {progressValue}%
-              </span>
+          </div>
+
+          {/* Progress percentage with modern typography */}
+          <div className="flex items-center justify-center gap-2.5">
+            <span className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+              {progressValue}%
+            </span>
+            {/* Animated indicator dots */}
+            <div className="flex gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-400" style={{ animation: 'dotBounce 1.2s ease-in-out infinite' }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-400" style={{ animation: 'dotBounce 1.2s ease-in-out infinite 0.2s' }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-400" style={{ animation: 'dotBounce 1.2s ease-in-out infinite 0.4s' }} />
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 bg-clip-text text-transparent drop-shadow-sm">
+        {/* Clean modern typography */}
+        <div className="space-y-3">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent">
             {title}
           </h2>
-          <p className="text-slate-700 text-base leading-relaxed font-light tracking-wide">
-            {finalSubtitle}{dots}
+          <p className="text-slate-600 text-sm font-medium tracking-wide">
+            {finalSubtitle}
           </p>
-          <p className="text-xs text-slate-500 font-medium tracking-wider uppercase">
+          <p 
+            className="text-slate-400 text-xs italic min-h-[18px] transition-opacity duration-500"
+            key={taglineIndex}
+            style={{ animation: 'fadeInScale 0.6s ease-out' }}
+          >
             {taglines[taglineIndex]}
           </p>
-        </div>
 
-        <div className="flex space-x-3 mt-2">
-          <div className={`w-3 h-3 ${config.accentColor} rounded-full shadow-lg`} style={{ animation: 'dotPulse 1.5s ease-in-out infinite', animationDelay: '0ms' }}></div>
-          <div className={`w-3 h-3 ${config.accentColor} rounded-full shadow-lg`} style={{ animation: 'dotPulse 1.5s ease-in-out infinite', animationDelay: '200ms' }}></div>
-          <div className={`w-3 h-3 ${config.accentColor} rounded-full shadow-lg`} style={{ animation: 'dotPulse 1.5s ease-in-out infinite', animationDelay: '400ms' }}></div>
+          {/* Optional step indicator */}
+          {showSteps && currentStep && (
+            <div className="mt-5 px-5 py-2.5 bg-slate-50 rounded-lg border border-slate-200/60">
+              <p className="text-xs text-slate-500 font-medium">{currentStep}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
