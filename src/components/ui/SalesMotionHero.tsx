@@ -228,28 +228,30 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             <div className="flex items-center">
               {primaryAction && (
                 <motion.button
-                  style={{ border, boxShadow: '0 8px 24px rgba(139, 92, 246, 0.3)' }}
-                  whileHover={{ scale: 1.05, y: -2 }}
+                  style={{ border, boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)' }}
+                  whileHover={{ scale: 1.05, y: -2, boxShadow: '0 0 30px rgba(255, 255, 255, 0.2)' }}
                   whileTap={{ scale: 0.98 }}
                   onClick={primaryAction?.onClick}
-                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600/80 to-blue-600/80 backdrop-blur-sm px-6 py-3 text-white font-semibold transition-all duration-300 hover:from-purple-500 hover:to-blue-500 shadow-lg"
+                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent backdrop-blur-lg border-2 border-white/20 px-6 py-3 text-white font-semibold transition-all duration-300 hover:bg-white/10 hover:border-white/30 shadow-lg"
                 >
-                  <LayoutDashboard className="w-5 h-5" />
-                  <span>{primaryAction?.label ?? 'View Dashboard'}</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <LayoutDashboard className="w-5 h-5 relative z-10" />
+                  <span className="relative z-10">{primaryAction?.label ?? 'View Dashboard'}</span>
                 </motion.button>
               )}
             </div>
             <div className="flex items-center gap-3">
               {secondaryAction && (
                 <motion.button
-                  style={{ border, boxShadow: '0 4px 16px rgba(255, 255, 255, 0.1)' }}
-                  whileHover={{ scale: 1.05, y: -2 }}
+                  style={{ border, boxShadow: '0 0 15px rgba(255, 255, 255, 0.08)' }}
+                  whileHover={{ scale: 1.05, y: -2, boxShadow: '0 0 25px rgba(255, 255, 255, 0.15)' }}
                   whileTap={{ scale: 0.98 }}
                   onClick={secondaryAction?.onClick}
-                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-3 text-gray-100 font-semibold transition-all duration-300 hover:bg-white/20 hover:border-white/30"
+                  className="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent backdrop-blur-lg border-2 border-white/15 px-6 py-3 text-gray-100 font-semibold transition-all duration-300 hover:bg-white/8 hover:border-white/25"
                 >
-                  <Download className="w-5 h-5" />
-                  <span>{secondaryAction?.label ?? 'Export Report'}</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/3 to-white/6 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Download className="w-5 h-5 relative z-10" />
+                  <span className="relative z-10">{secondaryAction?.label ?? 'Export Report'}</span>
                 </motion.button>
               )}
               {extra && (

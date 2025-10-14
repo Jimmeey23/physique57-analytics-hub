@@ -217,10 +217,11 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
             variant="ghost" 
             size="sm" 
             onClick={() => navigate('/')} 
-            className="text-white/90 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:scale-105"
+            className="group text-white/90 hover:text-white bg-transparent backdrop-blur-lg border-2 border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-105 hover:bg-white/10 relative overflow-hidden"
           >
-            <Home className="w-4 h-4 mr-2" />
-            Dashboard
+            <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <Home className="w-4 h-4 mr-2 relative z-10" />
+            <span className="relative z-10">Dashboard</span>
           </Button>}
       </div>
       
@@ -231,23 +232,25 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
           size="sm" 
           onClick={handlePlayAudio} 
           className={cn(
-            "text-white/90 hover:text-white backdrop-blur-sm border transition-all duration-300 hover:scale-105",
-            "bg-white/10 hover:bg-white/20 border-white/20",
+            "group text-white/90 hover:text-white backdrop-blur-lg border-2 transition-all duration-300 hover:scale-105 relative overflow-hidden",
+            "bg-transparent hover:bg-white/8 border-white/15 hover:border-white/25",
             audioError && "border-red-400/50 bg-red-500/10"
           )}
         >
-          {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-          {isPlaying ? 'Pause' : 'Play'}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/3 to-white/6 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {isPlaying ? <Pause className="w-4 h-4 mr-2 relative z-10" /> : <Play className="w-4 h-4 mr-2 relative z-10" />}
+          <span className="relative z-10">{isPlaying ? 'Pause' : 'Play'}</span>
         </Button>
         
         {exportButton || (onExport && <Button 
             variant="ghost" 
             size="sm" 
             onClick={onExport} 
-            className="text-white/90 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:scale-105"
+            className="group text-white/90 hover:text-white bg-transparent backdrop-blur-lg border-2 border-white/15 hover:border-white/25 transition-all duration-300 hover:scale-105 hover:bg-white/8 relative overflow-hidden"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Export
+            <div className="absolute inset-0 bg-gradient-to-r from-white/3 to-white/6 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <Download className="w-4 h-4 mr-2 relative z-10" />
+            <span className="relative z-10">Export</span>
           </Button>)}
       </div>
       
