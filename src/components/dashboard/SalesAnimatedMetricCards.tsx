@@ -11,6 +11,7 @@ interface SalesAnimatedMetricCardsProps {
   historicalData?: SalesData[];
   dateRange?: { start: string | Date; end: string | Date };
   onMetricClick?: (metricData: any) => void;
+  locationId?: string;
 }
 
 const iconMap = {
@@ -28,7 +29,8 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
   data,
   historicalData,
   dateRange,
-  onMetricClick 
+  onMetricClick,
+  locationId
 }) => {
   const { metrics } = useSalesMetrics(data, historicalData, { dateRange });
 
@@ -88,7 +90,7 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
                     )}>
                       <IconComponent className="w-6 h-6 drop-shadow-sm" />
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
                         {metric.title}
                       </h3>

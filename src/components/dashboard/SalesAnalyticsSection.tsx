@@ -32,6 +32,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { CustomerBehaviorMonthOnMonthTable } from './CustomerBehaviorMonthOnMonthTable';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 interface SalesAnalyticsSectionProps {
   data: SalesData[];
@@ -727,7 +728,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       {/* Note Taker removed as requested; AI Notes remain elsewhere */}
 
       {/* Vertical timeline navigation (scrollspy) */}
-      <SectionTimelineNav position="right" title="Sales sections" />
+      <div className="flex items-center justify-between">
+        <SectionTimelineNav position="right" title="Sales sections" />
+        {(activeLocation === 'kwality' || activeLocation === 'supreme') && (
+          <div className="pr-6">
+            <InfoPopover context="sales-overview" locationId={activeLocation} />
+          </div>
+        )}
+      </div>
 
       {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
       <div className="container mx-auto px-6 space-y-6">
@@ -777,6 +785,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               historicalData={metricsHistoricData}
               dateRange={filters.dateRange}
               onMetricClick={handleMetricClick}
+              locationId={activeLocation}
             />
           </SectionAnchor>
 
@@ -785,6 +794,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </SectionAnchor>
 
               <SectionAnchor id="sales-sellers" label="Top & Bottom Sellers">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-semibold text-gray-900">Top & Bottom Sellers</h2>
+                </div>
                 <UnifiedTopBottomSellers data={filteredData} />
               </SectionAnchor>
 
@@ -822,7 +834,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         t.find(el => el.getAttribute('data-value') === 'monthOnMonth')?.click();
                       }
                     }} className="space-y-4">
-                      <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
+                      </div>
                       <MonthOnMonthTableNew 
                         data={allHistoricData} 
                         onRowClick={handleRowClick} 
@@ -843,7 +857,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         t.find(el => el.getAttribute('data-value') === 'yearOnYear')?.click();
                       }
                     }} className="space-y-4">
-                      <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
+                      </div>
                       <EnhancedYearOnYearTableNew 
                         data={allHistoricData} 
                         onRowClick={handleRowClick} 
@@ -858,7 +874,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
                     t.find(el => el.getAttribute('data-value') === 'productPerformance')?.click();
                   }} className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
+                    </div>
                     <ProductPerformanceTableNew 
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
@@ -873,7 +891,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
                     t.find(el => el.getAttribute('data-value') === 'categoryPerformance')?.click();
                   }} className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Category Performance Analysis</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-gray-900">Category Performance Analysis</h2>
+                    </div>
                     <CategoryPerformanceTableNew 
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
@@ -888,7 +908,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
                     t.find(el => el.getAttribute('data-value') === 'soldByAnalysis')?.click();
                   }} className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Sold By Analysis</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-gray-900">Sold By Analysis</h2>
+                    </div>
                     <SoldByMonthOnMonthTableNew 
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
@@ -903,7 +925,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
                     t.find(el => el.getAttribute('data-value') === 'paymentMethodAnalysis')?.click();
                   }} className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Payment Method Analysis</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-gray-900">Payment Method Analysis</h2>
+                    </div>
                     <PaymentMethodMonthOnMonthTableNew 
                       data={allHistoricData} 
                       onRowClick={handleRowClick} 
@@ -918,6 +942,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
                     t.find(el => el.getAttribute('data-value') === 'customerBehavior')?.click();
                   }}>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-gray-900">Customer Behavior</h2>
+                    </div>
                     {/* Use allHistoricData to make this tab independent from the date filters */}
                     <CustomerBehaviorMonthOnMonthTable data={allHistoricData} onReady={markReady} onRowClick={handleRowClick} />
                   </SectionAnchor>
