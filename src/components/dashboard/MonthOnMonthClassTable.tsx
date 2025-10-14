@@ -725,7 +725,6 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           </CardContent>
         </motion.div>
         
-        {/* AI Notes Section */}
         <PersistentTableFooter
           tableId="month-on-month-class-attendance"
           tableData={processedData}

@@ -496,9 +496,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                 onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
               }} 
             />
-            {/* AI Notes Footer */}
             <div className="border-t border-slate-200 p-4 bg-slate-50 rounded-b-xl mt-2">
-              <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
               {(() => {
                 const currentDate = new Date();
                 const currentYear = currentDate.getFullYear();

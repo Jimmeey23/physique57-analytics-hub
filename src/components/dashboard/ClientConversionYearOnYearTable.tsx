@@ -338,9 +338,7 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
           sortField={sortField}
           sortDirection={sortDirection}
         />
-        {/* AI Notes Footer */}
         <div className="border-t border-slate-200 p-4 bg-slate-50">
-          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
           <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
             <li>Largest YoY trials growth month: {(() => {
               const withPrev = yearOnYearData.filter(r => (r.previousTotalMembers || 0) > 0);

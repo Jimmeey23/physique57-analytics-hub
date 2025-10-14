@@ -1159,7 +1159,6 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
         )}
       </CardContent>
       
-      {/* AI Notes Section */}
       <PersistentTableFooter
         tableId="comprehensive-class-attendance"
         tableData={viewMode === 'grouped' ? groupedData.map(g => g.aggregatedMetrics) : processedData}

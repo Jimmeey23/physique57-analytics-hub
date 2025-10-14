@@ -8,7 +8,6 @@ import { Search, Download, Filter, TrendingUp, TrendingDown, Percent, DollarSign
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
 import { PersistentTableFooter } from './PersistentTableFooter';
-import { AiNotes } from '@/components/ui/AiNotes';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 interface EnhancedDiscountDataTableProps {
   data: SalesData[];
@@ -116,12 +115,6 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
               <CardTitle className="text-2xl font-bold">Detailed Discount Analysis</CardTitle>
 
           <div className="p-6 border-t">
-            <AiNotes
-              tableKey="discounts:enhancedDataTable"
-              location={filters.location[0]}
-              period={periodId}
-              sectionId="discounts-table"
-            />
           </div>
               <p className="text-slate-200 mt-1">
                 Comprehensive transaction-level discount data with advanced filtering
@@ -298,7 +291,6 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
             </div>
           </div>}
       </CardContent>
-        {/* AI Notes Footer */}
         <PersistentTableFooter
           tableId="discounts-detailed-table"
           tableName="Detailed Discount Analysis"

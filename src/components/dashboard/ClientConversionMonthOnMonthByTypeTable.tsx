@@ -246,8 +246,10 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
     if (totalsRow && totalsRow.avgConversionDays) notes.push(`Average conversion time is ${Math.round(totalsRow.avgConversionDays)} days with avg visits ${totalsRow.avgVisits.toFixed(1)}.`);
     return notes;
   }, [tableData, totalsRow]);
-  return <Card className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
-  <CardHeader className="bg-gradient-to-r from-indigo-800 to-purple-900 text-white pb-4">
+
+  return (
+    <Card className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-indigo-800 to-purple-900 text-white pb-4">
         <CardTitle className="text-lg font-bold flex items-center gap-2">
           <Calendar className="w-5 h-5" />
           Month-on-Month Analysis by Client Type
@@ -329,19 +331,14 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
             </TableBody>
           </Table>
         </div>
-        {/* AI Notes Footer */}
         <div className="border-t border-slate-200 p-4 bg-slate-50">
-          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
-          {aiNotes.length > 0 ? (
-            <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              {aiNotes.map((n, i) => (
-                <li key={i}>{n}</li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-sm text-slate-500">No notable patterns found for the current filters.</div>
-          )}
+          <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+            {aiNotes.map((insight, index) => (
+              <li key={index}>{insight}</li>
+            ))}
+          </ul>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };

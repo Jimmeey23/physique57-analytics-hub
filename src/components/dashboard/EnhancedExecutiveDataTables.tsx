@@ -16,7 +16,6 @@ import {
   Zap
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { AiNotes } from '@/components/ui/AiNotes';
 import { NotesBlock } from '@/components/ui/NotesBlock';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
@@ -492,14 +491,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
       </Card>
     <NotesBlock tableKey="executive:trainer-performance" sectionId="exec-trainer-performance" locationOverride={selectedLocation} />
 
-      {/* AI Notes & Summary saved globally for this table and period/location */}
       <div className="lg:col-span-2">
-        <AiNotes 
-          tableKey="executive:enhancedDataTables"
-          location={selectedLocation}
-          period={periodId}
-          sectionId="executive-tables"
-        />
       </div>
     </div>
   );

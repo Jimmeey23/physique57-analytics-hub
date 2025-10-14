@@ -303,9 +303,7 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
           sortField={sortField}
           sortDirection={sortDirection}
         />
-        {/* AI Notes Footer */}
         <div className="border-t border-slate-200 p-4 bg-slate-50">
-          <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
           <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
             <li>Highest conversion: {(() => {
               const withNew = monthlyData.filter(r => r.newMembers > 0);

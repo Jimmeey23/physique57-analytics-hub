@@ -18,7 +18,6 @@ import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { SessionsFilterSection } from './SessionsFilterSection';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { AiNotes } from '@/components/ui/AiNotes';
-import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 
 const locations = [
   { id: 'all', name: 'All Locations', fullName: 'All Locations' },
@@ -252,15 +251,7 @@ export const SessionsSection: React.FC = () => {
 
               {locations.map((location) => (
                 <TabsContent key={location.id} value={location.id} className="space-y-8 mt-8">
-                  <WithContextualInfo
-                    dataType="sessionsData"
-                    currentLocation={activeLocation}
-                    title="Session Optimization"
-                    iconPosition="top-right"
-                    iconSize="md"
-                  >
-                    <SessionsMetricCards data={filteredData} />
-                  </WithContextualInfo>
+                  <SessionsMetricCards data={filteredData} />
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <ImprovedSessionsTopBottomLists 

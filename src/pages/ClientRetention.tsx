@@ -15,7 +15,6 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getPreviousMonthDateRange, getCurrentMonthDateRange, parseDate } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
-import { AiNotes } from '@/components/ui/AiNotes';
 
 // Import new components for rebuilt client conversion tab
 import { EnhancedClientConversionFilterSection } from '@/components/dashboard/EnhancedClientConversionFilterSection';
@@ -31,7 +30,6 @@ import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedCla
 import { ClientConversionDrillDownModalV3 } from '@/components/dashboard/ClientConversionDrillDownModalV3';
 import NotesBlock from '@/components/ui/NotesBlock';
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
-import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 const ClientRetention = () => {
   const {
     data,
@@ -549,31 +547,23 @@ const ClientRetention = () => {
             </div>
 
           {/* Enhanced Metric Cards */}
-          <WithContextualInfo
-            dataType="clientRetentionData"
-            currentLocation={selectedLocation}
-            title="Client Retention Intelligence"
-            iconPosition="top-right"
-            iconSize="md"
-          >
-            <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
-              <ClientConversionMetricCards 
-                data={filteredData}
-                historicalData={data}
-                dateRange={filters.dateRange}
-                onCardClick={(title, data, metricType) => setDrillDownModal({
-                isOpen: true,
-                client: null,
-                title: `${title} - Detailed Analysis`,
-                data: {
-                  clients: data,
-                  metricType
-                },
-                type: 'metric'
-              })}
-              />
-            </div>
-          </WithContextualInfo>
+          <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+            <ClientConversionMetricCards 
+              data={filteredData}
+              historicalData={filteredDataNoDateRange}
+              dateRange={filters.dateRange}
+              onCardClick={(title, data, metricType) => setDrillDownModal({
+              isOpen: true,
+              client: null,
+              title: `${title} - Detailed Analysis`,
+              data: {
+                clients: data,
+                metricType
+              },
+              type: 'metric'
+            })}
+            />
+          </div>
 
           {/* Enhanced Simplified Ranking System */}
           <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-3" id="rankings">
@@ -713,15 +703,6 @@ const ClientRetention = () => {
               </div>
               <NotesBlock tableKey="clientRetention:memberships" sectionId="retention-memberships" />
             </>}
-            
-            <div className="mt-8">
-              <AiNotes 
-                location="client-retention"
-                sectionId="retention-analytics" 
-                tableKey={`client-retention-${activeTable}`}
-                author="Client Retention Analyst"
-              />
-            </div>
           </div>
         </main>
 

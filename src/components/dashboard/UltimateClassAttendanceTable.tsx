@@ -20,7 +20,6 @@ import {
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { AiNotes } from '@/components/ui/AiNotes';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface UltimateClassAttendanceTableProps {
@@ -756,12 +755,6 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
       </CardContent>
     </Card>
     <div className="mt-4">
-      <AiNotes
-        tableKey="sessions:ultimateAttendance"
-        location={location}
-        period={periodId}
-        sectionId="attendance-table"
-      />
     </div>
     </>
   );

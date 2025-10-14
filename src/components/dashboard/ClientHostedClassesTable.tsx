@@ -276,7 +276,6 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     }
   };
 
-  // AI Notes for hosted classes
   const aiNotes = React.useMemo(() => {
     if (!hostedClassData || hostedClassData.length === 0) return [] as string[];
     const topTrials = [...hostedClassData].sort((a,b) => b.totalMembers - a.totalMembers)[0];
@@ -319,16 +318,11 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
             sortDirection={sortDirection}
           />
           <div className="border-t border-slate-200 p-4 bg-slate-50">
-            <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
-            {aiNotes.length > 0 ? (
-              <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-                {aiNotes.map((n, i) => (
-                  <li key={i}>{n}</li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-sm text-slate-500">No notable patterns found for the current filters.</div>
-            )}
+            <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              {keyInsights.map((insight, index) => (
+                <li key={index}>{insight}</li>
+              ))}
+            </ul>
           </div>
         </CardContent>
       </Card>

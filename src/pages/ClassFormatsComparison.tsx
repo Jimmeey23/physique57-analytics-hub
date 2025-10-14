@@ -24,8 +24,6 @@ import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModa
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { PowerCycleBarreStrengthDetailedAnalytics } from '@/components/dashboard/PowerCycleBarreStrengthDetailedAnalytics';
 import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
-import { AiNotes } from '@/components/ui/AiNotes';
-import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 
 const locations = [
   { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
@@ -314,15 +312,7 @@ const ClassFormatsComparison: React.FC = () => {
                         <SessionsFilterSection data={filteredByLocation} />
 
                         {/* Summary cards per format */}
-                        <WithContextualInfo
-                          dataType="classFormatData"
-                          currentLocation={activeLocation}
-                          title="Class Format Analytics"
-                          iconPosition="top-right"
-                          iconSize="sm"
-                        >
-                          <FormatComparisonSummaryCards data={filteredByLocation} />
-                        </WithContextualInfo>
+                        <FormatComparisonSummaryCards data={filteredByLocation} />
 
                         {/* Interactive charts and tables with metric selector */}
                         <ComprehensiveClassFormatComparison 
@@ -355,15 +345,6 @@ const ClassFormatsComparison: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    
-                    <div className="mt-8">
-                      <AiNotes 
-                        location="class-formats-overview"
-                        sectionId="overview-analytics" 
-                        tableKey={`class-formats-overview-${location.id}`}
-                        author="Class Format Analyst"
-                      />
-                    </div>
                   </TabsContent>
 
                   <TabsContent value="trends" className="space-y-8 mt-6">
@@ -405,28 +386,10 @@ const ClassFormatsComparison: React.FC = () => {
                         initialCount={10}
                       />
                     </div>
-                    
-                    <div className="mt-8">
-                      <AiNotes 
-                        location="class-formats-trends"
-                        sectionId="trends-analytics" 
-                        tableKey={`class-formats-trends-${location.id}`}
-                        author="Class Format Analyst"
-                      />
-                    </div>
                   </TabsContent>
 
                   <TabsContent value="performance" className="space-y-8 mt-6">
                     <PowerCycleVsBarreSection data={filteredPayrollByLocation as any} />
-                    
-                    <div className="mt-8">
-                      <AiNotes 
-                        location="class-formats-performance"
-                        sectionId="performance-analytics" 
-                        tableKey={`class-formats-performance-${location.id}`}
-                        author="Class Format Performance Analyst"
-                      />
-                    </div>
                   </TabsContent>
 
                   <TabsContent value="detailed" className="space-y-8 mt-6">
@@ -434,15 +397,6 @@ const ClassFormatsComparison: React.FC = () => {
                       data={filteredPayrollByLocation as any}
                       onItemClick={(item) => setDrill({ scope: 'detailed-format', item })}
                     />
-                    
-                    <div className="mt-8">
-                      <AiNotes 
-                        location="class-formats-detailed"
-                        sectionId="detailed-analytics" 
-                        tableKey={`class-formats-detailed-${location.id}`}
-                        author="Class Format Analyst"
-                      />
-                    </div>
                   </TabsContent>
                 </Tabs>
               </TabsContent>

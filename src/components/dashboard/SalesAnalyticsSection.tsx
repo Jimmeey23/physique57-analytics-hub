@@ -32,7 +32,6 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { CustomerBehaviorMonthOnMonthTable } from './CustomerBehaviorMonthOnMonthTable';
-import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 
 interface SalesAnalyticsSectionProps {
   data: SalesData[];
@@ -773,20 +772,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           </SectionAnchor>
 
           <SectionAnchor id="sales-metrics" label="Metrics">
-            <WithContextualInfo
-              dataType="generalInsights"
-              currentLocation={activeLocation}
-              title="Sales Intelligence"
-              iconPosition="top-right"
-              iconSize="md"
-            >
-              <SalesAnimatedMetricCards 
-                data={filteredData} 
-                historicalData={metricsHistoricData}
-                dateRange={filters.dateRange}
-                onMetricClick={handleMetricClick}
-              />
-            </WithContextualInfo>
+            <SalesAnimatedMetricCards 
+              data={filteredData} 
+              historicalData={metricsHistoricData}
+              dateRange={filters.dateRange}
+              onMetricClick={handleMetricClick}
+            />
           </SectionAnchor>
 
               <SectionAnchor id="sales-charts" label="Charts">
@@ -794,15 +785,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </SectionAnchor>
 
               <SectionAnchor id="sales-sellers" label="Top & Bottom Sellers">
-                <WithContextualInfo
-                  dataType="topBottomAnalysis"
-                  currentLocation={activeLocation}
-                  title="Top & Bottom Performance Analysis"
-                  iconPosition="top-right"
-                  iconSize="md"
-                >
-                  <UnifiedTopBottomSellers data={filteredData} />
-                </WithContextualInfo>
+                <UnifiedTopBottomSellers data={filteredData} />
               </SectionAnchor>
 
                 <Tabs defaultValue="monthOnMonth" className="w-full">
@@ -840,23 +823,15 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       }
                     }} className="space-y-4">
                       <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
-                      <WithContextualInfo
-                        dataType="monthlyAnalysis"
-                        currentLocation={activeLocation}
-                        title="Monthly Trends Analysis"
-                        iconPosition="top-right"
-                        iconSize="sm"
-                      >
-                        <MonthOnMonthTableNew 
-                          data={allHistoricData} 
-                          onRowClick={handleRowClick} 
-                          collapsedGroups={collapsedGroups} 
-                          // Adapter to match MonthOnMonthTableNew's onGroupToggle signature (Set<string>)
-                          onGroupToggle={React.useCallback((groups: Set<string>) => setCollapsedGroups(new Set(groups)), [])} 
-                          selectedMetric={activeYoyMetric} 
-                          onReady={markReady}
-                        />
-                      </WithContextualInfo>
+                      <MonthOnMonthTableNew 
+                        data={allHistoricData} 
+                        onRowClick={handleRowClick} 
+                        collapsedGroups={collapsedGroups} 
+                        // Adapter to match MonthOnMonthTableNew's onGroupToggle signature (Set<string>)
+                        onGroupToggle={React.useCallback((groups: Set<string>) => setCollapsedGroups(new Set(groups)), [])} 
+                        selectedMetric={activeYoyMetric} 
+                        onReady={markReady}
+                      />
                     </SectionAnchor>
                   </TabsContent>
 
@@ -869,20 +844,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       }
                     }} className="space-y-4">
                       <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
-                      <WithContextualInfo
-                        dataType="yearlyAnalysis"
-                        currentLocation={activeLocation}
-                        title="Annual Performance Insights"
-                        iconPosition="top-right"
-                        iconSize="sm"
-                      >
-                        <EnhancedYearOnYearTableNew 
-                          data={allHistoricData} 
-                          onRowClick={handleRowClick} 
-                          selectedMetric={activeYoyMetric} 
-                          onReady={markReady}
-                        />
-                      </WithContextualInfo>
+                      <EnhancedYearOnYearTableNew 
+                        data={allHistoricData} 
+                        onRowClick={handleRowClick} 
+                        selectedMetric={activeYoyMetric} 
+                        onReady={markReady}
+                      />
                     </SectionAnchor>
                   </TabsContent>
 
@@ -892,20 +859,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     t.find(el => el.getAttribute('data-value') === 'productPerformance')?.click();
                   }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
-                    <WithContextualInfo
-                      dataType="productPerformance"
-                      currentLocation={activeLocation}
-                      title="Product Performance Intelligence"
-                      iconPosition="top-right"
-                      iconSize="sm"
-                    >
-                      <ProductPerformanceTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </WithContextualInfo>
+                    <ProductPerformanceTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -915,20 +874,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     t.find(el => el.getAttribute('data-value') === 'categoryPerformance')?.click();
                   }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Category Performance Analysis</h2>
-                    <WithContextualInfo
-                      dataType="categoryPerformance"
-                      currentLocation={activeLocation}
-                      title="Category Intelligence"
-                      iconPosition="top-right"
-                      iconSize="sm"
-                    >
-                      <CategoryPerformanceTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </WithContextualInfo>
+                    <CategoryPerformanceTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -938,20 +889,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     t.find(el => el.getAttribute('data-value') === 'soldByAnalysis')?.click();
                   }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Sold By Analysis</h2>
-                    <WithContextualInfo
-                      dataType="salesTeamAnalysis"
-                      currentLocation={activeLocation}
-                      title="Sales Team Analysis"
-                      iconPosition="top-right"
-                      iconSize="sm"
-                    >
-                      <SoldByMonthOnMonthTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </WithContextualInfo>
+                    <SoldByMonthOnMonthTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -961,20 +904,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     t.find(el => el.getAttribute('data-value') === 'paymentMethodAnalysis')?.click();
                   }} className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-900">Payment Method Analysis</h2>
-                    <WithContextualInfo
-                      dataType="paymentAnalysis"
-                      currentLocation={activeLocation}
-                      title="Payment Analysis"
-                      iconPosition="top-right"
-                      iconSize="sm"
-                    >
-                      <PaymentMethodMonthOnMonthTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </WithContextualInfo>
+                    <PaymentMethodMonthOnMonthTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
