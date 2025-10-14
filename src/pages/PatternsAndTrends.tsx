@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Users, Calendar, BarChart3, Info, Grid3x3, LayoutGrid } from 'lucide-react';
+import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Users, Calendar, BarChart3, Info, Grid3x3, LayoutGrid, UserCheck, AlertCircle, Activity } from 'lucide-react';
 import { useCheckinsData } from '@/hooks/useCheckinsData';
 import { formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -12,13 +12,13 @@ import { InfoPopover } from '@/components/ui/InfoPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HeroSection } from '@/components/ui/HeroSection';
 
-type GroupByOption = 'product' | 'category' | 'teacher';
+type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
 export const PatternsAndTrends = () => {
   const { data: checkinsData, loading, error } = useCheckinsData();
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<GroupByOption>('product');
   
   // Filter states
@@ -112,6 +112,10 @@ export const PatternsAndTrends = () => {
         groupKey = item.cleanedCategory || 'Unknown';
       } else if (groupBy === 'teacher') {
         groupKey = item.teacherName || 'Unknown';
+      } else if (groupBy === 'location') {
+        groupKey = item.location || 'Unknown';
+      } else if (groupBy === 'memberStatus') {
+        groupKey = item.isNew || 'Unknown';
       }
       
       const monthYear = `${item.month} ${item.year}`;
@@ -191,14 +195,124 @@ export const PatternsAndTrends = () => {
   }, [filteredData, groupBy]);
 
   const toggleProductExpansion = (product: string) => {
-    const newExpanded = new Set(expandedProducts);
+    const newExpanded = new Set(expandedRows);
     if (newExpanded.has(product)) {
       newExpanded.delete(product);
     } else {
       newExpanded.add(product);
     }
-    setExpandedProducts(newExpanded);
+    setExpandedRows(newExpanded);
   };
+
+  // Calculate visit frequency buckets (monthly check-ins per member)
+  const visitFrequencyData = useMemo(() => {
+    const memberMonthlyVisits: Record<string, Record<string, number>> = {};
+    
+    filteredData.forEach(item => {
+      if (!item.checkedIn) return;
+      const monthYear = `${item.month} ${item.year}`;
+      
+      if (!memberMonthlyVisits[item.memberId]) {
+        memberMonthlyVisits[item.memberId] = {};
+      }
+      memberMonthlyVisits[item.memberId][monthYear] = (memberMonthlyVisits[item.memberId][monthYear] || 0) + 1;
+    });
+
+    const buckets = {
+      '1 class': 0,
+      '2-5 classes': 0,
+      '6-10 classes': 0,
+      '11-15 classes': 0,
+      '16-20 classes': 0,
+      '21-25 classes': 0,
+      '>25 classes': 0
+    };
+
+    Object.values(memberMonthlyVisits).forEach(monthData => {
+      Object.values(monthData).forEach(count => {
+        if (count === 1) buckets['1 class']++;
+        else if (count >= 2 && count <= 5) buckets['2-5 classes']++;
+        else if (count >= 6 && count <= 10) buckets['6-10 classes']++;
+        else if (count >= 11 && count <= 15) buckets['11-15 classes']++;
+        else if (count >= 16 && count <= 20) buckets['16-20 classes']++;
+        else if (count >= 21 && count <= 25) buckets['21-25 classes']++;
+        else if (count > 25) buckets['>25 classes']++;
+      });
+    });
+
+    return buckets;
+  }, [filteredData]);
+
+  // Calculate late cancellation frequency buckets
+  const lateCancellationFrequencyData = useMemo(() => {
+    const memberMonthlyLateCancels: Record<string, Record<string, number>> = {};
+    
+    filteredData.forEach(item => {
+      if (!item.isLateCancelled) return;
+      const monthYear = `${item.month} ${item.year}`;
+      
+      if (!memberMonthlyLateCancels[item.memberId]) {
+        memberMonthlyLateCancels[item.memberId] = {};
+      }
+      memberMonthlyLateCancels[item.memberId][monthYear] = (memberMonthlyLateCancels[item.memberId][monthYear] || 0) + 1;
+    });
+
+    const buckets = {
+      '1 cancellation': 0,
+      '2-5 cancellations': 0,
+      '6-10 cancellations': 0,
+      '11-15 cancellations': 0,
+      '16-20 cancellations': 0,
+      '21-25 cancellations': 0,
+      '>25 cancellations': 0
+    };
+
+    Object.values(memberMonthlyLateCancels).forEach(monthData => {
+      Object.values(monthData).forEach(count => {
+        if (count === 1) buckets['1 cancellation']++;
+        else if (count >= 2 && count <= 5) buckets['2-5 cancellations']++;
+        else if (count >= 6 && count <= 10) buckets['6-10 cancellations']++;
+        else if (count >= 11 && count <= 15) buckets['11-15 cancellations']++;
+        else if (count >= 16 && count <= 20) buckets['16-20 cancellations']++;
+        else if (count >= 21 && count <= 25) buckets['21-25 cancellations']++;
+        else if (count > 25) buckets['>25 cancellations']++;
+      });
+    });
+
+    return buckets;
+  }, [filteredData]);
+
+  // Calculate multiple classes per day
+  const multipleClassesPerDay = useMemo(() => {
+    const dailyCheckins: Record<string, Record<string, number>> = {};
+    
+    filteredData.forEach(item => {
+      if (!item.checkedIn) return;
+      const date = item.dateIST || '';
+      
+      if (!dailyCheckins[item.memberId]) {
+        dailyCheckins[item.memberId] = {};
+      }
+      dailyCheckins[item.memberId][date] = (dailyCheckins[item.memberId][date] || 0) + 1;
+    });
+
+    let membersWithMultipleClasses = 0;
+    let totalMultipleClassDays = 0;
+
+    Object.values(dailyCheckins).forEach(memberDates => {
+      const daysWithMultiple = Object.values(memberDates).filter(count => count > 1).length;
+      if (daysWithMultiple > 0) {
+        membersWithMultipleClasses++;
+        totalMultipleClassDays += daysWithMultiple;
+      }
+    });
+
+    return {
+      membersWithMultipleClasses,
+      totalMultipleClassDays,
+      avgMultipleClassDays: membersWithMultipleClasses > 0 ? (totalMultipleClassDays / membersWithMultipleClasses).toFixed(1) : '0'
+    };
+  }, [filteredData]);
 
   const getChangePercentage = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
@@ -548,7 +662,7 @@ export const PatternsAndTrends = () => {
                 variant={groupBy === 'product' ? 'default' : 'outline'}
                 onClick={() => {
                   setGroupBy('product');
-                  setExpandedProducts(new Set());
+                  setExpandedRows(new Set());
                 }}
                 className={cn(
                   "flex items-center gap-2",
@@ -562,7 +676,7 @@ export const PatternsAndTrends = () => {
                 variant={groupBy === 'category' ? 'default' : 'outline'}
                 onClick={() => {
                   setGroupBy('category');
-                  setExpandedProducts(new Set());
+                  setExpandedRows(new Set());
                 }}
                 className={cn(
                   "flex items-center gap-2",
@@ -576,7 +690,7 @@ export const PatternsAndTrends = () => {
                 variant={groupBy === 'teacher' ? 'default' : 'outline'}
                 onClick={() => {
                   setGroupBy('teacher');
-                  setExpandedProducts(new Set());
+                  setExpandedRows(new Set());
                 }}
                 className={cn(
                   "flex items-center gap-2",
@@ -585,6 +699,34 @@ export const PatternsAndTrends = () => {
               >
                 <Users className="w-4 h-4" />
                 Teacher
+              </Button>
+              <Button
+                variant={groupBy === 'location' ? 'default' : 'outline'}
+                onClick={() => {
+                  setGroupBy('location');
+                  setExpandedRows(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-2",
+                  groupBy === 'location' ? 'bg-blue-600 hover:bg-blue-700' : ''
+                )}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                Location
+              </Button>
+              <Button
+                variant={groupBy === 'memberStatus' ? 'default' : 'outline'}
+                onClick={() => {
+                  setGroupBy('memberStatus');
+                  setExpandedRows(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-2",
+                  groupBy === 'memberStatus' ? 'bg-emerald-600 hover:bg-emerald-700' : ''
+                )}
+              >
+                <UserCheck className="w-4 h-4" />
+                Member Status
               </Button>
             </div>
           </CardContent>
@@ -643,7 +785,7 @@ export const PatternsAndTrends = () => {
                 </TableHeader>
                 <TableBody>
                   {monthlyProductData.products.map((productData) => {
-                    const isExpanded = expandedProducts.has(productData.product);
+                    const isExpanded = expandedRows.has(productData.product);
                     const values = productData.monthlyBreakdown.map(m => m.visits);
                     const growth = values.length >= 2 ? getChangePercentage(values[0], values[1]) : 0;
 
@@ -690,20 +832,78 @@ export const PatternsAndTrends = () => {
                         {isExpanded && (
                           <TableRow className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 animate-fade-in">
                             <TableCell colSpan={monthlyProductData.months.length + 3} className="p-6">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                                  <p className="text-slate-600 text-xs font-medium">Total Check-ins</p>
-                                  <p className="font-bold text-slate-800 text-2xl">{formatNumber(productData.totalVisits)}</p>
+                              <div className="space-y-6">
+                                {/* Summary Metrics */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                  <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <p className="text-slate-600 text-xs font-medium">Total Check-ins</p>
+                                    <p className="font-bold text-slate-800 text-2xl">{formatNumber(productData.totalVisits)}</p>
+                                  </div>
+                                  <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <p className="text-slate-600 text-xs font-medium">Unique Members</p>
+                                    <p className="font-bold text-indigo-600 text-2xl">{formatNumber(productData.totalUniqueMembers)}</p>
+                                  </div>
+                                  <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <p className="text-slate-600 text-xs font-medium">Avg Visits/Member</p>
+                                    <p className="font-bold text-purple-600 text-2xl">
+                                      {productData.totalUniqueMembers > 0 ? (productData.totalVisits / productData.totalUniqueMembers).toFixed(1) : '0'}
+                                    </p>
+                                  </div>
+                                  <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <p className="text-slate-600 text-xs font-medium">Peak Month</p>
+                                    <p className="font-bold text-pink-600 text-lg">
+                                      {productData.monthlyBreakdown.reduce((max, m) => m.visits > max.visits ? m : max, productData.monthlyBreakdown[0])?.month.split(' ')[0] || '-'}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                                  <p className="text-slate-600 text-xs font-medium">Unique Members</p>
-                                  <p className="font-bold text-indigo-600 text-2xl">{formatNumber(productData.totalUniqueMembers)}</p>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                                  <p className="text-slate-600 text-xs font-medium">Avg Visits/Member</p>
-                                  <p className="font-bold text-purple-600 text-2xl">
-                                    {productData.totalUniqueMembers > 0 ? (productData.totalVisits / productData.totalUniqueMembers).toFixed(1) : '0'}
-                                  </p>
+
+                                {/* Month-by-Month Breakdown Table */}
+                                <div className="bg-white rounded-lg border overflow-hidden">
+                                  <div className="bg-gradient-to-r from-slate-100 to-slate-50 px-4 py-2 border-b">
+                                    <h4 className="font-semibold text-slate-700 text-sm">Monthly Breakdown</h4>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead className="font-semibold">Month</TableHead>
+                                          <TableHead className="text-center font-semibold">Visits</TableHead>
+                                          <TableHead className="text-center font-semibold">Unique Members</TableHead>
+                                          <TableHead className="text-center font-semibold">Avg Visits/Member</TableHead>
+                                          <TableHead className="text-center font-semibold">vs Prev Month</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {productData.monthlyBreakdown.map((month, idx) => {
+                                          const prevMonth = idx < productData.monthlyBreakdown.length - 1 ? productData.monthlyBreakdown[idx + 1] : null;
+                                          const growth = prevMonth ? getChangePercentage(month.visits, prevMonth.visits) : 0;
+                                          
+                                          return (
+                                            <TableRow key={month.month} className="hover:bg-slate-50">
+                                              <TableCell className="font-medium">{month.month}</TableCell>
+                                              <TableCell className="text-center">{formatNumber(month.visits)}</TableCell>
+                                              <TableCell className="text-center">{formatNumber(month.uniqueMembers)}</TableCell>
+                                              <TableCell className="text-center">
+                                                {month.uniqueMembers > 0 ? (month.visits / month.uniqueMembers).toFixed(1) : '0'}
+                                              </TableCell>
+                                              <TableCell className="text-center">
+                                                {prevMonth && (
+                                                  <div className={cn(
+                                                    "flex items-center justify-center gap-1",
+                                                    growth > 0 ? "text-green-600" : growth < 0 ? "text-red-600" : "text-slate-500"
+                                                  )}>
+                                                    {growth > 0 ? <TrendingUp className="w-3 h-3" /> : growth < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                                                    <span className="text-xs font-medium">{growth > 0 ? '+' : ''}{growth.toFixed(1)}%</span>
+                                                  </div>
+                                                )}
+                                                {!prevMonth && <span className="text-xs text-slate-400">-</span>}
+                                              </TableCell>
+                                            </TableRow>
+                                          );
+                                        })}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>
@@ -748,9 +948,98 @@ export const PatternsAndTrends = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Visit Frequency Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Monthly Visit Frequency */}
+          <Card className="bg-gradient-to-br from-white via-blue-50/30 to-white border-0 shadow-xl">
+            <CardHeader className="pb-4 bg-gradient-to-r from-blue-800 to-indigo-900 text-white rounded-t-lg">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Monthly Visit Frequency
+              </CardTitle>
+              <p className="text-blue-100 text-xs mt-1">
+                Distribution of members by classes attended per month
+              </p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                {Object.entries(visitFrequencyData).map(([bucket, count]) => (
+                  <div key={bucket} className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                    <span className="font-medium text-slate-700">{bucket}</span>
+                    <Badge className="bg-blue-600 text-white font-bold">
+                      {formatNumber(count)} member-months
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Late Cancellation Frequency */}
+          <Card className="bg-gradient-to-br from-white via-red-50/30 to-white border-0 shadow-xl">
+            <CardHeader className="pb-4 bg-gradient-to-r from-red-800 to-pink-900 text-white rounded-t-lg">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                Late Cancellation Frequency
+              </CardTitle>
+              <p className="text-red-100 text-xs mt-1">
+                Distribution of members by late cancellations per month
+              </p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                {Object.entries(lateCancellationFrequencyData).map(([bucket, count]) => (
+                  <div key={bucket} className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200">
+                    <span className="font-medium text-slate-700">{bucket}</span>
+                    <Badge className="bg-red-600 text-white font-bold">
+                      {formatNumber(count)} member-months
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Multiple Classes Per Day */}
+        <Card className="bg-gradient-to-br from-white via-purple-50/30 to-white border-0 shadow-xl">
+          <CardHeader className="pb-4 bg-gradient-to-r from-purple-800 to-indigo-900 text-white rounded-t-lg">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Multiple Classes Per Day Analysis
+            </CardTitle>
+            <p className="text-purple-100 text-xs mt-1">
+              Members attending more than one class on the same day
+            </p>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200">
+                <p className="text-slate-600 text-sm font-medium mb-2">Members with Multiple Classes/Day</p>
+                <p className="font-bold text-purple-800 text-3xl">
+                  {formatNumber(multipleClassesPerDay.membersWithMultipleClasses)}
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
+                <p className="text-slate-600 text-sm font-medium mb-2">Total Days with Multiple Classes</p>
+                <p className="font-bold text-indigo-800 text-3xl">
+                  {formatNumber(multipleClassesPerDay.totalMultipleClassDays)}
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-lg border border-blue-200">
+                <p className="text-slate-600 text-sm font-medium mb-2">Avg Multiple Class Days/Member</p>
+                <p className="font-bold text-blue-800 text-3xl">
+                  {multipleClassesPerDay.avgMultipleClassDays}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 };
 
 export default PatternsAndTrends;
+
