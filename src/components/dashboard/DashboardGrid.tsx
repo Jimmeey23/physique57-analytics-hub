@@ -92,6 +92,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = memo(({ onButtonClick
       hoverColor: 'hover:from-red-600 hover:to-red-700'
     },
     {
+      id: 'patterns-trends',
+      title: 'Patterns & Trends',
+      description: 'Member visit patterns and product usage trends over time',
+      icon: TrendingUp,
+      color: 'from-indigo-500 to-purple-600',
+      hoverColor: 'hover:from-indigo-600 hover:to-purple-700'
+    },
+    {
       id: 'expiration-analytics',
       title: 'Expirations & Churn',
       description: 'Membership expirations and customer retention analysis',

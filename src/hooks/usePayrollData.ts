@@ -36,9 +36,14 @@ export const usePayrollData = () => {
   };
 
   const parseNumericValue = (value: string | number): number => {
-    if (typeof value === 'number') return value;
+    // Accept numbers directly
+    if (typeof value === 'number') {
+      // Sheets with UNFORMATTED_VALUE will already give numbers
+      return isNaN(value) ? 0 : value;
+    }
     if (!value || value === '') return 0;
-    const cleaned = value.toString().replace(/,/g, '');
+    // Strip everything except digits, minus and decimal point
+    const cleaned = value.toString().replace(/[^0-9.-]/g, '');
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   };
@@ -49,7 +54,7 @@ export const usePayrollData = () => {
       setIsLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Payroll?alt=json`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Payroll?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
@@ -65,7 +70,7 @@ export const usePayrollData = () => {
         return;
       }
 
-      const payrollData: PayrollData[] = rows.slice(1).map((row: any[]) => {
+  const payrollData: PayrollData[] = rows.slice(1).map((row: any[]) => {
         const cycleSessions = parseNumericValue(row[4]);
         const emptyCycleSessions = parseNumericValue(row[5]);
         const nonEmptyCycleSessions = parseNumericValue(row[6]);
@@ -90,11 +95,14 @@ export const usePayrollData = () => {
         const totalCustomers = parseNumericValue(row[22]);
         const totalPaid = parseNumericValue(row[23]);
 
-        const converted = parseNumericValue(row[26]);
-        const conversionRate = parseNumericValue(row[27]);
-        const retained = parseNumericValue(row[28]);
-        const retentionRate = parseNumericValue(row[29]);
-        const newMembers = parseNumericValue(row[30]);
+  const converted = parseNumericValue(row[26]);
+  // Normalize percentage-like fields: Sheets UNFORMATTED_VALUE returns 0-1 for % cells
+  const conversionRateRaw = parseNumericValue(row[27]);
+  const conversionRate = conversionRateRaw <= 1 && conversionRateRaw > 0 ? conversionRateRaw * 100 : conversionRateRaw;
+  const retained = parseNumericValue(row[28]);
+  const retentionRateRaw = parseNumericValue(row[29]);
+  const retentionRate = retentionRateRaw <= 1 && retentionRateRaw > 0 ? retentionRateRaw * 100 : retentionRateRaw;
+  const newMembers = parseNumericValue(row[30]);
 
         return {
           teacherId: row[0] || '',
@@ -129,9 +137,10 @@ export const usePayrollData = () => {
           monthYear: row[24] || '',
           unique: row[25] || '',
           converted,
-          conversion: conversionRate.toString() + '%',
+          // Store human-readable strings for compatibility, ensure one decimal place
+          conversion: `${conversionRate.toFixed(1)}%`,
           retained,
-          retention: retentionRate.toString() + '%',
+          retention: `${retentionRate.toFixed(1)}%`,
           new: newMembers,
           conversionRate,
           retentionRate,

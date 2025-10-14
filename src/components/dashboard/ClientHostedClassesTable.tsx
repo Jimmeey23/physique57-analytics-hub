@@ -319,7 +319,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
           />
           <div className="border-t border-slate-200 p-4 bg-slate-50">
             <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              {keyInsights.map((insight, index) => (
+              {aiNotes.map((insight, index) => (
                 <li key={index}>{insight}</li>
               ))}
             </ul>

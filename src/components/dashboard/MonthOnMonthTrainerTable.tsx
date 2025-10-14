@@ -122,33 +122,97 @@ export const MonthOnMonthTrainerTable = ({
     }
   };
 
-  // Calculate totals for each month
+  // Calculate totals for each month (for class averages, compute weighted average by sessions)
   const monthlyTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    
+    const isClassAvg = selectedMetric === 'classAverageExclEmpty' || selectedMetric === 'classAverageInclEmpty';
+    const isRate = selectedMetric === 'conversionRate' || selectedMetric === 'retentionRate';
     processedData.months.forEach(month => {
-      let monthTotal = 0;
-      Object.values(processedData.trainerGroups).forEach(trainerData => {
-        if (trainerData[month]) {
-          monthTotal += getMetricValue(trainerData[month], selectedMetric);
-        }
-      });
-      totals[month] = monthTotal;
+      if (!isClassAvg && !isRate) {
+        let sum = 0;
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          if (trainerData[month]) sum += getMetricValue(trainerData[month], selectedMetric);
+        });
+        totals[month] = sum;
+      } else if (isClassAvg) {
+        let numerator = 0; // attendees
+        let denom = 0; // sessions (non-empty for exclEmpty)
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec = trainerData[month];
+          if (!rec) return;
+          const sessions = selectedMetric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+          const customers = rec.totalCustomers || 0;
+          numerator += customers;
+          denom += sessions;
+        });
+        totals[month] = denom > 0 ? numerator / denom : 0;
+      } else if (isRate) {
+        // Weighted average of rates by new members for the month
+        let numerator = 0; // converted or retained members
+        let denom = 0; // new members
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec: any = trainerData[month];
+          if (!rec) return;
+          if (selectedMetric === 'conversionRate') {
+            numerator += (rec.convertedMembers || 0);
+            denom += (rec.newMembers || 0);
+          } else if (selectedMetric === 'retentionRate') {
+            numerator += (rec.retainedMembers || 0);
+            denom += (rec.newMembers || 0);
+          }
+        });
+        totals[month] = denom > 0 ? (numerator / denom) * 100 : 0;
+      }
     });
-    
     return totals;
   }, [processedData, selectedMetric]);
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
     const allValues = Object.values(monthlyTotals);
-    const total = allValues.reduce((sum, val) => sum + val, 0);
-    const average = allValues.length > 0 ? total / allValues.length : 0;
-    const growth = allValues.length >= 2 ? 
-      getChangePercentage(allValues[0], allValues[1]) : 0; // Most recent vs previous month
-
+    const isClassAvg = selectedMetric === 'classAverageExclEmpty' || selectedMetric === 'classAverageInclEmpty';
+    const isRate = selectedMetric === 'conversionRate' || selectedMetric === 'retentionRate';
+    let total = 0;
+    if (!isClassAvg && !isRate) {
+      total = allValues.reduce((sum, val) => sum + val, 0);
+    } else if (isClassAvg) {
+      // Compute overall weighted average across months
+      let numerator = 0;
+      let denom = 0;
+      processedData.months.forEach(month => {
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec = (trainerData as any)[month];
+          if (!rec) return;
+          const sessions = selectedMetric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+          const customers = rec.totalCustomers || 0;
+          numerator += customers;
+          denom += sessions;
+        });
+      });
+      total = denom > 0 ? (numerator / denom) : 0;
+    } else if (isRate) {
+      // Weighted average across all months by new members
+      let numerator = 0;
+      let denom = 0;
+      processedData.months.forEach(month => {
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec: any = (trainerData as any)[month];
+          if (!rec) return;
+          if (selectedMetric === 'conversionRate') {
+            numerator += (rec.convertedMembers || 0);
+            denom += (rec.newMembers || 0);
+          } else if (selectedMetric === 'retentionRate') {
+            numerator += (rec.retainedMembers || 0);
+            denom += (rec.newMembers || 0);
+          }
+        });
+      });
+      total = denom > 0 ? (numerator / denom) * 100 : 0;
+    }
+    const average = allValues.length > 0 && !isClassAvg && !isRate ? total / allValues.length : total; // for class avg & rates, show the weighted average as "total"
+    const growth = allValues.length >= 2 ? getChangePercentage(allValues[0], allValues[1]) : 0;
     return { total, average, growth };
-  }, [monthlyTotals]);
+  }, [monthlyTotals, processedData, selectedMetric]);
 
   if (!data.length) {
     return (
@@ -185,7 +249,7 @@ export const MonthOnMonthTrainerTable = ({
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 to-slate-900">
+            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-900 via-slate-800 to-gray-900">
               <TableRow className="border-none">
                 <TableHead className="font-bold text-white sticky left-0 bg-slate-900/95 backdrop-blur-sm z-30 min-w-[240px]">
                   Trainer
@@ -210,7 +274,13 @@ export const MonthOnMonthTrainerTable = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">Total</TooltipTrigger>
-                      <TooltipContent>Sum across all visible months for each trainer</TooltipContent>
+                      <TooltipContent>
+                        {selectedMetric === 'classAverageExclEmpty' || selectedMetric === 'classAverageInclEmpty'
+                          ? 'Weighted average across visible months (by sessions)'
+                          : selectedMetric === 'conversionRate' || selectedMetric === 'retentionRate'
+                            ? 'Weighted average across visible months (by new members)'
+                            : 'Sum across all visible months for each trainer'}
+                      </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
@@ -218,12 +288,12 @@ export const MonthOnMonthTrainerTable = ({
             </TableHeader>
             <TableBody>
               {/* Totals Row */}
-              <TableRow className="bg-slate-50 font-bold">
-                <TableCell className="font-bold text-slate-800 sticky left-0 bg-slate-50 z-10">
+              <TableRow className="bg-gradient-to-r from-slate-100 to-slate-200 font-bold">
+                <TableCell className="font-bold text-slate-900 sticky left-0 bg-transparent z-10">
                   TOTAL
                 </TableCell>
                 {processedData.months.map((month) => (
-                  <TableCell key={`total-${month}`} className="text-center font-bold text-slate-800">
+                  <TableCell key={`total-${month}`} className="text-center font-bold text-slate-900">
                     {formatValue(monthlyTotals[month] || 0, selectedMetric)}
                   </TableCell>
                 ))}
@@ -240,7 +310,7 @@ export const MonthOnMonthTrainerTable = ({
                     {Math.abs(summaryStats.growth).toFixed(1)}%
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center font-bold text-slate-800">
+                <TableCell className="text-center font-bold text-slate-900">
                   {formatValue(summaryStats.total, selectedMetric)}
                 </TableCell>
               </TableRow>
@@ -252,7 +322,37 @@ export const MonthOnMonthTrainerTable = ({
                   trainerData[month] ? getMetricValue(trainerData[month], selectedMetric) : 0
                 );
                 
-                const trainerTotal = values.reduce((sum, val) => sum + val, 0);
+                const trainerTotal = (() => {
+                  if (selectedMetric === 'classAverageExclEmpty' || selectedMetric === 'classAverageInclEmpty') {
+                    // Weighted average across months per trainer
+                    let num = 0; let den = 0;
+                    processedData.months.forEach((month, i) => {
+                      const rec: any = (trainerData as any)[month];
+                      if (!rec) return;
+                      const sessions = selectedMetric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+                      const customers = rec.totalCustomers || 0;
+                      num += customers;
+                      den += sessions;
+                    });
+                    return den > 0 ? (num / den) : 0;
+                  } else if (selectedMetric === 'conversionRate' || selectedMetric === 'retentionRate') {
+                    // Weighted average of rates by new members across months for this trainer
+                    let num = 0; let den = 0;
+                    processedData.months.forEach((month) => {
+                      const rec: any = (trainerData as any)[month];
+                      if (!rec) return;
+                      if (selectedMetric === 'conversionRate') {
+                        num += (rec.convertedMembers || 0);
+                        den += (rec.newMembers || 0);
+                      } else {
+                        num += (rec.retainedMembers || 0);
+                        den += (rec.newMembers || 0);
+                      }
+                    });
+                    return den > 0 ? (num / den) * 100 : 0;
+                  }
+                  return values.reduce((sum, val) => sum + val, 0);
+                })();
                 const growth = values.length >= 2 ? getChangePercentage(values[0], values[1]) : 0;
                 
                 return (

@@ -38,11 +38,12 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
     const totalNonEmptySessions = data.reduce((sum, d) => sum + d.nonEmptySessions, 0);
     const utilizationRate = totalSessions > 0 ? (totalNonEmptySessions / totalSessions) * 100 : 0;
 
-    // Calculate average conversion and retention rates
-    const avgConversionRate = data.length > 0 ? 
-      data.reduce((sum, d) => sum + d.conversionRate, 0) / data.length : 0;
-    const avgRetentionRate = data.length > 0 ? 
-      data.reduce((sum, d) => sum + d.retentionRate, 0) / data.length : 0;
+    // Calculate weighted conversion and retention rates (by new members)
+    const totalNewMembers = data.reduce((sum, d) => sum + (d.newMembers || 0), 0);
+    const totalConverted = data.reduce((sum, d) => sum + (d.convertedMembers || 0), 0);
+    const totalRetained = data.reduce((sum, d) => sum + (d.retainedMembers || 0), 0);
+    const avgConversionRate = totalNewMembers > 0 ? (totalConverted / totalNewMembers) * 100 : 0;
+    const avgRetentionRate = totalNewMembers > 0 ? (totalRetained / totalNewMembers) * 100 : 0;
 
     return {
       totalTrainers,
@@ -152,6 +153,36 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
         { label: 'Retention Rate', value: `${summaryStats.avgRetentionRate.toFixed(1)}%` },
         { label: 'Performance', value: 'Strong' }
       ]
+    },
+    {
+      title: 'Revenue / Session',
+      value: formatCurrency(summaryStats.avgRevenuePerSession),
+      subtitle: 'Average per class',
+      icon: BarChart3,
+      gradient: 'from-fuchsia-500 to-pink-600',
+      bgGradient: 'from-fuchsia-50 to-pink-50',
+      borderColor: 'border-fuchsia-200',
+      change: '+1.2%',
+      changeType: 'positive' as const,
+      details: [
+        { label: 'Total Revenue', value: formatCurrency(summaryStats.totalRevenue) },
+        { label: 'Total Sessions', value: formatNumber(summaryStats.totalSessions) }
+      ]
+    },
+    {
+      title: 'Retention Rate',
+      value: `${summaryStats.avgRetentionRate.toFixed(1)}%`,
+      subtitle: 'Weighted across months',
+      icon: Award,
+      gradient: 'from-sky-500 to-blue-600',
+      bgGradient: 'from-sky-50 to-blue-50',
+      borderColor: 'border-sky-200',
+      change: '+0.8%',
+      changeType: 'positive' as const,
+      details: [
+        { label: 'Conversion Rate', value: `${summaryStats.avgConversionRate.toFixed(1)}%` },
+        { label: 'Utilization', value: `${summaryStats.utilizationRate.toFixed(1)}%` }
+      ]
     }
   ];
 
@@ -162,7 +193,7 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
         return (
           <div
             key={card.title}
-            onClick={() => onCardClick?.(card.title, { metric: card.title, data: summaryStats })}
+            onClick={() => onCardClick?.(card.title, { ...summaryStats, metric: card.title })}
             className={cn(
               "group relative rounded-2xl p-6 transition-all duration-500 ease-out",
               "bg-gradient-to-br from-white via-white to-slate-50/50",

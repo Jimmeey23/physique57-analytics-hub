@@ -290,7 +290,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
   totals.previousAvgClassSize = totals.previousSessions > 0 ? totals.previousCustomers / totals.previousSessions : 0;
   totals.classSizeGrowth = totals.previousAvgClassSize > 0 ? (totals.currentAvgClassSize - totals.previousAvgClassSize) / totals.previousAvgClassSize * 100 : 0;
   return <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-900 text-white">
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
           Trainer Year-on-Year Performance Comparison
@@ -304,7 +304,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
           data={sortedYoY}
           columns={columns}
           onRowClick={handleRowClick}
-          headerGradient="from-emerald-600 to-teal-600"
+          headerGradient="from-emerald-800 via-emerald-900 to-teal-900"
           showFooter={true}
           footerData={totals}
           stickyHeader={true}

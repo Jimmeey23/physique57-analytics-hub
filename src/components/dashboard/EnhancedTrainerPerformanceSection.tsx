@@ -10,19 +10,16 @@ import { MonthOnMonthTrainerTable } from './MonthOnMonthTrainerTable';
 import { DynamicTrainerDrillDownModal } from './DynamicTrainerDrillDownModal';
 import { TrainerFilterSection } from './TrainerFilterSection';
 import { TrainerMetricTabs } from './TrainerMetricTabs';
-import { EnhancedTrainerRankings } from './EnhancedTrainerRankings';
-import { PersistentTableFooter } from './PersistentTableFooter';
 import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
-import { AdvancedNotesModal } from '@/components/ui/AdvancedNotesModal';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { Users, Calendar, TrendingUp, AlertCircle, Award, Target, DollarSign, Activity, FileDown } from 'lucide-react';
+import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 
 export const EnhancedTrainerPerformanceSection = () => {
   const { data: payrollData, isLoading, error } = usePayrollData();
@@ -138,34 +135,69 @@ export const EnhancedTrainerPerformanceSection = () => {
     };
   }, [processedData]);
 
-  // Top and bottom performers
-  const topBottomPerformers = useMemo(() => {
-    if (!processedData.length) return { top: [], bottom: [] };
+  // Interactive rankings controls (metric + show count)
+  const [rankingMetric, setRankingMetric] = useState<'revenue' | 'sessions' | 'customers' | 'efficiency' | 'classAvg' | 'conversion' | 'retention' | 'emptySessions'>('revenue');
+  const [rankingCount, setRankingCount] = useState<number>(5);
 
-    const trainerStats = processedData.reduce((acc, trainer) => {
-      if (!acc[trainer.trainerName]) {
-        acc[trainer.trainerName] = {
-          name: trainer.trainerName,
-          totalSessions: 0,
+  // Build ranked trainers based on selected metric
+  const rankedTrainers = useMemo(() => {
+    if (!processedData.length) return [] as any[];
+
+    const byTrainer = processedData.reduce((acc, r) => {
+      const key = r.trainerName;
+      if (!acc[key]) {
+        acc[key] = {
+          name: key,
+          location: r.location,
           totalRevenue: 0,
+          totalSessions: 0,
           totalCustomers: 0,
-          location: trainer.location
-        };
+          nonEmptySessions: 0,
+          conversionSum: 0,
+          retentionSum: 0,
+          records: 0,
+          emptySessions: 0
+        } as any;
       }
-      acc[trainer.trainerName].totalSessions += trainer.totalSessions;
-      acc[trainer.trainerName].totalRevenue += trainer.totalPaid;
-      acc[trainer.trainerName].totalCustomers += trainer.totalCustomers;
+      const t = acc[key];
+      t.totalRevenue += r.totalPaid || 0;
+      t.totalSessions += r.totalSessions || 0;
+      t.totalCustomers += r.totalCustomers || 0;
+      t.nonEmptySessions += r.nonEmptySessions || 0;
+      t.conversionSum += r.conversionRate || 0;
+      t.retentionSum += r.retentionRate || 0;
+      t.emptySessions += r.emptySessions || 0;
+      t.records += 1;
       return acc;
     }, {} as Record<string, any>);
 
-    const trainers = Object.values(trainerStats);
-    const sortedByRevenue = [...trainers].sort((a: any, b: any) => b.totalRevenue - a.totalRevenue);
+    const trainers = Object.values(byTrainer).map((t: any) => {
+      const efficiency = t.totalSessions > 0 ? t.totalRevenue / t.totalSessions : 0;
+      const classAvg = t.totalSessions > 0 ? (t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalCustomers / t.totalSessions)) : 0;
+      const conversionRate = t.records > 0 ? t.conversionSum / t.records : 0;
+      const retentionRate = t.records > 0 ? t.retentionSum / t.records : 0;
+      return { ...t, efficiency, classAvg, conversionRate, retentionRate };
+    });
 
-    return {
-      top: sortedByRevenue.slice(0, 5),
-      bottom: sortedByRevenue.slice(-5).reverse()
+    const sortFn = (a: any, b: any) => {
+      switch (rankingMetric) {
+        case 'revenue': return b.totalRevenue - a.totalRevenue;
+        case 'sessions': return b.totalSessions - a.totalSessions;
+        case 'customers': return b.totalCustomers - a.totalCustomers;
+        case 'efficiency': return b.efficiency - a.efficiency;
+        case 'classAvg': return b.classAvg - a.classAvg;
+        case 'conversion': return b.conversionRate - a.conversionRate;
+        case 'retention': return b.retentionRate - a.retentionRate;
+        case 'emptySessions': return b.emptySessions - a.emptySessions;
+        default: return b.totalRevenue - a.totalRevenue;
+      }
     };
-  }, [processedData]);
+
+    return trainers.sort(sortFn);
+  }, [processedData, rankingMetric]);
+
+  const topList = rankedTrainers.slice(0, rankingCount);
+  const bottomList = rankedTrainers.slice(-rankingCount).reverse();
 
   // Chart data
   const chartData = useMemo(() => {
@@ -223,19 +255,6 @@ export const EnhancedTrainerPerformanceSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Hero for consistency across dashboards */}
-      {summaryStats && (
-        <DashboardMotionHero
-          title="Trainer Performance"
-          subtitle="Productivity, revenue impact, and session quality across locations and time"
-          metrics={[
-            { label: 'Total Trainers', value: String(summaryStats.totalTrainers) },
-            { label: 'Total Sessions', value: summaryStats.totalSessions.toLocaleString() },
-            { label: 'Avg Class Size', value: summaryStats.avgClassSize.toFixed(1) },
-            { label: 'Total Revenue', value: formatCurrency(summaryStats.totalRevenue) }
-          ]}
-        />
-      )}
       {/* Enhanced Location Tabs - matching Client Retention styling */}
       <div className="flex justify-center items-start mb-8" id="location-tabs">
         <div className="w-full max-w-4xl">
@@ -333,11 +352,189 @@ export const EnhancedTrainerPerformanceSection = () => {
         </Card>
       </div>
 
-      {/* Enhanced Rankings */}
-      <EnhancedTrainerRankings 
-        data={processedData} 
-        onTrainerClick={handleRowClick}
-      />
+      {/* Top & Bottom Performers — styled like Sales with controls */}
+      <Card className="bg-gradient-to-br from-white via-slate-50/20 to-white border-0 shadow-xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+            Trainer Top & Bottom Performers
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            {/* Metric selection */}
+            <div className="flex flex-wrap bg-slate-50 border border-slate-200 rounded-lg p-1 gap-1">
+              {[
+                { key: 'revenue', label: 'Revenue', icon: DollarSign },
+                { key: 'sessions', label: 'Sessions', icon: Activity },
+                { key: 'customers', label: 'Members', icon: Users },
+                { key: 'efficiency', label: 'Rev/Session', icon: DollarSign },
+                { key: 'classAvg', label: 'Class Avg', icon: Users },
+                { key: 'conversion', label: 'Conversion', icon: TrendingUp },
+                { key: 'retention', label: 'Retention', icon: Target },
+                { key: 'emptySessions', label: 'Empty', icon: Activity },
+              ].map(({ key, label, icon: Icon }: any) => (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant={rankingMetric === key ? 'default' : 'ghost'}
+                  className={rankingMetric === key ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100'}
+                  onClick={() => setRankingMetric(key)}
+                >
+                  <Icon className="w-3 h-3 mr-1" /> {label}
+                </Button>
+              ))}
+            </div>
+            {/* Count selection */}
+            <div className="flex bg-slate-50 border border-slate-200 rounded-lg p-1">
+              {[5, 10, 15].map((n) => (
+                <Button
+                  key={n}
+                  size="sm"
+                  variant={rankingCount === n ? 'default' : 'ghost'}
+                  className={rankingCount === n ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}
+                  onClick={() => setRankingCount(n)}
+                >
+                  {n}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Performers Card */}
+            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <span className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Top Trainers</span>
+                    <p className="text-sm text-slate-600 font-normal capitalize">By {rankingMetric === 'efficiency' ? 'Revenue/Session' : rankingMetric === 'classAvg' ? 'Class Average' : rankingMetric}</p>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {topList.map((t: any, index: number) => (
+                  <div
+                    key={t.name}
+                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-emerald-200/70"
+                    onClick={() => handleRowClick(t.name, t)}
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={
+                        `w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white ` +
+                        (index === 0
+                          ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500'
+                          : index === 1
+                          ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500'
+                          : index === 2
+                          ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600'
+                          : 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700')
+                      }>
+                        {index === 0 ? (
+                          <Crown className="w-6 h-6" />
+                        ) : index === 1 ? (
+                          <Trophy className="w-6 h-6" />
+                        ) : index === 2 ? (
+                          <Medal className="w-5 h-5" />
+                        ) : (
+                          <span className="text-sm font-bold">{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900 whitespace-normal break-words group-hover:text-blue-600 transition-colors">{t.name}</p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {formatNumber(t.totalSessions)} sessions
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
+                            Avg size: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-green-200 text-green-700">
+                            Members: {formatNumber(t.totalCustomers)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {rankingMetric === 'revenue' ? formatCurrency(t.totalRevenue)
+                          : rankingMetric === 'sessions' ? formatNumber(t.totalSessions)
+                          : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
+                          : rankingMetric === 'efficiency' ? formatCurrency(t.efficiency)
+                          : rankingMetric === 'classAvg' ? (t.classAvg).toFixed(1)
+                          : rankingMetric === 'conversion' ? `${t.conversionRate.toFixed(1)}%`
+                          : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
+                          : formatNumber(t.emptySessions)}
+                      </p>
+                      <p className="text-sm text-slate-500">{t.location}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Bottom Performers Card */}
+            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 rounded-full bg-gradient-to-r from-red-500 to-rose-600">
+                    <TrendingDown className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <span className="bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">Bottom Trainers</span>
+                    <p className="text-sm text-slate-600 font-normal capitalize">By {rankingMetric === 'efficiency' ? 'Revenue/Session' : rankingMetric === 'classAvg' ? 'Class Average' : rankingMetric}</p>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {bottomList.map((t: any, index: number) => (
+                  <div
+                    key={t.name}
+                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-rose-200/70"
+                    onClick={() => handleRowClick(t.name, t)}
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white bg-gradient-to-br from-red-500 via-rose-600 to-red-700">
+                        <span className="text-sm font-bold">{index + 1}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900 whitespace-normal break-words group-hover:text-blue-600 transition-colors">{t.name}</p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {formatNumber(t.totalSessions)} sessions
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
+                            Avg size: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-slate-200 text-slate-700">
+                            Members: {formatNumber(t.totalCustomers)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {rankingMetric === 'revenue' ? formatCurrency(t.totalRevenue)
+                          : rankingMetric === 'sessions' ? formatNumber(t.totalSessions)
+                          : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
+                          : rankingMetric === 'efficiency' ? formatCurrency(t.efficiency)
+                          : rankingMetric === 'classAvg' ? (t.classAvg).toFixed(1)
+                          : rankingMetric === 'conversion' ? `${t.conversionRate.toFixed(1)}%`
+                          : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
+                          : formatNumber(t.emptySessions)}
+                      </p>
+                      <p className="text-sm text-slate-500">{t.location}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+      
 
       {/* Analysis Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
@@ -395,16 +592,6 @@ export const EnhancedTrainerPerformanceSection = () => {
             defaultMetric="totalSessions"
             onRowClick={handleRowClick}
           />
-          <PersistentTableFooter
-            tableId="trainer-month-on-month"
-            tableName="Trainer Month-on-Month Analysis"
-            tableContext="Per-trainer monthly metrics and changes"
-            tableData={processedData}
-          />
-          <AdvancedNotesModal 
-            pageId="month-on-month-trainer"
-            title="Month-on-Month Analysis Notes"
-          />
         </TabsContent>
 
   <TabsContent value="year-on-year" className="space-y-6">
@@ -430,17 +617,6 @@ export const EnhancedTrainerPerformanceSection = () => {
             data={processedDataNoMonth}
             onRowClick={handleRowClick}
           />
-          <PersistentTableFooter
-            tableId="trainer-year-on-year"
-            tableName="Trainer Year-on-Year Comparison"
-            tableContext="This compares current year vs previous year trainer performance"
-            tableData={processedData}
-          />
-          
-          <AdvancedNotesModal 
-            pageId="year-on-year-trainer"
-            title="Year-on-Year Analysis Notes"
-          />
         </TabsContent>
 
         <TabsContent value="efficiency-analysis" className="space-y-6">
@@ -457,17 +633,6 @@ export const EnhancedTrainerPerformanceSection = () => {
             data={processedData}
             onRowClick={handleRowClick}
           />
-          <PersistentTableFooter
-            tableId="trainer-efficiency-analysis"
-            tableName="Trainer Efficiency & Productivity"
-            tableContext="Composite efficiency score with utilization, revenue per hour, retention, impact, and quality indices"
-            tableData={processedData}
-          />
-          
-          <AdvancedNotesModal 
-            pageId="efficiency-analysis-trainer"
-            title="Efficiency Analysis Notes"
-          />
         </TabsContent>
 
         <TabsContent value="performance-detail" className="space-y-6">
@@ -483,17 +648,6 @@ export const EnhancedTrainerPerformanceSection = () => {
           <TrainerPerformanceDetailTable
             data={processedData}
             onRowClick={handleRowClick}
-          />
-          <PersistentTableFooter
-            tableId="trainer-performance-detail"
-            tableName="Trainer Performance Detail"
-            tableContext="Aggregated trainer-level sessions, customers, revenue, and derived metrics"
-            tableData={processedData}
-          />
-          
-          <AdvancedNotesModal 
-            pageId="performance-detail-trainer"
-            title="Performance Detail Notes"
           />
         </TabsContent>
       </Tabs>

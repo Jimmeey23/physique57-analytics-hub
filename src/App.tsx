@@ -53,6 +53,9 @@ const ExpirationAnalytics = React.lazy(() =>
 const LateCancellations = React.lazy(() => 
   import("./pages/LateCancellations").then(module => ({ default: module.default }))
 );
+const PatternsAndTrends = React.lazy(() => 
+  import("./pages/PatternsAndTrends").then(module => ({ default: module.default }))
+);
 const HeroDemo = React.lazy(() => 
   import("./pages/HeroDemo").then(module => ({ default: module.default }))
 );
@@ -118,6 +121,7 @@ const App = () => {
               <Route path="/sessions" element={<Sessions />} />
               <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
               <Route path="/late-cancellations" element={<LateCancellations />} />
+              <Route path="/patterns-trends" element={<PatternsAndTrends />} />
               <Route path="/hero-demo" element={<HeroDemo />} />
               <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
               <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
