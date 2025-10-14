@@ -10,26 +10,88 @@ import { cn } from '@/lib/utils';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HeroHeader } from '@/components/ui/HeroHeader';
+import { HeroSection } from '@/components/ui/HeroSection';
 
 export const PatternsAndTrends = () => {
   const { data: checkinsData, loading, error } = useCheckinsData();
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  
+  // Filter states
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
+  const [selectedMemberStatus, setSelectedMemberStatus] = useState<string[]>([]);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
-  // Filter data by location
-  const filteredData = useMemo(() => {
-    if (selectedLocation === 'All Locations') return checkinsData;
-    
-    return checkinsData.filter(item => {
-      const location = item.location || '';
-      if (selectedLocation === 'Kenkere House') {
-        return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
-      }
-      return location === selectedLocation;
+  // Get unique filter options
+  const filterOptions = useMemo(() => {
+    const products = new Set<string>();
+    const categories = new Set<string>();
+    const teachers = new Set<string>();
+    const memberStatuses = new Set<string>();
+    const months = new Set<string>();
+
+    checkinsData.forEach(item => {
+      if (item.cleanedProduct) products.add(item.cleanedProduct);
+      if (item.cleanedCategory) categories.add(item.cleanedCategory);
+      if (item.teacherName) teachers.add(item.teacherName);
+      if (item.isNew) memberStatuses.add(item.isNew);
+      if (item.month) months.add(item.month);
     });
-  }, [checkinsData, selectedLocation]);
+
+    return {
+      products: Array.from(products).sort(),
+      categories: Array.from(categories).sort(),
+      teachers: Array.from(teachers).sort(),
+      memberStatuses: Array.from(memberStatuses).sort(),
+      months: Array.from(months).sort()
+    };
+  }, [checkinsData]);
+
+  // Filter data by location and additional filters
+  const filteredData = useMemo(() => {
+    let data = checkinsData;
+    
+    // Location filter
+    if (selectedLocation !== 'All Locations') {
+      data = data.filter(item => {
+        const location = item.location || '';
+        if (selectedLocation === 'Kenkere House') {
+          return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
+        }
+        return location === selectedLocation;
+      });
+    }
+
+    // Product filter
+    if (selectedProducts.length > 0) {
+      data = data.filter(item => selectedProducts.includes(item.cleanedProduct || ''));
+    }
+
+    // Category filter
+    if (selectedCategories.length > 0) {
+      data = data.filter(item => selectedCategories.includes(item.cleanedCategory || ''));
+    }
+
+    // Teacher filter
+    if (selectedTeachers.length > 0) {
+      data = data.filter(item => selectedTeachers.includes(item.teacherName || ''));
+    }
+
+    // Member status filter
+    if (selectedMemberStatus.length > 0) {
+      data = data.filter(item => selectedMemberStatus.includes(item.isNew || ''));
+    }
+
+    // Month filter
+    if (selectedMonths.length > 0) {
+      data = data.filter(item => selectedMonths.includes(item.month || ''));
+    }
+
+    return data;
+  }, [checkinsData, selectedLocation, selectedProducts, selectedCategories, selectedTeachers, selectedMemberStatus, selectedMonths]);
 
   // Process data: month-on-month breakdown by product
   const monthlyProductData = useMemo(() => {
@@ -108,11 +170,13 @@ export const PatternsAndTrends = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <HeroHeader
+        <HeroSection
           title="Patterns & Trends"
-          subtitle="Member visit patterns and product usage trends over time"
-          gradient="from-indigo-600 via-purple-600 to-pink-600"
-          icon={<BarChart3 className="w-12 h-12" />}
+          subtitle="Member Visit Analytics"
+          description="Month-on-month breakdown of visits by product and membership type"
+          badgeText="Visit Patterns"
+          badgeIcon={BarChart3}
+          gradient="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
         />
         <div className="container mx-auto px-4 py-8">
           <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
@@ -131,11 +195,13 @@ export const PatternsAndTrends = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <HeroHeader
+        <HeroSection
           title="Patterns & Trends"
-          subtitle="Member visit patterns and product usage trends over time"
-          gradient="from-indigo-600 via-purple-600 to-pink-600"
-          icon={<BarChart3 className="w-12 h-12" />}
+          subtitle="Member Visit Analytics"
+          description="Month-on-month breakdown of visits by product and membership type"
+          badgeText="Visit Patterns"
+          badgeIcon={BarChart3}
+          gradient="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
         />
         <div className="container mx-auto px-4 py-8">
           <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 shadow-xl">
@@ -150,11 +216,13 @@ export const PatternsAndTrends = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      <HeroHeader
+      <HeroSection
         title="Patterns & Trends"
-        subtitle="Member visit patterns and product usage trends over time"
-        gradient="from-indigo-600 via-purple-600 to-pink-600"
-        icon={<BarChart3 className="w-12 h-12" />}
+        subtitle="Member Visit Analytics"
+        description="Month-on-month breakdown of visits by product and membership type"
+        badgeText="Visit Patterns"
+        badgeIcon={BarChart3}
+        gradient="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
       />
 
       <div className="container mx-auto px-4 py-8 space-y-6">
@@ -195,16 +263,235 @@ export const PatternsAndTrends = () => {
                 {isFiltersCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 Filters & Options
               </CardTitle>
-              <Badge variant="outline" className="text-xs">
-                {isFiltersCollapsed ? 'Click to expand' : 'Click to collapse'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {(selectedProducts.length + selectedCategories.length + selectedTeachers.length + selectedMemberStatus.length + selectedMonths.length) > 0 && (
+                  <Badge variant="default" className="bg-indigo-600 text-white">
+                    {selectedProducts.length + selectedCategories.length + selectedTeachers.length + selectedMemberStatus.length + selectedMonths.length} active
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-xs">
+                  {isFiltersCollapsed ? 'Click to expand' : 'Click to collapse'}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           {!isFiltersCollapsed && (
-            <CardContent>
-              <p className="text-sm text-slate-600">
-                Additional filters coming soon. Currently showing data for {selectedLocation}.
-              </p>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Products Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-indigo-600" />
+                    Products
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white">
+                    <div className="space-y-1">
+                      {filterOptions.products.map(product => (
+                        <label key={product} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedProducts([...selectedProducts, product]);
+                              } else {
+                                setSelectedProducts(selectedProducts.filter(p => p !== product));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-sm text-slate-700">{product}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedProducts.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedProducts([])}
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+
+                {/* Categories Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-purple-600" />
+                    Categories
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white">
+                    <div className="space-y-1">
+                      {filterOptions.categories.map(category => (
+                        <label key={category} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.includes(category)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCategories([...selectedCategories, category]);
+                              } else {
+                                setSelectedCategories(selectedCategories.filter(c => c !== category));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-sm text-slate-700">{category}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedCategories.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedCategories([])}
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+
+                {/* Teachers Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-pink-600" />
+                    Teachers
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white">
+                    <div className="space-y-1">
+                      {filterOptions.teachers.map(teacher => (
+                        <label key={teacher} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedTeachers.includes(teacher)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTeachers([...selectedTeachers, teacher]);
+                              } else {
+                                setSelectedTeachers(selectedTeachers.filter(t => t !== teacher));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-pink-600 focus:ring-pink-500"
+                          />
+                          <span className="text-sm text-slate-700">{teacher}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedTeachers.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedTeachers([])}
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+
+                {/* Member Status Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-emerald-600" />
+                    Member Status
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white">
+                    <div className="space-y-1">
+                      {filterOptions.memberStatuses.map(status => (
+                        <label key={status} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedMemberStatus.includes(status)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedMemberStatus([...selectedMemberStatus, status]);
+                              } else {
+                                setSelectedMemberStatus(selectedMemberStatus.filter(s => s !== status));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm text-slate-700">{status}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedMemberStatus.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedMemberStatus([])}
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+
+                {/* Months Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    Months
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 bg-white">
+                    <div className="space-y-1">
+                      {filterOptions.months.map(month => (
+                        <label key={month} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedMonths.includes(month)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedMonths([...selectedMonths, month]);
+                              } else {
+                                setSelectedMonths(selectedMonths.filter(m => m !== month));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-slate-700">{month}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedMonths.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedMonths([])}
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Clear All Filters */}
+              {(selectedProducts.length + selectedCategories.length + selectedTeachers.length + selectedMemberStatus.length + selectedMonths.length) > 0 && (
+                <div className="flex justify-end pt-4 border-t border-slate-200">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedProducts([]);
+                      setSelectedCategories([]);
+                      setSelectedTeachers([]);
+                      setSelectedMemberStatus([]);
+                      setSelectedMonths([]);
+                    }}
+                    className="text-slate-700 hover:bg-slate-100"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              )}
             </CardContent>
           )}
         </Card>

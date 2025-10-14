@@ -7,7 +7,7 @@ const GOOGLE_CONFIG = {
   TOKEN_URL: "https://oauth2.googleapis.com/token"
 };
 
-const SPREADSHEET_ID = "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
+const SPREADSHEET_ID = "149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI";
 
 export interface CheckinData {
   memberId: string;
@@ -83,7 +83,7 @@ export const useCheckinsData = () => {
       setLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Checkins?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Checkins?alt=json`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
