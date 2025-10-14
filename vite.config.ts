@@ -14,9 +14,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react({
-      jsxImportSource: 'react'
-    }),
+    react(),
     mode === 'development' &&
     componentTagger(),
     // Local API middleware to handle /api/notes in development
@@ -99,18 +97,20 @@ export default defineConfig(({ mode }) => ({
             }
             // Keep React, React-DOM, React Router, recharts, lucide-react, framer-motion, and Radix UI together in vendor chunk
             // This prevents React import resolution issues and circular dependencies
-            if (id.includes('react') || id.includes('react-dom')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react/')) {
               return 'vendor';
             }
             return 'vendor';
           }
           
-          if (id.includes('/components/dashboard/')) {
-            return 'dashboard';
+          // Don't split UI components into separate chunk - keep with main bundle
+          // This prevents React forwardRef issues
+          if (id.includes('/components/ui/')) {
+            return 'vendor';
           }
           
-          if (id.includes('/components/ui/')) {
-            return 'ui-components';
+          if (id.includes('/components/dashboard/')) {
+            return 'dashboard';
           }
           
           if (id.includes('/pages/')) {
