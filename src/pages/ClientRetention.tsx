@@ -10,6 +10,7 @@ import { Home, Users } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Card, CardContent } from '@/components/ui/card';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
@@ -516,7 +517,7 @@ const ClientRetention = () => {
             <SectionTimelineNav />
             
             {/* Enhanced Location Tabs - unified styling (moved above filters) */}
-            <div className="flex justify-center mb-8" id="location-tabs">
+            <div className="flex items-start justify-center mb-8" id="location-tabs">
               <div className="w-full max-w-4xl">
                 <div className="grid grid-cols-4 location-tabs">
                   {[
@@ -538,6 +539,9 @@ const ClientRetention = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="ml-3 mt-1">
+                <InfoPopover context="sales-overview" locationId={selectedLocation === 'All Locations' ? 'all' : selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 'kenkere'} />
               </div>
             </div>
 

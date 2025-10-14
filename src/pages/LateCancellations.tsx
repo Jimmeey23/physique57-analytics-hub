@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Home, XCircle } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { AiNotes } from '@/components/ui/AiNotes';
@@ -397,7 +398,7 @@ const LateCancellations = () => {
         <div className="container mx-auto px-6 py-8">
           {/* Location Tabs */}
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full mb-8">
-            <div className="flex justify-center mb-8">
+            <div className="flex items-start justify-center mb-8">
               <TabsList className="location-tabs grid w-full max-w-4xl overflow-visible" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
                 {locations.map(location => {
                   const parts = location.name.split(',').map(s => s.trim());
@@ -421,6 +422,9 @@ const LateCancellations = () => {
                   );
                 })}
               </TabsList>
+              <div className="ml-3 mt-1">
+                <InfoPopover context="sales-overview" locationId={activeLocation} />
+              </div>
             </div>
 
             {locations.map(location => (

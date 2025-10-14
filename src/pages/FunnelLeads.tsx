@@ -21,6 +21,7 @@ import { FunnelDrillDownModal } from '@/components/dashboard/FunnelDrillDownModa
 import { LeadsFilterOptions } from '@/types/leads';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -236,7 +237,7 @@ export default function FunnelLeads() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
-        <div className="flex justify-center mb-8" id="location-tabs">
+        <div className="flex items-start justify-center mb-8" id="location-tabs">
           <div className="w-full max-w-4xl">
             <div className="grid grid-cols-4 location-tabs">
               {locations.map(location => {
@@ -257,6 +258,9 @@ export default function FunnelLeads() {
                 );
               })}
             </div>
+          </div>
+          <div className="ml-3 mt-1">
+            <InfoPopover context="sales-overview" locationId={activeLocation} />
           </div>
         </div>
 

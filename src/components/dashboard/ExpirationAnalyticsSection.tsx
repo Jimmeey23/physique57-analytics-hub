@@ -15,6 +15,7 @@ import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Calendar, Users, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 interface ExpirationAnalyticsSectionProps {
   data: ExpirationData[];
@@ -210,7 +211,8 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
             <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
               Expirations & Churn Analytics
             </h1>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <InfoPopover context="sales-overview" locationId={activeLocation} />
               <AdvancedExportButton 
                 additionalData={{ expirations: filteredData }}
                 defaultFileName="expirations-analysis"

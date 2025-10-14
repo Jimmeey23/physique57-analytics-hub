@@ -167,12 +167,14 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
         </button>
       </PopoverTrigger>
       <PopoverContent
-        align="end"
+        align="center"
         side="bottom"
-        sideOffset={10}
-        avoidCollisions
-        collisionPadding={16}
-        className="w-[36rem] min-w-[20rem] max-w-[95vw] max-h-[80vh] overflow-auto overscroll-contain px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-10 text-sm space-y-4 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-slate-200 shadow-2xl rounded-xl ring-1 ring-slate-200 focus:outline-none resize prose prose-slate prose-sm prose-headings:text-slate-900 prose-h2:text-xl prose-h3:text-lg prose-p:text-slate-700 prose-strong:text-slate-900 prose-li:marker:text-slate-400"
+        sideOffset={24}
+        avoidCollisions={false}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        collisionPadding={{ top: 80, bottom: 24, left: 16, right: 16 }}
+        style={{ maxHeight: 'calc(100dvh - 128px)' }}
+        className="z-[9999] w-[36rem] min-w-[20rem] max-w-[95vw] overflow-auto overscroll-contain px-4 pb-4 pt-12 md:px-6 md:pb-6 md:pt-14 text-sm space-y-4 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-slate-200 shadow-2xl rounded-xl ring-1 ring-slate-200 focus:outline-none resize prose prose-slate prose-sm prose-headings:text-slate-900 prose-h2:text-xl prose-h3:text-lg prose-p:text-slate-700 prose-strong:text-slate-900 prose-li:marker:text-slate-400"
       >
         {context === 'sales-overview' && isSupreme && (
           <div className="space-y-4">

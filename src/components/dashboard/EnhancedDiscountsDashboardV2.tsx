@@ -10,6 +10,7 @@ import { DiscountDrillDownModal } from './DiscountDrillDownModal';
 import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 interface EnhancedDiscountsDashboardV2Props {
   data: SalesData[];
@@ -255,7 +256,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
 
       {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
       <div className="container mx-auto px-6 space-y-6">
-        <div className="flex justify-center mb-8" id="location-tabs">
+        <div className="flex items-start justify-center mb-8" id="location-tabs">
           <div className="w-full max-w-4xl">
             <div className="grid grid-cols-4 location-tabs">
               {locations.map(location => {
@@ -279,6 +280,9 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
                 );
               })}
             </div>
+          </div>
+          <div className="ml-4 mt-1">
+            <InfoPopover context="sales-overview" locationId={activeLocation} />
           </div>
         </div>
 

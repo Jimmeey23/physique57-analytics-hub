@@ -18,6 +18,7 @@ import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { SessionsFilterSection } from './SessionsFilterSection';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 const locations = [
   { id: 'all', name: 'All Locations', fullName: 'All Locations' },
@@ -236,6 +237,10 @@ export const SessionsSection: React.FC = () => {
         {/* Location Tabs and Content */}
         <Card className={`${designTokens.card.background} ${designTokens.card.shadow} ${designTokens.card.border} overflow-hidden`}>
           <CardContent className="p-2">
+            <div className="flex items-center justify-end pr-2 pt-2">
+              {/* One info icon per active location */}
+              <InfoPopover context="sales-overview" locationId={activeLocation} />
+            </div>
             <Tabs value={activeLocation} onValueChange={handleLocationChange} className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-2 rounded-2xl h-auto gap-2">
                 {locations.map((location) => (

@@ -16,6 +16,7 @@ import { EnhancedPayrollTable } from './EnhancedPayrollTable';
 import { HostedClassesAnalytics } from './HostedClassesAnalytics';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useNavigate } from 'react-router-dom';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 const locations = [{
   id: 'all',
@@ -95,7 +96,7 @@ export const EnhancedClassAttendanceSection: React.FC = () => {
 
       {/* Location Tabs */}
       <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center items-start mb-8">
           <TabsList className="glass-morphism p-2 rounded-2xl shadow-lg border-0 grid grid-cols-4 w-full max-w-4xl">
             {locations.map(location => (
               <TabsTrigger 
@@ -113,6 +114,9 @@ export const EnhancedClassAttendanceSection: React.FC = () => {
               </TabsTrigger>
             ))}
           </TabsList>
+          <div className="ml-3 mt-1">
+            <InfoPopover context="sales-overview" locationId={activeLocation} />
+          </div>
         </div>
 
         {locations.map(location => (

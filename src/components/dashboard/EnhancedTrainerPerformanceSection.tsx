@@ -18,9 +18,11 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Users, Calendar, TrendingUp, AlertCircle, Award, Target, DollarSign, Activity, FileDown } from 'lucide-react';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 
 export const EnhancedTrainerPerformanceSection = () => {
   const { data: payrollData, isLoading, error } = usePayrollData();
@@ -221,8 +223,21 @@ export const EnhancedTrainerPerformanceSection = () => {
 
   return (
     <div className="space-y-6">
+      {/* Page Hero for consistency across dashboards */}
+      {summaryStats && (
+        <DashboardMotionHero
+          title="Trainer Performance"
+          subtitle="Productivity, revenue impact, and session quality across locations and time"
+          metrics={[
+            { label: 'Total Trainers', value: String(summaryStats.totalTrainers) },
+            { label: 'Total Sessions', value: summaryStats.totalSessions.toLocaleString() },
+            { label: 'Avg Class Size', value: summaryStats.avgClassSize.toFixed(1) },
+            { label: 'Total Revenue', value: formatCurrency(summaryStats.totalRevenue) }
+          ]}
+        />
+      )}
       {/* Enhanced Location Tabs - matching Client Retention styling */}
-      <div className="flex justify-center mb-8" id="location-tabs">
+      <div className="flex justify-center items-start mb-8" id="location-tabs">
         <div className="w-full max-w-4xl">
           <div className="grid grid-cols-4 location-tabs">
             {[
@@ -245,10 +260,13 @@ export const EnhancedTrainerPerformanceSection = () => {
             ))}
           </div>
         </div>
+        <div className="ml-3 mt-1">
+          <InfoPopover context="sales-overview" locationId={selectedLocation === 'All Locations' ? 'all' : selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 'kenkere'} />
+        </div>
       </div>
 
       {/* Filter Section */}
-      <div className="glass-card modern-card-hover p-6 rounded-2xl mb-6" id="filters">
+  <div className="glass-card modern-card-hover p-6 rounded-2xl mb-6" id="filters">
 
         <TrainerFilterSection
           data={payrollData || []}
@@ -259,7 +277,7 @@ export const EnhancedTrainerPerformanceSection = () => {
       </div>
 
       {/* Enhanced Metric Cards - matching Sales styling */}
-      <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+  <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
         <EnhancedTrainerMetricCards 
           data={processedData} 
           onCardClick={(title, data) => {

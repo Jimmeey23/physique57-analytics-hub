@@ -24,6 +24,7 @@ import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModa
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { PowerCycleBarreStrengthDetailedAnalytics } from '@/components/dashboard/PowerCycleBarreStrengthDetailedAnalytics';
 import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 const locations = [
   { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
@@ -255,7 +256,7 @@ const ClassFormatsComparison: React.FC = () => {
         <div className="container mx-auto px-6 py-8">
           {/* Location Tabs */}
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full mb-8">
-            <div className="flex justify-center mb-8">
+            <div className="flex items-start justify-center mb-8">
               <TabsList className="location-tabs grid w-full max-w-4xl overflow-visible" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
                 {locations.map(location => {
                   const parts = location.name.split(',').map(s => s.trim());
@@ -279,6 +280,9 @@ const ClassFormatsComparison: React.FC = () => {
                   );
                 })}
               </TabsList>
+              <div className="ml-3 mt-1">
+                <InfoPopover context="sales-overview" locationId={activeLocation} />
+              </div>
             </div>
 
             {locations.map(location => (
