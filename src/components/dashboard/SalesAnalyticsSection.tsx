@@ -834,7 +834,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         onReady={markReady}
                       />
                       <div className="mt-3">
-                        <AiNotes tableKey="sales:monthOnMonth" location={filters.location[0]} period={periodId} sectionId="sales-mom" />
+                        <AiNotes tableKey="sales:monthOnMonth" location={activeLocation} period={periodId} sectionId="sales-mom" author="Sales Analyst" />
                       </div>
                     </SectionAnchor>
                   </TabsContent>
@@ -855,7 +855,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         onReady={markReady}
                       />
                       <div className="mt-3">
-                        <AiNotes tableKey="sales:yoy" location={filters.location[0]} period={periodId} sectionId="sales-yoy" />
+                        <AiNotes tableKey="sales:yoy" location={activeLocation} period={periodId} sectionId="sales-yoy" author="Sales Analyst" />
                       </div>
                     </SectionAnchor>
                   </TabsContent>
@@ -873,7 +873,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onReady={markReady}
                     />
                     <div className="mt-3">
-                      <AiNotes tableKey="sales:productPerformance" location={filters.location[0]} period={periodId} sectionId="sales-product" />
+                      <AiNotes tableKey="sales:productPerformance" location={activeLocation} period={periodId} sectionId="sales-product" author="Sales Analyst" />
                     </div>
                   </SectionAnchor>
                 </TabsContent>
@@ -891,7 +891,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onReady={markReady}
                     />
                     <div className="mt-3">
-                      <AiNotes tableKey="sales:categoryPerformance" location={filters.location[0]} period={periodId} sectionId="sales-category" />
+                      <AiNotes tableKey="sales:categoryPerformance" location={activeLocation} period={periodId} sectionId="sales-category" author="Sales Analyst" />
                     </div>
                   </SectionAnchor>
                 </TabsContent>
@@ -909,7 +909,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onReady={markReady}
                     />
                     <div className="mt-3">
-                      <AiNotes tableKey="sales:soldBy" location={filters.location[0]} period={periodId} sectionId="sales-soldby" />
+                      <AiNotes tableKey="sales:soldBy" location={activeLocation} period={periodId} sectionId="sales-soldby" author="Sales Analyst" />
                     </div>
                   </SectionAnchor>
                 </TabsContent>
@@ -927,7 +927,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onReady={markReady}
                     />
                     <div className="mt-3">
-                      <AiNotes tableKey="sales:paymentMethod" location={filters.location[0]} period={periodId} sectionId="sales-payment" />
+                      <AiNotes tableKey="sales:paymentMethod" location={activeLocation} period={periodId} sectionId="sales-payment" author="Sales Analyst" />
                     </div>
                   </SectionAnchor>
                 </TabsContent>
