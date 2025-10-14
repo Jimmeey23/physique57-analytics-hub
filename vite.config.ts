@@ -87,38 +87,8 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            // Move recharts to vendor chunk to avoid circular dependency issues
-            // Keep core libraries (React, recharts, lucide-react) together
-            if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
-              return 'utils-vendor';
-            }
-            if (id.includes('@tanstack')) {
-              return 'query-vendor';
-            }
-            // Keep React, React-DOM, React Router, recharts, lucide-react, framer-motion, and Radix UI together in vendor chunk
-            // This prevents React import resolution issues and circular dependencies
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react/')) {
-              return 'vendor';
-            }
+            // All node_modules go into vendor chunk to ensure React is available everywhere
             return 'vendor';
-          }
-          
-          // Don't split UI components into separate chunk - keep with main bundle
-          // This prevents React forwardRef issues
-          if (id.includes('/components/ui/')) {
-            return 'vendor';
-          }
-          
-          if (id.includes('/components/dashboard/')) {
-            return 'dashboard';
-          }
-          
-          if (id.includes('/pages/')) {
-            return 'pages';
-          }
-          
-          if (id.includes('/hooks/') || id.includes('/utils/')) {
-            return 'utils';
           }
         },
         chunkFileNames: (chunkInfo) => {
