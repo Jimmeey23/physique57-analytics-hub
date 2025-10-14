@@ -42,8 +42,36 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
     const totalTransactions = items.length;
     const uniqueMembers = new Set(items.map(item => item.memberId)).size;
     const totalUnits = items.length;
-    const totalVat = items.reduce((sum, item) => sum + (item.paymentValue * 0.18 || 0), 0);
-    const avgDiscountPercentage = 10;
+    
+    // Use actual VAT from data, not calculated percentage
+    const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
+    
+    // Use actual discount data from the items
+    const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    
+    // Calculate average discount percentage from actual data
+    const itemsWithDiscount = items.filter(item => (item.discountAmount || 0) > 0);
+    const avgDiscountPercentage = itemsWithDiscount.length > 0 
+      ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
+      : 0;
+
+    // Purchase Frequency in Days
+    const dates = items.map(item => {
+      const dateStr = item.paymentDate;
+      if (!dateStr) return null;
+      const ddmmyyyy = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyy) {
+        const [, day, month, year] = ddmmyyyy;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+      return new Date(dateStr);
+    }).filter((date): date is Date => date !== null && !isNaN(date.getTime())).sort((a, b) => a.getTime() - b.getTime());
+    
+    let purchaseFrequency = 0;
+    if (dates.length > 1) {
+      const totalDays = (dates[dates.length - 1].getTime() - dates[0].getTime()) / (1000 * 60 * 60 * 24);
+      purchaseFrequency = totalDays / (dates.length - 1);
+    }
 
     switch (metric) {
       case 'revenue': return totalRevenue;
@@ -55,7 +83,9 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
       case 'upt': return totalTransactions > 0 ? totalUnits / totalTransactions : 0;
       case 'asv': return totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       case 'vat': return totalVat;
-      case 'discountPercentage': return avgDiscountPercentage || 0;
+      case 'discountValue': return totalDiscount;
+      case 'discountPercentage': return avgDiscountPercentage;
+      case 'purchaseFrequency': return purchaseFrequency;
       default: return 0;
     }
   };
@@ -67,6 +97,7 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
       case 'atv':
       case 'asv':
       case 'vat':
+      case 'discountValue':
         return formatCurrency(value);
       case 'transactions':
       case 'members':
@@ -76,6 +107,8 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
         return value.toFixed(2);
       case 'discountPercentage':
         return `${value.toFixed(1)}%`;
+      case 'purchaseFrequency':
+        return `${value.toFixed(1)} days`;
       default:
         return formatNumber(value);
     }

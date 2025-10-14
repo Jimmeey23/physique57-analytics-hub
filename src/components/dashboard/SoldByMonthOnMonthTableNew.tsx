@@ -55,6 +55,38 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
       ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
       : 0;
 
+    // Calculate purchase frequency (average days between purchases)
+    const calculatePurchaseFrequency = () => {
+      if (uniqueMembers <= 1) return 0;
+      
+      const memberPurchases: Record<string, Date[]> = {};
+      items.forEach(item => {
+        const date = parseDate(item.paymentDate);
+        if (date && item.memberId) {
+          if (!memberPurchases[item.memberId]) {
+            memberPurchases[item.memberId] = [];
+          }
+          memberPurchases[item.memberId].push(date);
+        }
+      });
+      
+      let totalDaysBetweenPurchases = 0;
+      let intervalCount = 0;
+      
+      Object.values(memberPurchases).forEach(dates => {
+        if (dates.length > 1) {
+          dates.sort((a, b) => a.getTime() - b.getTime());
+          for (let i = 1; i < dates.length; i++) {
+            const daysDiff = (dates[i].getTime() - dates[i-1].getTime()) / (1000 * 60 * 60 * 24);
+            totalDaysBetweenPurchases += daysDiff;
+            intervalCount++;
+          }
+        }
+      });
+      
+      return intervalCount > 0 ? totalDaysBetweenPurchases / intervalCount : 0;
+    };
+
     switch (metric) {
       case 'revenue': return totalRevenue;
       case 'transactions': return totalTransactions;
@@ -67,6 +99,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
       case 'vat': return totalVat;
       case 'discountValue': return totalDiscount;
       case 'discountPercentage': return avgDiscountPercentage;
+      case 'purchaseFrequency': return calculatePurchaseFrequency();
       default: return 0;
     }
   };
@@ -78,6 +111,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
       case 'atv':
       case 'asv':
       case 'vat':
+      case 'discountValue':
         return formatCurrency(value);
       case 'transactions':
       case 'members':
@@ -87,6 +121,8 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
         return value.toFixed(2);
       case 'discountPercentage':
         return `${value.toFixed(1)}%`;
+      case 'purchaseFrequency':
+        return `${value.toFixed(1)} days`;
       default:
         return formatNumber(value);
     }

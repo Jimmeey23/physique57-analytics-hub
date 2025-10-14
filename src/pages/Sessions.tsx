@@ -8,6 +8,7 @@ import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { formatNumber } from '@/utils/formatters';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 
 const Sessions = () => {
   const { data, loading } = useSessionsData();

@@ -25,6 +25,7 @@ import { usePayrollData } from '@/hooks/usePayrollData';
 import { PowerCycleBarreStrengthDetailedAnalytics } from '@/components/dashboard/PowerCycleBarreStrengthDetailedAnalytics';
 import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 
 const locations = [
   { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
@@ -46,7 +47,15 @@ const ClassFormatsComparison: React.FC = () => {
 
   useEffect(() => {
     setLoading(loading || checkinsLoading || payrollLoading, 'Loading class format comparison data...');
-  }, [loading, checkinsLoading, payrollLoading, setLoading]);
+    console.log('ClassFormatsComparison - Data Status:', {
+      sessionsData: data?.length || 0,
+      sessionsLoading: loading,
+      checkins: allCheckins?.length || 0,
+      checkinsLoading,
+      payrollData: payrollData?.length || 0,
+      payrollLoading
+    });
+  }, [loading, checkinsLoading, payrollLoading, setLoading, data, allCheckins, payrollData]);
 
   // NOTE: We must read filters within the provider. We'll render an inner component below.
   // Global drilldown event bridge
@@ -288,26 +297,64 @@ const ClassFormatsComparison: React.FC = () => {
                   </div>
 
                   <TabsContent value="overview" className="space-y-8 mt-6">
-                    {/* Filters */}
-                    <SessionsFilterSection data={filteredByLocation} />
+                    {/* Debug info */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <h3 className="font-semibold text-blue-800">Data Debug Info</h3>
+                      <div className="text-blue-700 text-sm mt-2">
+                        <p>Sessions data: {filteredByLocation?.length || 0} items</p>
+                        <p>All sessions: {data?.length || 0} items</p>
+                        <p>Active location: {activeLocation}</p>
+                        <p>Loading states: Sessions({loading ? 'loading' : 'loaded'}), Checkins({checkinsLoading ? 'loading' : 'loaded'}), Payroll({payrollLoading ? 'loading' : 'loaded'})</p>
+                      </div>
+                    </div>
 
-                    {/* Summary cards per format */}
-                    <FormatComparisonSummaryCards data={filteredByLocation} />
+                    {filteredByLocation && filteredByLocation.length > 0 ? (
+                      <>
+                        {/* Filters */}
+                        <SessionsFilterSection data={filteredByLocation} />
 
-                    {/* Interactive charts and tables with metric selector */}
-                    <ComprehensiveClassFormatComparison 
-                      data={filteredByLocation}
-                      selectedFormats={selectedFormats}
-                      onFormatsChange={setSelectedFormats}
-                      compareWithTrainer={compareWithTrainer}
-                      onCompareWithTrainerChange={setCompareWithTrainer}
-                    />
+                        {/* Summary cards per format */}
+                        <WithContextualInfo
+                          dataType="classFormatData"
+                          currentLocation={activeLocation}
+                          title="Class Format Analytics"
+                          iconPosition="top-right"
+                          iconSize="sm"
+                        >
+                          <FormatComparisonSummaryCards data={filteredByLocation} />
+                        </WithContextualInfo>
 
-                    {/* Class Type Performance Metrics */}
-                    <ClassTypePerformanceMetrics 
-                      data={filteredByLocation as any}
-                      defaultGroupBy="classType"
-                    />
+                        {/* Interactive charts and tables with metric selector */}
+                        <ComprehensiveClassFormatComparison 
+                          data={filteredByLocation}
+                          selectedFormats={selectedFormats}
+                          onFormatsChange={setSelectedFormats}
+                          compareWithTrainer={compareWithTrainer}
+                          onCompareWithTrainerChange={setCompareWithTrainer}
+                        />
+
+                        {/* Class Type Performance Metrics */}
+                        <ClassTypePerformanceMetrics 
+                          data={filteredByLocation as any}
+                          defaultGroupBy="classType"
+                        />
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="bg-gray-50 rounded-xl p-8">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-2">No Data Available</h3>
+                          <p className="text-gray-600 mb-4">
+                            {loading || checkinsLoading || payrollLoading 
+                              ? 'Loading data...' 
+                              : 'No session data found for the selected location and filters.'
+                            }
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Raw data: {data?.length || 0} sessions, {allCheckins?.length || 0} checkins
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="mt-8">
                       <AiNotes 

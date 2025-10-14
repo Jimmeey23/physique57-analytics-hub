@@ -16,6 +16,7 @@ import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
 import { AdvancedNotesModal } from '@/components/ui/AdvancedNotesModal';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
+import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Users, Calendar, TrendingUp, AlertCircle, Award, Target, DollarSign, Activity, FileDown } from 'lucide-react';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
@@ -259,16 +260,24 @@ export const EnhancedTrainerPerformanceSection = () => {
       </div>
 
       {/* Enhanced Metric Cards - matching Sales styling */}
-      <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
-        <EnhancedTrainerMetricCards 
-          data={processedData} 
-          onCardClick={(title, data) => {
-            // Open drill-down modal with trainer data
-            setSelectedTrainer(title);
-            setDrillDownData(data);
-          }}
-        />
-      </div>
+      <WithContextualInfo
+        dataType="trainerPerformance"
+        currentLocation={selectedLocation}
+        title="Performance Metrics"
+        iconPosition="top-right"
+        iconSize="sm"
+      >
+        <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+          <EnhancedTrainerMetricCards 
+            data={processedData} 
+            onCardClick={(title, data) => {
+              // Open drill-down modal with trainer data
+              setSelectedTrainer(title);
+              setDrillDownData(data);
+            }}
+          />
+        </div>
+      </WithContextualInfo>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -316,10 +325,18 @@ export const EnhancedTrainerPerformanceSection = () => {
       </div>
 
       {/* Enhanced Rankings */}
-      <EnhancedTrainerRankings 
-        data={processedData} 
-        onTrainerClick={handleRowClick}
-      />
+      <WithContextualInfo
+        dataType="trainerPerformance"
+        currentLocation={selectedLocation}
+        title="Trainer Performance Insights"
+        iconPosition="top-right"
+        iconSize="md"
+      >
+        <EnhancedTrainerRankings 
+          data={processedData} 
+          onTrainerClick={handleRowClick}
+        />
+      </WithContextualInfo>
 
       {/* Analysis Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">

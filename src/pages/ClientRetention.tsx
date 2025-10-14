@@ -31,6 +31,7 @@ import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedCla
 import { ClientConversionDrillDownModalV3 } from '@/components/dashboard/ClientConversionDrillDownModalV3';
 import NotesBlock from '@/components/ui/NotesBlock';
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
+import { WithContextualInfo } from '@/components/ui/WithContextualInfo';
 const ClientRetention = () => {
   const {
     data,
@@ -548,23 +549,31 @@ const ClientRetention = () => {
             </div>
 
           {/* Enhanced Metric Cards */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
-            <ClientConversionMetricCards 
-              data={filteredData}
-              historicalData={data}
-              dateRange={filters.dateRange}
-              onCardClick={(title, data, metricType) => setDrillDownModal({
-              isOpen: true,
-              client: null,
-              title: `${title} - Detailed Analysis`,
-              data: {
-                clients: data,
-                metricType
-              },
-              type: 'metric'
-            })}
-            />
-          </div>
+          <WithContextualInfo
+            dataType="clientRetentionData"
+            currentLocation={selectedLocation}
+            title="Client Retention Intelligence"
+            iconPosition="top-right"
+            iconSize="md"
+          >
+            <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+              <ClientConversionMetricCards 
+                data={filteredData}
+                historicalData={data}
+                dateRange={filters.dateRange}
+                onCardClick={(title, data, metricType) => setDrillDownModal({
+                isOpen: true,
+                client: null,
+                title: `${title} - Detailed Analysis`,
+                data: {
+                  clients: data,
+                  metricType
+                },
+                type: 'metric'
+              })}
+              />
+            </div>
+          </WithContextualInfo>
 
           {/* Enhanced Simplified Ranking System */}
           <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-3" id="rankings">
