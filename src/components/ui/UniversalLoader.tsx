@@ -203,9 +203,6 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" style={{ animation: 'shimmerWave 3.5s ease-in-out infinite' }} />
             </div>
-
-            {/* Bottom gradient accent */}
-            <div className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t ${config.gradient} opacity-8`} />
           </div>
         </div>
 
