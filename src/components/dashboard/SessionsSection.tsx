@@ -220,7 +220,7 @@ export const SessionsSection: React.FC = () => {
             <Database className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-medium text-slate-700">Data Source: Sessions Sheet</span>
             <Badge variant="outline" className="text-indigo-700 border-indigo-200">
-              149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI
+              1sDPAX6OmGb48kL1pm0mhin2C9KD-Jykq8skJjNuQUNg
             </Badge>
           </div>
           <Button
@@ -320,7 +320,7 @@ export const SessionsSection: React.FC = () => {
         sources={[{
           name: 'Sessions',
           sheetName: 'Sessions',
-          spreadsheetId: '149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI',
+          spreadsheetId: '1sDPAX6OmGb48kL1pm0mhin2C9KD-Jykq8skJjNuQUNg',
           data: data || []
         }]}
       />

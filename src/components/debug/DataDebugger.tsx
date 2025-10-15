@@ -11,7 +11,7 @@ export const DataDebugger: React.FC = () => {
   const handleTestAPICall = async () => {
     try {
       console.log('Testing API call directly...');
-      const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI/values/Sales?alt=json');
+      const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1sDPAX6OmGb48kL1pm0mhin2C9KD-Jykq8skJjNuQUNg/values/Sales?alt=json');
       console.log('API Response status:', response.status);
       console.log('API Response headers:', response.headers);
       

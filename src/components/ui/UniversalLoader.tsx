@@ -160,10 +160,10 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
 
       {/* Modern minimalist background with white base */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Subtle gradient orbs */}
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-blue-100/30 to-indigo-100/20 rounded-full blur-3xl" style={{ animation: 'floatSoft 18s ease-in-out infinite' }} />
-        <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-gradient-to-br from-purple-100/30 to-pink-100/20 rounded-full blur-3xl" style={{ animation: 'floatSoft 22s ease-in-out infinite 4s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-cyan-50/25 to-blue-50/15 rounded-full blur-3xl" style={{ animation: 'pulseGlow 14s ease-in-out infinite' }} />
+        {/* Darker gradient orbs behind the logo */}
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-blue-400/40 to-indigo-500/30 rounded-full blur-3xl" style={{ animation: 'floatSoft 18s ease-in-out infinite' }} />
+        <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-gradient-to-br from-purple-400/40 to-pink-500/30 rounded-full blur-3xl" style={{ animation: 'floatSoft 22s ease-in-out infinite 4s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-cyan-400/35 to-blue-500/25 rounded-full blur-3xl" style={{ animation: 'pulseGlow 14s ease-in-out infinite' }} />
       </div>
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-md text-center px-6 py-8" style={{ animation: 'fadeInScale 0.7s cubic-bezier(0.34, 1.4, 0.64, 1)' }}>
@@ -180,8 +180,8 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
             <div className={`absolute w-28 h-28 rounded-full bg-gradient-to-r ${config.gradient} opacity-15`} style={{ animation: 'rippleOut 3s ease-out infinite 1.5s' }} />
           </div>
 
-          {/* Logo container with glass morphism */}
-          <div className={`relative w-36 h-36 bg-white/90 backdrop-blur-xl rounded-3xl flex items-center justify-center shadow-2xl border border-slate-100 overflow-hidden`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
+          {/* Logo container - pure white background */}
+          <div className={`relative w-36 h-36 bg-white rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 overflow-hidden`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
             {!imgFailed ? (
               <img
                 src={logoSrcs[srcIndex]}
