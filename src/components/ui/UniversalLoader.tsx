@@ -174,14 +174,8 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
             <div className="absolute inset-0 rounded-full border-2 border-dashed border-slate-200/40" style={{ animation: 'spinSlow 20s linear infinite reverse' }} />
           </div>
 
-          {/* Logo container with filling animation */}
-          <div className={`relative w-36 h-36 rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 overflow-hidden z-10 bg-gradient-to-r ${config.gradient}`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
-            {/* White fill from bottom up based on progress */}
-            <div 
-              className="absolute bottom-0 left-0 right-0 bg-white transition-all duration-300 ease-out"
-              style={{ height: `${progressValue}%` }}
-            />
-            
+          {/* Logo container - pure white background */}
+          <div className={`relative w-36 h-36 bg-white rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 overflow-hidden z-10`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
             {!imgFailed ? (
               <img
                 src={logoSrcs[srcIndex]}
@@ -200,7 +194,7 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
             )}
             
             {/* Shimmer effect */}
-            <div className="absolute inset-0 overflow-hidden z-20 pointer-events-none">
+            <div className="absolute inset-0 overflow-hidden">
               <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" style={{ animation: 'shimmerWave 3.5s ease-in-out infinite' }} />
             </div>
           </div>
