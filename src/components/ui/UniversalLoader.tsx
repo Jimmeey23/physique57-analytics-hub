@@ -168,20 +168,14 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-md text-center px-6 py-8" style={{ animation: 'fadeInScale 0.7s cubic-bezier(0.34, 1.4, 0.64, 1)' }}>
         <div className="relative" aria-label="Loading brand">
-          {/* Animated decorative rings */}
+          {/* Animated decorative rings - light and subtle */}
           <div className="absolute inset-0 -m-8">
-            <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${config.gradient} opacity-10`} style={{ animation: 'spinSlow 25s linear infinite' }} />
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-slate-200" style={{ animation: 'spinSlow 20s linear infinite reverse' }} />
-          </div>
-
-          {/* Ripple effects */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`absolute w-28 h-28 rounded-full bg-gradient-to-r ${config.gradient} opacity-15`} style={{ animation: 'rippleOut 3s ease-out infinite' }} />
-            <div className={`absolute w-28 h-28 rounded-full bg-gradient-to-r ${config.gradient} opacity-15`} style={{ animation: 'rippleOut 3s ease-out infinite 1.5s' }} />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-slate-200/20 to-slate-300/20 opacity-30" style={{ animation: 'spinSlow 25s linear infinite' }} />
+            <div className="absolute inset-0 rounded-full border-2 border-dashed border-slate-200/40" style={{ animation: 'spinSlow 20s linear infinite reverse' }} />
           </div>
 
           {/* Logo container - pure white background */}
-          <div className={`relative w-36 h-36 bg-white rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 overflow-hidden`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
+          <div className={`relative w-36 h-36 bg-white rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 overflow-hidden z-10`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
             {!imgFailed ? (
               <img
                 src={logoSrcs[srcIndex]}
