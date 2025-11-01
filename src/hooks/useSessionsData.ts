@@ -35,9 +35,9 @@ export interface SessionData {
 }
 
 const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_1.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_1",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_1B",
+  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
+  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
+  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
   TOKEN_URL: "https://oauth2.googleapis.com/token"
 };
 
