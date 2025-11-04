@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,82 @@ interface ClientConversionDataTableProps {
   onItemClick?: (item: any) => void;
 }
 
-export const ClientConversionDataTable: React.FC<ClientConversionDataTableProps> = ({
+// Memoized row component to prevent unnecessary rerenders
+const TableRow = React.memo<{ item: NewClientData; index: number; onRowClick: (item: NewClientData) => void }>(({ 
+  item, 
+  index, 
+  onRowClick 
+}) => {
+  const handleClick = useCallback(() => {
+    onRowClick(item);
+  }, [item, onRowClick]);
+
+  return (
+    <tr 
+      className="border-b hover:bg-blue-50 transition-colors cursor-pointer"
+      onClick={handleClick}
+    >
+      <td className="p-4">
+        <div>
+          <p className="font-medium text-gray-800">
+            {item.firstName} {item.lastName}
+          </p>
+          <p className="text-sm text-gray-500">{item.email}</p>
+        </div>
+      </td>
+      <td className="p-4">
+        <div>
+          <p className="text-sm text-gray-800">{item.firstVisitDate}</p>
+          <p className="text-xs text-gray-500">{item.firstVisitType}</p>
+        </div>
+      </td>
+      <td className="p-4">
+        <p className="text-sm text-gray-800">{item.firstVisitLocation || 'N/A'}</p>
+        <p className="text-xs text-gray-500">Home: {item.homeLocation || 'N/A'}</p>
+      </td>
+      <td className="p-4">
+        <p className="text-sm text-gray-800">{item.trainerName || 'N/A'}</p>
+      </td>
+      <td className="p-4">
+        <div className="flex flex-col gap-1">
+          <Badge 
+            className={`text-xs px-2 py-1 ${
+              item.conversionStatus === 'Converted' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-orange-100 text-orange-800'
+            }`}
+          >
+            {item.conversionStatus}
+          </Badge>
+          <Badge 
+            className={`text-xs px-2 py-1 ${
+              item.retentionStatus === 'Retained' 
+                ? 'bg-blue-100 text-blue-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}
+          >
+            {item.retentionStatus}
+          </Badge>
+        </div>
+      </td>
+      <td className="p-4">
+        <p className="font-semibold text-gray-800">{formatCurrency(item.ltv || 0)}</p>
+      </td>
+      <td className="p-4">
+        <p className="text-sm text-gray-800">{formatNumber(item.visitsPostTrial || 0)}</p>
+      </td>
+      <td className="p-4 text-center">
+        <Button variant="ghost" size="sm">
+          <Eye className="w-4 h-4" />
+        </Button>
+      </td>
+    </tr>
+  );
+});
+
+TableRow.displayName = 'TableRow';
+
+export const ClientConversionDataTable: React.FC<ClientConversionDataTableProps> = React.memo(({
   data,
   onItemClick
 }) => {
@@ -21,22 +96,39 @@ export const ClientConversionDataTable: React.FC<ClientConversionDataTableProps>
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  const filteredData = data.filter(item =>
-    item.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.trainerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.firstVisitLocation?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoize filtered data to prevent recalculation on every render
+  const filteredData = useMemo(() => {
+    const lowerSearch = searchTerm.toLowerCase();
+    if (!lowerSearch) return data;
+    
+    return data.filter(item =>
+      item.firstName?.toLowerCase().includes(lowerSearch) ||
+      item.lastName?.toLowerCase().includes(lowerSearch) ||
+      item.email?.toLowerCase().includes(lowerSearch) ||
+      item.trainerName?.toLowerCase().includes(lowerSearch) ||
+      item.firstVisitLocation?.toLowerCase().includes(lowerSearch)
+    );
+  }, [data, searchTerm]);
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
+  // Memoize pagination calculations
+  const { totalPages, currentData } = useMemo(() => {
+    const pages = Math.ceil(filteredData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return {
+      totalPages: pages,
+      currentData: filteredData.slice(startIndex, endIndex)
+    };
+  }, [filteredData, currentPage, itemsPerPage]);
 
-  const handleRowClick = (item: NewClientData) => {
+  const handleRowClick = useCallback((item: NewClientData) => {
     onItemClick?.(item);
-  };
+  }, [onItemClick]);
+
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
+  }, []);
 
   return (
     <Card className="bg-white shadow-xl border-0">
@@ -49,7 +141,7 @@ export const ClientConversionDataTable: React.FC<ClientConversionDataTableProps>
               <Input
                 placeholder="Search clients..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
                 className="pl-10 w-64"
               />
             </div>
@@ -77,82 +169,21 @@ export const ClientConversionDataTable: React.FC<ClientConversionDataTableProps>
             </thead>
             <tbody>
               {currentData.map((item, index) => (
-                <tr 
-                  key={item.memberId}
-                  className="border-b hover:bg-blue-50 transition-colors cursor-pointer"
-                  onClick={() => handleRowClick(item)}
-                >
-                  <td className="p-4">
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {item.firstName} {item.lastName}
-                      </p>
-                      <p className="text-sm text-gray-500">{item.email}</p>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div>
-                      <p className="text-sm text-gray-800">{item.firstVisitDate}</p>
-                      <p className="text-xs text-gray-500">{item.firstVisitType}</p>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <p className="text-sm text-gray-800">{item.firstVisitLocation || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Home: {item.homeLocation || 'N/A'}</p>
-                  </td>
-                  <td className="p-4">
-                    <p className="text-sm text-gray-800">{item.trainerName || 'N/A'}</p>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col gap-1">
-                      <Badge 
-                        className={`text-xs px-2 py-1 ${
-                          item.conversionStatus === 'Converted' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-orange-100 text-orange-800'
-                        }`}
-                      >
-                        {item.conversionStatus}
-                      </Badge>
-                      <Badge 
-                        className={`text-xs px-2 py-1 ${
-                          item.retentionStatus === 'Retained' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {item.retentionStatus}
-                      </Badge>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <p className="font-semibold text-gray-800">{formatCurrency(item.ltv || 0)}</p>
-                  </td>
-                  <td className="p-4">
-                    <p className="text-sm text-gray-800">{formatNumber(item.visitsPostTrial || 0)}</p>
-                  </td>
-                  <td className="p-4 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRowClick(item);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </td>
-                </tr>
+                <TableRow 
+                  key={item.memberId || index}
+                  item={item}
+                  index={index}
+                  onRowClick={handleRowClick}
+                />
               ))}
             </tbody>
           </table>
         </div>
         
         {/* Pagination */}
-        <div className="flex items-center justify-between p-4 border-t bg-gray-50">
+        <div className="flex items-center justify-between p-4 border-t">
           <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} entries
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} entries
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -179,4 +210,4 @@ export const ClientConversionDataTable: React.FC<ClientConversionDataTableProps>
       </CardContent>
     </Card>
   );
-};
+});

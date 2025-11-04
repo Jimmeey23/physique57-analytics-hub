@@ -65,6 +65,9 @@ const GeminiAIDemoPage = React.lazy(() =>
 const GeminiEnhancementTest = React.lazy(() => 
   import("./components/test/GeminiEnhancementTest").then(module => ({ default: module.default }))
 );
+const DataExport = React.lazy(() => 
+  import("./pages/DataExport").then(module => ({ default: module.default }))
+);
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
 );
@@ -125,6 +128,7 @@ const App = () => {
               <Route path="/hero-demo" element={<HeroDemo />} />
               <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
               <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
+              <Route path="/data-export" element={<DataExport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
                 </Routes>

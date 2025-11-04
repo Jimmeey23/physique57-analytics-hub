@@ -1,6 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { SalesData } from '@/types/dashboard';
+import { requestCache } from '@/utils/performanceOptimizations';
 
 const GOOGLE_CONFIG = {
   CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
@@ -11,12 +12,22 @@ const GOOGLE_CONFIG = {
 
 const SPREADSHEET_ID = "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
 
+// Cache for access token
+let cachedToken: { token: string; expiry: number } | null = null;
+
 export const useGoogleSheets = () => {
   const [data, setData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
   const getAccessToken = async () => {
+    // Return cached token if still valid
+    if (cachedToken && Date.now() < cachedToken.expiry) {
+      return cachedToken.token;
+    }
+
     try {
       const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
         method: 'POST',
@@ -32,6 +43,13 @@ export const useGoogleSheets = () => {
       });
 
       const tokenData = await response.json();
+      
+      // Cache token for 50 minutes (tokens expire in 1 hour)
+      cachedToken = {
+        token: tokenData.access_token,
+        expiry: Date.now() + (50 * 60 * 1000)
+      };
+      
       return tokenData.access_token;
     } catch (error) {
       console.error('Error getting access token:', error);
@@ -56,43 +74,61 @@ export const useGoogleSheets = () => {
   };
 
   const fetchSalesData = async () => {
+    // Abort previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
-      setError(null); // Clear previous errors
-      console.log('Fetching sales data from Google Sheets...');
-      const accessToken = await getAccessToken();
-      console.log('Access token obtained successfully');
+      setError(null);
       
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
+      // Use request cache to prevent duplicate requests
+      const result = await requestCache.fetch('google-sheets-sales', async () => {
+        console.log('Fetching sales data from Google Sheets...');
+        const accessToken = await getAccessToken();
+        
+        const response = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            signal: abortControllerRef.current?.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
+        return response.json();
+      });
+      
       const rows = result.values || [];
       
       if (rows.length < 2) {
-        setData([]);
+        if (isMountedRef.current) {
+          setData([]);
+          setLoading(false);
+        }
         return;
       }
 
       const headers = rows[0];
-      console.log('Sheet headers:', headers);
       
-      // Transform the raw data to match SalesData interface - optimize with batching
-      const batchSize = 100;
+      // Process data in chunks to avoid blocking UI
       const salesData: SalesData[] = [];
+      const chunkSize = 200; // Increased chunk size for better performance
       
-      const processRowsBatch = (startIndex: number, endIndex: number) => {
-        const batch = rows.slice(startIndex, endIndex).map((row: any[]) => {
+      for (let i = 1; i < rows.length; i += chunkSize) {
+        // Check if component is still mounted
+        if (!isMountedRef.current) return;
+        
+        const end = Math.min(i + chunkSize, rows.length);
+        const batch = rows.slice(i, end).map((row: any[]) => {
           const rawItem: any = {};
           headers.forEach((header: string, index: number) => {
             rawItem[header] = row[index] || '';
@@ -194,21 +230,10 @@ export const useGoogleSheets = () => {
         });
         
         salesData.push(...batch);
-      };
-
-      // Process data in batches to avoid blocking the main thread
-      const totalRows = rows.length - 1; // Exclude header
-      for (let i = 1; i <= totalRows; i += batchSize) {
-        const endIndex = Math.min(i + batchSize, totalRows + 1);
-        
-        // Use setTimeout to yield control back to the browser
-        if (i > 1) {
-          await new Promise(resolve => setTimeout(resolve, 0));
-        }
-        
-        processRowsBatch(i, endIndex);
       }
-
+      
+      if (!isMountedRef.current) return;
+      
       console.log('Transformed sales data sample:', salesData.slice(0, 3));
       console.log('Sample discount data:', {
         discountAmount: salesData[0]?.discountAmount,
@@ -217,18 +242,31 @@ export const useGoogleSheets = () => {
         mrpPostTax: salesData[0]?.mrpPostTax
       });
       
+      // Update state with processed data
       setData(salesData);
       setError(null);
     } catch (err) {
-      console.error('Error fetching sales data:', err);
-      setError('Failed to load sales data');
+      if (isMountedRef.current) {
+        console.error('Error fetching sales data:', err);
+        setError('Failed to load sales data');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchSalesData();
+    
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   return { data, loading, error, refetch: fetchSalesData };
