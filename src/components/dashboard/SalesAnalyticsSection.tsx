@@ -728,19 +728,16 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       {/* Note Taker removed as requested; AI Notes remain elsewhere */}
 
       {/* Vertical timeline navigation (scrollspy) */}
-      <div className="flex items-center justify-between">
-        <SectionTimelineNav position="right" title="Sales sections" />
-        {(activeLocation === 'kwality' || activeLocation === 'supreme') && (
-          <div className="pr-6">
-            <InfoPopover context="sales-overview" locationId={activeLocation} />
-          </div>
-        )}
-      </div>
+      <SectionTimelineNav position="right" title="Sales sections" />
 
       {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
       <div className="container mx-auto px-6 space-y-6">
         <div className="flex justify-center mb-8" id="location-tabs">
           <div className="w-full max-w-4xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1"></div>
+              <InfoPopover context="sales-overview" locationId={activeLocation} />
+            </div>
             <div className="grid grid-cols-4 location-tabs">
               {locations.map(location => {
                 const parts = location.name.split(',').map(s => s.trim());

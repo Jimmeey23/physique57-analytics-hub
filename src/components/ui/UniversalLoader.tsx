@@ -32,7 +32,8 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
     'Crunching numbers and polishing insights.',
     'Fetching fresh data and KPIs.',
     'Applying smart filters and visualizations.',
-    'Aligning dashboards with your brand.'
+    'Aligning dashboards with your brand.',
+    'Enhanced loader system activated.'
   ];
   const [taglineIndex, setTaglineIndex] = useState(0);
 
@@ -85,49 +86,49 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
       case 'sales':
         return {
           icon: TrendingUp,
-          gradient: theme.activeTabGradient,
+          gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
           accentColor: `bg-${theme.accentColors.secondary}`,
           defaultSubtitle: 'Loading sales analytics and revenue data...'
         };
       case 'discounts':
         return {
           icon: Percent,
-          gradient: theme.activeTabGradient,
+          gradient: 'from-orange-500 via-amber-500 to-yellow-500',
           accentColor: `bg-${theme.accentColors.secondary}`,
           defaultSubtitle: 'Loading discount and promotional analysis...'
         };
       case 'funnel':
         return {
           icon: Target,
-          gradient: theme.activeTabGradient,
+          gradient: 'from-purple-500 via-violet-500 to-indigo-500',
           accentColor: `bg-${theme.accentColors.secondary}`,
           defaultSubtitle: 'Loading funnel and lead conversion data...'
         };
       case 'retention':
         return {
           icon: Users,
-          gradient: theme.activeTabGradient,
+          gradient: 'from-pink-500 via-rose-500 to-red-500',
           accentColor: `bg-${theme.accentColors.secondary}`,
           defaultSubtitle: 'Loading client retention and conversion data...'
         };
       case 'attendance':
         return {
           icon: Calendar,
-          gradient: theme.activeTabGradient,
+          gradient: 'from-blue-500 via-sky-500 to-cyan-500',
           accentColor: `bg-${theme.accentColors.secondary}`,
           defaultSubtitle: 'Loading class attendance and session data...'
         };
       case 'analytics':
         return {
           icon: BarChart3,
-          gradient: theme.activeTabGradient,
+          gradient: 'from-indigo-500 via-blue-500 to-purple-500',
           accentColor: `bg-${theme.accentColors.secondary}`,
           defaultSubtitle: 'Loading analytics and performance data...'
         };
       default:
         return {
           icon: Activity,
-          gradient: 'from-slate-800 to-slate-900',
+          gradient: 'from-blue-500 via-indigo-500 to-purple-500',
           accentColor: 'bg-indigo-500',
           defaultSubtitle: 'Loading dashboard...'
         };
@@ -147,40 +148,29 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-white">
-      <style>{`
-        @keyframes floatSoft { 0%, 100% { transform: translateY(0px) } 50% { transform: translateY(-15px) } }
-        @keyframes shimmerWave { 0% { transform: translateX(-100%) } 100% { transform: translateX(200%) } }
-        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; transform: scale(1) } 50% { opacity: 0.6; transform: scale(1.05) } }
-        @keyframes spinSlow { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
-        @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.95) translateY(10px) } 100% { opacity: 1; transform: scale(1) translateY(0) } }
-        @keyframes progressShine { 0% { left: -100% } 100% { left: 200% } }
-        @keyframes dotBounce { 0%, 100% { transform: translateY(0) scale(1) } 50% { transform: translateY(-6px) scale(1.1) } }
-        @keyframes rippleOut { 0% { transform: scale(0.9); opacity: 0.4 } 100% { transform: scale(1.8); opacity: 0 } }
-      `}</style>
 
-      {/* Modern minimalist background with white base */}
+      {/* Enhanced animated background with floating orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Darker gradient orbs behind the logo */}
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-blue-400/40 to-indigo-500/30 rounded-full blur-3xl" style={{ animation: 'floatSoft 18s ease-in-out infinite' }} />
-        <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-gradient-to-br from-purple-400/40 to-pink-500/30 rounded-full blur-3xl" style={{ animation: 'floatSoft 22s ease-in-out infinite 4s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-cyan-400/35 to-blue-500/25 rounded-full blur-3xl" style={{ animation: 'pulseGlow 14s ease-in-out infinite' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '3s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-br from-purple-400/30 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[32rem] h-[32rem] bg-gradient-to-br from-cyan-400/20 to-blue-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md text-center px-6 py-8" style={{ animation: 'fadeInScale 0.7s cubic-bezier(0.34, 1.4, 0.64, 1)' }}>
+      <div className="relative z-10 flex flex-col items-center gap-6 max-w-sm text-center px-6 py-8 animate-fade-in">
         <div className="relative" aria-label="Loading brand">
-          {/* Animated decorative rings - light and subtle */}
-          <div className="absolute inset-0 -m-8">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-slate-200/20 to-slate-300/20 opacity-30" style={{ animation: 'spinSlow 25s linear infinite' }} />
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-slate-200/40" style={{ animation: 'spinSlow 20s linear infinite reverse' }} />
-          </div>
-
-          {/* Logo container - pure white background */}
-          <div className={`relative w-36 h-36 bg-white rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 overflow-hidden z-10`} style={{ animation: 'floatSoft 7s ease-in-out infinite' }}>
+          {/* Compact logo container with subtle animations */}
+          <div className="relative w-20 h-20 bg-white/95 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl border border-gray-100 overflow-hidden animate-pulse" 
+               style={{ 
+                 animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite, float 6s ease-in-out infinite',
+               }}>
             {!imgFailed ? (
               <img
                 src={logoSrcs[srcIndex]}
                 alt="Physique 57"
-                className="w-24 h-24 object-contain relative z-10"
+                className="w-14 h-14 object-contain relative z-10 transition-transform duration-700"
+                style={{
+                  animation: 'gentle-bounce 2s ease-in-out infinite'
+                }}
                 onError={() => {
                   if (srcIndex < logoSrcs.length - 1) {
                     setSrcIndex(srcIndex + 1);
@@ -190,73 +180,53 @@ export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
                 }}
               />
             ) : (
-              <Icon className="w-14 h-14 text-slate-700 relative z-10" />
+              <Icon className="w-10 h-10 text-gray-700 relative z-10" style={{ animation: 'gentle-bounce 2s ease-in-out infinite' }} />
             )}
             
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" style={{ animation: 'shimmerWave 3.5s ease-in-out infinite' }} />
-            </div>
+            {/* Subtle shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 animate-shimmer opacity-50" />
           </div>
         </div>
 
-        {/* Modern progress bar */}
-        <div className="w-full max-w-sm space-y-4">
-          <div className="relative h-2.5 rounded-full overflow-hidden bg-slate-100 shadow-inner border border-slate-200/50">
+        {/* Sleek minimal progress bar */}
+        <div className="w-full max-w-xs">
+          <div className="relative h-1 rounded-full overflow-hidden bg-gray-200">
             <div
-              className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${config.gradient} transition-all duration-500 ease-out relative`}
+              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out bg-gradient-to-r ${config.gradient}`}
               style={{ 
                 width: progressValue > 0 ? `${progressValue}%` : '0%',
-                boxShadow: '0 0 18px rgba(99, 102, 241, 0.35)'
+                boxShadow: `0 0 8px ${config.gradient.includes('emerald') ? 'rgba(16, 185, 129, 0.3)' : 
+                                      config.gradient.includes('orange') ? 'rgba(249, 115, 34, 0.3)' : 
+                                      config.gradient.includes('purple') ? 'rgba(168, 85, 247, 0.3)' : 
+                                      config.gradient.includes('pink') ? 'rgba(236, 72, 153, 0.3)' : 
+                                      'rgba(59, 130, 246, 0.3)'}`,
               }}
             >
-              {/* Animated shine */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent" style={{ animation: 'progressShine 2.5s ease-in-out infinite' }} />
-            </div>
-            
-            {/* Glow on right edge */}
-            {progressValue > 8 && (
-              <div
-                className="absolute top-0 bottom-0 w-10 blur-md bg-gradient-to-r from-transparent to-indigo-300/30 transition-all duration-500"
-                style={{ left: `${Math.max(0, progressValue - 8)}%` }}
-              />
-            )}
-          </div>
-
-          {/* Progress percentage with modern typography */}
-          <div className="flex items-center justify-center gap-2.5">
-            <span className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-              {progressValue}%
-            </span>
-            {/* Animated indicator dots */}
-            <div className="flex gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-400" style={{ animation: 'dotBounce 1.2s ease-in-out infinite' }} />
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-400" style={{ animation: 'dotBounce 1.2s ease-in-out infinite 0.2s' }} />
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-400" style={{ animation: 'dotBounce 1.2s ease-in-out infinite 0.4s' }} />
+              {/* Subtle shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
             </div>
           </div>
         </div>
 
-        {/* Clean modern typography */}
-        <div className="space-y-3">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent">
+        {/* Clean, visible typography */}
+        <div className="space-y-2">
+          <h2 className={`text-xl font-semibold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}>
             {title}
           </h2>
-          <p className="text-slate-600 text-sm font-medium tracking-wide">
+          <p className="text-gray-600 text-sm font-medium">
             {finalSubtitle}
           </p>
           <p 
-            className="text-slate-400 text-xs italic min-h-[18px] transition-opacity duration-500"
+            className="text-gray-500 text-xs min-h-[16px] transition-opacity duration-500 animate-fade-in"
             key={taglineIndex}
-            style={{ animation: 'fadeInScale 0.6s ease-out' }}
           >
             {taglines[taglineIndex]}
           </p>
 
-          {/* Optional step indicator */}
+          {/* Step indicator */}
           {showSteps && currentStep && (
-            <div className="mt-5 px-5 py-2.5 bg-slate-50 rounded-lg border border-slate-200/60">
-              <p className="text-xs text-slate-500 font-medium">{currentStep}</p>
+            <div className="mt-4 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-700 font-medium">{currentStep}</p>
             </div>
           )}
         </div>

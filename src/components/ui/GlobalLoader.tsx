@@ -36,8 +36,17 @@ export const GlobalLoader: React.FC = () => {
   const currentStep = currentStepId ? steps.find(s => s.id === currentStepId)?.name : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-violet-100/90 via-purple-50/80 to-pink-100/70 backdrop-blur-sm">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-white/40 to-white/30"></div>
+    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-md">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50"></div>
+      
+      {/* Floating animated orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/6 w-96 h-96 bg-gradient-to-br from-blue-300/20 to-indigo-400/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute bottom-1/4 right-1/6 w-80 h-80 bg-gradient-to-br from-purple-300/20 to-pink-400/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[28rem] h-[28rem] bg-gradient-to-br from-cyan-300/15 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
+      </div>
+      
       <div className="relative z-10">
         <UniversalLoader 
           variant={variant}

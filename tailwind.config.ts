@@ -121,6 +121,30 @@ const config = {
           "75%": {
             transform: "translateY(-15px) rotate(0.5deg)"
           }
+        },
+        "shimmer": {
+          "0%": {
+            transform: "translateX(-100%)"
+          },
+          "100%": {
+            transform: "translateX(200%)"
+          }
+        },
+        "wave": {
+          "0%, 40%, 100%": {
+            transform: "scaleY(0.4)"
+          },
+          "20%": {
+            transform: "scaleY(1)"
+          }
+        },
+        "gentle-bounce": {
+          "0%, 100%": {
+            transform: "scale(1) translateY(0)"
+          },
+          "50%": {
+            transform: "scale(1.05) translateY(-2px)"
+          }
         }
       },
       animation: {
@@ -130,6 +154,9 @@ const config = {
         "slide-up": "slide-up 0.6s ease-out",
         "scale-in": "scale-in 0.4s ease-out",
         "float": "float 6s ease-in-out infinite",
+        "shimmer": "shimmer 2.5s ease-in-out infinite",
+        "wave": "wave 1.5s ease-in-out infinite",
+        "gentle-bounce": "gentle-bounce 2s ease-in-out infinite",
       },
     },
   },
