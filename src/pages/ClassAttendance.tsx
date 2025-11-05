@@ -7,9 +7,10 @@ import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { Loader2 } from 'lucide-react';
 
 const ClassAttendanceContent = () => {
-  const { data } = useSessionsData();
+  const { data, loading } = useSessionsData();
   const filteredData = useFilteredSessionsData(data || []);
 
   const heroMetrics = useMemo(() => {
@@ -56,6 +57,19 @@ const ClassAttendanceContent = () => {
       }
     ];
   }, [filteredData]);
+
+  // Show loader while data is loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-purple-50/30 to-pink-50/20 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg font-medium">Loading Class Attendance Data...</p>
+          <p className="text-gray-400 text-sm mt-2">Fetching sessions and attendance records</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-purple-50/30 to-pink-50/20 relative">

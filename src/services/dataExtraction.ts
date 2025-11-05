@@ -5,7 +5,75 @@
 
 import { SalesData } from '@/types/dashboard';
 
+/**
+ * Generate unique table ID
+ */
+function generateTableId(page: string, title: string, location?: string, tab?: string): string {
+  const parts = [
+    page.toLowerCase().replace(/\s+/g, '-'),
+    title.toLowerCase().replace(/\s+/g, '-'),
+    location?.toLowerCase().replace(/[,\s]+/g, '-'),
+    tab?.toLowerCase().replace(/\s+/g, '-'),
+  ].filter(Boolean);
+  
+  return parts.join('_');
+}
+
+/**
+ * Generate tags for table identification
+ */
+function generateTags(options: {
+  page: string;
+  section?: string;
+  location?: string;
+  tab?: string;
+  subTab?: string;
+  tableType?: string;
+  additionalTags?: string[];
+}): string[] {
+  const tags: string[] = [];
+  
+  // Page tag
+  tags.push(`page:${options.page}`);
+  
+  // Section tag
+  if (options.section) {
+    tags.push(`section:${options.section}`);
+  }
+  
+  // Location tag
+  if (options.location && options.location !== 'All Locations') {
+    const locationShort = options.location.split(',')[0].trim();
+    tags.push(`location:${locationShort}`);
+  } else if (options.location === 'All Locations') {
+    tags.push('location:all');
+  }
+  
+  // Tab tag
+  if (options.tab) {
+    tags.push(`tab:${options.tab}`);
+  }
+  
+  // SubTab tag
+  if (options.subTab) {
+    tags.push(`subtab:${options.subTab}`);
+  }
+  
+  // Table type tag
+  if (options.tableType) {
+    tags.push(`type:${options.tableType}`);
+  }
+  
+  // Additional custom tags
+  if (options.additionalTags) {
+    tags.push(...options.additionalTags);
+  }
+  
+  return tags;
+}
+
 export interface ExtractedTable {
+  id: string; // Unique identifier for the table
   title: string;
   subtitle?: string;
   location?: string;
@@ -13,11 +81,13 @@ export interface ExtractedTable {
   subTab?: string;
   headers: string[];
   rows: any[][];
+  tags: string[]; // Tags for easy identification
   metadata?: {
     page: string;
     section?: string;
     timestamp: string;
     recordCount: number;
+    tableType?: string; // e.g., "revenue", "attendance", "customer", etc.
   };
 }
 
@@ -126,21 +196,40 @@ export function extractTableFromData(
     page: string;
     section?: string;
     headers?: string[];
+    tableType?: string;
+    additionalTags?: string[];
   }
 ): ExtractedTable {
   if (!data || data.length === 0) {
+    // Generate unique ID
+    const id = generateTableId(options.page, title, options.location, options.tab);
+    
+    // Generate tags
+    const tags = generateTags({
+      page: options.page,
+      section: options.section,
+      location: options.location,
+      tab: options.tab,
+      subTab: options.subTab,
+      tableType: options.tableType,
+      additionalTags: options.additionalTags,
+    });
+    
     return {
+      id,
       title,
       location: options.location,
       tab: options.tab,
       subTab: options.subTab,
       headers: options.headers || [],
       rows: [],
+      tags,
       metadata: {
         page: options.page,
         section: options.section,
         timestamp: new Date().toISOString(),
         recordCount: 0,
+        tableType: options.tableType,
       },
     };
   }
@@ -156,18 +245,35 @@ export function extractTableFromData(
     })
   );
 
+  // Generate unique ID
+  const id = generateTableId(options.page, title, options.location, options.tab);
+  
+  // Generate tags
+  const tags = generateTags({
+    page: options.page,
+    section: options.section,
+    location: options.location,
+    tab: options.tab,
+    subTab: options.subTab,
+    tableType: options.tableType,
+    additionalTags: options.additionalTags,
+  });
+
   return {
+    id,
     title,
     location: options.location,
     tab: options.tab,
     subTab: options.subTab,
     headers,
     rows,
+    tags,
     metadata: {
       page: options.page,
       section: options.section,
       timestamp: new Date().toISOString(),
       recordCount: data.length,
+      tableType: options.tableType,
     },
   };
 }

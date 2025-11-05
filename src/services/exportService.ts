@@ -123,9 +123,11 @@ export function exportToCSV(data: ExtractedData, filename: string = 'analytics-e
   // Add tables section
   data.tables.forEach((table, index) => {
     csvContent += `\n=== TABLE ${index + 1}: ${table.title} ===\n`;
+    csvContent += `ID: ${table.id}\n`;
     if (table.location) csvContent += `Location: ${table.location}\n`;
     if (table.tab) csvContent += `Tab: ${table.tab}\n`;
     if (table.subTab) csvContent += `Sub-Tab: ${table.subTab}\n`;
+    if (table.tags && table.tags.length > 0) csvContent += `Tags: ${table.tags.join(', ')}\n`;
     csvContent += `Records: ${table.metadata?.recordCount || table.rows.length}\n\n`;
 
     // Add headers
@@ -150,160 +152,204 @@ export function exportToCSV(data: ExtractedData, filename: string = 'analytics-e
  * Export data to PDF format with professional styling
  */
 export function exportToPDF(data: ExtractedData, filename: string = 'analytics-export') {
-  const doc = new jsPDF({
-    orientation: 'landscape', // Landscape for better table fitting
-    unit: 'mm',
-    format: 'a4'
-  });
-  
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const contentWidth = pageWidth - (margin * 2);
-  let yPos = margin;
+  try {
+    console.log('Starting PDF export...', { 
+      tables: data.tables.length, 
+      metrics: data.metrics.length 
+    });
 
-  // Color scheme
-  const colors = {
-    primary: [41, 128, 185] as [number, number, number],
-    secondary: [52, 73, 94] as [number, number, number],
-    success: [39, 174, 96] as [number, number, number],
-    warning: [243, 156, 18] as [number, number, number],
-    danger: [231, 76, 60] as [number, number, number],
-    light: [236, 240, 241] as [number, number, number],
-    text: [44, 62, 80] as [number, number, number]
-  };
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 12;
+    const contentWidth = pageWidth - (margin * 2);
+    let yPos = margin;
+
+    // Professional color scheme - softer, more readable
+    const colors = {
+      primary: [41, 98, 155] as [number, number, number],      // Deep blue
+      secondary: [52, 73, 94] as [number, number, number],     // Dark slate
+      success: [46, 125, 50] as [number, number, number],      // Forest green
+      warning: [245, 124, 0] as [number, number, number],      // Vibrant orange
+      danger: [211, 47, 47] as [number, number, number],       // Deep red
+      light: [245, 247, 250] as [number, number, number],      // Very light gray
+      text: [33, 33, 33] as [number, number, number],          // Almost black
+      textLight: [97, 97, 97] as [number, number, number]      // Medium gray
+    };
 
   // Helper function to add page header
   const addPageHeader = () => {
+    // Gradient-like header with two-tone design
     doc.setFillColor(...colors.primary);
-    doc.rect(0, 0, pageWidth, 20, 'F');
+    doc.rect(0, 0, pageWidth, 25, 'F');
+    
+    // Company/title section
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Physique57 Analytics Export', margin, 12);
-    doc.setFontSize(8);
+    doc.text('Physique57 Analytics', margin, 12);
+    
+    // Subtitle
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(new Date(data.summary.timestamp).toLocaleDateString(), pageWidth - margin, 12, { align: 'right' });
+    doc.text('Comprehensive Data Export', margin, 18);
+    
+    // Date stamp
+    doc.setFontSize(9);
+    const dateStr = new Date(data.summary.timestamp).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    doc.text(dateStr, pageWidth - margin, 12, { align: 'right' });
+    
+    // Location info if single location
+    if (data.summary.locations.length === 1) {
+      doc.setFontSize(8);
+      doc.text(`📍 ${data.summary.locations[0]}`, pageWidth - margin, 18, { align: 'right' });
+    }
   };
 
   // Helper function to add page footer
   const addPageFooter = () => {
     const pageNumber = doc.getCurrentPageInfo().pageNumber;
+    const totalPages = doc.getNumberOfPages();
+    
+    // Footer line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+    
+    // Page number
     doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
+    doc.setTextColor(...colors.textLight);
+    doc.setFont('helvetica', 'normal');
     doc.text(
-      `Page ${pageNumber}`,
+      `Page ${pageNumber} of ${totalPages}`,
       pageWidth / 2,
-      pageHeight - 8,
+      pageHeight - 7,
       { align: 'center' }
     );
+    
+    // Footer text
+    doc.text('Physique57 Analytics Hub', margin, pageHeight - 7);
+    doc.text('Confidential', pageWidth - margin, pageHeight - 7, { align: 'right' });
   };
 
   // Helper function to check if new page is needed
   const checkNewPage = (requiredSpace: number) => {
-    if (yPos + requiredSpace > pageHeight - 25) {
+    if (yPos + requiredSpace > pageHeight - 20) {
       doc.addPage();
       addPageHeader();
-      yPos = 30;
+      yPos = 32; // Start below header
       return true;
     }
     return false;
   };
 
-  // Title page
+  // Title page with enhanced styling
   addPageHeader();
   yPos = 35;
 
-  // Summary stats in a nice grid
-  doc.setFontSize(14);
+  // Summary stats in a professional card-style layout
+  doc.setFontSize(16);
   doc.setTextColor(...colors.text);
   doc.setFont('helvetica', 'bold');
-  doc.text('Export Summary', margin, yPos);
-  yPos += 10;
+  doc.text('📊 Export Summary', margin, yPos);
+  yPos += 12;
 
   const statsData = [
-    ['Total Tables', data.summary.totalTables.toString()],
-    ['Total Metrics', data.summary.totalMetrics.toString()],
-    ['Pages Included', data.summary.pages.length.toString()],
+    ['Tables Exported', formatNumber(data.summary.totalTables)],
+    ['Key Metrics', formatNumber(data.summary.totalMetrics)],
+    ['Pages Covered', data.summary.pages.length.toString()],
     ['Locations', data.summary.locations.join(', ')]
   ];
 
   autoTable(doc, {
     startY: yPos,
-    head: [['Statistic', 'Value']],
+    head: [['Category', 'Details']],
     body: statsData,
-    theme: 'grid',
+    theme: 'plain',
     headStyles: { 
       fillColor: colors.primary,
       textColor: [255, 255, 255],
-      fontSize: 10,
+      fontSize: 11,
       fontStyle: 'bold',
-      halign: 'left'
+      halign: 'left',
+      cellPadding: 4
     },
     bodyStyles: { 
-      fontSize: 9,
-      textColor: colors.text
+      fontSize: 10,
+      textColor: colors.text,
+      cellPadding: 4
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 50 },
-      1: { cellWidth: 'auto' }
+      0: { fontStyle: 'bold', cellWidth: 60, textColor: colors.textLight },
+      1: { cellWidth: 'auto', fontStyle: 'bold', textColor: colors.text }
     },
-    margin: { left: margin, right: margin }
+    margin: { left: margin, right: margin },
+    styles: {
+      lineColor: [230, 230, 230],
+      lineWidth: 0.1
+    }
   });
 
   yPos = (doc as any).lastAutoTable.finalY + 15;
 
-  // Metrics section
+  // Metrics section with enhanced styling
   if (data.metrics.length > 0) {
-    checkNewPage(40);
+    checkNewPage(50);
     
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.text);
-    doc.text('Key Metrics', margin, yPos);
-    yPos += 8;
+    doc.text('📈 Key Performance Metrics', margin, yPos);
+    yPos += 10;
 
-    // Group metrics by category
-    const groupedMetrics: Record<string, ExtractedMetric[]> = {};
-    data.metrics.forEach(m => {
-      if (!groupedMetrics[m.category]) {
-        groupedMetrics[m.category] = [];
-      }
-      groupedMetrics[m.category].push(m);
-    });
-
-    // Display metrics in a compact grid (limit to top 30)
-    const metricsToShow = data.metrics.slice(0, 30);
+    // Show top 40 metrics with better formatting
+    const metricsToShow = data.metrics.slice(0, 40);
     const metricsData = metricsToShow.map(m => [
       m.category,
       m.title,
       formatCellValue(m.value),
       m.change ? formatCellValue(m.change) : '-',
-      m.location || 'All'
+      m.location || 'All Locations'
     ]);
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Category', 'Metric', 'Value', 'Change', 'Location']],
+      head: [['Category', 'Metric Name', 'Current Value', 'Change', 'Location']],
       body: metricsData,
       theme: 'striped',
       headStyles: { 
         fillColor: colors.success,
         textColor: [255, 255, 255],
         fontSize: 9,
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+        halign: 'left',
+        cellPadding: 3
       },
       bodyStyles: { 
         fontSize: 8,
         textColor: colors.text,
-        cellPadding: 2
+        cellPadding: 2.5,
+        lineColor: [220, 220, 220],
+        lineWidth: 0.1
       },
       columnStyles: {
-        0: { cellWidth: 40, fontStyle: 'bold' },
+        0: { cellWidth: 42, fontStyle: 'bold', textColor: colors.textLight },
         1: { cellWidth: 'auto' },
-        2: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
-        3: { cellWidth: 25, halign: 'right' },
-        4: { cellWidth: 40 }
+        2: { cellWidth: 35, halign: 'right', fontStyle: 'bold', textColor: colors.primary },
+        3: { cellWidth: 28, halign: 'right' },
+        4: { cellWidth: 45, fontSize: 7 }
       },
       alternateRowStyles: {
         fillColor: colors.light
@@ -313,125 +359,221 @@ export function exportToPDF(data: ExtractedData, filename: string = 'analytics-e
 
     yPos = (doc as any).lastAutoTable.finalY + 10;
 
-    if (data.metrics.length > 30) {
+    if (data.metrics.length > 40) {
       doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
+      doc.setTextColor(...colors.textLight);
       doc.setFont('helvetica', 'italic');
-      doc.text(`... and ${data.metrics.length - 30} more metrics (see full export for complete data)`, margin, yPos);
+      doc.text(`Note: Showing top 40 of ${formatNumber(data.metrics.length)} total metrics`, margin, yPos);
       yPos += 8;
     }
   }
 
-  // Tables section - ALL rows exported with professional formatting
+  // Tables section - Enhanced professional formatting
   data.tables.forEach((table, tableIndex) => {
-    // Start each table on a new page for better readability
-    if (tableIndex > 0 || yPos > 50) {
+    // Start new page for each major table for better readability
+    if (tableIndex > 0) {
       doc.addPage();
       addPageHeader();
-      yPos = 30;
+      yPos = 32;
     }
 
-    // Table title
-    doc.setFontSize(13);
+    // Section divider
+    if (tableIndex > 0 && !checkNewPage(15)) {
+      doc.setDrawColor(...colors.primary);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+    }
+
+    // Table title with numbering
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...colors.text);
-    doc.text(`${tableIndex + 1}. ${table.title}`, margin, yPos);
+    doc.text(`Table ${tableIndex + 1}: ${table.title}`, margin, yPos);
     yPos += 7;
 
-    // Table metadata badges
+    // Table ID for easy reference
+    doc.setFontSize(7);
+    doc.setTextColor(...colors.textLight);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`ID: ${table.id}`, margin, yPos);
+    yPos += 5;
+
+    // Metadata badges with icons and better formatting
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     const badges: string[] = [];
     if (table.location) badges.push(`📍 ${table.location}`);
     if (table.tab) badges.push(`📂 ${table.tab}`);
     if (table.metadata?.page) badges.push(`📄 ${table.metadata.page}`);
-    badges.push(`📊 ${table.rows.length} rows`);
+    badges.push(`📊 ${formatNumber(table.rows.length)} ${table.rows.length === 1 ? 'row' : 'rows'}`);
     
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(...colors.textLight);
     doc.text(badges.join('  •  '), margin, yPos);
-    yPos += 8;
+    yPos += 6;
 
-    // Format all table data
+    // Tags section - NEW!
+    if (table.tags && table.tags.length > 0) {
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      const tagsText = `🏷️  ${table.tags.join(' • ')}`;
+      doc.setTextColor(100, 100, 100);
+      doc.text(tagsText, margin, yPos);
+      yPos += 7;
+    } else {
+      yPos += 2;
+    }
+
+    // Format all table data with proper formatting
     const formattedRows = table.rows.map(row => 
       row.map((cell, idx) => formatCellValue(cell, table.headers[idx]))
     );
 
-    // Calculate optimal column widths
+    // Intelligent column width calculation
     const numCols = table.headers.length;
     const availableWidth = contentWidth;
     
-    // Smart column width calculation
     const columnStyles: any = {};
+    const headerWidths: number[] = [];
+    
     table.headers.forEach((header, idx) => {
       const lowerHeader = header.toLowerCase();
+      let width: number | 'auto' = 'auto';
+      let align: 'left' | 'center' | 'right' = 'left';
+      let isBold = false;
       
-      // Narrow columns for counts and percentages
-      if (lowerHeader.includes('count') || lowerHeader.includes('#') || 
-          lowerHeader.includes('percentage') || lowerHeader.includes('%')) {
-        columnStyles[idx] = { cellWidth: 20, halign: 'center' };
+      // ID/Number columns - very narrow
+      if (lowerHeader.includes('#') || lowerHeader === 'id' || lowerHeader === 'no') {
+        width = 15;
+        align = 'center';
       }
-      // Medium columns for amounts and averages
+      // Count/Percentage columns - narrow
+      else if (lowerHeader.includes('count') || lowerHeader.includes('qty') ||
+               lowerHeader.includes('percentage') || lowerHeader.includes('%')) {
+        width = 22;
+        align = 'center';
+      }
+      // Currency/Amount columns - medium, right-aligned, bold
       else if (lowerHeader.includes('revenue') || lowerHeader.includes('amount') || 
-               lowerHeader.includes('avg') || lowerHeader.includes('value')) {
-        columnStyles[idx] = { cellWidth: 25, halign: 'right', fontStyle: 'bold' };
+               lowerHeader.includes('value') || lowerHeader.includes('price') ||
+               lowerHeader.includes('mrp') || lowerHeader.includes('discount')) {
+        width = 28;
+        align = 'right';
+        isBold = true;
       }
-      // Wide columns for names and descriptions
+      // Average columns - medium, right-aligned
+      else if (lowerHeader.includes('avg') || lowerHeader.includes('average')) {
+        width = 26;
+        align = 'right';
+        isBold = true;
+      }
+      // Date columns - medium
+      else if (lowerHeader.includes('date') || lowerHeader.includes('time')) {
+        width = 30;
+        align = 'center';
+      }
+      // Name/Description columns - auto (flexible)
       else if (lowerHeader.includes('name') || lowerHeader.includes('product') || 
-               lowerHeader.includes('customer') || lowerHeader.includes('category')) {
-        columnStyles[idx] = { cellWidth: 'auto', halign: 'left' };
+               lowerHeader.includes('customer') || lowerHeader.includes('category') ||
+               lowerHeader.includes('description')) {
+        width = 'auto';
+        align = 'left';
       }
-      // Default medium width
-      else {
-        columnStyles[idx] = { cellWidth: 'auto' };
-      }
+      
+      columnStyles[idx] = { 
+        cellWidth: width,
+        halign: align,
+        ...(isBold && { fontStyle: 'bold', textColor: colors.primary })
+      };
     });
+
+    // Determine font size based on table complexity
+    let baseFontSize = 8;
+    let headerFontSize = 9;
+    
+    if (numCols > 10) {
+      baseFontSize = 6;
+      headerFontSize = 7;
+    } else if (numCols > 7) {
+      baseFontSize = 7;
+      headerFontSize = 8;
+    }
 
     autoTable(doc, {
       startY: yPos,
       head: [table.headers],
-      body: formattedRows, // ALL rows, no limits
+      body: formattedRows,
       theme: 'grid',
       headStyles: { 
         fillColor: colors.secondary,
         textColor: [255, 255, 255],
-        fontSize: 8,
+        fontSize: headerFontSize,
         fontStyle: 'bold',
         halign: 'center',
-        cellPadding: 3
+        cellPadding: 3,
+        lineColor: [255, 255, 255],
+        lineWidth: 0.1
       },
       bodyStyles: { 
-        fontSize: 7,
+        fontSize: baseFontSize,
         textColor: colors.text,
         cellPadding: 2,
-        lineColor: [200, 200, 200],
+        lineColor: [210, 210, 210],
         lineWidth: 0.1
       },
       columnStyles,
       alternateRowStyles: {
-        fillColor: [248, 249, 250]
+        fillColor: [250, 251, 252]
       },
       margin: { left: margin, right: margin },
       tableWidth: 'auto',
       didDrawPage: (data) => {
-        addPageFooter();
+        // Only add footer if we're on a table continuation page
+        if (data.pageNumber > 1) {
+          addPageFooter();
+        }
       },
-      // Auto-scale font if table is too wide
       styles: {
         overflow: 'linebreak',
         cellWidth: 'wrap',
-        fontSize: numCols > 8 ? 6 : 7,
-        minCellHeight: 5
-      }
+        minCellHeight: 5,
+        halign: 'left'
+      },
+      // Show all rows - no pagination within tables
+      showHead: 'everyPage',
+      rowPageBreak: 'auto',
+      tableLineColor: [200, 200, 200],
+      tableLineWidth: 0.1
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 10;
+    yPos = (doc as any).lastAutoTable.finalY + 12;
   });
 
-  // Add footer to last page
+  // Add final footer to last page
   addPageFooter();
 
-  // Save the PDF
-  doc.save(`${filename}.pdf`);
+  // Update total page count in all footers
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addPageFooter();
+  }
+
+  // Save the PDF with timestamp
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const finalFilename = `${filename}_${timestamp}.pdf`;
+  
+  console.log('PDF generated successfully!', { 
+    totalPages, 
+    filename: finalFilename 
+  });
+  
+  doc.save(finalFilename);
+  
+  } catch (error) {
+    console.error('PDF Export Error:', error);
+    throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**
@@ -484,6 +626,7 @@ export function exportToText(data: ExtractedData, filename: string = 'analytics-
 
     data.tables.forEach((table, index) => {
       textContent += `\n▶ TABLE ${index + 1}: ${table.title}\n`;
+      textContent += `  ID: ${table.id}\n`;
       
       const metadata: string[] = [];
       if (table.location) metadata.push(`📍 ${table.location}`);
@@ -492,6 +635,11 @@ export function exportToText(data: ExtractedData, filename: string = 'analytics-
       metadata.push(`📊 ${formatNumber(table.rows.length)} rows`);
       
       textContent += `  ${metadata.join('  •  ')}\n`;
+      
+      if (table.tags && table.tags.length > 0) {
+        textContent += `  🏷️  Tags: ${table.tags.join(', ')}\n`;
+      }
+      
       textContent += '─'.repeat(120) + '\n\n';
 
       // Format all rows

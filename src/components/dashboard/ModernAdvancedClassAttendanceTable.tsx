@@ -81,7 +81,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
     key: 'trainer',
-    direction: 'asc'
+    direction: 'desc'
   });
 
   // Process raw session data
@@ -523,14 +523,15 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       <CardContent className="p-0 rounded-b-xl">
         <div className="relative w-full overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl" style={{ display: 'block' }}>
           <Table className="min-w-[2000px] w-max">
-            <TableHeader className="sticky top-0 z-20">
-              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b-2 border-slate-700 shadow-lg">
+            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+              <TableRow className="border-b-2 border-slate-700 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[200px] sticky left-0 z-30 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[200px] sticky left-0 z-30 h-10 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
+                    <User className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">
                     {groupBy === 'trainer' ? 'TRAINER' :
                      groupBy === 'class' ? 'CLASS TYPE' :
                      groupBy === 'location' ? 'LOCATION' :
@@ -543,162 +544,163 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                      groupBy === 'trainer_time' ? 'TRAINER | TIME' :
                      groupBy === 'uniqueid1' ? 'GROUP BY CLASS' :
                      groupBy === 'uniqueid2' ? 'GROUP BY CLASS & TRAINER' : 'PRIMARY'}
+                    </span>
                     {getSortIcon('trainer')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[80px] h-10"
                   onClick={() => handleSort('period')}
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
+                  <div className="flex items-center gap-1 justify-center">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
                     PERIOD
                     {getSortIcon('period')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[100px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[100px] h-10"
                   onClick={() => handleSort('date')}
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
+                  <div className="flex items-center gap-1 justify-center">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
                     DATE
                     {getSortIcon('date')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[150px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[130px] h-10"
                   onClick={() => handleSort('classType')}
                 >
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4" />
+                  <div className="flex items-center gap-1 justify-center">
+                    <Activity className="w-4 h-4 flex-shrink-0" />
                     CLASS TYPE
                     {getSortIcon('classType')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[90px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[80px] h-10"
                   onClick={() => handleSort('day')}
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
+                  <div className="flex items-center gap-1 justify-center">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
                     DAY
                     {getSortIcon('day')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[70px] h-10"
                   onClick={() => handleSort('time')}
                 >
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
+                  <div className="flex items-center gap-1 justify-center">
+                    <Clock className="w-4 h-4 flex-shrink-0" />
                     TIME
                     {getSortIcon('time')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[150px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[130px] h-10"
                   onClick={() => handleSort('location')}
                 >
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
+                  <div className="flex items-center gap-1 justify-center">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
                     LOCATION
                     {getSortIcon('location')}
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0 py-2 h-10">
+                <TableHead className="font-bold text-white text-center w-[70px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <BarChart3 className="w-4 h-4" />
+                    <BarChart3 className="w-4 h-4 flex-shrink-0" />
                     CLASSES
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[70px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Target className="w-4 h-4 text-red-400" />
+                    <Target className="w-4 h-4 flex-shrink-0 text-red-400" />
                     EMPTY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Target className="w-4 h-4 text-green-400" />
+                    <Target className="w-4 h-4 flex-shrink-0 text-green-400" />
                     NON-EMPTY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Users className="w-4 h-4" />
+                    <Users className="w-4 h-4 flex-shrink-0" />
                     CHECKED IN
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Activity className="w-4 h-4" />
-                    AVG. (ALL)
+                    <Activity className="w-4 h-4 flex-shrink-0" />
+                    AVG (ALL)
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[90px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <TrendingUp className="w-4 h-4" />
-                    AVG. (NON-EMPTY)
+                    <TrendingUp className="w-4 h-4 flex-shrink-0" />
+                    AVG (NON-E)
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[100px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[100px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4" />
+                    <DollarSign className="w-4 h-4 flex-shrink-0" />
                     REVENUE
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Clock className="w-4 h-4 text-orange-400" />
-                    LATE CANCELS
+                    <Clock className="w-4 h-4 flex-shrink-0 text-orange-400" />
+                    LATE CANCEL
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4 text-green-400" />
+                    <DollarSign className="w-4 h-4 flex-shrink-0 text-green-400" />
                     PAYOUT
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[70px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4 text-yellow-400" />
+                    <DollarSign className="w-4 h-4 flex-shrink-0 text-yellow-400" />
                     TIPS
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Building2 className="w-4 h-4 text-blue-400" />
+                    <Building2 className="w-4 h-4 flex-shrink-0 text-blue-400" />
                     CAPACITY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Target className="w-4 h-4 text-purple-400" />
+                    <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
                     FILL RATE
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[90px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4 text-emerald-400" />
+                    <DollarSign className="w-4 h-4 flex-shrink-0 text-emerald-400" />
                     REV/CLASS
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[90px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4 text-teal-400" />
-                    REV/ATTENDEE
+                    <DollarSign className="w-4 h-4 flex-shrink-0 text-teal-400" />
+                    REV/ATTEND
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <Activity className="w-4 h-4 text-cyan-400" />
+                    <Activity className="w-4 h-4 flex-shrink-0 text-cyan-400" />
                     CONSISTENCY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] bg-gradient-to-r from-slate-800 to-slate-900 sticky top-0">
+                <TableHead className="font-bold text-white text-center w-[80px] h-10">
                   <div className="flex items-center justify-center gap-1">
-                    <TrendingUp className="w-4 h-4 text-indigo-400" />
+                    <TrendingUp className="w-4 h-4 flex-shrink-0 text-indigo-400" />
                     SHOW-UP %
                   </div>
                 </TableHead>
@@ -711,100 +713,100 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   <React.Fragment key={group.groupKey}>
                     {/* Group header row */}
                     <TableRow 
-                      className="bg-slate-100 hover:bg-slate-200 transition-colors border-l-4 border-l-blue-500 cursor-pointer"
+                      className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors border-l-4 border-l-blue-600 cursor-pointer max-h-[40px]"
                       onClick={() => toggleGroup(group.groupKey)}
                     >
-                      <TableCell className="py-4 sticky left-0 z-20 bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <TableCell className="py-2 sticky left-0 z-20 bg-gradient-to-r from-blue-50 to-indigo-50 group-hover:from-blue-100 group-hover:to-indigo-100 transition-colors max-h-[40px]">
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
                             {group.isExpanded ? 
                               <ChevronDown className="h-4 w-4" /> : 
                               <ChevronRight className="h-4 w-4" />
                             }
                           </Button>
-                          <TrainerAvatar name={group.trainer} />
-                          <div>
-                            <div className="font-semibold text-slate-900">{group.trainer}</div>
-                            <div className="text-xs text-slate-500">
-                              {group.aggregatedMetrics.totalClasses} total classes
+                          <TrainerAvatar name={group.groupLabel} />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-slate-900 truncate">{group.groupLabel}</div>
+                            <div className="text-xs text-slate-500 truncate">
+                              {group.aggregatedMetrics.totalClasses} classes
                             </div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="py-4">
-                        <Badge variant="secondary" className="font-medium">
+                      <TableCell className="py-2 max-h-[40px]">
+                        <Badge variant="secondary" className="font-medium text-xs h-6">
                           {group.period}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-slate-500">
-                        Multiple dates
+                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
+                        <span className="truncate">Multiple</span>
                       </TableCell>
-                      <TableCell className="py-4">
-                        <div className="text-slate-500">Multiple classes</div>
+                      <TableCell className="py-2 max-h-[40px]">
+                        <div className="text-slate-500 text-sm truncate">Multiple</div>
                       </TableCell>
-                      <TableCell className="py-4 text-slate-500">
-                        Various
+                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
+                        <span className="truncate">Various</span>
                       </TableCell>
-                      <TableCell className="py-4 text-slate-500">
-                        Various
+                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
+                        <span className="truncate">Various</span>
                       </TableCell>
-                      <TableCell className="py-4 text-slate-500">
-                        Multiple locations
+                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
+                        <span className="truncate">Multiple</span>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <Badge className="metric-badge badge-soft-blue">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <Badge className="metric-badge badge-soft-blue text-xs h-6 px-2 font-bold">
                           {group.aggregatedMetrics.totalClasses}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <Badge className="metric-badge badge-soft-red">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <Badge className="metric-badge badge-soft-red text-xs h-6 px-2 font-bold">
                           {group.aggregatedMetrics.emptyClasses}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <Badge className="metric-badge badge-soft-green">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <Badge className="metric-badge badge-soft-green text-xs h-6 px-2 font-bold">
                           {group.aggregatedMetrics.nonEmptyClasses}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-bold text-slate-900">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-bold text-slate-900 text-sm">
                           {group.aggregatedMetrics.totalCheckedIn}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-medium text-slate-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-medium text-slate-700 text-sm">
                           {group.aggregatedMetrics.avgAll.toFixed(1)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-medium text-slate-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-medium text-slate-700 text-sm">
                           {group.aggregatedMetrics.avgNonEmpty.toFixed(1)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-bold text-green-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-bold text-green-700 text-sm">
                           {formatCurrency(group.aggregatedMetrics.totalRevenue)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-medium text-orange-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-medium text-orange-700 text-sm">
                           {group.aggregatedMetrics.totalLateCancels}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center text-slate-400">
+                      <TableCell className="py-2 text-center text-slate-400 text-sm max-h-[40px]">
                         -
                       </TableCell>
-                      <TableCell className="py-4 text-center text-slate-400">
+                      <TableCell className="py-2 text-center text-slate-400 text-sm max-h-[40px]">
                         -
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-medium text-blue-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-medium text-blue-700 text-sm">
                           {formatNumber(group.aggregatedMetrics.totalCapacity)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
+                      <TableCell className="py-2 text-center max-h-[40px]">
                         <Badge className={cn(
-                          "metric-badge",
+                          "metric-badge text-xs h-6 px-2 font-bold",
                           group.aggregatedMetrics.fillRate >= 80 ? "badge-soft-green" :
                           group.aggregatedMetrics.fillRate >= 60 ? "badge-soft-yellow" :
                           "badge-soft-red"
@@ -812,19 +814,19 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           {group.aggregatedMetrics.fillRate.toFixed(1)}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-medium text-emerald-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-medium text-emerald-700 text-sm">
                           {formatCurrency(group.aggregatedMetrics.revenuePerClass)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="font-medium text-teal-700">
+                      <TableCell className="py-2 text-center max-h-[40px]">
+                        <div className="font-medium text-teal-700 text-sm">
                           {formatCurrency(group.aggregatedMetrics.revenuePerAttendee)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
+                      <TableCell className="py-2 text-center max-h-[40px]">
                         <Badge className={cn(
-                          "metric-badge",
+                          "metric-badge text-xs h-6 px-2 font-bold",
                           group.aggregatedMetrics.consistency >= 80 ? "badge-soft-green" :
                           group.aggregatedMetrics.consistency >= 60 ? "badge-soft-yellow" :
                           "badge-soft-red"
@@ -832,9 +834,9 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           {group.aggregatedMetrics.consistency.toFixed(1)}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 text-center">
+                      <TableCell className="py-2 text-center max-h-[40px]">
                         <Badge className={cn(
-                          "metric-badge",
+                          "metric-badge text-xs h-6 px-2 font-bold",
                           group.aggregatedMetrics.showUpRate >= 90 ? "badge-soft-green" :
                           group.aggregatedMetrics.showUpRate >= 75 ? "badge-soft-yellow" :
                           "badge-soft-red"
@@ -850,92 +852,96 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         key={`${group.groupKey}-${index}`}
                         className="bg-white hover:bg-blue-50 transition-colors border-l-4 border-l-transparent hover:border-l-blue-300"
                       >
-                        <TableCell className="py-3 pl-12">
-                          <div className="flex items-center gap-3">
-                            <TrainerAvatar name={session.trainerName || 'Unknown'} />
-                            <div>
-                              <div className="font-medium text-slate-800">{session.trainerName}</div>
+                        <TableCell className="py-2 pl-12 max-h-[40px]">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0">
+                              <TrainerAvatar name={session.trainerName || 'Unknown'} />
+                            </div>
+                            <div className="truncate">
+                              <div className="text-sm font-medium text-slate-800 truncate">{session.trainerName}</div>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-3">
-                          <Badge variant="outline" className="text-xs">
+                        <TableCell className="py-2 max-h-[40px]">
+                          <Badge variant="outline" className="text-xs h-6 px-2 font-bold">
                             {session.period}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-3">
-                          <div className="text-sm font-medium text-slate-700">
+                        <TableCell className="py-2 max-h-[40px]">
+                          <div className="text-sm font-medium text-slate-700 truncate">
                             {formatDate(session.date)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3">
-                          <ClassTypeBadge type={session.cleanedClass || 'Unknown'} />
+                        <TableCell className="py-2 max-h-[40px]">
+                          <div className="text-xs">
+                            <ClassTypeBadge type={session.cleanedClass || 'Unknown'} />
+                          </div>
                         </TableCell>
-                        <TableCell className="py-3">
-                          <div className="text-sm text-slate-600">
+                        <TableCell className="py-2 max-h-[40px]">
+                          <div className="text-sm text-slate-600 truncate">
                             {session.dayOfWeek}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3">
-                          <div className="text-sm font-medium text-slate-700">
+                        <TableCell className="py-2 max-h-[40px]">
+                          <div className="text-sm font-medium text-slate-700 truncate">
                             {session.time}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3">
-                          <div className="text-sm text-slate-600 truncate max-w-[120px]">
+                        <TableCell className="py-2 max-h-[40px]">
+                          <div className="text-sm text-slate-600 truncate">
                             {session.location}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
-                          <Badge variant="secondary" className="text-xs">
+                        <TableCell className="py-2 text-center max-h-[40px]">
+                          <Badge variant="secondary" className="text-xs h-6 px-2 font-bold">
                             1
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
+                        <TableCell className="py-2 text-center max-h-[40px]">
                           <Badge className={cn(
-                            "metric-badge",
+                            "text-xs h-6 px-2 font-bold",
                             session.emptyClasses > 0 ? "badge-soft-red" : "badge-soft-slate"
                           )}>
                             {session.emptyClasses}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
+                        <TableCell className="py-2 text-center max-h-[40px]">
                           <Badge className={cn(
-                            "metric-badge",
+                            "text-xs h-6 px-2 font-bold",
                             session.nonEmptyClasses > 0 ? "badge-soft-green" : "badge-soft-slate"
                           )}>
                             {session.nonEmptyClasses}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
-                          <div className="font-medium text-slate-800">
+                        <TableCell className="py-2 text-center max-h-[40px]">
+                          <div className="text-sm font-medium text-slate-800">
                             {session.checkedInCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
+                        <TableCell className="py-2 text-center max-h-[40px]">
                           <div className="text-sm text-slate-600">
                             {session.checkedInCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
+                        <TableCell className="py-2 text-center max-h-[40px]">
                           <div className="text-sm text-slate-600">
                             {(session.checkedInCount || 0) > 0 ? (session.checkedInCount || 0) : '-'}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
-                          <div className="font-medium text-green-700">
+                        <TableCell className="py-2 text-center max-h-[40px]">
+                          <div className="text-sm font-medium text-green-700 truncate">
                             {formatCurrency(session.totalPaid || 0)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 text-center">
+                        <TableCell className="py-2 text-center max-h-[40px]">
                           <div className="text-sm text-orange-600">
                             {session.lateCancelledCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 text-center text-slate-400">
+                        <TableCell className="py-2 text-center text-slate-400 max-h-[40px]">
                           -
                         </TableCell>
-                        <TableCell className="py-3 text-center text-slate-400">
+                        <TableCell className="py-2 text-center text-slate-400 max-h-[40px]">
                           -
                         </TableCell>
                       </TableRow>
@@ -1041,71 +1047,97 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 ))
               )}
               {/* Totals row */}
-              <TableRow className="bg-blue-50/60 font-bold border-t-2 border-blue-200">
-                <TableCell className="sticky left-0 z-10 bg-blue-50/60">Totals</TableCell>
+              <TableRow className="bg-gradient-to-r from-indigo-100 via-blue-100 to-indigo-100 border-t-4 border-indigo-500">
+                <TableCell className="sticky left-0 z-10 bg-gradient-to-r from-indigo-100 to-blue-100 py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">TOTALS</span>
+                </TableCell>
                 {/* Period */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Date */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Class Type */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Day */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Time */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Location */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Classes */}
-                <TableCell className="text-center">{formatNumber(processedData.length)}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.length)}</span>
+                </TableCell>
                 {/* Empty */}
-                <TableCell className="text-center">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) === 0).length)}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-red-700">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) === 0).length)}</span>
+                </TableCell>
                 {/* Non-Empty */}
-                <TableCell className="text-center">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) > 0).length)}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-green-700">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) > 0).length)}</span>
+                </TableCell>
                 {/* Checked In */}
-                <TableCell className="text-center">{formatNumber(processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}</span>
+                </TableCell>
                 {/* Avg (All) */}
-                <TableCell className="text-center">{(() => {
-                  const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
-                  return (processedData.length > 0 ? (totalChecked / processedData.length).toFixed(1) : '0.0');
-                })()}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">{(() => {
+                    const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                    return (processedData.length > 0 ? (totalChecked / processedData.length).toFixed(1) : '0.0');
+                  })()}</span>
+                </TableCell>
                 {/* Avg (Non-Empty) */}
-                <TableCell className="text-center">{(() => {
-                  const nonEmpty = processedData.filter(s => (s.checkedInCount || 0) > 0);
-                  const totalChecked = nonEmpty.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
-                  return (nonEmpty.length > 0 ? (totalChecked / nonEmpty.length).toFixed(1) : '0.0');
-                })()}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">{(() => {
+                    const nonEmpty = processedData.filter(s => (s.checkedInCount || 0) > 0);
+                    const totalChecked = nonEmpty.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                    return (nonEmpty.length > 0 ? (totalChecked / nonEmpty.length).toFixed(1) : '0.0');
+                  })()}</span>
+                </TableCell>
                 {/* Revenue */}
-                <TableCell className="text-center">{formatCurrency(processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-green-700">{formatCurrency(processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}</span>
+                </TableCell>
                 {/* Late Cancels */}
-                <TableCell className="text-center">{formatNumber(processedData.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0))}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-orange-700">{formatNumber(processedData.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0))}</span>
+                </TableCell>
                 {/* Payout */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Tips */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Capacity */}
-                <TableCell className="text-center">{formatNumber(processedData.reduce((sum, s) => sum + (s.capacity || 0), 0))}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.reduce((sum, s) => sum + (s.capacity || 0), 0))}</span>
+                </TableCell>
                 {/* Fill Rate */}
-                <TableCell className="text-center">{(() => {
-                  const totalCapacity = processedData.reduce((sum, s) => sum + (s.capacity || 0), 0);
-                  const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
-                  const pct = totalCapacity > 0 ? (totalChecked / totalCapacity) * 100 : 0;
-                  return `${pct.toFixed(1)}%`;
-                })()}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-indigo-900">{(() => {
+                    const totalCapacity = processedData.reduce((sum, s) => sum + (s.capacity || 0), 0);
+                    const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                    const pct = totalCapacity > 0 ? (totalChecked / totalCapacity) * 100 : 0;
+                    return `${pct.toFixed(1)}%`;
+                  })()}</span>
+                </TableCell>
                 {/* Rev/Class */}
-                <TableCell className="text-center">{(() => {
-                  const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
-                  return processedData.length > 0 ? formatCurrency(totalRevenue / processedData.length) : formatCurrency(0);
-                })()}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-green-700">{(() => {
+                    const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+                    return processedData.length > 0 ? formatCurrency(totalRevenue / processedData.length) : formatCurrency(0);
+                  })()}</span>
+                </TableCell>
                 {/* Rev/Attendee */}
-                <TableCell className="text-center">{(() => {
-                  const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
-                  const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
-                  return totalChecked > 0 ? formatCurrency(totalRevenue / totalChecked) : formatCurrency(0);
-                })()}</TableCell>
+                <TableCell className="text-center py-2 max-h-[40px]">
+                  <span className="text-sm font-bold text-green-700">{(() => {
+                    const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+                    const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+                    return totalChecked > 0 ? formatCurrency(totalRevenue / totalChecked) : formatCurrency(0);
+                  })()}</span>
+                </TableCell>
                 {/* Consistency */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
                 {/* Show-up % */}
-                <TableCell></TableCell>
+                <TableCell className="py-2 max-h-[40px]"></TableCell>
               </TableRow>
             </TableBody>
           </Table>

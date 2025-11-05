@@ -43,48 +43,74 @@ export async function crawlAllData(
   dataSources: DataSources,
   options: CrawlOptions = {}
 ): Promise<ExtractedData> {
-  const {
-    pages = Object.keys(PAGE_REGISTRY),
-    locations = ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
-    includeTables = true,
-    includeMetrics = true,
-    maxRowsPerTable = 10000,
-  } = options;
-
-  const extractedTables: ExtractedTable[] = [];
-  const extractedMetrics: ExtractedMetric[] = [];
-  const processedPages = new Set<string>();
-
-  // Crawl each page
-  for (const pageName of pages) {
-    if (!PAGE_REGISTRY[pageName as keyof typeof PAGE_REGISTRY]) continue;
+  try {
+    console.log('Starting data crawl...', { options, dataSources: Object.keys(dataSources) });
     
-    processedPages.add(pageName);
+    const {
+      pages = Object.keys(PAGE_REGISTRY),
+      locations = ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+      includeTables = true,
+      includeMetrics = true,
+      maxRowsPerTable = 10000,
+    } = options;
 
-    // Crawl each location for this page
-    for (const location of locations) {
-      const pageData = await crawlPage(pageName, location, dataSources, {
-        includeTables,
-        includeMetrics,
-        maxRowsPerTable,
-      });
+    const extractedTables: ExtractedTable[] = [];
+    const extractedMetrics: ExtractedMetric[] = [];
+    const processedPages = new Set<string>();
 
-      extractedTables.push(...pageData.tables);
-      extractedMetrics.push(...pageData.metrics);
+    // Crawl each page
+    for (const pageName of pages) {
+      if (!PAGE_REGISTRY[pageName as keyof typeof PAGE_REGISTRY]) {
+        console.warn(`Page not found in registry: ${pageName}`);
+        continue;
+      }
+      
+      console.log(`Crawling page: ${pageName}`);
+      processedPages.add(pageName);
+
+      // Crawl each location for this page
+      for (const location of locations) {
+        try {
+          const pageData = await crawlPage(pageName, location, dataSources, {
+            includeTables,
+            includeMetrics,
+            maxRowsPerTable,
+          });
+
+          extractedTables.push(...pageData.tables);
+          extractedMetrics.push(...pageData.metrics);
+          
+          console.log(`✓ ${pageName} - ${location}: ${pageData.tables.length} tables, ${pageData.metrics.length} metrics`);
+        } catch (error) {
+          console.error(`Error crawling ${pageName} - ${location}:`, error);
+          // Continue with other pages/locations
+        }
+      }
     }
-  }
 
-  return {
-    tables: extractedTables,
-    metrics: extractedMetrics,
-    summary: {
-      totalTables: extractedTables.length,
-      totalMetrics: extractedMetrics.length,
-      pages: Array.from(processedPages),
-      locations,
-      timestamp: new Date().toISOString(),
-    },
-  };
+    const result = {
+      tables: extractedTables,
+      metrics: extractedMetrics,
+      summary: {
+        totalTables: extractedTables.length,
+        totalMetrics: extractedMetrics.length,
+        pages: Array.from(processedPages),
+        locations,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    
+    console.log('Data crawl complete!', { 
+      totalTables: result.summary.totalTables,
+      totalMetrics: result.summary.totalMetrics 
+    });
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Fatal error in crawlAllData:', error);
+    throw new Error(`Data crawl failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**
@@ -262,6 +288,9 @@ function crawlSalesAnalytics(
       location,
       tab: 'Products',
       page: 'Sales Analytics',
+      section: 'Product Analysis',
+      tableType: 'revenue',
+      additionalTags: ['sales', 'products', 'performance'],
     }));
 
     // Category summary
@@ -282,6 +311,9 @@ function crawlSalesAnalytics(
       location,
       tab: 'Categories',
       page: 'Sales Analytics',
+      section: 'Category Analysis',
+      tableType: 'revenue',
+      additionalTags: ['sales', 'categories'],
     }));
 
     // Payment methods
@@ -300,6 +332,9 @@ function crawlSalesAnalytics(
       location,
       tab: 'Payment Analysis',
       page: 'Sales Analytics',
+      section: 'Payment Methods',
+      tableType: 'payment',
+      additionalTags: ['sales', 'payments'],
     }));
 
     // Discounts tab
@@ -318,6 +353,9 @@ function crawlSalesAnalytics(
         location,
         tab: 'Discounts',
         page: 'Sales Analytics',
+        section: 'Discount Details',
+        tableType: 'discount',
+        additionalTags: ['sales', 'discounts', 'promotions'],
       }));
     }
   }
