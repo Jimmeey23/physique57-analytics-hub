@@ -29,18 +29,42 @@ const OutlierAnalysisContent = () => {
   const heroMetrics = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
+    console.log('🔍 Outlier Analysis - Total sales data records:', salesData.length);
+    
+    // Sample a few dates to understand the format
+    if (salesData.length > 0) {
+      console.log('📅 Sample payment dates:', salesData.slice(0, 5).map(item => ({
+        original: item.paymentDate,
+        parsed: new Date(item.paymentDate),
+        year: new Date(item.paymentDate).getFullYear(),
+        month: new Date(item.paymentDate).getMonth()
+      })));
+    }
+
     const april2025Data = salesData.filter(item => {
+      if (!item.paymentDate) return false;
       const date = new Date(item.paymentDate);
-      return date.getFullYear() === 2025 && date.getMonth() === 3;
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      return year === 2025 && month === 3; // April = month 3 (0-indexed)
     });
 
     const august2025Data = salesData.filter(item => {
+      if (!item.paymentDate) return false;
       const date = new Date(item.paymentDate);
-      return date.getFullYear() === 2025 && date.getMonth() === 7;
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      return year === 2025 && month === 7; // August = month 7 (0-indexed)
     });
+
+    console.log('📊 April 2025 records:', april2025Data.length);
+    console.log('📊 August 2025 records:', august2025Data.length);
 
     const aprilRevenue = april2025Data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
     const augustRevenue = august2025Data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    
+    console.log('💰 April 2025 revenue:', aprilRevenue);
+    console.log('💰 August 2025 revenue:', augustRevenue);
     
     const aprilTransactions = april2025Data.length;
     const augustTransactions = august2025Data.length;

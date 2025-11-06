@@ -125,16 +125,16 @@ export const OutlierStudioComparison: React.FC<Props> = ({
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="font-bold">Studio</TableHead>
-                  <TableHead className="font-bold text-center">Month</TableHead>
-                  <TableHead className="font-bold text-right">Total Revenue</TableHead>
-                  <TableHead className="font-bold text-right">New Client Rev</TableHead>
-                  <TableHead className="font-bold text-right">Existing Client Rev</TableHead>
-                  <TableHead className="font-bold text-right">% New Clients</TableHead>
-                  <TableHead className="font-bold text-right">Transactions</TableHead>
-                  <TableHead className="font-bold text-right">Unique Customers</TableHead>
-                  <TableHead className="font-bold text-right">ATV</TableHead>
+                <TableRow>
+                  <TableHead className="font-bold text-white">Studio</TableHead>
+                  <TableHead className="font-bold text-center text-white">Month</TableHead>
+                  <TableHead className="font-bold text-right text-white">Total Revenue</TableHead>
+                  <TableHead className="font-bold text-right text-white">New Client Rev</TableHead>
+                  <TableHead className="font-bold text-right text-white">Existing Client Rev</TableHead>
+                  <TableHead className="font-bold text-right text-white">% New Clients</TableHead>
+                  <TableHead className="font-bold text-right text-white">Transactions</TableHead>
+                  <TableHead className="font-bold text-right text-white">Unique Customers</TableHead>
+                  <TableHead className="font-bold text-right text-white">ATV</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

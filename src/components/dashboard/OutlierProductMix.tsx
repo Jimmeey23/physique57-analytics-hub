@@ -127,13 +127,13 @@ export const OutlierProductMix: React.FC<Props> = ({
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-100">
-                  <TableHead className="font-bold">Product</TableHead>
-                  <TableHead className="font-bold text-right">April Revenue</TableHead>
-                  <TableHead className="font-bold text-right">August Revenue</TableHead>
-                  <TableHead className="font-bold text-right">April Txns</TableHead>
-                  <TableHead className="font-bold text-right">August Txns</TableHead>
-                  <TableHead className="font-bold text-right">Growth %</TableHead>
+                <TableRow>
+                  <TableHead className="font-bold text-white">Product</TableHead>
+                  <TableHead className="font-bold text-right text-white">April Revenue</TableHead>
+                  <TableHead className="font-bold text-right text-white">August Revenue</TableHead>
+                  <TableHead className="font-bold text-right text-white">April Txns</TableHead>
+                  <TableHead className="font-bold text-right text-white">August Txns</TableHead>
+                  <TableHead className="font-bold text-right text-white">Growth %</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
