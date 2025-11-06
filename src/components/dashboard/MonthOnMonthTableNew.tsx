@@ -350,7 +350,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
 
       // Add table headers
       const headers = ['Category / Product', 'Total'];
-      visibleMonths.forEach(month => headers.push(month.label));
+      visibleMonths.forEach(month => headers.push(month.display));
       allContent += headers.join('\t') + '\n';
       allContent += headers.map(() => '---').join('\t') + '\n';
 
