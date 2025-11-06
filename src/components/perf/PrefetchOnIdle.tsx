@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 const routesToPrefetch = [
   "/",
   "/executive-summary",
+  "/outlier-analysis",
   "/sales-analytics",
   "/funnel-leads",
   "/client-retention",
@@ -26,6 +27,7 @@ const routesToPrefetch = [
 const routeToModule: Record<string, string> = {
   "/": "/src/pages/Index.tsx",
   "/executive-summary": "/src/pages/ExecutiveSummary.tsx",
+  "/outlier-analysis": "/src/pages/OutlierAnalysis.tsx",
   "/sales-analytics": "/src/pages/SalesAnalytics.tsx",
   "/funnel-leads": "/src/pages/FunnelLeads.tsx",
   "/client-retention": "/src/pages/ClientRetention.tsx",

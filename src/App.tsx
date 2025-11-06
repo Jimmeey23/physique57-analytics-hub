@@ -48,6 +48,9 @@ const DiscountsPromotions = React.lazy(() =>
 const Sessions = React.lazy(() => 
   import("./pages/Sessions").then(module => ({ default: module.default }))
 );
+const OutlierAnalysis = React.lazy(() => 
+  import("./pages/OutlierAnalysis").then(module => ({ default: module.default }))
+);
 const ExpirationAnalytics = React.lazy(() => 
   import("./pages/ExpirationAnalytics").then(module => ({ default: module.default }))
 );
@@ -124,6 +127,7 @@ const App = () => {
                     <Route path="/powercycle-vs-barre" element={<ClassFormatsComparison />} />
                     <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
                     <Route path="/sessions" element={<Sessions />} />
+                    <Route path="/outlier-analysis" element={<OutlierAnalysis />} />
                     <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
                     <Route path="/late-cancellations" element={<LateCancellations />} />
                     <Route path="/patterns-trends" element={<PatternsAndTrends />} />

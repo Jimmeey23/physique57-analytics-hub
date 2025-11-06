@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { TrendingUp, TrendingDown, Activity, Users, DollarSign, Target } from 'lucide-react';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 
 interface ClassFormatAnalyticsProps {
   data: SessionData[];

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ChevronDown, ChevronRight, FolderOpen, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -112,7 +112,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
       case 'units':
         return formatNumber(value);
       case 'upt':
-        return value.toFixed(2);
+        return value.toFixed(1);
       case 'discountPercentage':
         return `${value.toFixed(1)}%`;
       case 'purchaseFrequency':

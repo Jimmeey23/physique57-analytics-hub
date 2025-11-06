@@ -26,7 +26,7 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
       return [
         'Analyzing revenue trends...',
         'Processing sales data...',
-        'Calculating metrics...',
+        'Calculating ATV...',
         'Preparing insights...'
       ];
     } else if (subtitleLower.includes('discount')) {

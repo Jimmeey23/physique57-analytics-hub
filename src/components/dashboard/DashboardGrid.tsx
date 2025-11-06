@@ -106,6 +106,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = memo(({ onButtonClick
       icon: Calendar,
       color: 'from-amber-500 to-amber-600',
       hoverColor: 'hover:from-amber-600 hover:to-amber-700'
+    },
+    {
+      id: 'outlier-analysis',
+      title: 'Outlier Analysis',
+      description: 'Deep dive into April & August 2025 exceptional performance',
+      icon: TrendingUp,
+      color: 'from-indigo-500 to-pink-600',
+      hoverColor: 'hover:from-indigo-600 hover:to-pink-700'
     }
   ], []);
 

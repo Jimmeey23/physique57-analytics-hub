@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { SalesData, FilterOptions, YearOnYearMetricType, EnhancedYearOnYearTableProps } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -133,7 +133,7 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
       case 'units':
         return formatNumber(value);
       case 'upt':
-        return value.toFixed(2);
+        return value.toFixed(1);
       case 'discountPercentage':
         return `${value.toFixed(1)}%`;
       case 'purchaseFrequency':

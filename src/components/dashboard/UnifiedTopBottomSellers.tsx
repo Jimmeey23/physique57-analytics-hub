@@ -203,7 +203,7 @@ export const UnifiedTopBottomSellers: React.FC<UnifiedTopBottomSellersProps> = (
                       ASV: {formatCurrency(seller.asv)}
                     </Badge>
                     <Badge variant="outline" className="text-xs border-slate-200 text-slate-700">
-                      UPT: {seller.upt.toFixed(2)}
+                      UPT: {seller.upt.toFixed(1)}
                     </Badge>
                   </div>
                 </div>

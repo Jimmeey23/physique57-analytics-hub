@@ -6,7 +6,6 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
-import { AiNotes } from '@/components/ui/AiNotes';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 const ClassAttendanceContent = () => {
@@ -81,15 +80,6 @@ const ClassAttendanceContent = () => {
 
       <div className="container mx-auto px-6 py-8">
         <UpdatedEnhancedClassAttendanceSection />
-        
-        <div className="mt-8">
-          <AiNotes 
-            location="class-attendance"
-            sectionId="analytics" 
-            tableKey="class-attendance-main"
-            author="Class Attendance Analyst"
-          />
-        </div>
       </div>
       
       <Footer />

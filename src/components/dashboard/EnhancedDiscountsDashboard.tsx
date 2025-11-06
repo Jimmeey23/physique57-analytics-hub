@@ -996,7 +996,7 @@ export const EnhancedDiscountsDashboard: React.FC<EnhancedDiscountsDashboardProp
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge variant="outline" className="text-orange-600 border-orange-200">
-                            {row.discountRate.toFixed(2)}%
+                            {row.discountRate.toFixed(1)}%
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">{formatNumber(row.totalTransactions)}</TableCell>
@@ -1086,7 +1086,7 @@ export const EnhancedDiscountsDashboard: React.FC<EnhancedDiscountsDashboardProp
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge variant="outline" className="text-orange-600 border-orange-200">
-                            {row.discountRate.toFixed(2)}%
+                            {row.discountRate.toFixed(1)}%
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">{formatNumber(row.totalTransactions)}</TableCell>
@@ -1150,14 +1150,14 @@ export const EnhancedDiscountsDashboard: React.FC<EnhancedDiscountsDashboardProp
                             </TableCell>
                             <TableCell className="text-right">
                               <Badge variant="outline" className="text-orange-600 border-orange-200">
-                                {row.discountRate.toFixed(2)}%
+                                {row.discountRate.toFixed(1)}%
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">{formatNumber(row.totalTransactions)}</TableCell>
                             <TableCell className="text-right font-medium">{formatCurrency(row.atv)}</TableCell>
                             <TableCell className="text-right font-medium">{formatCurrency(row.auv)}</TableCell>
                             <TableCell className="text-right font-medium">{formatCurrency(row.asv)}</TableCell>
-                            <TableCell className="text-right">{row.upt.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">{row.upt.toFixed(1)}</TableCell>
                             <TableCell className="text-right">{formatNumber(row.uniqueMembers)}</TableCell>
                           </TableRow>
                         ))}
@@ -1191,7 +1191,7 @@ export const EnhancedDiscountsDashboard: React.FC<EnhancedDiscountsDashboardProp
                             {formatCurrency(metrics.overallASV)}
                           </TableCell>
                           <TableCell className="text-right font-bold">
-                            {metrics.overallUPT.toFixed(2)}
+                            {metrics.overallUPT.toFixed(1)}
                           </TableCell>
                           <TableCell className="text-right font-bold">
                             {formatNumber(metrics.uniqueMembers)}

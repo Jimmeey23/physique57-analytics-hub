@@ -85,7 +85,7 @@ export const formatMetricValue = (value: number, metric: YearOnYearMetricType): 
     case 'units':
       return value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     case 'upt':
-      return value.toFixed(2);
+      return value.toFixed(1);
     case 'discountPercentage':
       return `${value.toFixed(1)}%`;
     default:

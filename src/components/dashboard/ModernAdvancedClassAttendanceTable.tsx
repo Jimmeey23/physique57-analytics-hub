@@ -16,7 +16,7 @@ import {
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 
 interface AdvancedClassAttendanceTableProps {
   data: SessionData[];

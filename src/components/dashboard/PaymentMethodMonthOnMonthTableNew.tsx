@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
 import { getRankingDisplay } from '@/utils/rankingUtils';
@@ -104,7 +104,7 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
       case 'units':
         return formatNumber(value);
       case 'upt':
-        return value.toFixed(2);
+        return value.toFixed(1);
       case 'discountPercentage':
         return `${value.toFixed(1)}%`;
       case 'purchaseFrequency':

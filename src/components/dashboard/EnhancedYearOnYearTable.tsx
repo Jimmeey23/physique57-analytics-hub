@@ -117,7 +117,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
       case 'units':
         return formatNumber(value);
       case 'upt':
-        return value.toFixed(2);
+        return value.toFixed(1);
       case 'discountPercentage':
         return `${value.toFixed(1)}%`;
       default:

@@ -49,7 +49,7 @@ export const ModernSalesTable: React.FC<ModernSalesTableProps> = ({
           <div>Previous: {formatCurrency(previous)}</div>
           <div>Current: {formatCurrency(current)}</div>
           <div className={isPositive ? "text-emerald-300" : "text-red-300"}>
-            {isPositive ? "↗" : "↘"} {growth.toFixed(2)}%
+            {isPositive ? "↗" : "↘"} {growth.toFixed(1)}%
           </div>
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
         </div>

@@ -15,7 +15,7 @@ import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 
 interface MonthOnMonthClassTableProps {
@@ -24,7 +24,7 @@ interface MonthOnMonthClassTableProps {
 }
 
 type MetricType = 'attendance' | 'sessions' | 'revenue' | 'fillRate' | 'classAverage' | 'capacity' | 'bookingRate';
-type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall';
+type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall' | 'am_pm' | 'timeslot' | 'class_time' | 'day_time' | 'trainer_time' | 'class_day' | 'trainer_day' | 'time_location' | 'class_location';
 
 interface MonthlyData {
   month: string;
@@ -137,6 +137,36 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           break;
         case 'uniqueid2':
           groupKey = session.uniqueId2 || 'Unknown UniqueID2';
+          break;
+        case 'am_pm':
+          const hour = parseInt(session.time?.split(':')[0] || '0');
+          groupKey = hour < 12 ? 'AM' : 'PM';
+          break;
+        case 'timeslot':
+          const sessionHour = parseInt(session.time?.split(':')[0] || '0');
+          if (sessionHour >= 5 && sessionHour < 9) groupKey = 'Early Morning (5-9)';
+          else if (sessionHour >= 9 && sessionHour < 12) groupKey = 'Morning (9-12)';
+          else if (sessionHour >= 12 && sessionHour < 17) groupKey = 'Afternoon (12-17)';
+          else if (sessionHour >= 17 && sessionHour < 21) groupKey = 'Evening (17-21)';
+          else groupKey = 'Late Night (21-5)';
+          break;
+        case 'class_time':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.time}`;
+          break;
+        case 'trainer_time':
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.time}`;
+          break;
+        case 'class_day':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
+        case 'trainer_day':
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
+        case 'time_location':
+          groupKey = `${session.time} - ${session.location || 'Unknown'}`;
+          break;
+        case 'class_location':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'}`;
           break;
         case 'overall':
         default:
@@ -271,10 +301,18 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
     { value: 'trainer', label: 'By Trainer', icon: Users },
     { value: 'class', label: 'By Class', icon: Activity },
     { value: 'location', label: 'By Location', icon: MapPin },
-    { value: 'uniqueid1', label: 'Group by Class', icon: Target },
-    { value: 'uniqueid2', label: 'Group by Class & Trainer', icon: Users },
+    { value: 'am_pm', label: 'By AM/PM', icon: Clock },
+    { value: 'timeslot', label: 'By Timeslot', icon: Clock },
     { value: 'day_time', label: 'By Day & Time', icon: Clock },
-    { value: 'trainer_class', label: 'By Trainer & Class', icon: Target }
+    { value: 'class_time', label: 'By Class & Time', icon: Activity },
+    { value: 'trainer_time', label: 'By Trainer & Time', icon: Users },
+    { value: 'class_day', label: 'By Class & Day', icon: Activity },
+    { value: 'trainer_day', label: 'By Trainer & Day', icon: Users },
+    { value: 'time_location', label: 'By Time & Location', icon: MapPin },
+    { value: 'class_location', label: 'By Class & Location', icon: Building2 },
+    { value: 'trainer_class', label: 'By Trainer & Class', icon: Target },
+    { value: 'uniqueid1', label: 'Group by Class', icon: Target },
+    { value: 'uniqueid2', label: 'Group by Class & Trainer', icon: Users }
   ];
 
   return (

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { PayrollData } from '@/types/dashboard';
 import { formatNumber } from '@/utils/formatters';
 import { Activity, Users, DollarSign, Target, Calendar, AlertTriangle } from 'lucide-react';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import type { TableColumn } from '@/hooks/useGeminiAnalysis';
 
 interface BarreDetailedTableProps {

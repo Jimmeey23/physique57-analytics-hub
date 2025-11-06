@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 
 interface EnhancedDiscountBreakdownTablesProps {
   data: SalesData[];

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Search, Download, Filter, TrendingUp, TrendingDown, Percent, DollarSign, Eye } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 interface EnhancedDiscountDataTableProps {
   data: SalesData[];

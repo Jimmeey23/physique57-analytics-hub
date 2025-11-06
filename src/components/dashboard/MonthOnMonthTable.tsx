@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { SalesData, FilterOptions, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs } from './ModernTableWrapper';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber, formatPercentage, formatDiscount } from '@/utils/formatters';
 import { Calendar, TrendingUp, TrendingDown, ChevronDown, ChevronRight, BarChart3, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +105,7 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
       case 'units':
         return formatNumber(value);
       case 'upt':
-        return value.toFixed(2);
+        return value.toFixed(1);
       default:
         return formatNumber(value);
     }
@@ -450,7 +450,7 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
                           <div className="flex items-center justify-center">
                       {formatMetricValue(current, selectedMetric)}
                           </div>
-                        </td>;
+                        </td>
                 })}
                   </tr>
                   
@@ -506,13 +506,12 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
                     console.log(`Cell click: ${product.product} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
                     onRowClick && onRowClick(enhancedCellData);
                   }}>
-                            <div className="flex items-center justify-center">
-                              {formatMetricValue(current, selectedMetric)}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
+                    <div className="flex items-center justify-center">
+                      {formatMetricValue(current, selectedMetric)}
+                    </div>
+                  </td>;
+                })}
+              </tr>
                   )}
                 </React.Fragment>
               ))}

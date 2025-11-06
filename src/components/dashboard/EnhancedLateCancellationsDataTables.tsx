@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { LateCancellationsData } from '@/types/dashboard';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface EnhancedLateCancellationsDataTablesProps {
@@ -1119,7 +1119,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     <TableCell className="h-[35px] py-2">{formatCurrency(trainer.revenue || 0)}</TableCell>
                     <TableCell className="h-[35px] py-2">
                       <Badge variant="outline">
-                        {trainer.avgCancellationsPerSession.toFixed(2)}
+                        {trainer.avgCancellationsPerSession.toFixed(1)}
                       </Badge>
                     </TableCell>
                   </TableRow>

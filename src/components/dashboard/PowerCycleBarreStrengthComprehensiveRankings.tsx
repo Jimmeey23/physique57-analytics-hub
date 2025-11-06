@@ -18,7 +18,7 @@ import {
   UserCheck,
   AlertTriangle
 } from 'lucide-react';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import type { TableColumn } from '@/hooks/useGeminiAnalysis';
 
 interface PowerCycleBarreStrengthComprehensiveRankingsProps {

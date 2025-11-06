@@ -605,7 +605,7 @@ function crawlDiscounts(
 
     metrics.push({
       title: 'Total Discount Value',
-      value: totalDiscount.toFixed(2),
+      value: totalDiscount.toFixed(1),
       category: 'Discounts',
       location,
       tab: 'Overview',
@@ -623,7 +623,7 @@ function crawlDiscounts(
 
     metrics.push({
       title: 'Average Discount',
-      value: avgDiscount.toFixed(2),
+      value: avgDiscount.toFixed(1),
       category: 'Discounts',
       location,
       tab: 'Overview',

@@ -3,7 +3,7 @@ import { SalesData } from '@/types/dashboard';
 import { ModernMetricTabs, ModernTableWrapper } from './ModernTableWrapper';
 import { Activity, Users, ShoppingCart, Clock, Percent, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { PersistentTableFooter } from './PersistentTableFooter';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 
 interface Props {
   data: SalesData[]; // Provide data independent of date filters
