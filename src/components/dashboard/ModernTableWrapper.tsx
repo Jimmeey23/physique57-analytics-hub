@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, TrendingUp, BarChart3, DollarSign, Users, ShoppingCart, Target, Package, Activity, Percent, Trophy, Medal, Award, Crown, Star, Eye, Percent as PercentIcon, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, TrendingUp, BarChart3, DollarSign, Users, ShoppingCart, Target, Package, Activity, Percent, Trophy, Medal, Award, Crown, Star, Eye, Percent as PercentIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 
@@ -24,6 +24,7 @@ interface ModernTableWrapperProps {
   onDisplayModeChange?: (mode: 'values' | 'growth') => void;
   showCopyButton?: boolean;
   tableRef?: React.RefObject<HTMLTableElement>;
+  onCopyAllTabs?: () => Promise<string>;
 }
 
 export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
@@ -43,7 +44,8 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
   displayMode = 'values',
   onDisplayModeChange,
   showCopyButton = true,
-  tableRef
+  tableRef,
+  onCopyAllTabs
 }) => {
   const internalTableRef = useRef<HTMLDivElement>(null);
   return (
@@ -131,6 +133,7 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
                 tableName={title}
                 size="sm"
                 className="text-white hover:bg-white/20"
+                onCopyAllTabs={onCopyAllTabs}
               />
             )}
 
@@ -176,8 +179,6 @@ interface ModernMetricTabsProps {
   selectedMetric: string;
   onMetricChange: (metric: string) => void;
   className?: string;
-  tableRef?: React.RefObject<HTMLTableElement>;
-  showCopyButton?: boolean;
 }
 
 // Standard metrics for all tables
@@ -200,48 +201,8 @@ export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({
   metrics,
   selectedMetric,
   onMetricChange,
-  className = '',
-  tableRef,
-  showCopyButton = true
+  className = ''
 }) => {
-  const [copiedMetric, setCopiedMetric] = useState<string | null>(null);
-
-  const handleCopyTable = async (metricKey: string, metricLabel: string) => {
-    if (!tableRef?.current) return;
-
-    try {
-      // Create a temporary container
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      document.body.appendChild(container);
-
-      // Clone the table
-      const tableClone = tableRef.current.cloneNode(true) as HTMLTableElement;
-      container.appendChild(tableClone);
-
-      // Get the HTML
-      const html = container.innerHTML;
-      
-      // Create clipboard item
-      const blob = new Blob([html], { type: 'text/html' });
-      const clipboardItem = new ClipboardItem({
-        'text/html': blob
-      });
-
-      await navigator.clipboard.write([clipboardItem]);
-      
-      // Cleanup
-      document.body.removeChild(container);
-
-      // Show success state
-      setCopiedMetric(metricKey);
-      setTimeout(() => setCopiedMetric(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy table:', error);
-    }
-  };
-
   return (
     <div className={`flex flex-wrap gap-2 p-4 bg-white rounded-lg border border-slate-300 shadow-sm ${className}`}>
       <div className="flex items-center space-x-2 text-slate-700 font-semibold text-sm mr-4">
@@ -250,36 +211,18 @@ export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({
       </div>
       <div className="flex flex-wrap gap-1.5">
         {metrics.map((metric) => (
-          <div key={metric.key} className="relative inline-flex items-center">
-            <button
-              onClick={() => onMetricChange(metric.key)}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-sm font-medium text-sm transition-all duration-200 whitespace-nowrap ${
-                selectedMetric === metric.key
-                  ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-              } ${showCopyButton && tableRef ? 'rounded-r-none border-r-0' : ''}`}
-            >
-              {metric.icon}
-              <span>{metric.label}</span>
-            </button>
-            {showCopyButton && tableRef && (
-              <button
-                onClick={() => handleCopyTable(metric.key, metric.label)}
-                className={`flex items-center justify-center px-2 py-1.5 rounded-r-sm font-medium text-sm transition-all duration-200 border-l ${
-                  selectedMetric === metric.key
-                    ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white shadow-sm border-white/20'
-                    : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-                }`}
-                title={`Copy ${metric.label} table`}
-              >
-                {copiedMetric === metric.key ? (
-                  <Check className="w-3.5 h-3.5 text-green-500" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-              </button>
-            )}
-          </div>
+          <button
+            key={metric.key}
+            onClick={() => onMetricChange(metric.key)}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-sm font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+              selectedMetric === metric.key
+                ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+            }`}
+          >
+            {metric.icon}
+            <span>{metric.label}</span>
+          </button>
         ))}
       </div>
     </div>

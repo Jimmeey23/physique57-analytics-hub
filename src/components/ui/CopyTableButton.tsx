@@ -10,6 +10,7 @@ interface CopyTableButtonProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   showDropdown?: boolean; // If false, defaults to HTML copy on click
+  onCopyAllTabs?: () => Promise<string>; // Function to generate content for all tabs
 }
 
 export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
@@ -17,7 +18,8 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
   tableName = 'Table',
   className = '',
   size = 'sm',
-  showDropdown = true
+  showDropdown = true,
+  onCopyAllTabs
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -374,10 +376,45 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       });
 
     } catch (error) {
-      console.error('Error copying table:', error);
+      console.error('Error copying table as text:', error);
       toast({
         title: "Copy Failed",
         description: `Unable to copy table to clipboard: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const copyAllTabsAsText = async () => {
+    if (!onCopyAllTabs) {
+      toast({
+        title: "Error",
+        description: "Copy all tabs function not provided",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const allTabsContent = await onCopyAllTabs();
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(allTabsContent);
+      
+      // Show success feedback
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+
+      toast({
+        title: "Copied All Tabs",
+        description: "All metric tables have been copied to clipboard",
+      });
+
+    } catch (error) {
+      console.error('Error copying all tabs:', error);
+      toast({
+        title: "Copy Failed",
+        description: `Unable to copy all tabs: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     }
@@ -421,6 +458,12 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
             <FileText className="h-4 w-4" />
             <span>Copy as text</span>
           </DropdownMenuItem>
+          {onCopyAllTabs && (
+            <DropdownMenuItem onClick={copyAllTabsAsText} className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span>Copy all tabs</span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     );

@@ -335,6 +335,93 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
+  // Function to generate content for all metric tabs
+  const generateAllTabsContent = useCallback(async () => {
+    let allContent = `Month-on-Month Analysis - All Metrics\n`;
+    allContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+    allContent += `\n${'='.repeat(80)}\n\n`;
+
+    // Loop through all metrics from STANDARD_METRICS
+    for (const metricInfo of STANDARD_METRICS) {
+      const metric = metricInfo.key as YearOnYearMetricType;
+
+      allContent += `\n${metricInfo.label.toUpperCase()}\n`;
+      allContent += `${'-'.repeat(metricInfo.label.length + 10)}\n\n`;
+
+      // Add table headers
+      const headers = ['Category / Product', 'Total'];
+      visibleMonths.forEach(month => headers.push(month.label));
+      allContent += headers.join('\t') + '\n';
+      allContent += headers.map(() => '---').join('\t') + '\n';
+
+      // Reprocess data specifically for this metric
+      const grouped = groupDataByCategory(data);
+      const metricProcessedData = Object.entries(grouped).map(([category, products]) => {
+        const categoryProducts = Object.entries(products).map(([product, items]) => {
+          const monthlyValues: Record<string, number> = {};
+
+          monthlyData.forEach(({ key, year, month }) => {
+            const monthItems = (items as SalesData[]).filter(item => {
+              const itemDate = parseDate(item.paymentDate);
+              return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+            });
+            monthlyValues[key] = getMetricValue(monthItems, metric);
+          });
+
+          return {
+            product,
+            monthlyValues,
+            totalValue: getMetricValue(items as SalesData[], metric)
+          };
+        });
+
+        const categoryMonthlyValues: Record<string, number> = {};
+        monthlyData.forEach(({ key }) => {
+          categoryMonthlyValues[key] = categoryProducts.reduce(
+            (sum, product) => sum + (product.monthlyValues[key] || 0),
+            0
+          );
+        });
+
+        return {
+          category,
+          products: categoryProducts,
+          monthlyValues: categoryMonthlyValues,
+          totalValue: categoryProducts.reduce((sum, product) => sum + product.totalValue, 0)
+        };
+      });
+
+      // Add data rows
+      metricProcessedData.forEach(categoryGroup => {
+        // Category row
+        const categoryTotal = categoryGroup.totalValue;
+        const categoryRow = [categoryGroup.category, formatMetricValue(categoryTotal, metric)];
+        
+        visibleMonths.forEach(month => {
+          const value = categoryGroup.monthlyValues[month.key] || 0;
+          categoryRow.push(formatMetricValue(value, metric));
+        });
+        allContent += categoryRow.join('\t') + '\n';
+
+        // Product rows (include all products for export)
+        categoryGroup.products.forEach(product => {
+          const productTotal = product.totalValue;
+          const productRow = [`  ${product.product}`, formatMetricValue(productTotal, metric)];
+          
+          visibleMonths.forEach(month => {
+            const value = product.monthlyValues[month.key] || 0;
+            productRow.push(formatMetricValue(value, metric));
+          });
+          allContent += productRow.join('\t') + '\n';
+        });
+      });
+
+      allContent += `\n`;
+    }
+
+    return allContent;
+  }, [data, visibleMonths, monthlyData]);
+
   // visibleMonths already defined above
 
   return (
@@ -345,8 +432,6 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
         selectedMetric={selectedMetric}
         onMetricChange={(metric) => setSelectedMetric(metric as YearOnYearMetricType)}
         className="mb-4"
-        tableRef={tableRef}
-        showCopyButton={true}
       />
       <ModernTableWrapper
         title="Month-on-Month Analysis"
@@ -361,6 +446,7 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
         onDisplayModeChange={setDisplayMode}
         tableRef={tableRef}
         showCopyButton={true}
+        onCopyAllTabs={generateAllTabsContent}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">
