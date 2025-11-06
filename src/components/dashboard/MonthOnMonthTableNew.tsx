@@ -345,6 +345,8 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
         selectedMetric={selectedMetric}
         onMetricChange={(metric) => setSelectedMetric(metric as YearOnYearMetricType)}
         className="mb-4"
+        tableRef={tableRef}
+        showCopyButton={true}
       />
       <ModernTableWrapper
         title="Month-on-Month Analysis"
