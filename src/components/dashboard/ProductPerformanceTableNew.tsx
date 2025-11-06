@@ -229,6 +229,103 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
     setLocalCollapsedGroups(new Set());
   }, []);
 
+  // Function to generate content for all metric tabs
+  const generateAllTabsContent = useCallback(async () => {
+    let allContent = `Product Performance Analysis - All Metrics\n`;
+    allContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+    allContent += `\n${'='.repeat(80)}\n\n`;
+
+    // Loop through all metrics from STANDARD_METRICS
+    for (const metricInfo of STANDARD_METRICS) {
+      const metric = metricInfo.key as YearOnYearMetricType;
+
+      allContent += `\n${metricInfo.label.toUpperCase()}\n`;
+      allContent += `${'-'.repeat(metricInfo.label.length + 10)}\n\n`;
+
+      // Add table headers
+      const headers = ['Category / Product', 'Total'];
+      visibleMonths.forEach(month => headers.push(month.display));
+      allContent += headers.join('\t') + '\n';
+      allContent += headers.map(() => '---').join('\t') + '\n';
+
+      // Reprocess data specifically for this metric
+      const categoryGroups = data.reduce((acc: Record<string, Record<string, SalesData[]>>, item) => {
+        const category = item.cleanedCategory || 'Uncategorized';
+        const product = item.cleanedProduct || 'Unknown';
+        
+        if (!acc[category]) {
+          acc[category] = {};
+        }
+        if (!acc[category][product]) {
+          acc[category][product] = [];
+        }
+        acc[category][product].push(item);
+        return acc;
+      }, {});
+
+      const metricProcessedData = Object.entries(categoryGroups).map(([category, products]) => {
+        const productData = Object.entries(products).map(([product, items]) => {
+          const monthlyValues: Record<string, number> = {};
+          
+          monthlyData.forEach(({ key, year, month }) => {
+            const monthItems = items.filter(item => {
+              const itemDate = parseDate(item.paymentDate);
+              return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+            });
+            monthlyValues[key] = getMetricValue(monthItems, metric);
+          });
+
+          return {
+            product,
+            monthlyValues,
+            totalValue: getMetricValue(items, metric)
+          };
+        });
+
+        const categoryMonthlyValues: Record<string, number> = {};
+        monthlyData.forEach(({ key }) => {
+          categoryMonthlyValues[key] = productData.reduce((sum, p) => sum + (p.monthlyValues[key] || 0), 0);
+        });
+
+        return {
+          category,
+          products: productData,
+          monthlyValues: categoryMonthlyValues,
+          totalValue: productData.reduce((sum, p) => sum + p.totalValue, 0)
+        };
+      });
+
+      // Add data rows
+      metricProcessedData.forEach(categoryGroup => {
+        // Category row
+        const categoryTotal = categoryGroup.totalValue;
+        const categoryRow = [categoryGroup.category, formatMetricValue(categoryTotal, metric)];
+        
+        visibleMonths.forEach(month => {
+          const value = categoryGroup.monthlyValues[month.key] || 0;
+          categoryRow.push(formatMetricValue(value, metric));
+        });
+        allContent += categoryRow.join('\t') + '\n';
+
+        // Product rows (include all products for export)
+        categoryGroup.products.forEach(product => {
+          const productTotal = product.totalValue;
+          const productRow = [`  ${product.product}`, formatMetricValue(productTotal, metric)];
+          
+          visibleMonths.forEach(month => {
+            const value = product.monthlyValues[month.key] || 0;
+            productRow.push(formatMetricValue(value, metric));
+          });
+          allContent += productRow.join('\t') + '\n';
+        });
+      });
+
+      allContent += `\n`;
+    }
+
+    return allContent;
+  }, [data, visibleMonths, monthlyData]);
+
   const getGrowthPercentage = (current: number, previous: number) => {
     if (previous === 0 && current === 0) return null;
     if (previous === 0) return '+100';
@@ -260,6 +357,7 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
         className="animate-in slide-in-from-bottom-8 fade-in duration-1000"
         tableRef={tableRef}
         showCopyButton={true}
+        onCopyAllTabs={generateAllTabsContent}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">
