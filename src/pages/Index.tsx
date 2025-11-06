@@ -130,7 +130,7 @@ const Index = memo(() => {
                 <StatsCard title="Real-time" subtitle="Data Insights" />
               </div>
               <div className="glass-card modern-card-hover soft-bounce stagger-2">
-                <StatsCard title="10+" subtitle="Analytics Modules" />
+                <StatsCard title="12" subtitle="Analytics Modules" />
               </div>
               <div className="glass-card modern-card-hover soft-bounce stagger-3">
                 <StatsCard title="Precision" subtitle="Data Accuracy" />
@@ -145,18 +145,7 @@ const Index = memo(() => {
             <div className="min-w-full glass-card glow-pulse rounded-2xl p-6">
               <DashboardGrid onButtonClick={handleSectionClick} />
             </div>
-            
-
           </main>
-          
-          <div className="mt-8">
-            <AiNotes 
-              location="dashboard-overview"
-              sectionId="main-dashboard" 
-              tableKey="main-dashboard"
-              author="Dashboard Analyst"
-            />
-          </div>
         </div>
       </div>
       

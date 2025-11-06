@@ -71,15 +71,6 @@ const TrainerPerformance = () => {
         <div className="container mx-auto px-6 py-8 bg-white min-h-screen">
           <main className="space-y-8 slide-in-from-right stagger-1">
             <EnhancedTrainerPerformanceSection />
-            
-            <div className="mt-8">
-              <AiNotes 
-                location="trainer-performance"
-                sectionId="analytics" 
-                tableKey="trainer-performance-main"
-                author="Trainer Performance Analyst"
-              />
-            </div>
           </main>
         </div>
         

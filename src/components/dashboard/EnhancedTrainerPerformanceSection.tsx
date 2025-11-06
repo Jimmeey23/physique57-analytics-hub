@@ -218,16 +218,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   }, [processedData]);
 
   if (isLoading) {
-    return (
-      <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center space-x-2">
-                 <BrandSpinner size="sm" />
-            <span className="text-slate-600">Loading trainer performance data...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return null; // Global loader handles this
   }
 
   if (error) {
