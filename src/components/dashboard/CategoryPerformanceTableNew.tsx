@@ -211,6 +211,68 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
+  // Function to generate content for all metric tabs
+  const generateAllTabsContent = useCallback(async () => {
+    let allContent = `Category Performance Analysis - All Metrics\n`;
+    allContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+    allContent += `\n${'='.repeat(80)}\n\n`;
+
+    // Loop through all metrics from STANDARD_METRICS
+    for (const metricInfo of STANDARD_METRICS) {
+      const metric = metricInfo.key as YearOnYearMetricType;
+
+      allContent += `\n${metricInfo.label.toUpperCase()}\n`;
+      allContent += `${'-'.repeat(metricInfo.label.length + 10)}\n\n`;
+
+      // Add table headers
+      const headers = ['Category', 'Total'];
+      visibleMonths.forEach(month => headers.push(month.display));
+      allContent += headers.join('\t') + '\n';
+      allContent += headers.map(() => '---').join('\t') + '\n';
+
+      // Reprocess data specifically for this metric
+      const categoryData = data.reduce((acc: Record<string, SalesData[]>, item) => {
+        const category = item.cleanedCategory || 'Uncategorized';
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(item);
+        return acc;
+      }, {});
+
+      const metricProcessedData = Object.entries(categoryData).map(([category, items]) => {
+        const monthlyValues: Record<string, number> = {};
+        
+        monthlyData.forEach(({ key, year, month }) => {
+          const monthItems = items.filter(item => {
+            const itemDate = parseDate(item.paymentDate);
+            return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+          });
+          monthlyValues[key] = getMetricValue(monthItems, metric);
+        });
+
+        return {
+          category,
+          monthlyValues,
+          totalValue: getMetricValue(items, metric)
+        };
+      });
+
+      // Add data rows
+      metricProcessedData.forEach(categoryData => {
+        const categoryRow = [categoryData.category, formatMetricValue(categoryData.totalValue, metric)];
+        
+        visibleMonths.forEach(month => {
+          const value = categoryData.monthlyValues[month.key] || 0;
+          categoryRow.push(formatMetricValue(value, metric));
+        });
+        allContent += categoryRow.join('\t') + '\n';
+      });
+
+      allContent += `\n`;
+    }
+
+    return allContent;
+  }, [data, visibleMonths, monthlyData]);
+
   // Prepare data and columns for AI analysis
   const aiTableData = useMemo(() => {
     return processedData.map(category => ({
@@ -271,6 +333,7 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
         className="animate-in slide-in-from-bottom-8 fade-in duration-1000"
         tableRef={tableRef}
         showCopyButton={true}
+        onCopyAllTabs={generateAllTabsContent}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { ModernMetricTabs, ModernTableWrapper } from './ModernTableWrapper';
 import { Activity, Users, ShoppingCart, Clock, Percent, Calendar } from 'lucide-react';
@@ -198,6 +198,106 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
     return `${growth.toFixed(1)}%`;
   };
 
+  // Function to generate content for all metric tabs
+  const generateAllTabsContent = useCallback(async () => {
+    let allContent = `Customer Purchase Behavior - All Metrics\n`;
+    allContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+    allContent += `\n${'='.repeat(80)}\n\n`;
+
+    // Loop through all behavior metrics
+    for (const metricInfo of BEHAVIOR_METRICS) {
+      const metric = metricInfo.key;
+
+      allContent += `\n${metricInfo.label.toUpperCase()}\n`;
+      allContent += `${'-'.repeat(metricInfo.label.length + 10)}\n\n`;
+
+      // Add table headers
+      const headers = ['Category / Product', 'Total'];
+      monthKeys.forEach(month => headers.push(month.display));
+      allContent += headers.join('\t') + '\n';
+      allContent += headers.map(() => '---').join('\t') + '\n';
+
+      // Reprocess data specifically for this metric
+      const categoryGroups: Record<string, Record<string, SalesData[]>> = {};
+      data.forEach(item => {
+        const cat = item.cleanedCategory || 'Uncategorized';
+        const prod = item.cleanedProduct || 'Unknown';
+        if (!categoryGroups[cat]) categoryGroups[cat] = {};
+        if (!categoryGroups[cat][prod]) categoryGroups[cat][prod] = [];
+        categoryGroups[cat][prod].push(item);
+      });
+
+      const metricProcessedData = Object.entries(categoryGroups).map(([category, products]) => {
+        const productsData = Object.entries(products).map(([product, items]) => {
+          const monthlyValues: Record<string, number> = {};
+          
+          monthKeys.forEach(({ key, year, month }) => {
+            const monthItems = items.filter(item => {
+              const itemDate = parseDate(item.paymentDate);
+              return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+            });
+            monthlyValues[key] = getMetricValue(monthItems, metric);
+          });
+
+          return {
+            product,
+            monthlyValues,
+            totalValue: getMetricValue(items, metric)
+          };
+        });
+
+        const categoryMonthlyValues: Record<string, number> = {};
+        monthKeys.forEach(({ key }) => {
+          categoryMonthlyValues[key] = productsData.reduce((sum, p) => sum + (p.monthlyValues[key] || 0), 0);
+        });
+
+        return {
+          category,
+          products: productsData,
+          monthlyValues: categoryMonthlyValues,
+          totalValue: productsData.reduce((sum, p) => sum + p.totalValue, 0)
+        };
+      });
+
+      // Add data rows
+      metricProcessedData.forEach(categoryData => {
+        // Category row
+        const categoryRow = [categoryData.category, formatMetricValue(categoryData.totalValue, metric)];
+        
+        monthKeys.forEach(month => {
+          const value = categoryData.monthlyValues[month.key] || 0;
+          categoryRow.push(formatMetricValue(value, metric));
+        });
+        allContent += categoryRow.join('\t') + '\n';
+
+        // Product rows
+        categoryData.products.forEach(productData => {
+          const productRow = [`  ${productData.product}`, formatMetricValue(productData.totalValue, metric)];
+          
+          monthKeys.forEach(month => {
+            const value = productData.monthlyValues[month.key] || 0;
+            productRow.push(formatMetricValue(value, metric));
+          });
+          allContent += productRow.join('\t') + '\n';
+        });
+      });
+
+      allContent += `\n`;
+    }
+
+    return allContent;
+  }, [data, monthKeys]);
+
+  // Helper function to format metric values
+  const formatMetricValue = (value: number, metric: string): string => {
+    if (metric === 'avgSpend') return formatCurrency(value);
+    if (metric === 'percentDiscounted') return `${value.toFixed(1)}%`;
+    if (metric.includes('Frequency') || metric.includes('Lifespan') || metric.includes('Days')) {
+      return `${value.toFixed(1)} days`;
+    }
+    return formatNumber(value);
+  };
+
   // AI footer data (flattened rows for current metric)
   const aiTableColumns = [
     { header: 'Category', key: 'category', type: 'text' },
@@ -235,6 +335,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
         showDisplayToggle={true}
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
+        onCopyAllTabs={generateAllTabsContent}
       >
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">

@@ -224,6 +224,68 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
+  // Function to generate content for all metric tabs
+  const generateAllTabsContent = useCallback(async () => {
+    let allContent = `Sales Team Performance - All Metrics\n`;
+    allContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+    allContent += `\n${'='.repeat(80)}\n\n`;
+
+    // Loop through all metrics from STANDARD_METRICS
+    for (const metricInfo of STANDARD_METRICS) {
+      const metric = metricInfo.key as YearOnYearMetricType;
+
+      allContent += `\n${metricInfo.label.toUpperCase()}\n`;
+      allContent += `${'-'.repeat(metricInfo.label.length + 10)}\n\n`;
+
+      // Add table headers
+      const headers = ['Sold By', 'Total'];
+      visibleMonths.forEach(month => headers.push(month.display));
+      allContent += headers.join('\t') + '\n';
+      allContent += headers.map(() => '---').join('\t') + '\n';
+
+      // Reprocess data specifically for this metric
+      const soldByGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
+        const soldBy = item.soldBy || 'Unknown';
+        if (!acc[soldBy]) acc[soldBy] = [];
+        acc[soldBy].push(item);
+        return acc;
+      }, {});
+
+      const metricProcessedData = Object.entries(soldByGroups).map(([soldBy, items]) => {
+        const monthlyValues: Record<string, number> = {};
+        
+        monthlyData.forEach(({ key, year, month }) => {
+          const monthItems = items.filter(item => {
+            const itemDate = parseDate(item.paymentDate);
+            return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+          });
+          monthlyValues[key] = getMetricValue(monthItems, metric);
+        });
+
+        return {
+          soldBy,
+          monthlyValues,
+          totalValue: getMetricValue(items, metric)
+        };
+      });
+
+      // Add data rows
+      metricProcessedData.forEach(sellerData => {
+        const sellerRow = [sellerData.soldBy, formatMetricValue(sellerData.totalValue, metric)];
+        
+        visibleMonths.forEach(month => {
+          const value = sellerData.monthlyValues[month.key] || 0;
+          sellerRow.push(formatMetricValue(value, metric));
+        });
+        allContent += sellerRow.join('\t') + '\n';
+      });
+
+      allContent += `\n`;
+    }
+
+    return allContent;
+  }, [data, visibleMonths, monthlyData]);
+
   return (
     <div className="space-y-4">
       {/* Modern Metric Selector */}
@@ -242,6 +304,7 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         showCollapseControls={false}
+        onCopyAllTabs={generateAllTabsContent}
       >
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
@@ -179,6 +179,68 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
     return ((current - previous) / previous * 100).toFixed(1);
   };
 
+  // Function to generate content for all metric tabs
+  const generateAllTabsContent = useCallback(async () => {
+    let allContent = `Payment Method Analysis - All Metrics\n`;
+    allContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+    allContent += `\n${'='.repeat(80)}\n\n`;
+
+    // Loop through all metrics from STANDARD_METRICS
+    for (const metricInfo of STANDARD_METRICS) {
+      const metric = metricInfo.key as YearOnYearMetricType;
+
+      allContent += `\n${metricInfo.label.toUpperCase()}\n`;
+      allContent += `${'-'.repeat(metricInfo.label.length + 10)}\n\n`;
+
+      // Add table headers
+      const headers = ['Payment Method', 'Total'];
+      visibleMonths.forEach(month => headers.push(month.display));
+      allContent += headers.join('\t') + '\n';
+      allContent += headers.map(() => '---').join('\t') + '\n';
+
+      // Reprocess data specifically for this metric
+      const paymentMethodGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
+        const method = item.paymentMethod || 'Unknown';
+        if (!acc[method]) acc[method] = [];
+        acc[method].push(item);
+        return acc;
+      }, {});
+
+      const metricProcessedData = Object.entries(paymentMethodGroups).map(([method, items]) => {
+        const monthlyValues: Record<string, number> = {};
+        
+        monthlyData.forEach(({ key, year, month }) => {
+          const monthItems = items.filter(item => {
+            const itemDate = parseDate(item.paymentDate);
+            return itemDate && itemDate.getFullYear() === year && itemDate.getMonth() + 1 === month;
+          });
+          monthlyValues[key] = getMetricValue(monthItems, metric);
+        });
+
+        return {
+          method,
+          monthlyValues,
+          totalValue: getMetricValue(items, metric)
+        };
+      });
+
+      // Add data rows
+      metricProcessedData.forEach(methodData => {
+        const methodRow = [methodData.method, formatMetricValue(methodData.totalValue, metric)];
+        
+        visibleMonths.forEach(month => {
+          const value = methodData.monthlyValues[month.key] || 0;
+          methodRow.push(formatMetricValue(value, metric));
+        });
+        allContent += methodRow.join('\t') + '\n';
+      });
+
+      allContent += `\n`;
+    }
+
+    return allContent;
+  }, [data, visibleMonths, monthlyData]);
+
   return (
     <div className="space-y-4">
       {/* Modern Metric Selector */}
@@ -197,6 +259,7 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         showCollapseControls={false}
+        onCopyAllTabs={generateAllTabsContent}
       >
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
