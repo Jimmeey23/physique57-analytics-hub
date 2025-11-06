@@ -4,10 +4,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { UniversalLoader } from "@/components/ui/UniversalLoader";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { GlobalCommandPalette } from "@/components/ui/GlobalCommandPalette";
+import { PageTransition } from "@/components/ui/PageTransition";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
 import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
@@ -110,28 +111,30 @@ const App = () => {
           <InitialLoadGate>
             <React.Suspense fallback={<div />}> {/* Minimal fallback; we show InitialLoadGate overlay */}
               <FirstRouteReady>
-                <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/executive-summary" element={<ExecutiveSummary />} />
-              <Route path="/sales-analytics" element={<SalesAnalytics />} />
-              <Route path="/funnel-leads" element={<FunnelLeads />} />
-              <Route path="/client-retention" element={<ClientRetention />} />
-              <Route path="/trainer-performance" element={<TrainerPerformance />} />
-              <Route path="/class-attendance" element={<ClassAttendance />} />
-              <Route path="/class-formats" element={<ClassFormatsComparison />} />
-              <Route path="/powercycle-vs-barre" element={<ClassFormatsComparison />} />
-              <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
-              <Route path="/sessions" element={<Sessions />} />
-              <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
-              <Route path="/late-cancellations" element={<LateCancellations />} />
-              <Route path="/patterns-trends" element={<PatternsAndTrends />} />
-              <Route path="/hero-demo" element={<HeroDemo />} />
-              <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
-              <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
-              <Route path="/data-export" element={<DataExport />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-                </Routes>
+                <PageTransition>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/executive-summary" element={<ExecutiveSummary />} />
+                    <Route path="/sales-analytics" element={<SalesAnalytics />} />
+                    <Route path="/funnel-leads" element={<FunnelLeads />} />
+                    <Route path="/client-retention" element={<ClientRetention />} />
+                    <Route path="/trainer-performance" element={<TrainerPerformance />} />
+                    <Route path="/class-attendance" element={<ClassAttendance />} />
+                    <Route path="/class-formats" element={<ClassFormatsComparison />} />
+                    <Route path="/powercycle-vs-barre" element={<ClassFormatsComparison />} />
+                    <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
+                    <Route path="/sessions" element={<Sessions />} />
+                    <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
+                    <Route path="/late-cancellations" element={<LateCancellations />} />
+                    <Route path="/patterns-trends" element={<PatternsAndTrends />} />
+                    <Route path="/hero-demo" element={<HeroDemo />} />
+                    <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
+                    <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
+                    <Route path="/data-export" element={<DataExport />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </PageTransition>
               </FirstRouteReady>
             </React.Suspense>
           </InitialLoadGate>

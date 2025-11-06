@@ -14,7 +14,7 @@ interface DiscountsAnimatedMetricCardsProps {
   onMetricClick?: (metricData: any) => void;
 }
 
-const iconMap = {
+const iconMap: Record<string, any> = {
   DollarSign,
   ShoppingCart,
   Activity,
@@ -76,94 +76,112 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => {
         const IconComponent = iconMap[metric.icon as keyof typeof iconMap] || DollarSign;
+        const isPositive = metric.change > 0;
+        const isNegative = metric.change < 0;
         
         return (
           <Card 
             key={metric.title}
             className={cn(
-              "group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-out cursor-pointer",
-              "bg-gradient-to-br from-white via-orange-50/30 to-orange-100/50",
-              "hover:scale-105 hover:-translate-y-1"
+              "group relative overflow-hidden cursor-pointer transition-all duration-700",
+              "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+              index % 4 === 0 && "border-t-4 border-orange-700 hover:border-orange-700 shadow-lg",
+              index % 4 === 1 && "border-t-4 border-amber-700 hover:border-amber-700 shadow-lg",
+              index % 4 === 2 && "border-t-4 border-yellow-700 hover:border-yellow-700 shadow-lg", 
+              index % 4 === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
+              "hover:shadow-2xl hover:shadow-slate-900/30",
+              "hover:-translate-y-2 hover:scale-[1.02]",
+              onMetricClick && "hover:cursor-pointer"
             )}
             onClick={() => handleMetricClick(metric)}
-            style={{ 
-              animationDelay: `${index * 100}ms`,
-              animation: 'slideInUp 0.6s ease-out forwards'
-            }}
           >
-            {/* Background gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            
-            <CardContent className="relative p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-600 mb-1">
-                    {metric.title}
-                  </h3>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {metric.value}
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    {metric.description}
-                  </p>
-                </div>
-                
-                <div className="flex flex-col items-end gap-2">
-                  <div className={cn(
-                    "p-2 rounded-lg transition-colors duration-300",
-                    "bg-orange-100 text-orange-600",
-                    "group-hover:bg-orange-200 group-hover:scale-110"
-                  )}>
-                    <IconComponent className="w-5 h-5" />
+            <CardContent className="p-6 relative">
+              <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                <IconComponent className={cn(
+                  "w-12 h-12 transition-all duration-700",
+                  index % 4 === 0 && "text-orange-700",
+                  index % 4 === 1 && "text-amber-700",
+                  index % 4 === 2 && "text-yellow-700",
+                  index % 4 === 3 && "text-red-700",
+                  "group-hover:text-white/40"
+                )} />
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                      index % 4 === 0 && "bg-gradient-to-br from-orange-700 to-orange-600 border-orange-900 text-white shadow-orange-200",
+                      index % 4 === 1 && "bg-gradient-to-br from-amber-700 to-amber-600 border-amber-900 text-white shadow-amber-200",
+                      index % 4 === 2 && "bg-gradient-to-br from-yellow-700 to-yellow-600 border-yellow-900 text-white shadow-yellow-200",
+                      index % 4 === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
+                      "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                    )}>
+                      <IconComponent className="w-6 h-6 drop-shadow-sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                        {metric.title}
+                      </h3>
+                    </div>
                   </div>
                   
-                  {typeof metric.change === 'number' && (
-                    <Badge 
-                      className={cn(
-                        "text-xs font-medium px-2 py-1",
-                        metric.change > 0
-                          ? "bg-green-100 text-green-700 border-green-200" 
-                          : metric.change < 0
-                          ? "bg-red-100 text-red-700 border-red-200"
-                          : "bg-gray-100 text-gray-700 border-gray-200"
-                      )}
-                    >
-                      {metric.change > 0 && <ArrowUpRight className="w-3 h-3 mr-1" />}
-                      {metric.change < 0 && <ArrowDownRight className="w-3 h-3 mr-1" />}
-                      {`${metric.change > 0 ? '+' : ''}${metric.change.toFixed(1)}%`}
-                    </Badge>
-                  )}
+                  <div className={cn(
+                    "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
+                    isPositive
+                      ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
+                      : isNegative
+                      ? "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
+                      : "bg-blue-50 text-blue-700 group-hover:bg-blue-400/30 group-hover:text-blue-100"
+                  )}>
+                    {isPositive && <TrendingUp className="w-3 h-3" />}
+                    {isNegative && <TrendingDown className="w-3 h-3" />}
+                    <span>
+                      {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className={cn(
+                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                  )}>
+                    {metric.value}
+                  </p>
+                  <p className={cn(
+                    "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+                  )}>
+                    {metric.periodLabel ? (
+                      <>
+                        {metric.periodLabel}: <span className="font-medium">{metric.previousValue}</span>
+                      </>
+                    ) : (
+                      <>vs previous month: <span className="font-medium">{metric.previousValue}</span></>
+                    )}
+                  </p>
                 </div>
               </div>
               
-              {/* Bottom accent line */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-              {/* Period label and previous value */}
-              {metric.periodLabel && (
-                <div className="mt-3 text-xs text-gray-500">
-                  {metric.periodLabel}: <span className="font-medium">{metric.previousValue}</span>
-                </div>
-              )}
+              <div className={cn(
+                "mt-4 p-3 border-t border-l-4 transition-all duration-700",
+                "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
+                index % 4 === 0 && "border-l-orange-700",
+                index % 4 === 1 && "border-l-amber-700",
+                index % 4 === 2 && "border-l-yellow-700",
+                index % 4 === 3 && "border-l-red-700"
+              )}>
+                <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
+                  {metric.description}
+                </p>
+              </div>
             </CardContent>
           </Card>
         );
       })}
-      
-      <style>{`
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

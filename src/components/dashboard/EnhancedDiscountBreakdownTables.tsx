@@ -176,36 +176,36 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                 {productBreakdown.slice(0, 10).map((item, index) => {
                   const badge = getPerformanceBadge(item.avgDiscountPercentage);
                   return (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        <div className="max-w-[200px] truncate" title={item.product}>
+                    <TableRow key={index} className="max-h-[35px]">
+                      <TableCell className="font-medium py-2 max-h-[35px]">
+                        <div className="max-w-[200px] truncate text-sm" title={item.product}>
                           {item.product}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-slate-600">{item.category}</span>
+                      <TableCell className="py-2 max-h-[35px]">
+                        <span className="text-sm text-slate-600 truncate block">{item.category}</span>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline">{formatNumber(item.transactions)}</Badge>
+                      <TableCell className="text-center py-2 max-h-[35px]">
+                        <Badge variant="outline" className="text-xs h-6 px-2">{formatNumber(item.transactions)}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-red-600">
-                        {formatCurrency(item.totalDiscount)}
+                      <TableCell className="text-right font-semibold text-sm text-red-600 py-2 max-h-[35px]">
+                        <span className="truncate block">{formatCurrency(item.totalDiscount)}</span>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={badge.variant}>
+                      <TableCell className="text-right py-2 max-h-[35px]">
+                        <Badge variant={badge.variant} className="text-xs h-6 px-2">
                           {formatPercentage(item.avgDiscountPercentage)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-green-600">
-                        {formatCurrency(item.totalRevenue)}
+                      <TableCell className="text-right font-semibold text-sm text-green-600 py-2 max-h-[35px]">
+                        <span className="truncate block">{formatCurrency(item.totalRevenue)}</span>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="text-sm">
-                          <div className="font-medium">{formatCurrency(item.discountRate)}</div>
-                          <div className="text-slate-500">per transaction</div>
+                      <TableCell className="text-right py-2 max-h-[35px]">
+                        <div className="text-xs truncate">
+                          <div className="font-medium truncate">{formatCurrency(item.discountRate)}</div>
+                          <div className="text-slate-500 truncate">per transaction</div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center py-2 max-h-[35px]">
                         <Button
                           variant="outline"
                           size="sm"
@@ -214,9 +214,9 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                             item.data, 
                             'product-discount'
                           )}
-                          className="hover:bg-orange-50"
+                          className="hover:bg-orange-50 h-7"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3 h-3" />
                         </Button>
                       </TableCell>
                     </TableRow>

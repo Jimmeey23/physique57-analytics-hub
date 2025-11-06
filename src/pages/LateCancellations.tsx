@@ -16,7 +16,6 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { AiNotes } from '@/components/ui/AiNotes';
 import { formatNumber } from '@/utils/formatters';
 
 const LateCancellations = () => {
@@ -453,38 +452,11 @@ const LateCancellations = () => {
                   {/* Metric Cards */}
                   <LateCancellationsMetricCards data={filteredData} onMetricClick={handleDrillDownClick} />
                   
-                  {/* AI Notes for Metrics */}
-                  <AiNotes 
-                    tableKey="lateCancellations:metrics" 
-                    location={location.id} 
-                    period={selectedTimeframe} 
-                    sectionId="late-cancellations-metrics" 
-                    author="Analytics Team" 
-                  />
-                  
                   {/* Interactive Charts */}
                   <LateCancellationsInteractiveCharts data={chartData} />
                   
-                  {/* AI Notes for Charts */}
-                  <AiNotes 
-                    tableKey="lateCancellations:charts" 
-                    location={location.id} 
-                    period={selectedTimeframe} 
-                    sectionId="late-cancellations-charts" 
-                    author="Analytics Team" 
-                  />
-                  
-                  {/* Enhanced Top/Bottom Lists (Side by Side) */}
+                  {/* Enhanced Top/Bottom Lists */}
                   <EnhancedLateCancellationsTopBottomLists data={filteredData} />
-                  
-                  {/* AI Notes for Top/Bottom Lists */}
-                  <AiNotes 
-                    tableKey="lateCancellations:rankings" 
-                    location={location.id} 
-                    period={selectedTimeframe} 
-                    sectionId="late-cancellations-rankings" 
-                    author="Analytics Team" 
-                  />
                   
                   {/* Month on Month Analysis Table */}
                   <LateCancellationsMonthOnMonthTable 
@@ -492,26 +464,8 @@ const LateCancellations = () => {
                     onRowClick={handleDrillDownClick} 
                   />
                   
-                  {/* AI Notes for Month on Month Analysis */}
-                  <AiNotes 
-                    tableKey="lateCancellations:monthOnMonth" 
-                    location={location.id} 
-                    period={selectedTimeframe} 
-                    sectionId="late-cancellations-mom" 
-                    author="Analytics Team" 
-                  />
-                  
                   {/* Enhanced Detailed Data Tables with Pagination */}
                   <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownClick} />
-                  
-                  {/* AI Notes for Detailed Tables */}
-                  <AiNotes 
-                    tableKey="lateCancellations:detailedTables" 
-                    location={location.id} 
-                    period={selectedTimeframe} 
-                    sectionId="late-cancellations-details" 
-                    author="Analytics Team" 
-                  />
                 </div>
               </TabsContent>
             ))}

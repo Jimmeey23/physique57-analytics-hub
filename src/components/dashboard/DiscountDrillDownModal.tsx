@@ -414,10 +414,12 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
               </TableHeader>
               <TableBody>
                 {tableData.slice(0, 20).map((item, index) => (
-                  <TableRow key={index} className="hover:bg-gray-50">
+                  <TableRow key={index} className="hover:bg-gray-50 max-h-[35px]">
                     {columns.map((col) => (
-                      <TableCell key={col.key}>
-                        {col.format ? col.format(item[col.key]) : item[col.key]}
+                      <TableCell key={col.key} className="py-2 max-h-[35px]">
+                        <span className="truncate block text-sm">
+                          {col.format ? col.format(item[col.key]) : item[col.key]}
+                        </span>
                       </TableCell>
                     ))}
                   </TableRow>
@@ -425,6 +427,88 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
               </TableBody>
             </Table>
           </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderIndividualTransactions = () => {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5" />
+            Individual Transactions ({formatNumber(Math.min(data.length, 50))})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead className="text-right">MRP</TableHead>
+                  <TableHead className="text-right">Discount</TableHead>
+                  <TableHead className="text-right">Discount %</TableHead>
+                  <TableHead className="text-right">Paid</TableHead>
+                  <TableHead>Location</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.slice(0, 50).map((item, index) => (
+                  <TableRow key={index} className="hover:bg-gray-50 max-h-[35px]">
+                    <TableCell className="py-2 max-h-[35px]">
+                      <span className="text-sm truncate block">
+                        {new Date(item.paymentDate).toLocaleDateString()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-2 max-h-[35px]">
+                      <div className="truncate">
+                        <div className="text-sm font-medium truncate">{item.customerName}</div>
+                        <div className="text-xs text-slate-500 truncate">{item.customerEmail}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2 max-h-[35px]">
+                      <div className="truncate">
+                        <div className="text-sm truncate">{item.cleanedProduct}</div>
+                        <div className="text-xs text-slate-500 truncate">{item.cleanedCategory}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right py-2 max-h-[35px]">
+                      <span className="text-sm truncate block">
+                        {formatCurrency(item.mrpPostTax || item.mrpPreTax || 0)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right py-2 max-h-[35px]">
+                      <span className="text-sm font-semibold text-red-600 truncate block">
+                        -{formatCurrency(item.discountAmount || 0)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right py-2 max-h-[35px]">
+                      <Badge variant="outline" className="text-xs h-6 px-2">
+                        {formatPercentage(item.discountPercentage || 0)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right py-2 max-h-[35px]">
+                      <span className="text-sm font-semibold text-green-600 truncate block">
+                        {formatCurrency(item.paymentValue || 0)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-2 max-h-[35px]">
+                      <span className="text-xs text-slate-600 truncate block">{item.calculatedLocation}</span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {data.length > 50 && (
+            <p className="text-sm text-slate-500 mt-2 text-center">
+              Showing first 50 of {formatNumber(data.length)} transactions
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -455,6 +539,8 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
             )}
             
             {renderDetailedTable()}
+            
+            {renderIndividualTransactions()}
           </div>
         </ScrollArea>
       </DialogContent>

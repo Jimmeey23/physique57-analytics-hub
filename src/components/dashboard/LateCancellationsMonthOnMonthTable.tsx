@@ -253,7 +253,7 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
   };
 
   return (
-    <Card className="w-full">
+    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-blue-600" />

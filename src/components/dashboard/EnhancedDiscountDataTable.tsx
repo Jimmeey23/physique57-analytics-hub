@@ -205,47 +205,47 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedData.map((item, index) => <TableRow key={`${item.saleItemId}-${index}`} className="hover:cursor-pointer">
-                  <TableCell className="font-medium">
-                    {new Date(item.paymentDate).toLocaleDateString()}
+              {paginatedData.map((item, index) => <TableRow key={`${item.saleItemId}-${index}`} className="hover:cursor-pointer max-h-[35px]">
+                  <TableCell className="font-medium py-2 max-h-[35px]">
+                    <span className="truncate block">{new Date(item.paymentDate).toLocaleDateString()}</span>
                   </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-slate-700">{item.customerName}</div>
-                      <div className="text-sm text-slate-500">{item.customerEmail}</div>
+                  <TableCell className="py-2 max-h-[35px]">
+                    <div className="truncate">
+                      <div className="font-medium text-sm text-slate-700 truncate">{item.customerName}</div>
+                      <div className="text-xs text-slate-500 truncate">{item.customerEmail}</div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-slate-700">{item.cleanedProduct}</div>
-                      <div className="text-sm text-slate-500">{item.cleanedCategory}</div>
+                  <TableCell className="py-2 max-h-[35px]">
+                    <div className="truncate">
+                      <div className="font-medium text-sm text-slate-700 truncate">{item.cleanedProduct}</div>
+                      <div className="text-xs text-slate-500 truncate">{item.cleanedCategory}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(item.mrpPostTax || 0)}
+                  <TableCell className="text-right font-medium py-2 max-h-[35px]">
+                    <span className="truncate block">{formatCurrency(item.mrpPostTax || 0)}</span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <span className="font-semibold text-red-600">
+                  <TableCell className="text-right py-2 max-h-[35px]">
+                    <span className="font-semibold text-sm text-red-600 truncate block">
                       -{formatCurrency(item.discountAmount || 0)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant={getDiscountBadgeColor(item.discountPercentage || 0)}>
+                  <TableCell className="text-right py-2 max-h-[35px]">
+                    <Badge variant={getDiscountBadgeColor(item.discountPercentage || 0)} className="text-xs h-6 px-2 font-bold">
                       {formatPercentage(item.discountPercentage || 0)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-semibold text-green-600">
-                    {formatCurrency(item.paymentValue || 0)}
+                  <TableCell className="text-right font-semibold text-sm text-green-600 py-2 max-h-[35px]">
+                    <span className="truncate block">{formatCurrency(item.paymentValue || 0)}</span>
                   </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-slate-600">{item.calculatedLocation}</span>
+                  <TableCell className="py-2 max-h-[35px]">
+                    <span className="text-sm text-slate-600 truncate block">{item.calculatedLocation}</span>
                   </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-slate-600">{item.soldBy}</span>
+                  <TableCell className="py-2 max-h-[35px]">
+                    <span className="text-sm text-slate-600 truncate block">{item.soldBy}</span>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Button variant="outline" size="sm" onClick={() => handleRowClick(item)} className="hover:bg-blue-50">
-                      <Eye className="w-4 h-4" />
+                  <TableCell className="text-center py-2 max-h-[35px]">
+                    <Button variant="outline" size="sm" onClick={() => handleRowClick(item)} className="hover:bg-blue-50 h-7">
+                      <Eye className="w-3 h-3" />
                     </Button>
                   </TableCell>
                 </TableRow>)}

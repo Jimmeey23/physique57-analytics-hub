@@ -25,18 +25,30 @@ const locations = [
 
 const getPreviousMonthDateRange = () => {
   const now = new Date();
-  // Get the first day of the previous month
-  const firstDayPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  // Get the last day of the previous month  
-  const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
   
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
+  // Use UTC to avoid timezone issues
+  const year = now.getFullYear();
+  const month = now.getMonth(); // Current month (0-indexed)
+  
+  // Get first day of previous month (in local time, formatted as YYYY-MM-DD)
+  const firstDayPreviousMonth = new Date(year, month - 1, 1);
+  const firstFormatted = `${firstDayPreviousMonth.getFullYear()}-${String(firstDayPreviousMonth.getMonth() + 1).padStart(2, '0')}-01`;
+  
+  // Get last day of previous month (in local time, formatted as YYYY-MM-DD)
+  const lastDayPreviousMonth = new Date(year, month, 0);
+  const lastFormatted = `${lastDayPreviousMonth.getFullYear()}-${String(lastDayPreviousMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayPreviousMonth.getDate()).padStart(2, '0')}`;
+  
+  console.log('Date range calculation:', {
+    today: now.toLocaleDateString(),
+    currentMonth: month,
+    previousMonth: month - 1,
+    firstDay: firstFormatted,
+    lastDay: lastFormatted
+  });
   
   return {
-    start: formatDate(firstDayPreviousMonth),
-    end: formatDate(lastDayPreviousMonth)
+    start: firstFormatted,
+    end: lastFormatted
   };
 };
 
@@ -110,20 +122,42 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           
           let itemDate: Date;
           
-          // Handle multiple date formats
-          if (item.paymentDate.includes('/')) {
-            // Handle YYYY/MM/DD HH:MM:SS format
-            if (item.paymentDate.includes(' ')) {
-              const [datePart] = item.paymentDate.split(' ');
-              const [year, month, day] = datePart.split('/');
-              itemDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          // Handle multiple date formats robustly
+          const dateStr = item.paymentDate.toString().trim();
+          
+          if (dateStr.includes('/')) {
+            // Remove time part if present
+            const datePart = dateStr.split(' ')[0];
+            const parts = datePart.split('/');
+            
+            // Determine format based on part values
+            if (parts.length === 3) {
+              const [p1, p2, p3] = parts.map(p => parseInt(p));
+              
+              // If first part > 31, it's YYYY/MM/DD
+              if (p1 > 31) {
+                itemDate = new Date(p1, p2 - 1, p3);
+              }
+              // If third part > 31, it's DD/MM/YYYY
+              else if (p3 > 31) {
+                itemDate = new Date(p3, p2 - 1, p1);
+              }
+              // If middle part > 12, it's DD/MM/YYYY (month can't be > 12)
+              else if (p2 > 12) {
+                itemDate = new Date(p3, p1 - 1, p2);
+              }
+              // Otherwise assume DD/MM/YYYY (most common format)
+              else {
+                itemDate = new Date(p3, p2 - 1, p1);
+              }
             } else {
-              // Handle DD/MM/YYYY format
-              const [day, month, year] = item.paymentDate.split('/');
-              itemDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              itemDate = new Date(dateStr);
             }
+          } else if (dateStr.includes('-')) {
+            // ISO format YYYY-MM-DD
+            itemDate = new Date(dateStr);
           } else {
-            itemDate = new Date(item.paymentDate);
+            itemDate = new Date(dateStr);
           }
           
           if (!itemDate || isNaN(itemDate.getTime())) {
@@ -132,16 +166,11 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           }
           
           const itemInRange = (!startDate || itemDate >= startDate) && (!endDate || itemDate <= endDate);
-          if (!itemInRange && console.log) {
-            console.log('Date out of range:', { 
-              paymentDate: item.paymentDate, 
-              parsed: itemDate.toISOString(),
-              inRange: itemInRange 
-            });
-          }
           
           return itemInRange;
         });
+        
+        console.log('After date filter:', filtered.length, 'records');
       }
     }
 
@@ -313,14 +342,23 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="detailed" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-orange-100 via-amber-100 to-yellow-100 p-1 rounded-xl shadow-lg border border-orange-200/50">
-            <TabsTrigger value="detailed" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 p-1.5 rounded-xl shadow-md border border-orange-200">
+            <TabsTrigger 
+              value="detailed" 
+              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               Data Tables
             </TabsTrigger>
-            <TabsTrigger value="breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+            <TabsTrigger 
+              value="breakdown" 
+              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               Breakdowns
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-orange-800 font-semibold transition-all duration-300">
+            <TabsTrigger 
+              value="analytics" 
+              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               Analytics
             </TabsTrigger>
           </TabsList>

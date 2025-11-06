@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,15 +7,16 @@ import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Users, Calendar, B
 import { useCheckinsData } from '@/hooks/useCheckinsData';
 import { formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HeroSection } from '@/components/ui/HeroSection';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
 export const PatternsAndTrends = () => {
   const { data: checkinsData, loading, error } = useCheckinsData();
+  const { setLoading } = useGlobalLoading();
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -27,6 +28,11 @@ export const PatternsAndTrends = () => {
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
   const [selectedMemberStatus, setSelectedMemberStatus] = useState<string[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+
+  // Sync loading state with global loader
+  useEffect(() => {
+    setLoading(loading, 'Loading patterns and trends data...');
+  }, [loading, setLoading]);
 
   // Get unique filter options
   const filterOptions = useMemo(() => {
@@ -320,28 +326,7 @@ export const PatternsAndTrends = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        <HeroSection
-          title="Patterns & Trends"
-          subtitle="Member Visit Analytics"
-          description="Month-on-month breakdown of visits by product and membership type"
-          badgeText="Visit Patterns"
-          badgeIcon={BarChart3}
-          gradient="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
-        />
-        <div className="container mx-auto px-4 py-8">
-          <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center space-x-2">
-                <BrandSpinner size="sm" />
-                <span className="text-slate-600">Loading patterns and trends data...</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return null; // Global loader handles this
   }
 
   if (error) {

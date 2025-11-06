@@ -145,13 +145,23 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
     }
   };
 
+  // Map colors to match Sales tab styling (cycling through green, blue, pink, red)
+  const colorMap = {
+    'red': { index: 3, gradient: 'from-red-700 to-red-600', shadow: 'shadow-red-200', border: 'border-red-700' },
+    'orange': { index: 0, gradient: 'from-green-700 to-green-600', shadow: 'shadow-green-200', border: 'border-green-700' },
+    'blue': { index: 1, gradient: 'from-blue-700 to-blue-600', shadow: 'shadow-blue-200', border: 'border-blue-700' },
+    'purple': { index: 2, gradient: 'from-pink-700 to-pink-600', shadow: 'shadow-pink-200', border: 'border-pink-700' },
+    'green': { index: 0, gradient: 'from-green-700 to-green-600', shadow: 'shadow-green-200', border: 'border-green-700' },
+    'cyan': { index: 1, gradient: 'from-blue-700 to-blue-600', shadow: 'shadow-blue-200', border: 'border-blue-700' }
+  };
+
   if (metrics.length === 0) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(6)].map((_, index) => (
-          <Card key={index} className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm animate-pulse">
-            <CardContent className="p-5">
-              <div className="h-16 bg-slate-100 rounded-xl"></div>
+          <Card key={index} className="bg-white border border-gray-200 rounded-2xl shadow-lg animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-24 bg-slate-100 rounded-xl"></div>
             </CardContent>
           </Card>
         ))}
@@ -160,51 +170,107 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => {
         const IconComponent = metric.icon;
         const isPositive = metric.change > 0;
+        const isNegative = metric.change < 0;
         const showChange = metric.showPercentage !== false;
+        const colorConfig = colorMap[metric.color as keyof typeof colorMap] || colorMap.blue;
+        const cardIndex = index % 4;
         
         return (
-          <Card 
-            key={index} 
+          <Card
+            key={index}
             className={cn(
-              "bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 group cursor-pointer",
-              "hover:shadow-lg"
+              "group relative overflow-hidden cursor-pointer transition-all duration-700",
+              "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+              cardIndex === 0 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+              cardIndex === 1 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+              cardIndex === 2 && "border-t-4 border-pink-700 hover:border-pink-700 shadow-lg",
+              cardIndex === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
+              "hover:shadow-2xl hover:shadow-slate-900/30",
+              "hover:-translate-y-2 hover:scale-[1.02]",
+              onMetricClick && "hover:cursor-pointer"
             )}
             onClick={() => handleMetricClick(metric)}
-            style={{ animationDelay: `${index * 150}ms` }}
           >
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-9 h-9 rounded-xl flex items-center justify-center text-white",
-                    metric.color === 'red' && 'bg-red-500',
-                    metric.color === 'orange' && 'bg-orange-500',
-                    metric.color === 'blue' && 'bg-blue-500',
-                    metric.color === 'purple' && 'bg-purple-500',
-                    metric.color === 'green' && 'bg-green-500',
-                    metric.color === 'cyan' && 'bg-cyan-500'
-                  )}>
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-700 text-sm">{metric.title}</h3>
-                    <p className="text-2xl font-bold text-slate-900 leading-tight">{metric.value}</p>
-                  </div>
-                </div>
-                {showChange && (
-                  <div className={cn(
-                    "text-xs font-medium px-2 py-1 rounded-md",
-                    isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                  )}>
-                    {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
-                  </div>
-                )}
+            <CardContent className="p-6 relative">
+              <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                <IconComponent className={cn(
+                  "w-12 h-12 transition-all duration-700",
+                  cardIndex === 0 && "text-green-700",
+                  cardIndex === 1 && "text-blue-700",
+                  cardIndex === 2 && "text-pink-700",
+                  cardIndex === 3 && "text-red-700",
+                  "group-hover:text-white/40"
+                )} />
               </div>
-              <p className="mt-3 text-xs text-slate-500">{metric.description}</p>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                      cardIndex === 0 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                      cardIndex === 1 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                      cardIndex === 2 && "bg-gradient-to-br from-pink-700 to-pink-600 border-pink-900 text-white shadow-pink-200",
+                      cardIndex === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
+                      "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                    )}>
+                      <IconComponent className="w-6 h-6 drop-shadow-sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                        {metric.title}
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  {showChange && (
+                    <div className={cn(
+                      "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
+                      isPositive
+                        ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
+                        : isNegative
+                        ? "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
+                        : "bg-blue-50 text-blue-700 group-hover:bg-blue-400/30 group-hover:text-blue-100"
+                    )}>
+                      {isPositive && <TrendingUp className="w-3 h-3" />}
+                      {isNegative && <TrendingDown className="w-3 h-3" />}
+                      <span>
+                        {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className={cn(
+                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                  )}>
+                    {metric.value}
+                  </p>
+                  <p className={cn(
+                    "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+                  )}>
+                    vs previous period
+                  </p>
+                </div>
+              </div>
+              
+              <div className={cn(
+                "mt-4 p-3 border-t border-l-4 transition-all duration-700",
+                "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
+                cardIndex === 0 && "border-l-green-700",
+                cardIndex === 1 && "border-l-blue-700",
+                cardIndex === 2 && "border-l-pink-700",
+                cardIndex === 3 && "border-l-red-700"
+              )}>
+                <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
+                  {metric.description}
+                </p>
+              </div>
             </CardContent>
           </Card>
         );

@@ -188,14 +188,14 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
   }
 
   return (
-    <div className="space-y-8">
-      {/* Main Chart - Full Width */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Main Chart - Left Side */}
       <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white border-0">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <CardTitle className="flex items-center gap-3 text-white text-xl font-bold">
+          <div className="flex flex-col gap-4">
+            <CardTitle className="flex items-center gap-3 text-white text-lg font-bold">
               <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                <BarChart3 className="w-6 h-6 text-white" />
+                <BarChart3 className="w-5 h-5 text-white" />
               </div>
               {chartType === 'source' ? 'Lead Source Analytics' : chartType === 'stage' ? 'Funnel Stage Analytics' : 'Timeline Trend Analysis'}
             </CardTitle>
@@ -244,9 +244,8 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                 Timeline
               </Button>
             </div>
-          </div>
           
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2">
             <Badge 
               variant={metricType === 'volume' ? 'secondary' : 'outline'}
               className={cn(
@@ -284,10 +283,11 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
               LTV
             </Badge>
           </div>
+          </div>
         </CardHeader>
         
-        <CardContent className="p-8 bg-gradient-to-br from-slate-50 to-white">
-          <div className="h-96 relative">
+        <CardContent className="p-6 bg-gradient-to-br from-slate-50 to-white">
+          <div className="h-80 relative">
             <div className="absolute top-0 right-0 text-xs text-slate-500 font-medium">
               {getMetricLabel()}
             </div>
@@ -354,26 +354,26 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
         </CardContent>
       </Card>
 
-      {/* Enhanced Pie Chart */}
+      {/* Enhanced Pie Chart - Right Side */}
       <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-orange-800 via-red-800 to-red-900 text-white border-0">
-          <CardTitle className="flex items-center gap-3 text-white text-xl font-bold">
+          <CardTitle className="flex items-center gap-3 text-white text-lg font-bold">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <PieChartIcon className="w-6 h-6 text-white" />
+              <PieChartIcon className="w-5 h-5 text-white" />
             </div>
             Conversion Status Distribution
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-8 bg-gradient-to-br from-slate-50 to-white">
-          <div className="h-96">
+        <CardContent className="p-6 bg-gradient-to-br from-slate-50 to-white">
+          <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={90}
-                  outerRadius={150}
+                  innerRadius={70}
+                  outerRadius={120}
                   paddingAngle={4}
                   dataKey="value"
                   animationBegin={0}
@@ -391,8 +391,8 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                 <Tooltip content={<PieTooltip />} />
                 <Legend 
                   verticalAlign="bottom" 
-                  height={70}
-                  wrapperStyle={{ fontSize: '14px', fontWeight: 600 }}
+                  height={60}
+                  wrapperStyle={{ fontSize: '13px', fontWeight: 600 }}
                   formatter={(value, entry: any) => (
                     <span style={{ color: entry.color, fontWeight: 700 }}>
                       {value} ({entry.payload.percentage}%)

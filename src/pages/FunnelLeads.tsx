@@ -20,7 +20,6 @@ import { FunnelAnalyticsTables } from '@/components/dashboard/FunnelAnalyticsTab
 import { FunnelDrillDownModal } from '@/components/dashboard/FunnelDrillDownModal';
 import { LeadsFilterOptions } from '@/types/leads';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
-import { AiNotes } from '@/components/ui/AiNotes';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 export default function FunnelLeads() {
   const {
@@ -36,6 +35,7 @@ export default function FunnelLeads() {
   }, [loading, setLoading]);
   const [activeLocation, setActiveLocation] = useState('all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
+  const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -282,103 +282,75 @@ export default function FunnelLeads() {
 
                   {/* Metric Cards */}
                   <FunnelMetricCards data={filteredData} onCardClick={handleDrillDown} />
-                  
-                  {/* AI Notes for Metrics */}
-                  <AiNotes 
-                    tableKey="funnelLeads:metrics" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-metrics" 
-                    author="Funnel Analyst" 
-                  />
 
-                  {/* Interactive Charts */}
-                  <FunnelInteractiveCharts data={filteredData} />
-                  
-                  {/* AI Notes for Charts */}
-                  <AiNotes 
-                    tableKey="funnelLeads:charts" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-charts" 
-                    author="Funnel Analyst" 
-                  />
+                  {/* Interactive Charts - Collapsible */}
+                  <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
+                    <CardContent className="p-6 w-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">Interactive Charts</h3>
+                        <Button variant="ghost" size="sm" onClick={() => setChartsCollapsed(!chartsCollapsed)} className="gap-2">
+                          {chartsCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                          {chartsCollapsed ? 'Show Charts' : 'Hide Charts'}
+                        </Button>
+                      </div>
+                      {!chartsCollapsed && (
+                        <div className="w-full">
+                          <FunnelInteractiveCharts data={filteredData} />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
                   {/* Enhanced Rankings Section */}
                   <EnhancedFunnelRankings data={filteredData} />
-                  
-                  {/* AI Notes for Rankings */}
-                  <AiNotes 
-                    tableKey="funnelLeads:rankings" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-rankings" 
-                    author="Funnel Analyst" 
-                  />
 
                   {/* Tables Sub-Tabs */}
           <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
             <CardContent className="p-4 w-full">
               <Tabs defaultValue="analytics" className="w-full">
-                <TabsList className="flex flex-wrap gap-2 bg-slate-100 p-2 rounded-xl">
-                  <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Analytics</TabsTrigger>
-                  <TabsTrigger value="mom" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Month-on-Month</TabsTrigger>
-                  <TabsTrigger value="yoy" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Year-on-Year</TabsTrigger>
-                  <TabsTrigger value="health" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Health Metrics</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-50 p-1.5 rounded-xl shadow-md border border-slate-200">
+                  <TabsTrigger 
+                    value="analytics" 
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                  >
+                    Analytics
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="mom" 
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                  >
+                    Month-on-Month
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="yoy" 
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                  >
+                    Year-on-Year
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="health" 
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                  >
+                    Health Metrics
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="analytics" className="mt-4">
                   <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
-                  
-                  {/* AI Notes for Analytics Tables */}
-                  <AiNotes 
-                    tableKey="funnelLeads:analytics" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-analytics" 
-                    author="Funnel Analyst" 
-                  />
                 </TabsContent>
 
                 <TabsContent value="mom" className="mt-4">
                   {/* Uses ALL location data, independent from page date filters */}
                   <FunnelMonthOnMonthTable data={locationFilteredData} />
-                  
-                  {/* AI Notes for Month-on-Month */}
-                  <AiNotes 
-                    tableKey="funnelLeads:monthOnMonth" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-mom" 
-                    author="Funnel Analyst" 
-                  />
                 </TabsContent>
 
                 <TabsContent value="yoy" className="mt-4">
                   {/* Uses ALL location data, independent from page date filters */}
                   <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
-                  
-                  {/* AI Notes for Year-on-Year */}
-                  <AiNotes 
-                    tableKey="funnelLeads:yearOnYear" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-yoy" 
-                    author="Funnel Analyst" 
-                  />
                 </TabsContent>
 
                 <TabsContent value="health" className="mt-4">
                   <FunnelHealthMetricsTable data={filteredData} />
-                  
-                  {/* AI Notes for Health Metrics */}
-                  <AiNotes 
-                    tableKey="funnelLeads:healthMetrics" 
-                    location={activeLocation} 
-                    period="current" 
-                    sectionId="funnel-health" 
-                    author="Funnel Analyst" 
-                  />
                 </TabsContent>
               </Tabs>
             </CardContent>

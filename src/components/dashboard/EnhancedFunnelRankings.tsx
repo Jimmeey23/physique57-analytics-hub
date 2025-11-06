@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, Users, Target, AlertTriangle, CheckCircle, Crown, Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrendingUp, TrendingDown, Users, Target, AlertTriangle, Award, Crown, Trophy, Medal, Star, ArrowDownCircle, ThumbsDown, BarChart3 } from 'lucide-react';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { LeadsData } from '@/types/leads';
 
 interface EnhancedFunnelRankingsProps {
@@ -12,6 +13,9 @@ interface EnhancedFunnelRankingsProps {
 }
 
 export const EnhancedFunnelRankings: React.FC<EnhancedFunnelRankingsProps> = ({ data }) => {
+  const [activeType, setActiveType] = useState<'source' | 'stage'>('source');
+  const [showMore, setShowMore] = useState(false);
+
   const rankings = useMemo(() => {
     if (!data || data.length === 0) return { sources: [], stages: [] };
 
@@ -80,179 +84,174 @@ export const EnhancedFunnelRankings: React.FC<EnhancedFunnelRankingsProps> = ({ 
   }, [data]);
 
   const totalLeads = data?.length || 0;
+  const displayCount = showMore ? 10 : 5;
+  const currentRankings = activeType === 'source' ? rankings.sources : rankings.stages;
+  const topItems = currentRankings.slice(0, displayCount);
+  const bottomItems = currentRankings.slice(-displayCount).reverse();
 
-  const RankingCard = ({ title, items, type, icon: Icon, gradient }: any) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-0 overflow-hidden h-full">
-        <CardHeader className={`bg-gradient-to-r ${gradient} text-white`}>
-          <CardTitle className="flex items-center gap-3 text-lg font-bold">
-            <div className="p-2 bg-white/20 rounded-xl">
-              <Icon className="w-5 h-5" />
-            </div>
-            {title}
+  const getTypeConfig = (type: 'source' | 'stage') => {
+    if (type === 'source') {
+      return { icon: Users, label: 'Sources', description: 'Lead source performance' };
+    }
+    return { icon: Target, label: 'Stages', description: 'Funnel stage performance' };
+  };
+
+  const renderRankingCard = (items: any[], isTop: boolean, type: 'source' | 'stage') => {
+    const config = getTypeConfig(type);
+
+    return (
+      <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            {isTop ? (
+              <>
+                <div className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500">
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <span className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                    Top {displayCount} {config.label}
+                  </span>
+                  <p className="text-sm text-slate-600 font-normal">{config.description}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="p-2 rounded-full bg-gradient-to-r from-red-500 to-rose-600">
+                  <TrendingDown className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <span className="bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                    Bottom {displayCount} {config.label}
+                  </span>
+                  <p className="text-sm text-slate-600 font-normal">Areas for improvement</p>
+                </div>
+              </>
+            )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {/* Top Performers */}
-            <div>
-              <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <Crown className="w-4 h-4 text-yellow-500" />
-                Top Performers
-              </h4>
-              <div className="space-y-3">
-                {items.slice(0, 5).map((item: any, index: number) => (
-                  <motion.div
-                    key={`top-${item.name}`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge 
-                        variant="secondary" 
-                        className={`
-                          ${index === 0 ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : ''}
-                          ${index === 1 ? 'bg-gray-100 text-gray-800 border-gray-300' : ''}
-                          ${index === 2 ? 'bg-orange-100 text-orange-800 border-orange-300' : ''}
-                          ${index > 2 ? 'bg-blue-100 text-blue-800 border-blue-300' : ''}
-                        `}
-                      >
-                        #{index + 1}
-                      </Badge>
-                      <div>
-                        <span className="font-semibold text-slate-800 text-sm">{item.name}</span>
-                        <div className="text-xs text-slate-500">{item.conversionRate.toFixed(1)}% conversion</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-green-700 text-lg">{formatNumber(item.count)}</div>
-                      <div className="text-xs text-slate-500">
-                        {type === 'stage' ? `${item.percentage.toFixed(1)}% of funnel` : formatCurrency(item.avgRevenue)}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom Performers */}
-            <div>
-              <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
-                Needs Attention
-              </h4>
-              <div className="space-y-3">
-                {items.slice(-3).reverse().map((item: any, index: number) => (
-                  <motion.div
-                    key={`bottom-${item.name}`}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border border-red-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300">
-                        #{items.length - 2 + index}
-                      </Badge>
-                      <div>
-                        <span className="font-semibold text-slate-800 text-sm">{item.name}</span>
-                        <div className="text-xs text-slate-500">{item.conversionRate.toFixed(1)}% conversion</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-red-700 text-lg">{formatNumber(item.count)}</div>
-                      <div className="text-xs text-slate-500">
-                        {type === 'stage' ? `${item.percentage.toFixed(1)}% of funnel` : formatCurrency(item.avgRevenue)}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Performance Overview */}
-            <div className="mt-6 p-4 bg-slate-50 rounded-xl">
-              <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-indigo-600" />
-                Performance Overview
-              </h4>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-indigo-600">{items.length}</div>
-                  <div className="text-xs text-slate-600">Total {type === 'source' ? 'Sources' : 'Stages'}</div>
+        <CardContent className="space-y-4">
+          {items.map((item, index) => (
+            <div 
+              key={item.name} 
+              className={`group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 ${isTop ? 'hover:border-emerald-200/70' : 'hover:border-rose-200/70'}`}
+            >
+              <div className="flex items-center gap-4 flex-1">
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center shadow-lg",
+                  isTop 
+                    ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 text-white'
+                    : 'bg-gradient-to-br from-red-500 via-rose-600 to-red-700 text-white'
+                )}>
+                  {isTop ? (
+                    index === 0 ? <Crown className="w-6 h-6" /> :
+                    index === 1 ? <Trophy className="w-6 h-6" /> :
+                    index === 2 ? <Medal className="w-5 h-5" /> :
+                    index === 3 ? <Star className="w-5 h-5" /> :
+                    <span className="text-sm font-bold">{index + 1}</span>
+                  ) : (
+                    index === 0 ? <ArrowDownCircle className="w-6 h-6" /> :
+                    index === 1 ? <TrendingDown className="w-6 h-6" /> :
+                    index === 2 ? <ThumbsDown className="w-5 h-5" /> :
+                    <span className="text-sm font-bold">{index + 1}</span>
+                  )}
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {(items.reduce((sum: number, item: any) => sum + item.conversionRate, 0) / items.length).toFixed(1)}%
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-900 whitespace-normal break-words group-hover:text-blue-600 transition-colors">
+                    {item.name}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      {formatNumber(item.count)} leads
+                    </Badge>
+                    <Badge variant="outline" className="text-xs border-green-200 text-green-700">
+                      {item.conversionRate.toFixed(1)}% conv.
+                    </Badge>
+                    <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
+                      Avg: {formatCurrency(item.avgRevenue)}
+                    </Badge>
+                    {type === 'stage' && (
+                      <Badge variant="outline" className="text-xs border-orange-200 text-orange-700">
+                        {item.percentage.toFixed(1)}% of funnel
+                      </Badge>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-600">Avg Conversion</div>
                 </div>
               </div>
+              <div className="text-right">
+                <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                  {formatNumber(item.count)}
+                </p>
+                <p className="text-sm text-slate-500">{formatNumber(item.converted)} converted</p>
+                <p className="text-xs text-slate-400">{formatCurrency(item.revenue)} revenue</p>
+              </div>
             </div>
+          ))}
+          
+          <div className="mt-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Performance Summary
+              </h4>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMore(!showMore)}
+                className="text-xs"
+              >
+                Show {showMore ? 'Less' : 'More'}
+              </Button>
+            </div>
+            <ul className="text-sm text-slate-600 space-y-1">
+              <li>• Average leads: {formatNumber(items.reduce((sum, s) => sum + s.count, 0) / items.length)}</li>
+              <li>• Total converted: {formatNumber(items.reduce((sum, s) => sum + s.converted, 0))}</li>
+              <li>• Combined revenue: {formatCurrency(items.reduce((sum, s) => sum + s.revenue, 0))}</li>
+              <li>• Performance spread: {((items[0]?.count / items[items.length - 1]?.count || 1) - 1).toFixed(1)}x variance</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
-    </motion.div>
-  );
+    );
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{rankings.sources.length}</div>
-              <div className="text-sm text-blue-100">Active Sources</div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{rankings.stages.length}</div>
-              <div className="text-sm text-purple-100">Funnel Stages</div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-xl font-bold">
-                {formatCurrency(rankings.sources.reduce((sum, source) => sum + source.revenue, 0))}
-              </div>
-              <div className="text-sm text-green-100">Total Revenue</div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+    <div className="space-y-6">
+      {/* Enhanced Tab Navigation */}
+      <Card className="bg-gradient-to-br from-white via-slate-50/20 to-white border-0 shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+            Lead Performance Rankings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeType} onValueChange={(val) => setActiveType(val as 'source' | 'stage')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-2 rounded-2xl shadow-lg border border-slate-200/30">
+              <TabsTrigger 
+                value="source" 
+                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Lead Sources
+              </TabsTrigger>
+              <TabsTrigger 
+                value="stage" 
+                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+              >
+                <Target className="w-4 h-4 mr-2" />
+                Funnel Stages
+              </TabsTrigger>
+            </TabsList>
 
-      {/* Rankings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <RankingCard
-          title="Lead Source Rankings"
-          items={rankings.sources}
-          type="source"
-          icon={Users}
-          gradient="from-blue-600 to-indigo-700"
-        />
-        
-        <RankingCard
-          title="Funnel Stage Rankings"
-          items={rankings.stages}
-          type="stage"
-          icon={Target}
-          gradient="from-purple-600 to-pink-700"
-        />
-      </div>
+            <TabsContent value={activeType} className="mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {renderRankingCard(topItems, true, activeType)}
+                {renderRankingCard(bottomItems, false, activeType)}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
