@@ -6,6 +6,7 @@ import { useSessionsData } from '@/hooks/useSessionsData';
 import { useCheckinsData } from '@/hooks/useCheckinsData';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useLeadsData } from '@/hooks/useLeadsData';
+import { useNewClientData } from '@/hooks/useNewClientData';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { OutlierAnalysisSection } from '@/components/dashboard/OutlierAnalysisSection';
@@ -17,9 +18,10 @@ const OutlierAnalysisContent = () => {
   const { data: checkinsData, loading: checkinsLoading } = useCheckinsData();
   const { data: expirationsData, loading: expirationsLoading } = useExpirationsData();
   const { data: leadsData, loading: leadsLoading } = useLeadsData();
+  const { data: newClientData, loading: newClientLoading } = useNewClientData();
   const { setLoading } = useGlobalLoading();
 
-  const loading = salesLoading || sessionsLoading || checkinsLoading || expirationsLoading || leadsLoading;
+  const loading = salesLoading || sessionsLoading || checkinsLoading || expirationsLoading || leadsLoading || newClientLoading;
   const error = salesError;
 
   useEffect(() => {
@@ -40,20 +42,6 @@ const OutlierAnalysisContent = () => {
         month: new Date(item.paymentDate).getMonth()
       })));
     }
-
-    // Build customer first purchase map across ALL data
-    const customerFirstPurchase = new Map<string, Date>();
-    salesData.forEach(item => {
-      const customerId = item.memberId || item.customerEmail;
-      if (!customerId || !item.paymentDate) return;
-      
-      const purchaseDate = new Date(item.paymentDate);
-      const existingFirstDate = customerFirstPurchase.get(customerId);
-      
-      if (!existingFirstDate || purchaseDate < existingFirstDate) {
-        customerFirstPurchase.set(customerId, purchaseDate);
-      }
-    });
 
     const april2025Data = salesData.filter(item => {
       if (!item.paymentDate) return false;
@@ -83,18 +71,11 @@ const OutlierAnalysisContent = () => {
     const aprilTransactions = april2025Data.length;
     const augustTransactions = august2025Data.length;
 
-    // Count new clients - customers whose FIRST EVER purchase was in these months
     const aprilNewClients = new Set(
       april2025Data
         .filter(item => {
-          const customerId = item.memberId || item.customerEmail;
-          if (!customerId) return false;
-          
-          const firstPurchase = customerFirstPurchase.get(customerId);
-          if (!firstPurchase) return false;
-          
-          // Check if their first purchase was in April 2025
-          return firstPurchase.getFullYear() === 2025 && firstPurchase.getMonth() === 3;
+          const product = (item.cleanedProduct || item.paymentItem || '').toLowerCase();
+          return product.includes('intro') || product.includes('new client') || product.includes('trial') || product.includes('first time');
         })
         .map(item => item.memberId || item.customerEmail)
     ).size;
@@ -102,20 +83,11 @@ const OutlierAnalysisContent = () => {
     const augustNewClients = new Set(
       august2025Data
         .filter(item => {
-          const customerId = item.memberId || item.customerEmail;
-          if (!customerId) return false;
-          
-          const firstPurchase = customerFirstPurchase.get(customerId);
-          if (!firstPurchase) return false;
-          
-          // Check if their first purchase was in August 2025
-          return firstPurchase.getFullYear() === 2025 && firstPurchase.getMonth() === 7;
+          const product = (item.cleanedProduct || item.paymentItem || '').toLowerCase();
+          return product.includes('intro') || product.includes('new client') || product.includes('trial') || product.includes('first time');
         })
         .map(item => item.memberId || item.customerEmail)
     ).size;
-
-    console.log('👥 April 2025 new clients (first-time buyers):', aprilNewClients);
-    console.log('👥 August 2025 new clients (first-time buyers):', augustNewClients);
 
     return [
       { location: 'April 2025', label: 'Total Revenue', value: formatCurrency(aprilRevenue), subValue: `${formatNumber(aprilTransactions)} transactions` },
@@ -185,6 +157,7 @@ const OutlierAnalysisContent = () => {
             checkinsData={checkinsData || []}
             expirationsData={expirationsData || []}
             leadsData={leadsData || []}
+            newClientData={newClientData || []}
           />
         </div>
         <Footer />
