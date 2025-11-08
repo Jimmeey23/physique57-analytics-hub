@@ -167,6 +167,7 @@ const DiscountsSection = () => {
           data={discountData}
           columns={discountColumns}
           maxHeight="500px"
+          tableId="Discount Analysis"
         />
       </CardContent>
     </Card>

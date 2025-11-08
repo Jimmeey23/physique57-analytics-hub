@@ -187,6 +187,7 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
           onSort={handleSort}
           sortField={sortField}
           sortDirection={sortDirection}
+          tableId="Membership Type Performance Analysis"
         />
         <div className="border-t border-slate-200 p-4 bg-slate-50">
           <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">

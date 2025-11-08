@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,8 @@ import { TrainerMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { TrainerMetricTabs } from './TrainerMetricTabs';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { ProcessedTrainerData, getMetricValue } from './TrainerDataProcessor';
 
 interface MonthOnMonthTrainerTableProps {
@@ -224,8 +226,189 @@ export const MonthOnMonthTrainerTable = ({
     );
   }
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+  const tableId = 'Month-on-Month Trainer Analysis';
+  useEffect(() => {
+    if (!registry) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const getTextContent = () => {
+      const table = el.querySelector('table') || el;
+      let text = `${tableId}\n`;
+      const headerCells = table.querySelectorAll('thead th');
+      const headers: string[] = [];
+      headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [registry]);
+
+  // Generate "All Tabs" content across all trainer metrics, regardless of the active tab
+  const generateAllTabsContent = useMemo(() => {
+    const allMetrics: TrainerMetricType[] = [
+      'totalSessions',
+      'totalCustomers',
+      'totalPaid',
+      'classAverageExclEmpty',
+      'emptySessions',
+      'conversionRate',
+      'retentionRate',
+      'newMembers'
+    ];
+
+    const metricLabel = (m: TrainerMetricType) => {
+      switch (m) {
+        case 'totalSessions': return 'Total Sessions';
+        case 'totalCustomers': return 'Total Members';
+        case 'totalPaid': return 'Total Revenue';
+        case 'classAverageExclEmpty': return 'Class Average';
+        case 'emptySessions': return 'Empty Sessions';
+        case 'conversionRate': return 'Conversion Rate';
+        case 'retentionRate': return 'Retention Rate';
+        case 'newMembers': return 'New Members';
+        default: return m;
+      }
+    };
+
+    const lines: string[] = [];
+    lines.push(`${tableId} — All Metrics`);
+    lines.push(`Trainers: ${Object.keys(processedData.trainerGroups).length} | Months: ${processedData.months.length}`);
+
+    allMetrics.forEach(metric => {
+      lines.push('');
+      lines.push(`=== ${metricLabel(metric)} ===`);
+      // Header row
+      const headers = ['Trainer', ...processedData.months, 'MoM Change', metric === 'classAverageExclEmpty' || metric === 'classAverageInclEmpty' || metric === 'conversionRate' || metric === 'retentionRate' ? 'Weighted Avg' : 'Total'];
+      lines.push(headers.join('\t'));
+
+      // Totals row (for class avg / rates use weighted average)
+      const isClassAvg = metric === 'classAverageExclEmpty' || metric === 'classAverageInclEmpty';
+      const isRate = metric === 'conversionRate' || metric === 'retentionRate';
+
+      const monthlyTotals = processedData.months.map(month => {
+        if (!isClassAvg && !isRate) {
+          let sum = 0;
+          Object.values(processedData.trainerGroups).forEach(trainerData => {
+            if ((trainerData as any)[month]) sum += getMetricValue((trainerData as any)[month], metric);
+          });
+          return sum;
+        } else if (isClassAvg) {
+          let num = 0; let den = 0;
+          Object.values(processedData.trainerGroups).forEach(trainerData => {
+            const rec: any = (trainerData as any)[month];
+            if (!rec) return;
+            const sessions = metric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+            const customers = rec.totalCustomers || 0;
+            num += customers;
+            den += sessions;
+          });
+          return den > 0 ? (num / den) : 0;
+        } else { // isRate
+          let num = 0; let den = 0;
+          Object.values(processedData.trainerGroups).forEach(trainerData => {
+            const rec: any = (trainerData as any)[month];
+            if (!rec) return;
+            if (metric === 'conversionRate') { num += (rec.convertedMembers || 0); den += (rec.newMembers || 0); }
+            else { num += (rec.retainedMembers || 0); den += (rec.newMembers || 0); }
+          });
+          return den > 0 ? (num / den) * 100 : 0;
+        }
+      });
+      const totalsAllValues = monthlyTotals;
+      const totalsGrowth = totalsAllValues.length >= 2 ? getChangePercentage(totalsAllValues[0], totalsAllValues[1]) : 0;
+      const totalsOverall = (() => {
+        if (!isClassAvg && !isRate) return totalsAllValues.reduce((s, v) => s + v, 0);
+        // weighted avg across all months
+        if (isClassAvg) {
+          let num = 0; let den = 0;
+          processedData.months.forEach(month => {
+            Object.values(processedData.trainerGroups).forEach(trainerData => {
+              const rec: any = (trainerData as any)[month];
+              if (!rec) return;
+              const sessions = metric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+              const customers = rec.totalCustomers || 0;
+              num += customers; den += sessions;
+            });
+          });
+          return den > 0 ? (num / den) : 0;
+        }
+        // isRate
+        let num = 0; let den = 0;
+        processedData.months.forEach(month => {
+          Object.values(processedData.trainerGroups).forEach(trainerData => {
+            const rec: any = (trainerData as any)[month];
+            if (!rec) return;
+            if (metric === 'conversionRate') { num += (rec.convertedMembers || 0); den += (rec.newMembers || 0); }
+            else { num += (rec.retainedMembers || 0); den += (rec.newMembers || 0); }
+          });
+        });
+        return den > 0 ? (num / den) * 100 : 0;
+      })();
+
+      const totalsRow = [
+        'TOTAL',
+        ...monthlyTotals.map(v => formatValue(v, metric)),
+        `${totalsGrowth >= 0 ? '' : ''}${Math.abs(totalsGrowth).toFixed(1)}%`,
+        formatValue(totalsOverall as number, metric)
+      ];
+      lines.push(totalsRow.join('\t'));
+
+      // Trainer rows
+      Object.entries(processedData.trainerGroups).forEach(([trainer, trainerData]) => {
+        const values = processedData.months.map(month => (trainerData as any)[month] ? getMetricValue((trainerData as any)[month], metric) : 0);
+        const growth = values.length >= 2 ? getChangePercentage(values[0], values[1]) : 0;
+        const total = (() => {
+          if (!isClassAvg && !isRate) return values.reduce((s, v) => s + v, 0);
+          if (isClassAvg) {
+            let num = 0; let den = 0;
+            processedData.months.forEach(month => {
+              const rec: any = (trainerData as any)[month];
+              if (!rec) return;
+              const sessions = metric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+              const customers = rec.totalCustomers || 0;
+              num += customers; den += sessions;
+            });
+            return den > 0 ? (num / den) : 0;
+          }
+          // isRate
+          let num = 0; let den = 0;
+          processedData.months.forEach(month => {
+            const rec: any = (trainerData as any)[month];
+            if (!rec) return;
+            if (metric === 'conversionRate') { num += (rec.convertedMembers || 0); den += (rec.newMembers || 0); }
+            else { num += (rec.retainedMembers || 0); den += (rec.newMembers || 0); }
+          });
+          return den > 0 ? (num / den) * 100 : 0;
+        })();
+
+        const row = [
+          trainer,
+          ...values.map(v => formatValue(v, metric)),
+          `${growth >= 0 ? '' : ''}${Math.abs(growth).toFixed(1)}%`,
+          formatValue(total as number, metric)
+        ];
+        lines.push(row.join('\t'));
+      });
+    });
+
+    return lines.join('\n');
+  }, [processedData]);
+
   return (
-    <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
+    <Card ref={containerRef} className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
       <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-t-lg">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -237,6 +420,12 @@ export const MonthOnMonthTrainerTable = ({
               <Badge className="bg-white/20 text-white border-white/30">
                 Individual Monthly Columns
               </Badge>
+              <CopyTableButton
+                tableRef={containerRef as any}
+                tableName={tableId}
+                size="sm"
+                onCopyAllTabs={async () => generateAllTabsContent}
+              />
             </div>
           </div>
           <p className="text-blue-100 text-sm">
@@ -283,6 +472,14 @@ export const MonthOnMonthTrainerTable = ({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+                </TableHead>
+                <TableHead className="text-right font-bold text-white min-w-[60px]">
+                  <CopyTableButton
+                    tableRef={containerRef as any}
+                    tableName={tableId}
+                    size="sm"
+                    onCopyAllTabs={async () => generateAllTabsContent}
+                  />
                 </TableHead>
               </TableRow>
             </TableHeader>

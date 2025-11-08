@@ -11,6 +11,7 @@ import { GlobalCommandPalette } from "@/components/ui/GlobalCommandPalette";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
+import { MetricsTablesRegistryProvider } from '@/contexts/MetricsTablesRegistryContext';
 import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
 import PrefetchOnIdle from "@/components/perf/PrefetchOnIdle";
 import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
@@ -106,6 +107,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <GlobalFiltersProvider>
+          <MetricsTablesRegistryProvider>
           <SectionNavigationProvider>
           <NavigationLoader />
           <ForceTopOnLoad />
@@ -145,6 +147,7 @@ const App = () => {
             </React.Suspense>
           </InitialLoadGate>
           </SectionNavigationProvider>
+          </MetricsTablesRegistryProvider>
         </GlobalFiltersProvider>
       </BrowserRouter>
     </TooltipProvider>

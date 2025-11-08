@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
@@ -26,7 +26,12 @@ interface UniformTrainerTableProps {
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
   onRowClick?: (row: any) => void;
+  tableId?: string; // enable copy button + registry aggregation
+  disableRegistry?: boolean;
 }
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+
 export const UniformTrainerTable: React.FC<UniformTrainerTableProps> = ({
   data,
   columns,
@@ -40,7 +45,9 @@ export const UniformTrainerTable: React.FC<UniformTrainerTableProps> = ({
   onSort,
   sortField,
   sortDirection,
-  onRowClick
+  onRowClick,
+  tableId,
+  disableRegistry = false
 }) => {
   if (loading) {
     return <div className="flex items-center justify-center p-8">
@@ -52,9 +59,50 @@ export const UniformTrainerTable: React.FC<UniformTrainerTableProps> = ({
       onSort(column.key);
     }
   };
-  return <div className={cn("relative overflow-auto rounded-xl", className)} style={{
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+
+  // auto-register for copy-all aggregation
+  useEffect(() => {
+    if (!tableId) return;
+    if (disableRegistry) return;
+    if (!registry) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const getTextContent = () => {
+      const table = el.querySelector('table') || el;
+      let text = `${tableId}\n`;
+      const headerCells = table.querySelectorAll('thead th');
+      const headers: string[] = [];
+      headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [tableId, disableRegistry, registry]);
+
+  return <div ref={containerRef} className={cn("relative overflow-auto rounded-xl", className)} style={{
     maxHeight
   }}>
+      {tableId && <div className="absolute top-2 right-2 z-30">
+        <CopyTableButton
+          tableRef={containerRef as any}
+          tableName={tableId}
+          size="sm"
+          onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+        />
+      </div>}
       <Table className="w-full table-fixed">
         <TableHeader className={cn(
           stickyHeader && "sticky top-0 z-20",

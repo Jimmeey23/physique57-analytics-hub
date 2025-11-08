@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 
 type Canonical = 'powercycle' | 'barre' | 'strength' | 'other';
 
@@ -22,6 +24,8 @@ interface ClassFormatsYoYTableProps {
 
 export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sessions, checkins }) => {
   const [metric, setMetric] = useState<'sessions' | 'checkins' | 'revenue' | 'fillRate' | 'lateCancelled'>('sessions');
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, 'Year-on-Year Comparison');
 
   const years = useMemo(() => {
     const parseYear = (input?: string): string | null => {
@@ -244,9 +248,15 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
               <SelectItem value="fillRate">Fill Rate</SelectItem>
             </SelectContent>
           </Select>
+          <CopyTableButton 
+            tableRef={tableContainerRef as any}
+            tableName="Year-on-Year Comparison"
+            size="sm"
+            onCopyAllTabs={async () => getAllTabsText()}
+          />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent ref={tableContainerRef as any}>
         <Table>
           <TableHeader>
             <TableRow>

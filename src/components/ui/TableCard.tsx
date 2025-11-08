@@ -1,6 +1,7 @@
 import React, { useRef, forwardRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CopyTableButton from './CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { cn } from '@/lib/utils';
 
 interface TableCardProps {
@@ -10,6 +11,8 @@ interface TableCardProps {
   className?: string;
   showCopyButton?: boolean;
   headerControls?: React.ReactNode;
+  onCopyAllTabs?: () => Promise<string>; // optional explicit override
+  disableAutoRegistry?: boolean;
 }
 
 export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
@@ -18,9 +21,41 @@ export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
   children,
   className,
   showCopyButton = true,
-  headerControls
+  headerControls,
+  onCopyAllTabs,
+  disableAutoRegistry = false
 }, ref) => {
   const tableRef = useRef<HTMLDivElement>(null);
+  const metricsRegistry = useMetricsTablesRegistry();
+
+  React.useEffect(() => {
+    if (disableAutoRegistry) return;
+    if (!metricsRegistry) return;
+    if (!title) return;
+    const refEl = tableRef.current;
+    if (!refEl) return;
+    const getTextContent = () => {
+      const table = refEl.querySelector('table') || refEl;
+      let text = `${title}\n`;
+      const headerCells = table.querySelectorAll('thead th, thead td, tr:first-child th, tr:first-child td');
+      const headers: string[] = [];
+      headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    metricsRegistry.register({ id: title, getTextContent });
+    return () => metricsRegistry.unregister(title);
+  }, [metricsRegistry, title, disableAutoRegistry]);
   
   return (
     <Card className={cn("bg-white/95 backdrop-blur-sm border-0 shadow-xl", className)} ref={ref}>
@@ -45,6 +80,11 @@ export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
                   tableName={title || 'Table'}
                   size="sm"
                   className="text-white hover:bg-white/20"
+                  onCopyAllTabs={
+                    onCopyAllTabs ?
+                      (() => onCopyAllTabs().then(r => r)) :
+                      (metricsRegistry ? async () => metricsRegistry.getAllTabsContent() : undefined)
+                  }
                 />
               )}
             </div>

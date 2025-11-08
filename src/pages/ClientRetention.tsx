@@ -29,7 +29,7 @@ import ClientRetentionYearOnYearPivot from '@/components/dashboard/ClientRetenti
 import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
 import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
 import { ClientConversionDrillDownModalV3 } from '@/components/dashboard/ClientConversionDrillDownModalV3';
-import NotesBlock from '@/components/ui/NotesBlock';
+// Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
 const ClientRetention = () => {
   const {
@@ -650,7 +650,7 @@ const ClientRetention = () => {
               type: 'month'
             })} />
               </div>
-              <NotesBlock tableKey="clientRetention:monthOnMonthByType" sectionId="retention-mom-by-type" />
+              {/* AI Notes removed */}
             </>}
 
             {activeTable === 'monthonmonth' && <>
@@ -668,7 +668,7 @@ const ClientRetention = () => {
                   })}
                 />
               </div>
-              <NotesBlock tableKey="clientRetention:monthOnMonth" sectionId="retention-mom" />
+              {/* AI Notes removed */}
             </>}
 
             {activeTable === 'yearonyear' && <>
@@ -685,7 +685,7 @@ const ClientRetention = () => {
                   })}
                 />
               </div>
-              <NotesBlock tableKey="clientRetention:yearOnYear" sectionId="retention-yoy" />
+              {/* AI Notes removed */}
             </>}
 
             {activeTable === 'hostedclasses' && <>
@@ -698,14 +698,14 @@ const ClientRetention = () => {
               type: 'class'
             })} />
               </div>
-              <NotesBlock tableKey="clientRetention:hostedClasses" sectionId="retention-hosted-classes" />
+              {/* AI Notes removed */}
             </>}
 
             {activeTable === 'memberships' && <>
               <div id="memberships-table">
                 <ClientConversionMembershipTable data={filteredData} />
               </div>
-              <NotesBlock tableKey="clientRetention:memberships" sectionId="retention-memberships" />
+              {/* AI Notes removed */}
             </>}
           </div>
         </main>

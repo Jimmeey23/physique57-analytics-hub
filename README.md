@@ -1,3 +1,38 @@
+## Universal Table Copy Functionality
+
+All metric tables now display a copy icon that opens a dropdown with:
+
+1. Copy with styling – rich HTML (keeps header + basic formatting)
+2. Copy as text – tab separated plain text for quick spreadsheet pasting
+3. Copy all tabs – aggregates every registered table in the current metrics context
+
+### How it works
+The app wraps pages in a `MetricsTablesRegistryProvider` (see `App.tsx`). Each table using `ModernTableWrapper`, `TableCard`, or the `useRegisterTableForCopy` hook auto-registers itself. The registry builds a unified export when "Copy all tabs" is chosen.
+
+### Adding to a custom table
+If you have a standalone table component:
+
+```tsx
+const ref = useRef<HTMLDivElement>(null);
+const { getAllTabsText } = useRegisterTableForCopy(ref, 'My Table Title');
+
+<div ref={ref}>
+	<CopyTableButton
+		tableRef={ref as any}
+		tableName="My Table Title"
+		onCopyAllTabs={async () => getAllTabsText()}
+	/>
+	{/* your <Table> ... */}
+</div>
+```
+
+No manual aggregation is required—registration handles it automatically.
+
+### Notes
+* Rich HTML copy falls back to plain text if the browser rejects `ClipboardItem`.
+* Auto-registration can be disabled per table via `disableAutoRegistry` on wrappers.
+* Each table is keyed by its title; ensure titles are unique within a page when using copy-all.
+
 # Welcome to your Lovable project
 
 ## Project info

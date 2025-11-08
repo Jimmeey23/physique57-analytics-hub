@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import {
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface EnhancedDiscountBreakdownTablesProps {
   data: SalesData[];
@@ -34,6 +36,46 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
   data, 
   onDrillDown 
 }) => {
+  const productRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const staffRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+
+  useEffect(() => {
+    if (!registry) return;
+    const register = (ref: React.RefObject<HTMLDivElement>, id: string) => {
+      const el = ref.current;
+      if (!el) return;
+      const getTextContent = () => {
+        const table = el.querySelector('table') || el;
+        let text = `${id}\n`;
+        const headerCells = table.querySelectorAll('thead th');
+        const headers: string[] = [];
+        headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+        if (headers.length) {
+          text += headers.join('\t') + '\n';
+          text += headers.map(() => '---').join('\t') + '\n';
+        }
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          const rowData: string[] = [];
+          cells.forEach(c => rowData.push((c.textContent || '').trim()));
+          if (rowData.length) text += rowData.join('\t') + '\n';
+        });
+        return text.trim();
+      };
+      registry.register({ id, getTextContent });
+    };
+    register(productRef, 'Product-wise Discount Breakdown');
+    register(locationRef, 'Location-wise Discount Breakdown');
+    register(staffRef, 'Staff-wise Discount Breakdown');
+    return () => {
+      registry.unregister('Product-wise Discount Breakdown');
+      registry.unregister('Location-wise Discount Breakdown');
+      registry.unregister('Staff-wise Discount Breakdown');
+    };
+  }, [registry]);
   
   // Product breakdown
   const productBreakdown = useMemo(() => {
@@ -142,7 +184,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
   return (
     <div className="grid gap-6">
       {/* Product Breakdown */}
-      <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/20">
+      <Card ref={productRef} className="shadow-xl border-0 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/20">
         <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
@@ -154,6 +196,12 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                 Discount performance analysis by product category
               </p>
             </div>
+            <CopyTableButton
+              tableRef={productRef as any}
+              tableName="Product-wise Discount Breakdown"
+              size="sm"
+              onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+            />
           </div>
         </CardHeader>
         
@@ -265,7 +313,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
       />
 
       {/* Location Breakdown */}
-      <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20">
+      <Card ref={locationRef} className="shadow-xl border-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20">
         <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
@@ -277,6 +325,12 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                 Geographic analysis of discount utilization patterns
               </p>
             </div>
+            <CopyTableButton
+              tableRef={locationRef as any}
+              tableName="Location-wise Discount Breakdown"
+              size="sm"
+              onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+            />
           </div>
         </CardHeader>
         
@@ -391,7 +445,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
       />
 
       {/* Staff Breakdown */}
-      <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20">
+      <Card ref={staffRef} className="shadow-xl border-0 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20">
         <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
@@ -403,6 +457,12 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                 Analysis of discount authorization by sales staff
               </p>
             </div>
+            <CopyTableButton
+              tableRef={staffRef as any}
+              tableName="Staff-wise Discount Breakdown"
+              size="sm"
+              onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+            />
           </div>
         </CardHeader>
         

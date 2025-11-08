@@ -394,6 +394,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
             onSort={handleSort}
             sortField={sortConfig.key}
             sortDirection={sortConfig.direction}
+            tableId="Trainer Performance Detail Analysis"
           />
       </CardContent>
     </Card>

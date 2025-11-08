@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
@@ -27,7 +27,12 @@ interface ModernDataTableProps {
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
   onRowClick?: (row: any) => void;
+  tableId?: string; // optional identifier for copy-all registry
+  disableRegistry?: boolean; // opt-out
 }
+
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   data,
@@ -42,7 +47,9 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   onSort,
   sortField,
   sortDirection,
-  onRowClick
+  onRowClick,
+  tableId,
+  disableRegistry = false
 }) => {
   // Remove individual loading state - parent components handle loading via global loader
   // if (loading) {
@@ -69,8 +76,41 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
     }
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+
+  // auto-register for copy-all
+  useEffect(() => {
+    if (disableRegistry) return;
+    if (!registry) return;
+    if (!tableId) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const getTextContent = () => {
+      const table = el.querySelector('table') || el;
+      let text = `${tableId}\n`;
+      const headerCells = table.querySelectorAll('thead th, thead td, tr:first-child th, tr:first-child td');
+      const headers: string[] = [];
+      headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [registry, tableId, disableRegistry]);
+
   return (
-    <div className={cn("relative overflow-auto rounded-xl", className)} style={{ maxHeight }}>
+    <div ref={containerRef} className={cn("relative overflow-auto rounded-xl", className)} style={{ maxHeight }}>
       <Table className="w-full">
         <TableHeader className={cn(
           stickyHeader && "sticky top-0 z-20",
@@ -117,6 +157,17 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 </TableHead>
               );
             })}
+            {/* Copy button pinned at end of header */}
+            {tableId && (
+              <TableHead className="font-bold h-12 px-3 text-xs text-white border-r border-white/20 last:border-r-0 min-w-[60px] bg-transparent text-right">
+                <CopyTableButton 
+                  tableRef={containerRef as any}
+                  tableName={tableId}
+                  size="sm"
+                  onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+                />
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>

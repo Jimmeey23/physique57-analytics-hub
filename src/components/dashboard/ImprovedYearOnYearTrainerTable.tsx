@@ -9,6 +9,8 @@ import { TrainerMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { TrainerMetricTabs } from './TrainerMetricTabs';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { TrainerMetricType as TMT } from '@/types/dashboard';
 import { ProcessedTrainerData, getMetricValue } from './TrainerDataProcessor';
 
 interface ImprovedYearOnYearTrainerTableProps {
@@ -213,6 +215,158 @@ export const ImprovedYearOnYearTrainerTable = ({
             Monthly comparison across different years for {Object.keys(processedData.trainerGroups).length} trainers
           </p>
           <TrainerMetricTabs value={selectedMetric} onValueChange={setSelectedMetric} />
+          <div className="flex justify-end">
+            <CopyTableButton
+              tableRef={undefined as any}
+              tableName="Year-on-Year Trainer Performance Analysis"
+              size="sm"
+              onCopyAllTabs={async () => {
+                // Generate comprehensive multi-metric year-on-year export (Sales-style)
+                const metrics: TMT[] = [
+                  'totalSessions',
+                  'totalCustomers',
+                  'totalPaid',
+                  'classAverageExclEmpty',
+                  'emptySessions',
+                  'conversionRate',
+                  'retentionRate',
+                  'newMembers'
+                ];
+                const label = (m: TMT) => {
+                  switch (m) {
+                    case 'totalSessions': return 'Total Sessions';
+                    case 'totalCustomers': return 'Total Members';
+                    case 'totalPaid': return 'Total Revenue';
+                    case 'classAverageExclEmpty': return 'Class Average';
+                    case 'emptySessions': return 'Empty Sessions';
+                    case 'conversionRate': return 'Conversion Rate';
+                    case 'retentionRate': return 'Retention Rate';
+                    case 'newMembers': return 'New Members';
+                    default: return m;
+                  }
+                };
+
+                const allLines: string[] = [];
+                allLines.push('Year-on-Year Trainer Performance Analysis — All Metrics');
+                allLines.push(`Trainers: ${Object.keys(processedData.trainerGroups).length}`);
+
+                metrics.forEach(metric => {
+                  allLines.push('');
+                  allLines.push(`=== ${label(metric)} ===`);
+                  // Headers
+                  const headers = ['Trainer', ...processedData.organizedMonths.map(m => m.display), 'YoY Growth', metric === 'classAverageExclEmpty' || metric === 'classAverageInclEmpty' || metric === 'conversionRate' || metric === 'retentionRate' ? 'Weighted Avg' : 'Total'];
+                  allLines.push(headers.join('\t'));
+
+                  const isClassAvg = metric === 'classAverageExclEmpty' || metric === 'classAverageInclEmpty';
+                  const isRate = metric === 'conversionRate' || metric === 'retentionRate';
+
+                  // Totals per displayed month
+                  const monthTotals = processedData.organizedMonths.map(({ key }) => {
+                    if (!isClassAvg && !isRate) {
+                      let sum = 0;
+                      Object.values(processedData.trainerGroups).forEach(group => {
+                        const rec: any = (group as any)[key];
+                        if (rec) sum += getMetricValue(rec, metric);
+                      });
+                      return sum;
+                    } else if (isClassAvg) {
+                      let num = 0; let den = 0;
+                      Object.values(processedData.trainerGroups).forEach(group => {
+                        const rec: any = (group as any)[key];
+                        if (!rec) return;
+                        const sessions = metric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+                        const customers = rec.totalCustomers || 0;
+                        num += customers; den += sessions;
+                      });
+                      return den > 0 ? (num / den) : 0;
+                    } else { // isRate
+                      let num = 0; let den = 0;
+                      Object.values(processedData.trainerGroups).forEach(group => {
+                        const rec: any = (group as any)[key];
+                        if (!rec) return;
+                        if (metric === 'conversionRate') { num += (rec.convertedMembers || 0); den += (rec.newMembers || 0); }
+                        else { num += (rec.retainedMembers || 0); den += (rec.newMembers || 0); }
+                      });
+                      return den > 0 ? (num / den) * 100 : 0;
+                    }
+                  });
+                  const growthTotal = monthTotals.length >= 2 ? ((monthTotals[monthTotals.length - 1] - monthTotals[monthTotals.length - 2]) / Math.max(monthTotals[monthTotals.length - 2], 1)) * 100 : 0;
+                  const overallTotal = (() => {
+                    if (!isClassAvg && !isRate) return monthTotals.reduce((s, v) => s + v, 0);
+                    if (isClassAvg) {
+                      let num = 0; let den = 0;
+                      processedData.organizedMonths.forEach(({ key }) => {
+                        Object.values(processedData.trainerGroups).forEach(group => {
+                          const rec: any = (group as any)[key];
+                          if (!rec) return;
+                          const sessions = metric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+                          const customers = rec.totalCustomers || 0;
+                          num += customers; den += sessions;
+                        });
+                      });
+                      return den > 0 ? (num / den) : 0;
+                    }
+                    // isRate
+                    let num = 0; let den = 0;
+                    processedData.organizedMonths.forEach(({ key }) => {
+                      Object.values(processedData.trainerGroups).forEach(group => {
+                        const rec: any = (group as any)[key];
+                        if (!rec) return;
+                        if (metric === 'conversionRate') { num += (rec.convertedMembers || 0); den += (rec.newMembers || 0); }
+                        else { num += (rec.retainedMembers || 0); den += (rec.newMembers || 0); }
+                      });
+                    });
+                    return den > 0 ? (num / den) * 100 : 0;
+                  })();
+                  const totalsRow = [
+                    'TOTAL',
+                    ...monthTotals.map(v => formatValue(v, metric)),
+                    `${growthTotal >= 0 ? '' : ''}${Math.abs(growthTotal).toFixed(1)}%`,
+                    formatValue(overallTotal as number, metric)
+                  ];
+                  allLines.push(totalsRow.join('\t'));
+
+                  // Trainer rows
+                  Object.entries(processedData.trainerGroups).forEach(([trainer, trainerData]) => {
+                    const values = processedData.organizedMonths.map(({ key }) => (trainerData as any)[key] ? getMetricValue((trainerData as any)[key], metric) : 0);
+                    const growth = values.length >= 2 ? ((values[values.length - 1] - values[values.length - 2]) / Math.max(values[values.length - 2], 1)) * 100 : 0;
+                    const total = (() => {
+                      if (!isClassAvg && !isRate) return values.reduce((s, v) => s + v, 0);
+                      if (isClassAvg) {
+                        let num = 0; let den = 0;
+                        processedData.organizedMonths.forEach(({ key }) => {
+                          const rec: any = (trainerData as any)[key];
+                          if (!rec) return;
+                          const sessions = metric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+                          const customers = rec.totalCustomers || 0;
+                          num += customers; den += sessions;
+                        });
+                        return den > 0 ? (num / den) : 0;
+                      }
+                      // isRate
+                      let num = 0; let den = 0;
+                      processedData.organizedMonths.forEach(({ key }) => {
+                        const rec: any = (trainerData as any)[key];
+                        if (!rec) return;
+                        if (metric === 'conversionRate') { num += (rec.convertedMembers || 0); den += (rec.newMembers || 0); }
+                        else { num += (rec.retainedMembers || 0); den += (rec.newMembers || 0); }
+                      });
+                      return den > 0 ? (num / den) * 100 : 0;
+                    })();
+                    const row = [
+                      trainer,
+                      ...values.map(v => formatValue(v, metric)),
+                      `${growth >= 0 ? '' : ''}${Math.abs(growth).toFixed(1)}%`,
+                      formatValue(total as number, metric)
+                    ];
+                    allLines.push(row.join('\t'));
+                  });
+                });
+
+                return allLines.join('\n');
+              }}
+            />
+          </div>
         </div>
       </CardHeader>
 

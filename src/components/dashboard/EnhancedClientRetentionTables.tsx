@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { NewClientData } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 
 interface EnhancedClientRetentionTablesProps {
   data: NewClientData[];
@@ -19,6 +21,9 @@ export const EnhancedClientRetentionTables: React.FC<EnhancedClientRetentionTabl
   type,
   onRowClick
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tableTitle = type === 'detailed' ? 'Detailed Client Data' : type === 'monthOnMonth' ? 'Month-on-Month Client Trends' : 'Year-on-Year Client Trends';
+  const { getAllTabsText } = useRegisterTableForCopy(containerRef as any, tableTitle);
 
   const processedData = useMemo(() => {
     // Use allData for month-on-month and year-on-year to show complete trends
@@ -254,15 +259,26 @@ export const EnhancedClientRetentionTables: React.FC<EnhancedClientRetentionTabl
   }[type];
 
   return (
-    <ModernDataTable
-      data={processedData}
-      columns={columns}
-      loading={false}
-      stickyHeader={true}
-      maxHeight="600px"
-      headerGradient="from-slate-700 to-slate-900"
-      onRowClick={onRowClick}
-      className="shadow-lg"
-    />
+    <div ref={containerRef} className="relative">
+      <div className="absolute top-2 right-2 z-10">
+        <CopyTableButton 
+          tableRef={containerRef as any}
+          tableName={tableTitle}
+          size="sm"
+          onCopyAllTabs={async () => getAllTabsText()}
+        />
+      </div>
+      <ModernDataTable
+        data={processedData}
+        columns={columns}
+        loading={false}
+        stickyHeader={true}
+        maxHeight="600px"
+        headerGradient="from-slate-700 to-slate-900"
+        onRowClick={onRowClick}
+        className="shadow-lg"
+        tableId={tableTitle}
+      />
+    </div>
   );
 };

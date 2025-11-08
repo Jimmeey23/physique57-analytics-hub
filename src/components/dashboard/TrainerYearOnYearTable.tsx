@@ -311,6 +311,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
           onSort={handleSort}
           sortField={sortConfig.key}
           sortDirection={sortConfig.direction}
+          tableId="Trainer Year-on-Year Performance Comparison"
         />
       </CardContent>
     </Card>;

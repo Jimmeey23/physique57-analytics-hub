@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, TrendingUp, TrendingDown, Minus, Users, BookOpen, CreditCard, Clock } from 'lucide-react';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface LateCancellationData {
   dateIST?: string;
@@ -37,6 +39,8 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
   onRowClick
 }) => {
   const [activeView, setActiveView] = useState<'monthly' | 'membership' | 'class' | 'trainer'>('monthly');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
 
   // Process monthly data
   const monthlyData = useMemo(() => {
@@ -252,13 +256,121 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
     }
   };
 
+  // Build text for all tabs (not just active)
+  const generateAllTabsContent = useCallback(async () => {
+    const parts: string[] = [];
+    parts.push(`Late Cancellations - Month on Month Analysis (All Tabs)`);
+    parts.push(`Exported on ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`);
+    parts.push('');
+
+    // Monthly Trends
+    parts.push('=== Monthly Trends ===');
+    let headers = ['Month','Cancellations','Previous Month','Change','% Change','Trend'];
+    parts.push(headers.join('\t'));
+    parts.push(headers.map(()=>'---').join('\t'));
+    monthlyData.forEach(m => {
+      parts.push([
+        m.month,
+        formatNumber(m.cancellations),
+        m.prevCancellations ? formatNumber(m.prevCancellations) : '-',
+        m.change !== undefined ? (m.change > 0 ? `+${formatNumber(m.change)}` : formatNumber(m.change)) : '-',
+        m.changePercent !== undefined ? (m.changePercent > 0 ? `+${formatPercentage(m.changePercent)}` : formatPercentage(m.changePercent)) : '-',
+        m.trend || 'same'
+      ].join('\t'));
+    });
+
+    // By Membership
+    parts.push('\n=== By Membership ===');
+    headers = ['Membership Type','Total','Latest Month','Change','Trend'];
+    parts.push(headers.join('\t'));
+    parts.push(headers.map(()=>'---').join('\t'));
+    membershipData.forEach(row => {
+      parts.push([
+        row.membership,
+        formatNumber(row.total),
+        formatNumber(row.latest),
+        row.change > 0 ? `+${formatNumber(row.change)}` : formatNumber(row.change),
+        row.trend
+      ].join('\t'));
+    });
+
+    // By Class
+    parts.push('\n=== By Class ===');
+    headers = ['Class','Total','Latest Month','Change','Trend'];
+    parts.push(headers.join('\t'));
+    parts.push(headers.map(()=>'---').join('\t'));
+    classData.forEach(row => {
+      parts.push([
+        row.className,
+        formatNumber(row.total),
+        formatNumber(row.latest),
+        row.change > 0 ? `+${formatNumber(row.change)}` : formatNumber(row.change),
+        row.trend
+      ].join('\t'));
+    });
+
+    // By Trainer
+    parts.push('\n=== By Trainer ===');
+    headers = ['Trainer','Total','Latest Month','Change','Trend'];
+    parts.push(headers.join('\t'));
+    parts.push(headers.map(()=>'---').join('\t'));
+    trainerData.forEach(row => {
+      parts.push([
+        row.trainer,
+        formatNumber(row.total),
+        formatNumber(row.latest),
+        row.change > 0 ? `+${formatNumber(row.change)}` : formatNumber(row.change),
+        row.trend
+      ].join('\t'));
+    });
+
+    return parts.join('\n');
+  }, [monthlyData, membershipData, classData, trainerData]);
+
+  // Register with global registry (active view snapshot) to participate in full app copy
+  useEffect(() => {
+    if (!registry) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const tableId = 'Late Cancellations - MoM & Breakdowns';
+    const getTextContent = () => {
+      const table = el.querySelector('table') || el;
+      let text = `${tableId} (${activeView})\n`;
+      const headerCells = table.querySelectorAll('thead th');
+      const headers: string[] = [];
+      headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(()=>'---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [registry, activeView]);
+
   return (
-    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
+    <Card ref={containerRef} className="bg-white/90 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          Late Cancellations - Month on Month Analysis
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            Late Cancellations - Month on Month Analysis
+          </CardTitle>
+          <CopyTableButton
+            tableRef={containerRef as any}
+            tableName="Late Cancellations - Month on Month Analysis"
+            size="sm"
+            onCopyAllTabs={async () => generateAllTabsContent()}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="w-full">

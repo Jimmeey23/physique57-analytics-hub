@@ -1,11 +1,13 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Calendar, Users, Target, AlertCircle } from 'lucide-react';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface MonthData {
@@ -29,6 +31,8 @@ export const ImprovedLeadMonthOnMonthTable: React.FC<ImprovedLeadMonthOnMonthTab
   title = "Month-on-Month Lead Analysis" 
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, title);
   
   const monthOnMonthData = useMemo(() => {
     if (!data || data.length === 0) return { monthData: {}, months: [] };
@@ -153,12 +157,21 @@ export const ImprovedLeadMonthOnMonthTable: React.FC<ImprovedLeadMonthOnMonthTab
     <TooltipProvider>
       <Card className="bg-white shadow-lg border-0">
         <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            {title}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              {title}
+            </CardTitle>
+            <CopyTableButton 
+              tableRef={tableContainerRef as any}
+              tableName={title}
+              size="sm"
+              className="text-white hover:bg-white/20"
+              onCopyAllTabs={async () => getAllTabsText()}
+            />
+          </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0" ref={tableContainerRef as any}>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

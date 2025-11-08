@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, TrendingUp, BarChart3, DollarSign, Users, ShoppingCart, Target, Package, Activity, Percent, Trophy, Medal, Award, Crown, Star, Eye, Percent as PercentIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface ModernTableWrapperProps {
   title: string;
@@ -24,7 +25,8 @@ interface ModernTableWrapperProps {
   onDisplayModeChange?: (mode: 'values' | 'growth') => void;
   showCopyButton?: boolean;
   tableRef?: React.RefObject<HTMLTableElement>;
-  onCopyAllTabs?: () => Promise<string>;
+  onCopyAllTabs?: () => Promise<string>; // explicit override
+  disableAutoRegistry?: boolean; // opt-out of automatic registry + copy all tabs
 }
 
 export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
@@ -45,9 +47,47 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
   onDisplayModeChange,
   showCopyButton = true,
   tableRef,
-  onCopyAllTabs
+  onCopyAllTabs,
+  disableAutoRegistry = false
 }) => {
   const internalTableRef = useRef<HTMLDivElement>(null);
+  const metricsRegistry = useMetricsTablesRegistry();
+
+  // Auto-register this table for "copy all tabs" aggregation if provider is present
+  useEffect(() => {
+    if (disableAutoRegistry) return;
+    if (!metricsRegistry) return;
+    const refEl = (tableRef?.current as HTMLElement) || internalTableRef.current;
+    if (!refEl) return;
+
+    const getTextContent = () => {
+      // Attempt to extract tab-separated text similar to CopyTableButton's logic
+      const table = refEl.querySelector('table') || refEl;
+      let text = `${title}\n`;
+      // Headers
+      const headerCells = table.querySelectorAll('thead th, thead td, tr:first-child th, tr:first-child td');
+      const headers: string[] = [];
+      headerCells.forEach(cell => {
+        const t = cell.textContent?.trim();
+        if (t) headers.push(t);
+      });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+
+    metricsRegistry.register({ id: title, getTextContent });
+    return () => metricsRegistry.unregister(title);
+  }, [metricsRegistry, title, tableRef, disableAutoRegistry]);
   return (
     <Card className={cn(
       "w-full shadow-lg border border-slate-300 bg-white",
@@ -133,7 +173,12 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
                 tableName={title}
                 size="sm"
                 className="text-white hover:bg-white/20"
-                onCopyAllTabs={onCopyAllTabs}
+                onCopyAllTabs={
+                  // Prioritize explicit override; otherwise use registry aggregator if available
+                  onCopyAllTabs ?
+                    (() => onCopyAllTabs().then(r => r)) :
+                    (metricsRegistry ? async () => metricsRegistry.getAllTabsContent() : undefined)
+                }
               />
             )}
 

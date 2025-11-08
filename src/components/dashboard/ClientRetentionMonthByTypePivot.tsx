@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, TrendingUp, ArrowUpDown } from 'lucide-react';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -43,6 +45,9 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+  const tableId = 'Client Retention MoM by Type Pivot';
 
   const months = useMemo(() => {
     const arr: { key: string; label: string; year: number; month: number }[] = [];
@@ -330,8 +335,89 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
     return totals;
   }, [pivot, clientTypes, months]);
 
+  // Copy-all: include ALL metrics across ALL months and types (values mode)
+  const generateAllTabsContent = useCallback(() => {
+    const sections: string[] = [];
+    sections.push(`${tableId} - All Metrics Export`);
+    sections.push(`Exported on ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`);
+    sections.push('');
+
+    const metricKeys = Object.keys(METRIC_LABELS) as MetricKey[];
+
+    const formatVal = (metricKey: MetricKey, cell: any) => {
+      switch (metricKey) {
+        case 'trials': return formatNumber(cell?.trials || 0);
+        case 'newMembers': return formatNumber(cell?.newMembers || 0);
+        case 'converted': return formatNumber(cell?.converted || 0);
+        case 'retained': return formatNumber(cell?.retained || 0);
+        case 'retentionRate': return `${(cell?.retentionRate || 0).toFixed(1)}%`;
+        case 'conversionRate': return `${(cell?.conversionRate || 0).toFixed(1)}%`;
+        case 'avgLTV': return formatCurrency(cell?.avgLTV || 0);
+        case 'totalLTV': return formatCurrency(cell?.totalLTV || 0);
+        case 'avgConversionDays': return `${Math.round(cell?.avgConversionDays || 0)}`;
+        case 'avgVisits': return `${(cell?.avgVisits || 0).toFixed(1)}`;
+      }
+    };
+
+    metricKeys.forEach(mk => {
+      sections.push(`\n${METRIC_LABELS[mk].toUpperCase()}`);
+      const headers = ['Client Type', ...months.map(m => m.label)];
+      sections.push(headers.join('\t'));
+      sections.push(headers.map(() => '---').join('\t'));
+
+      clientTypes.forEach(t => {
+        const row: string[] = [t];
+        months.forEach(m => {
+          const cell = pivot[t]?.[m.key];
+          row.push(formatVal(mk, cell) as string);
+        });
+        sections.push(row.join('\t'));
+      });
+
+      // Totals row
+      const totalRow: string[] = ['TOTALS'];
+      months.forEach(m => {
+        const cell = totalsRow[m.key];
+        totalRow.push(formatVal(mk, cell) as string);
+      });
+      sections.push(totalRow.join('\t'));
+    });
+
+    return sections.join('\n');
+  }, [clientTypes, months, pivot, totalsRow, tableId]);
+
+  useEffect(() => {
+    if (!registry) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const getTextContent = () => {
+      const table = el.querySelector('table');
+      if (!table) return `${tableId} (No Data)`;
+      let text = `${tableId}\nMetric: ${METRIC_LABELS[metric]} | Mode: ${displayMode}\n`;
+      // Build header row
+      const headerCells = table.querySelectorAll('thead th');
+      const headers: string[] = [];
+      headerCells.forEach(h => headers.push((h.textContent || '').trim().replace(/Prev \| Curr/i, '').trim()));
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      // Body rows
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(r => {
+        const cells = r.querySelectorAll('td');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [registry, metric, displayMode, pivot, sortedTypes]);
+
   return (
-    <Card className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+    <Card ref={containerRef} className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
       <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-indigo-700 to-purple-800 text-white pt-4">
         <div className="flex flex-col gap-3">
@@ -340,6 +426,14 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               <Calendar className="w-5 h-5" />
               Month-on-Month by Client Type
               <Badge variant="secondary" className="bg-white/20 text-white">Last 22 months</Badge>
+              <div className="ml-4">
+                <CopyTableButton
+                  tableRef={containerRef as any}
+                  tableName={tableId}
+                  size="sm"
+                  onCopyAllTabs={async () => generateAllTabsContent()}
+                />
+              </div>
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button

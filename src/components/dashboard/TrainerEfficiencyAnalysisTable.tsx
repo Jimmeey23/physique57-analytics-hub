@@ -471,6 +471,7 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
           headerGradient="from-orange-800 via-orange-900 to-red-900"
           showFooter={false}
           stickyHeader={true}
+          tableId="Trainer Efficiency & Productivity Analysis"
         />
       </CardContent>
     </Card>

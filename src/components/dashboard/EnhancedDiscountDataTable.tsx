@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,8 @@ import { Search, Download, Filter, TrendingUp, TrendingDown, Percent, DollarSign
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 interface EnhancedDiscountDataTableProps {
   data: SalesData[];
@@ -104,7 +106,37 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
     { header: 'Location', key: 'calculatedLocation', type: 'text' },
     { header: 'Sold By', key: 'soldBy', type: 'text' }
   ];
-  return <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+  const tableId = `Detailed Discount Analysis (${periodId})`;
+  useEffect(() => {
+    if (!registry) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const getTextContent = () => {
+      const table = el.querySelector('table') || el;
+      let text = `${tableId}\n`;
+      const headerCells = table.querySelectorAll('thead th');
+      const headers: string[] = [];
+      headerCells.forEach(cell => { const t = cell.textContent?.trim(); if (t) headers.push(t); });
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [registry, tableId]);
+
+  return <Card ref={containerRef} className="shadow-xl border-0 bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
       <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -131,6 +163,12 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
+            <CopyTableButton
+              tableRef={containerRef as any}
+              tableName={tableId}
+              size="sm"
+              onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+            />
           </div>
         </div>
       </CardHeader>
@@ -202,6 +240,14 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
                 <TableHead>Location</TableHead>
                 <TableHead>Sold By</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
+                <TableHead className="text-right">
+                  <CopyTableButton
+                    tableRef={containerRef as any}
+                    tableName={tableId}
+                    size="sm"
+                    onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+                  />
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -1,12 +1,15 @@
-import React, { useMemo } from 'react';
+ 
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, TrendingUp, Users } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
 import { parseDate } from '@/utils/dateUtils';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface CheckinData {
   memberId: string;
@@ -18,16 +21,13 @@ interface CheckinData {
   year: string;
 }
 
-interface VisitsSummary {
-  [monthYear: string]: number; // e.g., "2024-01": 450
-}
-
 interface ClientConversionMonthOnMonthByTypeTableProps {
   data: NewClientData[];
   checkins?: CheckinData[];
-  visitsSummary?: VisitsSummary;
-  onRowClick?: (monthData: any) => void;
+  visitsSummary?: Record<string, number>; // e.g., "Jan 2024" -> 450
+  onRowClick?: (row: any) => void;
 }
+
 interface MonthlyStats {
   month: string;
   sortKey: string;
@@ -42,49 +42,33 @@ interface MonthlyStats {
   visitsPostTrial: number[];
   clients: NewClientData[];
 }
-export const ClientConversionMonthOnMonthByTypeTable = ({ 
-  data, 
-  checkins, 
+
+export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionMonthOnMonthByTypeTableProps> = ({
+  data,
+  checkins,
   visitsSummary,
-  onRowClick 
-}: ClientConversionMonthOnMonthByTypeTableProps) => {
-  const [sortField, setSortField] = React.useState<string | undefined>(undefined);
-  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
+  onRowClick
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const registry = useMetricsTablesRegistry();
+  const tableId = 'Client Conversion MoM by Type';
+
+  const [sortField, setSortField] = useState<string | undefined>(undefined);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
   const monthlyDataByType = useMemo(() => {
-    if (!data || data.length === 0) return [];
-
-    // Get unique isNew types for debugging
-    const uniqueTypes = [...new Set(data.map(client => client.isNew || 'Unknown').filter(Boolean))];
-    console.log('Unique isNew types found:', uniqueTypes);
-
-    // Process checkins data for total visits calculation
-    const checkinsByMonthAndType: Record<string, number> = {};
-    if (checkins) {
-      checkins.forEach(checkin => {
-        if (checkin.month && checkin.year && checkin.isNew) {
-          const monthKey = `${checkin.year}-${String(new Date(Date.parse(checkin.month + " 1, " + checkin.year)).getMonth() + 1).padStart(2, '0')}`;
-          const key = `${monthKey}-${checkin.isNew}`;
-          checkinsByMonthAndType[key] = (checkinsByMonthAndType[key] || 0) + 1;
-        }
-      });
-    }
+    if (!data || data.length === 0) return [] as MonthlyStats[];
 
     const monthlyStats: Record<string, MonthlyStats> = {};
     data.forEach(client => {
       const date = parseDate(client.firstVisitDate || '');
       if (!date) return;
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('en-US', {
-        month: 'short',
-        year: 'numeric'
-      });
-      // Use the actual raw value from isNew column as requested
+      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       const clientType = client.isNew || 'Unknown';
 
-      // Create unique key for month + type combination
       const key = `${monthKey}-${clientType}`;
       if (!monthlyStats[key]) {
-        // visitsSummary keys like "Jan 2024"; convert monthKey to that format
         const [y, m] = monthKey.split('-');
         const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         const summaryKey = `${monthNames[parseInt(m)-1]} ${y}`;
@@ -108,67 +92,44 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
       stat.totalTrials++;
       stat.clients.push(client);
 
-      // Count new members - when isNew contains "new" (case insensitive)
       const isNewValue = (client.isNew || '').toLowerCase();
       if (isNewValue.includes('new')) {
         stat.newMembers++;
       }
-
-      // Count conversions - when conversionStatus is exactly "Converted"
       if (client.conversionStatus === 'Converted') {
         stat.converted++;
       }
-
-      // Count retention - when retentionStatus is exactly "Retained"
       if (client.retentionStatus === 'Retained') {
         stat.retained++;
       }
-
-      // Accumulate LTV
       stat.totalLTV += client.ltv || 0;
-
-      // Track conversion intervals
       if (client.conversionSpan && client.conversionSpan > 0) {
         stat.conversionIntervals.push(client.conversionSpan);
       }
-
-      // Track visits post trial
       if (client.visitsPostTrial && client.visitsPostTrial > 0) {
         stat.visitsPostTrial.push(client.visitsPostTrial);
       }
     });
-    
+
     return Object.values(monthlyStats).sort((a, b) => {
-      // First sort by month
       const monthCompare = a.sortKey.localeCompare(b.sortKey);
       if (monthCompare !== 0) return monthCompare;
-      // Then sort by type (New first)
       if (a.type.toLowerCase().includes('new') && !b.type.toLowerCase().includes('new')) return -1;
       if (!a.type.toLowerCase().includes('new') && b.type.toLowerCase().includes('new')) return 1;
       return a.type.localeCompare(b.type);
     });
-  }, [data, checkins]);
+  }, [data, checkins, visitsSummary]);
 
-  // Prepare table data with calculated metrics
   const tableData = useMemo(() => {
     return monthlyDataByType.map(stat => {
-      const conversionRate = stat.newMembers > 0 ? stat.converted / stat.newMembers * 100 : 0;
-      // Retention rate standardized: retained / newMembers
-      const retentionRate = stat.newMembers > 0 ? stat.retained / stat.newMembers * 100 : 0;
+      const conversionRate = stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0;
+      const retentionRate = stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0;
       const avgLTV = stat.totalTrials > 0 ? stat.totalLTV / stat.totalTrials : 0;
       const avgConversionDays = stat.conversionIntervals.length > 0 ? stat.conversionIntervals.reduce((sum, interval) => sum + interval, 0) / stat.conversionIntervals.length : 0;
       const avgVisits = stat.visitsPostTrial.length > 0 ? stat.visitsPostTrial.reduce((sum, visits) => sum + visits, 0) / stat.visitsPostTrial.length : 0;
-      return {
-        ...stat,
-        conversionRate,
-        retentionRate,
-        avgLTV,
-        avgConversionDays,
-        avgVisits
-      };
+      return { ...stat, conversionRate, retentionRate, avgLTV, avgConversionDays, avgVisits };
     });
   }, [monthlyDataByType]);
-  console.log('Month-on-month by type data prepared:', tableData.length, 'entries');
 
   const displayedData = useMemo(() => {
     if (!sortField) return tableData;
@@ -187,7 +148,6 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
     else { setSortField(field); setSortDirection('desc'); }
   };
 
-  // Calculate totals for the totals row
   const totals = useMemo(() => {
     return tableData.reduce((acc, row) => ({
       visits: acc.visits + (row.visits || 0),
@@ -209,9 +169,10 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
       visitsPostTrial: [] as number[]
     });
   }, [tableData]);
+
   const totalsRow = useMemo(() => {
-    const conversionRate = totals.newMembers > 0 ? totals.converted / totals.newMembers * 100 : 0;
-    const retentionRate = totals.newMembers > 0 ? totals.retained / totals.newMembers * 100 : 0;
+    const conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
+    const retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
     const avgLTV = totals.totalTrials > 0 ? totals.totalLTV / totals.totalTrials : 0;
     const avgConversionDays = totals.conversionIntervals.length > 0 ? totals.conversionIntervals.reduce((sum, interval) => sum + interval, 0) / totals.conversionIntervals.length : 0;
     const avgVisits = totals.visitsPostTrial.length > 0 ? totals.visitsPostTrial.reduce((sum, visits) => sum + visits, 0) / totals.visitsPostTrial.length : 0;
@@ -232,33 +193,54 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
     };
   }, [totals]);
 
-  // Compute concise AI notes for summary
-  const aiNotes = useMemo(() => {
-    if (!tableData || tableData.length === 0) return [] as string[];
-    const withNew = tableData.filter(r => r.newMembers > 0);
-    const topConversion = [...withNew].sort((a,b) => (b.conversionRate||0)-(a.conversionRate||0))[0];
-    const topRetention = [...withNew].sort((a,b) => (b.retentionRate||0)-(a.retentionRate||0))[0];
-    const topVolume = [...tableData].sort((a,b) => (b.totalTrials||0)-(a.totalTrials||0))[0];
-    const notes: string[] = [];
-    if (topConversion) notes.push(`${topConversion.month} ${topConversion.type} shows the highest conversion at ${topConversion.conversionRate.toFixed(1)}% (${topConversion.converted}/${topConversion.newMembers}).`);
-    if (topRetention) notes.push(`${topRetention.month} ${topRetention.type} leads retention at ${topRetention.retentionRate.toFixed(1)}% (${topRetention.retained}/${topRetention.newMembers}).`);
-    if (topVolume) notes.push(`${topVolume.month} ${topVolume.type} had the most trials (${topVolume.totalTrials}) with avg LTV ${formatCurrency(topVolume.avgLTV)}.`);
-    if (totalsRow && totalsRow.avgConversionDays) notes.push(`Average conversion time is ${Math.round(totalsRow.avgConversionDays)} days with avg visits ${totalsRow.avgVisits.toFixed(1)}.`);
-    return notes;
-  }, [tableData, totalsRow]);
+  // Registry integration for copy-all-tabs
+  useEffect(() => {
+    if (!registry) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const getTextContent = () => {
+      const table = el.querySelector('table');
+      if (!table) return `${tableId} (No Data)`;
+      let text = `${tableId}\n`;
+      const headerCells = table.querySelectorAll('thead th');
+      const headers: string[] = [];
+      headerCells.forEach(cell => headers.push((cell.textContent || '').trim()));
+      if (headers.length) {
+        text += headers.join('\t') + '\n';
+        text += headers.map(() => '---').join('\t') + '\n';
+      }
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData: string[] = [];
+        cells.forEach(c => rowData.push((c.textContent || '').trim()));
+        if (rowData.length) text += rowData.join('\t') + '\n';
+      });
+      return text.trim();
+    };
+    registry.register({ id: tableId, getTextContent });
+    return () => registry.unregister(tableId);
+  }, [registry, tableData]);
 
   return (
-    <Card className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
+    <Card ref={containerRef} className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-indigo-800 to-purple-900 text-white pb-4">
-        <CardTitle className="text-lg font-bold flex items-center gap-2">
+        <CardTitle className="text-lg font-bold flex items-center gap-2 w-full">
           <Calendar className="w-5 h-5" />
           Month-on-Month Analysis by Client Type
           <Badge variant="secondary" className="ml-2 bg-white/20 text-white border-white/30">
-            {Object.keys(monthlyDataByType).length} Entries
+            {monthlyDataByType.length} Entries
           </Badge>
+          <div className="ml-auto">
+            <CopyTableButton
+              tableRef={containerRef as any}
+              tableName={tableId}
+              size="sm"
+              onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+            />
+          </div>
         </CardTitle>
       </CardHeader>
-      
       <CardContent className="p-0 overflow-hidden">
         <div className="overflow-x-auto max-h-[600px]">
           <Table className="w-full">
@@ -279,7 +261,12 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayedData.map((row, index) => <TableRow key={`${row.month}-${row.type}`} className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 h-10" onClick={() => onRowClick?.(row)}>
+              {displayedData.map((row) => (
+                <TableRow
+                  key={`${row.month}-${row.type}`}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 h-10"
+                  onClick={() => onRowClick?.(row)}
+                >
                   <TableCell className="text-xs px-4 sticky left-0 bg-slate-100 z-10 border-r">
                     <span className="text-sm font-medium text-slate-900">{row.month}</span>
                   </TableCell>
@@ -300,8 +287,8 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
                   <TableCell className="text-xs px-3 text-right font-medium text-slate-900">{formatCurrency(row.totalLTV)}</TableCell>
                   <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{row.avgConversionDays.toFixed(0)} days</TableCell>
                   <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{row.avgVisits.toFixed(1)}</TableCell>
-                </TableRow>)}
-              {/* Totals Row */}
+                </TableRow>
+              ))}
               <TableRow className="border-t-4 border-gray-800 text-gray-900">
                 <TableCell className="border-t-4 border-gray-800 text-gray-900">{totalsRow.month}</TableCell>
                 <TableCell className="text-xs px-3 text-center">
@@ -313,15 +300,11 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
                 <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.newMembers)}</TableCell>
                 <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.retained)}</TableCell>
                 <TableCell className="text-xs px-3 text-center">
-                  <span className={`font-bold ${totalsRow.retentionRate >= 70 ? 'text-green-600' : totalsRow.retentionRate >= 50 ? 'text-orange-600' : 'text-red-600'}`}>
-                    {totalsRow.retentionRate.toFixed(1)}%
-                  </span>
+                  <span className={`font-bold ${totalsRow.retentionRate >= 70 ? 'text-green-600' : totalsRow.retentionRate >= 50 ? 'text-orange-600' : 'text-red-600'}`}>{totalsRow.retentionRate.toFixed(1)}%</span>
                 </TableCell>
                 <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.converted)}</TableCell>
                 <TableCell className="text-xs px-3 text-center">
-                  <span className={`font-bold ${totalsRow.conversionRate >= 50 ? 'text-green-600' : totalsRow.conversionRate >= 30 ? 'text-orange-600' : 'text-red-600'}`}>
-                    {totalsRow.conversionRate.toFixed(1)}%
-                  </span>
+                  <span className={`font-bold ${totalsRow.conversionRate >= 50 ? 'text-green-600' : totalsRow.conversionRate >= 30 ? 'text-orange-600' : 'text-red-600'}`}>{totalsRow.conversionRate.toFixed(1)}%</span>
                 </TableCell>
                 <TableCell className="text-xs px-3 text-right font-bold text-emerald-600">{formatCurrency(totalsRow.avgLTV)}</TableCell>
                 <TableCell className="text-xs px-3 text-right font-bold text-green-600">{formatCurrency(totalsRow.totalLTV)}</TableCell>
@@ -330,13 +313,6 @@ export const ClientConversionMonthOnMonthByTypeTable = ({
               </TableRow>
             </TableBody>
           </Table>
-        </div>
-        <div className="border-t border-slate-200 p-4 bg-slate-50">
-          <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-            {aiNotes.map((insight, index) => (
-              <li key={index}>{insight}</li>
-            ))}
-          </ul>
         </div>
       </CardContent>
     </Card>

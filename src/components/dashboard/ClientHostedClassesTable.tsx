@@ -316,7 +316,8 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
             onSort={handleSort}
             sortField={sortField}
             sortDirection={sortDirection}
-          />
+            tableId="Hosted Classes Performance Analysis"
+            />
           <div className="border-t border-slate-200 p-4 bg-slate-50">
             <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
               {aiNotes.map((insight, index) => (

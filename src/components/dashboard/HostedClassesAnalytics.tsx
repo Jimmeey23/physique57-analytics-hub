@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
@@ -55,6 +57,8 @@ export const HostedClassesAnalytics: React.FC<HostedClassesAnalyticsProps> = ({ 
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, 'Hosted Classes Analytics');
 
   const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -337,7 +341,7 @@ export const HostedClassesAnalytics: React.FC<HostedClassesAnalyticsProps> = ({ 
 
       {/* Monthly Data Table */}
       <Card className="border-0 shadow-xl">
-        <CardContent className="p-0">
+        <CardContent className="p-0" ref={tableContainerRef as any}>
           <div className="overflow-auto max-h-[800px] border rounded-lg">
             <Table>
               <TableHeader className={`sticky top-0 z-10 border-b-2 ${getTableHeaderClasses('retention')}`}>
@@ -349,7 +353,14 @@ export const HostedClassesAnalytics: React.FC<HostedClassesAnalyticsProps> = ({ 
                   >
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      Month {getSortIcon('monthKey')}
+                      <span>Month {getSortIcon('monthKey')}</span>
+                      <CopyTableButton 
+                        tableRef={tableContainerRef as any}
+                        tableName="Hosted Classes Analytics"
+                        size="sm"
+                        className="ml-2"
+                        onCopyAllTabs={async () => getAllTabsText()}
+                      />
                     </div>
                   </TableHead>
                   <TableHead 

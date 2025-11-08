@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface EnhancedLateCancellationsDataTablesProps {
   data: LateCancellationsData[];
@@ -20,6 +21,8 @@ interface EnhancedLateCancellationsDataTablesProps {
 const ITEMS_PER_PAGE = 100;
 
 export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellationsDataTablesProps> = ({ data, allCheckins = [], onDrillDown }) => {
+  // Registry for global copy-all aggregation
+  const metricsRegistry = useMetricsTablesRegistry();
   // Refs for each table tab
   const multipleDayTableRef = useRef<HTMLDivElement>(null);
   const membersTableRef = useRef<HTMLDivElement>(null);
@@ -1314,16 +1317,312 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
     );
   };
 
+  // Build aggregated text for ALL internal analysis tabs (not just active)
+  // Derived data sets reused in export aggregation
+  const trainerAnalysis = useMemo(() => {
+    // Mirror logic inside renderTrainerAnalysisTable for consistency
+    const trainerGroups = data.reduce((acc, item) => {
+      const trainer = item.teacherName || 'Unknown Trainer';
+      if (!acc[trainer]) {
+        acc[trainer] = {
+          trainerName: trainer,
+          count: 0,
+          members: new Set(),
+          locations: new Set(),
+          classes: new Set(),
+          revenue: 0
+        };
+      }
+      acc[trainer].count += 1;
+      acc[trainer].members.add(item.memberId);
+      acc[trainer].locations.add(item.location);
+      acc[trainer].classes.add(item.cleanedClass);
+      acc[trainer].revenue += item.paidAmount || 0;
+      return acc;
+    }, {} as Record<string, any>);
+    return Object.values(trainerGroups).map((g: any) => ({
+      trainerName: g.trainerName,
+      count: g.count,
+      uniqueMembers: g.members.size,
+      uniqueLocations: g.locations.size,
+      uniqueClasses: g.classes.size,
+      revenue: g.revenue
+    })).sort((a:any,b:any)=>b.count-a.count);
+  }, [data]);
+
+  const locationAnalysis = useMemo(() => {
+    const locationGroups = data.reduce((acc, item) => {
+      const location = item.location || 'Unknown Location';
+      if (!acc[location]) {
+        acc[location] = {
+          locationName: location,
+          count: 0,
+          members: new Set(),
+          trainers: new Set(),
+          classes: new Set(),
+          revenue: 0,
+          peakDays: {} as Record<string, number>,
+          peakTimes: {} as Record<string, number>
+        };
+      }
+      acc[location].count += 1;
+      acc[location].members.add(item.memberId);
+      acc[location].trainers.add(item.teacherName);
+      acc[location].classes.add(item.cleanedClass);
+      acc[location].revenue += item.paidAmount || 0;
+      if (item.dayOfWeek) acc[location].peakDays[item.dayOfWeek] = (acc[location].peakDays[item.dayOfWeek] || 0) + 1;
+      if (item.time) {
+        const hour = parseInt(item.time.split(':')[0]);
+        const slot = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
+        acc[location].peakTimes[slot] = (acc[location].peakTimes[slot] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+    return Object.values(locationGroups).map((g: any) => {
+      const peakDay = Object.entries(g.peakDays).reduce((a,b)=> g.peakDays[a[0]]>g.peakDays[b[0]]?a:b, ['N/A',0] as any)[0];
+      const peakTime = Object.entries(g.peakTimes).reduce((a,b)=> g.peakTimes[a[0]]>g.peakTimes[b[0]]?a:b, ['N/A',0] as any)[0];
+      return {
+        locationName: g.locationName,
+        count: g.count,
+        uniqueMembers: g.members.size,
+        uniqueTrainers: g.trainers.size,
+        uniqueClasses: g.classes.size,
+        peakDay,
+        peakTime,
+        revenue: g.revenue
+      };
+    }).sort((a:any,b:any)=>b.count-a.count);
+  }, [data]);
+
+  const generateAllTabsContent = useCallback((): string => {
+    const sections: string[] = [];
+    const stamp = new Date().toLocaleString();
+    sections.push(`Enhanced Late Cancellations Analysis - All Tabs Export\nExported: ${stamp}`);
+    sections.push('='.repeat(80));
+
+    // Helper to serialize a simple rows array with headers
+    const serialize = (title: string, headers: string[], rows: (string | number)[][]) => {
+      sections.push(`\n=== ${title} ===`);
+      sections.push(headers.join('\t'));
+      sections.push(headers.map(() => '---').join('\t'));
+      rows.forEach(r => sections.push(r.map(v => (v === undefined || v === null) ? '' : String(v)).join('\t')));
+    };
+
+    // 1. Multiple cancellations per day
+    if (multipleCancellationsPerDay.length) {
+      serialize(
+        'Members with Multiple Same-Day Late Cancellations',
+        ['Member', 'Email', 'Date', 'Cancellation Count', 'Unique Locations', 'Unique Formats', 'Unique Specific Classes', 'Unique Trainers'],
+        multipleCancellationsPerDay.map(m => [
+          m.memberName,
+          m.email,
+          m.date,
+          m.count,
+          m.uniqueLocations,
+          m.uniqueClasses,
+          m.uniqueSpecificClasses,
+          m.uniqueTrainers
+        ])
+      );
+    }
+
+    // 2. Multiple check-ins per day
+    if (multipleCheckinsPerDay.length) {
+      serialize(
+        'Members with Multiple Same-Day Check-ins',
+        ['Member', 'Email', 'Date', 'Check-ins'],
+        multipleCheckinsPerDay.map(m => [
+          (m as any).memberName,
+          (m as any).email,
+          (m as any).date,
+          (m as any).totalSessions
+        ])
+      );
+    }
+
+    // 3. Multiple bookings per day
+    if (multipleBookingsPerDay.length) {
+      serialize(
+        'Members with Multiple Same-Day Bookings',
+        ['Member', 'Email', 'Date', 'Bookings'],
+        multipleBookingsPerDay.map(m => [
+          (m as any).memberName,
+          (m as any).email,
+          (m as any).date,
+          (m as any).totalBookings
+        ])
+      );
+    }
+
+    // 4. Cancellations by Class
+    if (cancellationsByClass.length) {
+      serialize(
+        'Cancellations by Class Format',
+        ['Class', 'Category', 'Cancellations', 'Unique Members', 'Unique Locations', 'Unique Trainers', 'Avg Duration', 'Avg Revenue', 'Peak Day', 'Peak Time'],
+        cancellationsByClass.map(c => [
+          c.className,
+          c.category,
+          c.count,
+          c.uniqueMembers,
+          c.uniqueLocations,
+          c.uniqueTrainers,
+          c.avgDuration,
+          c.avgRevenue?.toFixed?.(2) ?? c.avgRevenue,
+          c.peakDay,
+          c.peakTime
+        ])
+      );
+    }
+
+    // 5. Cancellations by Membership
+    if (cancellationsByMembership.length) {
+      serialize(
+        'Cancellations by Membership Type',
+        ['Membership', 'Category', 'Cancellations', 'Unique Members', 'Unique Locations', 'Unique Classes', 'Revenue Impact', 'Avg Revenue/Cancellation', 'Avg Cancellations/Member'],
+        cancellationsByMembership.map(m => [
+          m.membershipType,
+          m.category,
+          m.count,
+          m.uniqueMembers,
+          m.uniqueLocations,
+          m.uniqueClasses,
+          m.revenue?.toFixed?.(2) ?? m.revenue,
+          m.avgRevenuePerCancellation?.toFixed?.(2) ?? m.avgRevenuePerCancellation,
+          m.avgCancellationsPerMember?.toFixed?.(2) ?? m.avgCancellationsPerMember
+        ])
+      );
+    }
+
+    // 6. Cancellations by Trainer
+    if (trainerAnalysis.length) {
+      serialize(
+        'Cancellations by Trainer',
+        ['Trainer', 'Cancellations', 'Unique Members', 'Unique Locations', 'Unique Classes', 'Revenue Impact'],
+        trainerAnalysis.map(t => [
+          (t as any).trainerName,
+          (t as any).count,
+          (t as any).uniqueMembers,
+          (t as any).uniqueLocations,
+          (t as any).uniqueClasses,
+          (t as any).revenue?.toFixed?.(2) ?? (t as any).revenue
+        ])
+      );
+    }
+
+    // 7. Cancellations by Location
+    if (locationAnalysis.length) {
+      serialize(
+        'Cancellations by Location',
+        ['Location', 'Cancellations', 'Unique Members', 'Unique Trainers', 'Unique Classes', 'Peak Day', 'Peak Time', 'Revenue Impact'],
+        locationAnalysis.map(l => [
+          l.locationName,
+          l.count,
+          l.uniqueMembers,
+          l.uniqueTrainers,
+          l.uniqueClasses,
+          l.peakDay,
+          l.peakTime,
+          l.revenue?.toFixed?.(2) ?? l.revenue
+        ])
+      );
+    }
+
+    // 8. Top Cancellers (overall timeframe)
+    if (topCancellersByMember.length) {
+      serialize(
+        'Top Repeat Cancellers (Members)',
+        ['Member', 'Email', 'Cancellations', 'Unique Locations', 'Unique Classes', 'Unique Trainers'],
+        topCancellersByMember.map(m => [
+          m.memberName,
+          m.email,
+          m.count,
+          m.uniqueLocations,
+          m.uniqueClasses,
+          m.uniqueTrainers
+        ])
+      );
+    }
+
+    // 9. Visit Frequency Buckets
+    const { buckets = [], byFormat = [], byMembership = [] } = visitFrequencyBreakdowns || {};
+    if (buckets.length) {
+      // Overall buckets
+      const memberTotals = data.reduce((acc, item) => {
+        const id = item.memberId || item.email || 'unknown';
+        acc[id] = (acc[id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const bucketRows = buckets.map(b => [
+        b.label,
+        Object.values(memberTotals).filter(v => v >= b.min && v <= b.max).length
+      ]);
+      serialize('Visit Frequency Buckets (Overall)', ['Bucket', 'Members'], bucketRows);
+
+      if (byFormat.length) {
+        serialize(
+          'Visit Frequency by Format',
+          ['Format', 'Members', 'Revenue', ...buckets.map(b => b.label)],
+          byFormat.map(r => [
+            r.format,
+            r.members,
+            r.revenue?.toFixed?.(2) ?? r.revenue,
+            ...buckets.map(b => r[b.label] || 0)
+          ])
+        );
+      }
+      if (byMembership.length) {
+        serialize(
+          'Visit Frequency by Membership',
+          ['Membership', 'Members', 'Revenue', ...buckets.map(b => b.label)],
+          byMembership.map(r => [
+            r.membership,
+            r.members,
+            r.revenue?.toFixed?.(2) ?? r.revenue,
+            ...buckets.map(b => r[b.label] || 0)
+          ])
+        );
+      }
+    }
+
+    return sections.join('\n');
+  }, [
+    multipleCancellationsPerDay,
+    multipleCheckinsPerDay,
+    multipleBookingsPerDay,
+    cancellationsByClass,
+    cancellationsByMembership,
+    trainerAnalysis,
+    locationAnalysis,
+    topCancellersByMember,
+    visitFrequencyBreakdowns,
+    data
+  ]);
+
+  // Auto-register with metrics registry so global Copy All Tabs includes this aggregate
+  React.useEffect(() => {
+    if (!metricsRegistry) return;
+    metricsRegistry.register({ id: 'Enhanced Late Cancellations Analysis (All Tabs)', getTextContent: generateAllTabsContent });
+    return () => metricsRegistry.unregister('Enhanced Late Cancellations Analysis (All Tabs)');
+  }, [metricsRegistry, generateAllTabsContent]);
+
   return (
     <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
       <CardHeader>
-        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Users className="w-5 h-5 text-red-600" />
-          Enhanced Late Cancellations Analysis
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 min-w-[180px] justify-center">
-            Multiple analysis views with 35px row height
-          </Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Users className="w-5 h-5 text-red-600" />
+            Enhanced Late Cancellations Analysis
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 min-w-[180px] justify-center">
+              Multiple analysis views with 35px row height
+            </Badge>
+          </CardTitle>
+          <CopyTableButton
+            tableRef={multipleDayTableRef as any}
+            tableName="Enhanced Late Cancellations (Active Tab)"
+            size="sm"
+            onCopyAllTabs={async () => generateAllTabsContent()}
+          />
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
