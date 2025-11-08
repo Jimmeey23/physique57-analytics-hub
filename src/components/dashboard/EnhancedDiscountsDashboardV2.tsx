@@ -311,7 +311,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
             </div>
           </div>
           <div className="ml-4 mt-1">
-            <InfoPopover context="sales-overview" locationId={activeLocation} />
+            <InfoPopover context="discounts-promotions-overview" locationId={activeLocation} />
           </div>
         </div>
 

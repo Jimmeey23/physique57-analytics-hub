@@ -41,6 +41,20 @@ const OutlierAnalysisContent = () => {
       })));
     }
 
+    // Build customer first purchase map across ALL data
+    const customerFirstPurchase = new Map<string, Date>();
+    salesData.forEach(item => {
+      const customerId = item.memberId || item.customerEmail;
+      if (!customerId || !item.paymentDate) return;
+      
+      const purchaseDate = new Date(item.paymentDate);
+      const existingFirstDate = customerFirstPurchase.get(customerId);
+      
+      if (!existingFirstDate || purchaseDate < existingFirstDate) {
+        customerFirstPurchase.set(customerId, purchaseDate);
+      }
+    });
+
     const april2025Data = salesData.filter(item => {
       if (!item.paymentDate) return false;
       const date = new Date(item.paymentDate);
@@ -69,11 +83,18 @@ const OutlierAnalysisContent = () => {
     const aprilTransactions = april2025Data.length;
     const augustTransactions = august2025Data.length;
 
+    // Count new clients - customers whose FIRST EVER purchase was in these months
     const aprilNewClients = new Set(
       april2025Data
         .filter(item => {
-          const product = (item.cleanedProduct || item.paymentItem || '').toLowerCase();
-          return product.includes('intro') || product.includes('new client') || product.includes('trial') || product.includes('first time');
+          const customerId = item.memberId || item.customerEmail;
+          if (!customerId) return false;
+          
+          const firstPurchase = customerFirstPurchase.get(customerId);
+          if (!firstPurchase) return false;
+          
+          // Check if their first purchase was in April 2025
+          return firstPurchase.getFullYear() === 2025 && firstPurchase.getMonth() === 3;
         })
         .map(item => item.memberId || item.customerEmail)
     ).size;
@@ -81,11 +102,20 @@ const OutlierAnalysisContent = () => {
     const augustNewClients = new Set(
       august2025Data
         .filter(item => {
-          const product = (item.cleanedProduct || item.paymentItem || '').toLowerCase();
-          return product.includes('intro') || product.includes('new client') || product.includes('trial') || product.includes('first time');
+          const customerId = item.memberId || item.customerEmail;
+          if (!customerId) return false;
+          
+          const firstPurchase = customerFirstPurchase.get(customerId);
+          if (!firstPurchase) return false;
+          
+          // Check if their first purchase was in August 2025
+          return firstPurchase.getFullYear() === 2025 && firstPurchase.getMonth() === 7;
         })
         .map(item => item.memberId || item.customerEmail)
     ).size;
+
+    console.log('👥 April 2025 new clients (first-time buyers):', aprilNewClients);
+    console.log('👥 August 2025 new clients (first-time buyers):', augustNewClients);
 
     return [
       { location: 'April 2025', label: 'Total Revenue', value: formatCurrency(aprilRevenue), subValue: `${formatNumber(aprilTransactions)} transactions` },

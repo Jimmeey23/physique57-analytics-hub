@@ -115,7 +115,7 @@ export const EnhancedClassAttendanceSection: React.FC = () => {
             ))}
           </TabsList>
           <div className="ml-3 mt-1">
-            <InfoPopover context="sales-overview" locationId={activeLocation} />
+            <InfoPopover context="class-attendance-overview" locationId={activeLocation} />
           </div>
         </div>
 

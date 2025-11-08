@@ -212,7 +212,7 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
               Expirations & Churn Analytics
             </h1>
             <div className="flex items-center gap-3">
-              <InfoPopover context="sales-overview" locationId={activeLocation} />
+              <InfoPopover context="expiration-analytics-overview" locationId={activeLocation} />
               <AdvancedExportButton 
                 additionalData={{ expirations: filteredData }}
                 defaultFileName="expirations-analysis"

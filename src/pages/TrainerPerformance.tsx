@@ -1,19 +1,33 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedTrainerPerformanceSection } from '@/components/dashboard/EnhancedTrainerPerformanceSection';
 import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency } from '@/utils/formatters';
-import { AiNotes } from '@/components/ui/AiNotes';
 
 const TrainerPerformance = () => {
   const { data: payrollData, isLoading } = usePayrollData();
   const { isLoading: globalLoading, setLoading } = useGlobalLoading();
+  const [isContentReady, setIsContentReady] = useState(false);
 
   useEffect(() => {
-    setLoading(isLoading, 'Analyzing trainer performance metrics and insights...');
-  }, [isLoading, setLoading]);
+    // Keep loading active until both data is loaded and content is ready
+    const shouldLoad = isLoading || !isContentReady;
+    setLoading(shouldLoad, 'Analyzing trainer performance metrics and insights...');
+  }, [isLoading, isContentReady, setLoading]);
+
+  useEffect(() => {
+    // Mark content as ready once data is available
+    if (!isLoading && payrollData && payrollData.length > 0) {
+      const timer = setTimeout(() => {
+        setIsContentReady(true);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else if (!isLoading && (!payrollData || payrollData.length === 0)) {
+      setIsContentReady(true);
+    }
+  }, [isLoading, payrollData]);
 
   const heroMetrics = useMemo(() => {
     if (!payrollData || payrollData.length === 0) return [];

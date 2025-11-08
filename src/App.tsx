@@ -16,6 +16,7 @@ import PrefetchOnIdle from "@/components/perf/PrefetchOnIdle";
 import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
 import InitialLoadGate, { useInitialLoad } from "@/components/perf/InitialLoadGate";
 import ForceTopOnLoad from "@/components/perf/ForceTopOnLoad";
+import { NavigationLoader } from "@/components/perf/NavigationLoader";
 
 // Optimized lazy loading with preloading for critical pages
 const Index = React.lazy(() => 
@@ -106,13 +107,14 @@ const App = () => {
       <BrowserRouter>
         <GlobalFiltersProvider>
           <SectionNavigationProvider>
+          <NavigationLoader />
           <ForceTopOnLoad />
           <PrefetchOnIdle />
           <HashJumpOnLoad />
           <GlobalLoader />
           <GlobalCommandPalette />
           <InitialLoadGate>
-            <React.Suspense fallback={<div />}> {/* Minimal fallback; we show InitialLoadGate overlay */}
+            <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}> {/* Blank white screen during chunk load */}
               <FirstRouteReady>
                 <PageTransition>
                   <Routes>

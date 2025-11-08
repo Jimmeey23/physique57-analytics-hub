@@ -14,10 +14,13 @@ import { useDiscountsData } from '@/hooks/useDiscountsData';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useLeadsData } from '@/hooks/useLeadsData';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { Loader2 } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 
 const DataExport = () => {
+  const { setLoading } = useGlobalLoading();
+  
   // Load all data sources
   const { data: salesData, loading: salesLoading } = useGoogleSheets();
   const { data: checkinsData, loading: checkinsLoading } = useCheckinsData();
@@ -38,6 +41,11 @@ const DataExport = () => {
     expirationsLoading || 
     cancellationsLoading || 
     leadsLoading;
+
+  // Track loading state
+  React.useEffect(() => {
+    setLoading(isLoading, 'Loading all data sources for export...');
+  }, [isLoading, setLoading]);
 
   const dataSources = {
     salesData,

@@ -36,12 +36,8 @@ export function useClientConversionMetrics(
   options?: Options
 ) {
   return useMemo(() => {
-    // Use the filtered data passed in as 'data' for current period metrics
-    // This respects all filters applied (location, trainer, etc.)
-    const current = data;
-    
-    // For historical comparison, we need to get previous month data from the same filter context
-    // Use historicalData if provided, otherwise use the full unfiltered dataset with same filters
+    // Use historicalData as the base dataset that contains data across multiple periods
+    // This should have location/trainer filters applied but NOT date filters
     const base = (historicalData && historicalData.length > 0 ? historicalData : data) as NewClientData[];
     
     const compareEnd = options?.dateRange?.end
@@ -59,19 +55,22 @@ export function useClientConversionMetrics(
 
     const within = (d?: Date | null, start?: Date, end?: Date) => !!(d && start && end && d >= start && d <= end);
 
-    // For previous period, filter the base data by previous month date range
+    // Filter base data for current period by the selected date range
+    const current = base.filter((it) => within(parseDate((it as any).firstVisitDate), currentStart, currentEnd));
+    
+    // Filter base data for previous period by previous month date range
     const previous = base.filter((it) => within(parseDate((it as any).firstVisitDate), prevStart, prevEnd));
 
     const isNew = (c: NewClientData) => String(c.isNew || '').toLowerCase().includes('new');
     const isConverted = (c: NewClientData) => c.conversionStatus === 'Converted';
     const isRetained = (c: NewClientData) => c.retentionStatus === 'Retained';
 
-    // Use the current filtered data directly (already filtered by all user selections)
+    // Calculate current period metrics
     const curNew = current.filter(isNew).length;
     const curConverted = current.filter(isConverted).length;
     const curRetained = current.filter(isRetained).length;
 
-    // For previous month comparison, filter the previous data
+    // Calculate previous period metrics
     const prevNew = previous.filter(isNew).length;
     const prevConverted = previous.filter(isConverted).length;
     const prevRetained = previous.filter(isRetained).length;

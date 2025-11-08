@@ -13,16 +13,34 @@ import {
 interface Props {
   aprilData: SalesData[];
   augustData: SalesData[];
+  allSalesData?: SalesData[]; // Need full dataset to determine first purchases
 }
 
 const COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#3b82f6', '#ef4444'];
 
 export const OutlierClientSegmentation: React.FC<Props> = ({
   aprilData,
-  augustData
+  augustData,
+  allSalesData = []
 }) => {
   const clientAnalysis = useMemo(() => {
-    const analyzeClients = (data: SalesData[], month: string) => {
+    // Build customer first purchase map across ALL data
+    const customerFirstPurchase = new Map<string, Date>();
+    const dataToUse = allSalesData.length > 0 ? allSalesData : [...aprilData, ...augustData];
+    
+    dataToUse.forEach(item => {
+      const customerId = item.memberId || item.customerEmail;
+      if (!customerId || !item.paymentDate) return;
+      
+      const purchaseDate = new Date(item.paymentDate);
+      const existingFirstDate = customerFirstPurchase.get(customerId);
+      
+      if (!existingFirstDate || purchaseDate < existingFirstDate) {
+        customerFirstPurchase.set(customerId, purchaseDate);
+      }
+    });
+
+    const analyzeClients = (data: SalesData[], month: string, monthYear: { year: number, month: number }) => {
       // Group by customer
       const customerMap = new Map<string, {
         purchases: number;
@@ -33,6 +51,8 @@ export const OutlierClientSegmentation: React.FC<Props> = ({
 
       data.forEach(item => {
         const customerId = item.memberId || item.customerEmail;
+        if (!customerId) return;
+        
         if (!customerMap.has(customerId)) {
           customerMap.set(customerId, {
             purchases: 0,
@@ -45,13 +65,16 @@ export const OutlierClientSegmentation: React.FC<Props> = ({
         const customer = customerMap.get(customerId)!;
         customer.purchases += 1;
         customer.totalSpent += item.paymentValue || 0;
-        customer.products.push(item.cleanedProduct || item.paymentItem);
+        customer.products.push(item.cleanedProduct || item.paymentItem || '');
 
-        const isNewClient = item.cleanedProduct?.toLowerCase().includes('intro') ||
-                           item.cleanedProduct?.toLowerCase().includes('new client') ||
-                           item.paymentItem?.toLowerCase().includes('intro');
-        if (isNewClient) {
-          customer.isNew = true;
+        // Check if this is their first purchase ever
+        const firstPurchase = customerFirstPurchase.get(customerId);
+        if (firstPurchase) {
+          const isFirstPurchaseInThisMonth = firstPurchase.getFullYear() === monthYear.year && 
+                                             firstPurchase.getMonth() === monthYear.month;
+          if (isFirstPurchaseInThisMonth) {
+            customer.isNew = true;
+          }
         }
       });
 
@@ -65,6 +88,17 @@ export const OutlierClientSegmentation: React.FC<Props> = ({
       const existingRevenue = existingCustomers.reduce((sum, [_, c]) => sum + c.totalSpent, 0);
       const stackingRevenue = stackingCustomers.reduce((sum, [_, c]) => sum + c.totalSpent, 0);
 
+      const totalRevenue = data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+
+      console.log(`📊 Client Segmentation ${month}:`, {
+        totalCustomers: customerMap.size,
+        newCustomers: newCustomers.length,
+        existingCustomers: existingCustomers.length,
+        newRevenue,
+        existingRevenue,
+        totalRevenue
+      });
+
       return {
         month,
         totalCustomers: customerMap.size,
@@ -75,16 +109,16 @@ export const OutlierClientSegmentation: React.FC<Props> = ({
         newRevenue,
         existingRevenue,
         stackingRevenue,
-        avgSpendPerCustomer: customerMap.size > 0 ? data.reduce((sum, item) => sum + (item.paymentValue || 0), 0) / customerMap.size : 0,
+        avgSpendPerCustomer: customerMap.size > 0 ? totalRevenue / customerMap.size : 0,
         avgPurchasesPerCustomer: customerMap.size > 0 ? data.length / customerMap.size : 0
       };
     };
 
-    const april = analyzeClients(aprilData, 'April');
-    const august = analyzeClients(augustData, 'August');
+    const april = analyzeClients(aprilData, 'April', { year: 2025, month: 3 });
+    const august = analyzeClients(augustData, 'August', { year: 2025, month: 7 });
 
     return { april, august };
-  }, [aprilData, augustData]);
+  }, [aprilData, augustData, allSalesData]);
 
   const chartData = [
     {

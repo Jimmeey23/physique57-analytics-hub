@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePayrollData } from '@/hooks/usePayrollData';
@@ -28,6 +28,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [isRendering, setIsRendering] = useState(true);
   const [filters, setFilters] = useState({ 
     location: '', 
     trainer: '', 
@@ -217,7 +218,21 @@ export const EnhancedTrainerPerformanceSection = () => {
     return Object.values(monthlyData).sort((a: any, b: any) => a.month.localeCompare(b.month));
   }, [processedData]);
 
-  if (isLoading) {
+  // Handle rendering state - wait for data to be processed before showing content
+  useEffect(() => {
+    if (!isLoading && payrollData && payrollData.length > 0 && processedData.length > 0) {
+      // Give a small delay to ensure all heavy computations are done
+      const timer = setTimeout(() => {
+        setIsRendering(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!isLoading && (!payrollData || payrollData.length === 0)) {
+      // If there's no data, stop rendering immediately
+      setIsRendering(false);
+    }
+  }, [isLoading, payrollData, processedData]);
+
+  if (isLoading || isRendering) {
     return null; // Global loader handles this
   }
 

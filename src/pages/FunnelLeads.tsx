@@ -260,7 +260,7 @@ export default function FunnelLeads() {
             </div>
           </div>
           <div className="ml-3 mt-1">
-            <InfoPopover context="sales-overview" locationId={activeLocation} />
+            <InfoPopover context="funnel-leads-overview" locationId={activeLocation} />
           </div>
         </div>
 

@@ -1,15 +1,20 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useGlobalLoading } from "@/hooks/useGlobalLoading";
 
 const NotFound = () => {
   const location = useLocation();
+  const { setLoading } = useGlobalLoading();
 
   useEffect(() => {
+    // Immediately signal page is ready (no data loading needed for 404)
+    setLoading(false);
+    
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+  }, [location.pathname, setLoading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

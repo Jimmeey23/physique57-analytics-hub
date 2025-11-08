@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ModernHeroSection } from '@/components/ui/ModernHeroSection';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 const variants = [
   { key: 'sales', title: 'Sales Analytics', subtitle: 'Comprehensive sales performance insights with advanced metrics and forecasting' },
@@ -19,6 +20,12 @@ const variants = [
 
 export default function HeroDemo() {
   const [currentVariant, setCurrentVariant] = useState(0);
+  const { setLoading } = useGlobalLoading();
+  
+  // Signal page is ready
+  React.useEffect(() => {
+    setLoading(false);
+  }, [setLoading]);
   
   const handleExport = () => {
     console.log('Export triggered for variant:', variants[currentVariant].key);

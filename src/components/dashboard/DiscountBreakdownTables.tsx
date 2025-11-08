@@ -21,8 +21,8 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
       if (!acc[product]) {
         acc[product] = {
           product,
-          transactions: 0,
-          unitsSold: 0,
+          transactionIds: new Set(),
+          saleItemIds: new Set(),
           totalDiscount: 0,
           totalRevenue: 0,
           avgDiscountPercent: 0,
@@ -32,8 +32,14 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
         };
       }
       
-      acc[product].transactions += 1;
-      acc[product].unitsSold += 1; // Each transaction is one unit
+      // Track unique transaction IDs and sale item IDs
+      if (item.paymentTransactionId) {
+        acc[product].transactionIds.add(item.paymentTransactionId);
+      }
+      if (item.saleItemId) {
+        acc[product].saleItemIds.add(item.saleItemId);
+      }
+      
       acc[product].totalDiscount += item.discountAmount || 0;
       acc[product].totalRevenue += item.paymentValue || 0;
       acc[product].totalDiscountPercent += item.discountPercentage || 0;
@@ -44,11 +50,15 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
     }, {} as Record<string, any>);
 
     return Object.values(products).map((item: any) => ({
-      ...item,
+      product: item.product,
+      transactions: item.transactionIds.size,
+      unitsSold: item.saleItemIds.size,
+      totalDiscount: item.totalDiscount,
+      totalRevenue: item.totalRevenue,
       locationsCount: item.locations.size,
       customersCount: item.customers.size,
-      avgDiscountPercent: item.transactions > 0 ? item.totalDiscountPercent / item.transactions : 0,
-      avgRevenuePerUnit: item.unitsSold > 0 ? item.totalRevenue / item.unitsSold : 0
+      avgDiscountPercent: item.transactionIds.size > 0 ? item.totalDiscountPercent / item.transactionIds.size : 0,
+      avgRevenuePerUnit: item.saleItemIds.size > 0 ? item.totalRevenue / item.saleItemIds.size : 0
     })).sort((a, b) => b.totalDiscount - a.totalDiscount);
   }, [data]);
 
@@ -60,8 +70,8 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
       if (!acc[category]) {
         acc[category] = {
           category,
-          transactions: 0,
-          unitsSold: 0,
+          transactionIds: new Set(),
+          saleItemIds: new Set(),
           totalDiscount: 0,
           totalRevenue: 0,
           avgDiscountPercent: 0,
@@ -71,8 +81,14 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
         };
       }
       
-      acc[category].transactions += 1;
-      acc[category].unitsSold += 1;
+      // Track unique transaction IDs and sale item IDs
+      if (item.paymentTransactionId) {
+        acc[category].transactionIds.add(item.paymentTransactionId);
+      }
+      if (item.saleItemId) {
+        acc[category].saleItemIds.add(item.saleItemId);
+      }
+      
       acc[category].totalDiscount += item.discountAmount || 0;
       acc[category].totalRevenue += item.paymentValue || 0;
       acc[category].totalDiscountPercent += item.discountPercentage || 0;
@@ -83,11 +99,15 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
     }, {} as Record<string, any>);
 
     return Object.values(categories).map((item: any) => ({
-      ...item,
+      category: item.category,
+      transactions: item.transactionIds.size,
+      unitsSold: item.saleItemIds.size,
+      totalDiscount: item.totalDiscount,
+      totalRevenue: item.totalRevenue,
       productsCount: item.products.size,
       customersCount: item.customers.size,
-      avgDiscountPercent: item.transactions > 0 ? item.totalDiscountPercent / item.transactions : 0,
-      avgRevenuePerUnit: item.unitsSold > 0 ? item.totalRevenue / item.unitsSold : 0
+      avgDiscountPercent: item.transactionIds.size > 0 ? item.totalDiscountPercent / item.transactionIds.size : 0,
+      avgRevenuePerUnit: item.saleItemIds.size > 0 ? item.totalRevenue / item.saleItemIds.size : 0
     })).sort((a, b) => b.totalDiscount - a.totalDiscount);
   }, [data]);
 
@@ -99,8 +119,8 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
       if (!acc[location]) {
         acc[location] = {
           location,
-          transactions: 0,
-          unitsSold: 0,
+          transactionIds: new Set(),
+          saleItemIds: new Set(),
           totalDiscount: 0,
           totalRevenue: 0,
           avgDiscountPercent: 0,
@@ -110,8 +130,14 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
         };
       }
       
-      acc[location].transactions += 1;
-      acc[location].unitsSold += 1;
+      // Track unique transaction IDs and sale item IDs
+      if (item.paymentTransactionId) {
+        acc[location].transactionIds.add(item.paymentTransactionId);
+      }
+      if (item.saleItemId) {
+        acc[location].saleItemIds.add(item.saleItemId);
+      }
+      
       acc[location].totalDiscount += item.discountAmount || 0;
       acc[location].totalRevenue += item.paymentValue || 0;
       acc[location].totalDiscountPercent += item.discountPercentage || 0;
@@ -122,11 +148,15 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
     }, {} as Record<string, any>);
 
     return Object.values(locations).map((item: any) => ({
-      ...item,
+      location: item.location,
+      transactions: item.transactionIds.size,
+      unitsSold: item.saleItemIds.size,
+      totalDiscount: item.totalDiscount,
+      totalRevenue: item.totalRevenue,
       productsCount: item.products.size,
       customersCount: item.customers.size,
-      avgDiscountPercent: item.transactions > 0 ? item.totalDiscountPercent / item.transactions : 0,
-      avgRevenuePerUnit: item.unitsSold > 0 ? item.totalRevenue / item.unitsSold : 0
+      avgDiscountPercent: item.transactionIds.size > 0 ? item.totalDiscountPercent / item.transactionIds.size : 0,
+      avgRevenuePerUnit: item.saleItemIds.size > 0 ? item.totalRevenue / item.saleItemIds.size : 0
     })).sort((a, b) => b.totalDiscount - a.totalDiscount);
   }, [data]);
 

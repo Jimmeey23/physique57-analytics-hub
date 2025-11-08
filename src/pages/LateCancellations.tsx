@@ -422,7 +422,7 @@ const LateCancellations = () => {
                 })}
               </TabsList>
               <div className="ml-3 mt-1">
-                <InfoPopover context="sales-overview" locationId={activeLocation} />
+                <InfoPopover context="late-cancellations-overview" locationId={activeLocation} />
               </div>
             </div>
 

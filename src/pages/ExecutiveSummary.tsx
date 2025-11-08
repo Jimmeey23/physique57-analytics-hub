@@ -16,17 +16,25 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { useDynamicHeroMetrics } from '@/hooks/useDynamicHeroMetrics';
 import { AiNotes } from '@/components/ui/AiNotes';
+import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 // Inner component that has access to GlobalFilters context
 const ExecutiveSummaryContent = () => {
-  const { data: salesData = [] } = useSalesData();
-  const { data: sessionsData = [] } = useSessionsData();
-  const { data: payrollData = [] } = usePayrollData();
-  const { data: newClientData = [] } = useNewClientData();
-  const { data: leadsData = [] } = useLeadsData();
+  const { data: salesData = [], loading: salesLoading } = useSalesData();
+  const { data: sessionsData = [], loading: sessionsLoading } = useSessionsData();
+  const { data: payrollData = [], isLoading: payrollLoading } = usePayrollData();
+  const { data: newClientData = [], loading: clientsLoading } = useNewClientData();
+  const { data: leadsData = [], loading: leadsLoading } = useLeadsData();
   const { data: discountData = [] } = useDiscountAnalysis();
+  const { setLoading } = useGlobalLoading();
   const exportRef = React.useRef<{ open: () => void }>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
+
+  // Track loading state
+  React.useEffect(() => {
+    const isLoading = salesLoading || sessionsLoading || payrollLoading || clientsLoading || leadsLoading;
+    setLoading(isLoading, 'Loading executive dashboard data...');
+  }, [salesLoading, sessionsLoading, payrollLoading, clientsLoading, leadsLoading, setLoading]);
 
   // Get dynamic hero metrics that update with location filter
   const heroMetrics = useDynamicHeroMetrics({

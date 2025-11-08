@@ -239,7 +239,7 @@ export const SessionsSection: React.FC = () => {
           <CardContent className="p-2">
             <div className="flex items-center justify-end pr-2 pt-2">
               {/* One info icon per active location */}
-              <InfoPopover context="sales-overview" locationId={activeLocation} />
+              <InfoPopover context="sessions-overview" locationId={activeLocation} />
             </div>
             <Tabs value={activeLocation} onValueChange={handleLocationChange} className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-2 rounded-2xl h-auto gap-2">

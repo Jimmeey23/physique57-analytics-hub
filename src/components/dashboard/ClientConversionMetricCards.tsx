@@ -13,7 +13,7 @@ interface ClientConversionMetricCardsProps {
   onCardClick?: (title: string, data: NewClientData[], metricType: string) => void;
 }
 
-export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsProps> = ({ data, historicalData, dateRange, onCardClick }) => {
+const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCardsProps> = ({ data, historicalData, dateRange, onCardClick }) => {
   const { metrics } = useClientConversionMetrics(data, historicalData, { dateRange });
   
   // Calculate additional metrics
@@ -135,3 +135,6 @@ export const ClientConversionMetricCards: React.FC<ClientConversionMetricCardsPr
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders
+export const ClientConversionMetricCards = React.memo(ClientConversionMetricCardsComponent);

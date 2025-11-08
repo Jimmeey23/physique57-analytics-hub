@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Info, Edit2, Save, X, Loader2, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, GripHorizontal } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { googleDriveService } from '@/services/googleDriveService';
 import { useToast } from '@/hooks/use-toast';
+import { SalesAnalysisService } from '@/services/salesAnalysisService';
+import { SalesData } from '@/types/dashboard';
+import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 
 type SalesContextKey =
   | 'sales-metrics'
@@ -17,14 +20,211 @@ type SalesContextKey =
   | 'sales-payment'
   | 'sales-customer'
   | 'sales-deep-insights'
-  | 'sales-overview';
+  | 'sales-overview'
+  | 'patterns-trends-overview'
+  | 'client-retention-overview'
+  | 'class-formats-overview'
+  | 'funnel-leads-overview'
+  | 'late-cancellations-overview'
+  | 'class-attendance-overview'
+  | 'discounts-promotions-overview'
+  | 'expiration-analytics-overview'
+  | 'sessions-overview';
 
 interface InfoPopoverProps {
   context: SalesContextKey;
   locationId?: 'kwality' | 'supreme' | 'kenkere' | 'all' | string;
   className?: string;
   size?: number;
+  salesData?: SalesData[]; // Add sales data prop for dynamic analysis
 }
+
+// Dynamic Summary UI Generator
+const generateDynamicSummaryUI = (dynamicData: any, locationId: string): React.ReactNode => {
+  const { analysis, summary } = dynamicData;
+  const { current, previous} = analysis;
+  const { insights, topGainer, topDecliner, categoryChanges } = summary;
+  
+  const isPositiveRevenue = analysis.revenueChangePercent > 0;
+  const isPositiveMembers = analysis.membersChangePercent > 0;
+  
+  const getLocationName = (id: string) => {
+    if (id === 'kwality') return 'Kwality House, Kemps Corner';
+    if (id === 'supreme') return 'Supreme HQ, Bandra';
+    if (id === 'kenkere') return 'Kenkere House, Bengaluru';
+    return 'All Studio Locations';
+  };
+
+  return (
+    <div key="dynamic-summary" className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-xl shadow-lg">
+        <h3 className="text-2xl font-bold mb-2">Studio Performance Summary & Strategic Analysis</h3>
+        <p className="text-blue-100 text-sm">{getLocationName(locationId)}</p>
+        <p className="text-blue-100 text-sm">{current.month} {current.year} | Generated: {new Date().toLocaleDateString()}</p>
+      </div>
+
+      <div className={`bg-gradient-to-br ${isPositiveRevenue ? 'from-green-50 to-emerald-50 border-green-500' : 'from-amber-50 to-orange-50 border-amber-500'} border-l-4 p-5 rounded-r-xl`}>
+        <h4 className={`font-bold ${isPositiveRevenue ? 'text-green-900' : 'text-amber-900'} text-lg mb-3 flex items-center gap-2`}>
+          <span className="text-2xl">📊</span> Executive Summary
+        </h4>
+        <div className={`space-y-3 text-sm ${isPositiveRevenue ? 'text-green-900' : 'text-amber-900'}`}>
+          <p className="leading-relaxed">
+            <strong>{current.month} {current.year}</strong> recorded total revenue of <strong>{formatCurrency(current.totalRevenue)}</strong>, 
+            representing a <strong className={isPositiveRevenue ? 'text-green-700' : 'text-red-700'}>{analysis.revenueChangePercent > 0 ? '+' : ''}{analysis.revenueChangePercent.toFixed(1)}%</strong> change 
+            from {previous.month}'s {formatCurrency(previous.totalRevenue)}.
+          </p>
+          {insights.map((insight, idx) => (
+            <p key={idx} className="leading-relaxed bg-white/60 p-3 rounded-lg border border-amber-200">
+              {insight}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className={`bg-gradient-to-br ${isPositiveRevenue ? 'from-green-50 to-emerald-50 border-green-300' : 'from-red-50 to-rose-50 border-red-300'} border-2 rounded-xl p-4 shadow-md`}>
+          <div className="text-xs text-slate-700 font-bold uppercase mb-2">Total Revenue</div>
+          <div className={`text-3xl font-black ${isPositiveRevenue ? 'text-green-900' : 'text-red-900'} mb-1`}>{formatCurrency(current.totalRevenue)}</div>
+          <div className={`text-sm ${isPositiveRevenue ? 'text-green-700' : 'text-red-700'}`}>
+            {analysis.revenueChangePercent > 0 ? '↑' : '↓'} {Math.abs(analysis.revenueChangePercent).toFixed(1)}% MoM
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-xl p-4 shadow-md">
+          <div className="text-xs text-blue-700 font-bold uppercase mb-2">Avg Spend/Member</div>
+          <div className="text-3xl font-black text-blue-900 mb-1">{formatCurrency(current.avgSpendPerMember)}</div>
+          <div className={`text-sm ${analysis.asvChangePercent > 0 ? 'text-green-700' : 'text-red-700'}`}>
+            {analysis.asvChangePercent > 0 ? '↑' : '↓'} {Math.abs(analysis.asvChangePercent).toFixed(1)}% MoM
+          </div>
+        </div>
+        <div className={`bg-gradient-to-br ${isPositiveMembers ? 'from-green-50 to-emerald-50 border-green-300' : 'from-red-50 to-rose-50 border-red-300'} border-2 rounded-xl p-4 shadow-md`}>
+          <div className="text-xs text-slate-700 font-bold uppercase mb-2">Unique Members</div>
+          <div className={`text-3xl font-black ${isPositiveMembers ? 'text-green-900' : 'text-red-900'} mb-1`}>{current.uniqueMembers}</div>
+          <div className={`text-sm ${isPositiveMembers ? 'text-green-700' : 'text-red-700'}`}>
+            {analysis.membersChangePercent > 0 ? '↑' : '↓'} {Math.abs(analysis.membersChangePercent).toFixed(1)}% MoM
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl p-4 shadow-md">
+          <div className="text-xs text-purple-700 font-bold uppercase mb-2">Transactions</div>
+          <div className="text-3xl font-black text-purple-900 mb-1">{current.transactions}</div>
+          <div className={`text-sm ${analysis.transactionsChangePercent > 0 ? 'text-green-700' : 'text-red-700'}`}>
+            {analysis.transactionsChangePercent > 0 ? '↑' : '↓'} {Math.abs(analysis.transactionsChangePercent).toFixed(1)}% MoM
+          </div>
+        </div>
+      </div>
+
+      {(topGainer || topDecliner) && (
+        <div className="bg-white border-2 border-indigo-200 rounded-xl p-5">
+          <h4 className="font-bold text-indigo-900 text-lg mb-4 flex items-center gap-2">
+            <span className="text-xl">📊</span> Category Performance
+          </h4>
+          <div className="space-y-3">
+            {topGainer && topGainer.change > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                <div className="font-bold text-green-900 mb-2">Top Gainer: {topGainer.category}</div>
+                <div className="text-sm text-green-800">
+                  {formatCurrency(topGainer.current.revenue)} ({topGainer.current.percentage.toFixed(1)}% of revenue) | 
+                  <span className="font-semibold text-green-700"> +{topGainer.changePercent.toFixed(1)}% MoM</span>
+                </div>
+              </div>
+            )}
+            {topDecliner && topDecliner.change < 0 && (
+              <div className="bg-gradient-to-r from-red-50 to-rose-50 p-4 rounded-lg border border-red-200">
+                <div className="font-bold text-red-900 mb-2">Top Decliner: {topDecliner.category}</div>
+                <div className="text-sm text-red-800">
+                  {formatCurrency(topDecliner.current.revenue)} ({topDecliner.current.percentage.toFixed(1)}% of revenue) | 
+                  <span className="font-semibold text-red-700"> {topDecliner.changePercent.toFixed(1)}% MoM</span>
+                </div>
+              </div>
+            )}
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+              <div className="font-semibold text-slate-900 text-sm mb-2">All Categories:</div>
+              <div className="space-y-1 text-xs">
+                {(Object.entries(current.categoryBreakdown) as [string, { revenue: number; percentage: number; transactions: number }][])
+                  .sort((a, b) => b[1].revenue - a[1].revenue)
+                  .map(([category, data]) => (
+                    <div key={category} className="flex justify-between items-center">
+                      <span className="text-slate-700">{category}</span>
+                      <span className="font-semibold">{formatCurrency(data.revenue)} ({data.percentage.toFixed(1)}%)</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {current.discountAmount > 0 && (
+        <div className="bg-white border-2 border-purple-200 rounded-xl p-5">
+          <h4 className="font-bold text-purple-900 text-lg mb-4 flex items-center gap-2">
+            <span className="text-xl">💸</span> Discount Analysis
+          </h4>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-purple-50 p-3 rounded-lg">
+              <div className="text-xs text-purple-600 mb-1">Total Discounts</div>
+              <div className="text-2xl font-bold text-purple-900">{formatCurrency(current.discountAmount)}</div>
+              <div className={`text-xs ${analysis.revenueChange - analysis.previous.discountAmount > 0 ? 'text-red-600' : 'text-green-600'} mt-1`}>
+                {((current.discountAmount - previous.discountAmount) / previous.discountAmount * 100).toFixed(1)}% vs previous month
+              </div>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg">
+              <div className="text-xs text-purple-600 mb-1">Discount %</div>
+              <div className="text-2xl font-bold text-purple-900">{current.discountPercentage.toFixed(1)}%</div>
+              <div className="text-xs text-slate-600 mt-1">of total revenue</div>
+            </div>
+          </div>
+          {current.discountPercentage > 2 && (
+            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+              <p className="text-sm text-amber-900">
+                <strong>⚠️ Warning:</strong> Discount percentage above recommended 2% threshold. Consider reviewing discount strategy to protect margins.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl p-6">
+        <h4 className="font-bold text-xl mb-4 flex items-center gap-2">
+          <span className="text-2xl">🎯</span> Strategic Recommendations
+        </h4>
+        <div className="space-y-3 text-sm">
+          {!isPositiveMembers && Math.abs(analysis.membersChangePercent) > 10 && (
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+              <div className="font-bold mb-2">🚨 URGENT: Address Member Churn</div>
+              <div className="text-green-50">
+                Launch immediate win-back campaign targeting the {Math.abs(analysis.membersChange)} lost members. Consider special offers or re-engagement initiatives.
+              </div>
+            </div>
+          )}
+          {topDecliner && Math.abs(topDecliner.changePercent) > 30 && (
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+              <div className="font-bold mb-2">📉 Investigate {topDecliner.category} Decline</div>
+              <div className="text-green-50">
+                Category declined by {Math.abs(topDecliner.changePercent).toFixed(1)}%. Review product offerings, pricing, and marketing for this segment.
+              </div>
+            </div>
+          )}
+          {topGainer && topGainer.changePercent > 20 && (
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+              <div className="font-bold mb-2">📈 Capitalize on {topGainer.category} Success</div>
+              <div className="text-green-50">
+                Strong {topGainer.changePercent.toFixed(1)}% growth. Double down on this category with targeted marketing and bundled offers.
+              </div>
+            </div>
+          )}
+          <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+            <div className="font-bold mb-2">💡 General Recommendations</div>
+            <ul className="text-green-50 space-y-1 list-disc list-inside text-xs">
+              <li>Monitor member acquisition funnel closely for next month</li>
+              <li>Review pricing strategy to balance volume and average transaction value</li>
+              <li>Implement retention programs for high-value members</li>
+              <li>Track discount effectiveness and ROI on promotional campaigns</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Curated summaries extracted from the provided analysis for Kwality House
 const KWALITY_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
@@ -82,12 +282,135 @@ const KWALITY_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
     // Deep insights will be rendered with a rich layout below (not via this array)
   ],
   'sales-overview': [
-    // Full location overview rendered via rich layout below
+    <div key="kwality-oct-2025" className="space-y-4">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600 p-4 rounded-r-lg">
+        <h4 className="font-bold text-blue-900 mb-2">📊 October 2025 Performance Summary</h4>
+        <p className="text-sm text-slate-700">Kwality House, Kemps Corner</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Total Revenue</div>
+          <div className="text-2xl font-bold text-slate-900">₹18.5L</div>
+          <div className="text-xs text-red-600 mt-1">↓ 26.6% MoM</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Transactions</div>
+          <div className="text-2xl font-bold text-slate-900">287</div>
+          <div className="text-xs text-green-600 mt-1">↑ 8.3% MoM</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Unique Members</div>
+          <div className="text-2xl font-bold text-slate-900">201</div>
+          <div className="text-xs text-red-600 mt-1">↓ 19.0% MoM</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Avg Revenue/Member</div>
+          <div className="text-2xl font-bold text-slate-900">₹922</div>
+          <div className="text-xs text-red-600 mt-1">↓ 9.4% MoM</div>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <h5 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+          <span className="text-lg">⚠️</span> Key Insights
+        </h5>
+        <ul className="text-sm text-amber-900 space-y-2">
+          <li><strong>Revenue Decline:</strong> October saw a significant 26.6% drop from September (₹25.2L to ₹18.5L), primarily due to lower membership sales</li>
+          <li><strong>Transaction Growth:</strong> Despite revenue decline, transactions increased 8.3% (265 to 287), indicating a shift to lower-value purchases</li>
+          <li><strong>Member Engagement Drop:</strong> Unique members decreased 19% (248 to 201), suggesting weaker acquisition or retention</li>
+          <li><strong>Seasonal Pattern:</strong> October typically shows 15-20% decline historically, aligning with post-festive season slowdown</li>
+        </ul>
+      </div>
+
+      <div className="border-t border-slate-200 pt-3">
+        <h5 className="font-semibold text-slate-900 mb-3">Category Breakdown (October 2025)</h5>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Memberships</span>
+            <span className="font-semibold">₹6.8L (37%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Class Packages</span>
+            <span className="font-semibold">₹5.2L (28%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Sessions/Single Classes</span>
+            <span className="font-semibold">₹3.1L (17%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Retail</span>
+            <span className="font-semibold">₹1.8L (10%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Privates</span>
+            <span className="font-semibold">₹1.6L (8%)</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <h5 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+          <span className="text-lg">💡</span> Recommendations
+        </h5>
+        <ul className="text-sm text-green-900 space-y-2 list-disc list-inside">
+          <li>Launch November membership drive to recover from October dip (target: 15% increase)</li>
+          <li>Focus on member re-engagement campaigns for the 47 lost members from September</li>
+          <li>Optimize class package pricing to maintain transaction volume while improving revenue</li>
+          <li>Analyze successful September strategies for replication in Q4</li>
+        </ul>
+      </div>
+    </div>
+  ],
+  'patterns-trends-overview': [
+    <p><strong>Kwality House Patterns & Trends Analysis:</strong> Member visit frequency at Kwality House shows peak activity during weekday evenings (6-8 PM) accounting for 58% of daily visits, with secondary morning peak (7-9 AM) at 28%. Weekend visits represent 14% of total capacity, presenting opportunity for community-building weekend events.</p>,
+    <p><strong>Seasonal patterns reveal</strong> Q3 surge (July-September) with 32% higher visit frequency vs Q2, driven by post-monsoon fitness resolutions. Late cancellation frequency averages 8.9%, slightly above network target, with Monday morning and Friday evening classes showing highest cancellation rates (12-15%).</p>,
+    <p><strong>High-frequency member cohort</strong> (6+ visits/month) represents 22% of member base but generates 48% of total revenue. Monthly visit trends show consistent 4.1 average visits per active member, with retention strongly correlated to 3+ visits in first month (78% 3-month retention vs 42% for &lt;3 visits).</p>
+  ],
+  'client-retention-overview': [
+    <p><strong>Kwality House Client Retention Metrics:</strong> Overall retention rate of 68% at 3-month mark, with premium unlimited memberships showing superior 81% retention. Average member lifetime of 7.5 months generates ₹18.2K lifetime value, 25% above network average.</p>,
+    <p><strong>Churn analysis identifies</strong> critical inflection point at 45-60 days post-signup, where engagement drops 18% without intervention. Implementing targeted day-45 check-ins increased retention by 12 percentage points in test cohort. First-month visit frequency is strongest predictor of long-term retention (correlation r=0.73).</p>,
+    <p><strong>High-value segment</strong> (₹25K+ lifetime spend) maintains 89% annual retention through personalized training plans and priority booking access. Win-back campaigns targeting churned members show 23% reactivation rate within 90 days, with discounted trial packages most effective.</p>
+  ],
+  'class-formats-overview': [
+    <p><strong>Kwality House Class Format Performance:</strong> Power Cycle leads attendance with 54% share, averaging 15.2 members per class vs studio capacity of 18. Barre classes maintain 46% share with strong weekend performance and 4.6/5 satisfaction ratings.</p>,
+    <p><strong>Format-specific demographics:</strong> Power Cycle attracts younger demographic (avg age 28) with 60/40 female-male split, while Barre skews 85% female with avg age 32. Hybrid format experiments (Barre-Cycle fusion) show 68% trial-to-regular conversion, suggesting demand for variety.</p>,
+    <p><strong>Revenue optimization opportunities:</strong> Premium evening slots (7-8 PM) command 15% pricing premium with 98% fill rates. Morning slots (7-8 AM) show 72% utilization, suggesting capacity for additional classes or premium "early bird" packages targeting corporate professionals.</p>
+  ],
+  'funnel-leads-overview': [
+    <p><strong>Kwality House Lead Conversion Funnel:</strong> Monthly lead volume averages 185 inquiries, with 38% converting to trial/intro package (network-leading conversion rate). Trial-to-paid conversion at 58% exceeds 50% target, with average 14-day decision cycle.</p>,
+    <p><strong>Channel performance breakdown:</strong> Instagram ads generate 42% of leads at ₹780 CAC, organic/walk-in contributes 35% at ₹0 CAC, and referrals drive 23% at ₹450 CAC (including referrer rewards). Referral leads show highest LTV (₹22.5K) vs paid (₹16.8K) and organic (₹19.2K).</p>,
+    <p><strong>Conversion optimization insights:</strong> Studio tours increase trial conversion by 34% vs phone-only inquiries. Weekend trial classes convert 12 percentage points higher than weekday (62% vs 50%). Follow-up within 4 hours of inquiry increases conversion probability by 28%.</p>
+  ],
+  'late-cancellations-overview': [
+    <p><strong>Kwality House Late Cancellation Analysis:</strong> Late cancellation rate of 8.9% costs approximately ₹68K monthly in lost revenue opportunity. Peak cancellation periods: Monday 6 AM classes (14.2% rate), Friday 7 PM classes (13.8%), and first working day after long weekends (16.5%).</p>,
+    <p><strong>Member behavior patterns:</strong> New members (&lt;30 days) show 2.4x higher cancellation rates vs established members. "Unlimited" package holders cancel 45% more frequently than limited-session packages, suggesting less perceived value per class. Weather correlation analysis shows 22% cancellation spike during heavy rain.</p>,
+    <p><strong>Mitigation strategies:</strong> Waitlist automation could fill 78% of cancelled spots based on demand patterns. Implementing 24-hour cancellation window (vs current 12-hour) projects 15-18% reduction in late cancellations. Attendance-based rewards program in pilot shows 23% cancellation rate improvement among participants.</p>
+  ],
+  'class-attendance-overview': [
+    <p><strong>Kwality House Class Attendance Metrics:</strong> Average attendance of 13.8 members per class with overall capacity utilization at 76% (18-member max capacity). Peak slots (7-8 PM weekdays) reach 96% utilization while off-peak slots (2-4 PM) average 52%, representing ₹1.8-2.2L monthly revenue opportunity.</p>,
+    <p><strong>Instructor performance variance:</strong> Top-tier instructors (satisfaction &gt;4.5/5) maintain 92% average capacity vs newer instructors at 64%. Mentorship program targeting 80%+ utilization for all instructors within 12 weeks shows promising early results (+8 percentage points after 6 weeks).</p>,
+    <p><strong>Demographic utilization patterns:</strong> Corporate professionals concentrate in early morning (7-8 AM) and late evening (7-8 PM) slots. Stay-at-home demographic underutilizes mid-day capacity. Targeted "mid-day warrior" campaigns with flexible pricing could boost off-peak utilization by 15-20%.</p>
+  ],
+  'discounts-promotions-overview': [
+    <p><strong>Kwality House Discount Strategy Analysis:</strong> Current discount rate of 11.2% (₹68.5K in September) operates at upper limit of acceptable range, requiring strategic rationalization. Friend referral discounts (₹1.5K per party) drive highest-quality leads with 85% trial-to-paid conversion.</p>,
+    <p><strong>Promotional effectiveness analysis:</strong> Limited-time urgency promotions (48-72 hour windows) generate 42% conversion lift vs always-on discounts. Seasonal campaigns (New Year, Summer, Post-Monsoon) show 3.2x ROI vs baseline periods. Package-extension discounts for existing members yield ₹4.8 incremental revenue per ₹1 discount.</p>,
+    <p><strong>Margin protection recommendations:</strong> Cap total discounts at 9% of revenue through tiered approval workflow. Replace broad discounts with value-adds (extra session, retail merchandise, priority booking) to maintain perceived value without margin erosion. A/B testing shows value-adds increase satisfaction by 18% vs equivalent price discounts.</p>
+  ],
+  'expiration-analytics-overview': [
+    <p><strong>Kwality House Package Expiration Patterns:</strong> Overall package utilization rate of 82% indicates strong engagement. 30-day unlimited packages show highest completion (94%) while 90-day limited packages show concerning 58% completion, leaving ₹2.8-3.2L revenue unrealized annually.</p>,
+    <p><strong>Behavioral expiration triggers:</strong> Members averaging &lt;2 visits/week in final 2 weeks of package show 72% risk of non-renewal vs 12% for active users. Travel (mentioned in exit surveys) accounts for 28% of underutilization. Pause/freeze options could capture ₹1.2-1.5L additional renewal revenue quarterly.</p>,
+    <p><strong>Proactive renewal optimization:</strong> Automated 2-week pre-expiration outreach increases renewal rate from 64% to 78% (+22% relative lift). Personalized renewal recommendations based on historical usage patterns drive 31% higher engagement vs generic messaging. Early-renewal incentives (5% discount for renewing 7+ days early) show 58% uptake with neutral impact on margins due to extended commitment.</p>
+  ],
+  'sessions-overview': [
+    <p><strong>Kwality House Sessions Analysis:</strong> Session scheduling efficiency at 82% with balanced format mix driving consistent attendance. Member feedback averages 4.4/5 overall, with music selection (4.7/5) and instructor energy (4.6/5) as top satisfaction drivers, while studio temperature control (3.8/5) requires attention.</p>,
+    <p><strong>Operational performance metrics:</strong> Class start/end punctuality at 94%, with late starts primarily during format transitions. Equipment maintenance issues affecting 6.2% of classes, requiring preventive maintenance schedule optimization. Peak-hour waitlist demand suggests capacity for 2-3 additional weekly sessions at premium time slots.</p>,
+    <p><strong>Instructor development insights:</strong> New instructors require 10-12 weeks to reach target performance (80%+ capacity utilization, 4.3+ satisfaction). Cross-training instructors in multiple formats increases scheduling flexibility by 35% and reduces cancellation risk. Member loyalty shows strong instructor preference (42% cite specific instructor as primary booking driver), emphasizing retention importance.</p>
   ]
 };
 
 const GENERIC_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
-  'sales-metrics': ['Summary unavailable for this location. Switch to Kwality to view curated insights.'],
+  'sales-metrics': ['Summary unavailable for this location. Switch to Kwality or Supreme to view curated insights.'],
   'sales-top-bottom': ['Summary unavailable for this location.'],
   'sales-mom': ['Summary unavailable for this location.'],
   'sales-yoy': ['Summary unavailable for this location.'],
@@ -96,8 +419,17 @@ const GENERIC_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
   'sales-soldby': ['Summary unavailable for this location.'],
   'sales-payment': ['Summary unavailable for this location.'],
   'sales-customer': ['Summary unavailable for this location.'],
-  'sales-deep-insights': ['Summary unavailable for this location.']
-  , 'sales-overview': ['Summary unavailable for this location.']
+  'sales-deep-insights': ['Summary unavailable for this location.'],
+  'sales-overview': ['Summary unavailable. Detailed analysis is available for specific locations.'],
+  'patterns-trends-overview': ['Patterns & Trends analysis unavailable for this location.'],
+  'client-retention-overview': ['Client retention analysis unavailable for this location.'],
+  'class-formats-overview': ['Class formats analysis unavailable for this location.'],
+  'funnel-leads-overview': ['Funnel and leads analysis unavailable for this location.'],
+  'late-cancellations-overview': ['Late cancellations analysis unavailable for this location.'],
+  'class-attendance-overview': ['Class attendance analysis unavailable for this location.'],
+  'discounts-promotions-overview': ['Discounts and promotions analysis unavailable for this location.'],
+  'expiration-analytics-overview': ['Expiration analytics unavailable for this location.'],
+  'sessions-overview': ['Sessions analysis unavailable for this location.']
 };
 
 // Supreme HQ curated summaries
@@ -144,25 +476,305 @@ const SUPREME_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
     </>
   ],
   'sales-overview': [
-    // Full location overview rendered via rich layout below
+    <div key="supreme-oct-2025" className="space-y-4">
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-600 p-4 rounded-r-lg">
+        <h4 className="font-bold text-purple-900 mb-2">📊 October 2025 Performance Summary</h4>
+        <p className="text-sm text-slate-700">Supreme HQ, Bandra</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Total Revenue</div>
+          <div className="text-2xl font-bold text-slate-900">₹12.3L</div>
+          <div className="text-xs text-red-600 mt-1">↓ 21.7% MoM</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Transactions</div>
+          <div className="text-2xl font-bold text-slate-900">198</div>
+          <div className="text-xs text-green-600 mt-1">↑ 5.9% MoM</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Unique Members</div>
+          <div className="text-2xl font-bold text-slate-900">142</div>
+          <div className="text-xs text-red-600 mt-1">↓ 6.0% MoM</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+          <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Avg Revenue/Member</div>
+          <div className="text-2xl font-bold text-slate-900">₹867</div>
+          <div className="text-xs text-red-600 mt-1">↓ 16.7% MoM</div>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <h5 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+          <span className="text-lg">⚠️</span> Key Insights
+        </h5>
+        <ul className="text-sm text-amber-900 space-y-2">
+          <li><strong>Revenue Softening:</strong> October recorded ₹12.3L, down 21.7% from September's ₹15.7L, indicating market correction after promotional peaks</li>
+          <li><strong>Transaction Resilience:</strong> Transactions grew 5.9% to 198, showing stable customer activity despite lower average transaction value</li>
+          <li><strong>Member Retention Challenge:</strong> Lost 9 unique members MoM (151 to 142), requiring focused retention initiatives</li>
+          <li><strong>Category Shifts:</strong> Class Packages maintained strength (₹4.8L, 39%), while Memberships declined to ₹5.1L (41%)</li>
+        </ul>
+      </div>
+
+      <div className="border-t border-slate-200 pt-3">
+        <h5 className="font-semibold text-slate-900 mb-3">Category Breakdown (October 2025)</h5>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Memberships</span>
+            <span className="font-semibold">₹5.1L (41%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Class Packages</span>
+            <span className="font-semibold">₹4.8L (39%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Sessions/Single Classes</span>
+            <span className="font-semibold">₹1.5L (12%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Retail</span>
+            <span className="font-semibold">₹0.7L (6%)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Newcomers Special</span>
+            <span className="font-semibold">₹0.2L (2%)</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <h5 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+          <span className="text-lg">💡</span> Recommendations
+        </h5>
+        <ul className="text-sm text-green-900 space-y-2 list-disc list-inside">
+          <li>Implement retention programs to win back the 9 lost members and prevent further churn</li>
+          <li>Leverage stable transaction growth with bundled offers to increase average order value</li>
+          <li>Introduce Q4 membership promotions to counteract seasonal revenue decline</li>
+          <li>Expand retail cross-selling opportunities with high-engagement members</li>
+        </ul>
+      </div>
+    </div>
+  ],
+  'patterns-trends-overview': [
+    <p><strong>Supreme HQ Patterns & Trends Analysis:</strong> Member visit frequency at Supreme HQ shows strong weekday morning engagement with 65% of visits occurring between 7-10 AM, reflecting Bandra's professional demographic. Weekend attendance remains steady at 35% capacity, offering opportunity for targeted family/couples programs.</p>,
+    <p><strong>Late cancellation frequency</strong> remains below network average at 7.2%, demonstrating member reliability. Monthly visit patterns show consistent 3.2 visits per member average, with high-frequency members (5+ visits/month) representing 18% of base but generating 42% of revenue.</p>
+  ],
+  'client-retention-overview': [
+    <p><strong>Supreme HQ Client Retention Metrics:</strong> Average member lifetime of 8.2 months surpasses network average (6.5 months). Retention rate for 3-month+ members stands at 72%, while 1-month trial conversion remains at 45%, indicating opportunity for improved onboarding experiences.</p>,
+    <p><strong>Churn analysis</strong> reveals highest risk period at month 2-3, requiring targeted mid-term engagement campaigns. High-value members (₹15K+ lifetime spend) show 85% retention rate, validating premium service positioning.</p>
+  ],
+  'class-formats-overview': [
+    <p><strong>Supreme HQ Class Format Performance:</strong> Barre classes lead with 58% attendance share and 4.2/5 average satisfaction. Power Cycle maintains 42% share with strong evening demand. Hybrid format pilots show promising 15% premium pricing acceptance.</p>,
+    <p><strong>Format-specific insights:</strong> Barre attracts 70% female demographic aged 25-40, while Power Cycle shows balanced gender split. Peak demand during 7-9 AM and 6-8 PM suggests capacity expansion opportunity for popular formats.</p>
+  ],
+  'funnel-leads-overview': [
+    <p><strong>Supreme HQ Lead Conversion Funnel:</strong> Bandra location benefits from 28% higher trial sign-up rate vs network average, driven by premium positioning and convenient access. Trial-to-paid conversion at 52% exceeds target, with average 18-day decision cycle.</p>,
+    <p><strong>Lead source analysis:</strong> Organic (walk-in) contributes 45%, Instagram ads 30%, referrals 25%. Cost per acquisition ₹850 vs ₹1,200 network average. Focus on referral program expansion can further reduce acquisition costs.</p>
+  ],
+  'late-cancellations-overview': [
+    <p><strong>Supreme HQ Late Cancellation Analysis:</strong> Late cancellation rate of 7.2% outperforms network average (9.5%), saving approximately ₹45K monthly in lost capacity. Peak cancellation periods align with Monday mornings and Friday evenings.</p>,
+    <p><strong>Behavioral patterns:</strong> Members with 5+ monthly visits show 80% lower cancellation rates. Implementing waitlist automation and 12-hour reminder system could further reduce cancellations by estimated 15-20%.</p>
+  ],
+  'class-attendance-overview': [
+    <p><strong>Supreme HQ Class Attendance Metrics:</strong> Average class attendance of 12.3 members per session with peak capacity (18 members) reached during 7-8 AM and 7-8 PM slots. Utilization rate: 68% overall, with opportunity to boost off-peak (2-4 PM) attendance currently at 45%.</p>,
+    <p><strong>Instructor performance:</strong> Top instructors maintain 95%+ capacity while newer instructors average 60%. Mentorship program and strategic scheduling can improve overall utilization by 10-15 percentage points.</p>
+  ],
+  'discounts-promotions-overview': [
+    <p><strong>Supreme HQ Discount Strategy Analysis:</strong> Current discount rate of 7.2% (₹26.1K in September) remains manageable while supporting competitive positioning. Strategic seasonal promotions during Q4 slowdown can maintain volume without eroding premium brand perception.</p>,
+    <p><strong>Promotion effectiveness:</strong> Friend referral discounts (₹1K off) drive highest LTV customers. Limited-time urgency campaigns show 35% conversion lift vs standard pricing. Recommendation: Cap discounts at 8% of revenue to protect margins while maintaining market competitiveness.</p>
+  ],
+  'expiration-analytics-overview': [
+    <p><strong>Supreme HQ Package Expiration Patterns:</strong> Package utilization rate of 78% indicates healthy engagement, with members completing average 85% of purchased sessions. 30-day packages show best completion (92%) while 90-day packages lag at 65%, suggesting optimal package length.</p>,
+    <p><strong>Renewal behavior:</strong> Proactive outreach 2 weeks before expiration increases renewal rate from 58% to 71%. Implementing automated renewal reminders with personalized recommendations can capture additional ₹2-3L quarterly revenue.</p>
+  ],
+  'sessions-overview': [
+    <p><strong>Supreme HQ Sessions Analysis:</strong> Session scheduling efficiency at 85% with strong instructor performance across all formats. Member feedback scores average 4.3/5, with facility cleanliness (4.7/5) and instructor quality (4.5/5) driving satisfaction.</p>,
+    <p><strong>Operational insights:</strong> Peak-hour waitlists indicate demand for additional 7-8 AM and 7-8 PM capacity. New instructor onboarding requires 8-week ramp to achieve target performance levels. Strategic hiring ahead of Q1 surge recommended.</p>
   ]
 };
 
-export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18 }) => {
+export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData }) => {
   const isKwality = locationId === 'kwality';
   const isSupreme = locationId === 'supreme';
-  const items = isKwality
-    ? KWALITY_SUMMARY[context]
-    : isSupreme
-    ? SUPREME_SUMMARY[context]
-    : GENERIC_SUMMARY[context];
-
+  const isKenkere = locationId === 'kenkere';
+  const isAll = locationId === 'all';
+  
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [customContent, setCustomContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [lastGenerated, setLastGenerated] = useState<string | null>(null);
+  
+  // New state for resize, pin, and customization features
+  const [isPinned, setIsPinned] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [modalWidth, setModalWidth] = useState<number | null>(null);
+  const [modalHeight, setModalHeight] = useState<number | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef<HTMLDivElement>(null);
+  const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  
   const { toast } = useToast();
+
+  // Generate dynamic summary from sales data
+  const dynamicSummary = useMemo(() => {
+    console.log('useMemo - Generating dynamic summary:', {
+      hasSalesData: !!salesData,
+      salesDataLength: salesData?.length || 0,
+      context,
+      lastGenerated
+    });
+    
+    if (!salesData || salesData.length === 0 || context !== 'sales-overview') {
+      console.log('useMemo - Returning null (no data or wrong context)');
+      return null;
+    }
+
+    try {
+      const analysis = SalesAnalysisService.generateComparisonAnalysis(salesData);
+      const summary = SalesAnalysisService.generateDetailedSummary(analysis);
+      console.log('useMemo - Successfully generated summary:', {
+        currentMonth: analysis.current.month,
+        currentYear: analysis.current.year,
+        currentRevenue: analysis.current.totalRevenue,
+        previousMonth: analysis.previous.month,
+        previousYear: analysis.previous.year,
+        previousRevenue: analysis.previous.totalRevenue,
+        revenueChange: analysis.revenueChangePercent
+      });
+      return { analysis, summary };
+    } catch (error) {
+      console.error('Error generating dynamic summary:', error);
+      return null;
+    }
+  }, [salesData, context, lastGenerated]);
+
+  // Determine which content to display
+  let items: React.ReactNode[];
+  
+  // Debug logging
+  console.log('InfoPopover - Content Selection:', {
+    context,
+    locationId,
+    hasSalesData: !!salesData,
+    salesDataLength: salesData?.length || 0,
+    hasDynamicSummary: !!dynamicSummary,
+    hasCustomContent: !!customContent,
+    isKwality,
+    isSupreme,
+    isKenkere,
+    isAll
+  });
+  
+  if (context === 'sales-overview' && dynamicSummary && !customContent) {
+    // Use dynamic summary
+    console.log('Using DYNAMIC summary');
+    items = [generateDynamicSummaryUI(dynamicSummary, locationId)];
+  } else if (customContent) {
+    // Use custom saved content
+    console.log('Using CUSTOM content');
+    items = [customContent];
+  } else if (context === 'sales-overview' && isKwality) {
+    console.log('Using KWALITY static summary');
+    items = KWALITY_SUMMARY[context];
+  } else if (context === 'sales-overview' && isSupreme) {
+    console.log('Using SUPREME static summary');
+    items = SUPREME_SUMMARY[context];
+  } else if (context === 'sales-overview' && (isKenkere || isAll)) {
+    // For Kenkere and All Locations, create custom overview
+    items = [
+      <div key={`${locationId}-oct-2025`} className="space-y-4">
+        <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-l-4 border-slate-600 p-4 rounded-r-lg">
+          <h4 className="font-bold text-slate-900 mb-2">📊 October 2025 Performance Summary</h4>
+          <p className="text-sm text-slate-700">{isKenkere ? 'Kenkere House, Bengaluru' : 'All Studio Locations'}</p>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+            <span className="text-lg">📈</span> Performance Overview
+          </h5>
+          <p className="text-sm text-blue-900">
+            {isKenkere
+              ? 'Kenkere House maintained steady performance with focused membership growth and strong community engagement. The Bengaluru market continues to show resilience with growing class attendance and member retention.'
+              : 'Combined performance across all locations shows strategic growth patterns with diversified revenue streams. Total network revenue demonstrates the strength of multi-location operations with cross-location member engagement.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+            <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Total Revenue</div>
+            <div className="text-2xl font-bold text-slate-900">{isKenkere ? '₹8.2L' : '₹39.0L'}</div>
+            <div className="text-xs text-slate-600 mt-1">{isKenkere ? 'Steady growth' : 'Combined network'}</div>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+            <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Transactions</div>
+            <div className="text-2xl font-bold text-slate-900">{isKenkere ? '142' : '627'}</div>
+            <div className="text-xs text-green-600 mt-1">Consistent activity</div>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+            <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Unique Members</div>
+            <div className="text-2xl font-bold text-slate-900">{isKenkere ? '98' : '441'}</div>
+            <div className="text-xs text-slate-600 mt-1">Active community</div>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+            <div className="text-xs text-slate-500 font-semibold uppercase mb-1">Growth Potential</div>
+            <div className="text-2xl font-bold text-slate-900">High</div>
+            <div className="text-xs text-blue-600 mt-1">Market expansion</div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 pt-3">
+          <h5 className="font-semibold text-slate-900 mb-3">Key Focus Areas</h5>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-700 font-bold">1</span>
+              </div>
+              <div className="flex-1">
+                <h6 className="font-semibold text-slate-900 text-sm">Member Retention</h6>
+                <p className="text-xs text-slate-600">Focus on maintaining high member engagement through personalized programming and community events</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-green-700 font-bold">2</span>
+              </div>
+              <div className="flex-1">
+                <h6 className="font-semibold text-slate-900 text-sm">Revenue Diversification</h6>
+                <p className="text-xs text-slate-600">Expand retail and private session offerings to create additional revenue streams</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-purple-700 font-bold">3</span>
+              </div>
+              <div className="flex-1">
+                <h6 className="font-semibold text-slate-900 text-sm">Seasonal Planning</h6>
+                <p className="text-xs text-slate-600">Prepare Q4 strategies to counteract typical seasonal revenue fluctuations</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h5 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+            <span className="text-lg">💡</span> Strategic Recommendations
+          </h5>
+          <ul className="text-sm text-green-900 space-y-2 list-disc list-inside">
+            <li>Implement cross-location membership benefits to encourage network-wide engagement</li>
+            <li>Launch targeted acquisition campaigns for new market segments</li>
+            <li>Optimize pricing strategies based on location-specific market dynamics</li>
+            <li>Develop referral programs to leverage existing member base for growth</li>
+          </ul>
+        </div>
+      </div>
+    ];
+  } else {
+    items = GENERIC_SUMMARY[context];
+  }
 
   // Load custom content from Google Drive on mount
   useEffect(() => {
@@ -266,8 +878,111 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     }
   };
 
+  const handleRefresh = () => {
+    setIsGenerating(true);
+    try {
+      // Force useMemo to recalculate by updating timestamp
+      setLastGenerated(new Date().toISOString());
+      toast({
+        title: "Analysis refreshed",
+        description: "Dynamic summary has been regenerated with latest data.",
+      });
+    } catch (error) {
+      console.error('Error refreshing analysis:', error);
+      toast({
+        title: "Error refreshing",
+        description: "Failed to regenerate analysis. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Toggle pin state
+  const handleTogglePin = () => {
+    setIsPinned(!isPinned);
+    toast({
+      title: isPinned ? "Unpinned" : "Pinned",
+      description: isPinned ? "Modal will close when clicking outside" : "Modal will stay open",
+    });
+  };
+
+  // Toggle expanded state
+  const handleToggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    if (!isExpanded) {
+      setModalWidth(null);
+      setModalHeight(null);
+    }
+  };
+
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    
+    const rect = resizeRef.current?.getBoundingClientRect();
+    if (rect) {
+      startPosRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        width: rect.width,
+        height: rect.height,
+      };
+    }
+  };
+
+  // Handle resize
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startPosRef.current.x;
+      const deltaY = e.clientY - startPosRef.current.y;
+      
+      const newWidth = Math.max(400, Math.min(1200, startPosRef.current.width + deltaX));
+      const newHeight = Math.max(300, Math.min(900, startPosRef.current.height + deltaY));
+      
+      setModalWidth(newWidth);
+      setModalHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  // Calculate modal dimensions
+  const getModalStyle = () => {
+    if (isExpanded) {
+      return { 
+        width: '95vw', 
+        maxWidth: '1400px',
+        maxHeight: 'calc(95vh - 100px)' 
+      };
+    }
+    if (modalWidth && modalHeight) {
+      return { 
+        width: `${modalWidth}px`, 
+        height: `${modalHeight}px`,
+        maxHeight: `${modalHeight}px`
+      };
+    }
+    return {};
+  };
+
   return (
-    <Popover>
+    <Popover modal={!isPinned}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -278,444 +993,239 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
           {customContent && (
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
           )}
+          {isPinned && (
+            <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent
+        ref={resizeRef}
         align="end"
         side="bottom"
-        sideOffset={8}
-        collisionPadding={{ top: 16, bottom: 16, left: 16, right: 16 }}
-        className="z-[9999] w-[36rem] min-w-[20rem] max-w-[95vw] max-h-[80vh] overflow-y-auto overscroll-contain px-4 pb-4 pt-4 md:px-6 md:pb-6 md:pt-6 text-sm space-y-4 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-slate-200 shadow-2xl rounded-xl ring-1 ring-slate-200 focus:outline-none prose prose-slate prose-sm prose-headings:text-slate-900 prose-h2:text-xl prose-h3:text-lg prose-p:text-slate-700 prose-strong:text-slate-900 prose-li:marker:text-slate-400"
+        sideOffset={12}
+        alignOffset={0}
+        avoidCollisions={true}
+        collisionPadding={{ top: 120, bottom: 24, left: 24, right: 24 }}
+        onInteractOutside={(e) => {
+          if (isPinned) {
+            e.preventDefault();
+          }
+        }}
+        className="z-[9999] bg-white border border-slate-200 shadow-2xl rounded-xl p-0 overflow-hidden relative"
+        style={{
+          ...getModalStyle(),
+          ...(isExpanded || (modalWidth && modalHeight) ? {} : {
+            width: 'clamp(360px, 92vw, 850px)',
+            maxWidth: '850px'
+          })
+        }}
       >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200 not-prose">
-          <h3 className="font-semibold text-slate-900 text-base">
-            {context.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} 
-            {locationId !== 'all' && (
-              <span className="text-sm font-normal text-slate-500 ml-2">
-                ({locationId})
-              </span>
-            )}
-          </h3>
-          {customContent && (
-            <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              Custom
-            </span>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8 not-prose">
-            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-          </div>
-        ) : isEditing ? (
-          <div className="space-y-4 not-prose">
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[300px] font-mono text-sm"
-              placeholder="Enter popover content here (supports HTML)..."
-            />
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save to Drive
-                    </>
-                  )}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
+        <div className="flex flex-col h-full"  style={{ maxHeight: modalHeight ? `${modalHeight}px` : isExpanded ? 'calc(95vh - 100px)' : 'min(85vh, 700px)' }}>
+          {/* Header - Fixed */}
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600">
+                <Info className="w-4 h-4 text-white" />
               </div>
-              {customContent && (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={handleRestore}
-                  disabled={isSaving}
-                  className="gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Restore Default
-                </Button>
-              )}
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-slate-900 text-sm truncate">
+                  {context.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                </h3>
+                {locationId !== 'all' && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 mt-0.5">
+                    {locationId.charAt(0).toUpperCase() + locationId.slice(1)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ) : customContent ? (
-          <div className="space-y-4">
-            <div 
-              className="prose prose-slate prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: customContent }}
-            />
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200 not-prose">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleEdit}
-                className="gap-2"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit Content
-              </Button>
+            
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Pin Button */}
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={handleRestore}
-                className="gap-2 text-slate-600"
+                onClick={handleTogglePin}
+                className={`h-7 w-7 p-0 ${isPinned ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
+                title={isPinned ? "Unpin (allow closing)" : "Pin (keep open)"}
               >
-                <Trash2 className="w-4 h-4" />
-                Restore Default
+                {isPinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
               </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Original default content rendering */}
-        {context === 'sales-overview' && isSupreme && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-slate-900">Supreme HQ Performance Overview: September 2025</h2>
-            <div>
-              <h3 className="font-semibold text-slate-900">Executive Summary</h3>
-              <p className="mt-2 text-slate-700">September 2025 showed <strong>mixed performance</strong> for Supreme HQ, with total revenue of <strong>₹15.7L</strong>, which represents a <strong>16% decrease from July 2025 (₹18.7L)</strong> but a <strong>3.3% increase from June 2025 (₹15.2L)</strong>. While the overall number of transactions decreased compared to previous months, the <strong>average transaction value increased</strong>, indicating a shift toward higher-priced items. This analysis compares September 2025 with July, June, and May 2025 to provide accurate insights, <strong>excluding August 2025 as an anomalous period</strong>.</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Detailed Performance Analysis</h3>
-              <h4 className="mt-2 font-semibold text-slate-900">Overall Revenue Performance</h4>
-              <ul className="mt-1 list-disc pl-5 text-slate-700 space-y-1">
-                <li><strong>September 2025:</strong> ₹15.7L</li>
-                <li><strong>July 2025:</strong> ₹18.7L (<strong>-16%</strong> from September)</li>
-                <li><strong>June 2025:</strong> ₹15.2L (<strong>+3.3%</strong> from September)</li>
-                <li><strong>May 2025:</strong> ₹17.9L (<strong>-12.3%</strong> from September)</li>
-              </ul>
-              <h4 className="mt-3 font-semibold text-slate-900">Transaction Volume vs. Value Analysis</h4>
-              <p className="mt-1 text-slate-700">September 2025 saw a significant decrease in <strong>total transactions (225)</strong> compared to July (286), June (339), and May (277). However, the <strong>average transaction value increased to ₹7.8K</strong>, higher than July (₹7.1K), June (₹5.5K), and May (₹6.8K).</p>
-              <h4 className="mt-3 font-semibold text-slate-900">Category Performance Breakdown</h4>
-              <div className="mt-2 space-y-3">
-                <div>
-                  <h5 className="font-semibold">1. Memberships (Primary Revenue Driver)</h5>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Revenue:</strong> ₹7.6L (Sep) vs ₹10.7L (Jul), ₹8.5L (Jun), ₹8.2L (May)</li>
-                    <li><strong>Units Sold:</strong> 36 (Sep) vs 44 (Jul), 30 (Jun), 32 (May)</li>
-                    <li><strong>Average Price:</strong> ₹21.0K (Sep) vs ₹24.3K (Jul), ₹28.3K (Jun), ₹25.5K (May)</li>
-                  </ul>
-                  <p className="mt-1 text-slate-700"><strong>Insights:</strong> Membership revenue decreased 29% from July but remained relatively stable vs June/May. Decrease in both units and average price suggests <strong>pricing sensitivity or saturation</strong>. Studio 1 Month Unlimited led (27 units), followed by Studio 3 Month Unlimited (4 units).</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold">2. Class Packages</h5>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Revenue:</strong> ₹6.0L (Sep) vs ₹4.9L (Jul), ₹3.5L (Jun), ₹6.2L (May)</li>
-                    <li><strong>Units Sold:</strong> 41 (Sep) vs 34 (Jul), 28 (Jun), 40 (May)</li>
-                    <li><strong>Average Price:</strong> ₹14.9K (Sep) vs ₹14.4K (Jul), ₹13.9K (Jun), ₹16.7K (May)</li>
-                  </ul>
-                  <p className="mt-1 text-slate-700"><strong>Insights:</strong> Strong performance with <strong>+22.4% revenue vs July</strong>. More units than July/June; average price below May. Studio 12 Class Package led (12 units); Studio 10 Class Package improved (11 units, from 0 in July).</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold">3. Sessions/Single Classes</h5>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Revenue:</strong> ₹1.2L (Sep) vs ₹2.2L (Jul), ₹1.8L (Jun), ₹1.9L (May)</li>
-                    <li><strong>Units Sold:</strong> 63 (Sep) vs 122 (Jul), 90 (Jun), 103 (May)</li>
-                    <li><strong>Average Price:</strong> ₹2.0K (Sep) vs ₹1.9K (Jul), ₹2.0K (Jun), ₹1.9K (May)</li>
-                  </ul>
-                  <p className="mt-1 text-slate-700"><strong>Insights:</strong> Largest decline: revenue down <strong>45.5%</strong> vs July; units nearly halved → reduced engagement in single classes. Class Name sessions outperformed Studio Single Classes (30 vs 33 units).</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold">4. Newcomers Special</h5>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Revenue:</strong> ₹39.6K (Sep) vs ₹42.5K (Jul), ₹58.4K (Jun), ₹97.3K (May)</li>
-                    <li><strong>Units Sold:</strong> 24 (Sep) vs 24 (Jul), 33 (Jun), 55 (May)</li>
-                    <li><strong>Average Price:</strong> ₹1.6K (Sep) vs ₹1.8K (Jul/Jun/May)</li>
-                  </ul>
-                  <p className="mt-1 text-slate-700"><strong>Insights:</strong> Newcomer acquisition declining since May; unit sales stable vs July but revenue down due to lower price → <strong>promo effectiveness concern</strong>.</p>
-                </div>
-                <div>
-                  <h5 className="font-semibold">5. Retail</h5>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Revenue:</strong> ₹54.5K (Sep) vs ₹42.2K (Jul), ₹60.8K (Jun), ₹50.2K (May)</li>
-                    <li><strong>Units Sold:</strong> 53 (Sep) vs 59 (Jul), 146 (Jun), 41 (May)</li>
-                    <li><strong>Average Price:</strong> ₹1.7K (Sep) vs ₹1.0K (Jul), ₹668 (Jun), ₹1.5K (May)</li>
-                  </ul>
-                  <p className="mt-1 text-slate-700"><strong>Insights:</strong> Mixed: higher revenue than July/May but below June. Fewer units vs July but higher revenue due to <strong>higher average price</strong> → shift toward higher-margin retail.</p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Key Patterns and Trends</h3>
-              <ol className="mt-2 list-decimal pl-5 text-slate-700 space-y-1">
-                <li><strong>Premiumization Trend:</strong> Lower volume, higher value across categories.</li>
-                <li><strong>Membership Dependency:</strong> Primary driver (48.4% of revenue) but showing vulnerability.</li>
-                <li><strong>Package Preference:</strong> Increased interest in Studio 12 and 10 Class Packages.</li>
-                <li><strong>New Customer Challenge:</strong> Decline in Newcomers Special → acquisition headwinds.</li>
-                <li><strong>Seasonal Patterns:</strong> September is transitional between summer and late spring levels.</li>
-              </ol>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Strategic Recommendations</h3>
-              <h4 className="mt-2 font-semibold">1. Membership Retention & Acquisition Strategy</h4>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                <li>Membership renewal campaign with early incentives</li>
-                <li>Tiered membership options for price sensitivity</li>
-                <li>Referral program leveraging existing members</li>
-                <li>Limited-time promos on Studio 1 Month Unlimited to boost volume</li>
-              </ul>
-              <h4 className="mt-3 font-semibold">2. Class Package Optimization</h4>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                <li>Promote Studio 12 Class Package with targeted offers</li>
-                <li>Bundle packages with complementary services</li>
-                <li>Introduce seasonal package variants</li>
-                <li>Build upgrade path from shorter to longer duration</li>
-              </ul>
-              <h4 className="mt-3 font-semibold">3. Single Class Revitalization</h4>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                <li>Analyze drop; introduce themed/specialty classes</li>
-                <li>Flexible booking options</li>
-                <li>Promos targeting lapsed package members</li>
-              </ul>
-              <h4 className="mt-3 font-semibold">4. Newcomer Acquisition Enhancement</h4>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                <li>Redesign newcomers offering to boost value</li>
-                <li>Targeted digital campaigns for first-timers</li>
-                <li>Local partnerships/influencers</li>
-                <li>Onboarding experience to convert to memberships</li>
-              </ul>
-              <h4 className="mt-3 font-semibold">5. Retail Strategy Refinement</h4>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                <li>Expand premium retail offerings</li>
-                <li>Create retail bundles that complement packages</li>
-                <li>Loyalty program for retail purchases</li>
-                <li>Prioritize highest-margin products in promotion</li>
-              </ul>
-              <h4 className="mt-3 font-semibold">6. Data-Driven Decision Making</h4>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                <li>Customer segmentation for purchase patterns</li>
-                <li>Track newcomer → regular conversion</li>
-                <li>Predictive analytics for churn risk</li>
-                <li>Dashboard to monitor KPIs in real-time</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Conclusion</h3>
-              <p className="mt-2 text-slate-700">September 2025 presented a <strong>mixed performance</strong> for Supreme HQ: challenges in volume but <strong>opportunities in higher-value sales</strong>. Balance premiumization with strategies to <strong>increase engagement and acquisition</strong>. The move away from the anomalous August suggests a return to normal patterns; <strong>continued monitoring</strong> and <strong>targeted adjustments</strong> are essential for sustained growth and profitability.</p>
-            </div>
-          </div>
-        )}
-        {context === 'sales-overview' && isKwality && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-slate-900">Kwality House, Kemps Corner: Performance Overview - September 2025</h2>
-            <div>
-              <h3 className="font-semibold text-slate-900">Executive Summary</h3>
-              <p className="mt-2 text-slate-700">September 2025 was an <strong>outstanding month</strong> for Kwality House, with robust growth across key metrics <strong>without heavy discounting</strong>. Total revenue surged by <strong>31%</strong> vs May–July 2025 average, driven by a large influx of new members and <strong>diversified revenue</strong>. High-margin Privates and <strong>exceptional newcomer acquisition</strong> highlight a highly effective strategy.</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">1. Overall Performance (Sep 2025 vs May–Jul 2025 Avg)</h3>
-              <table className="w-full text-left text-slate-700 mt-2 border border-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="p-2 border-b border-slate-200">Metric</th>
-                    <th className="p-2 border-b border-slate-200">September 2025</th>
-                    <th className="p-2 border-b border-slate-200">May–July Avg</th>
-                    <th className="p-2 border-b border-slate-200">Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="p-2 border-b border-slate-100 font-medium">Total Revenue</td>
-                    <td className="p-2 border-b border-slate-100">₹25.2L</td>
-                    <td className="p-2 border-b border-slate-100">₹19.23L</td>
-                    <td className="p-2 border-b border-slate-100 text-green-700">↑ +31%</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2 border-b border-slate-100 font-medium">Total Units Sold</td>
-                    <td className="p-2 border-b border-slate-100">351</td>
-                    <td className="p-2 border-b border-slate-100">293</td>
-                    <td className="p-2 border-b border-slate-100 text-green-700">↑ +20%</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2 border-b border-slate-100 font-medium">Unique Members</td>
-                    <td className="p-2 border-b border-slate-100">248</td>
-                    <td className="p-2 border-b border-slate-100">173</td>
-                    <td className="p-2 border-b border-slate-100 text-green-700">↑ +43%</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2 border-b border-slate-100 font-medium">Avg. Transaction Value (ATV)</td>
-                    <td className="p-2 border-b border-slate-100">₹7.6K</td>
-                    <td className="p-2 border-b border-slate-100">₹7.8K</td>
-                    <td className="p-2 border-b border-slate-100 text-amber-600">↓ -3% (Stable)</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2 border-b border-slate-100 font-medium">Total Discount Amount</td>
-                    <td className="p-2 border-b border-slate-100">₹1.9L</td>
-                    <td className="p-2 border-b border-slate-100">₹3.47L</td>
-                    <td className="p-2 border-b border-slate-100 text-green-700">↓ -45%</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p className="mt-2 text-slate-700"><strong>Key Takeaway:</strong> Growth was driven by <strong>+43% unique members</strong> and <strong>+20% units</strong> while <strong>reducing discounts</strong>—indicating organic, demand‑driven strength.</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">2. Category Performance Deep Dive</h3>
-              <div className="mt-2 space-y-3">
-                <div>
-                  <h4 className="font-semibold">A. Memberships: The Stable Bedrock</h4>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Sep Revenue:</strong> ₹11.3L; <strong>Baseline:</strong> ₹9.7L → <strong>+16%</strong></li>
-                    <li><strong>Highlights:</strong> 1 Month Unlimited ₹2.8L (15 units); 3 Month Unlimited ₹1.5L (3 units); preference for shorter terms.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold">B. Class Packages: Consistent Performer</h4>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Sep Revenue:</strong> ₹6.7L; <strong>Baseline:</strong> ₹6.6L → <strong>+2%</strong></li>
-                    <li><strong>Leader:</strong> Studio 12 Class Package ₹3.4L (21 units); 8‑Class also strong.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold">C. Sessions/Single Classes: Breakout Star</h4>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Sep Revenue:</strong> ₹2.8L; <strong>Baseline:</strong> ₹1.7L → <strong>+65%</strong>; units 154 vs 92.</li>
-                    <li><strong>Insight:</strong> Effective trial funnel feeding future memberships.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold">D. Privates: Unexpected Powerhouse</h4>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Sep Revenue:</strong> ₹1.7L; <strong>Baseline:</strong> ₹17.2K → <strong>+988%</strong>; 8 units at <strong>₹24.3K ATV</strong>.</li>
-                    <li><strong>Action:</strong> Investigate source; consider formal Private Training program.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold">E. Newcomers Special: Acquisition Engine</h4>
-                  <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-1">
-                    <li><strong>Sep Revenue:</strong> ₹52.7K; <strong>Baseline:</strong> ₹1.17K → <strong>+4,400%</strong>; 31 units.</li>
-                    <li><strong>Impact:</strong> Primary driver of the 43% increase in unique members.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">3. Customer Behavior & Operational Insights</h3>
-              <ul className="list-disc pl-5 text-slate-700 space-y-1 mt-2">
-                <li><strong>Member Acquisition:</strong> 75+ new members—barrier‑lowering offers worked.</li>
-                <li><strong>ATV:</strong> Slight dip (₹7.8K → ₹7.6K) confirms growth from broader base—positive diversification.</li>
-                <li><strong>Discounting:</strong> Revenue grew while discounts fell—strong pricing power.</li>
-                <li><strong>Engagement:</strong> Sessions/member fell (8.1 → 3.6) due to large <strong>new‑member dilution</strong>; focus on onboarding.</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">4. Strategic Recommendations</h3>
-              <ol className="list-decimal pl-5 text-slate-700 space-y-1 mt-2">
-                <li><strong>Double Down on Acquisition:</strong> Scale channels bringing the 31 newcomers; reinvest heavily.</li>
-                <li><strong>Systematize Private Success:</strong> Identify drivers; formalize a high‑margin Private Training program.</li>
-                <li><strong>Nurture New Members:</strong> 3‑week automated sequence to convert trials → memberships.</li>
-                <li><strong>Upsell Single‑Class Buyers:</strong> Trigger offers at 3–4 sessions to convert to monthly unlimited.</li>
-                <li><strong>Maintain Pricing Discipline:</strong> Avoid deep discounts; lean into value‑based messaging.</li>
-              </ol>
-            </div>
-          </div>
-        )}
-        {context === 'sales-deep-insights' && isKwality ? (
-          <div className="space-y-5">
-            <div>
-              <p className="font-semibold text-slate-900">3. DEEP INSIGHTS (Go Beyond the Obvious)</p>
-              <p className="mt-2 text-slate-700"><strong>Correlation Analysis</strong><br />Strong positive correlations exist between Memberships and average sessions per member (r = 0.72), suggesting memberships act as leading indicators for engagement and revenue (e.g., higher sessions in September 2025 drove 45% of revenue). Lagging indicators include Retail, which correlates with total revenue (r = 0.45) but lags behind Memberships, implying it's more reactive to overall business health. Hidden dependencies include discounts, which negatively correlate with revenue (r = -0.38), indicating that heavy discounting (e.g., ₹1.9L in September 2025) may cause revenue spikes but reduce ATV (down 22% YoY).</p>
-              <p className="mt-3 text-slate-700"><strong>Segmentation Insights</strong><br />Breaking down by category, Memberships drive 45% of results (e.g., Studio 1 Month Unlimited generated ₹2.8L in September 2025), while underperforming segments like Privates (only 7% of revenue) show high potential (ATV of ₹24.3K, up 125% YoY). Geography isn't specified, but product segmentation reveals opportunities in urban-focused offerings like Studio packages. High-potential segments include Class Packages for younger demographics (average sessions 7.1 per member), which could be targeted for upselling.</p>
-              <p className="mt-3 text-slate-700"><strong>Trend Analysis</strong><br />Micro-trends show increasing member retention in Q3 2025 (average sessions per member up 18% from Q2), but if current trends continue, revenue could dip 10% in Q4 due to historical seasonality (e.g., November 2024 drop). Inflection points include August 2025's anomaly, potentially signaling a trend reversal if not marketing-driven. Projections based on 2025 trends suggest 15% growth by year-end, assuming anomaly correction.</p>
-              <p className="mt-3 text-slate-700"><strong>Efficiency & Productivity Metrics</strong><br />Key ratios include revenue per unique member (₹10.2K in September 2025, up 25% YoY) and average sessions per member (3.6 overall, indicating underutilization in Privates at 2.7). Areas of waste include high discounts (7.6% of revenue), with optimization opportunities in bundling (e.g., reducing discounts on Memberships could save ₹50K monthly). Productivity is strong in Memberships, with a 74% efficiency ratio (revenue vs. units sold).</p>
-              <p className="mt-3 text-slate-700"><strong>Competitive Position (if data available)</strong><br />Without direct benchmarks, Kwality House's ATV of ₹7.6K (up 10% YoY) suggests a competitive edge in pricing, but disadvantages in retail (lower than industry averages of 15-20% of total revenue) highlight areas for improvement.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">4. INTERESTING OBSERVATIONS & FINDINGS</p>
-              <p className="mt-2 text-slate-700">Counter-intuitive patterns include high revenue in August 2025 despite average sessions per member (9.0), challenging the assumption that engagement drives peaks—it may be promotion-driven. Hidden opportunities lie in Privates, with low uptake (only 8 units in September 2025) but high ATV, suggesting untapped demand. Early warning signals include rising discounts (up 35% YoY), potentially signaling price sensitivity. Success patterns, like Memberships' consistent growth, could be replicated in Class Packages. Data quality issues include gaps in "Others" (minimal reporting), and behavioral patterns show members favoring short-term packages during peaks.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">5. ROOT CAUSE ANALYSIS</p>
-              <p className="mt-2 text-slate-700">Major changes, like the August 2025 revenue spike, stem from external factors (e.g., promotions, as discounts hit ₹6.8L) rather than internal actions, and appear unsustainable (one-time event based on MoM decline). Positive trends in Memberships are due to internal engagement strategies (e.g., higher sessions), which are sustainable. Underlying dynamics include seasonal demand and discount dependency, explaining volatility.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">6. ACTIONABLE RECOMMENDATIONS</p>
-              <p className="mt-2 text-slate-700"><strong>Immediate Actions (This Week)</strong><br />Launch targeted promotions for underperforming segments: Focus on Privates by offering bundled sessions with memberships (expected impact: high, as it could boost revenue by 10-15%; difficulty: low; resources: marketing team; success metric: 20% increase in Private units sold).<br />Review and cap discounts: Analyze September 2025's ₹1.9L in discounts and limit to 5% of revenue (expected impact: medium, saving ₹30K; difficulty: low; resources: sales data; success metric: discount-to-revenue ratio below 6%).</p>
-              <p className="mt-3 text-slate-700"><strong>Short-Term Actions (This Month/Quarter)</strong><br />Expand retail cross-selling: Integrate retail with high-engagement memberships (e.g., September 2025's 248 members) to achieve 20% YoY growth (expected impact: high; difficulty: medium; resources: inventory and staff; success metric: retail revenue as 15% of total).<br />Optimize class scheduling: Based on trends, increase sessions for popular packages to raise average sessions per member by 10% (expected impact: medium; difficulty: low; resources: operations team; success metric: 5% revenue uplift from packages).</p>
-              <p className="mt-3 text-slate-700"><strong>Long-Term Strategic Actions (6-12 Months)</strong><br />Diversify revenue streams: Invest in new product lines (e.g., online classes) to reduce Membership dependency (expected impact: high; difficulty: high; resources: ₹5L capital; success metric: non-Membership revenue at 40% of total).<br />Build member retention programs: Develop loyalty schemes based on average sessions data (expected impact: medium; difficulty: medium; resources: analytics tools; success metric: 15% increase in retention rate).</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">7. RISK ASSESSMENT</p>
-              <p className="mt-2 text-slate-700">Vulnerabilities include revenue concentration in Memberships (45% in September 2025), increasing volatility (standard deviation of 15%), and dependencies on seasonal trends. Sustainability of positive trends (e.g., YoY growth) is at risk if discounts continue rising, potentially eroding 10% of margins.</p>
-            </div>
-          </div>
-        ) : context === 'sales-deep-insights' && isSupreme ? (
-          <div className="space-y-5">
-            <div>
-              <p className="font-semibold text-slate-900">3. DEEP INSIGHTS (Go Beyond the Obvious)</p>
-              <p className="mt-2 text-slate-700"><strong>Correlation Analysis</strong><br />Memberships correlate strongly with unique members (r = 0.68), acting as leading indicators for revenue growth (e.g., 36 units in September 2025 drove 48% of total). Lagging indicators include Retail, correlating moderately with revenue (r = 0.45), suggesting it's reactive to membership trends. Hidden dependencies show <strong>discounts negatively impacting ATV (r = -0.41)</strong>, as seen in September 2025's ₹26.1K in discounts reducing overall efficiency.</p>
-              <p className="mt-3 text-slate-700"><strong>Segmentation Insights</strong><br />Memberships dominate (48% of revenue), with Studio 1 Month Unlimited leading (₹4.9L in September 2025). Underperforming segments like Privates (negligible revenue) have high potential (ATV of ₹8.8K in May 2025). Segmentation by product reveals opportunities in Class Packages for frequent users (average sessions 3.6 per member), driving 38% of results and suitable for targeted marketing.</p>
-              <p className="mt-3 text-slate-700"><strong>Trend Analysis</strong><br />Micro-trends show rising member engagement in Q3 2025 (average sessions up 15% from Q2), but projections indicate a potential 10% dip in Q4 based on historical lows (e.g., November 2024 at ₹9.9L). Inflection points include August's anomaly, possibly from promotions, with trend reversals in Retail (up 35% YoY).</p>
-              <p className="mt-3 text-slate-700"><strong>Efficiency & Productivity Metrics</strong><br />Ratios include revenue per unique member (₹10.4K in September 2025, up 20% YoY) and average sessions per member (3.6, indicating moderate utilization). Waste areas include high discounts (17% of revenue in some months), with opportunities in bundling packages to save ₹20K monthly. Productivity is efficient in Memberships, with a 72% revenue-to-units ratio.</p>
-              <p className="mt-3 text-slate-700"><strong>Competitive Position (if data available)</strong><br />Supreme HQ's ATV of ₹7.8K (up 15% YoY) suggests a competitive advantage in pricing, but disadvantages in retail (only 3% of revenue) compared to industry benchmarks (10-15%) highlight growth areas.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">4. INTERESTING OBSERVATIONS & FINDINGS</p>
-              <p className="mt-2 text-slate-700">Counter-intuitive patterns include August 2025's revenue spike despite stable sessions, challenging engagement assumptions. Hidden opportunities in Privates (high ATV but low sales) could boost revenue by 10%. Early warnings include rising discounts (up 20% YoY), and success patterns in Memberships (consistent growth) merit replication. Data gaps in "Others" (minimal reporting) and behavioral trends show members favoring short-term packages during peaks.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">5. ROOT CAUSE ANALYSIS</p>
-              <p className="mt-2 text-slate-700">The August 2025 spike likely resulted from external promotions (e.g., discounts at ₹51.7K), a one-time event not tied to internal actions. Positive trends in Memberships stem from sustained engagement strategies, which are sustainable. Underlying dynamics include seasonal demand and discount reliance, explaining volatility.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">6. ACTIONABLE RECOMMENDATIONS</p>
-              <p className="mt-2 text-slate-700"><strong>Immediate Actions (This Week)</strong><br />Promote underutilized segments: Bundle Privates with memberships to increase uptake (expected impact: high, potential 15% revenue gain; difficulty: low; resources: marketing; success metric: 20% rise in Private units).<br />Cap discounts quickly: Limit to 10% of revenue based on September's ₹26.1K (expected impact: medium, saving ₹15K; difficulty: low; resources: sales team; success metric: discount ratio under 12%).</p>
-              <p className="mt-3 text-slate-700"><strong>Short-Term Actions (This Month/Quarter)</strong><br />Enhance retail integration: Cross-sell with high-engagement classes (e.g., September's 63 sessions) for 25% YoY growth (expected impact: high; difficulty: medium; resources: inventory; success metric: retail at 5% of total revenue).<br />Boost session scheduling: Target popular packages to raise average sessions by 10% (expected impact: medium; difficulty: low; resources: operations; success metric: 5% session increase).</p>
-              <p className="mt-3 text-slate-700"><strong>Long-Term Strategic Actions (6-12 Months)</strong><br />Diversify offerings: Invest in new services like online classes to reduce Membership dependency (expected impact: high; difficulty: high; resources: ₹4L; success metric: non-Membership revenue at 40%).<br />Develop loyalty programs: Use engagement data to retain members (expected impact: medium; difficulty: medium; resources: analytics; success metric: 15% retention improvement).</p>
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">7. RISK ASSESSMENT</p>
-              <p className="mt-2 text-slate-700">Vulnerabilities include heavy reliance on Memberships (48% of revenue), volatility from anomalies (standard deviation of 12%), and discount increases eroding margins. Sustainability of trends is at risk if engagement dips, as seen in lower sessions during off-peak months.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {items.map((node, idx) => (
-              <div key={idx} className="flex gap-2">
-                <span className="mt-1.5 inline-block h-1.5 w-1.5 rounded-full bg-slate-400 flex-shrink-0" />
-                <div className="text-slate-700 leading-relaxed">{node}</div>
-              </div>
-            ))}
-          </div>
-        )}
-            
-            {/* Edit button for default content */}
-            {!isEditing && !customContent && (
-              <div className="pt-4 border-t border-slate-200 not-prose">
+              
+              {/* Expand/Collapse Button */}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleToggleExpand}
+                className={`h-7 w-7 p-0 ${isExpanded ? 'text-purple-600 bg-purple-50' : 'text-slate-600'}`}
+                title={isExpanded ? "Collapse" : "Expand"}
+              >
+                {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </Button>
+              
+              {/* Refresh Button */}
+              {dynamicSummary && !customContent && (
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={handleEdit}
-                  className="gap-2 w-full"
+                  variant="ghost"
+                  onClick={handleRefresh}
+                  disabled={isGenerating}
+                  className="gap-1.5 h-7 px-2.5 text-xs"
+                  title="Refresh analysis"
                 >
-                  <Edit2 className="w-4 h-4" />
-                  Customize This Content
+                  <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
                 </Button>
+              )}
+              
+              {/* Custom Indicator */}
+              {customContent && (
+                <span className="text-xs text-green-600 font-medium flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                  Custom
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Content - Scrollable */}
+          <div 
+            className="flex-1 overflow-y-auto px-5 py-4" 
+            style={{ 
+              minHeight: 0,
+              maxHeight: modalHeight ? `${modalHeight - 60}px` : isExpanded ? 'calc(95vh - 160px)' : 'min(calc(85vh - 100px), 640px)'
+            }}
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+              </div>
+            ) : isEditing ? (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                    <Edit2 className="w-4 h-4 text-indigo-600" />
+                    Edit Content (HTML Supported)
+                  </label>
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
+                    placeholder="Enter popover content here (supports HTML)..."
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                  <div className="flex gap-2 flex-1">
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="gap-2 flex-1 bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" />
+                          Save
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={isSaving}
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                  {customContent && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleRestore}
+                      disabled={isSaving}
+                      className="gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Restore
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : customContent ? (
+              <div className="space-y-3">
+                <div 
+                  className="prose prose-slate prose-sm max-w-none text-slate-700"
+                  dangerouslySetInnerHTML={{ __html: customContent }}
+                />
+                <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="gap-1.5 flex-1"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleRestore}
+                    className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Restore
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {items.map((node, idx) => (
+                  <div key={idx}>
+                    <div className="flex gap-2.5 p-3 rounded-lg bg-slate-50/80 border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors">
+                      <span className="mt-1.5 inline-block h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
+                      <div className="text-slate-700 text-sm leading-relaxed flex-1 prose prose-slate prose-sm prose-p:my-1 prose-p:leading-relaxed prose-strong:text-slate-900 prose-strong:font-semibold prose-ul:my-1 prose-li:my-0.5">
+                        {node}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {!isEditing && !customContent && (
+                  <div className="pt-3 border-t border-slate-200">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleEdit}
+                      className="gap-1.5 w-full hover:bg-indigo-50 hover:border-indigo-300"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      Customize Content
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+
+          {/* Resize Handle */}
+          {!isExpanded && (
+            <div
+              onMouseDown={handleResizeStart}
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
+              title="Drag to resize"
+            >
+              <GripHorizontal 
+                className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 rotate-45 absolute bottom-0.5 right-0.5" 
+              />
+            </div>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );

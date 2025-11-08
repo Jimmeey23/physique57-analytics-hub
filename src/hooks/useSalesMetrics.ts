@@ -150,9 +150,9 @@ export const useSalesMetrics = (
     const currentRevenue = currentPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
     const currentDiscount = currentPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
     const currentVAT = currentPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
-    const currentTransactions = currentPeriodData.length;
+    const currentTransactions = new Set(currentPeriodData.map(item => (item as any).paymentTransactionId || (item as any).paymentTransactionID).filter(Boolean)).size;
     const currentMembers = new Set(currentPeriodData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
-    const currentUnits = currentPeriodData.length; // Use transaction count as units since each transaction represents units sold
+    const currentUnits = new Set(currentPeriodData.map(item => (item as any).saleItemId || (item as any).saleItemID).filter(Boolean)).size;
     const currentATV = currentTransactions > 0 ? currentRevenue / currentTransactions : 0;
     const currentASV = currentMembers > 0 ? currentRevenue / currentMembers : 0;
     const currentDiscountPercentage = currentPeriodData.length > 0 ? 
@@ -162,9 +162,9 @@ export const useSalesMetrics = (
   const prevRevenue = previousPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
   const prevDiscount = previousPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
   const prevVAT = previousPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
-    const prevTransactions = previousPeriodData.length;
+    const prevTransactions = new Set(previousPeriodData.map(item => (item as any).paymentTransactionId || (item as any).paymentTransactionID).filter(Boolean)).size;
     const prevMembers = new Set(previousPeriodData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
-    const prevUnits = previousPeriodData.length; // Use transaction count as units
+    const prevUnits = new Set(previousPeriodData.map(item => (item as any).saleItemId || (item as any).saleItemID).filter(Boolean)).size;
     const prevATV = prevTransactions > 0 ? prevRevenue / prevTransactions : 0;
     const prevASV = prevMembers > 0 ? prevRevenue / prevMembers : 0;
     const prevDiscountPercentage = previousPeriodData.length > 0 ? 

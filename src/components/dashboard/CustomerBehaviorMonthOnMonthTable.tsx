@@ -136,9 +136,9 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
 
   const formatValue = (value: number, metric: string) => {
     if (metric === 'avgSpend') return formatCurrency(value);
-    if (['purchaseFrequency', 'avgCustomerLifespan', 'avgDaysToSecondPurchase'].includes(metric)) return `${value.toFixed(1)} days`;
+    if (['purchaseFrequency', 'avgCustomerLifespan', 'avgDaysToSecondPurchase'].includes(metric)) return value.toFixed(1);
     if (metric === 'avgSessionsPerMember') return value.toFixed(1);
-    if (metric === 'percentDiscounted') return `${value.toFixed(1)}%`;
+    if (metric === 'percentDiscounted') return value.toFixed(1);
     return formatNumber(value);
   };
 
@@ -360,7 +360,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                 <React.Fragment key={cat.category}>
                   <tr className="bg-slate-100 border-b border-slate-300 font-semibold">
                     <td
-                      className="w-[30rem] px-6 py-3 text-left sticky left-0 bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-r border-slate-300 z-20 cursor-pointer hover:underline"
+                      className="w-[30rem] px-6 py-3 text-left sticky left-0 bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-r border-slate-300 z-20 cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis"
                       onClick={() =>
                         onRowClick?.({
                           category: cat.category,
@@ -386,7 +386,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                       return (
                         <td
                           key={key}
-                          className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 cursor-pointer hover:bg-blue-100/60"
+                          className="px-2 py-3 text-center text-sm font-bold text-slate-800 border-l border-slate-300 cursor-pointer hover:bg-blue-100/60 whitespace-nowrap"
                           onClick={() =>
                             onRowClick?.({
                               category: cat.category,
@@ -417,7 +417,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                   {!collapsedCategories.has(cat.category) && cat.products.map(prod => (
                     <tr key={`${cat.category}-${prod.product}`} className="bg-white hover:bg-blue-50 border-b border-gray-200 transition-all">
                       <td
-                        className="w-[30rem] px-10 py-2 text-left sticky left-0 bg-white border-r border-gray-200 z-10 cursor-pointer hover:underline"
+                        className="w-[30rem] px-10 py-3 text-left sticky left-0 bg-white border-r border-gray-200 z-10 cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis"
                         onClick={() =>
                           onRowClick?.({
                             product: prod.product,
@@ -444,7 +444,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                         return (
                           <td
                             key={key}
-                            className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 cursor-pointer hover:bg-blue-100/60"
+                            className="px-2 py-3 text-center text-sm font-mono text-slate-700 border-l border-gray-200 cursor-pointer hover:bg-blue-100/60 whitespace-nowrap"
                             onClick={() =>
                               onRowClick?.({
                                 product: prod.product,
@@ -480,7 +480,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
               {/* Totals row across all categories/products per month */}
               <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400">
                 <td
-                  className="w-[30rem] px-6 py-2 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20 cursor-pointer hover:underline"
+                  className="w-[30rem] px-6 py-3 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20 cursor-pointer hover:underline whitespace-nowrap"
                   onClick={() =>
                     onRowClick?.({
                       name: 'TOTALS',
@@ -515,7 +515,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                   return (
                     <td
                       key={key}
-                      className="px-2 py-2 text-center text-sm font-bold text-white border-l border-slate-400 cursor-pointer hover:bg-slate-700/60"
+                      className="px-2 py-3 text-center text-sm font-bold text-white border-l border-slate-400 cursor-pointer hover:bg-slate-700/60 whitespace-nowrap"
                       onClick={() =>
                         onRowClick?.({
                           name: 'TOTALS',
