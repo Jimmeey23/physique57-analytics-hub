@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { BarChart3, Users, CreditCard, Target, TrendingUp, TrendingDown } from 'lucide-react';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 export interface MetricCardData {
   title: string;
@@ -19,7 +20,7 @@ interface MetricCardProps {
   onClick?: () => void;
 }
 
-export const MetricCard: React.FC<MetricCardProps> = ({ 
+const MetricCardComponent: React.FC<MetricCardProps> = ({ 
   data, 
   onClick 
 }) => {
@@ -191,3 +192,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     </TooltipProvider>
   );
 };
+
+// Memoize component with custom comparison
+export const MetricCard = React.memo(
+  MetricCardComponent,
+  (prevProps, nextProps) => {
+    return (
+      shallowEqual(prevProps.data, nextProps.data) &&
+      prevProps.onClick === nextProps.onClick
+    );
+  }
+);

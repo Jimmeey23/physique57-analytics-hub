@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatte
 import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface MonthOnMonthTableNewProps {
   data: SalesData[];
@@ -32,7 +33,7 @@ const groupDataByCategory = (data: SalesData[]) => {
   }, {});
 };
 
-export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
+const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
   data,
   onRowClick,
   filters = {
@@ -706,3 +707,20 @@ export const MonthOnMonthTableNew: React.FC<MonthOnMonthTableNewProps> = ({
     </div>
   );
 };
+
+// Memoize component with custom comparison
+export const MonthOnMonthTableNew = React.memo(
+  MonthOnMonthTableNewComponent,
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent unnecessary re-renders
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.selectedMetric === nextProps.selectedMetric &&
+      prevProps.onRowClick === nextProps.onRowClick &&
+      prevProps.onReady === nextProps.onReady &&
+      shallowEqual(prevProps.filters, nextProps.filters) &&
+      prevProps.collapsedGroups === nextProps.collapsedGroups &&
+      prevProps.onGroupToggle === nextProps.onGroupToggle
+    );
+  }
+);

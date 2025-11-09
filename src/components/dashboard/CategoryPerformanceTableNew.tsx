@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ChevronDown, ChevronRight, FolderOpen, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface CategoryPerformanceTableNewProps {
   data: SalesData[];
@@ -14,7 +15,7 @@ interface CategoryPerformanceTableNewProps {
   onReady?: () => void;
 }
 
-export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewProps> = ({
+export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceTableNewProps> = ({
   data,
   onRowClick,
   selectedMetric: initialMetric = 'revenue',
@@ -524,3 +525,16 @@ export const CategoryPerformanceTableNew: React.FC<CategoryPerformanceTableNewPr
     </div>
   );
 };
+
+// Memoized export with custom comparison function
+export const CategoryPerformanceTableNew = React.memo(
+  CategoryPerformanceTableNewComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.selectedMetric === nextProps.selectedMetric &&
+      prevProps.onRowClick === nextProps.onRowClick &&
+      prevProps.onReady === nextProps.onReady
+    );
+  }
+);

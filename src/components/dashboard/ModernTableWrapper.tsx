@@ -6,6 +6,7 @@ import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, Tr
 import { cn } from '@/lib/utils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface ModernTableWrapperProps {
   title: string;
@@ -29,7 +30,7 @@ interface ModernTableWrapperProps {
   disableAutoRegistry?: boolean; // opt-out of automatic registry + copy all tabs
 }
 
-export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
+const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
   title,
   description,
   icon,
@@ -77,6 +78,19 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
       }
       const rows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
       rows.forEach(row => {
+        // Check if this is a grouped/category row but NOT the totals row
+        const isGroupRow = row.classList.contains('bg-slate-100') || 
+                           row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
+                           row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null;
+        const isTotalsRow = row.classList.contains('bg-slate-800') || 
+                            row.textContent?.includes('TOTALS') ||
+                            row.textContent?.includes('Total');
+        
+        // Skip group rows but include totals
+        if (isGroupRow && !isTotalsRow) {
+          return;
+        }
+        
         const cells = row.querySelectorAll('td, th');
         const rowData: string[] = [];
         cells.forEach(c => rowData.push((c.textContent || '').trim()));
@@ -193,6 +207,33 @@ export const ModernTableWrapper: React.FC<ModernTableWrapperProps> = ({
     </Card>
   );
 };
+
+// Memoize component with custom comparison
+export const ModernTableWrapper = React.memo(
+  ModernTableWrapperComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.title === nextProps.title &&
+      prevProps.description === nextProps.description &&
+      prevProps.totalItems === nextProps.totalItems &&
+      prevProps.filterCount === nextProps.filterCount &&
+      prevProps.className === nextProps.className &&
+      prevProps.showCollapseControls === nextProps.showCollapseControls &&
+      prevProps.showDisplayToggle === nextProps.showDisplayToggle &&
+      prevProps.displayMode === nextProps.displayMode &&
+      prevProps.showCopyButton === nextProps.showCopyButton &&
+      prevProps.disableAutoRegistry === nextProps.disableAutoRegistry &&
+      prevProps.collapsedGroups === nextProps.collapsedGroups &&
+      prevProps.onCollapseAll === nextProps.onCollapseAll &&
+      prevProps.onExpandAll === nextProps.onExpandAll &&
+      prevProps.onDisplayModeChange === nextProps.onDisplayModeChange &&
+      prevProps.tableRef === nextProps.tableRef &&
+      prevProps.onCopyAllTabs === nextProps.onCopyAllTabs &&
+      prevProps.children === nextProps.children
+    );
+  }
+);
+
 
 interface ModernGroupBadgeProps {
   count: number;

@@ -44,6 +44,27 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       // Clone the table element
       const tableClone = tableRef.current.cloneNode(true) as HTMLElement;
       
+      // Remove grouped rows (category headers) but keep totals row
+      const tbody = tableClone.querySelector('tbody');
+      if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.forEach(row => {
+          // Check if this is a grouped/category row (has bg-slate-100 or contains collapse button)
+          // But NOT the totals row (has bg-slate-800)
+          const isGroupRow = row.classList.contains('bg-slate-100') || 
+                             row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
+                             row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null;
+          const isTotalsRow = row.classList.contains('bg-slate-800') || 
+                              row.textContent?.includes('TOTALS') ||
+                              row.textContent?.includes('Total');
+          
+          // Remove group rows but keep totals
+          if (isGroupRow && !isTotalsRow) {
+            row.remove();
+          }
+        });
+      }
+      
       // Add comprehensive styling to the cloned table
       const styleSheet = document.createElement('style');
       styleSheet.textContent = `
@@ -336,6 +357,19 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       // Extract data rows
       const dataRows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
       dataRows.forEach(row => {
+        // Check if this is a grouped/category row but NOT the totals row
+        const isGroupRow = row.classList.contains('bg-slate-100') || 
+                           row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
+                           row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null;
+        const isTotalsRow = row.classList.contains('bg-slate-800') || 
+                            row.textContent?.includes('TOTALS') ||
+                            row.textContent?.includes('Total');
+        
+        // Skip group rows but include totals
+        if (isGroupRow && !isTotalsRow) {
+          return;
+        }
+        
         const cells = row.querySelectorAll('td, th');
         const rowData: string[] = [];
         cells.forEach(cell => {

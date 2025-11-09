@@ -28,7 +28,8 @@ import { ClientRetentionMonthByTypePivot } from '@/components/dashboard/ClientRe
 import ClientRetentionYearOnYearPivot from '@/components/dashboard/ClientRetentionYearOnYearPivotNew';
 import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
 import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
-import { ClientConversionDrillDownModalV3 } from '@/components/dashboard/ClientConversionDrillDownModalV3';
+import { LazyClientConversionDrillDownModalV3 } from '@/components/lazy/LazyModals';
+import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
 const ClientRetention = () => {
@@ -710,20 +711,24 @@ const ClientRetention = () => {
           </div>
         </main>
 
-        {/* Enhanced Drill Down Modal */}
-        <ClientConversionDrillDownModalV3 
-          isOpen={drillDownModal.isOpen} 
-          onClose={() => setDrillDownModal({
-            isOpen: false,
-            client: null,
-            title: '',
-            data: null,
-            type: 'month'
-          })} 
-          title={drillDownModal.title} 
-          data={drillDownModal.data} 
-          type={drillDownModal.type} 
-        />
+        {/* Enhanced Drill Down Modal - Lazy loaded */}
+        <ModalSuspense>
+          {drillDownModal.isOpen && (
+            <LazyClientConversionDrillDownModalV3 
+              isOpen={drillDownModal.isOpen} 
+              onClose={() => setDrillDownModal({
+                isOpen: false,
+                client: null,
+                title: '',
+                data: null,
+                type: 'month'
+              })} 
+              title={drillDownModal.title} 
+              data={drillDownModal.data} 
+              type={drillDownModal.type} 
+            />
+          )}
+        </ModalSuspense>
         </div>
       </div>
       

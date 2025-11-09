@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatte
 import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 const groupDataByCategory = (data: SalesData[]) => {
   return data.reduce((acc: Record<string, any>, item) => {
@@ -22,7 +23,7 @@ const groupDataByCategory = (data: SalesData[]) => {
   }, {});
 };
 
-export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps & { onReady?: () => void }> = ({
+export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTableProps & { onReady?: () => void }> = ({
   data,
   filters = {
     dateRange: { start: '', end: '' },
@@ -685,3 +686,19 @@ export const EnhancedYearOnYearTableNew: React.FC<EnhancedYearOnYearTableProps &
     </div>
   );
 };
+
+// Memoized export with custom comparison function
+export const EnhancedYearOnYearTableNew = React.memo(
+  EnhancedYearOnYearTableNewComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.selectedMetric === nextProps.selectedMetric &&
+      shallowEqual(prevProps.filters, nextProps.filters) &&
+      prevProps.collapsedGroups === nextProps.collapsedGroups &&
+      prevProps.onRowClick === nextProps.onRowClick &&
+      prevProps.onGroupToggle === nextProps.onGroupToggle &&
+      prevProps.onReady === nextProps.onReady
+    );
+  }
+);

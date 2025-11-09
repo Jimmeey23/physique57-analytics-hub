@@ -75,19 +75,47 @@ export default defineConfig(({ mode }) => ({
     'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
   },
   build: {
-    sourcemap: false,
+    sourcemap: mode === 'production' ? false : true,
     minify: 'esbuild',
     cssCodeSplit: true,
-    assetsInlineLimit: 0,
+    assetsInlineLimit: 4096, // Inline small assets
     rollupOptions: {
       external: (_id) => {
-        // Don't externalize any dependencies - bundle them all
         return false;
       },
       output: {
+        // Optimized chunk splitting strategy
         manualChunks: (id) => {
+          // React core libraries
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
+          }
+          // React Query
+          if (id.includes('@tanstack/react-query')) {
+            return 'react-query';
+          }
+          // Radix UI components
+          if (id.includes('@radix-ui')) {
+            return 'radix-ui';
+          }
+          // Chart libraries
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'charts';
+          }
+          // Date utilities
+          if (id.includes('date-fns')) {
+            return 'date-utils';
+          }
+          // Lucide icons
+          if (id.includes('lucide-react')) {
+            return 'icons';
+          }
+          // PDF generation (lazy loaded)
+          if (id.includes('jspdf') || id.includes('html2canvas')) {
+            return 'pdf-export';
+          }
+          // Other node_modules
           if (id.includes('node_modules')) {
-            // All node_modules go into vendor chunk to ensure React is available everywhere
             return 'vendor';
           }
         },
@@ -101,7 +129,7 @@ export default defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 1000,
     reportCompressedSize: true,
-    target: 'es2015',
+    target: 'es2020', // Modern target for better tree-shaking
   },
   optimizeDeps: {
     include: [
@@ -119,14 +147,16 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-dialog',
       '@radix-ui/react-select',
       '@radix-ui/react-popover',
-      '@tanstack/react-query'
+      '@tanstack/react-query',
+      'zustand'
     ],
     exclude: [],
-    force: true,
+    force: false, // Only force in dev when needed
   },
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
     treeShaking: true,
+    legalComments: 'none', // Remove comments in production
   }
 }));
 ;

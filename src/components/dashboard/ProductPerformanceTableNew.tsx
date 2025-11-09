@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, ShoppingCart, TrendingUp, TrendingDown, BarC
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface ProductPerformanceTableNewProps {
   data: SalesData[];
@@ -15,7 +16,7 @@ interface ProductPerformanceTableNewProps {
   onReady?: () => void;
 }
 
-export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProps> = ({
+export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTableNewProps> = ({
   data,
   onRowClick,
   selectedMetric: initialMetric = 'revenue',
@@ -624,3 +625,16 @@ export const ProductPerformanceTableNew: React.FC<ProductPerformanceTableNewProp
     </div>
   );
 };
+
+// Memoized export with custom comparison function
+export const ProductPerformanceTableNew = React.memo(
+  ProductPerformanceTableNewComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.selectedMetric === nextProps.selectedMetric &&
+      prevProps.onRowClick === nextProps.onRowClick &&
+      prevProps.onReady === nextProps.onReady
+    );
+  }
+);

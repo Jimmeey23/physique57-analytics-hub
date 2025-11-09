@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building2, Landmark, Building } from 'lucide-react';
@@ -8,7 +8,8 @@ import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
 import { DataTable } from './DataTable';
 import { InteractiveChart } from './InteractiveChart';
 import { ThemeSelector } from './ThemeSelector';
-import { EnhancedSalesDrillDownModal } from './EnhancedSalesDrillDownModal';
+import { LazyEnhancedSalesDrillDownModal } from '@/components/lazy/LazyModals';
+import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { getActiveTabClasses } from '@/utils/colorThemes';
 import { EnhancedYearOnYearTableNew } from './EnhancedYearOnYearTableNew';
 import { MonthOnMonthTableNew } from './MonthOnMonthTableNew';
@@ -231,7 +232,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     return filtered;
   }, [data, activeLocation]);
 
-  const handleRowClick = (rowData: any) => {
+  const handleRowClick = useCallback((rowData: any) => {
     console.log('Row clicked with data:', rowData);
     console.log('Available properties in rowData:', Object.keys(rowData));
     
@@ -587,9 +588,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     
     setDrillDownData(enhancedData);
     setDrillDownType(drillDownTypeToSet);
-  };
+  }, [data, activeLocation, filteredData]);
 
-  const handleMetricClick = (metricData: any) => {
+  const handleMetricClick = useCallback((metricData: any) => {
     console.log('Metric clicked with data:', metricData);
     
     // Filter data based on the specific metric clicked
@@ -667,9 +668,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     console.log(`Metric-specific drill-down for '${metricData.title}' with ${specificData.length} filtered transactions, revenue: ${dynamicRevenue}`);
     setDrillDownData(enhancedData);
     setDrillDownType('metric');
-  };
+  }, [filteredData]);
 
-  const handleGroupToggle = (groupKey: string) => {
+  const handleGroupToggle = useCallback((groupKey: string) => {
     const newCollapsed = new Set(collapsedGroups);
     if (newCollapsed.has(groupKey)) {
       newCollapsed.delete(groupKey);
@@ -677,9 +678,9 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       newCollapsed.add(groupKey);
     }
     setCollapsedGroups(newCollapsed);
-  };
+  }, [collapsedGroups]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     const previousMonth = getPreviousMonthDateRange();
     
     setFilters({
@@ -690,7 +691,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       soldBy: [],
       paymentMethod: []
     });
-  };
+  }, []);
 
   // Calculate tab counts for location tabs using filtered data
   const tabCounts = useMemo(() => {
@@ -950,17 +951,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         </div>
       </div>
 
-      {/* Modal */}
-      {drillDownData && (
-        <EnhancedSalesDrillDownModal 
-          isOpen={!!drillDownData} 
-          onClose={() => setDrillDownData(null)} 
-          data={drillDownData} 
-          type={drillDownType} 
-        />
-      )}
+      {/* Modal - Lazy loaded for performance */}
+      <ModalSuspense>
+        {drillDownData && (
+          <LazyEnhancedSalesDrillDownModal 
+            isOpen={!!drillDownData} 
+            onClose={() => setDrillDownData(null)} 
+            data={drillDownData} 
+            type={drillDownType} 
+          />
+        )}
+      </ModalSuspense>
     </div>
   );
 };
-
 

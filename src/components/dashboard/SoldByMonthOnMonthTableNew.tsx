@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ChevronDown, ChevronRight, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface SoldByMonthOnMonthTableNewProps {
   data: SalesData[];
@@ -14,7 +15,7 @@ interface SoldByMonthOnMonthTableNewProps {
   onReady?: () => void;
 }
 
-export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProps> = ({
+export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTableNewProps> = ({
   data,
   onRowClick,
   selectedMetric: initialMetric = 'revenue',
@@ -490,3 +491,16 @@ export const SoldByMonthOnMonthTableNew: React.FC<SoldByMonthOnMonthTableNewProp
     </div>
   );
 };
+
+// Memoized export with custom comparison function
+export const SoldByMonthOnMonthTableNew = React.memo(
+  SoldByMonthOnMonthTableNewComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.selectedMetric === nextProps.selectedMetric &&
+      prevProps.onRowClick === nextProps.onRowClick &&
+      prevProps.onReady === nextProps.onReady
+    );
+  }
+);

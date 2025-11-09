@@ -17,7 +17,8 @@ import { FunnelYearOnYearTable } from '@/components/dashboard/FunnelYearOnYearTa
 import { EnhancedFunnelRankings } from '@/components/dashboard/EnhancedFunnelRankings';
 import { FunnelHealthMetricsTable } from '@/components/dashboard/FunnelHealthMetricsTable';
 import { FunnelAnalyticsTables } from '@/components/dashboard/FunnelAnalyticsTables';
-import { FunnelDrillDownModal } from '@/components/dashboard/FunnelDrillDownModal';
+import { LazyFunnelDrillDownModal } from '@/components/lazy/LazyModals';
+import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { LeadsFilterOptions } from '@/types/leads';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { InfoPopover } from '@/components/ui/InfoPopover';
@@ -358,10 +359,20 @@ export default function FunnelLeads() {
         </div>
       </div>
 
-      {/* Drill Down Modal */}
-      <FunnelDrillDownModal isOpen={drillDownModal.isOpen} onClose={() => setDrillDownModal(prev => ({
-      ...prev,
-      isOpen: false
-    }))} title={drillDownModal.title} data={drillDownModal.data} type={drillDownModal.type} />
+      {/* Drill Down Modal - Lazy loaded */}
+      <ModalSuspense>
+        {drillDownModal.isOpen && (
+          <LazyFunnelDrillDownModal 
+            isOpen={drillDownModal.isOpen} 
+            onClose={() => setDrillDownModal(prev => ({
+              ...prev,
+              isOpen: false
+            }))} 
+            title={drillDownModal.title} 
+            data={drillDownModal.data} 
+            type={drillDownModal.type} 
+          />
+        )}
+      </ModalSuspense>
     </div>;
 }

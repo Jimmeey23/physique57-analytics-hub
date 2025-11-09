@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface PaymentMethodMonthOnMonthTableNewProps {
   data: SalesData[];
@@ -14,7 +15,7 @@ interface PaymentMethodMonthOnMonthTableNewProps {
   onReady?: () => void;
 }
 
-export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMonthTableNewProps> = ({
+export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodMonthOnMonthTableNewProps> = ({
   data,
   onRowClick,
   selectedMetric: initialMetric = 'revenue',
@@ -443,3 +444,16 @@ export const PaymentMethodMonthOnMonthTableNew: React.FC<PaymentMethodMonthOnMon
     </div>
   );
 };
+
+// Memoized export with custom comparison function
+export const PaymentMethodMonthOnMonthTableNew = React.memo(
+  PaymentMethodMonthOnMonthTableNewComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.selectedMetric === nextProps.selectedMetric &&
+      prevProps.onRowClick === nextProps.onRowClick &&
+      prevProps.onReady === nextProps.onReady
+    );
+  }
+);

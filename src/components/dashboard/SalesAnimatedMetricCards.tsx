@@ -5,6 +5,7 @@ import { SalesData } from '@/types/dashboard';
 import { formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useSalesMetrics } from '@/hooks/useSalesMetrics';
+import { shallowEqual } from '@/utils/performanceUtils';
 
 interface SalesAnimatedMetricCardsProps {
   data: SalesData[];
@@ -25,7 +26,7 @@ const iconMap = {
   Activity,
 };
 
-export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> = ({ 
+export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCardsProps> = ({ 
   data,
   historicalData,
   dateRange,
@@ -152,5 +153,19 @@ export const SalesAnimatedMetricCards: React.FC<SalesAnimatedMetricCardsProps> =
     </div>
   );
 };
+
+// Memoized export with custom comparison function
+export const SalesAnimatedMetricCards = React.memo(
+  SalesAnimatedMetricCardsComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.data === nextProps.data &&
+      shallowEqual(prevProps.historicalData, nextProps.historicalData) &&
+      shallowEqual(prevProps.dateRange, nextProps.dateRange) &&
+      prevProps.onMetricClick === nextProps.onMetricClick &&
+      prevProps.locationId === nextProps.locationId
+    );
+  }
+);
 
 export default SalesAnimatedMetricCards;
