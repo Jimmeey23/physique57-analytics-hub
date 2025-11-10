@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 // Import all the new enhanced components
 import { ModernMetricCards } from './ModernMetricCards';
@@ -48,6 +49,8 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
         data={filteredData}
         selectedLocation={selectedLocation}
         onLocationChange={setSelectedLocation}
+        showInfoPopover={true}
+        infoPopoverContext="class-attendance-overview"
       >
         {(locationFilteredData) => (
           <>

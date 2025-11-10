@@ -108,7 +108,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
   return (
     <div className="space-y-6">
       {/* Location Performance */}
-      <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
             Location Performance Analysis
@@ -166,7 +166,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
       </Card>
 
       {/* Sales Rep Performance */}
-      <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
             Top Sales Representatives by Membership Volume
@@ -207,7 +207,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
       {/* Monthly Trend & Value Segment Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Trend */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
+        <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
               Monthly Status Trend
@@ -229,7 +229,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
         </Card>
 
         {/* Value Segment Analysis */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
+        <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
               Value Segment Performance

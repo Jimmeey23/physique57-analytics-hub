@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useDeferredValue, useTransition } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue, useTransition, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +12,8 @@ import { InfoPopover } from '@/components/ui/InfoPopover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HeroSection } from '@/components/ui/HeroSection';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 
 type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
@@ -92,6 +94,26 @@ export const PatternsAndTrends = () => {
   const [frequencyQuickFilterMonth, setFrequencyQuickFilterMonth] = useState<string>('All');
   const [cancellationBreakdownBy, setCancellationBreakdownBy] = useState<'product' | 'category' | 'teacher' | 'class'>('class');
   const [cancellationQuickFilterMonth, setCancellationQuickFilterMonth] = useState<string>('All');
+
+  // Refs for copy table functionality
+  const monthOnMonthTableRef = useRef<HTMLDivElement>(null);
+  const frequencyTableRef = useRef<HTMLDivElement>(null);
+  const cancellationTableRef = useRef<HTMLDivElement>(null);
+  
+  // Register tables for copy functionality - but we need custom logic for all metrics
+  const { getAllTabsText: getMonthOnMonthText } = useRegisterTableForCopy(
+    monthOnMonthTableRef as any, 
+    `${METRICS.find(m => m.id === selectedMetric)?.label} by ${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month`,
+    true // disabled - we'll handle this manually
+  );
+  const { getAllTabsText: getFrequencyText } = useRegisterTableForCopy(
+    frequencyTableRef as any,
+    'Attendance Frequency Breakdown'
+  );
+  const { getAllTabsText: getCancellationText } = useRegisterTableForCopy(
+    cancellationTableRef as any,
+    'Late Cancellations Breakdown'
+  );
 
   // Sync loading state with global loader
   useEffect(() => {
@@ -554,6 +576,88 @@ export const PatternsAndTrends = () => {
 
     return { products, months, totalsRow };
   }, [filteredData, groupBy, salesData]);
+
+  // Custom function to get ALL metric tables data - placed after monthlyProductData
+  const getAllMetricTablesText = React.useCallback(async () => {
+    let allText = '';
+    
+    // For each metric, generate the table data
+    METRICS.forEach((metric) => {
+      allText += `\n\n${'='.repeat(80)}\n`;
+      allText += `${metric.label} by ${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month\n`;
+      allText += `${'='.repeat(80)}\n\n`;
+      
+      // Headers
+      const headers = [groupBy.charAt(0).toUpperCase() + groupBy.slice(1), ...monthlyProductData.months, 'Total', 'Average'];
+      allText += headers.join('\t') + '\n';
+      allText += headers.map(() => '---').join('\t') + '\n';
+      
+      // Data rows
+      monthlyProductData.products.forEach(productItem => {
+        const row = [productItem.product];
+        let totalValue = 0;
+        let monthCount = 0;
+        
+        monthlyProductData.months.forEach(month => {
+          const monthData = productItem.monthlyBreakdown.find(m => m.month === month);
+          let value = 0;
+          
+          if (monthData) {
+            switch (metric.id) {
+              case 'visits': value = monthData.visits; break;
+              case 'bookings': value = monthData.bookings; break;
+              case 'checkins': value = monthData.checkins; break;
+              case 'sessions': value = monthData.sessions; break;
+              case 'emptySessions': value = monthData.emptySessions; break;
+              case 'uniqueMembers': value = monthData.uniqueMembers; break;
+              case 'newMembers': value = monthData.newMembers; break;
+              case 'returningMembers': value = monthData.returningMembers; break;
+              case 'revenue': value = monthData.revenue; break;
+              case 'earnedRevenue': value = monthData.earnedRevenue; break;
+              case 'unitsSold': value = monthData.unitsSold; break;
+              case 'classAvg': value = monthData.classAvg; break;
+              case 'fillRate': value = monthData.fillRate; break;
+              case 'capacity': value = monthData.capacity; break;
+              case 'lateCancellations': value = monthData.lateCancellations; break;
+              case 'complementary': value = monthData.complementary; break;
+              case 'avgRevenuePerMember': value = monthData.avgRevenuePerMember; break;
+              case 'avgRevenuePerSession': value = monthData.avgRevenuePerSession; break;
+            }
+            totalValue += value;
+            monthCount++;
+          }
+          
+          // Format value based on metric type
+          let formattedValue = '-';
+          if (value > 0) {
+            switch (metric.format) {
+              case 'currency': formattedValue = formatCurrency(value); break;
+              case 'percentage': formattedValue = `${value.toFixed(1)}%`; break;
+              case 'decimal': formattedValue = value.toFixed(2); break;
+              default: formattedValue = formatNumber(value); break;
+            }
+          }
+          row.push(formattedValue);
+        });
+        
+        // Add total and average
+        const formattedTotal = metric.format === 'currency' ? formatCurrency(totalValue) :
+                              metric.format === 'percentage' ? `${totalValue.toFixed(1)}%` :
+                              metric.format === 'decimal' ? totalValue.toFixed(2) :
+                              formatNumber(totalValue);
+        const avgValue = monthCount > 0 ? totalValue / monthCount : 0;
+        const formattedAvg = metric.format === 'currency' ? formatCurrency(avgValue) :
+                            metric.format === 'percentage' ? `${avgValue.toFixed(1)}%` :
+                            metric.format === 'decimal' ? avgValue.toFixed(2) :
+                            formatNumber(avgValue);
+        
+        row.push(formattedTotal, formattedAvg);
+        allText += row.join('\t') + '\n';
+      });
+    });
+    
+    return allText;
+  }, [monthlyProductData, groupBy, METRICS]);
 
   const toggleProductExpansion = (product: string) => {
     const newExpanded = new Set(expandedRows);
@@ -1172,20 +1276,30 @@ export const PatternsAndTrends = () => {
         <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
           <CardHeader className="pb-4 bg-gradient-to-r from-indigo-800 to-purple-900 text-white rounded-t-lg">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Calendar className="w-6 h-6" />
-                {METRICS.find(m => m.id === selectedMetric)?.label} by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month
-              </CardTitle>
-              <Badge className="bg-white/20 text-white border-white/30">
-                {monthlyProductData.products.length} {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}s
-              </Badge>
+                <CardTitle className="text-xl font-bold">
+                  {METRICS.find(m => m.id === selectedMetric)?.label} by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month
+                </CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-white/20 text-white border-white/30">
+                  {monthlyProductData.products.length} {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}s
+                </Badge>
+                <CopyTableButton 
+                  tableRef={monthOnMonthTableRef as any}
+                  tableName={`${METRICS.find(m => m.id === selectedMetric)?.label} by ${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month`}
+                  size="sm"
+                  onCopyAllTabs={getAllMetricTablesText}
+                />
+              </div>
             </div>
             <p className="text-indigo-100 text-sm mt-2">
               Track member check-in patterns across {groupBy}s and time periods
             </p>
           </CardHeader>
 
-          <CardContent className="p-0">
+          <CardContent className="p-0" ref={monthOnMonthTableRef as any}>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-900">
@@ -1558,15 +1672,25 @@ export const PatternsAndTrends = () => {
           {/* Monthly Visit Frequency */}
           <Card className="bg-gradient-to-br from-white via-blue-50/30 to-white border-0 shadow-xl">
             <CardHeader className="pb-4 bg-gradient-to-r from-blue-800 to-indigo-900 text-white rounded-t-lg">
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Monthly Visit Frequency by {frequencyBreakdownBy.charAt(0).toUpperCase() + frequencyBreakdownBy.slice(1)}
-              </CardTitle>
-              <p className="text-blue-100 text-xs mt-1">
-                Distribution of members by classes attended per month
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Monthly Visit Frequency by {frequencyBreakdownBy.charAt(0).toUpperCase() + frequencyBreakdownBy.slice(1)}
+                  </CardTitle>
+                  <p className="text-blue-100 text-xs mt-1">
+                    Distribution of members by classes attended per month
+                  </p>
+                </div>
+                <CopyTableButton 
+                  tableRef={frequencyTableRef as any}
+                  tableName="Attendance Frequency Breakdown"
+                  size="sm"
+                  onCopyAllTabs={async () => getFrequencyText()}
+                />
+              </div>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-4" ref={frequencyTableRef as any}>
               {/* Breakdown Selector */}
               <div className="flex flex-wrap gap-2 pb-3 border-b border-blue-200">
                 <Button
@@ -1766,15 +1890,25 @@ export const PatternsAndTrends = () => {
           {/* Late Cancellation Frequency */}
           <Card className="bg-gradient-to-br from-white via-red-50/30 to-white border-0 shadow-xl">
             <CardHeader className="pb-4 bg-gradient-to-r from-red-800 to-pink-900 text-white rounded-t-lg">
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                Late Cancellation Frequency by {cancellationBreakdownBy.charAt(0).toUpperCase() + cancellationBreakdownBy.slice(1)}
-              </CardTitle>
-              <p className="text-red-100 text-xs mt-1">
-                Distribution of members by late cancellations per month
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    Late Cancellation Frequency by {cancellationBreakdownBy.charAt(0).toUpperCase() + cancellationBreakdownBy.slice(1)}
+                  </CardTitle>
+                  <p className="text-red-100 text-xs mt-1">
+                    Distribution of members by late cancellations per month
+                  </p>
+                </div>
+                <CopyTableButton 
+                  tableRef={cancellationTableRef as any}
+                  tableName="Late Cancellations Breakdown"
+                  size="sm"
+                  onCopyAllTabs={async () => getCancellationText()}
+                />
+              </div>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-4" ref={cancellationTableRef as any}>
               {/* Breakdown Selector */}
               <div className="flex flex-wrap gap-2 pb-3 border-b border-red-200">
                 <Button

@@ -36,7 +36,11 @@ export function useExpirationMetrics(
   options?: Options
 ) {
   return useMemo(() => {
-    const base = (historicalData && historicalData.length > 0 ? historicalData : data) as ExpirationData[];
+    // Use the filtered data directly for current metrics
+    // Don't filter by date again - the data passed in is already filtered
+    const current = data;
+    
+    // For historical comparison, use the historicalData if provided
     const compareEnd = options?.dateRange?.end
       ? (typeof options.dateRange.end === 'string' ? new Date(options.dateRange.end) : (options.dateRange.end as Date))
       : new Date();
@@ -52,8 +56,9 @@ export function useExpirationMetrics(
 
     const within = (d?: Date | null, start?: Date, end?: Date) => !!(d && start && end && d >= start && d <= end);
 
-    const current = base.filter((it) => within(parseDate((it as any).endDate), currentStart, currentEnd));
-    const previous = base.filter((it) => within(parseDate((it as any).endDate), prevStart, prevEnd));
+    // Use historicalData or data for previous period comparison
+    const baseForComparison = historicalData && historicalData.length > 0 ? historicalData : data;
+    const previous = baseForComparison.filter((it) => within(parseDate((it as any).endDate), prevStart, prevEnd));
 
     const countByStatus = (list: ExpirationData[], status: string) => list.filter((i) => (i.status || '').toLowerCase() === status).length;
 
@@ -114,7 +119,7 @@ export function useExpirationMetrics(
         previousRawValue: activePrev,
         periodLabel,
         icon: 'CheckCircle',
-        description: `${formatPercentage(activeRateCur)} of total memberships`,
+        description: `${activeRateCur.toFixed(1)}% of total memberships`,
       },
       {
         title: 'Churned Members',
@@ -126,7 +131,7 @@ export function useExpirationMetrics(
         previousRawValue: churnedPrev,
         periodLabel,
         icon: 'AlertTriangle',
-        description: `${formatPercentage(churnRateCur)} churn rate`,
+        description: `${churnRateCur.toFixed(1)}% churn rate`,
       },
       {
         title: 'Frozen Members',
@@ -138,15 +143,15 @@ export function useExpirationMetrics(
         previousRawValue: frozenPrev,
         periodLabel,
         icon: 'Clock',
-        description: `${formatPercentage(frozenRateCur)} of total memberships`,
+        description: `${frozenRateCur.toFixed(1)}% of total memberships`,
       },
       {
         title: 'Revenue Impact',
-        value: `₹${formatNumber(churnLossCur)}`,
+        value: formatCurrency(churnLossCur),
         rawValue: churnLossCur,
         change: calcGrowth(churnLossCur, churnLossPrev).rate,
         changeDetails: calcGrowth(churnLossCur, churnLossPrev),
-        previousValue: `₹${formatNumber(churnLossPrev)}`,
+        previousValue: formatCurrency(churnLossPrev),
         previousRawValue: churnLossPrev,
         periodLabel,
         icon: 'TrendingUp',

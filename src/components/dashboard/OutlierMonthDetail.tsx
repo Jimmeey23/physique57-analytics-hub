@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Users, DollarSign, Target, Calendar,
@@ -8,12 +10,22 @@ import {
   BarChart3, PieChart, Zap, Award, ArrowUpRight, ArrowDownRight,
   UserPlus, UserCheck, RefreshCw, TrendingDown, Layers, Percent
 } from 'lucide-react';
-import { OutlierMonthAnalytics } from '@/hooks/useOutlierMonthAnalytics';
+import { OutlierMonthAnalytics, SpenderData, LapsedMemberData, TransactionDetail } from '@/hooks/useOutlierMonthAnalytics';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import {
   BarChart, Bar, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { OutlierDrillDownModal } from './OutlierDrillDownModal';
+import { SalesData } from '@/types/dashboard';
+import { StackedMemberData } from '@/hooks/useOutlierMonthAnalytics';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface OutlierMonthDetailProps {
   analytics: OutlierMonthAnalytics;
@@ -29,6 +41,21 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
   locationName
 }) => {
   const [chartView, setChartView] = useState<'daily' | 'membership'>('daily');
+  const [selectedStackedMember, setSelectedStackedMember] = useState<StackedMemberData | null>(null);
+  const [modalData, setModalData] = useState<{
+    isOpen: boolean;
+    type: 'spender' | 'lapsed' | 'new-transactions' | 'repeat-transactions' | 'membership';
+    title: string;
+    spenderData?: SpenderData;
+    lapsedData?: LapsedMemberData;
+    transactions?: TransactionDetail[];
+    membershipTransactions?: SalesData[];
+    membershipName?: string;
+  }>({
+    isOpen: false,
+    type: 'new-transactions',
+    title: ''
+  });
 
   // Calculate percentages
   const newClientPercentage = analytics.totalRevenue > 0 
@@ -93,6 +120,13 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
+          onClick={() => setModalData({
+            isOpen: true,
+            type: 'new-transactions',
+            title: `${monthName} - New Client Transactions (${locationName})`,
+            transactions: analytics.newTransactions
+          })}
+          className="cursor-pointer"
         >
           <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
@@ -108,7 +142,7 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
               <p className="text-sm text-gray-600 mt-1">New Client Revenue</p>
               <div className="mt-3 pt-3 border-t border-emerald-100">
                 <div className="text-xs text-gray-500">
-                  {formatNumber(analytics.newClients)} new clients
+                  {formatNumber(analytics.newClients)} new clients • Click for details
                 </div>
               </div>
             </CardContent>
@@ -120,6 +154,13 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
+          onClick={() => setModalData({
+            isOpen: true,
+            type: 'repeat-transactions',
+            title: `${monthName} - Repeat Client Transactions (${locationName})`,
+            transactions: analytics.repeatTransactions
+          })}
+          className="cursor-pointer"
         >
           <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200 hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
@@ -135,7 +176,7 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
               <p className="text-sm text-gray-600 mt-1">Existing Client Revenue</p>
               <div className="mt-3 pt-3 border-t border-purple-100">
                 <div className="text-xs text-gray-500">
-                  {formatNumber(analytics.existingClients)} returning clients
+                  {formatNumber(analytics.existingClients)} returning clients • Click for details
                 </div>
               </div>
             </CardContent>
@@ -169,6 +210,203 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
           </Card>
         </motion.div>
       </div>
+
+      {/* Comprehensive Revenue Split Metrics */}
+      {analytics.newCustomerMetrics && analytics.repeatCustomerMetrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* New Customer Metrics */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+          <Card className="border-emerald-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50">
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-600" />
+                New Customer Detailed Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-emerald-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Revenue</div>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {formatCurrency(analytics.newCustomerMetrics.revenue)}
+                  </div>
+                </div>
+                <div className="bg-emerald-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Units Sold</div>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {formatNumber(analytics.newCustomerMetrics.unitsSold)}
+                  </div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Transactions</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatNumber(analytics.newCustomerMetrics.transactions)}
+                  </div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Unique Members</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatNumber(analytics.newCustomerMetrics.uniqueMembers)}
+                  </div>
+                </div>
+                <div className="col-span-2 bg-teal-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Average Transaction Value (ATV)</div>
+                  <div className="text-2xl font-bold text-teal-600">
+                    {formatCurrency(analytics.newCustomerMetrics.atv)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-emerald-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-orange-500" />
+                  Discount Analysis
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div 
+                    className="bg-orange-50 p-3 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+                    onClick={() => setModalData({
+                      isOpen: true,
+                      type: 'new-transactions',
+                      title: `${monthName} - New Customer Discounted Transactions`,
+                      transactions: analytics.newTransactions.filter(t => t.discountAmount > 0)
+                    })}
+                  >
+                    <div className="text-xs text-gray-600">Discounted Revenue</div>
+                    <div className="text-lg font-bold text-orange-600">
+                      {formatCurrency(analytics.newCustomerMetrics.discountedRevenue)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatNumber(analytics.newCustomerMetrics.discountedTransactions)} txns
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-600">Non-Discounted</div>
+                    <div className="text-lg font-bold text-gray-700">
+                      {formatCurrency(analytics.newCustomerMetrics.nonDiscountedRevenue)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatNumber(analytics.newCustomerMetrics.nonDiscountedTransactions)} txns
+                    </div>
+                  </div>
+                  <div className="col-span-2 bg-red-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-600">Total Discounts Given</span>
+                      <span className="text-lg font-bold text-red-600">
+                        {formatCurrency(analytics.newCustomerMetrics.totalDiscountAmount)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Avg: {formatPercentage(analytics.newCustomerMetrics.avgDiscountPercentage)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Repeat Customer Metrics */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="border-purple-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50">
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-purple-600" />
+                Repeat Customer Detailed Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Revenue</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(analytics.repeatCustomerMetrics.revenue)}
+                  </div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Units Sold</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatNumber(analytics.repeatCustomerMetrics.unitsSold)}
+                  </div>
+                </div>
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Transactions</div>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {formatNumber(analytics.repeatCustomerMetrics.transactions)}
+                  </div>
+                </div>
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Unique Members</div>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {formatNumber(analytics.repeatCustomerMetrics.uniqueMembers)}
+                  </div>
+                </div>
+                <div className="col-span-2 bg-violet-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Average Transaction Value (ATV)</div>
+                  <div className="text-2xl font-bold text-violet-600">
+                    {formatCurrency(analytics.repeatCustomerMetrics.atv)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-purple-100">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-orange-500" />
+                  Discount Analysis
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div 
+                    className="bg-orange-50 p-3 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+                    onClick={() => setModalData({
+                      isOpen: true,
+                      type: 'repeat-transactions',
+                      title: `${monthName} - Repeat Customer Discounted Transactions`,
+                      transactions: analytics.repeatTransactions.filter(t => t.discountAmount > 0)
+                    })}
+                  >
+                    <div className="text-xs text-gray-600">Discounted Revenue</div>
+                    <div className="text-lg font-bold text-orange-600">
+                      {formatCurrency(analytics.repeatCustomerMetrics.discountedRevenue)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatNumber(analytics.repeatCustomerMetrics.discountedTransactions)} txns
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-600">Non-Discounted</div>
+                    <div className="text-lg font-bold text-gray-700">
+                      {formatCurrency(analytics.repeatCustomerMetrics.nonDiscountedRevenue)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatNumber(analytics.repeatCustomerMetrics.nonDiscountedTransactions)} txns
+                    </div>
+                  </div>
+                  <div className="col-span-2 bg-red-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-600">Total Discounts Given</span>
+                      <span className="text-lg font-bold text-red-600">
+                        {formatCurrency(analytics.repeatCustomerMetrics.totalDiscountAmount)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Avg: {formatPercentage(analytics.repeatCustomerMetrics.avgDiscountPercentage)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        </div>
+      )}
 
       {/* Membership Behavior Metrics */}
       <Card>
@@ -217,6 +455,70 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Stacked Members Detail Table */}
+      {analytics.stackedMembersDetails && analytics.stackedMembersDetails.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-purple-600" />
+              Stacked Memberships - Detailed Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-purple-50">
+                  <tr>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
+                    <th className="text-center p-3 text-sm font-semibold text-gray-700">Total Memberships</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Paid</th>
+                    <th className="text-center p-3 text-sm font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.stackedMembersDetails.map((member, index) => (
+                    <tr key={index} className="border-t hover:bg-purple-50">
+                      <td className="p-3 text-sm text-gray-900 font-medium">{member.customerName}</td>
+                      <td className="p-3 text-sm text-gray-600">{member.customerEmail}</td>
+                      <td className="p-3 text-sm text-center">
+                        <Badge className="bg-purple-100 text-purple-700">
+                          {member.totalMemberships} Memberships
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-sm text-gray-900 text-right font-semibold">
+                        {formatCurrency(member.totalAmountPaid)}
+                      </td>
+                      <td className="p-3 text-sm text-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedStackedMember(member)}
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        >
+                          View Details
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-gray-700">
+                  <strong>Stacking Insight:</strong> {analytics.stackedMembersDetails.length} members purchased multiple memberships in {monthName}. 
+                  Average stacking value: {formatCurrency(analytics.stackedMembersDetails.reduce((sum, m) => sum + m.totalAmountPaid, 0) / analytics.stackedMembersDetails.length)}.
+                  These highly engaged members represent {formatPercentage((analytics.stackedMembersDetails.length / analytics.totalClients) * 100)} of total clients
+                  but contribute {formatPercentage((analytics.stackedMembersDetails.reduce((sum, m) => sum + m.totalAmountPaid, 0) / analytics.totalRevenue) * 100)} of total revenue.
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Revenue Distribution Chart */}
       <Card>
@@ -407,114 +709,609 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
         </CardContent>
       </Card>
 
-      {/* Top Spenders Table */}
+      {/* Detailed Transactions Table - Bifurcated by New/Repeat */}
+      {analytics.newTransactions && analytics.repeatTransactions && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-indigo-600" />
+            Detailed Transaction History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="new" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new" className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                New Customer Transactions ({analytics.newTransactions?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="repeat" className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                Repeat Customer Transactions ({analytics.repeatTransactions?.length || 0})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* New Customer Transactions */}
+            <TabsContent value="new">
+              <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                <table className="w-full">
+                  <thead className="bg-emerald-50 sticky top-0">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Date</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Product</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Category</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">MRP</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Paid</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Discount</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Savings</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Location</th>
+                      <th className="text-center p-3 text-sm font-semibold text-gray-700">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.newTransactions.slice(0, 100).map((transaction, index) => (
+                      <tr 
+                        key={`new-${transaction.transactionId}-${index}`}
+                        className="border-t hover:bg-emerald-50 cursor-pointer transition-colors"
+                        onClick={() => setModalData({
+                          isOpen: true,
+                          type: 'spender',
+                          title: `${transaction.customerName} - Transaction History`,
+                          spenderData: {
+                            memberId: transaction.memberId,
+                            customerName: transaction.customerName,
+                            customerEmail: transaction.customerEmail,
+                            totalSpent: transaction.paymentValue,
+                            transactions: 1,
+                            avgTransaction: transaction.paymentValue,
+                            firstPurchaseDate: transaction.paymentDate,
+                            lastPurchaseDate: transaction.paymentDate,
+                            isNew: true,
+                            rawTransactions: [transaction as any]
+                          }
+                        })}
+                      >
+                        <td className="p-3 text-sm text-gray-600">
+                          {new Date(transaction.paymentDate).toLocaleDateString()}
+                        </td>
+                        <td className="p-3 text-sm text-gray-900 font-medium">
+                          <div>{transaction.customerName}</div>
+                          <div className="text-xs text-gray-500">{transaction.customerEmail}</div>
+                        </td>
+                        <td className="p-3 text-sm text-gray-900">
+                          <div className="max-w-xs truncate" title={transaction.product}>
+                            {transaction.product}
+                          </div>
+                          {transaction.membershipEndDate && (
+                            <div className="text-xs text-gray-500">
+                              Expires: {new Date(transaction.membershipEndDate).toLocaleDateString()}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm">
+                          <Badge variant="outline" className="text-xs">
+                            {transaction.category}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm text-gray-900 text-right font-medium">
+                          {transaction.mrpPostTax ? formatCurrency(transaction.mrpPostTax) : '-'}
+                        </td>
+                        <td className="p-3 text-sm text-gray-900 text-right font-semibold">
+                          {formatCurrency(transaction.paymentValue)}
+                        </td>
+                        <td className="p-3 text-sm text-right">
+                          {transaction.discountAmount > 0 ? (
+                            <span className="text-orange-600 font-medium">
+                              {formatCurrency(transaction.discountAmount)}
+                              {transaction.discountPercentage > 0 && (
+                                <span className="text-xs block">
+                                  ({formatPercentage(transaction.discountPercentage)})
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm text-right">
+                          {transaction.savings && transaction.savings > 0 ? (
+                            <span className="text-green-600 font-medium">
+                              {formatCurrency(transaction.savings)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {transaction.location}
+                        </td>
+                        <td className="p-3 text-sm text-center">
+                          <div className="flex flex-col gap-1 items-center">
+                            {transaction.isStacked && (
+                              <Badge className="bg-purple-100 text-purple-700 text-xs">
+                                Stacked
+                              </Badge>
+                            )}
+                            {transaction.discountType && (
+                              <Badge variant="outline" className="text-xs">
+                                {transaction.discountType}
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {analytics.newTransactions.length > 100 && (
+                <div className="mt-3 text-sm text-gray-500 text-center">
+                  Showing first 100 of {analytics.newTransactions.length} transactions
+                </div>
+              )}
+              <div className="mt-4 p-4 bg-emerald-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>New Customer Transaction Insights:</strong> {analytics.newTransactions.length} transactions from new customers. 
+                    Avg transaction value: {formatCurrency(analytics.newCustomerMetrics.atv)}. 
+                    {analytics.newCustomerMetrics.discountedTransactions > 0 && (
+                      <> {formatPercentage((analytics.newCustomerMetrics.discountedTransactions / analytics.newCustomerMetrics.transactions) * 100)} of transactions included discounts.</>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Repeat Customer Transactions */}
+            <TabsContent value="repeat">
+              <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                <table className="w-full">
+                  <thead className="bg-purple-50 sticky top-0">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Date</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Product</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Category</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">MRP</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Paid</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Discount</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Savings</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Location</th>
+                      <th className="text-center p-3 text-sm font-semibold text-gray-700">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.repeatTransactions.slice(0, 100).map((transaction, index) => (
+                      <tr 
+                        key={`repeat-${transaction.transactionId}-${index}`}
+                        className="border-t hover:bg-purple-50 cursor-pointer transition-colors"
+                        onClick={() => setModalData({
+                          isOpen: true,
+                          type: 'spender',
+                          title: `${transaction.customerName} - Transaction History`,
+                          spenderData: {
+                            memberId: transaction.memberId,
+                            customerName: transaction.customerName,
+                            customerEmail: transaction.customerEmail,
+                            totalSpent: transaction.paymentValue,
+                            transactions: 1,
+                            avgTransaction: transaction.paymentValue,
+                            firstPurchaseDate: transaction.paymentDate,
+                            lastPurchaseDate: transaction.paymentDate,
+                            isNew: false,
+                            rawTransactions: [transaction as any]
+                          }
+                        })}
+                      >
+                        <td className="p-3 text-sm text-gray-600">
+                          {new Date(transaction.paymentDate).toLocaleDateString()}
+                        </td>
+                        <td className="p-3 text-sm text-gray-900 font-medium">
+                          <div>{transaction.customerName}</div>
+                          <div className="text-xs text-gray-500">{transaction.customerEmail}</div>
+                        </td>
+                        <td className="p-3 text-sm text-gray-900">
+                          <div className="max-w-xs truncate" title={transaction.product}>
+                            {transaction.product}
+                          </div>
+                          {transaction.membershipEndDate && (
+                            <div className="text-xs text-gray-500">
+                              Expires: {new Date(transaction.membershipEndDate).toLocaleDateString()}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm">
+                          <Badge variant="outline" className="text-xs">
+                            {transaction.category}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm text-gray-900 text-right font-medium">
+                          {transaction.mrpPostTax ? formatCurrency(transaction.mrpPostTax) : '-'}
+                        </td>
+                        <td className="p-3 text-sm text-gray-900 text-right font-semibold">
+                          {formatCurrency(transaction.paymentValue)}
+                        </td>
+                        <td className="p-3 text-sm text-right">
+                          {transaction.discountAmount > 0 ? (
+                            <span className="text-orange-600 font-medium">
+                              {formatCurrency(transaction.discountAmount)}
+                              {transaction.discountPercentage > 0 && (
+                                <span className="text-xs block">
+                                  ({formatPercentage(transaction.discountPercentage)})
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm text-right">
+                          {transaction.savings && transaction.savings > 0 ? (
+                            <span className="text-green-600 font-medium">
+                              {formatCurrency(transaction.savings)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {transaction.location}
+                        </td>
+                        <td className="p-3 text-sm text-center">
+                          <div className="flex flex-col gap-1 items-center">
+                            {transaction.isStacked && (
+                              <Badge className="bg-purple-100 text-purple-700 text-xs">
+                                Stacked
+                              </Badge>
+                            )}
+                            {transaction.discountType && (
+                              <Badge variant="outline" className="text-xs">
+                                {transaction.discountType}
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {analytics.repeatTransactions.length > 100 && (
+                <div className="mt-3 text-sm text-gray-500 text-center">
+                  Showing first 100 of {analytics.repeatTransactions.length} transactions
+                </div>
+              )}
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <RefreshCw className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>Repeat Customer Transaction Insights:</strong> {analytics.repeatTransactions.length} transactions from repeat customers. 
+                    Avg transaction value: {formatCurrency(analytics.repeatCustomerMetrics.atv)}. 
+                    {analytics.repeatCustomerMetrics.discountedTransactions > 0 && (
+                      <> {formatPercentage((analytics.repeatCustomerMetrics.discountedTransactions / analytics.repeatCustomerMetrics.transactions) * 100)} of transactions included discounts.</>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top Spenders Table - Bifurcated by New/Repeat */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Award className="w-5 h-5 text-amber-600" />
-            Top 20 Spenders
+            Top 20 Spenders - New vs Repeat Customers
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-700">Rank</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
-                  <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Spent</th>
-                  <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
-                  <th className="text-right p-3 text-sm font-semibold text-gray-700">Avg/Transaction</th>
-                  <th className="text-center p-3 text-sm font-semibold text-gray-700">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analytics.topSpenders.map((spender, index) => (
-                  <tr key={index} className="border-t hover:bg-gray-50">
-                    <td className="p-3 text-sm text-gray-600">#{index + 1}</td>
-                    <td className="p-3 text-sm text-gray-900 font-medium">{spender.customerName}</td>
-                    <td className="p-3 text-sm text-gray-600">{spender.customerEmail}</td>
-                    <td className="p-3 text-sm text-gray-900 text-right font-semibold">
-                      {formatCurrency(spender.totalSpent)}
-                    </td>
-                    <td className="p-3 text-sm text-gray-600 text-right">{formatNumber(spender.transactions)}</td>
-                    <td className="p-3 text-sm text-gray-600 text-right">{formatCurrency(spender.avgTransaction)}</td>
-                    <td className="p-3 text-center">
-                      {spender.isNew ? (
-                        <Badge className="bg-emerald-100 text-emerald-700">New</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-purple-700 border-purple-300">Existing</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 p-4 bg-amber-50 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-700">
-                <strong>High-Value Client Analysis:</strong> Top 20 spenders contributed {formatCurrency(analytics.topSpenders.reduce((sum, s) => sum + s.totalSpent, 0))}, 
-                representing {formatPercentage((analytics.topSpenders.reduce((sum, s) => sum + s.totalSpent, 0) / analytics.totalRevenue) * 100)} of total revenue. 
-                {analytics.topSpenders.filter(s => s.isNew).length > 0 && ` ${analytics.topSpenders.filter(s => s.isNew).length} new clients in top 20 indicates strong acquisition of high-value customers.`}
-                This concentration highlights the importance of VIP customer retention and targeted engagement strategies.
+          <Tabs defaultValue="new" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new" className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                New Customers ({analytics.topNewSpenders?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="repeat" className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                Repeat Customers ({analytics.topRepeatSpenders?.length || 0})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="new" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-emerald-50">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Rank</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Spent</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Discounts</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Membership</th>
+                      <th className="text-center p-3 text-sm font-semibold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.topNewSpenders.map((spender, index) => (
+                      <tr 
+                        key={index} 
+                        className="border-t hover:bg-emerald-50 cursor-pointer transition-colors"
+                        onClick={() => setModalData({
+                          isOpen: true,
+                          type: 'spender',
+                          title: `${spender.customerName} - Transaction History`,
+                          spenderData: spender
+                        })}
+                      >
+                        <td className="p-3 text-sm text-gray-600">#{index + 1}</td>
+                        <td className="p-3 text-sm text-gray-900 font-medium">{spender.customerName}</td>
+                        <td className="p-3 text-sm text-gray-600">{spender.customerEmail}</td>
+                        <td className="p-3 text-sm text-gray-900 text-right font-semibold">
+                          {formatCurrency(spender.totalSpent)}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600 text-right">{formatNumber(spender.transactions)}</td>
+                        <td className="p-3 text-sm text-orange-600 text-right font-medium">
+                          {formatCurrency(spender.totalDiscountReceived || 0)}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          <div>
+                            <div className="font-medium truncate max-w-xs">{spender.lastMembershipName || 'N/A'}</div>
+                            {spender.lastMembershipEndDate && (
+                              <div className="text-xs text-gray-500">
+                                Ends: {new Date(spender.lastMembershipEndDate).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge 
+                            variant="default"
+                            className={`text-xs ${
+                              spender.membershipStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                              spender.membershipStatus === 'Frozen' ? 'bg-blue-100 text-blue-700' :
+                              spender.membershipStatus === 'Expired' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {spender.membershipStatus || 'None'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </div>
+              <div className="mt-4 p-4 bg-emerald-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>New Customer High-Value Analysis:</strong> Top {analytics.topNewSpenders.length} new customer spenders contributed {formatCurrency(analytics.topNewSpenders.reduce((sum, s) => sum + s.totalSpent, 0))}, 
+                    demonstrating strong initial engagement. Average spending: {formatCurrency(analytics.topNewSpenders.reduce((sum, s) => sum + s.totalSpent, 0) / Math.max(analytics.topNewSpenders.length, 1))} per customer.
+                    Total discounts given: {formatCurrency(analytics.topNewSpenders.reduce((sum, s) => sum + (s.totalDiscountReceived || 0), 0))}.
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="repeat" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-purple-50">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Rank</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Spent</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Discounts</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Membership</th>
+                      <th className="text-center p-3 text-sm font-semibold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.topRepeatSpenders.map((spender, index) => (
+                      <tr 
+                        key={index} 
+                        className="border-t hover:bg-purple-50 cursor-pointer transition-colors"
+                        onClick={() => setModalData({
+                          isOpen: true,
+                          type: 'spender',
+                          title: `${spender.customerName} - Transaction History`,
+                          spenderData: spender
+                        })}
+                      >
+                        <td className="p-3 text-sm text-gray-600">#{index + 1}</td>
+                        <td className="p-3 text-sm text-gray-900 font-medium">{spender.customerName}</td>
+                        <td className="p-3 text-sm text-gray-600">{spender.customerEmail}</td>
+                        <td className="p-3 text-sm text-gray-900 text-right font-semibold">
+                          {formatCurrency(spender.totalSpent)}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600 text-right">{formatNumber(spender.transactions)}</td>
+                        <td className="p-3 text-sm text-orange-600 text-right font-medium">
+                          {formatCurrency(spender.totalDiscountReceived || 0)}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          <div>
+                            <div className="font-medium truncate max-w-xs">{spender.lastMembershipName || 'N/A'}</div>
+                            {spender.lastMembershipEndDate && (
+                              <div className="text-xs text-gray-500">
+                                Ends: {new Date(spender.lastMembershipEndDate).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge 
+                            variant="default"
+                            className={`text-xs ${
+                              spender.membershipStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                              spender.membershipStatus === 'Frozen' ? 'bg-blue-100 text-blue-700' :
+                              spender.membershipStatus === 'Expired' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {spender.membershipStatus || 'None'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>Repeat Customer High-Value Analysis:</strong> Top {analytics.topRepeatSpenders.length} repeat customer spenders contributed {formatCurrency(analytics.topRepeatSpenders.reduce((sum, s) => sum + s.totalSpent, 0))}, 
+                    representing {formatPercentage((analytics.topRepeatSpenders.reduce((sum, s) => sum + s.totalSpent, 0) / analytics.totalRevenue) * 100)} of total revenue.
+                    These loyal customers demonstrate consistent engagement with average: {formatCurrency(analytics.topRepeatSpenders.reduce((sum, s) => sum + s.totalSpent, 0) / Math.max(analytics.topRepeatSpenders.length, 1))} per customer.
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
-      {/* Bottom Spenders (Low Value) */}
+      {/* Bottom Spenders (Low Value) - Bifurcated */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingDown className="w-5 h-5 text-gray-600" />
-            Bottom 20 Spenders
+            Bottom 20 Spenders - New vs Repeat Customers
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
-                  <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Spent</th>
-                  <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
-                  <th className="text-center p-3 text-sm font-semibold text-gray-700">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analytics.bottomSpenders.map((spender, index) => (
-                  <tr key={index} className="border-t hover:bg-gray-50">
-                    <td className="p-3 text-sm text-gray-900 font-medium">{spender.customerName}</td>
-                    <td className="p-3 text-sm text-gray-600">{spender.customerEmail}</td>
-                    <td className="p-3 text-sm text-gray-900 text-right">{formatCurrency(spender.totalSpent)}</td>
-                    <td className="p-3 text-sm text-gray-600 text-right">{formatNumber(spender.transactions)}</td>
-                    <td className="p-3 text-center">
-                      {spender.isNew ? (
-                        <Badge className="bg-emerald-100 text-emerald-700">New</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-purple-700 border-purple-300">Existing</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-gray-700">
-                <strong>Low-Value Client Insight:</strong> These customers represent growth opportunities through upselling and engagement initiatives. 
-                Many may be trial or single-purchase customers who haven't yet discovered the full value proposition. 
-                Targeted nurture campaigns could convert these into higher-value relationships.
+          <Tabs defaultValue="new" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new">New Customers ({analytics.bottomNewSpenders?.length || 0})</TabsTrigger>
+              <TabsTrigger value="repeat">Repeat Customers ({analytics.bottomRepeatSpenders?.length || 0})</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="new" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Spent</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Membership</th>
+                      <th className="text-center p-3 text-sm font-semibold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.bottomNewSpenders.map((spender, index) => (
+                      <tr 
+                        key={index} 
+                        className="border-t hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => setModalData({
+                          isOpen: true,
+                          type: 'spender',
+                          title: `${spender.customerName} - Transaction History`,
+                          spenderData: spender
+                        })}
+                      >
+                        <td className="p-3 text-sm text-gray-900 font-medium">{spender.customerName}</td>
+                        <td className="p-3 text-sm text-gray-600">{spender.customerEmail}</td>
+                        <td className="p-3 text-sm text-gray-900 text-right">{formatCurrency(spender.totalSpent)}</td>
+                        <td className="p-3 text-sm text-gray-600 text-right">{formatNumber(spender.transactions)}</td>
+                        <td className="p-3 text-sm text-gray-600 truncate max-w-xs">{spender.lastMembershipName || 'N/A'}</td>
+                        <td className="p-3 text-center">
+                          <Badge 
+                            variant="default"
+                            className={`text-xs ${
+                              spender.membershipStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                              spender.membershipStatus === 'Frozen' ? 'bg-blue-100 text-blue-700' :
+                              spender.membershipStatus === 'Expired' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {spender.membershipStatus || 'None'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </div>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>New Customer Growth Opportunity:</strong> These new customers represent upselling potential through targeted engagement. 
+                    Many may be trial or single-purchase customers discovering your offerings. Nurture campaigns could convert them into higher-value relationships.
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="repeat" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Customer</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Spent</th>
+                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                      <th className="text-left p-3 text-sm font-semibold text-gray-700">Membership</th>
+                      <th className="text-center p-3 text-sm font-semibold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.bottomRepeatSpenders.map((spender, index) => (
+                      <tr 
+                        key={index} 
+                        className="border-t hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => setModalData({
+                          isOpen: true,
+                          type: 'spender',
+                          title: `${spender.customerName} - Transaction History`,
+                          spenderData: spender
+                        })}
+                      >
+                        <td className="p-3 text-sm text-gray-900 font-medium">{spender.customerName}</td>
+                        <td className="p-3 text-sm text-gray-600">{spender.customerEmail}</td>
+                        <td className="p-3 text-sm text-gray-900 text-right">{formatCurrency(spender.totalSpent)}</td>
+                        <td className="p-3 text-sm text-gray-600 text-right">{formatNumber(spender.transactions)}</td>
+                        <td className="p-3 text-sm text-gray-600 truncate max-w-xs">{spender.lastMembershipName || 'N/A'}</td>
+                        <td className="p-3 text-center">
+                          <Badge 
+                            variant="default"
+                            className={`text-xs ${
+                              spender.membershipStatus === 'Active' ? 'bg-green-100 text-green-700' :
+                              spender.membershipStatus === 'Frozen' ? 'bg-blue-100 text-blue-700' :
+                              spender.membershipStatus === 'Expired' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {spender.membershipStatus || 'None'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>Repeat Customer Retention Insight:</strong> These lower-value repeat customers show continued loyalty despite modest spending. 
+                    Re-engagement campaigns and personalized offers could help increase their lifetime value while maintaining the relationship.
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -541,7 +1338,16 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
               </thead>
               <tbody>
                 {analytics.lapsedMembers.slice(0, 50).map((member, index) => (
-                  <tr key={index} className="border-t hover:bg-gray-50">
+                  <tr 
+                    key={index} 
+                    className="border-t hover:bg-red-50 cursor-pointer transition-colors"
+                    onClick={() => setModalData({
+                      isOpen: true,
+                      type: 'lapsed',
+                      title: `${member.customerName} - Lapsed Member Details`,
+                      lapsedData: member
+                    })}
+                  >
                     <td className="p-3 text-sm text-gray-900 font-medium">{member.customerName}</td>
                     <td className="p-3 text-sm text-gray-600">{member.customerEmail}</td>
                     <td className="p-3 text-sm text-gray-600">{member.lastMembershipType}</td>
@@ -653,6 +1459,126 @@ export const OutlierMonthDetail: React.FC<OutlierMonthDetailProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Drill Down Modal */}
+      <OutlierDrillDownModal
+        isOpen={modalData.isOpen}
+        onClose={() => setModalData({ ...modalData, isOpen: false })}
+        data={modalData}
+      />
+
+      {/* Stacked Member Details Modal */}
+      <Dialog open={!!selectedStackedMember} onOpenChange={() => setSelectedStackedMember(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-purple-600" />
+              Stacked Memberships Details
+            </DialogTitle>
+            <DialogDescription>
+              {selectedStackedMember && (
+                <>
+                  <div className="text-base font-semibold text-gray-900 mt-2">
+                    {selectedStackedMember.customerName}
+                  </div>
+                  <div className="text-sm text-gray-600">{selectedStackedMember.customerEmail}</div>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedStackedMember && (
+            <div className="space-y-4 mt-4">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 rounded-lg">
+                <div>
+                  <div className="text-sm text-gray-600">Total Memberships</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {selectedStackedMember.totalMemberships}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Total Amount Paid</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(selectedStackedMember.totalAmountPaid)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Membership Details */}
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Membership Breakdown</h4>
+                <div className="space-y-3">
+                  {selectedStackedMember.memberships.map((membership, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h5 className="font-semibold text-gray-900 text-lg">
+                            {membership.membershipName}
+                          </h5>
+                          <Badge variant="outline" className="mt-1">
+                            {membership.category}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-gray-900">
+                            {formatCurrency(membership.amountPaid)}
+                          </div>
+                          {membership.discountAmount && membership.discountAmount > 0 && (
+                            <div className="text-sm text-orange-600 font-medium mt-1">
+                              Save {formatCurrency(membership.discountAmount)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <div className="text-gray-500">Purchase Date</div>
+                          <div className="font-medium text-gray-900">
+                            {new Date(membership.purchaseDate).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </div>
+                        </div>
+                        {membership.endDate && (
+                          <div>
+                            <div className="text-gray-500">Expiry Date</div>
+                            <div className="font-medium text-gray-900">
+                              {new Date(membership.endDate).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Insights */}
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <strong>Member Value:</strong> This customer purchased {selectedStackedMember.totalMemberships} memberships 
+                    for a total of {formatCurrency(selectedStackedMember.totalAmountPaid)}, 
+                    averaging {formatCurrency(selectedStackedMember.totalAmountPaid / selectedStackedMember.totalMemberships)} per membership. 
+                    {selectedStackedMember.memberships.some(m => m.discountAmount && m.discountAmount > 0) && (
+                      <> They saved a total of {formatCurrency(selectedStackedMember.memberships.reduce((sum, m) => sum + (m.discountAmount || 0), 0))} through discounts.</>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

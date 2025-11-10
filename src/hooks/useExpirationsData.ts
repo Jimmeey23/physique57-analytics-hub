@@ -8,7 +8,8 @@ const GOOGLE_CONFIG = {
   TOKEN_URL: "https://oauth2.googleapis.com/token"
 };
 
-const SPREADSHEET_ID = import.meta.env.VITE_EXPIRATIONS_SPREADSHEET_ID;
+const SPREADSHEET_ID = import.meta.env.VITE_EXPIRATIONS_SPREADSHEET_ID || "1rGMDDvvTbZfNg1dueWtRN3LhOgGQOdLg3Fd7Sn1GCZo";
+const SHEET_NAME = "Expirations";
 
 export const useExpirationsData = () => {
   const [data, setData] = useState<ExpirationData[]>([]);
@@ -43,9 +44,14 @@ export const useExpirationsData = () => {
       setLoading(true);
       setError(null);
 
+      console.log('Fetching expirations data from spreadsheet:', SPREADSHEET_ID);
+      console.log('Sheet name:', SHEET_NAME);
+
       const accessToken = await getAccessToken();
       
-      const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:Z`;
+      const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:Z`;
+      
+      console.log('Fetching from URL:', sheetUrl);
       
       const response = await fetch(sheetUrl, {
         headers: {
@@ -54,33 +60,51 @@ export const useExpirationsData = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch data');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('API Response:', result);
+      
       const rows = result.values || [];
       
+      console.log('Total rows received:', rows.length);
+      
       if (rows.length === 0) {
+        console.warn('No data found in the sheet');
         setData([]);
         return;
       }
 
       const headers = rows[0];
+      console.log('Headers:', headers);
+      
       const dataRows = rows.slice(1);
+      console.log('Data rows count:', dataRows.length);
 
       const processedData: ExpirationData[] = dataRows.map((row: string[], index: number) => ({
-        id: index + 1,
-        clientName: row[0] || '',
-        expirationDate: row[1] || '',
-        daysUntilExpiration: parseInt(row[2] || '0'),
-        packageType: row[3] || '',
-        remainingSessions: parseInt(row[4] || '0'),
-        membershipStatus: row[5] || '',
-        lastVisit: row[6] || '',
-        contactInfo: row[7] || '',
-        renewalProbability: row[8] || 'Unknown',
-        totalPurchaseValue: parseFloat(row[9] || '0'),
+        uniqueId: row[0] || '',
+        memberId: row[1] || '',
+        firstName: row[2] || '',
+        lastName: row[3] || '',
+        email: row[4] || '',
+        membershipName: row[5] || '',
+        endDate: row[6] || '',
+        homeLocation: row[7] || '',
+        currentUsage: row[8] || '-',
+        id: row[9] || '',
+        orderAt: row[10] || '',
+        soldBy: row[11] || '-',
+        membershipId: row[12] || '-',
+        frozen: row[13]?.toUpperCase() === 'TRUE',
+        paid: row[14] || '-',
+        status: row[15] || '',
       }));
+
+      console.log('Processed data count:', processedData.length);
+      console.log('Sample data:', processedData.slice(0, 2));
 
       setData(processedData);
     } catch (error) {

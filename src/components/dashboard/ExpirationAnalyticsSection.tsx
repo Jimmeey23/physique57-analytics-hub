@@ -57,21 +57,45 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
     };
   });
 
+  // Count data by location for tabs
+  const tabCounts = useMemo(() => {
+    const counts = {
+      all: data?.length || 0,
+      kwality: 0,
+      supreme: 0,
+      kenkere: 0
+    };
+
+    data?.forEach(item => {
+      const location = item.homeLocation || '';
+      if (location.includes('Kwality') || location.includes('Kemps Corner')) {
+        counts.kwality++;
+      } else if (location.includes('Supreme') || location.includes('Bandra')) {
+        counts.supreme++;
+      } else if (location.includes('Kenkere') || location.includes('Bengaluru')) {
+        counts.kenkere++;
+      }
+    });
+
+    return counts;
+  }, [data]);
+
   const applyFilters = (rawData: ExpirationData[]) => {
     console.log('Applying filters to', rawData.length, 'expiration records');
     
     let filtered = [...rawData];
 
-    // Apply location filter
+    // Apply location filter from activeLocation (location tabs)
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
         const locationMatch = activeLocation === 'kwality' 
-          ? item.homeLocation === 'Kwality House, Kemps Corner' 
+          ? item.homeLocation?.includes('Kwality') || item.homeLocation?.includes('Kemps Corner')
           : activeLocation === 'supreme' 
-          ? item.homeLocation === 'Supreme HQ, Bandra' 
-          : item.homeLocation?.includes('Kenkere') || item.homeLocation === 'Kenkere House';
+          ? item.homeLocation?.includes('Supreme') || item.homeLocation?.includes('Bandra')
+          : item.homeLocation?.includes('Kenkere') || item.homeLocation?.includes('Bengaluru');
         return locationMatch;
       });
+      console.log(`📍 LOCATION FILTER: Reduced to ${filtered.length} records for location: ${activeLocation}`);
     }
 
     // Apply status filter
@@ -203,140 +227,134 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
   const { topMemberships, topStatuses } = getTopBottomData(filteredData);
 
   return (
-    <div className="w-full bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 rounded-lg">
-      {/* Header Section with Location Tabs */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-slate-200/50 rounded-t-lg">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-              Expirations & Churn Analytics
-            </h1>
-            <div className="flex items-center gap-3">
-              <InfoPopover context="expiration-analytics-overview" locationId={activeLocation} />
-              <AdvancedExportButton 
-                additionalData={{ expirations: filteredData }}
-                defaultFileName="expirations-analysis"
-              />
-              {/* NoteTaker removed as per request */}
-            </div>
+    <div className="space-y-6">
+      {/* Enhanced Location Tabs - matching Sales tab structure */}
+      <div className="flex justify-center mb-8" id="location-tabs">
+        <div className="w-full max-w-4xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1"></div>
+            <InfoPopover context="expiration-analytics-overview" locationId={activeLocation} />
           </div>
-
-          {/* Location Tabs */}
-          <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-            <TabsList className="modern-tabs grid w-full grid-cols-4">
-              {locations.map(location => (
-                <TabsTrigger 
-                  key={location.id} 
-                  value={location.id}
-                  className="modern-tab-trigger tab-variant-purple"
+          <div className="grid grid-cols-4 location-tabs">
+            {locations.map(location => {
+              const parts = location.name.split(',').map(s => s.trim());
+              const mainName = parts[0] || location.name;
+              const subName = parts[1] || '';
+              const countKey = location.id === 'kenkere' ? 'kenkere' : location.id as keyof typeof tabCounts;
+              const count = tabCounts[countKey] || 0;
+              
+              return (
+                <button
+                  key={location.id}
+                  onClick={() => setActiveLocation(location.id)}
+                  className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
+                  data-state={activeLocation === location.id ? 'active' : 'inactive'}
+                  style={activeLocation === location.id ? { '--tab-accent': 'var(--hero-accent, #3b82f6)' } as React.CSSProperties : undefined}
                 >
-                  {location.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+                  <span className="relative z-10 flex flex-col items-center leading-tight">
+                    <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{mainName}</span>
+                    <span className="text-xs sm:text-sm opacity-90">{subName} ({count})</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
-        <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
-          {locations.map(location => (
-            <TabsContent key={location.id} value={location.id} className="mt-0">
-              {/* Analysis Type Tabs */}
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="modern-tabs grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="overview" className="modern-tab-trigger tab-variant-blue">
-                    Overview & Analytics
-                  </TabsTrigger>
-                  <TabsTrigger value="churned" className="modern-tab-trigger tab-variant-rose">
-                    Churned Members Details
-                  </TabsTrigger>
-                </TabsList>
+      <div className="space-y-8">
+        {/* Filters */}
+        <AutoCloseFilterSection
+          filters={filters as any}
+          onFiltersChange={(newFilters: any) => setFilters(newFilters as ExpirationFilterOptions)}
+          onReset={resetFilters}
+        />
 
-                {/* Overview Tab */}
-                <TabsContent value="overview" className="mt-0">
-                  <div className="space-y-8">
-                    {/* Filters */}
-                    <AutoCloseFilterSection
-                      filters={filters as any}
-                      onFiltersChange={(newFilters: any) => setFilters(newFilters as ExpirationFilterOptions)}
-                      onReset={resetFilters}
-                    />
+        {/* Metric Cards */}
+        <ExpirationMetricCards
+          data={filteredData}
+          historicalData={data || []}
+          dateRange={filters.dateRange}
+          onMetricClick={(data, type) => handleRowClick(data, 'expiration')}
+        />
 
-                    {/* Metric Cards */}
-                    <ExpirationMetricCards
-                      data={filteredData}
-                      historicalData={data || []}
-                      dateRange={filters.dateRange}
-                      onMetricClick={(data, type) => handleRowClick(data, 'expiration')}
-                    />
+        {/* Charts Grid */}
+        <ExpirationChartsGrid data={filteredData} />
 
-                    {/* Charts Grid */}
-                    <ExpirationChartsGrid data={filteredData} />
+        {/* Analysis Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 flex w-full max-w-7xl mx-auto overflow-hidden">
+            <TabsTrigger value="overview" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+              Overview & Analytics
+            </TabsTrigger>
+            <TabsTrigger value="churned" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-red-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+              Churned Members Details
+            </TabsTrigger>
+          </TabsList>
 
-                    {/* Top/Bottom Lists */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
-                        <CardHeader>
-                          <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
-                            Top Membership Types
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {topMemberships.slice(0, 5).map((membership, index) => (
-                              <div key={membership.name} className="flex justify-between items-center p-2 hover:bg-slate-50/50 rounded cursor-pointer"
-                                   onClick={() => handleRowClick(filteredData.filter(item => item.membershipName === membership.name), 'expiration')}>
-                                <span className="text-sm text-slate-700">{membership.name}</span>
-                                <span className="text-sm font-medium text-slate-900">{membership.count}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50">
-                        <CardHeader>
-                          <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
-                            Status Distribution
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {topStatuses.map((status, index) => (
-                              <div key={status.name} className="flex justify-between items-center p-2 hover:bg-slate-50/50 rounded cursor-pointer"
-                                   onClick={() => handleRowClick(filteredData.filter(item => item.status === status.name), 'status')}>
-                                <span className="text-sm text-slate-700">{status.name}</span>
-                                <span className="text-sm font-medium text-slate-900">{status.count}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="mt-8">
+            <div className="space-y-8">
+              {/* Top/Bottom Lists */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
+                      Top Membership Types
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {topMemberships.slice(0, 5).map((membership, index) => (
+                        <div key={membership.name} className="flex justify-between items-center p-2 hover:bg-slate-50/50 rounded cursor-pointer"
+                             onClick={() => handleRowClick(filteredData.filter(item => item.membershipName === membership.name), 'expiration')}>
+                          <span className="text-sm text-slate-700">{membership.name}</span>
+                          <span className="text-sm font-medium text-slate-900">{membership.count}</span>
+                        </div>
+                      ))}
                     </div>
+                  </CardContent>
+                </Card>
 
-                    {/* Additional Analytics */}
-                    <ExpirationAdditionalAnalytics data={filteredData} />
+                <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
+                      Status Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {topStatuses.map((status, index) => (
+                        <div key={status.name} className="flex justify-between items-center p-2 hover:bg-slate-50/50 rounded cursor-pointer"
+                             onClick={() => handleRowClick(filteredData.filter(item => item.status === status.name), 'status')}>
+                          <span className="text-sm text-slate-700">{status.name}</span>
+                          <span className="text-sm font-medium text-slate-900">{status.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-                    {/* Data Tables */}
-                    <ExpirationDataTables 
-                      data={filteredData} 
-                      onRowClick={(item) => handleRowClick([item], 'member')} 
-                    />
-                  </div>
-                </TabsContent>
+              {/* Additional Analytics */}
+              <ExpirationAdditionalAnalytics data={filteredData} />
 
-                {/* Churned Members Tab */}
-                <TabsContent value="churned" className="mt-0">
-                  <ChurnedMembersDetailedTable
-                    data={filteredData}
-                    onRowClick={(item) => handleRowClick([item], 'member')}
-                  />
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-          ))}
+              {/* Data Tables */}
+              <ExpirationDataTables 
+                data={filteredData} 
+                onRowClick={(item) => handleRowClick([item], 'member')} 
+              />
+            </div>
+          </TabsContent>
+
+          {/* Churned Members Tab */}
+          <TabsContent value="churned" className="mt-8">
+            <ChurnedMembersDetailedTable
+              data={filteredData}
+              onRowClick={(item) => handleRowClick([item], 'member')}
+            />
+          </TabsContent>
         </Tabs>
       </div>
 

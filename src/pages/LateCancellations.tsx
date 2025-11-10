@@ -54,6 +54,39 @@ const LateCancellations = () => {
     ));
   }, [lateCancellationsData]);
   
+  // Helper functions for consistent date parsing
+  const parseItemDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    
+    let parsedDate: Date;
+    
+    if (dateStr.includes('-')) {
+      // ISO format: YYYY-MM-DD
+      parsedDate = new Date(dateStr);
+    } else if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        // DD/MM/YYYY format
+        parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+    
+    // Normalize to start of day in local timezone for consistent comparison
+    parsedDate.setHours(0, 0, 0, 0);
+    return parsedDate;
+  };
+  
+  // Helper function to normalize date to start of day
+  const normalizeDate = (date: Date): Date => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+  
   // Enhanced filter data based on all selected filters
   const filteredData = useMemo(() => {
     if (!Array.isArray(lateCancellationsData)) return [];
@@ -114,53 +147,77 @@ const LateCancellations = () => {
       switch (selectedTimeframe) {
         case '1w':
           startDate.setDate(now.getDate() - 7);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '2w':
           startDate.setDate(now.getDate() - 14);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '1m':
           startDate.setMonth(now.getMonth() - 1);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case 'prev-month':
-          // Previous complete month
-          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-          startDate = lastMonth;
-          endDate = lastMonthEnd;
+          // Previous complete month - first day to last day
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          endDate.setHours(0, 0, 0, 0);
+          console.log('Previous month filter:', { 
+            startDate: startDate.toISOString().split('T')[0], 
+            endDate: endDate.toISOString().split('T')[0],
+            totalRecords: filtered.length
+          });
           filtered = filtered.filter(item => {
-            if (!item?.dateIST) return false;
-            const itemDate = new Date(item.dateIST);
+            const itemDate = parseItemDate(item?.dateIST);
+            if (!itemDate) return false;
             return itemDate >= startDate && itemDate <= endDate;
           });
+          console.log('After prev-month filter:', filtered.length);
           return filtered;
         case '3m':
           startDate.setMonth(now.getMonth() - 3);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '6m':
           startDate.setMonth(now.getMonth() - 6);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '1y':
           startDate.setFullYear(now.getFullYear() - 1);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case 'custom':
           if (dateRange.start || dateRange.end) {
-            const customStart = dateRange.start ? new Date(dateRange.start) : new Date('2020-01-01');
-            const customEnd = dateRange.end ? new Date(dateRange.end) : now;
+            const customStart = dateRange.start ? normalizeDate(new Date(dateRange.start)) : new Date('2020-01-01');
+            const customEnd = dateRange.end ? normalizeDate(new Date(dateRange.end)) : normalizeDate(now);
+            console.log('Custom date filter:', { 
+              startDate: customStart.toISOString().split('T')[0], 
+              endDate: customEnd.toISOString().split('T')[0],
+              totalRecords: filtered.length
+            });
             filtered = filtered.filter(item => {
-              if (!item?.dateIST) return false;
-              const itemDate = new Date(item.dateIST);
+              const itemDate = parseItemDate(item?.dateIST);
+              if (!itemDate) return false;
               return itemDate >= customStart && itemDate <= customEnd;
             });
           }
+          console.log('After custom filter:', filtered.length);
           return filtered;
         default:
           return filtered;
       }
       
       filtered = filtered.filter(item => {
-        if (!item?.dateIST) return false;
-        const itemDate = new Date(item.dateIST);
-        return itemDate >= startDate && itemDate <= now;
+        const itemDate = parseItemDate(item?.dateIST);
+        if (!itemDate) return false;
+        return itemDate >= startDate && itemDate <= endDate;
       });
     }
     
@@ -291,42 +348,55 @@ const LateCancellations = () => {
       switch (selectedTimeframe) {
         case '1w':
           startDate.setDate(now.getDate() - 7);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '2w':
           startDate.setDate(now.getDate() - 14);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '1m':
           startDate.setMonth(now.getMonth() - 1);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case 'prev-month': {
-          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-          startDate = lastMonth;
-          endDate = lastMonthEnd;
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          endDate.setHours(0, 0, 0, 0);
           filtered = filtered.filter(item => {
-            if (!item?.dateIST) return false;
-            const itemDate = new Date(item.dateIST);
+            const itemDate = parseItemDate(item?.dateIST);
+            if (!itemDate) return false;
             return itemDate >= startDate && itemDate <= endDate;
           });
           return filtered;
         }
         case '3m':
           startDate.setMonth(now.getMonth() - 3);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '6m':
           startDate.setMonth(now.getMonth() - 6);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case '1y':
           startDate.setFullYear(now.getFullYear() - 1);
+          startDate = normalizeDate(startDate);
+          endDate = normalizeDate(now);
           break;
         case 'custom': {
           if (dateRange.start || dateRange.end) {
-            const customStart = dateRange.start ? new Date(dateRange.start) : new Date('2020-01-01');
-            const customEnd = dateRange.end ? new Date(dateRange.end) : now;
+            const customStart = dateRange.start ? normalizeDate(new Date(dateRange.start)) : new Date('2020-01-01');
+            const customEnd = dateRange.end ? normalizeDate(new Date(dateRange.end)) : normalizeDate(now);
             filtered = filtered.filter(item => {
-              if (!item?.dateIST) return false;
-              const itemDate = new Date(item.dateIST);
+              const itemDate = parseItemDate(item?.dateIST);
+              if (!itemDate) return false;
               return itemDate >= customStart && itemDate <= customEnd;
+
             });
           }
           return filtered;
@@ -335,9 +405,9 @@ const LateCancellations = () => {
           break;
       }
       filtered = filtered.filter(item => {
-        if (!item?.dateIST) return false;
-        const itemDate = new Date(item.dateIST);
-        return itemDate >= startDate && itemDate <= now;
+        const itemDate = parseItemDate(item?.dateIST);
+        if (!itemDate) return false;
+        return itemDate >= startDate && itemDate <= endDate;
       });
     }
     return filtered;

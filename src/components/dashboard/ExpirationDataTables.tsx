@@ -7,7 +7,6 @@ import { ExpirationData } from '@/types/dashboard';
 import { formatNumber } from '@/utils/formatters';
 import { Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NotesBlock } from '@/components/ui/NotesBlock';
 
 interface ExpirationDataTablesProps {
   data: ExpirationData[];
@@ -104,7 +103,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
   return (
     <div className="space-y-6">
       {/* Search Bar */}
-      <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl">
         <CardContent className="p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -117,11 +116,10 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
           </div>
         </CardContent>
       </Card>
-      <NotesBlock tableKey="expirations:churned" sectionId="expirations-churned" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Table 1: Churned Memberships */}
-        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent flex items-center gap-2">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -163,10 +161,9 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
             </div>
           </CardContent>
         </Card>
-        <NotesBlock tableKey="expirations:frozen" sectionId="expirations-frozen" />
 
         {/* Table 2: Frozen Memberships */}
-        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold bg-gradient-to-r from-yellow-600 to-yellow-500 bg-clip-text text-transparent flex items-center gap-2">
               <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -208,10 +205,9 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
             </div>
           </CardContent>
         </Card>
-        <NotesBlock tableKey="expirations:active" sectionId="expirations-active" />
 
         {/* Table 3: Active Memberships */}
-        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -253,10 +249,9 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
             </div>
           </CardContent>
         </Card>
-        <NotesBlock tableKey="expirations:summary" sectionId="expirations-summary" />
 
         {/* Table 4: Membership Summary */}
-        <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent flex items-center gap-2">
               <div className="w-2 h-2 bg-gradient-to-r from-slate-500 to-slate-600 rounded-full"></div>

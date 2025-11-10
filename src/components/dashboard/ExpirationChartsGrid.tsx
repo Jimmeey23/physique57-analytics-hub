@@ -64,7 +64,7 @@ export const ExpirationChartsGrid: React.FC<ExpirationChartsGridProps> = ({ data
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       {/* Chart 1: Status Distribution */}
-      <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent flex items-center gap-2">
             <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
@@ -95,7 +95,7 @@ export const ExpirationChartsGrid: React.FC<ExpirationChartsGridProps> = ({ data
       </Card>
 
       {/* Chart 2: Top Membership Types */}
-      <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent flex items-center gap-2">
             <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-full"></div>
@@ -116,7 +116,7 @@ export const ExpirationChartsGrid: React.FC<ExpirationChartsGridProps> = ({ data
       </Card>
 
       {/* Chart 3: Monthly Expiration Trend */}
-      <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent flex items-center gap-2">
             <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
@@ -137,7 +137,7 @@ export const ExpirationChartsGrid: React.FC<ExpirationChartsGridProps> = ({ data
       </Card>
 
       {/* Chart 4: Location vs Status */}
-      <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent flex items-center gap-2">
             <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>

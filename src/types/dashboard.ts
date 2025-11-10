@@ -40,6 +40,7 @@ export interface SalesData {
   secMembershipTotalClasses?: number;
   secMembershipClassesLeft?: number;
   secMembershipUsedSessions?: number;
+  secMembershipIsFreezed?: boolean | string; // TRUE/FALSE or boolean
 }
 
 export interface SessionData {

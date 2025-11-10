@@ -22,9 +22,12 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
   if (!data) return null;
 
   // Add safety checks for data structure
-  const safeData = data?.data || {};
-  const safeRawData = data?.rawData || [];
+  // Handle both nested (data.data) and direct (data) structures
+  const safeData = data?.data || data || {};
+  const safeRawData = data?.rawData || data?.rawData || [];
   const dataType = data?.type || 'unknown';
+  
+  console.log('Drill down data:', { data, safeData, safeRawData: safeRawData.length, dataType });
 
   const renderMemberDetails = () => (
     <div className="space-y-6">
@@ -344,26 +347,30 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{formatNumber(data?.totalCancellations || 0)}</div>
+            <div className="text-2xl font-bold text-red-600">{formatNumber(data?.totalCancellations || safeRawData.length || 0)}</div>
             <div className="text-sm text-gray-600">Total Cancellations</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{formatNumber(data?.uniqueMembers || 0)}</div>
+            <div className="text-2xl font-bold text-blue-600">{formatNumber(data?.uniqueMembers || new Set(safeRawData.map((r: any) => r.memberId)).size || 0)}</div>
             <div className="text-sm text-gray-600">Unique Members</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{formatNumber(data?.uniqueLocations || 0)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatNumber(data?.uniqueLocations || new Set(safeRawData.map((r: any) => r.location)).size || 0)}</div>
             <div className="text-sm text-gray-600">Locations</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {(data?.uniqueMembers || 0) > 0 ? ((data?.totalCancellations || 0) / (data?.uniqueMembers || 1)).toFixed(1) : '0'}
+              {(() => {
+                const totalCanc = data?.totalCancellations || safeRawData.length || 0;
+                const uniqueMems = data?.uniqueMembers || new Set(safeRawData.map((r: any) => r.memberId)).size || 0;
+                return uniqueMems > 0 ? (totalCanc / uniqueMems).toFixed(1) : '0';
+              })()}
             </div>
             <div className="text-sm text-gray-600">Avg per Member</div>
           </CardContent>
@@ -376,28 +383,34 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-64">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Trainer</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {safeRawData.slice(0, 15).map((item: any, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{(item?.firstName || '') + ' ' + (item?.lastName || '')}</TableCell>
-                    <TableCell>{item?.dateIST ? new Date(item.dateIST).toLocaleDateString() : 'N/A'}</TableCell>
-                    <TableCell>{item?.cleanedClass || 'N/A'}</TableCell>
-                    <TableCell>{item?.location || 'N/A'}</TableCell>
-                    <TableCell>{item?.teacherName || 'N/A'}</TableCell>
+            {safeRawData.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No late cancellation data available
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Trainer</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {safeRawData.slice(0, 15).map((item: any, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell>{(item?.firstName || '') + ' ' + (item?.lastName || '')}</TableCell>
+                      <TableCell>{item?.dateIST ? new Date(item.dateIST).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell>{item?.cleanedClass || 'N/A'}</TableCell>
+                      <TableCell>{item?.location || 'N/A'}</TableCell>
+                      <TableCell>{item?.teacherName || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>

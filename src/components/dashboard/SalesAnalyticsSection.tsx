@@ -737,8 +737,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           <div className="w-full max-w-4xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1"></div>
-              {/* Demo: open as sidebar by default for quick inspection */}
-              <InfoPopover context="sales-overview" locationId={activeLocation} salesData={filteredData} startOpen startAsSidebar />
+              <InfoPopover context="sales-overview" locationId={activeLocation} salesData={filteredData} />
             </div>
             <div className="grid grid-cols-4 location-tabs">
               {locations.map(location => {

@@ -5,19 +5,46 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Building2, Globe, Users } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { cn } from '@/lib/utils';
+import { InfoPopover } from '@/components/ui/InfoPopover';
+
+type SalesContextKey =
+  | 'sales-metrics'
+  | 'sales-top-bottom'
+  | 'sales-mom'
+  | 'sales-yoy'
+  | 'sales-product'
+  | 'sales-category'
+  | 'sales-soldby'
+  | 'sales-payment'
+  | 'sales-customer'
+  | 'sales-deep-insights'
+  | 'sales-overview'
+  | 'patterns-trends-overview'
+  | 'client-retention-overview'
+  | 'class-formats-overview'
+  | 'funnel-leads-overview'
+  | 'late-cancellations-overview'
+  | 'class-attendance-overview'
+  | 'discounts-promotions-overview'
+  | 'expiration-analytics-overview'
+  | 'sessions-overview';
 
 interface LocationTabsProps {
   data: SessionData[];
   selectedLocation: string;
   onLocationChange: (location: string) => void;
   children: (filteredData: SessionData[]) => React.ReactNode;
+  showInfoPopover?: boolean;
+  infoPopoverContext?: SalesContextKey;
 }
 
 export const LocationTabs: React.FC<LocationTabsProps> = ({
   data,
   selectedLocation,
   onLocationChange,
-  children
+  children,
+  showInfoPopover = false,
+  infoPopoverContext = 'class-attendance-overview'
 }) => {
   // Get all unique locations with their session counts
   const locationStats = useMemo(() => {
@@ -87,6 +114,13 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
         {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
         <div className="flex justify-center mb-8" id="location-tabs">
           <div className="w-full max-w-4xl">
+            {/* InfoPopover - positioned next to location tabs */}
+            {showInfoPopover && (
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1"></div>
+                <InfoPopover context={infoPopoverContext} locationId={selectedLocation} />
+              </div>
+            )}
             <div className="grid grid-cols-4 location-tabs">
               {/* All Locations Tab */}
               <button
