@@ -261,7 +261,8 @@ export default function FunnelLeads() {
             </div>
           </div>
           <div className="ml-3 mt-1">
-            <InfoPopover context="funnel-leads-overview" locationId={activeLocation} />
+            {/* Demo: show funnel insights as a sidebar on page load */}
+            <InfoPopover context="funnel-leads-overview" locationId={activeLocation} startOpen startAsSidebar />
           </div>
         </div>
 

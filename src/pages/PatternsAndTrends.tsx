@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -166,8 +166,15 @@ export const PatternsAndTrends = () => {
     return data;
   }, [checkinsData, selectedLocation, selectedProducts, selectedCategories, selectedTeachers, selectedMemberStatus, selectedMonths]);
 
+  // Defer heavy computations so UI stays responsive while filters change
+  const deferredFilteredData = useDeferredValue(filteredData);
+  const deferredSalesData = useDeferredValue(salesData);
+  const [isPending, startTransition] = useTransition();
+
   // Process data: month-on-month breakdown by product/category/teacher with ALL METRICS
   const monthlyProductData = useMemo(() => {
+    const fd = deferredFilteredData;
+    const sd = deferredSalesData;
     const grouped: Record<string, Record<string, {
       visits: number;
       bookings: number;
@@ -185,8 +192,8 @@ export const PatternsAndTrends = () => {
     }>> = {};
     const monthsSet = new Set<string>();
 
-    // Process check-ins data
-    filteredData.forEach(item => {
+  // Process check-ins data
+  fd.forEach(item => {
       // Determine grouping key based on selected option
       let groupKey = '';
       if (groupBy === 'product') {
@@ -263,8 +270,8 @@ export const PatternsAndTrends = () => {
       monthsSet.add(monthYear);
     });
 
-    // Calculate sessions and empty sessions
-    filteredData.forEach(item => {
+  // Calculate sessions and empty sessions
+  fd.forEach(item => {
       if (!item.sessionId) return;
       
       let groupKey = '';
@@ -287,9 +294,9 @@ export const PatternsAndTrends = () => {
       }
     });
 
-    // Calculate revenue and units from sales data
-    const salesByMonth: Record<string, Record<string, { revenue: number; saleItemIds: Set<string> }>> = {};
-    salesData.forEach(sale => {
+  // Calculate revenue and units from sales data
+  const salesByMonth: Record<string, Record<string, { revenue: number; saleItemIds: Set<string> }>> = {};
+  sd.forEach(sale => {
       // Extract month and year from paymentDate
       const date = new Date(sale.paymentDate);
       if (isNaN(date.getTime())) return; // Skip invalid dates
@@ -337,7 +344,7 @@ export const PatternsAndTrends = () => {
     const products = Object.entries(grouped).map(([product, monthData]) => {
       const monthlyBreakdown = months.map(month => {
         const data = monthData[month];
-        const salesForMonth = salesByMonth[product]?.[month] || { revenue: 0, saleItemIds: new Set() };
+  const salesForMonth = salesByMonth[product]?.[month] || { revenue: 0, saleItemIds: new Set() };
         
         if (!data) {
           return {
@@ -369,7 +376,7 @@ export const PatternsAndTrends = () => {
         
         // Empty sessions = sessions with no check-ins
         const sessionsWithCheckins = new Set<string>();
-        filteredData.forEach(item => {
+        fd.forEach(item => {
           if (item.checkedIn && item.sessionId && `${item.month} ${item.year}` === month) {
             sessionsWithCheckins.add(item.sessionId);
           }
@@ -430,7 +437,7 @@ export const PatternsAndTrends = () => {
     }).sort((a, b) => b.totalVisits - a.totalVisits);
 
     // Calculate totals row
-    const totalsRow = {
+  const totalsRow = {
       product: 'TOTAL',
       monthlyBreakdown: months.map(month => {
         const allData = {
@@ -448,7 +455,7 @@ export const PatternsAndTrends = () => {
           actualCheckins: 0
         };
         
-        filteredData.forEach(item => {
+  fd.forEach(item => {
           if (`${item.month} ${item.year}` === month) {
             allData.bookings += 1;
             
@@ -483,10 +490,10 @@ export const PatternsAndTrends = () => {
           }
         });
         
-        // Calculate sales totals for this month
-        let monthRevenue = 0;
-        const monthSaleItemIds = new Set<string>();
-        salesData.forEach(sale => {
+  // Calculate sales totals for this month
+  let monthRevenue = 0;
+  const monthSaleItemIds = new Set<string>();
+  sd.forEach(sale => {
           const date = new Date(sale.paymentDate);
           if (isNaN(date.getTime())) return;
           
@@ -542,7 +549,7 @@ export const PatternsAndTrends = () => {
         };
       }),
       totalVisits: products.reduce((sum, p) => sum + p.totalVisits, 0),
-      totalUniqueMembers: new Set(filteredData.filter(d => d.checkedIn).map(d => d.memberId)).size
+      totalUniqueMembers: new Set(fd.filter(d => d.checkedIn).map(d => d.memberId)).size
     };
 
     return { products, months, totalsRow };
@@ -563,7 +570,7 @@ export const PatternsAndTrends = () => {
     // Group by selected dimension (product, category, teacher, or class) and month
     const breakdownData: Record<string, Record<string, Record<string, number>>> = {};
     
-    filteredData.forEach(item => {
+  deferredFilteredData.forEach(item => {
       if (!item.checkedIn) return;
       
       let breakdownKey = '';
@@ -621,14 +628,14 @@ export const PatternsAndTrends = () => {
     });
 
     return result;
-  }, [filteredData, frequencyBreakdownBy]);
+  }, [deferredFilteredData, frequencyBreakdownBy]);
 
   // Calculate late cancellation frequency buckets - TABULAR FORMAT WITH MONTH FILTER
   const lateCancellationFrequencyData = useMemo(() => {
     // Group by selected dimension (product, category, teacher, or class) and month
     const breakdownData: Record<string, Record<string, Record<string, number>>> = {};
     
-    filteredData.forEach(item => {
+  deferredFilteredData.forEach(item => {
       if (!item.isLateCancelled) return;
       
       let breakdownKey = '';
@@ -686,7 +693,7 @@ export const PatternsAndTrends = () => {
     });
 
     return result;
-  }, [filteredData, cancellationBreakdownBy]);
+  }, [deferredFilteredData, cancellationBreakdownBy]);
 
   // Calculate multiple classes per day
   const multipleClassesPerDay = useMemo(() => {
@@ -768,10 +775,10 @@ export const PatternsAndTrends = () => {
           <div className="w-full max-w-4xl">
             <div className="grid grid-cols-4 location-tabs">
               {[
-                { id: 'All Locations', name: 'All Locations', sub: `(${formatNumber(filteredData.filter(d => d.checkedIn).length)} visits)` },
-                { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${formatNumber(filteredData.filter(d => d.checkedIn && d.location === 'Kwality House, Kemps Corner').length)})` },
-                { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${formatNumber(filteredData.filter(d => d.checkedIn && d.location === 'Supreme HQ, Bandra').length)})` },
-                { id: 'Kenkere House', name: 'Kenkere House', sub: `Bengaluru (${formatNumber(filteredData.filter(d => d.checkedIn && d.location.includes('Kenkere')).length)})` },
+                { id: 'All Locations', name: 'All Locations', sub: `(${formatNumber(deferredFilteredData.filter(d => d.checkedIn).length)} visits)` },
+                { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${formatNumber(deferredFilteredData.filter(d => d.checkedIn && d.location === 'Kwality House, Kemps Corner').length)})` },
+                { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${formatNumber(deferredFilteredData.filter(d => d.checkedIn && d.location === 'Supreme HQ, Bandra').length)})` },
+                { id: 'Kenkere House', name: 'Kenkere House', sub: `Bengaluru (${formatNumber(deferredFilteredData.filter(d => d.checkedIn && d.location.includes('Kenkere')).length)})` },
               ].map(loc => (
                 <button
                   key={loc.id}

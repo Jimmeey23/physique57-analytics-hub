@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, GripHorizontal } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import DOMPurify from 'dompurify';
+import { Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, GripHorizontal, Copy, Download, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,12 +33,30 @@ type SalesContextKey =
   | 'expiration-analytics-overview'
   | 'sessions-overview';
 
+/**
+ * InfoPopover component
+ *
+ * Features:
+ * - Wider, resizable modal with 80% overlay (overlay does not lock body scroll)
+ * - Header controls pinned above content (higher z-index)
+ * - Sidebar view (right-side panel) via `startAsSidebar` or header toggle
+ * - Copy/Export/Share/Compact/Auto-Refresh helper buttons
+ * - Pin to keep open when clicking outside
+ *
+ * Props:
+ * - context: which summary to show
+ * - locationId: location filter
+ * - startOpen: open the popover on mount (useful for demos)
+ * - startAsSidebar: open as sidebar on mount
+ */
 interface InfoPopoverProps {
   context: SalesContextKey;
   locationId?: 'kwality' | 'supreme' | 'kenkere' | 'all' | string;
   className?: string;
   size?: number;
   salesData?: SalesData[]; // Add sales data prop for dynamic analysis
+  startOpen?: boolean;
+  startAsSidebar?: boolean;
 }
 
 // Dynamic Summary UI Generator
@@ -594,7 +614,7 @@ const SUPREME_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
   ]
 };
 
-export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData }) => {
+export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData, startOpen = false, startAsSidebar = false }) => {
   const isKwality = locationId === 'kwality';
   const isSupreme = locationId === 'supreme';
   const isKenkere = locationId === 'kenkere';
@@ -614,8 +634,19 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const [modalWidth, setModalWidth] = useState<number | null>(null);
   const [modalHeight, setModalHeight] = useState<number | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [isSidebar, setIsSidebar] = useState(startAsSidebar);
+  const [isCompact, setIsCompact] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const resizeRef = useRef<HTMLDivElement>(null);
   const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  // Sidebar sizing and resize state
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(420);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const sidebarStartRef = useRef({ x: 0, width: 420 });
+  // Multi-view mode: 'summary' | 'raw' | 'json'
+  const [viewMode, setViewMode] = useState<'summary' | 'raw' | 'json'>('summary');
   
   const { toast } = useToast();
 
@@ -781,6 +812,82 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     loadCustomContent();
   }, [context, locationId]);
 
+  // Auto-refresh interval
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(() => {
+      if (open && !isPinned) {
+        handleRefresh();
+      }
+    }, 60_000); // every 60s
+    return () => clearInterval(id);
+  }, [autoRefresh, open, isPinned]);
+
+  // Sidebar resize handlers
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+    const onMouseMove = (e: MouseEvent) => {
+      const delta = sidebarStartRef.current.x - e.clientX;
+      const newWidth = Math.max(300, Math.min(900, sidebarStartRef.current.width + delta));
+      setSidebarWidth(newWidth);
+    };
+    const onMouseUp = () => setIsResizingSidebar(false);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isResizingSidebar]);
+
+  const handleSidebarResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizingSidebar(true);
+    sidebarStartRef.current = { x: e.clientX, width: sidebarWidth || 420 };
+  };
+
+  // Render content based on view mode
+  const renderContentByMode = (nodes: React.ReactNode[]) => {
+    if (viewMode === 'raw') {
+      return (
+        <pre className="whitespace-pre-wrap text-xs text-slate-700">{convertItemsToString()}</pre>
+      );
+    }
+    if (viewMode === 'json') {
+      const json = dynamicSummary ? JSON.stringify(dynamicSummary, null, 2) : JSON.stringify(items, null, 2);
+      return <pre className="whitespace-pre-wrap text-xs text-slate-700">{json}</pre>;
+    }
+    // default: summary
+    // If content is plain HTML string(s), render as HTML
+    const allStrings = nodes.every((n) => typeof n === 'string');
+    if (allStrings) {
+      const html = nodes.join('\n\n');
+      // Sanitize any HTML before injecting into the DOM
+      const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(html) : html;
+      return (
+        <div className="space-y-2.5">
+          <div className="prose prose-slate prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2.5">
+        {nodes.map((node, idx) => (
+          <div key={idx}>
+            <div className="flex gap-2.5 p-3 rounded-lg bg-slate-50/80 border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors">
+              <span className="mt-1.5 inline-block h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
+              <div className="text-slate-700 text-sm leading-relaxed flex-1 prose prose-slate prose-sm prose-p:my-1 prose-p:leading-relaxed prose-strong:text-slate-900 prose-strong:font-semibold prose-ul:my-1 prose-li:my-0.5">
+                {node}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const loadCustomContent = async () => {
     setIsLoading(true);
     try {
@@ -819,10 +926,12 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const success = await googleDriveService.updatePopoverContent(context, locationId, editContent);
+      // Sanitize content before saving to remote store
+      const sanitized = typeof window !== 'undefined' ? DOMPurify.sanitize(editContent) : editContent;
+      const success = await googleDriveService.updatePopoverContent(context, locationId, sanitized);
       
       if (success) {
-        setCustomContent(editContent);
+        setCustomContent(sanitized);
         setIsEditing(false);
         toast({
           title: "Content saved",
@@ -982,7 +1091,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   };
 
   return (
-    <Popover modal={!isPinned}>
+    <Popover open={open} onOpenChange={setOpen} modal={!isPinned}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -1011,7 +1120,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
             e.preventDefault();
           }
         }}
-        className="z-[9999] bg-white border border-slate-200 shadow-2xl rounded-xl p-0 overflow-hidden relative"
+        className={`z-[9999] bg-white border border-slate-200 shadow-2xl rounded-xl p-0 overflow-hidden relative ${isCompact ? 'text-sm p-0' : ''}`}
         style={{
           ...getModalStyle(),
           ...(isExpanded || (modalWidth && modalHeight) ? {} : {
@@ -1020,9 +1129,19 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
           })
         }}
       >
+        {/* Overlay rendered into body so it sits underneath the popover but above the page */}
+        {open && !isPinned && typeof document !== 'undefined' && createPortal(
+          <div
+            onClick={() => { if (!isPinned) setOpen(false); }}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9990 }}
+            aria-hidden
+          />,
+          document.body
+        )}
+
         <div className="flex flex-col h-full"  style={{ maxHeight: modalHeight ? `${modalHeight}px` : isExpanded ? 'calc(95vh - 100px)' : 'min(85vh, 700px)' }}>
           {/* Header - Fixed */}
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white" style={{ zIndex: 20 }}>
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600">
                 <Info className="w-4 h-4 text-white" />
@@ -1083,6 +1202,140 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
                   Custom
                 </span>
               )}
+              {/* Extra Features: Copy / Export / Share / Compact / Sidebar Toggle */}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(convertItemsToString());
+                    toast({ title: 'Copied', description: 'Summary copied to clipboard.' });
+                  } catch (err) {
+                    toast({ title: 'Copy failed', description: 'Unable to copy to clipboard.', variant: 'destructive' });
+                  }
+                }}
+                title="Copy summary"
+                className="h-7 w-7 p-0"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  try {
+                    // Build raw HTML from customContent (preferred) or items/text fallback
+                    let rawHtml = '';
+                    if (customContent) {
+                      rawHtml = customContent;
+                    } else {
+                      const allStrings = items.every((n) => typeof n === 'string');
+                      if (allStrings) {
+                        rawHtml = items.join('\n\n');
+                      } else {
+                        rawHtml = convertItemsToString().replace(/\n/g, '<br/>');
+                      }
+                    }
+
+                    // Sanitize before exporting
+                    const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
+                    const html = `<!doctype html><meta charset="utf-8"><title>Summary</title><body>${safeHtml}</body>`;
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${context}-${locationId || 'all'}-summary.html`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    toast({ title: 'Exported', description: 'Summary exported as HTML.' });
+                  } catch (err) {
+                    console.error('Export failed', err);
+                    toast({ title: 'Export failed', description: 'Unable to export summary.', variant: 'destructive' });
+                  }
+                }}
+                title="Export HTML"
+                className="h-7 w-7 p-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('popoverContext', context);
+                    url.searchParams.set('popoverLocation', locationId);
+                    if (lastGenerated) url.searchParams.set('generatedAt', lastGenerated);
+                    await navigator.clipboard.writeText(url.toString());
+                    toast({ title: 'Link copied', description: 'Shareable link copied to clipboard.' });
+                  } catch (err) {
+                    toast({ title: 'Share failed', description: 'Unable to create share link.', variant: 'destructive' });
+                  }
+                }}
+                title="Copy share link"
+                className="h-7 w-7 p-0"
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant={isCompact ? 'secondary' : 'ghost'}
+                onClick={() => setIsCompact(!isCompact)}
+                title="Toggle compact mode"
+                className="h-7 w-7 p-0"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant={autoRefresh ? 'secondary' : 'ghost'}
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                title="Toggle auto-refresh (60s)"
+                className="h-7 w-7 p-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
+              </Button>
+
+              <Button
+                size="sm"
+                variant={isSidebar ? 'secondary' : 'ghost'}
+                onClick={() => setIsSidebar(!isSidebar)}
+                title={isSidebar ? 'Close sidebar' : 'Open as sidebar'}
+                className="h-7 w-7 p-0"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </Button>
+              {/* View mode selector */}
+              <div className="hidden md:flex items-center gap-1 ml-2">
+                <button
+                  onClick={() => setViewMode('summary')}
+                  className={`px-2 py-1 rounded text-xs ${viewMode === 'summary' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                  title="Summary view"
+                >
+                  Summary
+                </button>
+                <button
+                  onClick={() => setViewMode('raw')}
+                  className={`px-2 py-1 rounded text-xs ${viewMode === 'raw' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                  title="Raw text"
+                >
+                  Raw
+                </button>
+                <button
+                  onClick={() => setViewMode('json')}
+                  className={`px-2 py-1 rounded text-xs ${viewMode === 'json' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                  title="JSON view"
+                >
+                  JSON
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1159,9 +1412,9 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
             ) : customContent ? (
               <div className="space-y-3">
                 <div 
-                  className="prose prose-slate prose-sm max-w-none text-slate-700"
-                  dangerouslySetInnerHTML={{ __html: customContent }}
-                />
+                      className="prose prose-slate prose-sm max-w-none text-slate-700"
+                      dangerouslySetInnerHTML={{ __html: (typeof window !== 'undefined' ? DOMPurify.sanitize(customContent || '') : (customContent || '')) }}
+                    />
                 <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
                   <Button
                     size="sm"
@@ -1185,17 +1438,8 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
               </div>
             ) : (
               <div className="space-y-2.5">
-                {items.map((node, idx) => (
-                  <div key={idx}>
-                    <div className="flex gap-2.5 p-3 rounded-lg bg-slate-50/80 border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors">
-                      <span className="mt-1.5 inline-block h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
-                      <div className="text-slate-700 text-sm leading-relaxed flex-1 prose prose-slate prose-sm prose-p:my-1 prose-p:leading-relaxed prose-strong:text-slate-900 prose-strong:font-semibold prose-ul:my-1 prose-li:my-0.5">
-                        {node}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
+                {renderContentByMode(items)}
+
                 {!isEditing && !customContent && (
                   <div className="pt-3 border-t border-slate-200">
                     <Button
@@ -1227,6 +1471,52 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
           )}
         </div>
       </PopoverContent>
+      {/* Sidebar portal: renders independent right-side panel when toggled */}
+      {isSidebar && open && typeof document !== 'undefined' && createPortal(
+        <div
+          className={`fixed top-0 right-0 h-full bg-white shadow-2xl z-[9999] ${isCompact ? 'text-sm' : ''}`}
+          style={{ width: modalWidth ? `${modalWidth}px` : 420, maxWidth: '95vw', overflow: 'auto' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center"><Info className="w-4 h-4 text-white" /></div>
+              <div>
+                <div className="font-semibold">{context.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</div>
+                {locationId !== 'all' && <div className="text-xs text-slate-500">{locationId}</div>}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setIsSidebar(false)}><X className="w-3.5 h-3.5"/></Button>
+            </div>
+          </div>
+          <div
+            ref={sidebarRef}
+            className="flex flex-col h-full"
+            style={{ height: '100vh', overflow: 'hidden' }}
+          >
+            <div className="p-4 overflow-hidden">
+              {/* small note area kept in header region inside sidebar */}
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+              ) : (
+                <div className="p-2">
+                  {renderContentByMode(items)}
+                </div>
+              )}
+            </div>
+            {/* Resize handle (left edge) */}
+            <div
+              onMouseDown={handleSidebarResizeStart}
+              className="absolute left-0 top-0 h-full w-2 -ml-2 cursor-ew-resize"
+              aria-hidden
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </Popover>
   );
 };
