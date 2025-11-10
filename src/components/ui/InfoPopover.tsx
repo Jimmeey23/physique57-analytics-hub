@@ -614,7 +614,7 @@ const SUPREME_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
   ]
 };
 
-export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData, startOpen = false, startAsSidebar = false }) => {
+export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData, startOpen = false, startAsSidebar = true }) => {
   const isKwality = locationId === 'kwality';
   const isSupreme = locationId === 'supreme';
   const isKenkere = locationId === 'kenkere';
@@ -645,6 +645,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const sidebarStartRef = useRef({ x: 0, width: 420 });
+  const suppressOpenRef = useRef(false);
   // Multi-view mode: 'summary' | 'raw' | 'json'
   const [viewMode, setViewMode] = useState<'summary' | 'raw' | 'json'>('summary');
   
@@ -840,11 +841,70 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     };
   }, [isResizingSidebar]);
 
+  // When sidebar is open, optionally push the page content to the left so the sidebar doesn't overlap.
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const shouldPush = isSidebar && open && window.innerWidth > 900; // only push on wide screens
+    const prevPadding = document.body.style.paddingRight || '';
+    const prevTransition = document.body.style.transition || '';
+    if (shouldPush) {
+      document.body.style.transition = 'padding-right 200ms ease';
+      document.body.style.paddingRight = `${sidebarWidth || 420}px`;
+    } else {
+      document.body.style.paddingRight = '';
+    }
+    return () => {
+      document.body.style.paddingRight = prevPadding;
+      document.body.style.transition = prevTransition;
+    };
+  }, [isSidebar, open, sidebarWidth]);
+
   const handleSidebarResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsResizingSidebar(true);
     sidebarStartRef.current = { x: e.clientX, width: sidebarWidth || 420 };
+  };
+
+  // Helper function to render HTML (handles both complete documents and snippets)
+  const renderHtmlContent = (html: string) => {
+    if (typeof window === 'undefined') {
+      return <div dangerouslySetInnerHTML={{ __html: html }} />;
+    }
+
+    // Check if this is a complete HTML document
+    const trimmedHtml = html.trim();
+    const isCompleteDocument = trimmedHtml.toLowerCase().startsWith('<!doctype html>') || 
+                               trimmedHtml.toLowerCase().startsWith('<html');
+    
+    if (isCompleteDocument) {
+      // Parse the complete HTML document
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Extract styles from <head>
+      const styleElements = doc.querySelectorAll('head style');
+      const styles = Array.from(styleElements).map(style => style.textContent).join('\n');
+      
+      // Extract body content
+      const bodyContent = doc.body?.innerHTML || '';
+      
+      // Sanitize the body content
+      const safeBodyHtml = DOMPurify.sanitize(bodyContent);
+      
+      return (
+        <>
+          {styles && <style dangerouslySetInnerHTML={{ __html: styles }} />}
+          <div dangerouslySetInnerHTML={{ __html: safeBodyHtml }} />
+        </>
+      );
+    }
+    
+    // Regular HTML snippet (not a complete document)
+    const safeHtml = DOMPurify.sanitize(html);
+    return (
+      <div className="prose prose-slate prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+    );
   };
 
   // Render content based on view mode
@@ -863,13 +923,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     const allStrings = nodes.every((n) => typeof n === 'string');
     if (allStrings) {
       const html = nodes.join('\n\n');
-      // Sanitize any HTML before injecting into the DOM
-      const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(html) : html;
-      return (
-        <div className="space-y-2.5">
-          <div className="prose prose-slate prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: safeHtml }} />
-        </div>
-      );
+      return <div className="space-y-2.5">{renderHtmlContent(html)}</div>;
     }
 
     return (
@@ -1090,8 +1144,183 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     return {};
   };
 
+  // Header controls shared between modal header and sidebar header
+  const headerControls = (
+    <div className="flex items-center gap-1 shrink-0">
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={handleTogglePin}
+        className={`h-7 w-7 p-0 ${isPinned ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
+        title={isPinned ? "Unpin (allow closing)" : "Pin (keep open)"}
+      >
+        {isPinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+      </Button>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={handleToggleExpand}
+        className={`h-7 w-7 p-0 ${isExpanded ? 'text-purple-600 bg-purple-50' : 'text-slate-600'}`}
+        title={isExpanded ? "Collapse" : "Expand"}
+      >
+        {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+      </Button>
+
+      {dynamicSummary && !customContent && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleRefresh}
+          disabled={isGenerating}
+          className="gap-1.5 h-7 px-2.5 text-xs"
+          title="Refresh analysis"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+        </Button>
+      )}
+
+      {customContent && (
+        <span className="text-xs text-green-600 font-medium flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
+          <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+          Custom
+        </span>
+      )}
+
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(convertItemsToString());
+            toast({ title: 'Copied', description: 'Summary copied to clipboard.' });
+          } catch (err) {
+            toast({ title: 'Copy failed', description: 'Unable to copy to clipboard.', variant: 'destructive' });
+          }
+        }}
+        title="Copy summary"
+        className="h-7 w-7 p-0"
+      >
+        <Copy className="w-3.5 h-3.5" />
+      </Button>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => {
+          try {
+            let rawHtml = '';
+            if (customContent) {
+              rawHtml = customContent;
+            } else {
+              const allStrings = items.every((n) => typeof n === 'string');
+              if (allStrings) {
+                rawHtml = items.join('\n\n');
+              } else {
+                rawHtml = convertItemsToString().replace(/\n/g, '<br/>');
+              }
+            }
+            const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
+            const html = `<!doctype html><meta charset="utf-8"><title>Summary</title><body>${safeHtml}</body>`;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${context}-${locationId || 'all'}-summary.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            toast({ title: 'Exported', description: 'Summary exported as HTML.' });
+          } catch (err) {
+            console.error('Export failed', err);
+            toast({ title: 'Export failed', description: 'Unable to export summary.', variant: 'destructive' });
+          }
+        }}
+        title="Export HTML"
+        className="h-7 w-7 p-0"
+      >
+        <Download className="w-3.5 h-3.5" />
+      </Button>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={async () => {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('popoverContext', context);
+            url.searchParams.set('popoverLocation', locationId);
+            if (lastGenerated) url.searchParams.set('generatedAt', lastGenerated);
+            await navigator.clipboard.writeText(url.toString());
+            toast({ title: 'Link copied', description: 'Shareable link copied to clipboard.' });
+          } catch (err) {
+            toast({ title: 'Share failed', description: 'Unable to create share link.', variant: 'destructive' });
+          }
+        }}
+        title="Copy share link"
+        className="h-7 w-7 p-0"
+      >
+        <LinkIcon className="w-3.5 h-3.5" />
+      </Button>
+
+      <Button
+        size="sm"
+        variant={isCompact ? 'secondary' : 'ghost'}
+        onClick={() => setIsCompact(!isCompact)}
+        title="Toggle compact mode"
+        className="h-7 w-7 p-0"
+      >
+        <Minimize2 className="w-3.5 h-3.5" />
+      </Button>
+
+      <Button
+        size="sm"
+        variant={autoRefresh ? 'secondary' : 'ghost'}
+        onClick={() => setAutoRefresh(!autoRefresh)}
+        title="Toggle auto-refresh (60s)"
+        className="h-7 w-7 p-0"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
+      </Button>
+
+      {/* Sidebar toggle button is included here as well */}
+      <Button
+        size="sm"
+        variant={isSidebar ? 'secondary' : 'ghost'}
+        onClick={() => {
+          if (isSidebar) {
+            setIsSidebar(false);
+            setOpen(false);
+          } else {
+            setIsSidebar(true);
+            setOpen(true);
+          }
+        }}
+        title={isSidebar ? 'Close sidebar' : 'Open as sidebar'}
+        className="h-7 w-7 p-0"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </Button>
+    </div>
+  );
+
+  // When opening via the trigger, default to sidebar mode (unless pinned) so the popover does not overlap
+  const handleOpenChange = (v: boolean) => {
+    // Prevent rapid re-open after a user-initiated close (suppressOpenRef).
+    if (v && suppressOpenRef.current) {
+      // ignore open
+      suppressOpenRef.current = false;
+      return;
+    }
+    // Keep open + sidebar state in sync: opening opens the sidebar by default,
+    // closing will close both the sidebar and the popover so we don't flip to modal.
+    setOpen(v);
+    setIsSidebar(v);
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={!isPinned}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={!isPinned}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -1107,7 +1336,9 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent
+      {/* Render modal popover only when not in sidebar mode to avoid double rendering/overlap */}
+      {(!isSidebar) && (
+        <PopoverContent
         ref={resizeRef}
         align="end"
         side="bottom"
@@ -1128,7 +1359,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
             maxWidth: '850px'
           })
         }}
-      >
+        >
         {/* Overlay rendered into body so it sits underneath the popover but above the page */}
         {open && !isPinned && typeof document !== 'undefined' && createPortal(
           <div
@@ -1306,7 +1537,19 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
               <Button
                 size="sm"
                 variant={isSidebar ? 'secondary' : 'ghost'}
-                onClick={() => setIsSidebar(!isSidebar)}
+                onClick={() => {
+                  if (isSidebar) {
+                    // closing via header toggle should suppress immediate re-open
+                    suppressOpenRef.current = true;
+                    setIsSidebar(false);
+                    setOpen(false);
+                    setTimeout(() => { suppressOpenRef.current = false; }, 350);
+                  } else {
+                    // open as sidebar
+                    setIsSidebar(true);
+                    setOpen(true);
+                  }
+                }}
                 title={isSidebar ? 'Close sidebar' : 'Open as sidebar'}
                 className="h-7 w-7 p-0"
               >
@@ -1411,10 +1654,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
               </div>
             ) : customContent ? (
               <div className="space-y-3">
-                <div 
-                      className="prose prose-slate prose-sm max-w-none text-slate-700"
-                      dangerouslySetInnerHTML={{ __html: (typeof window !== 'undefined' ? DOMPurify.sanitize(customContent || '') : (customContent || '')) }}
-                    />
+                {renderHtmlContent(customContent)}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
                   <Button
                     size="sm"
@@ -1470,12 +1710,13 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
             </div>
           )}
         </div>
-      </PopoverContent>
+        </PopoverContent>
+      )}
       {/* Sidebar portal: renders independent right-side panel when toggled */}
       {isSidebar && open && typeof document !== 'undefined' && createPortal(
         <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-2xl z-[9999] ${isCompact ? 'text-sm' : ''}`}
-          style={{ width: modalWidth ? `${modalWidth}px` : 420, maxWidth: '95vw', overflow: 'auto' }}
+          className={`fixed top-0 right-0 bg-white shadow-2xl z-[9999] ${isCompact ? 'text-sm' : ''}`}
+          style={{ width: sidebarWidth ? `${sidebarWidth}px` : 420, maxWidth: '95vw', height: '100vh', display: 'flex', flexDirection: 'column' }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -1487,31 +1728,142 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" onClick={() => setIsSidebar(false)}><X className="w-3.5 h-3.5"/></Button>
+              {headerControls}
+              <Button size="sm" variant="ghost" onClick={() => { suppressOpenRef.current = true; setIsSidebar(false); setOpen(false); setTimeout(() => { suppressOpenRef.current = false; }, 350); }}><X className="w-3.5 h-3.5"/></Button>
             </div>
           </div>
           <div
             ref={sidebarRef}
-            className="flex flex-col h-full"
-            style={{ height: '100vh', overflow: 'hidden' }}
+            className="flex-1 min-h-0 flex flex-col"
+            style={{ overflow: 'hidden' }}
           >
-            <div className="p-4 overflow-hidden">
+            <div className="p-4 shrink-0">
               {/* small note area kept in header region inside sidebar */}
             </div>
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-auto p-4" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
               {isLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+              ) : isEditing ? (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                      <Edit2 className="w-4 h-4 text-indigo-600" />
+                      Edit Content (HTML Supported)
+                    </label>
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
+                      placeholder="Enter popover content here (supports HTML)..."
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                    <div className="flex gap-2 flex-1">
+                      <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="gap-2 flex-1 bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-3.5 h-3.5" />
+                            Save
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                      >
+                        <X className="w-3.5 h-3.5 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                    {customContent && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRestore}
+                        disabled={isSaving}
+                        className="gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Restore
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : customContent ? (
+                <div className="space-y-3">
+                  {renderHtmlContent(customContent)}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleEdit}
+                      className="gap-1.5 flex-1"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRestore}
+                      className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Restore
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <div className="p-2">
+                <div className="space-y-2.5">
                   {renderContentByMode(items)}
+                  {!isEditing && !customContent && (
+                    <div className="pt-3 border-t border-slate-200 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEdit}
+                        className="gap-1.5 flex-1 hover:bg-indigo-50 hover:border-indigo-300"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Customize Content
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          // Open as modal (close sidebar, open popover as modal)
+                          setIsSidebar(false);
+                          setOpen(true);
+                        }}
+                        className="gap-1.5 hover:bg-blue-50 hover:border-blue-300"
+                        title="Open as popout modal"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        Pop Out
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-            {/* Resize handle (left edge) */}
+            {/* Resize handle (left edge) - visible indicator for easy grab */}
             <div
               onMouseDown={handleSidebarResizeStart}
-              className="absolute left-0 top-0 h-full w-2 -ml-2 cursor-ew-resize"
+              className="absolute left-0 top-0 h-full w-3 cursor-ew-resize bg-gradient-to-r from-slate-200 to-transparent hover:from-blue-400 hover:to-transparent opacity-50 hover:opacity-100 transition-opacity"
               aria-hidden
+              title="Drag to resize sidebar"
             />
           </div>
         </div>,
