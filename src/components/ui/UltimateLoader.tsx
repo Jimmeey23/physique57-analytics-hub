@@ -290,15 +290,19 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
 
       {/* Bottom text */}
       <motion.div
-        className="absolute bottom-20 text-center space-y-2"
+        className="absolute bottom-20 text-center space-y-4 px-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
       >
         <motion.div
-          className="text-gray-800 text-base font-bold tracking-[0.3em]"
+          className="text-slate-900 text-2xl md:text-3xl font-black tracking-[0.15em] uppercase"
+          style={{
+            textShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            letterSpacing: '0.2em'
+          }}
           animate={{
-            opacity: [0.7, 1, 0.7],
+            opacity: [0.8, 1, 0.8],
           }}
           transition={{
             duration: 2,
@@ -310,22 +314,30 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
         </motion.div>
         
         {/* Dynamic loading message */}
-        <motion.div
-          key={currentMessageIndex}
-          className="text-blue-600 text-sm font-semibold tracking-wide"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          {loadingMessages[currentMessageIndex]}
-        </motion.div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentMessageIndex}
+            className="text-blue-600 text-lg md:text-xl font-bold tracking-wide"
+            style={{
+              textShadow: '0 1px 3px rgba(0, 119, 182, 0.3)',
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.4 }}
+          >
+            {loadingMessages[currentMessageIndex]}
+          </motion.div>
+        </AnimatePresence>
         
         {subtitle && (
           <motion.div
-            className="text-gray-500 text-xs font-medium tracking-wider pt-1"
+            className="text-slate-600 text-base md:text-lg font-semibold tracking-wide pt-2"
+            style={{
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+            }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
+            animate={{ opacity: 0.85 }}
             transition={{ delay: 0.8 }}
           >
             {subtitle}
@@ -333,17 +345,21 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
         )}
         
         {/* Loading dots */}
-        <motion.div className="flex items-center justify-center gap-2 pt-4">
+        <motion.div className="flex items-center justify-center gap-3 pt-6">
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="w-2 h-2 rounded-full bg-blue-600"
+              className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg"
+              style={{
+                boxShadow: '0 2px 8px rgba(0, 119, 182, 0.4)',
+              }}
               animate={{
-                y: [0, -10, 0],
-                opacity: [0.5, 1, 0.5],
+                y: [0, -12, 0],
+                opacity: [0.6, 1, 0.6],
+                scale: [1, 1.1, 1],
               }}
               transition={{
-                duration: 1,
+                duration: 1.2,
                 repeat: Infinity,
                 delay: i * 0.2,
                 ease: "easeInOut",

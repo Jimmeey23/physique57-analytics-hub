@@ -313,45 +313,187 @@ export const EnhancedTrainerPerformanceSection = () => {
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section - Enhanced 3D Interactive */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
+        {/* Monthly Performance Trends - 3D Line Chart */}
+        <Card className="group relative bg-gradient-to-br from-white via-blue-50/30 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
+          {/* Glow effect on hover */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
+          
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              Monthly Performance Trends
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  Monthly Performance Trends
+                </div>
+                <div className="text-xs text-slate-500 font-normal">Revenue & session growth over time</div>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={3} name="Revenue" />
-                <Line type="monotone" dataKey="sessions" stroke="#10B981" strokeWidth={2} name="Sessions" />
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart 
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              >
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  </linearGradient>
+                  <filter id="shadow">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3"/>
+                  </filter>
+                </defs>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="#e2e8f0" 
+                  strokeOpacity={0.5}
+                />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="#64748b"
+                  style={{ fontSize: '12px', fontWeight: 500 }}
+                  tick={{ fill: '#64748b' }}
+                />
+                <YAxis 
+                  stroke="#64748b"
+                  style={{ fontSize: '12px', fontWeight: 500 }}
+                  tick={{ fill: '#64748b' }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                    padding: '12px 16px',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  labelStyle={{ color: '#f1f5f9', fontWeight: 600, marginBottom: '8px' }}
+                  itemStyle={{ color: '#e2e8f0', padding: '4px 0' }}
+                  cursor={{ stroke: '#3B82F6', strokeWidth: 2, strokeDasharray: '5 5' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="#3B82F6" 
+                  strokeWidth={4}
+                  name="Revenue"
+                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6, stroke: '#fff', filter: 'url(#shadow)' }}
+                  activeDot={{ r: 8, fill: '#2563EB', stroke: '#fff', strokeWidth: 3 }}
+                  fill="url(#revenueGradient)"
+                  animationDuration={1500}
+                  animationEasing="ease-in-out"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="sessions" 
+                  stroke="#10B981" 
+                  strokeWidth={3}
+                  strokeDasharray="5 5"
+                  name="Sessions"
+                  dot={{ fill: '#10B981', strokeWidth: 2, r: 5, stroke: '#fff', filter: 'url(#shadow)' }}
+                  activeDot={{ r: 7, fill: '#059669', stroke: '#fff', strokeWidth: 3 }}
+                  animationDuration={1500}
+                  animationEasing="ease-in-out"
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
+        {/* Sessions vs Revenue - 3D Bar Chart */}
+        <Card className="group relative bg-gradient-to-br from-white via-green-50/30 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
+          {/* Glow effect on hover */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-green-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
+          
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-green-600" />
-              Sessions vs Revenue
+              <div className="p-2 bg-gradient-to-br from-green-600 to-green-700 rounded-lg text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-lg font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                  Sessions vs Members
+                </div>
+                <div className="text-xs text-slate-500 font-normal">Comparative analysis by month</div>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="sessions" fill="#10B981" name="Sessions" />
-                <Bar dataKey="customers" fill="#8B5CF6" name="Customers" />
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart 
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              >
+                <defs>
+                  <linearGradient id="sessionsBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.8}/>
+                  </linearGradient>
+                  <linearGradient id="customersBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.8}/>
+                  </linearGradient>
+                  <filter id="barShadow">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.4"/>
+                  </filter>
+                </defs>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="#e2e8f0" 
+                  strokeOpacity={0.5}
+                />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="#64748b"
+                  style={{ fontSize: '12px', fontWeight: 500 }}
+                  tick={{ fill: '#64748b' }}
+                />
+                <YAxis 
+                  stroke="#64748b"
+                  style={{ fontSize: '12px', fontWeight: 500 }}
+                  tick={{ fill: '#64748b' }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                    padding: '12px 16px',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  labelStyle={{ color: '#f1f5f9', fontWeight: 600, marginBottom: '8px' }}
+                  itemStyle={{ color: '#e2e8f0', padding: '4px 0' }}
+                  cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+                />
+                <Bar 
+                  dataKey="sessions" 
+                  fill="url(#sessionsBarGradient)" 
+                  name="Sessions"
+                  radius={[8, 8, 0, 0]}
+                  filter="url(#barShadow)"
+                  animationDuration={1200}
+                  animationEasing="ease-out"
+                />
+                <Bar 
+                  dataKey="customers" 
+                  fill="url(#customersBarGradient)" 
+                  name="Members"
+                  radius={[8, 8, 0, 0]}
+                  filter="url(#barShadow)"
+                  animationDuration={1200}
+                  animationEasing="ease-out"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

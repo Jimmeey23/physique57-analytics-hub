@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Users, 
   Activity, 
@@ -186,127 +187,164 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
     }
   ];
 
+  // Get top trainers for each metric (for avatars)
+  const topTrainers = React.useMemo(() => {
+    if (!data.length) return [];
+    
+    // Get top 3 trainers by revenue
+    const trainerRevenue = new Map<string, number>();
+    data.forEach(d => {
+      const current = trainerRevenue.get(d.trainerName) || 0;
+      trainerRevenue.set(d.trainerName, current + d.totalPaid);
+    });
+    
+    return Array.from(trainerRevenue.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name]) => name);
+  }, [data]);
+
+  // Helper to get trainer initials
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {metricCards.slice(0, 8).map((card, index) => {
         const Icon = card.icon;
+        const isPositive = card.changeType === 'positive';
+        
         return (
-          <div
+          <Card
             key={card.title}
             onClick={() => onCardClick?.(card.title, { ...summaryStats, metric: card.title })}
             className={cn(
-              "group relative rounded-2xl p-6 transition-all duration-500 ease-out",
-              "bg-gradient-to-br from-white via-white to-slate-50/50",
-              "border border-slate-200/60 hover:border-slate-300",
-              "shadow-lg hover:shadow-2xl",
-              "hover:scale-[1.03] hover:-translate-y-1",
-              "cursor-pointer overflow-hidden",
-              "animate-fade-in"
+              "group relative overflow-hidden cursor-pointer transition-all duration-700",
+              "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+              index % 4 === 0 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+              index % 4 === 1 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+              index % 4 === 2 && "border-t-4 border-purple-700 hover:border-purple-700 shadow-lg",
+              index % 4 === 3 && "border-t-4 border-amber-700 hover:border-amber-700 shadow-lg",
+              "hover:shadow-2xl hover:shadow-slate-900/30",
+              "hover:-translate-y-2 hover:scale-[1.02]"
             )}
-            style={{
-              animationDelay: `${index * 80}ms`,
-              animationFillMode: 'both'
-            }}
           >
-            {/* Top gradient accent */}
-            <div className={cn(
-              "absolute inset-x-0 top-0 h-1 transition-all duration-500",
-              "bg-gradient-to-r",
-              index % 4 === 0 && "from-blue-500 via-blue-600 to-blue-500",
-              index % 4 === 1 && "from-emerald-500 via-emerald-600 to-emerald-500",
-              index % 4 === 2 && "from-purple-500 via-purple-600 to-purple-500",
-              index % 4 === 3 && "from-amber-500 via-amber-600 to-amber-500",
-              "group-hover:h-1.5"
-            )} />
-            
-            {/* Background glow on hover */}
-            <div className={cn(
-              "absolute -inset-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10",
-              "bg-gradient-to-br",
-              index % 4 === 0 && "from-blue-500/20 to-cyan-500/20",
-              index % 4 === 1 && "from-emerald-500/20 to-teal-500/20",
-              index % 4 === 2 && "from-purple-500/20 to-pink-500/20",
-              index % 4 === 3 && "from-amber-500/20 to-orange-500/20"
-            )} />
-
-            <div className="space-y-4">
-              {/* Header with icon and change badge */}
-              <div className="flex items-start justify-between">
-                <div className={cn(
-                  "p-3 rounded-xl transition-all duration-500",
-                  "bg-gradient-to-br group-hover:scale-110 group-hover:rotate-3",
-                  index % 4 === 0 && "from-blue-100 to-blue-200 text-blue-600",
-                  index % 4 === 1 && "from-emerald-100 to-emerald-200 text-emerald-600",
-                  index % 4 === 2 && "from-purple-100 to-purple-200 text-purple-600",
-                  index % 4 === 3 && "from-amber-100 to-amber-200 text-amber-600"
-                )}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                
-                <div className={cn(
-                  "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
-                  "backdrop-blur-sm transition-all duration-500 group-hover:scale-110",
-                  card.changeType === 'positive' 
-                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200" 
-                    : "bg-red-100 text-red-700 border border-red-200"
-                )}>
-                  {card.changeType === 'positive' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  <span>{card.change}</span>
-                </div>
+            <CardContent className="p-6 relative">
+              {/* Background Icon */}
+              <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                <Icon className={cn(
+                  "w-12 h-12 transition-all duration-700",
+                  index % 4 === 0 && "text-blue-700",
+                  index % 4 === 1 && "text-green-700",
+                  index % 4 === 2 && "text-purple-700",
+                  index % 4 === 3 && "text-amber-700",
+                  "group-hover:text-white/40"
+                )} />
               </div>
-
-              {/* Metric title */}
-              <div>
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
-                  {card.title}
-                </p>
-                <p className={cn(
-                  "text-3xl font-black transition-all duration-500",
-                  "bg-gradient-to-br bg-clip-text text-transparent",
-                  "group-hover:scale-105 transform-gpu",
-                  index % 4 === 0 && "from-blue-600 to-blue-800",
-                  index % 4 === 1 && "from-emerald-600 to-emerald-800",
-                  index % 4 === 2 && "from-purple-600 to-purple-800",
-                  index % 4 === 3 && "from-amber-600 to-amber-800"
-                )}>
-                  {card.value}
-                </p>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                {card.subtitle}
-              </p>
-
-              {/* Details */}
-              <div className="space-y-1 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-                {card.details.map((detail, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">{detail.label}</span>
-                    <span className="font-semibold text-slate-700">{detail.value}</span>
+              
+              <div className="relative z-10">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                      index % 4 === 0 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                      index % 4 === 1 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                      index % 4 === 2 && "bg-gradient-to-br from-purple-700 to-purple-600 border-purple-900 text-white shadow-purple-200",
+                      index % 4 === 3 && "bg-gradient-to-br from-amber-700 to-amber-600 border-amber-900 text-white shadow-amber-200",
+                      "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                    )}>
+                      <Icon className="w-6 h-6 drop-shadow-sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                        {card.title}
+                      </h3>
+                    </div>
                   </div>
-                ))}
+                  
+                  {/* Change Badge */}
+                  <div className={cn(
+                    "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
+                    isPositive
+                      ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
+                      : "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
+                  )}>
+                    {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    <span>{card.change}</span>
+                  </div>
+                </div>
+
+                {/* Value */}
+                <div className="space-y-2 mb-4">
+                  <p className={cn(
+                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                  )}>
+                    {card.value}
+                  </p>
+                  <p className={cn(
+                    "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+                  )}>
+                    {card.subtitle}
+                  </p>
+                </div>
+
+                {/* Top Trainers Avatars */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex -space-x-2">
+                    {topTrainers.slice(0, 3).map((trainer, idx) => (
+                      <Avatar 
+                        key={trainer}
+                        className={cn(
+                          "border-2 border-white group-hover:border-slate-800 transition-all duration-500",
+                          "w-8 h-8",
+                          "hover:z-10 hover:scale-110"
+                        )}
+                      >
+                        <AvatarFallback className={cn(
+                          "text-xs font-semibold",
+                          idx === 0 && "bg-gradient-to-br from-blue-500 to-blue-600 text-white",
+                          idx === 1 && "bg-gradient-to-br from-green-500 to-green-600 text-white",
+                          idx === 2 && "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                        )}>
+                          {getInitials(trainer)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  <span className="text-xs text-slate-600 group-hover:text-slate-300 transition-colors">
+                    Top {topTrainers.length} Trainers
+                  </span>
+                </div>
               </div>
-            </div>
-          </div>
+              
+              {/* Details Footer */}
+              <div className={cn(
+                "mt-4 p-3 border-t border-l-4 transition-all duration-700",
+                "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
+                index % 4 === 0 && "border-l-blue-700",
+                index % 4 === 1 && "border-l-green-700",
+                index % 4 === 2 && "border-l-purple-700",
+                index % 4 === 3 && "border-l-amber-700"
+              )}>
+                <div className="space-y-1.5">
+                  {card.details.map((detail, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <span className="text-slate-600 group-hover:text-slate-300 transition-colors duration-700">
+                        {detail.label}
+                      </span>
+                      <span className="font-semibold text-slate-900 group-hover:text-white transition-colors duration-700">
+                        {detail.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>
   );
 };
-
-// Add keyframes to the stylesheet
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-document.head.appendChild(style);
