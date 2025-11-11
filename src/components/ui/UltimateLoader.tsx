@@ -147,7 +147,7 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
       </div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10"
@@ -156,7 +156,7 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
         <motion.div className="relative">
           {/* Glow effect wrapper */}
           <motion.div
-            className="relative flex items-center justify-center overflow-hidden rounded-3xl"
+            className="relative flex items-center justify-center"
           >
             {/* Glossy shine effect overlay */}
             <motion.div
@@ -177,7 +177,7 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
             {/* Logo Image or Fallback SVG */}
             {!imgFailed ? (
               <motion.div 
-                className="relative w-96 h-96 flex items-center justify-center z-10"
+                className="relative w-60 h-60 flex items-center justify-center z-10"
                 animate={{
                   filter: ['brightness(1.1)', 'brightness(1.3)', 'brightness(1.1)']
                 }}
@@ -202,8 +202,8 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
               </motion.div>
             ) : (
               <svg
-                width="400"
-                height="400"
+                width="260"
+                height="260"
                 viewBox="0 0 500 500"
                 className="relative"
               >
@@ -290,83 +290,85 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
 
       {/* Bottom text */}
       <motion.div
-        className="absolute bottom-20 text-center space-y-4 px-8"
-        initial={{ opacity: 0, y: 20 }}
+        className="absolute bottom-16 text-center px-6"
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.8 }}
+        transition={{ delay: 0.45, duration: 0.8 }}
       >
-        <motion.div
-          className="text-slate-900 text-2xl md:text-3xl font-black tracking-[0.15em] uppercase"
-          style={{
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-            letterSpacing: '0.2em'
-          }}
-          animate={{
-            opacity: [0.8, 1, 0.8],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        >
-          {title}
-        </motion.div>
-        
-        {/* Dynamic loading message */}
-        <AnimatePresence mode="wait">
+  <div className="inline-flex flex-col items-center gap-5 px-10 py-8">
           <motion.div
-            key={currentMessageIndex}
-            className="text-blue-600 text-lg md:text-xl font-bold tracking-wide"
+            className="text-slate-900 text-3xl md:text-4xl font-black tracking-[0.18em] uppercase"
             style={{
-              textShadow: '0 1px 3px rgba(0, 119, 182, 0.3)',
+              textShadow: '0 3px 16px rgba(15, 23, 42, 0.12)',
+              letterSpacing: '0.22em'
             }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-          >
-            {loadingMessages[currentMessageIndex]}
-          </motion.div>
-        </AnimatePresence>
-        
-        {subtitle && (
-          <motion.div
-            className="text-slate-600 text-base md:text-lg font-semibold tracking-wide pt-2"
-            style={{
-              textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+            animate={{
+              opacity: [0.85, 1, 0.85],
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.85 }}
-            transition={{ delay: 0.8 }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
           >
-            {subtitle}
+            {title}
           </motion.div>
-        )}
-        
-        {/* Loading dots */}
-        <motion.div className="flex items-center justify-center gap-3 pt-6">
-          {[0, 1, 2].map((i) => (
+
+          {/* Dynamic loading message */}
+          <AnimatePresence mode="wait">
             <motion.div
-              key={i}
-              className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg"
+              key={currentMessageIndex}
+              className="text-blue-600 text-xl md:text-2xl font-bold tracking-wide"
               style={{
-                boxShadow: '0 2px 8px rgba(0, 119, 182, 0.4)',
+                textShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
               }}
-              animate={{
-                y: [0, -12, 0],
-                opacity: [0.6, 1, 0.6],
-                scale: [1, 1.1, 1],
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.45 }}
+            >
+              {loadingMessages[currentMessageIndex]}
+            </motion.div>
+          </AnimatePresence>
+
+          {subtitle && (
+            <motion.div
+              className="text-slate-600 text-lg md:text-xl font-semibold tracking-[0.08em]"
+              style={{
+                textShadow: '0 2px 6px rgba(15, 23, 42, 0.12)',
               }}
-              transition={{
-                duration: 1.2,
-                repeat: Infinity,
-                delay: i * 0.2,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </motion.div>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.9 }}
+              transition={{ delay: 0.6 }}
+            >
+              {subtitle}
+            </motion.div>
+          )}
+
+          {/* Loading dots */}
+          <motion.div className="flex items-center justify-center gap-3 pt-2">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500 shadow-lg"
+                style={{
+                  boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
+                }}
+                animate={{
+                  y: [0, -10, 0],
+                  opacity: [0.55, 1, 0.55],
+                  scale: [1, 1.12, 1],
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  delay: i * 0.22,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </motion.div>
+        </div>
       </motion.div>
     </div>
   );
