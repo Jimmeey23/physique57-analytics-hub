@@ -95,23 +95,21 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 4096, // Inline small assets
     rollupOptions: {
       output: {
-        // Critical: Keep React and all Radix UI in tightly controlled chunks
+        // Critical: Keep React, Radix UI, and chart libraries together
         manualChunks: (id) => {
-          // React and Radix UI MUST stay together in the same chunk
-          // This prevents the forwardRef initialization error
+          // React, Radix UI, and Recharts MUST stay together in the same chunk
+          // This prevents initialization errors (forwardRef, circular dependencies)
           if (id.includes('node_modules/react') || 
               id.includes('node_modules/react-dom') ||
               id.includes('node_modules/scheduler') ||
-              id.includes('@radix-ui/')) {
+              id.includes('@radix-ui/') ||
+              id.includes('recharts') || 
+              id.includes('d3-')) {
             return 'react-vendor';
           }
           // React Query
           if (id.includes('@tanstack/react-query')) {
             return 'react-query';
-          }
-          // Chart libraries
-          if (id.includes('recharts') || id.includes('d3-')) {
-            return 'charts';
           }
           // Date utilities
           if (id.includes('date-fns')) {
