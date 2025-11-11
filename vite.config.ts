@@ -68,7 +68,21 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Force single React instance - critical for Radix UI
+      "react": path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
     },
+    // Force single versions of these critical packages
+    dedupe: [
+      'react', 
+      'react-dom', 
+      'react/jsx-runtime',
+      '@radix-ui/react-primitive',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-use-callback-ref',
+      '@radix-ui/react-compose-refs',
+    ],
   },
   define: {
     // Ensure React is available globally for forwardRef
@@ -84,19 +98,19 @@ export default defineConfig(({ mode }) => ({
         return false;
       },
       output: {
-        // Optimized chunk splitting strategy
+        // Critical: Keep React and all Radix UI in tightly controlled chunks
         manualChunks: (id) => {
-          // React core libraries
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+          // React and Radix UI MUST stay together in the same chunk
+          // This prevents the forwardRef initialization error
+          if (id.includes('node_modules/react') || 
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/scheduler') ||
+              id.includes('@radix-ui/')) {
             return 'react-vendor';
           }
           // React Query
           if (id.includes('@tanstack/react-query')) {
             return 'react-query';
-          }
-          // Radix UI components
-          if (id.includes('@radix-ui')) {
-            return 'radix-ui';
           }
           // Chart libraries
           if (id.includes('recharts') || id.includes('d3-')) {
