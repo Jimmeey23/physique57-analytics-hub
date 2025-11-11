@@ -7,7 +7,6 @@ import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { AiNotes } from '@/components/ui/AiNotes';
 
 const DiscountsPromotions: React.FC = () => {
   const navigate = useNavigate();
@@ -99,7 +98,7 @@ const DiscountsPromotions: React.FC = () => {
   // Remove individual loader - rely on global loader only
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-amber-50/20">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/20">
         <div className="flex items-center justify-center min-h-screen p-4">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Connection Error</h1>
@@ -139,15 +138,6 @@ const DiscountsPromotions: React.FC = () => {
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
           <EnhancedDiscountsDashboardV2 data={discountData} />
-          
-          {/* AI Notes for Discounts Analysis */}
-          <AiNotes 
-            tableKey="discounts:analysis" 
-            location="all" 
-            period="current" 
-            sectionId="discounts-main" 
-            author="Discounts Analyst" 
-          />
         </main>
       </div>
       

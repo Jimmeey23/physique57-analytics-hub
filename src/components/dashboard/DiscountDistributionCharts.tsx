@@ -197,10 +197,10 @@ export const DiscountDistributionCharts: React.FC<DiscountDistributionChartsProp
       </Card>
 
       {/* Staff Discount Performance */}
-      <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-0 shadow-lg">
+      <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Users className="w-5 h-5 text-orange-600" />
+            <Users className="w-5 h-5 text-indigo-600" />
             Staff Discount Performance
           </CardTitle>
         </CardHeader>

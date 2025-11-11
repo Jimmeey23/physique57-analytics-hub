@@ -89,9 +89,8 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
     return sortDirection === 'asc' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />;
   };
   const getDiscountBadgeColor = (percentage: number) => {
-    if (percentage >= 50) return 'destructive';
     if (percentage >= 25) return 'secondary';
-    return 'default';
+    return 'outline';
   };
   // Columns definition for AI analysis footer
   const footerColumns = [
@@ -175,26 +174,26 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
 
       <CardContent className="p-0">
         {/* Summary Stats Bar */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 p-6 bg-gradient-to-r from-slate-50 to-slate-100 border-b">
           <div className="text-center">
-            <div className="text-2xl font-bold text-slate-700">{formatNumber(summaryStats.totalTransactions)}</div>
-            <div className="text-sm text-slate-500">Total Transactions</div>
+            <div className="text-2xl font-bold text-slate-800">{formatNumber(summaryStats.totalTransactions)}</div>
+            <div className="text-sm text-slate-600">Total Transactions</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">{formatCurrency(summaryStats.totalDiscount)}</div>
-            <div className="text-sm text-slate-500">Total Discount</div>
+            <div className="text-2xl font-bold text-slate-800">{formatCurrency(summaryStats.totalDiscount)}</div>
+            <div className="text-sm text-slate-600">Total Discount</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(summaryStats.totalRevenue)}</div>
-            <div className="text-sm text-slate-500">Total Revenue</div>
+            <div className="text-2xl font-bold text-slate-800">{formatCurrency(summaryStats.totalRevenue)}</div>
+            <div className="text-sm text-slate-600">Total Revenue</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(summaryStats.totalMrp)}</div>
-            <div className="text-sm text-slate-500">Total MRP</div>
+            <div className="text-2xl font-bold text-slate-800">{formatCurrency(summaryStats.totalMrp)}</div>
+            <div className="text-sm text-slate-600">Total MRP</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">{formatPercentage(summaryStats.avgDiscountPercentage)}</div>
-            <div className="text-sm text-slate-500">Avg Discount %</div>
+            <div className="text-2xl font-bold text-slate-800">{formatPercentage(summaryStats.avgDiscountPercentage)}</div>
+            <div className="text-sm text-slate-600">Avg Discount %</div>
           </div>
         </div>
 
@@ -271,16 +270,16 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
                     <span className="truncate block">{formatCurrency(item.mrpPostTax || 0)}</span>
                   </TableCell>
                   <TableCell className="text-right py-2 max-h-[35px]">
-                    <span className="font-semibold text-sm text-red-600 truncate block">
+                    <span className="font-medium text-sm text-slate-700 truncate block">
                       -{formatCurrency(item.discountAmount || 0)}
                     </span>
                   </TableCell>
                   <TableCell className="text-right py-2 max-h-[35px]">
-                    <Badge variant={getDiscountBadgeColor(item.discountPercentage || 0)} className="text-xs h-6 px-2 font-bold">
+                    <Badge variant={getDiscountBadgeColor(item.discountPercentage || 0)} className="text-xs h-6 px-2 font-medium w-16 justify-center">
                       {formatPercentage(item.discountPercentage || 0)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-semibold text-sm text-green-600 py-2 max-h-[35px]">
+                  <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
                     <span className="truncate block">{formatCurrency(item.paymentValue || 0)}</span>
                   </TableCell>
                   <TableCell className="py-2 max-h-[35px]">
@@ -304,13 +303,13 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
                 <TableCell className="text-right font-bold">
                   {formatCurrency(summaryStats.totalMrp)}
                 </TableCell>
-                <TableCell className="text-right font-bold text-red-600">
+                <TableCell className="text-right font-bold text-slate-700">
                   -{formatCurrency(summaryStats.totalDiscount)}
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {formatPercentage(summaryStats.avgDiscountPercentage)}
                 </TableCell>
-                <TableCell className="text-right font-bold text-green-600">
+                <TableCell className="text-right font-bold text-slate-700">
                   {formatCurrency(summaryStats.totalRevenue)}
                 </TableCell>
                 <TableCell colSpan={3}></TableCell>

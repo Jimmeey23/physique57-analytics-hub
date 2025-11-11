@@ -7,6 +7,7 @@ import { DiscountInteractiveTopBottomLists } from './DiscountInteractiveTopBotto
 import { EnhancedDiscountDataTable } from './EnhancedDiscountDataTable';
 import { EnhancedDiscountBreakdownTables } from './EnhancedDiscountBreakdownTables';
 import { DiscountDrillDownModal } from './DiscountDrillDownModal';
+import { MonthOnMonthDiscountTable } from './MonthOnMonthDiscountTable';
 import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
@@ -340,24 +341,27 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           onDrillDown={handleDrillDown}
         />
 
+        {/* Month-on-Month Analysis Table */}
+        <MonthOnMonthDiscountTable data={allHistoricData} />
+
         {/* Main Content Tabs */}
         <Tabs defaultValue="detailed" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 p-1.5 rounded-xl shadow-md border border-orange-200">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-slate-50 via-indigo-50 to-purple-50 p-1.5 rounded-xl shadow-md border border-slate-200">
             <TabsTrigger 
               value="detailed" 
-              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
             >
               Data Tables
             </TabsTrigger>
             <TabsTrigger 
               value="breakdown" 
-              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
             >
               Breakdowns
             </TabsTrigger>
             <TabsTrigger 
               value="analytics" 
-              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
             >
               Analytics
             </TabsTrigger>
@@ -368,7 +372,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           </TabsContent>
 
           <TabsContent value="detailed" className="space-y-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-orange-200/50">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-slate-200/50">
               <EnhancedDiscountDataTable 
                 data={discountAnalysisData}
                 onRowClick={(title, data, type) => handleDrillDown(title, data, type)}

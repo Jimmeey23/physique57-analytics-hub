@@ -266,8 +266,8 @@ export const DiscountMetricCards: React.FC<DiscountMetricCardsProps> = ({ data, 
         value={metrics.topCategory.value}
         icon={Package}
         change={0}
-        color="text-orange-600"
-        gradient="bg-gradient-to-br from-white via-orange-50/30 to-amber-50/20"
+        color="text-indigo-600"
+        gradient="bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20"
         breakdown={metrics.topCategory.breakdown}
         cardKey="topCategory"
         onClick={() => onDrillDown?.('Category Analysis', data, 'categories')}

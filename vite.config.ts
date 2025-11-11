@@ -14,13 +14,15 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
+    react({
+      // SWC plugin options to ensure proper React handling
+      jsxImportSource: 'react',
+    }),
+    mode === 'development' && componentTagger(),
     // Local API middleware to handle /api/notes in development
     mode === 'development' && {
       name: 'local-api-notes',
-  configureServer(server: ViteDevServer) {
+      configureServer(server: ViteDevServer) {
         server.middlewares.use('/api/notes', (req: any, res: any, next: any) => {
           // Only handle GET/POST we use; pass through others
           if (!['GET', 'POST'].includes(req.method)) return next();
@@ -68,104 +70,65 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Force single React instance - critical for Radix UI
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
-      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
     },
-    // Force single versions of these critical packages
-    dedupe: [
-      'react', 
-      'react-dom', 
-      'react/jsx-runtime',
-      '@radix-ui/react-primitive',
-      '@radix-ui/react-slot',
-      '@radix-ui/react-use-callback-ref',
-      '@radix-ui/react-compose-refs',
-    ],
   },
   define: {
-    // Ensure React is available globally for forwardRef
-    'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+    'process.env.NODE_ENV': JSON.stringify(mode),
   },
   build: {
     sourcemap: mode === 'production' ? false : true,
     minify: 'esbuild',
     cssCodeSplit: true,
-    assetsInlineLimit: 4096, // Inline small assets
+    assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
-        // Critical: Keep React, Radix UI, and chart libraries together
+        // Simplified chunking strategy to avoid forwardRef issues
         manualChunks: (id) => {
-          // React, Radix UI, and Recharts MUST stay together in the same chunk
-          // This prevents initialization errors (forwardRef, circular dependencies)
+          // Group all Radix UI together to ensure consistent React version
+          if (id.includes('@radix-ui')) {
+            return 'radix-ui';
+          }
+          // React and its dependencies in one chunk
           if (id.includes('node_modules/react') || 
-              id.includes('node_modules/react-dom') ||
               id.includes('node_modules/scheduler') ||
-              id.includes('@radix-ui/') ||
-              id.includes('recharts') || 
-              id.includes('d3-')) {
+              id.includes('node_modules/client-only')) {
             return 'react-vendor';
           }
-          // React Query
-          if (id.includes('@tanstack/react-query')) {
-            return 'react-query';
-          }
-          // Date utilities
-          if (id.includes('date-fns')) {
-            return 'date-utils';
-          }
-          // Lucide icons
-          if (id.includes('lucide-react')) {
-            return 'icons';
-          }
-          // PDF generation (lazy loaded)
-          if (id.includes('jspdf') || id.includes('html2canvas')) {
-            return 'pdf-export';
-          }
-          // Other node_modules
+          // Other vendor libraries
           if (id.includes('node_modules')) {
             return 'vendor';
           }
         },
-        chunkFileNames: (chunkInfo) => {
-          const name = chunkInfo.name || 'chunk';
-          return `assets/${name}-[hash].js`;
-        },
+        chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
     chunkSizeWarningLimit: 1000,
-    reportCompressedSize: true,
-    target: 'es2020', // Modern target for better tree-shaking
+    target: 'es2020',
   },
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react/jsx-runtime',
-      'react-router-dom',
-      'recharts',
-      'date-fns',
-      'lucide-react',
-      'clsx',
-      'tailwind-merge',
-      'class-variance-authority',
+      '@radix-ui/react-slot', // Ensure this is included
+      '@radix-ui/react-primitive', // Critical for forwardRef
       '@radix-ui/react-tabs',
       '@radix-ui/react-dialog',
       '@radix-ui/react-select',
       '@radix-ui/react-popover',
-      '@tanstack/react-query',
-      'zustand'
+      '@radix-ui/react-label',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-switch',
+      '@radix-ui/react-tooltip',
     ],
-    exclude: [],
-    force: false, // Only force in dev when needed
+    // Force optimization of Radix UI packages
+    force: mode === 'development',
   },
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
     treeShaking: true,
-    legalComments: 'none', // Remove comments in production
+    legalComments: 'none',
   }
 }));
-;

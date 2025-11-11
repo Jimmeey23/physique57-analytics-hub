@@ -89,6 +89,8 @@ export function useDiscountMetrics(
         customersWithDiscounts,
         avgDiscountPerTransaction,
         avgDiscountPerCustomer,
+        discountPenetration,
+        customerDiscountPenetration,
       };
     };
 
@@ -167,6 +169,30 @@ export function useDiscountMetrics(
         periodLabel,
         icon: 'Activity',
         description: 'Average discount per customer receiving discounts',
+      },
+      {
+        title: 'Discount Penetration',
+        value: formatPercentage(cur.discountPenetration),
+        rawValue: cur.discountPenetration,
+        change: calcGrowth(cur.discountPenetration, prev.discountPenetration).rate,
+        changeDetails: calcGrowth(cur.discountPenetration, prev.discountPenetration),
+        previousValue: formatPercentage(prev.discountPenetration),
+        previousRawValue: prev.discountPenetration,
+        periodLabel,
+        icon: 'PieChart',
+        description: 'Percentage of transactions that received discounts',
+      },
+      {
+        title: 'Customer Discount Rate',
+        value: formatPercentage(cur.customerDiscountPenetration),
+        rawValue: cur.customerDiscountPenetration,
+        change: calcGrowth(cur.customerDiscountPenetration, prev.customerDiscountPenetration || 0).rate,
+        changeDetails: calcGrowth(cur.customerDiscountPenetration, prev.customerDiscountPenetration || 0),
+        previousValue: formatPercentage(prev.customerDiscountPenetration || 0),
+        previousRawValue: prev.customerDiscountPenetration || 0,
+        periodLabel,
+        icon: 'UserCheck',
+        description: 'Percentage of unique customers who received discounts',
       },
     ];
 

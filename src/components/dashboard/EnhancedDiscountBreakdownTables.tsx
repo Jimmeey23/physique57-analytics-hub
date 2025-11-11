@@ -176,15 +176,14 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
   };
 
   const getPerformanceBadge = (percentage: number) => {
-    if (percentage >= 40) return { variant: 'destructive' as const, label: 'High' };
-    if (percentage >= 20) return { variant: 'secondary' as const, label: 'Medium' };
-    return { variant: 'default' as const, label: 'Low' };
+    if (percentage >= 20) return { variant: 'secondary' as const, label: 'High' };
+    return { variant: 'outline' as const, label: 'Low' };
   };
 
   return (
     <div className="grid gap-6">
       {/* Product Breakdown */}
-      <Card ref={productRef} className="shadow-xl border-0 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/20">
+      <Card ref={productRef} className="shadow-xl border-0 bg-white">
         <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
@@ -234,17 +233,17 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                         <span className="text-sm text-slate-600 truncate block">{item.category}</span>
                       </TableCell>
                       <TableCell className="text-center py-2 max-h-[35px]">
-                        <Badge variant="outline" className="text-xs h-6 px-2">{formatNumber(item.transactions)}</Badge>
+                        <Badge variant="outline" className="text-xs h-6 px-2 w-16 justify-center">{formatNumber(item.transactions)}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-sm text-red-600 py-2 max-h-[35px]">
+                      <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
                         <span className="truncate block">{formatCurrency(item.totalDiscount)}</span>
                       </TableCell>
                       <TableCell className="text-right py-2 max-h-[35px]">
-                        <Badge variant={badge.variant} className="text-xs h-6 px-2">
+                        <Badge variant={badge.variant} className="text-xs h-6 px-2 w-20 justify-center">
                           {formatPercentage(item.avgDiscountPercentage)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-sm text-green-600 py-2 max-h-[35px]">
+                      <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
                         <span className="truncate block">{formatCurrency(item.totalRevenue)}</span>
                       </TableCell>
                       <TableCell className="text-right py-2 max-h-[35px]">
@@ -262,7 +261,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                             item.data, 
                             'product-discount'
                           )}
-                          className="hover:bg-orange-50 h-7"
+                          className="hover:bg-slate-50 h-7"
                         >
                           <Eye className="w-3 h-3" />
                         </Button>
@@ -277,7 +276,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                   <TableCell className="text-center font-bold">
                     {formatNumber(productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.transactions, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-red-600">
+                  <TableCell className="text-right font-bold text-slate-700">
                     {formatCurrency(productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.totalDiscount, 0))}
                   </TableCell>
                   <TableCell className="text-right font-bold">
@@ -286,7 +285,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                       Math.min(10, productBreakdown.length)
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-green-600">
+                  <TableCell className="text-right font-bold text-slate-700">
                     {formatCurrency(productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.totalRevenue, 0))}
                   </TableCell>
                   <TableCell colSpan={2}></TableCell>
@@ -313,7 +312,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
       />
 
       {/* Location Breakdown */}
-      <Card ref={locationRef} className="shadow-xl border-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20">
+      <Card ref={locationRef} className="shadow-xl border-0 bg-white">
         <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 text-white rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
@@ -356,23 +355,23 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                     <TableRow key={index}>
                       <TableCell className="font-medium">{item.location}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline">{formatNumber(item.transactions)}</Badge>
+                        <Badge variant="outline" className="w-16 justify-center">{formatNumber(item.transactions)}</Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary">{formatNumber(item.uniqueCustomers)}</Badge>
+                        <Badge variant="secondary" className="w-16 justify-center">{formatNumber(item.uniqueCustomers)}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-red-600">
+                      <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.totalDiscount)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={badge.variant}>
+                        <Badge variant={badge.variant} className="w-20 justify-center">
                           {formatPercentage(item.avgDiscountPercentage)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.avgDiscountPerTransaction)}
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-green-600">
+                      <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.totalRevenue)}
                       </TableCell>
                       <TableCell className="text-center">
@@ -384,7 +383,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                             item.data, 
                             'location-discount'
                           )}
-                          className="hover:bg-blue-50"
+                          className="hover:bg-slate-50"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -402,7 +401,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                   <TableCell className="text-center font-bold">
                     {formatNumber(locationBreakdown.reduce((sum, item) => sum + item.uniqueCustomers, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-red-600">
+                  <TableCell className="text-right font-bold text-slate-700">
                     {formatCurrency(locationBreakdown.reduce((sum, item) => sum + item.totalDiscount, 0))}
                   </TableCell>
                   <TableCell className="text-right font-bold">
@@ -417,7 +416,7 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                       locationBreakdown.length
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-green-600">
+                  <TableCell className="text-right font-bold text-slate-700">
                     {formatCurrency(locationBreakdown.reduce((sum, item) => sum + item.totalRevenue, 0))}
                   </TableCell>
                   <TableCell></TableCell>
