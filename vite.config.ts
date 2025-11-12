@@ -17,8 +17,6 @@ export default defineConfig(({ mode }) => ({
     react({
       // SWC plugin options to ensure proper React handling
       jsxImportSource: 'react',
-      // Add this to ensure proper handling of React imports
-      fastRefresh: true,
     }),
     mode === 'development' && componentTagger(),
     // Local API middleware to handle /api/notes in development
@@ -78,7 +76,8 @@ export default defineConfig(({ mode }) => ({
     'process.env.NODE_ENV': JSON.stringify(mode),
   },
   build: {
-    sourcemap: mode === 'production' ? false : true,
+    
+    sourcemap: true,
     minify: 'esbuild',
     cssCodeSplit: true,
     assetsInlineLimit: 4096,
