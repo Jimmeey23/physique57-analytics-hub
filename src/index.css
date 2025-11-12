@@ -25,6 +25,56 @@
   }
 }
 
+@keyframes info-popover-wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(-12deg);
+  }
+  30% {
+    transform: rotate(10deg);
+  }
+  45% {
+    transform: rotate(-6deg);
+  }
+  60% {
+    transform: rotate(4deg);
+  }
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+@keyframes info-popover-callout {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-14px) scale(0.9);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-50%) translateX(6px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0) scale(1);
+  }
+}
+
+.info-popover-highlight {
+  animation: info-popover-wiggle 0.85s ease-in-out 0s 2;
+}
+
+.info-popover-callout {
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: center left;
+  animation: info-popover-callout 0.45s ease-out forwards;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 @keyframes modern-float {
   0%, 100% {
     transform: translateY(0px) scale(1);

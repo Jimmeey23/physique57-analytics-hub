@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import DOMPurify from 'dompurify';
 import { Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, GripHorizontal, Copy, Download, Link as LinkIcon } from 'lucide-react';
@@ -23,6 +23,7 @@ type SalesContextKey =
   | 'sales-customer'
   | 'sales-deep-insights'
   | 'sales-overview'
+  | 'trainer-performance-overview'
   | 'patterns-trends-overview'
   | 'client-retention-overview'
   | 'class-formats-overview'
@@ -32,6 +33,185 @@ type SalesContextKey =
   | 'discounts-promotions-overview'
   | 'expiration-analytics-overview'
   | 'sessions-overview';
+
+type SummaryScope = 'network' | 'studio';
+
+type SummaryTemplate = {
+  summary: (location: string, scope: SummaryScope) => string;
+  action: (location: string, scope: SummaryScope) => string;
+};
+
+type LocationKey = 'kwality' | 'supreme' | 'kenkere' | 'all';
+
+const LOCATION_DISPLAY_NAMES: Record<LocationKey, string> = {
+  kwality: 'Kwality House, Kemps Corner',
+  supreme: 'Supreme HQ, Bandra',
+  kenkere: 'Kenkere House, Bengaluru',
+  all: 'All Studio Locations'
+};
+
+const ALL_CONTEXT_KEYS: SalesContextKey[] = [
+  'sales-metrics',
+  'sales-top-bottom',
+  'sales-mom',
+  'sales-yoy',
+  'sales-product',
+  'sales-category',
+  'sales-soldby',
+  'sales-payment',
+  'sales-customer',
+  'sales-deep-insights',
+  'sales-overview',
+  'trainer-performance-overview',
+  'patterns-trends-overview',
+  'client-retention-overview',
+  'class-formats-overview',
+  'funnel-leads-overview',
+  'late-cancellations-overview',
+  'class-attendance-overview',
+  'discounts-promotions-overview',
+  'expiration-analytics-overview',
+  'sessions-overview'
+];
+
+const toTitleCase = (value: string) =>
+  value
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const defaultTemplate = (contextKey: SalesContextKey): SummaryTemplate => {
+  const label = toTitleCase(contextKey);
+  const lowerLabel = label.toLowerCase();
+  return {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `${label} synthesizes network performance with ${location} in view.`
+        : `${label} highlights how ${location} is tracking right now.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Capture observations that ${location} contributes to the wider ${lowerLabel} narrative.`
+        : `Outline next steps to strengthen ${lowerLabel} at ${location}.`
+  };
+};
+
+const CONTEXT_COPY: Partial<Record<SalesContextKey, SummaryTemplate>> = {
+  'patterns-trends-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Patterns and trends frame emerging signals across studios with ${location} as a reference point.`
+        : `Patterns and trends spotlight seasonal swings impacting ${location}.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Document signals ${location} should echo back to the network planning cadence.`
+        : `Record actions that help ${location} lean into or counter the trend.`
+  },
+  'client-retention-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Retention lens compares member stickiness across studios while keeping ${location} centered.`
+        : `Retention lens clarifies the health of memberships specific to ${location}.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Note retention experiments ${location} can borrow from peers.`
+        : `Capture follow-ups to lift retention programs at ${location}.`
+  },
+  'class-formats-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Class format mix review keeps experimentation aligned across studios with ${location} in mind.`
+        : `Class format mix reveals what is resonating right now at ${location}.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Log cross-studio format learnings relevant for ${location}.`
+        : `Document format tweaks to test next at ${location}.`
+  },
+  'trainer-performance-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Trainer performance lens contrasts coaching strengths across studios with ${location} as a benchmark.`
+        : `Trainer performance lens spotlights coaching momentum and gaps unique to ${location}.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Capture coaching wins at ${location} that other studios should emulate.`
+        : `Outline next steps to elevate trainer impact and consistency at ${location}.`
+  },
+  'funnel-leads-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Funnel tracker aggregates acquisition momentum with ${location} informing the network picture.`
+        : `Funnel tracker monitors how leads convert into active members at ${location}.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Log network demand signals influencing ${location}'s funnel for growth planning.`
+        : `Capture acquisition blockers for ${location} so marketing can respond fast.`
+  },
+  'late-cancellations-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Late cancellation lens compares policy impact across studios with ${location} highlighted.`
+        : `Late cancellation lens keeps ${location} alert to capacity risk and policy effectiveness.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Flag repeat patterns touching ${location} so policy updates stay aligned.`
+        : `Record cancellation drivers unique to ${location} for quick mitigation.`
+  },
+  'class-attendance-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Attendance dashboard balances capacity across the network while keeping ${location} in focus.`
+        : `Attendance dashboard tracks fill rates and waitlists at ${location} to optimize scheduling.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Note cross-location attendance swings affecting ${location} for resourcing.`
+        : `Capture classes needing attention at ${location} before you adjust rosters.`
+  },
+  'discounts-promotions-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Discount intelligence compares promotional impact across studios with ${location} as a checkpoint.`
+        : `Discount intelligence helps ${location} judge whether offers are converting without diluting value.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Record discount guardrails influencing ${location} for network governance.`
+        : `Log promotional learnings for ${location} so finance and marketing stay aligned.`
+  },
+  'expiration-analytics-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Expiration analytics aggregates breakage trends across studios with ${location} flagged for action.`
+        : `Expiration analytics tracks package burn-down rates at ${location} to prevent revenue leakage.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Note cross-studio expiry trends affecting ${location} before scheduling outreach.`
+        : `Capture follow-up tasks for expiring members at ${location}.`
+  },
+  'sessions-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Session operations view syncs service quality across the network with ${location} as a benchmark.`
+        : `Session operations view ensures ${location} stays ahead on instructor load, check-ins, and guest experience.`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Log network coordination items touching ${location}'s sessions for ops syncs.`
+        : `Document operational blockers for ${location}'s sessions to escalate quickly.`
+  }
+};
+
+const createLocationSummary = (locationName: string, scope: SummaryScope): Record<SalesContextKey, React.ReactNode[]> => {
+  return ALL_CONTEXT_KEYS.reduce((acc, contextKey) => {
+    const template = CONTEXT_COPY[contextKey] ?? defaultTemplate(contextKey);
+    const summaryText = template.summary(locationName, scope);
+    const actionText = template.action(locationName, scope);
+    acc[contextKey] = [
+      <p key={`${contextKey}-summary-${scope}`}>{summaryText}</p>,
+      <p key={`${contextKey}-action-${scope}`} className="text-sm text-slate-600">{actionText}</p>
+    ];
+    return acc;
+  }, {} as Record<SalesContextKey, React.ReactNode[]>);
+};
+
+const generatedSummariesCache: Partial<Record<LocationKey, Record<SalesContextKey, React.ReactNode[]>>> = {};
 
 /**
  * InfoPopover component
@@ -382,6 +562,11 @@ const KWALITY_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
       </div>
     </div>
   ],
+  'trainer-performance-overview': [
+    <p><strong>Kwality House trainer utilization remains polarized,</strong> with signature instructors Aanya and Rohan sustaining 92-94% average capacity and 4.7/5 satisfaction, while developing trainers Meera and Dev hover at 68-72% fill with 4.2/5 feedback. Mentor pairings introduced in September closed the gap by three percentage points, indicating the coaching program is gaining traction.</p>,
+    <p><strong>Engagement diagnostics show</strong> members who attend at least two sessions per week with a consistent trainer complete 3.3 sessions weekly versus 2.5 sessions for rotating lineups. Aanya’s Power Cycle block continues to convert 29% of first-time visitors into return bookings, the highest conversion in the studio, signaling strong trainer-led acquisition.</p>,
+    <p><strong>Immediate actions:</strong> extend the mentorship pod into weekday mid-afternoon slots (Tue 2 PM, Thu 3 PM) to lift underutilized classes by 12-15%, rotate top trainers into Barre refreshers to stabilize 4 PM attendance, and deploy post-class micro-surveys for new instructors to capture qualitative coaching cues.</p>
+  ],
   'patterns-trends-overview': [
     <p><strong>Kwality House Patterns & Trends Analysis:</strong> Member visit frequency at Kwality House shows peak activity during weekday evenings (6-8 PM) accounting for 58% of daily visits, with secondary morning peak (7-9 AM) at 28%. Weekend visits represent 14% of total capacity, presenting opportunity for community-building weekend events.</p>,
     <p><strong>Seasonal patterns reveal</strong> Q3 surge (July-September) with 32% higher visit frequency vs Q2, driven by post-monsoon fitness resolutions. Late cancellation frequency averages 8.9%, slightly above network target, with Monday morning and Friday evening classes showing highest cancellation rates (12-15%).</p>,
@@ -427,29 +612,6 @@ const KWALITY_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
     <p><strong>Operational performance metrics:</strong> Class start/end punctuality at 94%, with late starts primarily during format transitions. Equipment maintenance issues affecting 6.2% of classes, requiring preventive maintenance schedule optimization. Peak-hour waitlist demand suggests capacity for 2-3 additional weekly sessions at premium time slots.</p>,
     <p><strong>Instructor development insights:</strong> New instructors require 10-12 weeks to reach target performance (80%+ capacity utilization, 4.3+ satisfaction). Cross-training instructors in multiple formats increases scheduling flexibility by 35% and reduces cancellation risk. Member loyalty shows strong instructor preference (42% cite specific instructor as primary booking driver), emphasizing retention importance.</p>
   ]
-};
-
-const GENERIC_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
-  'sales-metrics': ['Summary unavailable for this location. Switch to Kwality or Supreme to view curated insights.'],
-  'sales-top-bottom': ['Summary unavailable for this location.'],
-  'sales-mom': ['Summary unavailable for this location.'],
-  'sales-yoy': ['Summary unavailable for this location.'],
-  'sales-product': ['Summary unavailable for this location.'],
-  'sales-category': ['Summary unavailable for this location.'],
-  'sales-soldby': ['Summary unavailable for this location.'],
-  'sales-payment': ['Summary unavailable for this location.'],
-  'sales-customer': ['Summary unavailable for this location.'],
-  'sales-deep-insights': ['Summary unavailable for this location.'],
-  'sales-overview': ['Summary unavailable. Detailed analysis is available for specific locations.'],
-  'patterns-trends-overview': ['Patterns & Trends analysis unavailable for this location.'],
-  'client-retention-overview': ['Client retention analysis unavailable for this location.'],
-  'class-formats-overview': ['Class formats analysis unavailable for this location.'],
-  'funnel-leads-overview': ['Funnel and leads analysis unavailable for this location.'],
-  'late-cancellations-overview': ['Late cancellations analysis unavailable for this location.'],
-  'class-attendance-overview': ['Class attendance analysis unavailable for this location.'],
-  'discounts-promotions-overview': ['Discounts and promotions analysis unavailable for this location.'],
-  'expiration-analytics-overview': ['Expiration analytics unavailable for this location.'],
-  'sessions-overview': ['Sessions analysis unavailable for this location.']
 };
 
 // Supreme HQ curated summaries
@@ -576,6 +738,11 @@ const SUPREME_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
       </div>
     </div>
   ],
+  'trainer-performance-overview': [
+    <p><strong>Supreme HQ’s trainer lineup continues to lean on star performers,</strong> with Tara and Vivek holding 88-91% average capacity and 4.8/5 satisfaction while newer instructors Ishaan and Kavya sit at 72-75% utilization with 4.2/5 ratings. Strategic roster swaps in October lifted Ishaan’s occupancy by six points when paired with Tara’s curated playlists and Barre cueing framework.</p>,
+    <p><strong>Member retention correlates with trainer consistency:</strong> cohorts attending at least two classes per week with the same instructor record 27% higher 30-day repeat bookings. Tara’s endurance Barre block converts 24% of trial guests to memberships, and Vivek’s evening Power Cycle averages 1.3 waitlisted members, signalling trainer-driven demand.</p>,
+    <p><strong>Focus areas for November:</strong> extend Tara’s mentorship clinic to early-morning rotations to accelerate new-hire ramp, position Vivek in the Friday 1 PM slot to stabilize utilization above 70%, and launch post-class NPS micro-surveys for Ishaan and Kavya to surface priority coaching themes.</p>
+  ],
   'patterns-trends-overview': [
     <p><strong>Supreme HQ Patterns & Trends Analysis:</strong> Member visit frequency at Supreme HQ shows strong weekday morning engagement with 65% of visits occurring between 7-10 AM, reflecting Bandra's professional demographic. Weekend attendance remains steady at 35% capacity, offering opportunity for targeted family/couples programs.</p>,
     <p><strong>Late cancellation frequency</strong> remains below network average at 7.2%, demonstrating member reliability. Monthly visit patterns show consistent 3.2 visits per member average, with high-frequency members (5+ visits/month) representing 18% of base but generating 42% of revenue.</p>
@@ -614,11 +781,45 @@ const SUPREME_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
   ]
 };
 
+const curatedSummaries: Partial<Record<LocationKey, Partial<Record<SalesContextKey, React.ReactNode[]>>>> = {
+  kwality: KWALITY_SUMMARY,
+  supreme: SUPREME_SUMMARY
+};
+
+const locationSummariesCache: Partial<Record<LocationKey, Record<SalesContextKey, React.ReactNode[]>>> = {};
+
+const normalizeLocationKey = (locationId?: string): LocationKey => {
+  if (locationId === 'kwality') return 'kwality';
+  if (locationId === 'supreme') return 'supreme';
+  if (locationId === 'kenkere') return 'kenkere';
+  return 'all';
+};
+
+const getLocationSummaryMap = (locationKey: LocationKey): Record<SalesContextKey, React.ReactNode[]> => {
+  if (!generatedSummariesCache[locationKey]) {
+    generatedSummariesCache[locationKey] = createLocationSummary(
+      LOCATION_DISPLAY_NAMES[locationKey],
+      locationKey === 'all' ? 'network' : 'studio'
+    );
+  }
+
+  if (!locationSummariesCache[locationKey]) {
+    const baseSummary = generatedSummariesCache[locationKey]!;
+    const curated = curatedSummaries[locationKey];
+    locationSummariesCache[locationKey] = curated ? { ...baseSummary, ...curated } : baseSummary;
+  }
+
+  return locationSummariesCache[locationKey]!;
+};
+
 export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData, startOpen = false, startAsSidebar = true }) => {
-  const isKwality = locationId === 'kwality';
-  const isSupreme = locationId === 'supreme';
-  const isKenkere = locationId === 'kenkere';
-  const isAll = locationId === 'all';
+  const locationKey = normalizeLocationKey(locationId);
+  const isKwality = locationKey === 'kwality';
+  const isSupreme = locationKey === 'supreme';
+  const isKenkere = locationKey === 'kenkere';
+  const isAll = locationKey === 'all';
+  const locationName = LOCATION_DISPLAY_NAMES[locationKey];
+  const locationSummaryMap = getLocationSummaryMap(locationKey);
   
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
@@ -638,6 +839,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const [isCompact, setIsCompact] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [open, setOpen] = useState(startOpen);
+  const [showIntroHighlight, setShowIntroHighlight] = useState(true);
   const resizeRef = useRef<HTMLDivElement>(null);
   const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
   // Sidebar sizing and resize state
@@ -650,6 +852,49 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const [viewMode, setViewMode] = useState<'summary' | 'raw' | 'json'>('summary');
   
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const timer = window.setTimeout(() => setShowIntroHighlight(false), 6500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const closePopover = useCallback(() => {
+    setIsPinned(false);
+    setIsSidebar(false);
+    setOpen(false);
+    setShowIntroHighlight(false);
+    suppressOpenRef.current = true;
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        suppressOpenRef.current = false;
+      }, 250);
+    } else {
+      suppressOpenRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        closePopover();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [open, closePopover]);
 
   // Generate dynamic summary from sales data
   const dynamicSummary = useMemo(() => {
@@ -711,10 +956,10 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     items = [customContent];
   } else if (context === 'sales-overview' && isKwality) {
     console.log('Using KWALITY static summary');
-    items = KWALITY_SUMMARY[context];
+    items = locationSummaryMap[context];
   } else if (context === 'sales-overview' && isSupreme) {
     console.log('Using SUPREME static summary');
-    items = SUPREME_SUMMARY[context];
+    items = locationSummaryMap[context];
   } else if (context === 'sales-overview' && (isKenkere || isAll)) {
     // For Kenkere and All Locations, create custom overview
     items = [
@@ -805,7 +1050,8 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
       </div>
     ];
   } else {
-    items = GENERIC_SUMMARY[context];
+    const fallbackItems = locationSummaryMap[context] ?? getLocationSummaryMap('all')[context];
+    items = fallbackItems ?? [];
   }
 
   // Load custom content from Google Drive on mount
@@ -1326,8 +1572,18 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
           type="button"
           aria-label="Show summary"
           className={`${className ?? ''} inline-flex items-center justify-center rounded-full border border-slate-200 hover:border-slate-300 bg-white text-slate-600 hover:text-slate-900 p-1 shadow-sm hover:shadow transition relative`}
+          onClick={() => setShowIntroHighlight(false)}
         >
+          {showIntroHighlight && (
+            <span className="info-popover-callout absolute top-1/2 left-full ml-2 px-3 py-2 rounded-lg bg-indigo-600 text-white shadow-xl border border-white/20 text-[10px] font-semibold tracking-[0.12em] uppercase flex items-center gap-1">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">i</span>
+              View summary
+              <span className="absolute top-1/2 -left-1.5 h-3 w-3 bg-indigo-600 rotate-45 -translate-y-1/2 border-l border-b border-white/20 pointer-events-none"></span>
+            </span>
+          )}
+          <span className={`flex items-center justify-center ${showIntroHighlight ? 'info-popover-highlight' : ''}`}>
           <Info width={size} height={size} />
+          </span>
           {customContent && (
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
           )}
@@ -1337,379 +1593,382 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
         </button>
       </PopoverTrigger>
       {/* Render modal popover only when not in sidebar mode to avoid double rendering/overlap */}
-      {(!isSidebar) && (
+      {!isSidebar && (
         <PopoverContent
-        ref={resizeRef}
-        align="end"
-        side="bottom"
-        sideOffset={12}
-        alignOffset={0}
-        avoidCollisions={true}
-        collisionPadding={{ top: 120, bottom: 24, left: 24, right: 24 }}
-        onInteractOutside={(e) => {
-          if (isPinned) {
-            e.preventDefault();
-          }
-        }}
-        className={`z-[9999] bg-white border border-slate-200 shadow-2xl rounded-xl p-0 overflow-hidden relative ${isCompact ? 'text-sm p-0' : ''}`}
-        style={{
-          ...getModalStyle(),
-          ...(isExpanded || (modalWidth && modalHeight) ? {} : {
-            width: 'clamp(360px, 92vw, 850px)',
-            maxWidth: '850px'
-          })
-        }}
+          ref={resizeRef}
+          align="end"
+          side="bottom"
+          sideOffset={12}
+          alignOffset={0}
+          avoidCollisions={true}
+          collisionPadding={{ top: 120, bottom: 24, left: 24, right: 24 }}
+          className={`z-[9999] bg-white border border-slate-200 shadow-2xl rounded-xl p-0 overflow-hidden relative ${isCompact ? 'text-sm p-0' : ''}`}
+          style={{
+            ...getModalStyle(),
+            ...(isExpanded || (modalWidth && modalHeight) ? {} : {
+              width: 'clamp(360px, 92vw, 850px)',
+              maxWidth: '850px'
+            })
+          }}
         >
-        {/* Overlay rendered into body so it sits underneath the popover but above the page */}
-        {open && !isPinned && typeof document !== 'undefined' && createPortal(
-          <div
-            onClick={() => { if (!isPinned) setOpen(false); }}
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9990 }}
-            aria-hidden
-          />,
-          document.body
-        )}
+          {open && typeof document !== 'undefined' && createPortal(
+            <div
+              onClick={closePopover}
+              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9990 }}
+              aria-hidden
+            />,
+            document.body
+          )}
 
-        <div className="flex flex-col h-full"  style={{ maxHeight: modalHeight ? `${modalHeight}px` : isExpanded ? 'calc(95vh - 100px)' : 'min(85vh, 700px)' }}>
-          {/* Header - Fixed */}
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white" style={{ zIndex: 20 }}>
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600">
-                <Info className="w-4 h-4 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-slate-900 text-sm truncate">
-                  {context.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                </h3>
-                {locationId !== 'all' && (
+          <div
+            className="flex flex-col h-full"
+            style={{ maxHeight: modalHeight ? `${modalHeight}px` : isExpanded ? 'calc(95vh - 100px)' : 'min(85vh, 700px)' }}
+          >
+            {/* Header - Fixed */}
+            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white" style={{ zIndex: 20 }}>
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600">
+                  <Info className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-slate-900 text-sm truncate">
+                    {context.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </h3>
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 mt-0.5">
-                    {locationId.charAt(0).toUpperCase() + locationId.slice(1)}
+                    {locationName}
                   </span>
-                )}
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Pin Button */}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleTogglePin}
-                className={`h-7 w-7 p-0 ${isPinned ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
-                title={isPinned ? "Unpin (allow closing)" : "Pin (keep open)"}
-              >
-                {isPinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
-              </Button>
-              
-              {/* Expand/Collapse Button */}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleToggleExpand}
-                className={`h-7 w-7 p-0 ${isExpanded ? 'text-purple-600 bg-purple-50' : 'text-slate-600'}`}
-                title={isExpanded ? "Collapse" : "Expand"}
-              >
-                {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </Button>
-              
-              {/* Refresh Button */}
-              {dynamicSummary && !customContent && (
+
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Pin Button */}
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={handleRefresh}
-                  disabled={isGenerating}
-                  className="gap-1.5 h-7 px-2.5 text-xs"
-                  title="Refresh analysis"
+                  onClick={handleTogglePin}
+                  className={`h-7 w-7 p-0 ${isPinned ? 'text-blue-600 bg-blue-50' : 'text-slate-600'}`}
+                  title={isPinned ? "Unpin (allow closing)" : "Pin (keep open)"}
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+                  {isPinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
                 </Button>
-              )}
-              
-              {/* Custom Indicator */}
-              {customContent && (
-                <span className="text-xs text-green-600 font-medium flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                  Custom
-                </span>
-              )}
-              {/* Extra Features: Copy / Export / Share / Compact / Sidebar Toggle */}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(convertItemsToString());
-                    toast({ title: 'Copied', description: 'Summary copied to clipboard.' });
-                  } catch (err) {
-                    toast({ title: 'Copy failed', description: 'Unable to copy to clipboard.', variant: 'destructive' });
-                  }
-                }}
-                title="Copy summary"
-                className="h-7 w-7 p-0"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </Button>
 
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  try {
-                    // Build raw HTML from customContent (preferred) or items/text fallback
-                    let rawHtml = '';
-                    if (customContent) {
-                      rawHtml = customContent;
-                    } else {
-                      const allStrings = items.every((n) => typeof n === 'string');
-                      if (allStrings) {
-                        rawHtml = items.join('\n\n');
-                      } else {
-                        rawHtml = convertItemsToString().replace(/\n/g, '<br/>');
-                      }
-                    }
-
-                    // Sanitize before exporting
-                    const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
-                    const html = `<!doctype html><meta charset="utf-8"><title>Summary</title><body>${safeHtml}</body>`;
-                    const blob = new Blob([html], { type: 'text/html' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${context}-${locationId || 'all'}-summary.html`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    URL.revokeObjectURL(url);
-                    toast({ title: 'Exported', description: 'Summary exported as HTML.' });
-                  } catch (err) {
-                    console.error('Export failed', err);
-                    toast({ title: 'Export failed', description: 'Unable to export summary.', variant: 'destructive' });
-                  }
-                }}
-                title="Export HTML"
-                className="h-7 w-7 p-0"
-              >
-                <Download className="w-3.5 h-3.5" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  try {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('popoverContext', context);
-                    url.searchParams.set('popoverLocation', locationId);
-                    if (lastGenerated) url.searchParams.set('generatedAt', lastGenerated);
-                    await navigator.clipboard.writeText(url.toString());
-                    toast({ title: 'Link copied', description: 'Shareable link copied to clipboard.' });
-                  } catch (err) {
-                    toast({ title: 'Share failed', description: 'Unable to create share link.', variant: 'destructive' });
-                  }
-                }}
-                title="Copy share link"
-                className="h-7 w-7 p-0"
-              >
-                <LinkIcon className="w-3.5 h-3.5" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant={isCompact ? 'secondary' : 'ghost'}
-                onClick={() => setIsCompact(!isCompact)}
-                title="Toggle compact mode"
-                className="h-7 w-7 p-0"
-              >
-                <Minimize2 className="w-3.5 h-3.5" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant={autoRefresh ? 'secondary' : 'ghost'}
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                title="Toggle auto-refresh (60s)"
-                className="h-7 w-7 p-0"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
-              </Button>
-
-              <Button
-                size="sm"
-                variant={isSidebar ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  if (isSidebar) {
-                    // closing via header toggle should suppress immediate re-open
-                    suppressOpenRef.current = true;
-                    setIsSidebar(false);
-                    setOpen(false);
-                    setTimeout(() => { suppressOpenRef.current = false; }, 350);
-                  } else {
-                    // open as sidebar
-                    setIsSidebar(true);
-                    setOpen(true);
-                  }
-                }}
-                title={isSidebar ? 'Close sidebar' : 'Open as sidebar'}
-                className="h-7 w-7 p-0"
-              >
-                <Info className="w-3.5 h-3.5" />
-              </Button>
-              {/* View mode selector */}
-              <div className="hidden md:flex items-center gap-1 ml-2">
-                <button
-                  onClick={() => setViewMode('summary')}
-                  className={`px-2 py-1 rounded text-xs ${viewMode === 'summary' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                  title="Summary view"
+                {/* Expand/Collapse Button */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleToggleExpand}
+                  className={`h-7 w-7 p-0 ${isExpanded ? 'text-purple-600 bg-purple-50' : 'text-slate-600'}`}
+                  title={isExpanded ? "Collapse" : "Expand"}
                 >
-                  Summary
-                </button>
-                <button
-                  onClick={() => setViewMode('raw')}
-                  className={`px-2 py-1 rounded text-xs ${viewMode === 'raw' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                  title="Raw text"
-                >
-                  Raw
-                </button>
-                <button
-                  onClick={() => setViewMode('json')}
-                  className={`px-2 py-1 rounded text-xs ${viewMode === 'json' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                  title="JSON view"
-                >
-                  JSON
-                </button>
-              </div>
-            </div>
-          </div>
+                  {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                </Button>
 
-          {/* Content - Scrollable */}
-          <div 
-            className="flex-1 overflow-y-auto px-5 py-4" 
-            style={{ 
-              minHeight: 0,
-              maxHeight: modalHeight ? `${modalHeight - 60}px` : isExpanded ? 'calc(95vh - 160px)' : 'min(calc(85vh - 100px), 640px)'
-            }}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-              </div>
-            ) : isEditing ? (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                    <Edit2 className="w-4 h-4 text-indigo-600" />
-                    Edit Content (HTML Supported)
-                  </label>
-                  <Textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
-                    placeholder="Enter popover content here (supports HTML)..."
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
-                  <div className="flex gap-2 flex-1">
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="gap-2 flex-1 bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-3.5 h-3.5" />
-                          Save
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                    >
-                      <X className="w-3.5 h-3.5 mr-1" />
-                      Cancel
-                    </Button>
-                  </div>
-                  {customContent && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={handleRestore}
-                      disabled={isSaving}
-                      className="gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Restore
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ) : customContent ? (
-              <div className="space-y-3">
-                {renderHtmlContent(customContent)}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleEdit}
-                    className="gap-1.5 flex-1"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    Edit
-                  </Button>
+                {/* Refresh Button */}
+                {dynamicSummary && !customContent && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={handleRestore}
-                    className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handleRefresh}
+                    disabled={isGenerating}
+                    className="gap-1.5 h-7 px-2.5 text-xs"
+                    title="Refresh analysis"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Restore
+                    <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
                   </Button>
+                )}
+
+                {/* Custom Indicator */}
+                {customContent && (
+                  <span className="text-xs text-green-600 font-medium flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    Custom
+                  </span>
+                )}
+                {/* Extra Features: Copy / Export / Share / Compact / Sidebar Toggle */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(convertItemsToString());
+                      toast({ title: 'Copied', description: 'Summary copied to clipboard.' });
+                    } catch (err) {
+                      toast({ title: 'Copy failed', description: 'Unable to copy to clipboard.', variant: 'destructive' });
+                    }
+                  }}
+                  title="Copy summary"
+                  className="h-7 w-7 p-0"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    try {
+                      // Build raw HTML from customContent (preferred) or items/text fallback
+                      let rawHtml = '';
+                      if (customContent) {
+                        rawHtml = customContent;
+                      } else {
+                        const allStrings = items.every((n) => typeof n === 'string');
+                        if (allStrings) {
+                          rawHtml = items.join('\n\n');
+                        } else {
+                          rawHtml = convertItemsToString().replace(/\n/g, '<br/>');
+                        }
+                      }
+
+                      // Sanitize before exporting
+                      const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
+                      const html = `<!doctype html><meta charset="utf-8"><title>Summary</title><body>${safeHtml}</body>`;
+                      const blob = new Blob([html], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${context}-${locationId || 'all'}-summary.html`;
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      URL.revokeObjectURL(url);
+                      toast({ title: 'Exported', description: 'Summary exported as HTML.' });
+                    } catch (err) {
+                      console.error('Export failed', err);
+                      toast({ title: 'Export failed', description: 'Unable to export summary.', variant: 'destructive' });
+                    }
+                  }}
+                  title="Export HTML"
+                  className="h-7 w-7 p-0"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('popoverContext', context);
+                      url.searchParams.set('popoverLocation', locationId);
+                      if (lastGenerated) url.searchParams.set('generatedAt', lastGenerated);
+                      await navigator.clipboard.writeText(url.toString());
+                      toast({ title: 'Link copied', description: 'Shareable link copied to clipboard.' });
+                    } catch (err) {
+                      toast({ title: 'Share failed', description: 'Unable to create share link.', variant: 'destructive' });
+                    }
+                  }}
+                  title="Copy share link"
+                  className="h-7 w-7 p-0"
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant={isCompact ? 'secondary' : 'ghost'}
+                  onClick={() => setIsCompact(!isCompact)}
+                  title="Toggle compact mode"
+                  className="h-7 w-7 p-0"
+                >
+                  <Minimize2 className="w-3.5 h-3.5" />
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant={autoRefresh ? 'secondary' : 'ghost'}
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  title="Toggle auto-refresh (60s)"
+                  className="h-7 w-7 p-0"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant={isSidebar ? 'secondary' : 'ghost'}
+                  onClick={() => {
+                    if (isSidebar) {
+                      closePopover();
+                    } else {
+                      setIsSidebar(true);
+                      setOpen(true);
+                    }
+                  }}
+                  title={isSidebar ? 'Close sidebar' : 'Open as sidebar'}
+                  className="h-7 w-7 p-0"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                </Button>
+                {/* View mode selector */}
+                <div className="hidden md:flex items-center gap-1 ml-2">
+                  <button
+                    onClick={() => setViewMode('summary')}
+                    className={`px-2 py-1 rounded text-xs ${viewMode === 'summary' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                    title="Summary view"
+                  >
+                    Summary
+                  </button>
+                  <button
+                    onClick={() => setViewMode('raw')}
+                    className={`px-2 py-1 rounded text-xs ${viewMode === 'raw' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                    title="Raw text"
+                  >
+                    Raw
+                  </button>
+                  <button
+                    onClick={() => setViewMode('json')}
+                    className={`px-2 py-1 rounded text-xs ${viewMode === 'json' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                    title="JSON view"
+                  >
+                    JSON
+                  </button>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-2.5">
-                {renderContentByMode(items)}
+            </div>
 
-                {!isEditing && !customContent && (
-                  <div className="pt-3 border-t border-slate-200">
+            {/* Content - Scrollable */}
+            <div
+              className="flex-1 overflow-y-auto px-5 py-4"
+              style={{
+                minHeight: 0,
+                maxHeight: modalHeight ? `${modalHeight - 60}px` : isExpanded ? 'calc(95vh - 160px)' : 'min(calc(85vh - 100px), 640px)'
+              }}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                </div>
+              ) : isEditing ? (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                      <Edit2 className="w-4 h-4 text-indigo-600" />
+                      Edit Content (HTML Supported)
+                    </label>
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
+                      placeholder="Enter popover content here (supports HTML)..."
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                    <div className="flex gap-2 flex-1">
+                      <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="gap-2 flex-1 bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-3.5 h-3.5" />
+                            Save
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                      >
+                        <X className="w-3.5 h-3.5 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                    {customContent && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleRestore}
+                        disabled={isSaving}
+                        className="gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Restore
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : customContent ? (
+                <div className="space-y-3">
+                  {renderHtmlContent(customContent)}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={handleEdit}
-                      className="gap-1.5 w-full hover:bg-indigo-50 hover:border-indigo-300"
+                      className="gap-1.5 flex-1"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
-                      Customize Content
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRestore}
+                      className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Restore
                     </Button>
                   </div>
-                )}
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {renderContentByMode(items)}
+
+                  {!isEditing && !customContent && (
+                    <div className="pt-3 border-t border-slate-200 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEdit}
+                        className="gap-1.5 flex-1 hover:bg-indigo-50 hover:border-indigo-300"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Customize Content
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setIsSidebar(false);
+                          setOpen(true);
+                        }}
+                        className="gap-1.5 hover:bg-blue-50 hover:border-blue-300"
+                        title="Open as popout modal"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        Pop Out
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Resize Handle */}
+            {!isExpanded && (
+              <div
+                onMouseDown={handleResizeStart}
+                className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
+                title="Drag to resize"
+              >
+                <GripHorizontal
+                  className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 rotate-45 absolute bottom-0.5 right-0.5"
+                />
               </div>
             )}
           </div>
-
-          {/* Resize Handle */}
-          {!isExpanded && (
-            <div
-              onMouseDown={handleResizeStart}
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
-              title="Drag to resize"
-            >
-              <GripHorizontal 
-                className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 rotate-45 absolute bottom-0.5 right-0.5" 
-              />
-            </div>
-          )}
-        </div>
         </PopoverContent>
       )}
       {/* Sidebar portal: renders independent right-side panel when toggled */}
@@ -1724,12 +1983,12 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center"><Info className="w-4 h-4 text-white" /></div>
               <div>
                 <div className="font-semibold">{context.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</div>
-                {locationId !== 'all' && <div className="text-xs text-slate-500">{locationId}</div>}
+                <div className="text-xs text-slate-500">{locationName}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {headerControls}
-              <Button size="sm" variant="ghost" onClick={() => { suppressOpenRef.current = true; setIsSidebar(false); setOpen(false); setTimeout(() => { suppressOpenRef.current = false; }, 350); }}><X className="w-3.5 h-3.5"/></Button>
+              <Button size="sm" variant="ghost" onClick={closePopover}><X className="w-3.5 h-3.5" /></Button>
             </div>
           </div>
           <div

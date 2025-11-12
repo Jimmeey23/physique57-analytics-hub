@@ -286,7 +286,10 @@ export const EnhancedTrainerPerformanceSection = () => {
           </div>
         </div>
         <div className="ml-3 mt-1">
-          <InfoPopover context="sales-overview" locationId={selectedLocation === 'All Locations' ? 'all' : selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 'kenkere'} />
+          <InfoPopover
+            context="trainer-performance-overview"
+            locationId={selectedLocation === 'All Locations' ? 'all' : selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 'kenkere'}
+          />
         </div>
       </div>
 
