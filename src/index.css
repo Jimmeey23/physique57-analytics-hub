@@ -1484,3 +1484,42 @@
     transform: translate3d(0,-1px,0);
   }
 }
+
+/* Custom HTML Content - Preserve user styles without interference */
+.custom-html-content {
+  all: initial;
+  display: block;
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.custom-html-content * {
+  all: revert;
+}
+
+/* Ensure custom HTML content renders properly with user styles */
+.custom-html-content pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.custom-html-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Custom HTML iframe container */
+.custom-html-iframe-container {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: white;
+}
+
+.custom-html-iframe {
+  display: block;
+  width: 100%;
+  border: none;
+  overflow: hidden;
+}

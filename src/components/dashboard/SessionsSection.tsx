@@ -48,7 +48,7 @@ const MetricDisplay = memo(({ title, value, description }: { title: string; valu
 export const SessionsSection: React.FC = () => {
   const navigate = useNavigate();
   const { data, loading, error, refetch } = useSessionsData();
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('kwality');
   const [openSource, setOpenSource] = useState(false);
 
   // Use the filtered data hook instead of the original useMemo

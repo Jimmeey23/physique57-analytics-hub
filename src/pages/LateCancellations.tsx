@@ -24,7 +24,7 @@ const LateCancellations = () => {
   const navigate = useNavigate();
   
   // Location tabs state
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('kwality');
   
   // Enhanced filter states - Default to previous month
   const [selectedTimeframe, setSelectedTimeframe] = useState('prev-month');

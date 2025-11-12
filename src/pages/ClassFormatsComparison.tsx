@@ -42,7 +42,7 @@ const ClassFormatsComparison: React.FC = () => {
   const { allCheckins, loading: checkinsLoading } = useLateCancellationsData();
   const { data: payrollData = [], isLoading: payrollLoading } = usePayrollData();
   const { setLoading } = useGlobalLoading();
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('kwality');
   const [selectedFormats, setSelectedFormats] = useState<string[]>(['Barre', 'PowerCycle', 'Strength']);
   const [compareWithTrainer, setCompareWithTrainer] = useState(false);
   const exportRef = React.useRef<{ open: () => void }>(null);

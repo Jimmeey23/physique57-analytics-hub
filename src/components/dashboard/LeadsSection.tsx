@@ -54,7 +54,7 @@ const LeadsSectionContent: React.FC = () => {
     error,
     refetch
   } = useLeadsData();
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('Kwality House, Kemps Corner');
   const {
     filters,
     setOptions

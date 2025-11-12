@@ -40,7 +40,7 @@ export const EnhancedClassAttendanceSection: React.FC = () => {
   const navigate = useNavigate();
   const { data: sessionsData, loading, error, refetch } = useSessionsData();
   const { data: payrollData, isLoading: payrollLoading } = usePayrollData();
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('Kwality House, Kemps Corner');
 
   // Apply filters to the data
   const filteredData = useFilteredSessionsData(sessionsData || []);

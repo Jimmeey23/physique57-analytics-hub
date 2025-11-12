@@ -27,7 +27,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [isRendering, setIsRendering] = useState(true);
   const [filters, setFilters] = useState({ 
     location: '', 
@@ -553,7 +553,7 @@ export const EnhancedTrainerPerformanceSection = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top Performers Card */}
-            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 flex flex-col">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <div className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -565,16 +565,16 @@ export const EnhancedTrainerPerformanceSection = () => {
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 flex-1">
                 {topList.map((t: any, index: number) => (
                   <div
                     key={t.name}
-                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-emerald-200/70"
+                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-emerald-200/70 min-h-[88px]"
                     onClick={() => handleRowClick(t.name, t)}
                   >
-                    <div className="flex items-center gap-4 flex-1">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className={
-                        `w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white ` +
+                        `w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center shadow-lg text-white ` +
                         (index === 0
                           ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500'
                           : index === 1
@@ -593,23 +593,23 @@ export const EnhancedTrainerPerformanceSection = () => {
                           <span className="text-sm font-bold">{index + 1}</span>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900 whitespace-normal break-words group-hover:text-blue-600 transition-colors">{t.name}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={t.name}>{t.name}</p>
+                        <div className="flex gap-2 mt-2 overflow-x-auto no-scrollbar">
+                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
                             {formatNumber(t.totalSessions)} sessions
                           </Badge>
-                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
-                            Avg size: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
+                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700 whitespace-nowrap">
+                            Avg: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
                           </Badge>
-                          <Badge variant="outline" className="text-xs border-green-200 text-green-700">
-                            Members: {formatNumber(t.totalCustomers)}
+                          <Badge variant="outline" className="text-xs border-green-200 text-green-700 whitespace-nowrap">
+                            {formatNumber(t.totalCustomers)} members
                           </Badge>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors whitespace-nowrap">
                         {rankingMetric === 'revenue' ? formatCurrency(t.totalRevenue)
                           : rankingMetric === 'sessions' ? formatNumber(t.totalSessions)
                           : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
@@ -619,7 +619,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                           : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
                           : formatNumber(t.emptySessions)}
                       </p>
-                      <p className="text-sm text-slate-500">{t.location}</p>
+                      <p className="text-sm text-slate-500 truncate" title={t.location}>{t.location}</p>
                     </div>
                   </div>
                 ))}
@@ -627,7 +627,7 @@ export const EnhancedTrainerPerformanceSection = () => {
             </Card>
 
             {/* Bottom Performers Card */}
-            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 flex flex-col">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <div className="p-2 rounded-full bg-gradient-to-r from-red-500 to-rose-600">
@@ -639,34 +639,34 @@ export const EnhancedTrainerPerformanceSection = () => {
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 flex-1">
                 {bottomList.map((t: any, index: number) => (
                   <div
                     key={t.name}
-                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-rose-200/70"
+                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-rose-200/70 min-h-[88px]"
                     onClick={() => handleRowClick(t.name, t)}
                   >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white bg-gradient-to-br from-red-500 via-rose-600 to-red-700">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center shadow-lg text-white bg-gradient-to-br from-red-500 via-rose-600 to-red-700">
                         <span className="text-sm font-bold">{index + 1}</span>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900 whitespace-normal break-words group-hover:text-blue-600 transition-colors">{t.name}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={t.name}>{t.name}</p>
+                        <div className="flex gap-2 mt-2 overflow-x-auto no-scrollbar">
+                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
                             {formatNumber(t.totalSessions)} sessions
                           </Badge>
-                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
-                            Avg size: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
+                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700 whitespace-nowrap">
+                            Avg: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
                           </Badge>
-                          <Badge variant="outline" className="text-xs border-slate-200 text-slate-700">
-                            Members: {formatNumber(t.totalCustomers)}
+                          <Badge variant="outline" className="text-xs border-slate-200 text-slate-700 whitespace-nowrap">
+                            {formatNumber(t.totalCustomers)} members
                           </Badge>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors whitespace-nowrap">
                         {rankingMetric === 'revenue' ? formatCurrency(t.totalRevenue)
                           : rankingMetric === 'sessions' ? formatNumber(t.totalSessions)
                           : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
@@ -676,7 +676,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                           : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
                           : formatNumber(t.emptySessions)}
                       </p>
-                      <p className="text-sm text-slate-500">{t.location}</p>
+                      <p className="text-sm text-slate-500 truncate" title={t.location}>{t.location}</p>
                     </div>
                   </div>
                 ))}

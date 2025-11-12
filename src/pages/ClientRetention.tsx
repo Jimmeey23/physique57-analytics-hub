@@ -50,7 +50,7 @@ const ClientRetention = () => {
     setLoading
   } = useGlobalLoading();
   const navigate = useNavigate();
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [activeTable, setActiveTable] = useState('monthonmonthbytype');
   const [selectedMetric, setSelectedMetric] = useState('conversion'); // New state for metric selection
   const [drillDownModal, setDrillDownModal] = useState({

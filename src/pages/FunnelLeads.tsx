@@ -34,7 +34,7 @@ export default function FunnelLeads() {
   useEffect(() => {
     setLoading(loading, 'Loading funnel and lead conversion data...');
   }, [loading, setLoading]);
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('kwality');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{

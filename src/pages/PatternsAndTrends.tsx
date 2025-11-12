@@ -50,7 +50,7 @@ export const PatternsAndTrends = () => {
   const { data: checkinsData, loading: checkinsLoading, error: checkinsError } = useCheckinsData();
   const { data: salesData, loading: salesLoading, error: salesError } = useSalesData();
   const { setLoading } = useGlobalLoading();
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<GroupByOption>('product');

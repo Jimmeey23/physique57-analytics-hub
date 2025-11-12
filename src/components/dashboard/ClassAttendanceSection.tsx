@@ -42,7 +42,7 @@ export const ClassAttendanceSection: React.FC = () => {
   const navigate = useNavigate();
   const { data: sessionsData, loading, error, refetch } = useSessionsData();
   const { data: payrollData, isLoading: payrollLoading } = usePayrollData();
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('Kwality House, Kemps Corner');
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [compareWithTrainer, setCompareWithTrainer] = useState(false);
 

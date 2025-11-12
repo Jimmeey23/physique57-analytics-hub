@@ -54,7 +54,7 @@ const getPreviousMonthDateRange = () => {
 };
 
 export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2Props> = ({ data }) => {
-  const [activeLocation, setActiveLocation] = useState('all');
+  const [activeLocation, setActiveLocation] = useState('kwality');
   const [filters, setFilters] = useState<any>({
     dateRange: { start: null, end: null },
     category: [],

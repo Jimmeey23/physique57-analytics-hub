@@ -1124,30 +1124,104 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
                                trimmedHtml.toLowerCase().startsWith('<html');
     
     if (isCompleteDocument) {
-      // Parse the complete HTML document
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+      // For complete HTML documents, render in an iframe for full isolation
+      const iframeRef = React.useRef<HTMLIFrameElement>(null);
       
-      // Extract styles from <head>
-      const styleElements = doc.querySelectorAll('head style');
-      const styles = Array.from(styleElements).map(style => style.textContent).join('\n');
-      
-      // Extract body content
-      const bodyContent = doc.body?.innerHTML || '';
-      
-      // Sanitize the body content
-      const safeBodyHtml = DOMPurify.sanitize(bodyContent);
+      React.useEffect(() => {
+        if (iframeRef.current) {
+          const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
+          if (iframeDoc) {
+            iframeDoc.open();
+            iframeDoc.write(html);
+            iframeDoc.close();
+            
+            // Auto-resize iframe to content height
+            const resizeIframe = () => {
+              if (iframeRef.current && iframeDoc.body) {
+                const height = iframeDoc.body.scrollHeight;
+                iframeRef.current.style.height = `${Math.max(height, 400)}px`;
+              }
+            };
+            
+            // Wait for content to load
+            setTimeout(resizeIframe, 100);
+            setTimeout(resizeIframe, 500);
+            setTimeout(resizeIframe, 1000);
+            
+            // Listen for image loads and other dynamic content
+            iframeDoc.addEventListener('load', resizeIframe, true);
+            
+            // Add mutation observer to track content changes
+            const observer = new MutationObserver(resizeIframe);
+            observer.observe(iframeDoc.body, { 
+              childList: true, 
+              subtree: true, 
+              attributes: true 
+            });
+            
+            return () => {
+              observer.disconnect();
+            };
+          }
+        }
+      }, [html]);
       
       return (
-        <>
-          {styles && <style dangerouslySetInnerHTML={{ __html: styles }} />}
-          <div dangerouslySetInnerHTML={{ __html: safeBodyHtml }} />
-        </>
+        <div className="custom-html-iframe-container">
+          <iframe
+            ref={iframeRef}
+            className="custom-html-iframe"
+            style={{
+              width: '100%',
+              minHeight: '400px',
+              border: 'none',
+              borderRadius: '8px',
+              backgroundColor: 'white'
+            }}
+            sandbox="allow-scripts allow-same-origin"
+            title="Custom HTML Content"
+          />
+        </div>
       );
     }
     
     // Regular HTML snippet (not a complete document)
-    const safeHtml = DOMPurify.sanitize(html);
+    // Parse to extract any inline styles
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+    
+    // Extract any <style> tags
+    const styleElements = doc.querySelectorAll('style');
+    const styles = Array.from(styleElements).map(style => style.textContent).filter(Boolean).join('\n');
+    
+    // Remove style tags from content to avoid duplication
+    styleElements.forEach(el => el.remove());
+    
+    // Get the cleaned HTML
+    const contentWithoutStyles = doc.body.innerHTML;
+    
+    // Configure DOMPurify to preserve styling
+    const safeHtml = DOMPurify.sanitize(contentWithoutStyles, {
+      ADD_TAGS: ['style'],
+      ADD_ATTR: ['style', 'class', 'id'],
+      ALLOW_DATA_ATTR: true,
+      KEEP_CONTENT: true
+    });
+    
+    // Check if the HTML contains style attributes or styled elements
+    const hasInlineStyles = /style\s*=/i.test(html) || styles.length > 0;
+    
+    // If it has styles, render without prose wrapper to preserve custom styling
+    if (hasInlineStyles) {
+      return (
+        <div className="custom-html-content">
+          {styles && <style dangerouslySetInnerHTML={{ __html: styles }} />}
+          <div dangerouslySetInnerHTML={{ __html: safeHtml }} />
+        </div>
+      );
+    }
+    
+    // Otherwise use prose for better default typography
     return (
       <div className="prose prose-slate prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: safeHtml }} />
     );
@@ -1845,13 +1919,39 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                       <Edit2 className="w-4 h-4 text-indigo-600" />
-                      Edit Content (HTML Supported)
+                      Edit Content
                     </label>
+                    <div className="text-xs text-slate-600 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+                      <strong className="text-blue-900">💡 Full HTML Support:</strong> 
+                      <ul className="mt-2 ml-4 space-y-1">
+                        <li>✅ <strong>Complete HTML documents</strong> with external CSS/JS (Google Fonts, Chart.js, etc.) will render in an isolated iframe</li>
+                        <li>✅ <strong>HTML snippets</strong> with inline styles, CSS classes, and custom formatting</li>
+                        <li>✅ <strong>Code blocks</strong> with proper syntax highlighting</li>
+                        <li>✅ All styles and scripts will execute exactly as written</li>
+                      </ul>
+                    </div>
                     <Textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
                       className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
-                      placeholder="Enter popover content here (supports HTML)..."
+                      placeholder="Enter content here... 
+
+Examples:
+• Plain text with markdown-like formatting
+• HTML snippet: <div style='color: red; font-weight: bold;'>Styled text</div>
+• Complete HTML document:
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <link href='https://fonts.googleapis.com/css2?family=Roboto' rel='stylesheet'>
+    <style>body { font-family: 'Roboto'; }</style>
+  </head>
+  <body>
+    <h1>My Report</h1>
+  </body>
+  </html>
+
+Your complete HTML documents will render in an iframe with full support for external resources!"
                     />
                   </div>
                   <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
