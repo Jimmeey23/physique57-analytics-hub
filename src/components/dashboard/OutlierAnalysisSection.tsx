@@ -9,6 +9,7 @@ import { CheckinData } from '@/hooks/useCheckinsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { useOutlierMonthAnalytics } from '@/hooks/useOutlierMonthAnalytics';
 import { OutlierMonthDetail } from '@/components/dashboard/OutlierMonthDetail';
+import { InfoPopover } from '@/components/ui/InfoPopover';
 
 interface OutlierAnalysisSectionProps {
   salesData: SalesData[];
@@ -152,9 +153,12 @@ export const OutlierAnalysisSection: React.FC<OutlierAnalysisSectionProps> = ({
         <TabsContent value="april" className="mt-8 space-y-6">
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
             <div className="mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Select Location</h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Select Location</h3>
+                </div>
+                <InfoPopover context="outlier-analysis-overview" locationId={activeLocation === 'all' ? 'all' : activeLocation} />
               </div>
               <TabsList className="bg-gray-100 p-1 rounded-lg inline-flex flex-wrap gap-2">
                 {availableLocations.map((location) => (
@@ -175,9 +179,12 @@ export const OutlierAnalysisSection: React.FC<OutlierAnalysisSectionProps> = ({
         <TabsContent value="august" className="mt-8 space-y-6">
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full">
             <div className="mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Building2 className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Select Location</h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Select Location</h3>
+                </div>
+                <InfoPopover context="outlier-analysis-overview" locationId={activeLocation === 'all' ? 'all' : activeLocation} />
               </div>
               <TabsList className="bg-gray-100 p-1 rounded-lg inline-flex flex-wrap gap-2">
                 {availableLocations.map((location) => (

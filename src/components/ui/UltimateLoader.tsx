@@ -109,80 +109,105 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
 
   return (
     <div className="fixed inset-0 z-[9999] bg-white overflow-hidden flex items-center justify-center">
-      {/* Animated gradient background orbs */}
-      <div className="absolute inset-0">
+      {/* Subtle gradient accent shadows in background */}
+      <div className="absolute inset-0 pointer-events-none">
         <motion.div
-          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-30"
+          className="absolute top-1/4 left-1/4 w-[32rem] h-[32rem] rounded-full blur-3xl opacity-[0.08]"
           style={{
-            background: "radial-gradient(circle, rgba(0,168,232,0.4) 0%, rgba(0,119,182,0.2) 50%, transparent 100%)"
+            background: "radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(37,99,235,0.2) 40%, transparent 70%)"
           }}
           animate={{
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-30"
-          style={{
-            background: "radial-gradient(circle, rgba(72,202,228,0.4) 0%, rgba(0,182,199,0.2) 50%, transparent 100%)"
-          }}
-          animate={{
-            x: [0, -100, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.3, 1],
+            x: [0, 80, 0],
+            y: [0, 40, 0],
+            scale: [1, 1.15, 1],
           }}
           transition={{
             duration: 10,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 1,
+          }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-[0.08]"
+          style={{
+            background: "radial-gradient(circle, rgba(99,102,241,0.4) 0%, rgba(79,70,229,0.2) 40%, transparent 70%)"
+          }}
+          animate={{
+            x: [0, -80, 0],
+            y: [0, -40, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1.5,
+          }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 w-[24rem] h-[24rem] rounded-full blur-3xl opacity-[0.06] -translate-x-1/2 -translate-y-1/2"
+          style={{
+            background: "radial-gradient(circle, rgba(147,197,253,0.3) 0%, rgba(96,165,250,0.15) 50%, transparent 70%)"
+          }}
+          animate={{
+            scale: [1, 1.25, 1],
+            opacity: [0.06, 0.1, 0.06],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
           }}
         />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
+        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
         className="relative z-10"
       >
-        {/* Main container - no rotation */}
+        {/* Main container with enhanced animations */}
         <motion.div className="relative">
-          {/* Glow effect wrapper */}
+          {/* Premium glow effect wrapper */}
           <motion.div
             className="relative flex items-center justify-center"
+            animate={{
+              filter: ['drop-shadow(0 10px 30px rgba(59, 130, 246, 0.12))', 'drop-shadow(0 15px 40px rgba(59, 130, 246, 0.2))', 'drop-shadow(0 10px 30px rgba(59, 130, 246, 0.12))']
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
           >
-            {/* Glossy shine effect overlay */}
+            {/* Refined glossy shine effect overlay */}
             <motion.div
-              className="absolute inset-0 z-20 pointer-events-none"
+              className="absolute inset-0 z-20 pointer-events-none rounded-full"
               style={{
-                background: 'linear-gradient(135deg, transparent 0%, transparent 40%, rgba(255,255,255,0.95) 50%, transparent 60%, transparent 100%)',
+                background: 'linear-gradient(135deg, transparent 0%, transparent 45%, rgba(255,255,255,0.35) 50%, transparent 55%, transparent 100%)',
               }}
               animate={{
-                x: ['-200%', '200%'],
+                x: ['-150%', '150%'],
               }}
               transition={{
-                duration: 2,
+                duration: 2.5,
                 repeat: Infinity,
-                repeatDelay: 0.3,
+                repeatDelay: 0.5,
                 ease: "easeInOut"
               }}
             />
             {/* Logo Image or Fallback SVG */}
             {!imgFailed ? (
               <motion.div 
-                className="relative w-60 h-60 flex items-center justify-center z-10"
+                className="relative w-56 h-56 flex items-center justify-center z-10"
                 animate={{
-                  filter: ['brightness(1.1)', 'brightness(1.3)', 'brightness(1.1)']
+                  scale: [1, 1.02, 1],
+                  filter: ['brightness(1)', 'brightness(1.08)', 'brightness(1)']
                 }}
                 transition={{
-                  duration: 1.5,
+                  duration: 2.5,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
@@ -288,25 +313,26 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
         </motion.div>
       </motion.div>
 
-      {/* Bottom text */}
+      {/* Bottom text - Premium refined styling */}
       <motion.div
-        className="absolute bottom-16 text-center px-6"
-        initial={{ opacity: 0, y: 24 }}
+        className="absolute bottom-20 text-center px-6"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45, duration: 0.8 }}
+        transition={{ delay: 0.5, duration: 0.7 }}
       >
-  <div className="inline-flex flex-col items-center gap-5 px-10 py-8">
+        <div className="inline-flex flex-col items-center gap-3.5 px-8 py-6">
+          {/* Brand title - Smaller, more refined */}
           <motion.div
-            className="text-slate-900 text-3xl md:text-4xl font-black tracking-[0.18em] uppercase"
+            className="text-slate-800 text-xl md:text-2xl font-bold tracking-[0.15em] uppercase"
             style={{
-              textShadow: '0 3px 16px rgba(15, 23, 42, 0.12)',
-              letterSpacing: '0.22em'
+              textShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
+              letterSpacing: '0.18em'
             }}
             animate={{
-              opacity: [0.85, 1, 0.85],
+              opacity: [0.9, 1, 0.9],
             }}
             transition={{
-              duration: 2,
+              duration: 2.5,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -314,55 +340,57 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
             {title}
           </motion.div>
 
-          {/* Dynamic loading message */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentMessageIndex}
-              className="text-blue-600 text-xl md:text-2xl font-bold tracking-wide"
-              style={{
-                textShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-              }}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.45 }}
-            >
-              {loadingMessages[currentMessageIndex]}
-            </motion.div>
-          </AnimatePresence>
-
+          {/* Subtitle - Smaller, elegant */}
           {subtitle && (
             <motion.div
-              className="text-slate-600 text-lg md:text-xl font-semibold tracking-[0.08em]"
+              className="text-slate-500 text-xs md:text-sm font-medium tracking-wider uppercase"
               style={{
-                textShadow: '0 2px 6px rgba(15, 23, 42, 0.12)',
+                textShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+                letterSpacing: '0.12em'
               }}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.9 }}
-              transition={{ delay: 0.6 }}
+              animate={{ opacity: 0.75 }}
+              transition={{ delay: 0.65 }}
             >
               {subtitle}
             </motion.div>
           )}
 
-          {/* Loading dots */}
-          <motion.div className="flex items-center justify-center gap-3 pt-2">
+          {/* Dynamic loading message - Compact and refined */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentMessageIndex}
+              className="text-blue-600 text-sm md:text-base font-semibold tracking-wide mt-1"
+              style={{
+                textShadow: '0 2px 8px rgba(37, 99, 235, 0.18)',
+              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
+            >
+              {loadingMessages[currentMessageIndex]}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Loading dots - Smaller, more refined */}
+          <motion.div className="flex items-center justify-center gap-2 pt-3">
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500 shadow-lg"
+                className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
                 style={{
-                  boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
                 }}
                 animate={{
-                  y: [0, -10, 0],
-                  opacity: [0.55, 1, 0.55],
-                  scale: [1, 1.12, 1],
+                  y: [0, -8, 0],
+                  opacity: [0.6, 1, 0.6],
+                  scale: [1, 1.15, 1],
                 }}
                 transition={{
-                  duration: 1.2,
+                  duration: 1.1,
                   repeat: Infinity,
-                  delay: i * 0.22,
+                  delay: i * 0.2,
                   ease: "easeInOut",
                 }}
               />

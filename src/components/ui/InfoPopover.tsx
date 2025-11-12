@@ -32,7 +32,8 @@ type SalesContextKey =
   | 'class-attendance-overview'
   | 'discounts-promotions-overview'
   | 'expiration-analytics-overview'
-  | 'sessions-overview';
+  | 'sessions-overview'
+  | 'outlier-analysis-overview';
 
 type SummaryScope = 'network' | 'studio';
 
@@ -71,7 +72,8 @@ const ALL_CONTEXT_KEYS: SalesContextKey[] = [
   'class-attendance-overview',
   'discounts-promotions-overview',
   'expiration-analytics-overview',
-  'sessions-overview'
+  'sessions-overview',
+  'outlier-analysis-overview'
 ];
 
 const toTitleCase = (value: string) =>
@@ -195,6 +197,16 @@ const CONTEXT_COPY: Partial<Record<SalesContextKey, SummaryTemplate>> = {
       scope === 'network'
         ? `Log network coordination items touching ${location}'s sessions for ops syncs.`
         : `Document operational blockers for ${location}'s sessions to escalate quickly.`
+  },
+  'outlier-analysis-overview': {
+    summary: (location, scope) =>
+      scope === 'network'
+        ? `Outlier analysis identifies exceptional revenue months (April & August 2025) across the network with ${location} as a comparative reference.`
+        : `Outlier analysis reveals what drove unusual performance at ${location} during peak revenue months (April & August 2025).`,
+    action: (location, scope) =>
+      scope === 'network'
+        ? `Document successful strategies from ${location}'s outlier months that other studios can replicate.`
+        : `Capture specific drivers (new clients, renewals, product mix) from ${location}'s peak months to repeat success.`
   }
 };
 
@@ -853,6 +865,14 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   
   const { toast } = useToast();
 
+  // DOMPurify options used for preserving style/class/id when rendering/saving trusted HTML
+  const DOMPURIFY_OPTS: DOMPurify.Config = {
+    ADD_TAGS: ['style'],
+    ADD_ATTR: ['style', 'class', 'id'],
+    ALLOW_DATA_ATTR: true,
+    KEEP_CONTENT: true
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -1125,64 +1145,89 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     
     if (isCompleteDocument) {
       // For complete HTML documents, render in an iframe for full isolation
-      const iframeRef = React.useRef<HTMLIFrameElement>(null);
-      
-      React.useEffect(() => {
-        if (iframeRef.current) {
-          const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
-          if (iframeDoc) {
-            iframeDoc.open();
-            iframeDoc.write(html);
-            iframeDoc.close();
-            
-            // Auto-resize iframe to content height
-            const resizeIframe = () => {
-              if (iframeRef.current && iframeDoc.body) {
-                const height = iframeDoc.body.scrollHeight;
-                iframeRef.current.style.height = `${Math.max(height, 400)}px`;
-              }
-            };
-            
-            // Wait for content to load
-            setTimeout(resizeIframe, 100);
-            setTimeout(resizeIframe, 500);
-            setTimeout(resizeIframe, 1000);
-            
-            // Listen for image loads and other dynamic content
+      // Use a component to ensure proper lifecycle management
+      const IframeRenderer = () => {
+        const iframeRef = React.useRef<HTMLIFrameElement>(null);
+        
+        React.useEffect(() => {
+          const iframe = iframeRef.current;
+          if (!iframe) return;
+          
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!iframeDoc) return;
+          
+          // Write the complete HTML document
+          iframeDoc.open();
+          iframeDoc.write(html);
+          iframeDoc.close();
+          
+          // Auto-resize iframe to content height
+          const resizeIframe = () => {
+            if (iframe && iframeDoc.body) {
+              // Get the full scrollable height including all content
+              const height = Math.max(
+                iframeDoc.body.scrollHeight,
+                iframeDoc.body.offsetHeight,
+                iframeDoc.documentElement.clientHeight,
+                iframeDoc.documentElement.scrollHeight,
+                iframeDoc.documentElement.offsetHeight
+              );
+              iframe.style.height = `${Math.max(height + 20, 400)}px`;
+            }
+          };
+          
+          // Multiple resize attempts to handle dynamic content loading
+          const timeouts = [100, 300, 500, 1000, 2000];
+          const timeoutIds = timeouts.map(delay => setTimeout(resizeIframe, delay));
+          
+          // Listen for load events in the iframe
+          if (iframeDoc.body) {
             iframeDoc.addEventListener('load', resizeIframe, true);
             
             // Add mutation observer to track content changes
-            const observer = new MutationObserver(resizeIframe);
+            const observer = new MutationObserver(() => {
+              setTimeout(resizeIframe, 50);
+            });
             observer.observe(iframeDoc.body, { 
               childList: true, 
               subtree: true, 
               attributes: true 
             });
             
+            // Cleanup function
             return () => {
+              timeoutIds.forEach(id => clearTimeout(id));
               observer.disconnect();
+              iframeDoc.removeEventListener('load', resizeIframe, true);
             };
           }
-        }
-      }, [html]);
+          
+          return () => {
+            timeoutIds.forEach(id => clearTimeout(id));
+          };
+        }, [html]);
+        
+        return (
+          <div className="custom-html-iframe-container" style={{ width: '100%', overflow: 'hidden' }}>
+            <iframe
+              ref={iframeRef}
+              className="custom-html-iframe"
+              style={{
+                width: '100%',
+                minHeight: '400px',
+                border: 'none',
+                borderRadius: '8px',
+                backgroundColor: 'white',
+                display: 'block'
+              }}
+              sandbox="allow-scripts allow-same-origin"
+              title="Custom HTML Content"
+            />
+          </div>
+        );
+      };
       
-      return (
-        <div className="custom-html-iframe-container">
-          <iframe
-            ref={iframeRef}
-            className="custom-html-iframe"
-            style={{
-              width: '100%',
-              minHeight: '400px',
-              border: 'none',
-              borderRadius: '8px',
-              backgroundColor: 'white'
-            }}
-            sandbox="allow-scripts allow-same-origin"
-            title="Custom HTML Content"
-          />
-        </div>
-      );
+      return <IframeRenderer />;
     }
     
     // Regular HTML snippet (not a complete document)
@@ -1201,12 +1246,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     const contentWithoutStyles = doc.body.innerHTML;
     
     // Configure DOMPurify to preserve styling
-    const safeHtml = DOMPurify.sanitize(contentWithoutStyles, {
-      ADD_TAGS: ['style'],
-      ADD_ATTR: ['style', 'class', 'id'],
-      ALLOW_DATA_ATTR: true,
-      KEEP_CONTENT: true
-    });
+    const safeHtml = DOMPurify.sanitize(contentWithoutStyles, DOMPURIFY_OPTS);
     
     // Check if the HTML contains style attributes or styled elements
     const hasInlineStyles = /style\s*=/i.test(html) || styles.length > 0;
@@ -1300,8 +1340,13 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Sanitize content before saving to remote store
-      const sanitized = typeof window !== 'undefined' ? DOMPurify.sanitize(editContent) : editContent;
+      // Sanitize content before saving to remote store using permissive options so
+      // inline styles, classes and <style> blocks are preserved for trusted admin content.
+      // We still sanitize to remove potentially dangerous tags/attributes while
+      // keeping styling intact.
+      const sanitized = typeof window !== 'undefined'
+        ? DOMPurify.sanitize(editContent, DOMPURIFY_OPTS)
+        : editContent;
       const success = await googleDriveService.updatePopoverContent(context, locationId, sanitized);
       
       if (success) {
@@ -1540,7 +1585,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
                 rawHtml = convertItemsToString().replace(/\n/g, '<br/>');
               }
             }
-            const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
+            const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml, DOMPURIFY_OPTS) : rawHtml;
             const html = `<!doctype html><meta charset="utf-8"><title>Summary</title><body>${safeHtml}</body>`;
             const blob = new Blob([html], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
@@ -1795,7 +1840,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
                       }
 
                       // Sanitize before exporting
-                      const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml) : rawHtml;
+                      const safeHtml = typeof window !== 'undefined' ? DOMPurify.sanitize(rawHtml, DOMPURIFY_OPTS) : rawHtml;
                       const html = `<!doctype html><meta charset="utf-8"><title>Summary</title><body>${safeHtml}</body>`;
                       const blob = new Blob([html], { type: 'text/html' });
                       const url = URL.createObjectURL(blob);
