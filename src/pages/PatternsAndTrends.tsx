@@ -14,6 +14,8 @@ import { HeroSection } from '@/components/ui/HeroSection';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
+import { MemberBehaviorPatterns } from '@/components/dashboard/MemberBehaviorPatterns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
@@ -1272,6 +1274,48 @@ export const PatternsAndTrends = () => {
           </CardContent>
         </Card>
 
+        {/* Analysis Sections - Organized by Tabs */}
+        <Tabs defaultValue="month-on-month" className="w-full space-y-6">
+          <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 rounded-xl shadow-lg">
+            <TabsTrigger 
+              value="month-on-month" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 px-4 font-semibold text-sm transition-all flex items-center justify-center"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Month Analysis
+            </TabsTrigger>
+            <TabsTrigger 
+              value="visit-frequency" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white py-3 px-4 font-semibold text-sm transition-all flex items-center justify-center"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Visit Frequency
+            </TabsTrigger>
+            <TabsTrigger 
+              value="cancellations" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-pink-600 data-[state=active]:text-white py-3 px-4 font-semibold text-sm transition-all flex items-center justify-center"
+            >
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Cancellations
+            </TabsTrigger>
+            <TabsTrigger 
+              value="multiple-classes" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white py-3 px-4 font-semibold text-sm transition-all flex items-center justify-center"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Multiple Classes
+            </TabsTrigger>
+            <TabsTrigger 
+              value="member-behavior" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white py-3 px-4 font-semibold text-sm transition-all flex items-center justify-center"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Member Behavior
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Month-on-Month Analysis Tab Content */}
+          <TabsContent value="month-on-month" className="mt-6 space-y-6">
         {/* Month-on-Month Product Breakdown Table */}
         <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
           <CardHeader className="pb-4 bg-gradient-to-r from-indigo-800 to-purple-900 text-white rounded-t-lg">
@@ -1666,7 +1710,10 @@ export const PatternsAndTrends = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          {/* Visit Frequency Analysis Tab Content */}
+          <TabsContent value="visit-frequency" className="mt-6 space-y-6">
         {/* Visit Frequency Analysis */}
         <div className="grid grid-cols-1 gap-6">
           {/* Monthly Visit Frequency */}
@@ -1886,7 +1933,11 @@ export const PatternsAndTrends = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+          </TabsContent>
 
+          {/* Cancellations Tab Content - Moved from visit frequency */}
+          <TabsContent value="cancellations" className="mt-6 space-y-6">
           {/* Late Cancellation Frequency */}
           <Card className="bg-gradient-to-br from-white via-red-50/30 to-white border-0 shadow-xl">
             <CardHeader className="pb-4 bg-gradient-to-r from-red-800 to-pink-900 text-white rounded-t-lg">
@@ -2104,8 +2155,10 @@ export const PatternsAndTrends = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </TabsContent>
 
+          {/* Multiple Classes Per Day Tab Content */}
+          <TabsContent value="multiple-classes" className="mt-6 space-y-6">
         {/* Multiple Classes Per Day */}
         <Card className="bg-gradient-to-br from-white via-purple-50/30 to-white border-0 shadow-xl">
           <CardHeader className="pb-4 bg-gradient-to-r from-purple-800 to-indigo-900 text-white rounded-t-lg">
@@ -2140,6 +2193,13 @@ export const PatternsAndTrends = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Member Behavior Patterns Tab Content */}
+          <TabsContent value="member-behavior" className="mt-6 space-y-6">
+            <MemberBehaviorPatterns />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
