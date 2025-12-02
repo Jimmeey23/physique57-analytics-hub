@@ -126,12 +126,12 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
 
   return (
     <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="border-b border-gray-100">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-purple-600" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Calendar className="w-6 h-6" />
             Month-on-Month Performance Analysis
-            <Badge variant="outline" className="text-purple-600">
+            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
               {monthOnMonthData.length} months
             </Badge>
           </CardTitle>
@@ -144,10 +144,10 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
             return (
               <Button
                 key={metric.id}
-                variant={selectedMetric === metric.id ? 'default' : 'outline'}
+                variant={selectedMetric === metric.id ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedMetric(metric.id)}
-                className="gap-1 text-xs"
+                className={`gap-1 text-xs ${selectedMetric === metric.id ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
               >
                 <Icon className="w-3 h-3" />
                 {metric.label}
@@ -161,81 +161,61 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="font-semibold text-gray-900 sticky left-0 bg-gray-50 z-10">Month</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Sessions</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Attendance</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Revenue</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Fill Rate</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Utilization</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">MoM Change</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Formats</TableHead>
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHead className="font-semibold text-white sticky left-0 bg-slate-800 z-10">Month</TableHead>
+                <TableHead className="text-center font-semibold text-white">Sessions</TableHead>
+                <TableHead className="text-center font-semibold text-white">Attendance</TableHead>
+                <TableHead className="text-center font-semibold text-white">Revenue</TableHead>
+                <TableHead className="text-center font-semibold text-white">Fill Rate</TableHead>
+                <TableHead className="text-center font-semibold text-white">Utilization</TableHead>
+                <TableHead className="text-center font-semibold text-white">MoM Change</TableHead>
+                <TableHead className="text-center font-semibold text-white">Formats</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {monthOnMonthData.map((row, index) => {
                 const change = row.changes?.[selectedMetric];
                 return (
-                  <TableRow key={index} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r">
-                      <div className="flex flex-col">
-                        <span className="text-gray-900">{row.month}</span>
-                        <span className="text-xs text-gray-500">
-                          {row.formatCount} formats
-                        </span>
-                      </div>
+                  <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
+                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r whitespace-nowrap">
+                      <span className="text-gray-900 font-semibold">{row.month}</span>
+                      <span className="text-xs text-gray-500 ml-2">({row.formatCount} formats)</span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatNumber(row.sessions)}</span>
-                        <span className="text-xs text-gray-500">
-                          {row.emptySessions} empty
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatNumber(row.sessions)}</span>
+                      <span className="text-xs text-gray-500 ml-1">({row.emptySessions} empty)</span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatNumber(row.attendance)}</span>
-                        <span className="text-xs text-gray-500">
-                          of {formatNumber(row.capacity)} capacity
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatNumber(row.attendance)}</span>
+                      <span className="text-xs text-gray-500 ml-1">/ {formatNumber(row.capacity)}</span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatCurrency(row.revenue)}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatCurrency(row.avgRevenue)} avg
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatCurrency(row.revenue)}</span>
+                      <span className="text-xs text-gray-500 ml-1">({formatCurrency(row.avgRevenue)} avg)</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
-                        className={
-                          `metric-badge ${
-                            row.fillRate >= 80 ? 'badge-soft-green' :
-                            row.fillRate >= 60 ? 'badge-soft-yellow' :
-                            'badge-soft-red'
-                          }`
-                        }
+                        className={`attendance-badge ${
+                          row.fillRate >= 80 ? 'badge-soft-green' :
+                          row.fillRate >= 60 ? 'badge-soft-yellow' :
+                          'badge-soft-red'
+                        }`}
                       >
                         {formatPercentage(row.fillRate)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
-                        className={
-                          `metric-badge ${
-                            row.utilizationRate >= 90 ? 'badge-soft-green' :
-                            row.utilizationRate >= 70 ? 'badge-soft-yellow' :
-                            'badge-soft-red'
-                          }`
-                        }
+                        className={`attendance-badge ${
+                          row.utilizationRate >= 90 ? 'badge-soft-green' :
+                          row.utilizationRate >= 70 ? 'badge-soft-yellow' :
+                          'badge-soft-red'
+                        }`}
                       >
                         {formatPercentage(row.utilizationRate)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       {change ? (
                         <div className="flex items-center justify-center gap-1">
                           {getTrendIcon(change)}
@@ -247,11 +227,8 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
                         <span className="text-gray-400 text-sm">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{row.formatCount}</span>
-                        <span className="text-xs text-gray-500">active</span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{row.formatCount}</span>
                     </TableCell>
                   </TableRow>
                 );

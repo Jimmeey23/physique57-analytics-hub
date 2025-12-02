@@ -261,21 +261,21 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-0">
                     <div className="max-h-96 overflow-auto">
                       <Table>
-                        <TableHeader className="sticky top-0 bg-slate-50 z-10">
-                          <TableRow>
-                            <TableHead className="font-semibold text-slate-700">Date</TableHead>
-                            <TableHead className="font-semibold text-slate-700">Time</TableHead>
-                            <TableHead className="font-semibold text-slate-700">Trainer</TableHead>
-                            <TableHead className="font-semibold text-slate-700">Location</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-700">Capacity</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-700">Checked In</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-700">Fill Rate</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-700">Revenue</TableHead>
+                        <TableHeader className="sticky top-0 z-10">
+                          <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                            <TableHead className="font-semibold text-slate-100">Date</TableHead>
+                            <TableHead className="font-semibold text-slate-100">Time</TableHead>
+                            <TableHead className="font-semibold text-slate-100">Trainer</TableHead>
+                            <TableHead className="font-semibold text-slate-100">Location</TableHead>
+                            <TableHead className="text-center font-semibold text-slate-100">Capacity</TableHead>
+                            <TableHead className="text-center font-semibold text-slate-100">Checked In</TableHead>
+                            <TableHead className="text-center font-semibold text-slate-100">Fill Rate</TableHead>
+                            <TableHead className="text-center font-semibold text-slate-100">Revenue</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {filteredSessions.slice(0, 50).map((session, index) => (
-                            <TableRow key={index} className="hover:bg-slate-50/80 transition-colors">
+                            <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
                               <TableCell className="font-medium">
                                 <div>
                                   <div className="text-slate-900">{session.date}</div>

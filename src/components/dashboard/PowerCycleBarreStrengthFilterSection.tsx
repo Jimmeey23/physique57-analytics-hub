@@ -56,7 +56,7 @@ export function PowerCycleBarreStrengthFilterSection({
 
   return (
     <Card className="bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 border-0 shadow-xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Filter className="w-6 h-6" />

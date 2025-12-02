@@ -27,7 +27,7 @@ export const colorThemes: Record<string, ColorTheme> = {
       dark: 'blue-800'
     },
     metricCardBorder: 'border-blue-200',
-    tableHeaderGradient: 'from-blue-700 to-blue-900',
+    tableHeaderGradient: 'from-slate-800 via-slate-900 to-slate-800',
     badgeColors: 'bg-blue-100 text-blue-800'
   },
   
@@ -72,7 +72,7 @@ export const colorThemes: Record<string, ColorTheme> = {
       dark: 'purple-800'
     },
     metricCardBorder: 'border-purple-200',
-    tableHeaderGradient: 'from-purple-700 to-violet-800',
+    tableHeaderGradient: 'from-slate-800 via-slate-900 to-slate-800',
     badgeColors: 'bg-purple-100 text-purple-800'
   },
   
@@ -87,7 +87,7 @@ export const colorThemes: Record<string, ColorTheme> = {
       dark: 'purple-800'
     },
     metricCardBorder: 'border-purple-200',
-    tableHeaderGradient: 'from-purple-700 to-violet-800',
+    tableHeaderGradient: 'from-slate-800 via-slate-900 to-slate-800',
     badgeColors: 'bg-purple-100 text-purple-800'
   },
   
@@ -147,7 +147,7 @@ export const colorThemes: Record<string, ColorTheme> = {
       dark: 'indigo-800'
     },
     metricCardBorder: 'border-indigo-200',
-    tableHeaderGradient: 'from-indigo-700 to-indigo-800',
+    tableHeaderGradient: 'from-slate-800 via-slate-900 to-slate-800',
     badgeColors: 'bg-indigo-100 text-indigo-800'
   },
   
@@ -162,7 +162,7 @@ export const colorThemes: Record<string, ColorTheme> = {
       dark: 'blue-800'
     },
     metricCardBorder: 'border-blue-200',
-    tableHeaderGradient: 'from-blue-700 to-purple-800',
+    tableHeaderGradient: 'from-slate-800 via-slate-900 to-slate-800',
     badgeColors: 'bg-blue-100 text-blue-800'
   }
 };

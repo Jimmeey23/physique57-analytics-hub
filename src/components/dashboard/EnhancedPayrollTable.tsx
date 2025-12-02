@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getTableHeaderClasses } from '@/utils/colorThemes';
 import { 
   DollarSign, TrendingUp, TrendingDown, Calendar, User, BarChart3,
-  ArrowUpDown, Filter, Download, Eye, Percent, Hash
+  ArrowUpDown, Filter, Download, Eye, Percent, Hash, ShrinkIcon, ExpandIcon
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatPercentage, formatNumber } from '@/utils/formatters';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface EnhancedPayrollTableProps {
   data: any[];
@@ -50,6 +52,19 @@ export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data
   const [viewMode, setViewMode] = useState<ViewMode>('detailed');
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [showTopN, setShowTopN] = useState(10);
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'enhanced-payroll-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
 
   const { processedData, availableMonths } = useMemo(() => {
     if (!data || data.length === 0) {
@@ -336,9 +351,30 @@ export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data
 
       {/* Main Payroll Table */}
       <Card className="border-0 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-t-lg">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-white flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-400" />
+              Payroll Details
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CopyTableButton tableRef={tableRef} />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+                className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+                {isTableCollapsed ? 'Expand' : 'Collapse'}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        {!isTableCollapsed && (
         <CardContent className="p-0">
-          <div className="overflow-auto max-h-[800px] border rounded-lg">
-            <Table>
+          <div className="overflow-auto max-h-[800px] border rounded-b-lg">
+            <Table ref={tableRef} id={tableId}>
               <TableHeader className={`sticky top-0 z-10 border-b-2 ${getTableHeaderClasses('analytics')}`}>
                 <TableRow className="hover:bg-transparent">
                   <TableHead 
@@ -497,6 +533,7 @@ export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data
             </Table>
           </div>
         </CardContent>
+        )}
       </Card>
 
       {/* Footer Info */}

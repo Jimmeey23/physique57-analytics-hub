@@ -350,7 +350,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
             <ModernDataTable
               data={rawData}
               columns={tableColumns}
-              headerGradient="from-emerald-600 to-blue-600"
+              headerGradient="from-slate-800 via-slate-900 to-slate-800"
               maxHeight="400px"
             />
           </CardContent>

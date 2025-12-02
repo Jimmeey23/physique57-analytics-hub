@@ -22,7 +22,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("bg-gradient-to-r from-purple-600/90 via-blue-600/90 to-purple-600/90 [&_tr]:border-none [&_th]:text-white [&_th]:font-semibold [&_th]:backdrop-blur-sm", className)} {...props} />
+  <thead ref={ref} className={cn("bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 [&_tr]:border-none [&_th]:text-white [&_th]:font-bold [&_th]:backdrop-blur-sm", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -45,7 +45,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t-2 border-slate-300 bg-gradient-to-r from-slate-100 via-blue-50 to-slate-100 font-semibold text-slate-700 shadow-inner [&>tr]:last:border-b-0 [&_td]:py-4 [&_td]:px-4 [&_td]:font-semibold",
+      "border-t-2 border-slate-600 bg-slate-800 font-bold text-white shadow-lg [&>tr]:last:border-b-0 [&_td]:py-3 [&_td]:px-4 [&_td]:font-bold",
       className
     )}
     {...props}

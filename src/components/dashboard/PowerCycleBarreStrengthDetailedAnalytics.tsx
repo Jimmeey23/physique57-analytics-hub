@@ -26,7 +26,7 @@ export const PowerCycleBarreStrengthDetailedAnalytics: React.FC<PowerCycleBarreS
   return (
     <div className="space-y-6">
       <Card className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 border-0 shadow-xl">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="text-xl font-bold flex items-center gap-3">
             <BarChart3 className="w-6 h-6" />
             Detailed Format Analytics

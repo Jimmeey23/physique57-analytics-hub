@@ -54,7 +54,7 @@ const getPreviousMonthDateRange = () => {
 };
 
 export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2Props> = ({ data }) => {
-  const [activeLocation, setActiveLocation] = useState('kwality');
+  const [activeLocation, setActiveLocation] = useState('all');  // Changed default to 'all' for better visibility
   const [filters, setFilters] = useState<any>({
     dateRange: { start: null, end: null },
     category: [],
@@ -70,18 +70,31 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     type: string;
   }>({ isOpen: false, title: '', data: [], type: '' });
 
-  // Set default date range to previous month
+  // Debug: Log received data
   useEffect(() => {
-    const previousMonth = getPreviousMonthDateRange();
-    console.log('Setting default date range:', previousMonth);
-    setFilters(prev => ({
-      ...prev,
-      dateRange: {
-        start: previousMonth.start,
-        end: previousMonth.end
-      }
-    }));
-  }, []);
+    console.log('EnhancedDiscountsDashboardV2 received data:', {
+      totalRecords: data?.length || 0,
+      sample: data?.slice(0, 3),
+      samplePaymentDates: data?.slice(0, 5).map(d => d.paymentDate),
+      sampleLocations: [...new Set(data?.slice(0, 50).map(d => d.calculatedLocation))]
+    });
+  }, [data]);
+
+  // Set default date range to previous month only after initial data check
+  useEffect(() => {
+    // Only set previous month filter if we have data
+    if (data && data.length > 0) {
+      const previousMonth = getPreviousMonthDateRange();
+      console.log('Setting default date range:', previousMonth);
+      setFilters(prev => ({
+        ...prev,
+        dateRange: {
+          start: previousMonth.start,
+          end: previousMonth.end
+        }
+      }));
+    }
+  }, [data]);
 
   // Apply filters similar to sales section
   const applyFilters = (rawData: SalesData[], includeHistoric: boolean = false) => {

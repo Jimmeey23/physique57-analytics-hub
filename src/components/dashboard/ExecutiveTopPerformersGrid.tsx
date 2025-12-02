@@ -125,7 +125,7 @@ export const ExecutiveTopPerformersGrid: React.FC<ExecutiveTopPerformersGridProp
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Top Class Types by Attendance */}
       <Card className="shadow-xl border-0">
-        <CardHeader className="bg-gradient-to-r from-purple-600 to-violet-600 text-white">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
             Top Class Types by Attendance
@@ -180,7 +180,7 @@ export const ExecutiveTopPerformersGrid: React.FC<ExecutiveTopPerformersGridProp
 
       {/* Top Sessions by Attendance */}
       <Card className="shadow-xl border-0">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
             Top Sessions by Attendance

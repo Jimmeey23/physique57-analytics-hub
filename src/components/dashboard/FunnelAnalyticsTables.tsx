@@ -305,7 +305,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
         <TabsContent value="source" className="mt-6">
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
-            <CardHeader className="bg-gradient-to-r from-red-600 via-red-700 to-red-800">
+            <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <Target className="w-5 h-5" />
@@ -404,7 +404,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('source', row)}
-                headerGradient="from-red-600 to-red-700"
+                headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 maxHeight="400px"
               />
             </CardContent>
@@ -413,7 +413,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
         <TabsContent value="stage" className="mt-6">
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={stageTableRef}>
-            <CardHeader className="bg-gradient-to-r from-red-700 via-red-800 to-orange-700">
+            <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <Activity className="w-5 h-5" />
@@ -484,7 +484,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('stage', row)}
-                headerGradient="from-red-700 to-orange-700"
+                headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 maxHeight="400px"
               />
             </CardContent>
@@ -493,7 +493,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
         <TabsContent value="span" className="mt-6">
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={spanTableRef}>
-            <CardHeader className="bg-gradient-to-r from-orange-600 via-red-600 to-pink-600">
+            <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <Clock className="w-5 h-5" />
@@ -543,7 +543,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     render: (value: number) => formatCurrency(value)
                   }
                 ]}
-                headerGradient="from-orange-600 to-pink-600"
+                headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 maxHeight="400px"
               />
             </CardContent>
@@ -552,7 +552,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
         <TabsContent value="ltv" className="mt-6">
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={ltvTableRef}>
-            <CardHeader className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600">
+            <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <DollarSign className="w-5 h-5" />
@@ -603,7 +603,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('ltv', row)}
-                headerGradient="from-green-600 to-emerald-600"
+                headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 maxHeight="400px"
               />
             </CardContent>
@@ -612,7 +612,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
         <TabsContent value="stages" className="mt-6">
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={topStagesTableRef}>
-            <CardHeader className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600">
+            <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <BarChart3 className="w-5 h-5" />
@@ -662,7 +662,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     render: (value: number) => formatCurrency(value)
                   }
                 ]}
-                headerGradient="from-indigo-600 to-blue-600"
+                headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 maxHeight="400px"
               />
             </CardContent>
@@ -671,7 +671,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
 
         <TabsContent value="proximity" className="mt-6">
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={proximityTableRef}>
-            <CardHeader className="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600">
+            <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <AlertTriangle className="w-5 h-5" />
@@ -742,7 +742,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('proximity', row)}
-                headerGradient="from-red-600 to-orange-600"
+                headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 maxHeight="400px"
               />
             </CardContent>

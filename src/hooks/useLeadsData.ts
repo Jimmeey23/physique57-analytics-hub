@@ -1,14 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { LeadsData } from '@/types/leads';
+import { getGoogleAccessToken } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
-
+const logger = createLogger('useLeadsData');
 const SPREADSHEET_ID = "1dQMNF69WnXVQdhlLvUZTig3kL97NA21k6eZ9HRu6xiQ";
 
 const parseDate = (dateString: string | undefined | null) => {
@@ -42,20 +38,17 @@ const parseDate = (dateString: string | undefined | null) => {
     
     // Validate the date and ensure it's not in the future or too far in the past
     if (!parsedDate || isNaN(parsedDate.getTime())) {
-      console.warn('Invalid date format:', dateString);
       return '';
     }
     
     // Exclude dates that are in the future or before 2020
     if (parsedDate > now || parsedDate.getFullYear() < 2020) {
-      console.warn('Date outside valid range:', dateString, parsedDate);
       return '';
     }
     
     // Return ISO string format for consistency
     return parsedDate.toISOString();
   } catch (error) {
-    console.warn('Error parsing date:', dateString, error);
     return '';
   }
 };
@@ -89,44 +82,12 @@ export const useLeadsData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getAccessToken = async () => {
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Token request failed: ${response.statusText}`);
-      }
-
-      const tokenData = await response.json();
-      
-      if (!tokenData.access_token) {
-        throw new Error('No access token received');
-      }
-      
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
-  };
-
   const fetchLeadsData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const accessToken = await getAccessToken();
+      const accessToken = await getGoogleAccessToken();
       
       const sheetName = encodeURIComponent('◉ Leads');
       const response = await fetch(
@@ -145,10 +106,9 @@ export const useLeadsData = () => {
       const result = await response.json();
       const rows = result.values || [];
       
-      console.log('Raw sheet data:', { totalRows: rows.length, sampleData: rows.slice(0, 3) });
+      logger.info(`Fetched ${rows.length} rows from leads sheet`);
       
       if (rows.length < 2) {
-        console.warn('Not enough data rows in sheet');
         setData([]);
         return;
       }
@@ -158,7 +118,6 @@ export const useLeadsData = () => {
         .map((row: any[], index: number) => {
           try {
             if (!row || row.length === 0) {
-              console.warn(`Empty row at index ${index + 1}`);
               return null;
             }
 
@@ -199,22 +158,18 @@ export const useLeadsData = () => {
 
             return leadData;
           } catch (rowError) {
-            console.error(`Error processing row ${index + 1}:`, rowError, row);
+            logger.error(`Error processing row ${index + 1}:`, rowError);
             return null;
           }
         })
         .filter((item): item is LeadsData => item !== null);
 
-      console.log('Processed leads data:', { 
-        totalProcessed: leadsData.length, 
-        sampleData: leadsData.slice(0, 3),
-        validDates: leadsData.filter(item => item.createdAt).length 
-      });
+      logger.info(`Processed ${leadsData.length} leads`);
       
       setData(leadsData);
       setError(null);
     } catch (err) {
-      console.error('Error fetching leads data:', err);
+      logger.error('Error fetching leads data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load leads data');
     } finally {
       setLoading(false);

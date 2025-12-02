@@ -311,8 +311,8 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
         <div className="overflow-x-auto rounded-b-2xl shadow-2xl">
           <table className="min-w-full bg-white border-0 rounded-b-2xl shadow-lg">
             <thead className="sticky top-0 z-30">
-              <tr className="bg-gradient-to-r from-slate-900 via-blue-900 to-purple-900">
-                <th rowSpan={2} className="w-80 px-8 py-4 text-left text-white font-bold text-lg uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-900 to-blue-900 z-40 border-r border-white/20 shadow-xl">
+              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <th rowSpan={2} className="w-80 px-8 py-4 text-left text-white font-bold text-lg uppercase tracking-wide sticky left-0 bg-slate-800 z-40 border-r border-white/20 shadow-xl">
                   <div className="flex items-center space-x-3">
                     <BarChart3 className="w-6 h-6 text-cyan-400" />
                     <span>Category / Product</span>
@@ -320,17 +320,17 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
                 </th>
                 
                 {Object.entries(groupedMonths).reverse().map(([quarterKey, months]) => (
-                  <th key={quarterKey} colSpan={months.length} className="px-4 py-3 text-center text-white font-bold text-sm uppercase tracking-wider border-l border-white/20 bg-gradient-to-b from-transparent to-black/10">
+                  <th key={quarterKey} colSpan={months.length} className="px-4 py-3 text-center text-white font-bold text-sm uppercase tracking-wider border-l border-white/20">
                     {quarterKey}
                   </th>
                 ))}
               </tr>
-              <tr className="bg-gradient-to-r from-slate-800 via-blue-800 to-purple-800">
+              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 {monthlyData.reverse().map(({key, display}) => (
-                  <th key={key} className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider border-l border-white/20 bg-gradient-to-b from-transparent to-black/10">
+                  <th key={key} className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wider border-l border-white/20">
                     <div className="flex flex-col items-center">
                       <span className="text-sm font-bold">{display.split(' ')[0]}</span>
-                      <span className="text-blue-200 text-xs">{display.split(' ')[1]}</span>
+                      <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>
                 ))}

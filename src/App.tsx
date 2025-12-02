@@ -18,6 +18,7 @@ import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
 import InitialLoadGate, { useInitialLoad } from "@/components/perf/InitialLoadGate";
 import ForceTopOnLoad from "@/components/perf/ForceTopOnLoad";
 import { NavigationLoader } from "@/components/perf/NavigationLoader";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Optimized lazy loading with preloading for critical pages
 const Index = React.lazy(() => 
@@ -68,8 +69,8 @@ const HeroDemo = React.lazy(() =>
 const GeminiAIDemoPage = React.lazy(() => 
   import("./pages/GeminiAIDemo").then(module => ({ default: module.default }))
 );
-const GeminiEnhancementTest = React.lazy(() => 
-  import("./components/test/GeminiEnhancementTest").then(module => ({ default: module.default }))
+const TrainerDebug = React.lazy(() => 
+  import("./pages/TrainerDebug").then(module => ({ default: module.default }))
 );
 const DataExport = React.lazy(() => 
   import("./pages/DataExport").then(module => ({ default: module.default }))
@@ -101,6 +102,7 @@ const App = () => {
   usePerformanceOptimization();
   
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
       <Toaster />
@@ -137,7 +139,7 @@ const App = () => {
                     <Route path="/patterns-trends" element={<PatternsAndTrends />} />
                     <Route path="/hero-demo" element={<HeroDemo />} />
                     <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
-                    <Route path="/gemini-test" element={<GeminiEnhancementTest />} />
+                    <Route path="/trainer-debug" element={<TrainerDebug />} />
                     <Route path="/data-export" element={<DataExport />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
@@ -152,6 +154,7 @@ const App = () => {
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
   );
 };
 

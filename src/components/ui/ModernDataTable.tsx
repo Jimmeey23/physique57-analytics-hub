@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { TABLE_STYLES, HEADER_GRADIENTS } from '@/styles/tableStyles';
 
 interface Column {
   key: string;
@@ -11,6 +12,7 @@ interface Column {
   align?: 'left' | 'center' | 'right';
   className?: string;
   sortable?: boolean;
+  sticky?: boolean;
 }
 
 interface ModernDataTableProps {
@@ -22,13 +24,15 @@ interface ModernDataTableProps {
   footerData?: any;
   maxHeight?: string;
   className?: string;
-  headerGradient?: string;
+  headerGradient?: keyof typeof HEADER_GRADIENTS | string;
   onSort?: (field: string) => void;
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
   onRowClick?: (row: any) => void;
-  tableId?: string; // optional identifier for copy-all registry
-  disableRegistry?: boolean; // opt-out
+  tableId?: string;
+  disableRegistry?: boolean;
+  striped?: boolean;
+  compact?: boolean;
 }
 
 import CopyTableButton from '@/components/ui/CopyTableButton';
@@ -43,14 +47,18 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   footerData,
   maxHeight,
   className,
-  headerGradient = "from-slate-600 to-slate-700",
+  headerGradient = "default",
   onSort,
   sortField,
   sortDirection,
   onRowClick,
   tableId,
-  disableRegistry = false
+  disableRegistry = false,
+  striped = true,
+  compact = false
 }) => {
+  // Get the gradient class - support both preset keys and custom strings
+  const gradientClass = HEADER_GRADIENTS[headerGradient as keyof typeof HEADER_GRADIENTS] || headerGradient;
   // Remove individual loading state - parent components handle loading via global loader
   // if (loading) {
   //   return (
@@ -68,6 +76,23 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
       }
     }
     return value;
+  };
+
+  const formatFooterValue = (value: any) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number') {
+      // Check if it's a percentage (typically 0-100 range with decimals)
+      if (value >= 0 && value <= 100 && !Number.isInteger(value)) {
+        return `${value.toFixed(1)}%`;
+      }
+      // Check if it looks like currency (large numbers)
+      if (value >= 1000) {
+        return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+      }
+      // Format with max 1 decimal
+      return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+    }
+    return formatCurrencyValue(value);
   };
 
   const handleSort = (column: Column) => {
@@ -110,18 +135,22 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   }, [registry, tableId, disableRegistry]);
 
   return (
-    <div ref={containerRef} className={cn("relative overflow-auto rounded-xl", className)} style={{ maxHeight }}>
-      <Table className="w-full">
+    <div ref={containerRef} className={cn(TABLE_STYLES.container, className)} style={{ maxHeight }}>
+      <Table className={TABLE_STYLES.table}>
         <TableHeader className={cn(
-          stickyHeader && "sticky top-0 z-20",
+          stickyHeader && TABLE_STYLES.header.wrapper,
           "border-b border-slate-300"
         )}>
           <TableRow className={cn(
-            "border-none h-12 bg-gradient-to-r",
-            headerGradient
+            "border-none",
+            compact ? "h-10" : "h-12",
+            "bg-gradient-to-r",
+            gradientClass,
+            "relative"
           )}>
-            {columns.map((column) => {
-              // Strip background classes from header to preserve gradient
+            {columns.map((column, colIndex) => {
+              const isSticky = column.sticky || colIndex === 0;
+              const isLastColumn = colIndex === columns.length - 1;
               const sanitizedHeaderClass = (column.className || '')
                 .split(' ')
                 .filter(c => !c.startsWith('bg-'))
@@ -130,12 +159,14 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 <TableHead 
                   key={column.key} 
                   className={cn(
-                    "font-bold h-12 px-3 text-xs text-white border-r border-white/20 last:border-r-0",
-                    "min-w-[80px] bg-transparent",
-                    column.align === 'center' && 'text-center',
+                    TABLE_STYLES.header.cell,
+                    compact ? "py-2" : "py-3",
+                    column.align === 'center' && TABLE_STYLES.header.cellCenter,
                     column.align === 'right' && 'text-right',
                     column.sortable && 'cursor-pointer hover:bg-white/10 transition-colors',
-                    sanitizedHeaderClass
+                    isSticky && TABLE_STYLES.header.cellSticky,
+                    sanitizedHeaderClass,
+                    isLastColumn && tableId && "pr-12" // Extra padding for copy button
                   )}
                   onClick={() => handleSort(column)}
                   style={{ minWidth: '80px' }}
@@ -154,20 +185,20 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                       <ChevronDown className="w-3 h-3" />
                   )}
                 </div>
+                {/* Copy button positioned in last column header */}
+                {isLastColumn && tableId && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <CopyTableButton 
+                      tableRef={containerRef as any}
+                      tableName={tableId}
+                      size="sm"
+                      onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
+                    />
+                  </div>
+                )}
                 </TableHead>
               );
             })}
-            {/* Copy button pinned at end of header */}
-            {tableId && (
-              <TableHead className="font-bold h-12 px-3 text-xs text-white border-r border-white/20 last:border-r-0 min-w-[60px] bg-transparent text-right">
-                <CopyTableButton 
-                  tableRef={containerRef as any}
-                  tableName={tableId}
-                  size="sm"
-                  onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
-                />
-              </TableHead>
-            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -175,71 +206,79 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
             <TableRow 
               key={index} 
               className={cn(
-                "hover:bg-muted/40 transition-all duration-200 h-12 table-row-stripe",
-                onRowClick && "cursor-pointer hover:scale-[1.01] hover:shadow-sm"
+                TABLE_STYLES.body.row,
+                striped && index % 2 === 1 && TABLE_STYLES.body.rowAlternate,
+                onRowClick && TABLE_STYLES.body.rowClickable,
+                compact ? "h-10" : "h-12"
               )}
               onClick={() => onRowClick?.(row)}
             >
-              {columns.map((column) => (
-                <TableCell 
-                  key={column.key}
-                  className={cn(
-                    "h-12 px-3 py-2 text-sm font-medium text-slate-900 border-r border-slate-200/50 last:border-r-0",
-                    "min-w-[80px]",
-                    column.align === 'center' && 'text-center',
-                    column.align === 'right' && 'text-right',
-                    column.className
-                  )}
-                  style={{ minWidth: '80px' }}
-                >
-                  <div className={cn(
-                    "flex items-center h-full",
-                    column.align === 'center' && 'justify-center',
-                    column.align === 'right' && 'justify-end'
-                  )}>
-                    {column.render 
-                      ? column.render(row[column.key], row)
-                      : <span className="text-sm truncate">{formatCurrencyValue(row[column.key])}</span>
-                    }
-                  </div>
-                </TableCell>
-              ))}
+              {columns.map((column, colIndex) => {
+                const isSticky = column.sticky || colIndex === 0;
+                return (
+                  <TableCell 
+                    key={column.key}
+                    className={cn(
+                      TABLE_STYLES.body.cell,
+                      compact ? "py-1.5" : "py-2",
+                      column.align === 'center' && TABLE_STYLES.body.cellCenter,
+                      column.align === 'right' && 'text-right',
+                      isSticky && TABLE_STYLES.body.cellSticky,
+                      column.className
+                    )}
+                    style={{ minWidth: '80px' }}
+                  >
+                    <div className={cn(
+                      "flex items-center h-full",
+                      column.align === 'center' && 'justify-center',
+                      column.align === 'right' && 'justify-end'
+                    )}>
+                      {column.render 
+                        ? column.render(row[column.key], row)
+                        : <span className="text-sm truncate">{formatCurrencyValue(row[column.key])}</span>
+                      }
+                    </div>
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </TableBody>
         {showFooter && footerData && (
           <TableFooter className="sticky bottom-0 z-10">
             <TableRow className={cn(
-              "h-12 border-t-4 border-slate-800 bg-white"
+              TABLE_STYLES.footer.row,
+              compact ? "h-10" : "h-12",
+              "hover:bg-slate-800" // Prevent hover color change
             )}>
-              {columns.map((column) => (
-                <TableCell 
-                  key={column.key}
-                  className={cn(
-                    "font-bold text-slate-900 h-12 px-3 py-2 text-xs border-r border-slate-200 last:border-r-0",
-                    "min-w-[80px]",
-                    column.align === 'center' && 'text-center',
-                    column.align === 'right' && 'text-right',
-                    column.className
-                  )}
-                  style={{ minWidth: '80px' }}
-                >
-                  <div className={cn(
-                    "flex items-center h-full",
-                    column.align === 'center' && 'justify-center',
-                    column.align === 'right' && 'justify-end'
-                  )}>
-                    {column.render 
-                      ? column.render(footerData[column.key], footerData)
-                      : <span className="text-xs font-bold uppercase tracking-wide">
-                          {footerData[column.key] === 'TOTALS' || footerData[column.key] === 'TOTAL' 
-                            ? footerData[column.key] 
-                            : formatCurrencyValue(footerData[column.key])}
-                        </span>
-                    }
-                  </div>
-                </TableCell>
-              ))}
+              {columns.map((column, colIndex) => {
+                const isSticky = column.sticky || colIndex === 0;
+                return (
+                  <TableCell 
+                    key={column.key}
+                    className={cn(
+                      TABLE_STYLES.footer.cell,
+                      compact ? "py-1.5" : "py-2",
+                      column.align === 'center' && TABLE_STYLES.footer.cellCenter,
+                      column.align === 'right' && 'text-right',
+                      isSticky && TABLE_STYLES.footer.cellSticky
+                    )}
+                    style={{ minWidth: '80px' }}
+                  >
+                    <div className={cn(
+                      "flex items-center h-full",
+                      column.align === 'center' && 'justify-center',
+                      column.align === 'right' && 'justify-end'
+                    )}>
+                      <span className="text-sm font-bold text-white">
+                        {footerData[column.key] === 'TOTALS' || footerData[column.key] === 'TOTAL' 
+                          ? footerData[column.key] 
+                          : formatFooterValue(footerData[column.key])}
+                      </span>
+                    </div>
+                  </TableCell>
+                );
+              })}
             </TableRow>
           </TableFooter>
         )}

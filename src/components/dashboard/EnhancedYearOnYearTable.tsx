@@ -1,11 +1,13 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { SalesData, FilterOptions, YearOnYearMetricType, EnhancedYearOnYearTableProps } from '@/types/dashboard';
 import { YearOnYearMetricTabs } from './YearOnYearMetricTabs';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
-import { ChevronDown, ChevronRight, RefreshCw, Filter, Calendar, TrendingUp, TrendingDown, Download } from 'lucide-react';
+import { ChevronDown, ChevronRight, RefreshCw, Filter, Calendar, TrendingUp, TrendingDown, Download, ShrinkIcon, ExpandIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 const groupDataByCategory = (data: SalesData[]) => {
   return data.reduce((acc: Record<string, any>, item) => {
     const category = item.cleanedCategory || 'Uncategorized';
@@ -41,6 +43,19 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [showFilters, setShowFilters] = useState(false);
   const [localCollapsedGroups, setLocalCollapsedGroups] = useState<Set<string>>(new Set());
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'enhanced-year-on-year-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
 
   // Initialize all groups as expanded by default
   const [isInitialized, setIsInitialized] = useState(false);
@@ -307,23 +322,33 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
     variant: 'destructive' as const
   }];
   return <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-t-lg">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
+              <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-400" />
                 Year-on-Year Performance Analysis
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-slate-300 mt-1">
                 Monthly comparison between 2024 and 2025 with alternating year display
               </p>
             </div>
             
             <div className="flex items-center gap-2">
+              <CopyTableButton tableRef={tableRef} />
               
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+                className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+                {isTableCollapsed ? 'Expand' : 'Collapse'}
+              </Button>
               
-              <Button variant="outline" size="sm" onClick={handleRefresh} className="flex items-center gap-2 hover:bg-purple-50 hover:text-purple-700">
+              <Button variant="outline" size="sm" onClick={handleRefresh} className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
                 <RefreshCw className="w-4 h-4" />
                 Refresh
               </Button>
@@ -337,22 +362,23 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
         </div>
       </CardHeader>
 
+      {!isTableCollapsed && (
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
-            <thead className="bg-gradient-to-r from-purple-700 to-purple-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-30">
-              <tr className="bg-gradient-to-r from-blue-800 to-indigo-900 text-white font-semibold text-sm uppercase tracking-wider">
-                <th className="bg-gradient-to-r from-blue-800 to-blue-800 text-white font-semibold text-sm uppercase tracking-wider px-4 py-2 sticky left-0 z-40">
+          <table ref={tableRef} id={tableId} className="min-w-full bg-white unified-table">
+            <thead className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-30">
+              <tr>
+                <th className="bg-slate-800 text-white font-bold text-sm uppercase tracking-wider px-4 py-3 sticky left-0 z-40 border-r border-white/20">
                   Product/Category
                 </th>
                 {monthlyData.map(({
                 key,
                 display,
                 year
-              }) => <th key={key} className="text-white font-semibold text-sm uppercase tracking-wider px-4 py-2">
-                    <div className="flex flex-col">
-                      <span className="text-base">{display.split(' ')[0]}</span>
-                      <span className="text-yellow-200 text-xs">
+              }) => <th key={key} className="text-white font-bold text-xs uppercase tracking-wider px-4 py-3 border-l border-white/20">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-bold">{display.split(' ')[0]}</span>
+                      <span className="text-slate-300 text-xs">
                         {display.split(' ')[1]}
                       </span>
                     </div>
@@ -496,21 +522,21 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
                     </tr>)}
 
                   {/* Category Totals Row */}
-                  <tr className="bg-gradient-to-r from-blue-100 to-indigo-100 border-t-2 border-blue-300 font-bold">
-                    <td className="px-8 py-3 text-sm font-bold text-blue-900 sticky left-0 bg-gradient-to-r from-blue-100 to-indigo-100 z-10">
+                  <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold">
+                    <td className="px-8 py-3 text-sm font-bold text-slate-900 sticky left-0 bg-slate-100 z-10 border-r border-slate-300">
                       {categoryGroup.category} TOTAL
                     </td>
                     {monthlyData.map(({
                 key
-              }) => <td key={key} className="px-4 py-3 text-center text-sm text-blue-900 font-mono font-bold">
+              }) => <td key={key} className="px-4 py-3 text-center text-sm text-slate-900 font-mono font-bold border-l border-slate-300">
                         {formatMetricValue(categoryGroup.monthlyValues[key] || 0, selectedMetric)}
                       </td>)}
                   </tr>
                 </React.Fragment>)}
 
               {/* Grand Totals Row */}
-              <tr className="bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-500 text-white border-t-4 border-emerald-700">
-                <td className="px-8 py-3 text-sm font-bold sticky left-0 bg-gradient-to-r from-emerald-500 to-teal-600 z-10">
+              <tr className="bg-slate-800 text-white border-t-2 border-slate-600">
+                <td className="px-8 py-3 text-sm font-bold sticky left-0 bg-slate-800 z-10 border-r border-slate-600">
                   GRAND TOTAL
                 </td>
                 {monthlyData.map(({
@@ -519,7 +545,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
               const grandTotal = processedData.reduce((sum, categoryGroup) => 
                 sum + (categoryGroup.monthlyValues[key] || 0), 0
               );
-              return <td key={key} className="px-4 py-3 text-center text-sm font-mono font-bold">
+              return <td key={key} className="px-4 py-3 text-center text-sm font-mono font-bold border-l border-slate-600">
                       {formatMetricValue(grandTotal, selectedMetric)}
                     </td>;
             })}
@@ -528,5 +554,6 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
           </table>
         </div>
       </CardContent>
+      )}
     </Card>;
 };

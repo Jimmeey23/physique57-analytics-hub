@@ -156,7 +156,7 @@ export const ClientConversionEntityTable: React.FC<ClientConversionEntityTablePr
         <ModernDataTable
           data={entityData}
           columns={columns}
-          headerGradient="from-green-600 to-teal-600"
+          headerGradient="from-slate-800 via-slate-900 to-slate-800"
           showFooter={true}
           footerData={totals}
           maxHeight="500px"

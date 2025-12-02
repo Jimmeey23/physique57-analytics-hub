@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import DOMPurify from 'dompurify';
+import DOMPurify, { type Config as DomPurifyConfig } from 'dompurify';
 import { Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, GripHorizontal, Copy, Download, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -624,6 +624,11 @@ const KWALITY_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
     <p><strong>Operational performance metrics:</strong> Class start/end punctuality at 94%, with late starts primarily during format transitions. Equipment maintenance issues affecting 6.2% of classes, requiring preventive maintenance schedule optimization. Peak-hour waitlist demand suggests capacity for 2-3 additional weekly sessions at premium time slots.</p>,
     <p><strong>Instructor development insights:</strong> New instructors require 10-12 weeks to reach target performance (80%+ capacity utilization, 4.3+ satisfaction). Cross-training instructors in multiple formats increases scheduling flexibility by 35% and reduces cancellation risk. Member loyalty shows strong instructor preference (42% cite specific instructor as primary booking driver), emphasizing retention importance.</p>
   ]
+  ,
+  'outlier-analysis-overview': [
+    <p><strong>Kwality House Outlier Analysis:</strong> April and August 2025 recorded exceptional revenue spikes relative to trend. April benefited from seasonal renewals and bundled offers; August was driven by a concentrated membership campaign and retail tie-ins. Both months sit ~2 standard deviations above the 2025 monthly mean.</p>,
+    <p><strong>Action:</strong> Decompose drivers into repeatable playbooks (renewal timing, offer structure, instructor lineup) and schedule controlled replications in Q1/Q2. Track leading indicators (unique members, trial conversions) to pre-emptively staff high-demand weeks.</p>
+  ]
 };
 
 // Supreme HQ curated summaries
@@ -791,6 +796,11 @@ const SUPREME_SUMMARY: Record<SalesContextKey, React.ReactNode[]> = {
     <p><strong>Supreme HQ Sessions Analysis:</strong> Session scheduling efficiency at 85% with strong instructor performance across all formats. Member feedback scores average 4.3/5, with facility cleanliness (4.7/5) and instructor quality (4.5/5) driving satisfaction.</p>,
     <p><strong>Operational insights:</strong> Peak-hour waitlists indicate demand for additional 7-8 AM and 7-8 PM capacity. New instructor onboarding requires 8-week ramp to achieve target performance levels. Strategic hiring ahead of Q1 surge recommended.</p>
   ]
+  ,
+  'outlier-analysis-overview': [
+    <p><strong>Supreme HQ Outlier Analysis:</strong> August 2025 shows a pronounced positive deviation versus 2025 baseline, linked to promotional lift in memberships and a surge in trial-to-paid conversions. Revenue composition skewed more heavily to memberships during the spike.</p>,
+    <p><strong>Action:</strong> Calibrate future promotions to protect AOV while sustaining volume. Mirror the instructor/slot mix that correlated with waitlists and high attendance; monitor discount leakage.</p>
+  ]
 };
 
 const curatedSummaries: Partial<Record<LocationKey, Partial<Record<SalesContextKey, React.ReactNode[]>>>> = {
@@ -823,6 +833,33 @@ const getLocationSummaryMap = (locationKey: LocationKey): Record<SalesContextKey
 
   return locationSummariesCache[locationKey]!;
 };
+
+// Public helper: get the same summary content InfoPopover would render,
+// so other components can embed analysis inline in reports (without a popover).
+// Note: `salesData` is optional and only used for dynamic 'sales-overview'.
+export function getInfoPopoverSummary(
+  context: SalesContextKey | string,
+  locationId: string = 'all',
+  opts?: { salesData?: any[] }
+): React.ReactNode[] {
+  const locationKey = normalizeLocationKey(locationId);
+  const locationSummaryMap = getLocationSummaryMap(locationKey);
+
+  // Dynamic sales overview if sales data provided
+  if (context === 'sales-overview' && opts?.salesData && opts.salesData.length) {
+    try {
+      const analysis = SalesAnalysisService.generateComparisonAnalysis(opts.salesData as any[]);
+      const summary = SalesAnalysisService.generateDetailedSummary(analysis);
+      return [generateDynamicSummaryUI({ analysis, summary }, locationId)];
+    } catch (e) {
+      console.error('getInfoPopoverSummary: dynamic summary failed, falling back', e);
+    }
+  }
+
+  // Fall back to curated/generated content for the location, or to 'all'
+  const items = (locationSummaryMap as any)[context] ?? getLocationSummaryMap('all' as any)[context as any] ?? [];
+  return Array.isArray(items) ? items : [];
+}
 
 export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 'all', className, size = 18, salesData, startOpen = false, startAsSidebar = true }) => {
   const locationKey = normalizeLocationKey(locationId);
@@ -866,7 +903,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const { toast } = useToast();
 
   // DOMPurify options used for preserving style/class/id when rendering/saving trusted HTML
-  const DOMPURIFY_OPTS: DOMPurify.Config = {
+  const DOMPURIFY_OPTS: DomPurifyConfig = {
     ADD_TAGS: ['style'],
     ADD_ATTR: ['style', 'class', 'id'],
     ALLOW_DATA_ATTR: true,
@@ -1246,7 +1283,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     const contentWithoutStyles = doc.body.innerHTML;
     
     // Configure DOMPurify to preserve styling
-    const safeHtml = DOMPurify.sanitize(contentWithoutStyles, DOMPURIFY_OPTS);
+  const safeHtml = DOMPurify.sanitize(contentWithoutStyles, DOMPURIFY_OPTS) as unknown as string;
     
     // Check if the HTML contains style attributes or styled elements
     const hasInlineStyles = /style\s*=/i.test(html) || styles.length > 0;
@@ -1344,13 +1381,13 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
       // inline styles, classes and <style> blocks are preserved for trusted admin content.
       // We still sanitize to remove potentially dangerous tags/attributes while
       // keeping styling intact.
-      const sanitized = typeof window !== 'undefined'
-        ? DOMPurify.sanitize(editContent, DOMPURIFY_OPTS)
-        : editContent;
+      const sanitized = (typeof window !== 'undefined'
+        ? (DOMPurify.sanitize(editContent, DOMPURIFY_OPTS) as unknown as string)
+        : editContent) as string;
       const success = await googleDriveService.updatePopoverContent(context, locationId, sanitized);
       
       if (success) {
-        setCustomContent(sanitized);
+  setCustomContent(sanitized);
         setIsEditing(false);
         toast({
           title: "Content saved",

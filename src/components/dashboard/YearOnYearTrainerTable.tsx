@@ -1,15 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronRight, Info, ShrinkIcon, ExpandIcon } from 'lucide-react';
 import { TrainerMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { TrainerDrillDownModal } from './TrainerDrillDownModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface YearOnYearTrainerTableProps {
   data: Record<string, Record<string, number>>;
@@ -29,6 +31,19 @@ export const YearOnYearTrainerTable = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'year-on-year-trainer-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
 
   const formatValue = (value: number, metric: TrainerMetricType) => {
     switch (metric) {
@@ -192,26 +207,41 @@ export const YearOnYearTrainerTable = ({
   return (
     <>
       <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            Year-on-Year {getMetricTitle(defaultMetric)} Comparison
-          </CardTitle>
+        <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-t-lg">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Year-on-Year {getMetricTitle(defaultMetric)} Comparison
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CopyTableButton tableRef={tableRef} />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+                className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+                {isTableCollapsed ? 'Expand' : 'Collapse'}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
+        {!isTableCollapsed && (
         <CardContent>
           <div className="overflow-x-auto">
             <TooltipProvider>
-              <Table>
+              <Table ref={tableRef} id={tableId}>
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2">
-                    <TableHead className="font-bold text-slate-700 sticky left-0 bg-gradient-to-r from-slate-50 to-slate-100 z-10 min-w-[200px]">
+                  <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white border-b-2 border-slate-600">
+                    <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-10 min-w-[200px] border-r border-slate-600">
                       <Button
                         variant="ghost"
                         onClick={() => {
                           setSortBy('name');
                           setSortOrder(sortBy === 'name' && sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
-                        className="font-bold text-slate-700 p-0 h-auto"
+                        className="font-bold text-white p-0 h-auto hover:text-slate-200"
                       >
                         Trainer
                         {sortBy === 'name' && (
@@ -220,14 +250,14 @@ export const YearOnYearTrainerTable = ({
                       </Button>
                     </TableHead>
                     {alternatingColumns.map((col) => (
-                      <TableHead key={`${col.monthName}-${col.year}`} className="text-center font-bold text-slate-700 min-w-[120px]">
+                      <TableHead key={`${col.monthName}-${col.year}`} className="text-center font-bold text-white min-w-[120px] border-l border-slate-600">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="text-center cursor-help">
                               <div className="font-bold">{col.monthName}</div>
                               <div className={cn(
                                 "text-xs font-medium",
-                                col.year === years[0] ? 'text-blue-600' : 'text-purple-600'
+                                col.year === years[0] ? 'text-blue-300' : 'text-purple-300'
                               )}>
                                 {col.year}
                               </div>
@@ -239,14 +269,14 @@ export const YearOnYearTrainerTable = ({
                         </Tooltip>
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-slate-700 min-w-[100px]">YoY Change</TableHead>
-                    <TableHead className="text-center font-bold text-slate-700 min-w-[100px]">Total</TableHead>
+                    <TableHead className="text-center font-bold text-white min-w-[100px] border-l border-slate-600">YoY Change</TableHead>
+                    <TableHead className="text-center font-bold text-white min-w-[100px] border-l border-slate-600">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {/* Totals Row */}
-                  <TableRow className="bg-gradient-to-r from-blue-50 to-purple-50 border-b-2 font-bold">
-                    <TableCell className="font-bold text-blue-800 sticky left-0 bg-gradient-to-r from-blue-50 to-purple-50 z-10 border-r">
+                  <TableRow className="bg-slate-100 border-b-2 font-bold">
+                    <TableCell className="font-bold text-slate-800 sticky left-0 bg-slate-100 z-10 border-r border-slate-300">
                       TOTAL
                     </TableCell>
                     {alternatingColumns.map((col) => (
@@ -425,6 +455,7 @@ export const YearOnYearTrainerTable = ({
             </TooltipProvider>
           </div>
         </CardContent>
+        )}
       </Card>
 
       {/* Drill Down Modal */}

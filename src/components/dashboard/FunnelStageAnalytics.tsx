@@ -208,7 +208,7 @@ export const FunnelStageAnalytics: React.FC<FunnelStageAnalyticsProps> = ({ data
         transition={{ delay: 0.4 }}
       >
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-0">
-          <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+          <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
             <CardTitle className="flex items-center gap-2 text-xl">
               <Target className="w-6 h-6" />
               Complete Funnel Stage Performance

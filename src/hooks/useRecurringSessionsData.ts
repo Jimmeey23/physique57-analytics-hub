@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import { batchFetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('useRecurringSessionsData');
 
 export interface RecurringSessionData {
   trainerId: string;
@@ -41,13 +45,6 @@ export interface RecurringSessionData {
   fillPercentage?: number;
 }
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
-
 const SPREADSHEET_ID = "1sDPAX6OmGb48kL1pm0mhin2C9KD-Jykq8skJjNuQUNg";
 
 export const useRecurringSessionsData = () => {
@@ -56,74 +53,15 @@ export const useRecurringSessionsData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getAccessToken = async () => {
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      const tokenData = await response.json();
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
-  };
-
-  const parseNumericValue = (value: string | number): number => {
-    if (typeof value === 'number') return value;
-    if (!value || value === '') return 0;
-    
-    const cleaned = value.toString().replace(/,/g, '').replace('%', '');
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : parsed;
-  };
-
   const fetchData = async () => {
     try {
       setLoading(true);
-      const accessToken = await getAccessToken();
       
-      // Fetch both sheets simultaneously
-      const [recurringResponse, teacherResponse] = await Promise.all([
-        fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Recurring?alt=json`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        ),
-        fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Teacher%20Recurring?alt=json`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        )
-      ]);
-
-      if (!recurringResponse.ok || !teacherResponse.ok) {
-        throw new Error('Failed to fetch recurring sessions data');
-      }
-
-      const [recurringResult, teacherResult] = await Promise.all([
-        recurringResponse.json(),
-        teacherResponse.json()
-      ]);
-
-      const recurringRows = recurringResult.values || [];
-      const teacherRows = teacherResult.values || [];
+      // Fetch both sheets using batch fetch
+      const results = await batchFetchGoogleSheet(SPREADSHEET_ID, ['Recurring', 'Teacher Recurring']);
+      
+      const recurringRows = results[0];
+      const teacherRows = results[1];
       
       // Process Recurring data
       if (recurringRows.length > 1) {
@@ -228,7 +166,7 @@ export const useRecurringSessionsData = () => {
 
       setError(null);
     } catch (err) {
-      console.error('Error fetching recurring sessions data:', err);
+      logger.error('Error fetching recurring sessions data:', err);
       setError('Failed to load recurring sessions data');
     } finally {
       setLoading(false);

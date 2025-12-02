@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { shallowEqual } from '@/utils/performanceUtils';
+import { TABLE_STYLES, HEADER_GRADIENTS } from '@/styles/tableStyles';
 
 interface ModernTableWrapperProps {
   title: string;
@@ -103,19 +104,16 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
     return () => metricsRegistry.unregister(title);
   }, [metricsRegistry, title, tableRef, disableAutoRegistry]);
   return (
-    <Card className={cn(
-      "w-full shadow-lg border border-slate-300 bg-white",
-      className
-    )}>
-      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white p-4 rounded-t-lg">
+    <Card className={cn(TABLE_STYLES.card.container, className)}>
+      <CardHeader className={TABLE_STYLES.card.header}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-sm">
+            <div className={TABLE_STYLES.card.headerIcon}>
               {icon}
             </div>
             <div>
-              <h3 className="text-lg font-bold">{title}</h3>
-              <p className="text-slate-300 text-sm font-medium">{description}</p>
+              <h3 className={TABLE_STYLES.card.headerTitle}>{title}</h3>
+              <p className={TABLE_STYLES.card.headerDescription}>{description}</p>
             </div>
           </div>
           
@@ -201,7 +199,7 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-0" ref={internalTableRef}>
+      <CardContent className={TABLE_STYLES.card.content} ref={internalTableRef}>
         {children}
       </CardContent>
     </Card>
@@ -249,7 +247,7 @@ export const ModernGroupBadge: React.FC<ModernGroupBadgeProps> = ({
   className = '' 
 }) => {
   return (
-    <div className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-slate-200 text-slate-800 border border-slate-300 rounded-sm ${className} shrink-0`}>
+    <div className={cn(TABLE_STYLES.group.badge, className)}>
       <span className="font-bold">{count}</span>
       <span className="ml-1.5 font-medium">{label}</span>
     </div>
@@ -290,8 +288,8 @@ export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`flex flex-wrap gap-2 p-4 bg-white rounded-lg border border-slate-300 shadow-sm ${className}`}>
-      <div className="flex items-center space-x-2 text-slate-700 font-semibold text-sm mr-4">
+    <div className={cn(TABLE_STYLES.metricTabs.container, className)}>
+      <div className={TABLE_STYLES.metricTabs.label}>
         <BarChart3 className="w-4 h-4 text-slate-500" />
         <span>Metrics:</span>
       </div>
@@ -300,11 +298,12 @@ export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({
           <button
             key={metric.key}
             onClick={() => onMetricChange(metric.key)}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-sm font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+            className={cn(
+              TABLE_STYLES.metricTabs.button,
               selectedMetric === metric.key
-                ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-            }`}
+                ? TABLE_STYLES.metricTabs.buttonActive
+                : TABLE_STYLES.metricTabs.buttonInactive
+            )}
           >
             {metric.icon}
             <span>{metric.label}</span>

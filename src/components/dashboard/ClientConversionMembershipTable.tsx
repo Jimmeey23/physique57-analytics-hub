@@ -69,10 +69,10 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     {
       key: 'membershipType' as const,
       header: 'Membership Type',
-      className: 'font-medium text-xs min-w-[240px] text-slate-900',
+      className: 'font-medium text-xs min-w-[240px]',
       sortable: true,
       render: (value: string) => (
-        <span className="text-sm font-medium text-slate-900 truncate" title={value}>{value}</span>
+        <span className="text-sm font-medium text-slate-700 truncate" title={value}>{value}</span>
       )
     },
     {
@@ -80,56 +80,56 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       header: 'Trials',
       align: 'center' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{formatNumber(value)}</span>
     },
     {
       key: 'newMembers' as const,
       header: 'New Members',
       align: 'center' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{formatNumber(value)}</span>
     },
     {
       key: 'retained' as const,
       header: 'Retained',
       align: 'center' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{formatNumber(value)}</span>
     },
     {
       key: 'retentionRate' as const,
       header: 'Retention %',
       align: 'center' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}%</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{value.toFixed(1)}%</span>
     },
     {
       key: 'converted' as const,
       header: 'Converted',
       align: 'center' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{formatNumber(value)}</span>
     },
     {
       key: 'conversionRate' as const,
       header: 'Conversion %',
       align: 'center' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{value.toFixed(1)}%</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{value.toFixed(1)}%</span>
     },
     {
       key: 'avgLTV' as const,
       header: 'Avg LTV',
       align: 'right' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{formatCurrency(value)}</span>
     },
     {
       key: 'totalLTV' as const,
       header: 'Total LTV',
       align: 'right' as const,
       sortable: true,
-      render: (value: number) => <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
+      render: (value: number) => <span className="text-sm font-medium text-slate-700">{formatCurrency(value)}</span>
     }
   ];
 
@@ -167,7 +167,7 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
 
   return (
     <Card className="bg-white shadow-lg border-0">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-800 to-indigo-800 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <CardTitle className="flex items-center gap-2">
           <Award className="w-5 h-5" />
           Membership Type Performance Analysis
@@ -180,7 +180,7 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
         <ModernDataTable
           data={displayedData}
           columns={columns}
-          headerGradient="from-purple-800 to-indigo-800"
+          headerGradient="from-slate-800 via-slate-900 to-slate-800"
           showFooter={true}
           footerData={totals}
           maxHeight="500px"

@@ -2,18 +2,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { requestCache } from '@/utils/performanceOptimizations';
+import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
+const logger = createLogger('useGoogleSheets');
 
 const SPREADSHEET_ID = "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
-
-// Cache for access token
-let cachedToken: { token: string; expiry: number } | null = null;
 
 export const useGoogleSheets = () => {
   const [data, setData] = useState<SalesData[]>([]);
@@ -21,57 +15,6 @@ export const useGoogleSheets = () => {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
-
-  const getAccessToken = async () => {
-    // Return cached token if still valid
-    if (cachedToken && Date.now() < cachedToken.expiry) {
-      return cachedToken.token;
-    }
-
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      const tokenData = await response.json();
-      
-      // Cache token for 50 minutes (tokens expire in 1 hour)
-      cachedToken = {
-        token: tokenData.access_token,
-        expiry: Date.now() + (50 * 60 * 1000)
-      };
-      
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
-  };
-
-  const parseNumericValue = (value: string | number): number => {
-    // Robust parser: handles currency symbols, commas, spaces, and percent signs
-    if (typeof value === 'number') return isNaN(value) ? 0 : value;
-    if (!value || value === '') return 0;
-
-    const cleaned = value
-      .toString()
-      .trim()
-      // Remove currency symbols and thousand separators
-      .replace(/[₹,\s]/g, '')
-      // Allow parseFloat to stop at non-numeric (e.g., %), so no need to strip % explicitly
-      ;
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : parsed;
-  };
 
   const fetchSalesData = async () => {
     // Abort previous request if still pending
@@ -87,8 +30,8 @@ export const useGoogleSheets = () => {
       
       // Use request cache to prevent duplicate requests
       const result = await requestCache.fetch('google-sheets-sales', async () => {
-        console.log('Fetching sales data from Google Sheets...');
-        const accessToken = await getAccessToken();
+        logger.info('Fetching sales data from Google Sheets...');
+        const accessToken = await getGoogleAccessToken();
         
         const response = await fetch(
           `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
@@ -108,6 +51,13 @@ export const useGoogleSheets = () => {
       });
       
       const rows = result.values || [];
+      
+      console.log('useGoogleSheets - Raw data from Google Sheets:', {
+        totalRows: rows.length,
+        hasHeaders: rows.length > 0,
+        headers: rows[0]?.slice(0, 10), // First 10 headers
+        sampleRow: rows[1]?.slice(0, 10) // First 10 columns of first data row
+      });
       
       if (rows.length < 2) {
         if (isMountedRef.current) {
@@ -234,8 +184,8 @@ export const useGoogleSheets = () => {
       
       if (!isMountedRef.current) return;
       
-      console.log('Transformed sales data sample:', salesData.slice(0, 3));
-      console.log('Sample discount data:', {
+      logger.debug('Transformed sales data sample:', salesData.slice(0, 3));
+      logger.debug('Sample discount data:', {
         discountAmount: salesData[0]?.discountAmount,
         discountPercentage: salesData[0]?.discountPercentage,
         mrpPreTax: salesData[0]?.mrpPreTax,
@@ -247,7 +197,7 @@ export const useGoogleSheets = () => {
       setError(null);
     } catch (err) {
       if (isMountedRef.current) {
-        console.error('Error fetching sales data:', err);
+        logger.error('Error fetching sales data:', err);
         setError('Failed to load sales data');
       }
     } finally {

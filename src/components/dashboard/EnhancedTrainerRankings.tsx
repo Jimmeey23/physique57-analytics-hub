@@ -6,6 +6,7 @@ import { Trophy, Medal, Award, Crown, Star, TrendingUp, Users, Target, Activity,
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { cn } from '@/lib/utils';
+import { TrainerAvatar } from '@/utils/trainerAvatars';
 
 interface EnhancedTrainerRankingsProps {
   data: ProcessedTrainerData[];
@@ -127,7 +128,7 @@ export const EnhancedTrainerRankings: React.FC<EnhancedTrainerRankingsProps> = (
 
   return (
     <Card className="bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-      <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-xl font-bold">
@@ -252,6 +253,7 @@ export const EnhancedTrainerRankings: React.FC<EnhancedTrainerRankingsProps> = (
                   {/* Trainer Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
+                      <TrainerAvatar name={trainer.name} size="sm" />
                       <h3 className="font-bold text-gray-900 truncate">{trainer.name}</h3>
                       {isTopThree && (
                         <Badge className="bg-yellow-100 text-yellow-800 text-xs animate-pulse">

@@ -2,44 +2,16 @@
 import { useState, useEffect } from 'react';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
+import { fetchGoogleSheet, SPREADSHEET_IDS } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
-
-const SPREADSHEET_ID = "1kDV0j7JQZCvBAu-asBkgA_9j0L90jAQFwdhQrRh4_kw";
+const logger = createLogger('useNewClientData');
 
 export const useNewClientData = () => {
   const [data, setData] = useState<NewClientData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  const getAccessToken = async () => {
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      const tokenData = await response.json();
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
-  };
 
   // Helper to calculate conversion span in days
   const calculateConversionSpan = (firstVisitDate: string, firstPurchaseDate: string): number => {
@@ -53,16 +25,7 @@ export const useNewClientData = () => {
     
     const diffTime = firstPurchase.getTime() - firstVisit.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const result = Math.max(0, diffDays);
-    
-    console.log('Conversion span calculated:', { 
-      firstVisitDate, 
-      firstPurchaseDate, 
-      diffDays, 
-      result 
-    });
-    
-    return result;
+    return Math.max(0, diffDays);
   };
 
   // Helper to format to canonical month key YYYY-MM
@@ -79,32 +42,18 @@ export const useNewClientData = () => {
       if (isInitialized) {
         setLoading(true);
       }
-      console.log('Fetching new client data from Google Sheets...');
-      const accessToken = await getAccessToken();
-      console.log('Access token obtained for new client data');
+      logger.info('Fetching new client data...');
       
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/New?alt=json`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const rows = await fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'New', {
+        valueRenderOption: 'FORMATTED_VALUE'
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch new client data');
-      }
-
-      const result = await response.json();
-      const rows = result.values || [];
-      
       if (rows.length < 2) {
         setData([]);
         return;
       }
 
-      const newClientData: NewClientData[] = rows.slice(1).map((row: any[], idx: number) => {
+      const newClientData: NewClientData[] = rows.slice(1).map((row: any[]) => {
         // Column mapping aligned to provided sample:
         // 0 Member Id, 1 First Name, 2 Last Name, 3 Email, 4 Phone Number,
         // 5 First Visit Date, 6 First Visit Entity Name, 7 First Visit Type, 8 First Visit Location,
@@ -154,17 +103,13 @@ export const useNewClientData = () => {
         } as NewClientData & { noOfVisits?: number };
       });
 
-      console.log('New client data loaded:', newClientData.length, 'records');
-      
-      // Minimal debug
-      const convertedClients = newClientData.filter(c => c.conversionStatus === 'Converted' && c.conversionSpan > 0);
-      console.log('New client data loaded:', newClientData.length, 'records', 'converted with span:', convertedClients.length);
+      logger.info(`New client data loaded: ${newClientData.length} records`);
       
       setData(newClientData);
       setError(null);
       setIsInitialized(true);
     } catch (err) {
-      console.error('Error fetching new client data:', err);
+      logger.error('Error fetching new client data:', err);
       setError('Failed to load new client data');
       setIsInitialized(true);
     } finally {

@@ -1,13 +1,10 @@
 /**
  * Google Drive Service for storing and retrieving popover content
  */
+import { getGoogleAccessToken } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
+const logger = createLogger('googleDriveService');
 
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_BASE = "https://www.googleapis.com/upload/drive/v3";
@@ -21,48 +18,14 @@ interface PopoverContent {
 }
 
 class GoogleDriveService {
-  private accessToken: string | null = null;
-  private tokenExpiry: number = 0;
   private folderId: string | null = null;
   private fileId: string | null = null;
 
   /**
-   * Get a fresh access token using refresh token
+   * Get a fresh access token using the centralized auth
    */
   private async getAccessToken(): Promise<string> {
-    // Check if current token is still valid
-    if (this.accessToken && Date.now() < this.tokenExpiry) {
-      return this.accessToken;
-    }
-
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to get access token: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      // Set expiry to 5 minutes before actual expiry for safety
-      this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000;
-      
-      return this.accessToken;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
+    return getGoogleAccessToken();
   }
 
   /**
@@ -164,7 +127,7 @@ class GoogleDriveService {
       const content = await response.json();
       return content;
     } catch (error) {
-      console.error('Error loading content from Drive:', error);
+      logger.error('Error loading content from Drive:', error);
       return {};
     }
   }
@@ -209,7 +172,7 @@ class GoogleDriveService {
       
       return true;
     } catch (error) {
-      console.error('Error saving content to Drive:', error);
+      logger.error('Error saving content to Drive:', error);
       return false;
     }
   }

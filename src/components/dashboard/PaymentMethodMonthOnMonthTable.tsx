@@ -1,12 +1,14 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { YearOnYearMetricTabs } from './YearOnYearMetricTabs';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { CreditCard, TrendingUp, TrendingDown, Edit3, Save, X } from 'lucide-react';
+import { CreditCard, TrendingUp, TrendingDown, Edit3, Save, X, ShrinkIcon, ExpandIcon, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 interface PaymentMethodMonthOnMonthTableProps {
   data: SalesData[];
   onRowClick: (row: any) => void;
@@ -20,6 +22,20 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const [isEditingSummary, setIsEditingSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('• Digital payment methods showing strong adoption\n• Credit card transactions dominate premium services\n• Cash payments declining as expected in digital transformation');
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'payment-method-month-on-month-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
+  
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
 
@@ -247,17 +263,31 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
     if (saved) setSummaryText(saved);
   };
   return <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl rounded-xl">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-t-lg">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-blue-600" />
+              <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-blue-400" />
                 Payment Method Month-on-Month Analysis
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-slate-300 mt-1">
                 Monthly performance metrics by payment method ({data.length} total records)
               </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <CopyTableButton tableRef={tableRef} />
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+                className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+                {isTableCollapsed ? 'Expand' : 'Collapse'}
+              </Button>
             </div>
           </div>
           
@@ -265,20 +295,21 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
         </div>
       </CardHeader>
 
+      {!isTableCollapsed && (
       <CardContent className="p-0">
         <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
-              <thead className="bg-gradient-to-r from-blue-700 to-blue-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
+            <table ref={tableRef} id={tableId} className="min-w-full bg-white unified-table">
+              <thead className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
                 <tr>
-                  <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-blue-800 z-30">Payment Method</th>
-                  <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 min-w-24">Contribution %</th>
+                  <th className="text-white font-bold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-30 border-r border-white/20">Payment Method</th>
+                  <th className="text-white font-bold text-xs uppercase tracking-wider px-3 py-3 border-l border-white/20 min-w-24">Contribution %</th>
                   {monthlyData.map(({
                   key,
                   display
-                }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 border-l border-blue-600 min-w-32">
-                      <div className="flex flex-col">
-                        <span className="text-sm">{display.split(' ')[0]}</span>
-                        <span className="text-blue-200 text-xs">{display.split(' ')[1]}</span>
+                }) => <th key={key} className="text-white font-bold text-xs uppercase tracking-wider px-3 py-3 border-l border-white/20 min-w-32">
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs font-bold">{display.split(' ')[0]}</span>
+                        <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                       </div>
                     </th>)}
                 </tr>
@@ -313,13 +344,14 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
                         </td>;
                 })}
                   </tr>)}
-              <tr className="bg-gradient-to-r from-blue-50 to-blue-100 border-t-2 border-blue-200 font-bold">
-                <td className="px-6 py-3 text-sm font-bold text-blue-900 sticky left-0 bg-blue-100 border-r border-blue-200">
+              <tr className="bg-slate-800 text-white border-t-2 border-slate-600 font-bold">
+                <td className="px-6 py-3 text-sm font-bold sticky left-0 bg-slate-800 border-r border-slate-600">
                   TOTAL
                 </td>
+                <td className="px-3 py-3 text-center text-sm font-mono font-bold border-l border-slate-600">100%</td>
                 {monthlyData.map(({
                 key
-              }) => <td key={key} className="px-3 py-3 text-center text-sm text-blue-900 font-mono font-bold border-l border-blue-200">
+              }) => <td key={key} className="px-3 py-3 text-center text-sm font-mono font-bold border-l border-slate-600">
                     {formatMetricValue(totalsRow.monthlyValues[key] || 0, selectedMetric)}
                   </td>)}
               </tr>
@@ -356,5 +388,6 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
             </div>}
         </div>
       </CardContent>
+      )}
     </Card>;
 };

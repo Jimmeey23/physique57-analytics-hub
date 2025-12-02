@@ -174,7 +174,7 @@ export const PowerCycleVsBarreEnhancedMonthOnMonthTable: React.FC<PowerCycleVsBa
           columns={columns}
           maxHeight="600px"
           stickyHeader={true}
-          headerGradient="from-blue-600 via-purple-600 to-pink-600"
+          headerGradient="from-slate-800 via-slate-900 to-slate-800"
           onRowClick={onRowClick}
         />
       </CardContent>

@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { NewClientData } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { Badge } from '@/components/ui/badge';
+// badge removed for table rows — using plain text for better contrast
 import { Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
@@ -94,18 +94,13 @@ export const EnhancedClientRetentionTables: React.FC<EnhancedClientRetentionTabl
 
   const getGrowthBadge = (current: number, previous: number) => {
     if (!previous || previous === 0) return null;
-    
     const growth = ((current - previous) / previous) * 100;
     const isPositive = growth > 0;
-    
     return (
-      <Badge className={cn(
-        "text-xs ml-2",
-        isPositive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-      )}>
-        {isPositive ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+      <span className={cn('text-xs ml-2 font-medium', isPositive ? 'text-emerald-700' : 'text-red-700')}>
+        {isPositive ? <TrendingUp className="w-3 h-3 inline-block mr-1" /> : <TrendingDown className="w-3 h-3 inline-block mr-1" />}
         {Math.abs(growth).toFixed(1)}%
-      </Badge>
+      </span>
     );
   };
 
@@ -116,9 +111,7 @@ export const EnhancedClientRetentionTables: React.FC<EnhancedClientRetentionTabl
           key: 'rank',
           header: '#',
           render: (value: any) => (
-            <Badge className="bg-blue-100 text-blue-800 w-8 h-6 flex items-center justify-center">
-              {value}
-            </Badge>
+            <span className="text-sm font-medium text-slate-700 w-8 h-6 inline-flex items-center justify-center">{value}</span>
           ),
           align: 'center' as const
         },
@@ -138,9 +131,7 @@ export const EnhancedClientRetentionTables: React.FC<EnhancedClientRetentionTabl
           key: 'location',
           header: 'Location',
           render: (value: any) => (
-            <Badge className="bg-purple-100 text-purple-800 text-xs">
-              {value?.split(',')[0] || 'Unknown'}
-            </Badge>
+            <span className="text-sm text-slate-700 truncate" title={value}>{value?.split(',')[0] || 'Unknown'}</span>
           ),
           align: 'center' as const
         },
@@ -148,12 +139,7 @@ export const EnhancedClientRetentionTables: React.FC<EnhancedClientRetentionTabl
           key: 'conversionStatus',
           header: 'Status',
           render: (value: any) => (
-            <Badge className={cn(
-              "text-xs",
-              value === 'Converted' ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-            )}>
-              {value}
-            </Badge>
+            <span className={cn('text-sm font-medium', value === 'Converted' ? 'text-emerald-700' : 'text-amber-700')}>{value || 'Pending'}</span>
           ),
           align: 'center' as const
         },

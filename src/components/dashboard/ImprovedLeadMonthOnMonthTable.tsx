@@ -156,7 +156,7 @@ export const ImprovedLeadMonthOnMonthTable: React.FC<ImprovedLeadMonthOnMonthTab
   return (
     <TooltipProvider>
       <Card className="bg-white shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />

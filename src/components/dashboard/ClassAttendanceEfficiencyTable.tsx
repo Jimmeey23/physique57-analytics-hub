@@ -169,12 +169,12 @@ export const ClassAttendanceEfficiencyTable: React.FC<ClassAttendanceEfficiencyT
 
   return (
     <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="border-b border-gray-100">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-6 h-6 text-yellow-600" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Zap className="w-6 h-6" />
             Efficiency & Optimization Analysis
-            <Badge variant="outline" className="text-yellow-600">
+            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
               {currentData.length} items
             </Badge>
           </CardTitle>
@@ -187,10 +187,10 @@ export const ClassAttendanceEfficiencyTable: React.FC<ClassAttendanceEfficiencyT
             return (
               <Button
                 key={view.id}
-                variant={selectedView === view.id ? 'default' : 'outline'}
+                variant={selectedView === view.id ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedView(view.id)}
-                className="gap-1 text-xs"
+                className={`gap-1 text-xs ${selectedView === view.id ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
               >
                 <Icon className="w-3 h-3" />
                 {view.label}
@@ -204,18 +204,18 @@ export const ClassAttendanceEfficiencyTable: React.FC<ClassAttendanceEfficiencyT
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="font-semibold text-gray-900 sticky left-0 bg-gray-50 z-10">
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHead className="font-semibold text-white sticky left-0 bg-slate-800 z-10">
                   {selectedView === 'timeEfficiency' ? 'Time Slot' : 'Class Format'}
                 </TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Sessions</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Fill Rate</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Utilization</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Efficiency Score</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Session Distribution</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Revenue</TableHead>
+                <TableHead className="text-center font-semibold text-white">Sessions</TableHead>
+                <TableHead className="text-center font-semibold text-white">Fill Rate</TableHead>
+                <TableHead className="text-center font-semibold text-white">Utilization</TableHead>
+                <TableHead className="text-center font-semibold text-white">Efficiency Score</TableHead>
+                <TableHead className="text-center font-semibold text-white">Session Distribution</TableHead>
+                <TableHead className="text-center font-semibold text-white">Revenue</TableHead>
                 {selectedView === 'performance' && (
-                  <TableHead className="text-center font-semibold text-gray-900">Recommendations</TableHead>
+                  <TableHead className="text-center font-semibold text-white">Recommendations</TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -225,100 +225,80 @@ export const ClassAttendanceEfficiencyTable: React.FC<ClassAttendanceEfficiencyT
                 const EfficiencyIcon = efficiencyBadge.icon;
                 
                 return (
-                  <TableRow key={index} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r">
-                      <div className="flex flex-col">
-                        <span className="text-gray-900">
-                          {selectedView === 'timeEfficiency' ? row.timeSlot : row.format}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {selectedView === 'timeEfficiency' 
-                            ? `${row.formatCount} formats` 
-                            : `${formatNumber(row.totalCapacity)} capacity`
-                          }
-                        </span>
-                      </div>
+                  <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
+                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r whitespace-nowrap">
+                      <span className="text-gray-900 font-semibold">
+                        {selectedView === 'timeEfficiency' ? row.timeSlot : row.format}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({selectedView === 'timeEfficiency' ? `${row.formatCount} formats` : formatNumber(row.totalCapacity)})
+                      </span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatNumber(row.totalSessions)}</span>
-                        <span className="text-xs text-gray-500">
-                          {row.emptySessions} empty
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatNumber(row.totalSessions)}</span>
+                      <span className="text-xs text-gray-500 ml-1">({row.emptySessions} empty)</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
-                        className={
-                          row.fillRate >= 80 ? 'bg-green-100 text-green-800' :
-                          row.fillRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }
+                        className={`attendance-badge ${
+                          row.fillRate >= 80 ? 'badge-soft-green' :
+                          row.fillRate >= 60 ? 'badge-soft-yellow' :
+                          'badge-soft-red'
+                        }`}
                       >
                         {formatPercentage(row.fillRate)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
-                        className={
-                          row.utilizationRate >= 90 ? 'bg-green-100 text-green-800' :
-                          row.utilizationRate >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }
+                        className={`attendance-badge ${
+                          row.utilizationRate >= 90 ? 'badge-soft-green' :
+                          row.utilizationRate >= 70 ? 'badge-soft-yellow' :
+                          'badge-soft-red'
+                        }`}
                       >
                         {formatPercentage(row.utilizationRate)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
-                        <EfficiencyIcon className="w-4 h-4" />
-                        <Badge className={efficiencyBadge.color}>
+                        <EfficiencyIcon className="w-3 h-3" />
+                        <Badge className={`attendance-badge ${efficiencyBadge.color}`}>
                           {formatPercentage(row.efficiencyScore || 0)}
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col gap-1">
+                    <TableCell className="text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2 text-xs">
                         {row.optimizedSessions > 0 && (
-                          <div className="flex items-center justify-center gap-1">
+                          <span className="flex items-center gap-0.5">
                             <CheckCircle className="w-3 h-3 text-green-600" />
-                            <span className="text-xs">{row.optimizedSessions} optimal</span>
-                          </div>
+                            {row.optimizedSessions}
+                          </span>
                         )}
                         {row.underutilizedSessions > 0 && (
-                          <div className="flex items-center justify-center gap-1">
+                          <span className="flex items-center gap-0.5">
                             <AlertTriangle className="w-3 h-3 text-yellow-600" />
-                            <span className="text-xs">{row.underutilizedSessions} underused</span>
-                          </div>
+                            {row.underutilizedSessions}
+                          </span>
                         )}
                         {row.oversoldSessions > 0 && (
-                          <div className="flex items-center justify-center gap-1">
+                          <span className="flex items-center gap-0.5">
                             <Activity className="w-3 h-3 text-blue-600" />
-                            <span className="text-xs">{row.oversoldSessions} oversold</span>
-                          </div>
+                            {row.oversoldSessions}
+                          </span>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatCurrency(row.totalRevenue || 0)}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatCurrency(row.avgRevenue || 0)} avg
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatCurrency(row.totalRevenue || 0)}</span>
+                      <span className="text-xs text-gray-500 ml-1">({formatCurrency(row.avgRevenue || 0)})</span>
                     </TableCell>
                     {selectedView === 'performance' && (
-                      <TableCell className="text-center">
-                        <div className="flex flex-col gap-1">
-                          <Badge className={row.categoryColor}>
-                            {row.category}
-                          </Badge>
-                          {row.recommendations.map((rec: string, idx: number) => (
-                            <span key={idx} className="text-xs text-gray-600">
-                              {rec}
-                            </span>
-                          ))}
-                        </div>
+                      <TableCell className="text-center whitespace-nowrap">
+                        <Badge className={`attendance-badge ${row.categoryColor}`}>
+                          {row.category}
+                        </Badge>
                       </TableCell>
                     )}
                   </TableRow>

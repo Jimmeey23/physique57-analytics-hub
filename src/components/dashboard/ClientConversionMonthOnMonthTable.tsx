@@ -294,7 +294,7 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
         <ModernDataTable
           data={displayedData}
           columns={columns}
-          headerGradient="from-blue-700 to-cyan-800"
+          headerGradient="from-slate-800 via-slate-900 to-slate-800"
           showFooter={true}
           footerData={totals}
           maxHeight="600px"

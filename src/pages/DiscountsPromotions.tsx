@@ -13,9 +13,25 @@ const DiscountsPromotions: React.FC = () => {
   const { setLoading } = useGlobalLoading();
   const { data: salesData, loading, error } = useSalesData();
   
+  // Debug: Log salesData directly from hook
+  useEffect(() => {
+    console.log('DiscountsPromotions - useSalesData returned:', {
+      loading,
+      error,
+      totalRecords: salesData?.length || 0,
+      sample: salesData?.slice(0, 3),
+      hasData: !!salesData && salesData.length > 0
+    });
+  }, [salesData, loading, error]);
+  
   // Transform sales data for discount analysis
   const discountData = useMemo(() => {
-    if (!salesData) return [];
+    if (!salesData) {
+      console.log('discountData - salesData is null/undefined');
+      return [];
+    }
+    
+    console.log('discountData - processing', salesData.length, 'records');
     
     return salesData.map((item: any) => {
       // Parse numeric values safely

@@ -242,7 +242,7 @@ export const ClientConversionDrillDownModalV2: React.FC<ClientConversionDrillDow
             <ModernDataTable
               data={clients}
               columns={columns}
-              headerGradient="from-blue-600 to-purple-600"
+              headerGradient="from-slate-800 via-slate-900 to-slate-800"
               maxHeight="400px"
             />
           </CardContent>

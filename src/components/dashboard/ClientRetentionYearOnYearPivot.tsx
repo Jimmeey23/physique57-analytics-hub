@@ -90,7 +90,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data }) => {
 
   return (
     <Card className="bg-white shadow-xl border-0 overflow-hidden">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-700 to-teal-800 text-white">
+      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
@@ -102,7 +102,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data }) => {
               <button
                 key={k}
                 onClick={() => setMetric(k)}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${metric === k ? 'bg-white text-emerald-700' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${metric === k ? 'bg-white text-slate-800' : 'bg-white/10 text-white hover:bg-white/20'}`}
                 title={METRIC_LABELS[k]}
               >
                 {METRIC_LABELS[k]}
@@ -113,15 +113,15 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data }) => {
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-full unified-table">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white">
-                <th className="px-4 py-3 text-left sticky left-0 z-20 bg-emerald-700/90 font-bold text-xs uppercase tracking-wide">Month</th>
+              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+                <th className="px-4 py-3 text-left sticky left-0 z-20 bg-slate-800 font-bold text-xs uppercase tracking-wide border-r border-white/20">Month</th>
                 {months.map(m => (
                   <th key={m.key} className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[100px] border-l border-white/20">
                     <div className="flex flex-col items-center">
                       <span className="text-xs font-bold whitespace-nowrap">{m.key}</span>
-                      <span className="text-white/80 text-[10px]">Prev | Curr</span>
+                      <span className="text-slate-300 text-[10px]">Prev | Curr</span>
                     </div>
                   </th>
                 ))}

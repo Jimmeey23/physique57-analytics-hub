@@ -192,7 +192,7 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
 
   return (
     <Card className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20 border-0 shadow-xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Filter className="w-6 h-6" />

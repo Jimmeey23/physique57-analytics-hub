@@ -7,11 +7,11 @@ interface ExecutiveLocationTabsProps {
   availableLocations: string[];
 }
 
-// Fixed location mapping like Sessions tab
+// Correct location names matching the data and other tabs
 const LOCATION_MAP = [
-  { key: 'Kwality House, Kemps Corner', display: 'Kwality', icon: '🏢' },
-  { key: 'Supreme HQ, Bandra', display: 'Supreme', icon: '🏛️' },
-  { key: 'Kenkere House', display: 'Kenkere', icon: '🏰' }
+  { key: 'Kwality House, Kemps Corner', display: 'Kwality House', subtitle: 'Kemps Corner', icon: '🏢' },
+  { key: 'Supreme HQ, Bandra', display: 'Supreme HQ', subtitle: 'Bandra', icon: '🏛️' },
+  { key: 'Kenkere House, Bengaluru', display: 'Kenkere House', subtitle: 'Bengaluru', icon: '🏰' }
 ];
 
 export const ExecutiveLocationTabs: React.FC<ExecutiveLocationTabsProps> = ({ 
@@ -60,10 +60,13 @@ export const ExecutiveLocationTabs: React.FC<ExecutiveLocationTabsProps> = ({
             <TabsTrigger 
               key={location.key}
               value={location.key}
-              className="px-6 py-3 rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 data-[state=active]:shadow-lg flex items-center gap-2"
+              className="px-6 py-3 rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 data-[state=active]:shadow-lg flex flex-col items-center gap-1"
             >
-              <span className="text-lg">{location.icon}</span>
-              {location.display}
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{location.icon}</span>
+                <span>{location.display}</span>
+              </div>
+              <span className="text-xs opacity-75">{location.subtitle}</span>
             </TabsTrigger>
           ))}
         </TabsList>

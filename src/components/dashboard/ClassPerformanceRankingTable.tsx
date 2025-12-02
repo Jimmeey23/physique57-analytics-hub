@@ -109,27 +109,27 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
           <div className="overflow-auto border rounded-lg">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>Class Name</TableHead>
-                  <TableHead>Trainer</TableHead>
-                  <TableHead>Day</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Sessions</TableHead>
-                  <TableHead>Avg Check-ins</TableHead>
-                  <TableHead>Fill Rate</TableHead>
-                  <TableHead>Total Attendance</TableHead>
-                  <TableHead>Late Cancelled</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                  <TableHead className="text-slate-100">Rank</TableHead>
+                  <TableHead className="text-slate-100">Class Name</TableHead>
+                  <TableHead className="text-slate-100">Trainer</TableHead>
+                  <TableHead className="text-slate-100">Day</TableHead>
+                  <TableHead className="text-slate-100">Time</TableHead>
+                  <TableHead className="text-slate-100">Location</TableHead>
+                  <TableHead className="text-slate-100">Sessions</TableHead>
+                  <TableHead className="text-slate-100">Avg Check-ins</TableHead>
+                  <TableHead className="text-slate-100">Fill Rate</TableHead>
+                  <TableHead className="text-slate-100">Total Attendance</TableHead>
+                  <TableHead className="text-slate-100">Late Cancelled</TableHead>
+                  <TableHead className="text-slate-100">Revenue</TableHead>
+                  <TableHead className="text-slate-100">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedData.map((classData, index) => {
                   const actualRank = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
-                  <TableRow key={classData.uniqueId} className="hover:bg-muted/50">
+                  <TableRow key={classData.uniqueId} className="compact-table-row hover:bg-gray-50">
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         {actualRank <= 3 && (
@@ -212,20 +212,20 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                             <div className="overflow-auto border rounded-lg">
                               <Table>
                                 <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Session Name</TableHead>
-                                    <TableHead>Capacity</TableHead>
-                                    <TableHead>Checked In</TableHead>
-                                    <TableHead>Booked</TableHead>
-                                    <TableHead>Late Cancelled</TableHead>
-                                    <TableHead>Revenue</TableHead>
-                                    <TableHead>Fill %</TableHead>
+                                  <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                                    <TableHead className="text-slate-100">Date</TableHead>
+                                    <TableHead className="text-slate-100">Session Name</TableHead>
+                                    <TableHead className="text-slate-100">Capacity</TableHead>
+                                    <TableHead className="text-slate-100">Checked In</TableHead>
+                                    <TableHead className="text-slate-100">Booked</TableHead>
+                                    <TableHead className="text-slate-100">Late Cancelled</TableHead>
+                                    <TableHead className="text-slate-100">Revenue</TableHead>
+                                    <TableHead className="text-slate-100">Fill %</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {classData.sessions.map((session, idx) => (
-                                    <TableRow key={idx}>
+                                    <TableRow key={idx} className="compact-table-row hover:bg-gray-50">
                                       <TableCell>{session.date}</TableCell>
                                       <TableCell>{session.sessionName}</TableCell>
                                       <TableCell>{session.capacity}</TableCell>

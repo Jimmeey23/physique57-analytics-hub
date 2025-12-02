@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, TrendingUp, BarChart3, Users, DollarSign, 
   Target, Activity, Building2, Percent, RefreshCw, 
-  ArrowUp, ArrowDown, Clock, MapPin, Sparkles 
+  ArrowUp, ArrowDown, Clock, MapPin, Sparkles, ShrinkIcon, ExpandIcon 
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface MonthOnMonthClassTableProps {
   data: SessionData[]; // This should be ALL data, ignoring current date filters
@@ -61,6 +63,19 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('attendance');
   const [groupBy, setGroupBy] = useState<GroupByType>('overall');
   const [showGrowthRate, setShowGrowthRate] = useState(false);
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'month-on-month-class-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
 
   // Apply location + non-date filters (independent of date range)
   const { filters } = useSessionsFilters();
@@ -327,7 +342,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <CardHeader className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white relative overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white relative overflow-hidden rounded-t-xl">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm"></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between">
@@ -341,14 +356,26 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   </motion.div>
                   Month-on-Month Analytics
                 </CardTitle>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Badge variant="secondary" className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-                    {data.length} Total Sessions
-                  </Badge>
-                </motion.div>
+                <div className="flex items-center gap-2">
+                  <CopyTableButton tableRef={tableRef} />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+                    className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+                    {isTableCollapsed ? 'Expand' : 'Collapse'}
+                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Badge variant="secondary" className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                      {data.length} Total Sessions
+                    </Badge>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -462,6 +489,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
             </motion.div>
 
             {/* Month-on-Month Table */}
+            {!isTableCollapsed && (
             <motion.div 
               className="border border-purple-100 rounded-xl bg-white shadow-xl overflow-visible"
               initial={{ opacity: 0, y: 20 }}
@@ -469,7 +497,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <div className="w-full overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
-                <Table className="min-w-[1400px] w-max">
+                <Table ref={tableRef} id={tableId} className="min-w-[1400px] w-max">
                   <TableHeader className="sticky top-0 z-20 shadow-sm border-b-2">
                     <TableRow className={`${getTableHeaderClasses('attendance')}`}>
                       <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold`}>
@@ -496,11 +524,11 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                     </TableHead>
                   ))}
                   
-                  <TableHead className="text-center min-w-[120px] bg-blue-100 font-bold text-slate-900">
+                  <TableHead className="text-center min-w-[120px] bg-slate-800 font-bold text-white">
                     <div className="space-y-1">
                       <div className="font-semibold">Total</div>
                       {showGrowthRate && (
-                        <div className="text-xs text-gray-500">Avg Growth</div>
+                        <div className="text-xs text-slate-300">Avg Growth</div>
                       )}
                     </div>
                   </TableHead>
@@ -513,7 +541,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                       <motion.tr
                         key={row.groupKey}
                         className={cn(
-                          "border-b transition-all duration-300 hover:shadow-md",
+                          "border-b transition-all duration-300 hover:shadow-md h-10 max-h-10",
                           rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                         )}
                         initial={{ opacity: 0, x: -20 }}
@@ -526,26 +554,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                           transition: { duration: 0.2 }
                         }}
                       >
-                        <TableCell className="sticky left-0 z-20 bg-white border-r font-medium">
-                          <motion.div 
-                            className="flex items-center gap-2"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <motion.div 
-                              className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md"
-                              whileHover={{ scale: 1.1, rotate: 5 }}
-                              transition={{ duration: 0.2 }}
-                            >
+                        <TableCell className="sticky left-0 z-20 bg-white border-r font-medium whitespace-nowrap py-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
                               {row.groupLabel.charAt(0).toUpperCase()}
-                            </motion.div>
-                            <div>
-                              <div className="font-semibold text-gray-900">{row.groupLabel}</div>
-                              <div className="text-xs text-gray-500">
-                                {row.totals.sessions} sessions total
-                              </div>
                             </div>
-                          </motion.div>
+                            <span className="font-semibold text-gray-900">{row.groupLabel}</span>
+                            <span className="text-xs text-gray-500">({row.totals.sessions})</span>
+                          </div>
                         </TableCell>
                     
                     {availableMonths.map((month, index) => {
@@ -570,44 +586,34 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                       const growthRate = prevMonthData ? getGrowthRate(currentValue, previousValue) : 0;
 
                       return (
-                        <TableCell key={month.key} className="text-center">
-                          <div className="space-y-1">
-                            <div className="font-semibold text-gray-900">
-                              {getMetricValue(monthData, selectedMetric)}
-                            </div>
-                            {showGrowthRate && prevMonthData && (
-                              <div className={cn(
-                                "text-xs font-medium flex items-center justify-center gap-1",
-                                growthRate > 0 ? "text-green-600" : growthRate < 0 ? "text-red-600" : "text-gray-500"
-                              )}>
-                                {growthRate > 0 ? (
-                                  <ArrowUp className="w-3 h-3" />
-                                ) : growthRate < 0 ? (
-                                  <ArrowDown className="w-3 h-3" />
-                                ) : null}
-                                {formatPercentage(Math.abs(growthRate))}
-                              </div>
-                            )}
-                          </div>
+                        <TableCell key={month.key} className="text-center py-1.5 whitespace-nowrap">
+                          <span className="font-semibold text-gray-900">
+                            {getMetricValue(monthData, selectedMetric)}
+                          </span>
+                          {showGrowthRate && prevMonthData && (
+                            <span className={cn(
+                              "text-xs font-medium ml-1",
+                              growthRate > 0 ? "text-green-600" : growthRate < 0 ? "text-red-600" : "text-gray-500"
+                            )}>
+                              {growthRate > 0 ? "↑" : growthRate < 0 ? "↓" : ""}
+                              {formatPercentage(Math.abs(growthRate))}
+                            </span>
+                          )}
                         </TableCell>
                       );
                     })}
                     
-                    <TableCell className="text-center bg-blue-50/50">
-                      <motion.div 
-                        className="font-bold text-blue-800"
-                        whileHover={{ scale: 1.1 }}
-                        transition={{ duration: 0.2 }}
-                      >
+                    <TableCell className="text-center py-1.5 whitespace-nowrap">
+                      <span className="font-bold text-slate-800">
                         {getMetricValue(row.totals, selectedMetric)}
-                      </motion.div>
+                      </span>
                     </TableCell>
                   </motion.tr>
                 ))}
                 </AnimatePresence>
                 {/* Totals row across all groups */}
-                <TableRow className="bg-blue-50/60 font-bold border-t-2 border-blue-200">
-                  <TableCell className="sticky left-0 z-10 bg-blue-50/60 border-r">Totals</TableCell>
+                <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-10 max-h-10">
+                  <TableCell className="sticky left-0 z-10 bg-slate-800 border-r text-white py-1.5">Totals</TableCell>
                   {availableMonths.map((month) => {
                     const totalsForMonth = processedData.reduce((acc, row) => {
                       const md = row.monthlyData[month.key];
@@ -635,14 +641,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                       booked: totalsForMonth.booked
                     }, selectedMetric);
                     return (
-                      <TableCell key={`total-${month.key}`} className="text-center bg-blue-50/60">
-                        <div className="font-bold text-blue-800">{display}</div>
+                      <TableCell key={`total-${month.key}`} className="text-center py-1.5">
+                        <span className="font-bold text-white">{display}</span>
                       </TableCell>
                     );
                   })}
                   {/* Overall total (rightmost) */}
-                  <TableCell className="text-center bg-blue-100">
-                    <div className="font-bold text-blue-900">
+                  <TableCell className="text-center py-1.5">
+                    <span className="font-bold text-white">
                       {getMetricValue({
                         month: 'total',
                         monthLabel: 'Total',
@@ -657,13 +663,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                         uniqueClasses: 0,
                         uniqueTrainers: 0
                       }, selectedMetric)}
-                    </div>
+                    </span>
                   </TableCell>
                 </TableRow>
               </TableBody>
               </Table>
             </div>
           </motion.div>
+          )}
 
           {/* Summary Stats */}
           <motion.div 

@@ -518,18 +518,18 @@ export const DataTable: React.FC<DataTableProps> = ({
         
 
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-gradient-to-r from-blue-500 via-purple-600 to-blue-500 z-10 shadow-lg">
+          <Table className="unified-table">
+            <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-10 shadow-lg">
               <TableRow className="border-0">
-                <TableHead className="font-bold text-white text-sm sticky left-0 bg-gradient-to-r from-blue-500 to-purple-600 backdrop-blur-sm border-r border-white/20 min-w-[200px] shadow-lg">
+                <TableHead className="font-bold text-white text-sm sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 backdrop-blur-sm border-r border-white/20 min-w-[200px] shadow-lg">
                   Product
                 </TableHead>
                 {Object.entries(quarterGroups).map(([quarter, months]) => <TableHead key={quarter} colSpan={months.length} className="text-center font-bold text-white text-sm border-r border-white/20">
                     {quarter}
                   </TableHead>)}
               </TableRow>
-              <TableRow className="bg-gradient-to-r from-blue-400 via-purple-500 to-blue-400 border-0">
-                <TableHead className="font-bold text-white text-sm sticky left-0 bg-gradient-to-r from-blue-400 to-purple-500 backdrop-blur-sm border-r border-white/20">
+              <TableRow className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 border-0">
+                <TableHead className="font-bold text-white text-sm sticky left-0 bg-gradient-to-r from-slate-700 to-slate-800 backdrop-blur-sm border-r border-white/20">
                   &nbsp;
                 </TableHead>
                 {monthYears.map(month => <TableHead key={month} className="text-center font-bold text-white text-sm min-w-[120px] border-r border-white/10">
@@ -570,12 +570,12 @@ export const DataTable: React.FC<DataTableProps> = ({
                     </TableRow>)}
                 </React.Fragment>)}
             </TableBody>
-            <TableFooter className="sticky bottom-0 bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-500 shadow-lg">
+            <TableFooter className="sticky bottom-0 bg-slate-800 shadow-lg">
               <TableRow className="border-0">
-                <TableCell className="font-bold text-white sticky left-0 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm border-r border-white/20">
+                <TableCell className="font-bold text-white sticky left-0 bg-slate-800 backdrop-blur-sm border-r border-slate-600">
                   GRAND TOTALS
                 </TableCell>
-                {monthYears.map(month => <TableCell key={month} className="text-center font-bold text-white border-r border-white/10">
+                {monthYears.map(month => <TableCell key={month} className="text-center font-bold text-white border-r border-slate-600">
                     {activeTab === 'grossRevenue' && formatCurrency(totals[`${month}_grossRevenue`] || 0)}
                     {activeTab === 'netRevenue' && formatCurrency(totals[`${month}_netRevenue`] || 0)}
                     {activeTab === 'transactions' && formatNumber(totals[`${month}_transactions`] || 0)}
@@ -603,18 +603,18 @@ export const DataTable: React.FC<DataTableProps> = ({
         </div>
 
         <div className="max-h-[600px] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-gradient-to-r from-blue-500 via-purple-600 to-blue-500 z-10 shadow-lg">
+          <Table className="unified-table">
+            <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-10 shadow-lg">
               <TableRow className="border-0">
                 <TableHead className="font-bold text-white">Category</TableHead>
-                <TableHead className="font-bold text-white">Name</TableHead>
-                <TableHead className="text-center font-bold text-white">{new Date().getFullYear()} Revenue</TableHead>
-                <TableHead className="text-center font-bold text-white">{new Date().getFullYear() - 1} Revenue</TableHead>
-                <TableHead className="text-center font-bold text-white">Revenue Growth</TableHead>
-                <TableHead className="text-center font-bold text-white">{new Date().getFullYear()} Transactions</TableHead>
-                <TableHead className="text-center font-bold text-white">{new Date().getFullYear() - 1} Transactions</TableHead>
-                <TableHead className="text-center font-bold text-white">Transaction Growth</TableHead>
-                <TableHead className="text-center font-bold text-white">Member Growth</TableHead>
+                <TableHead className="font-bold text-white border-l border-white/20">Name</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear()} Revenue</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear() - 1} Revenue</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">Revenue Growth</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear()} Transactions</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear() - 1} Transactions</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">Transaction Growth</TableHead>
+                <TableHead className="text-center font-bold text-white border-l border-white/20">Member Growth</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="bg-white">
@@ -655,7 +655,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </TableCell>
                 </TableRow>)}
             </TableBody>
-            <TableFooter className="sticky bottom-0 bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-500 shadow-lg">
+            <TableFooter className="sticky bottom-0 bg-slate-800 shadow-lg">
               <TableRow className="border-0">
                 <TableCell colSpan={2} className="font-bold text-white">TOTALS</TableCell>
                 <TableCell className="text-center font-bold text-white">{formatCurrency(totals.currentYearRevenue)}</TableCell>
@@ -681,23 +681,23 @@ export const DataTable: React.FC<DataTableProps> = ({
       <div className="relative">
         
 
-        <Table>
-          <TableHeader className="sticky top-0 bg-gradient-to-r from-blue-500 via-purple-600 to-blue-500 z-10 shadow-lg">
+        <Table className="unified-table">
+          <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-10 shadow-lg">
             <TableRow className="border-0">
               <TableHead className="font-bold text-white">Name</TableHead>
-              <TableHead className="text-center font-bold text-white cursor-pointer" onClick={() => handleSort('grossRevenue')}>
+              <TableHead className="text-center font-bold text-white cursor-pointer border-l border-white/20" onClick={() => handleSort('grossRevenue')}>
                 <div className="flex items-center justify-center gap-1">
                   Gross Revenue 
                   {sortField === 'grossRevenue' ? sortDirection === 'desc' ? <SortDesc className="w-3 h-3" /> : <SortAsc className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3" />}
                 </div>
               </TableHead>
-              <TableHead className="text-center font-bold text-white">VAT</TableHead>
-              <TableHead className="text-center font-bold text-white">Net Revenue</TableHead>
-              <TableHead className="text-center font-bold text-white">Units</TableHead>
-              <TableHead className="text-center font-bold text-white">Transactions</TableHead>
-              <TableHead className="text-center font-bold text-white">Members</TableHead>
-              <TableHead className="text-center font-bold text-white">ATV</TableHead>
-              <TableHead className="text-center font-bold text-white">AUV</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">VAT</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">Net Revenue</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">Units</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">Transactions</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">Members</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">ATV</TableHead>
+              <TableHead className="text-center font-bold text-white border-l border-white/20">AUV</TableHead>
               <TableHead className="text-center font-bold text-white">ASV</TableHead>
               <TableHead className="text-center font-bold text-white">UPT</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -756,19 +756,19 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </TableRow>)}
               </React.Fragment>)}
           </TableBody>
-          <TableFooter className="sticky bottom-0 bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-500 shadow-lg">
+          <TableFooter className="sticky bottom-0 bg-slate-800 shadow-lg">
             <TableRow className="border-0">
               <TableCell className="font-bold text-white">GRAND TOTALS</TableCell>
-              <TableCell className="text-center font-bold text-white">{formatCurrency(totals.grossRevenue)}</TableCell>
-              <TableCell className="text-center font-bold text-white">{formatCurrency(totals.vat)}</TableCell>
-              <TableCell className="text-center font-bold text-white">{formatCurrency(totals.netRevenue)}</TableCell>
-              <TableCell className="text-center font-bold text-white">{formatNumber(totals.unitsSold)}</TableCell>
-              <TableCell className="text-center font-bold text-white">{formatNumber(totals.transactions)}</TableCell>
-              <TableCell className="text-center font-bold text-white">{formatNumber(totals.uniqueMembers)}</TableCell>
-              <TableCell className="text-center text-white">-</TableCell>
-              <TableCell className="text-center text-white">-</TableCell>
-              <TableCell className="text-center text-white">-</TableCell>
-              <TableCell className="text-center text-white">-</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatCurrency(totals.grossRevenue)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatCurrency(totals.vat)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatCurrency(totals.netRevenue)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatNumber(totals.unitsSold)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatNumber(totals.transactions)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatNumber(totals.uniqueMembers)}</TableCell>
+              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
+              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
+              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
+              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableFooter>

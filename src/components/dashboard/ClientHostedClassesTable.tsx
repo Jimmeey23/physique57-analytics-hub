@@ -20,7 +20,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
   if (!data || data.length === 0) {
     return (
       <Card className="bg-white shadow-xl border-0 overflow-hidden">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-800 to-pink-800 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Dumbbell className="w-5 h-5" />
             Hosted Classes Performance Analysis
@@ -148,10 +148,10 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     {
       key: 'month',
       header: 'Month',
-      className: 'font-semibold min-w-[120px] text-slate-900',
+      className: 'font-semibold min-w-[120px]',
       sortable: true,
       render: (value: string) => (
-        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{value}</span>
+        <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{value}</span>
       )
     },
     {
@@ -160,7 +160,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       className: 'font-medium min-w-[360px] max-w-none h-auto whitespace-normal',
       sortable: true,
       render: (value: string) => (
-        <span className="text-sm font-medium text-slate-900 whitespace-normal break-words" title={value}>{value}</span>
+        <span className="text-sm font-medium text-slate-700 whitespace-normal break-words" title={value}>{value}</span>
       )
     },
     {
@@ -169,7 +169,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{formatNumber(value)}</span>
       )
     },
     {
@@ -178,7 +178,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{formatNumber(value)}</span>
       )
     },
     {
@@ -187,7 +187,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{formatNumber(value)}</span>
       )
     },
     {
@@ -197,7 +197,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       sortable: true,
       render: (value: number) => {
         const safeValue = value ?? 0;
-        return <span className="text-sm font-medium text-slate-900">{safeValue.toFixed(1)}%</span>;
+        return <span className="text-sm font-medium text-slate-700">{safeValue.toFixed(1)}%</span>;
       }
     },
     {
@@ -206,7 +206,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'center' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900">{formatNumber(value)}</span>
+        <span className="text-sm font-medium text-slate-700">{formatNumber(value)}</span>
       )
     },
     {
@@ -216,7 +216,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       sortable: true,
       render: (value: number) => {
         const safeValue = value ?? 0;
-        return <span className="text-sm font-medium text-slate-900">{safeValue.toFixed(1)}%</span>;
+        return <span className="text-sm font-medium text-slate-700">{safeValue.toFixed(1)}%</span>;
       }
     },
     {
@@ -225,7 +225,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       align: 'right' as const,
       sortable: true,
       render: (value: number) => (
-        <span className="text-sm font-medium text-slate-900">{formatCurrency(value)}</span>
+        <span className="text-sm font-medium text-slate-700">{formatCurrency(value)}</span>
       )
     },
     {
@@ -235,7 +235,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       sortable: true,
       render: (value: number) => {
         const safeValue = value ?? 0;
-        return <span className="text-sm font-medium text-slate-900">{Math.round(safeValue)} days</span>;
+        return <span className="text-sm font-medium text-slate-700">{Math.round(safeValue)} days</span>;
       }
     }
   ];
@@ -249,10 +249,12 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     converted: hostedClassData.reduce((sum, row) => sum + row.converted, 0),
     conversionRate: 0,
     retained: hostedClassData.reduce((sum, row) => sum + row.retained, 0),
+    retentionRate: 0,
     avgLTV: hostedClassData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1),
     avgConversionInterval: hostedClassData.reduce((sum, row) => sum + (row.avgConversionInterval * row.totalMembers), 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
   totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
+  totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
 
   // Sorting logic
   const displayedData = React.useMemo(() => {
@@ -295,7 +297,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       transition={{ duration: 0.6 }}
     >
       <Card className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-300">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-800 to-pink-800 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Dumbbell className="w-5 h-5" />
             Hosted Classes Performance Analysis
@@ -308,7 +310,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
           <ModernDataTable
             data={displayedData}
             columns={columns}
-            headerGradient="from-purple-800 to-pink-800"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
             showFooter={true}
             footerData={totals}
             maxHeight="600px"

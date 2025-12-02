@@ -220,7 +220,7 @@ export const ChurnedMembersDetailedTable: React.FC<ChurnedMembersDetailedTablePr
 
       {/* Detailed Table */}
       <Card className="bg-white/90 backdrop-blur-sm border-slate-200/50 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-red-600 to-red-700 text-white">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="text-xl font-bold flex items-center gap-2">
             <AlertTriangle className="w-6 h-6" />
             Churned Members - Detailed Analysis
@@ -229,7 +229,7 @@ export const ChurnedMembersDetailedTable: React.FC<ChurnedMembersDetailedTablePr
         <CardContent className="p-0">
           <div className="overflow-x-auto max-h-[600px]">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-gradient-to-r from-red-600 to-red-700 text-white">
+              <thead className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
                 <tr>
                   <th className="text-left py-3 px-4 min-w-[150px]">
                     <SortButton field="firstName">Member Details</SortButton>

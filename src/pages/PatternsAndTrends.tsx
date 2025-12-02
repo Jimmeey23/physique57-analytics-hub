@@ -1318,7 +1318,7 @@ export const PatternsAndTrends = () => {
           <TabsContent value="month-on-month" className="mt-6 space-y-6">
         {/* Month-on-Month Product Breakdown Table */}
         <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-          <CardHeader className="pb-4 bg-gradient-to-r from-indigo-800 to-purple-900 text-white rounded-t-lg">
+          <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="w-6 h-6" />
@@ -1346,16 +1346,16 @@ export const PatternsAndTrends = () => {
           <CardContent className="p-0" ref={monthOnMonthTableRef as any}>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-indigo-900 via-purple-800 to-indigo-900">
+                <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                   <TableRow className="border-none">
-                    <TableHead className="font-bold text-white sticky left-0 bg-indigo-900/95 backdrop-blur-sm z-30 min-w-[240px]">
+                    <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-30 min-w-[240px]">
                       {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
                     </TableHead>
                     {monthlyProductData.months.map((month) => (
                       <TableHead key={month} className="text-center font-bold text-white min-w-[140px]">
                         <div className="flex flex-col">
                           <span className="text-sm">{month.split(' ')[0]}</span>
-                          <span className="text-slate-200 text-xs">{month.split(' ')[1]}</span>
+                          <span className="text-slate-300 text-xs">{month.split(' ')[1]}</span>
                         </div>
                       </TableHead>
                     ))}
@@ -1718,7 +1718,7 @@ export const PatternsAndTrends = () => {
         <div className="grid grid-cols-1 gap-6">
           {/* Monthly Visit Frequency */}
           <Card className="bg-gradient-to-br from-white via-blue-50/30 to-white border-0 shadow-xl">
-            <CardHeader className="pb-4 bg-gradient-to-r from-blue-800 to-indigo-900 text-white rounded-t-lg">
+            <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -1848,20 +1848,20 @@ export const PatternsAndTrends = () => {
 
               {/* Tabular Frequency Data Display */}
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 z-10 bg-gradient-to-r from-blue-700 via-blue-800 to-blue-700">
+                <Table className="unified-table">
+                  <TableHeader className="sticky top-0 z-10 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                     <TableRow className="border-none">
-                      <TableHead className="font-bold text-white sticky left-0 bg-blue-800/95 backdrop-blur-sm z-20 min-w-[200px]">
+                      <TableHead className="font-bold text-white sticky left-0 bg-slate-800/95 backdrop-blur-sm z-20 min-w-[200px] border-r border-white/20">
                         {frequencyBreakdownBy.charAt(0).toUpperCase() + frequencyBreakdownBy.slice(1)}
                       </TableHead>
-                      <TableHead className="text-center font-bold text-white">1 class</TableHead>
-                      <TableHead className="text-center font-bold text-white">2-5 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white">6-10 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white">11-15 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white">16-20 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white">21-25 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white">&gt;25 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white">Total</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">1 class</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">2-5 classes</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">6-10 classes</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">11-15 classes</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">16-20 classes</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">21-25 classes</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">&gt;25 classes</TableHead>
+                      <TableHead className="text-center font-bold text-white border-l border-white/20">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1940,7 +1940,7 @@ export const PatternsAndTrends = () => {
           <TabsContent value="cancellations" className="mt-6 space-y-6">
           {/* Late Cancellation Frequency */}
           <Card className="bg-gradient-to-br from-white via-red-50/30 to-white border-0 shadow-xl">
-            <CardHeader className="pb-4 bg-gradient-to-r from-red-800 to-pink-900 text-white rounded-t-lg">
+            <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -2161,7 +2161,7 @@ export const PatternsAndTrends = () => {
           <TabsContent value="multiple-classes" className="mt-6 space-y-6">
         {/* Multiple Classes Per Day */}
         <Card className="bg-gradient-to-br from-white via-purple-50/30 to-white border-0 shadow-xl">
-          <CardHeader className="pb-4 bg-gradient-to-r from-purple-800 to-indigo-900 text-white rounded-t-lg">
+          <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Users className="w-5 h-5" />
               Multiple Classes Per Day Analysis

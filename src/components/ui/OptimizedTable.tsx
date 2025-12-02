@@ -1,7 +1,9 @@
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface OptimizedTableProps<T> {
   data: T[];
@@ -19,6 +21,8 @@ interface OptimizedTableProps<T> {
   showFooter?: boolean;
   footerData?: any;
   onRowClick?: (item: T) => void;
+  tableId?: string;
+  showCopyButton?: boolean;
 }
 
 function OptimizedTableComponent<T extends Record<string, any>>({
@@ -30,8 +34,22 @@ function OptimizedTableComponent<T extends Record<string, any>>({
   stickyFirstColumn = false,
   showFooter = false,
   footerData,
-  onRowClick
+  onRowClick,
+  tableId = 'optimized-table',
+  showCopyButton = true
 }: OptimizedTableProps<T>) {
+  const tableRef = useRef<HTMLTableElement>(null);
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    if (tableId) {
+      registerTable(tableId, tableRef);
+      return () => unregisterTable(tableId);
+    }
+  }, [tableId, registerTable, unregisterTable]);
+  
   const memoizedRows = useMemo(() => {
     return data.map((item, index) => (
       <TableRow 
@@ -67,40 +85,46 @@ function OptimizedTableComponent<T extends Record<string, any>>({
   }
 
   return (
-    <div 
-      className="relative w-full overflow-auto border border-gray-200 rounded-lg bg-white shadow-sm"
-      style={{ maxHeight }}
-    >
-      <Table>
-        <TableHeader className={stickyHeader ? "sticky top-0 z-20 bg-gradient-to-r from-gray-50 to-gray-100" : "bg-gradient-to-r from-gray-50 to-gray-100"}>
-          <TableRow className="border-b-2 border-gray-300">
-            {columns.map((column, colIndex) => (
-              <TableHead 
-                key={String(column.key)} 
-                className={`
-                  font-bold text-gray-800 py-4 px-4 text-sm
-                  ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}
-                  ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 bg-gradient-to-r from-gray-50 to-gray-100 z-30 border-r border-gray-300' : ''}
-                `}
-              >
-                {column.header}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
+    <div className="relative w-full">
+      {showCopyButton && (
+        <div className="absolute right-2 top-2 z-40">
+          <CopyTableButton tableRef={tableRef} />
+        </div>
+      )}
+      <div 
+        className="relative w-full overflow-auto border border-gray-200 rounded-lg bg-white shadow-sm"
+        style={{ maxHeight }}
+      >
+        <Table ref={tableRef} id={tableId}>
+          <TableHeader className={stickyHeader ? "sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800" : "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800"}>
+            <TableRow className="border-b-2 border-slate-600">
+              {columns.map((column, colIndex) => (
+                <TableHead 
+                  key={String(column.key)} 
+                  className={`
+                    font-bold text-white py-4 px-4 text-sm uppercase tracking-wider
+                    ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}
+                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-30 border-r border-slate-600' : ''}
+                  `}
+                >
+                  {column.header}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
         <TableBody>
           {memoizedRows}
         </TableBody>
         {showFooter && footerData && (
-          <tfoot className="sticky bottom-0 z-20 bg-black text-white border-t-4 border-indigo-600">
-            <TableRow className="hover:bg-black">
+          <tfoot className="sticky bottom-0 z-20 bg-slate-800 text-white border-t-2 border-slate-600">
+            <TableRow className="hover:bg-slate-800">
               {columns.map((column, colIndex) => (
                 <TableCell 
                   key={String(column.key)}
                   className={`
                     py-4 px-4 font-bold text-base align-middle
                     ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}
-                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 bg-black z-30 border-r border-gray-600' : ''}
+                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 bg-slate-800 z-30 border-r border-slate-600' : ''}
                   `}
                 >
                   {column.render && footerData[column.key] !== undefined 
@@ -113,6 +137,7 @@ function OptimizedTableComponent<T extends Record<string, any>>({
           </tfoot>
         )}
       </Table>
+    </div>
     </div>
   );
 }

@@ -294,53 +294,59 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           {viewMode==='table' ? (
             <div className="max-h-96 overflow-y-auto">
               <Table>
-                <TableHeader className="sticky top-0 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-10">
-                  <TableRow>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3">Name</TableHead>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3">Email</TableHead>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3 text-center">Type</TableHead>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3 text-center">Status</TableHead>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3 text-center">Conversion</TableHead>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3 text-right">LTV</TableHead>
-                    <TableHead className="font-semibold text-gray-900 text-xs px-3 text-center">Location</TableHead>
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">Name</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">Email</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">Trainer</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">Class No</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">Membership</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">First Visit Date</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">First Visit Location</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">First Visit Entity</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">Conversion Status</TableHead>
+                    <TableHead className="font-semibold text-slate-100 text-xs px-3">First Purchase Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {displayedClients.slice(0, 200).map((client, index) => (
-                    <TableRow key={index} className="hover:bg-slate-50/80 transition-colors h-10">
-                      <TableCell className="text-xs px-3 font-medium">
+                    <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
+                      <TableCell className="text-xs px-3 font-medium text-slate-800">
                         {client.firstName} {client.lastName}
                       </TableCell>
                       <TableCell className="text-xs px-3 text-gray-600 truncate max-w-[200px]" title={client.email}>
                         {client.email}
                       </TableCell>
-                      <TableCell className="text-xs px-3 text-center">
-                        <Badge variant={client.isNew?.toLowerCase().includes('new') ? 'default' : 'secondary'} className="text-[10px] rounded-full px-2 py-0.5">
-                          {client.isNew || 'Unknown'}
-                        </Badge>
+                      <TableCell className="text-xs px-3 text-slate-700 truncate max-w-[160px]" title={client.trainerName}>
+                        {client.trainerName || '—'}
                       </TableCell>
-                      <TableCell className="text-xs px-3 text-center">
-                        <Badge variant={client.retentionStatus?.toLowerCase().includes('retained') ? 'default' : 'secondary'} className={`text-[10px] rounded-full px-2 py-0.5 ${client.retentionStatus?.toLowerCase().includes('retained') ? 'bg-purple-100 text-purple-800' : ''}`}>
-                          {client.retentionStatus || 'Pending'}
-                        </Badge>
+                      <TableCell className="text-xs px-3 text-center text-slate-700">
+                        {client.classNo ?? '—'}
                       </TableCell>
-                      <TableCell className="text-xs px-3 text-center">
-                        <Badge variant={client.conversionStatus?.toLowerCase().includes('converted') ? 'default' : 'secondary'} className={`text-[10px] rounded-full px-2 py-0.5 ${client.conversionStatus?.toLowerCase().includes('converted') ? 'bg-green-100 text-green-800' : ''}`}>
-                          {client.conversionStatus || 'Pending'}
-                        </Badge>
+                      <TableCell className="text-xs px-3 text-slate-700">
+                        {client.membershipUsed || '—'}
                       </TableCell>
-                      <TableCell className="text-xs px-3 text-right font-semibold text-emerald-600">
-                        {formatCurrency(client.ltv || 0)}
+                      <TableCell className="text-xs px-3 text-slate-700">
+                        {client.firstVisitDate || '—'}
                       </TableCell>
-                      <TableCell className="text-xs px-3 text-center text-gray-600 truncate max-w-[160px]" title={client.firstVisitLocation}>
-                        {client.firstVisitLocation || 'Unknown'}
+                      <TableCell className="text-xs px-3 text-slate-700 truncate max-w-[160px]" title={client.firstVisitLocation}>
+                        {client.firstVisitLocation || '—'}
+                      </TableCell>
+                      <TableCell className="text-xs px-3 text-slate-700">
+                        {client.firstVisitEntityName || '—'}
+                      </TableCell>
+                      <TableCell className="text-xs px-3 text-slate-700">
+                        {client.conversionStatus || '—'}
+                      </TableCell>
+                      <TableCell className="text-xs px-3 text-slate-700">
+                        {client.firstPurchase || '—'}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
               {displayedClients.length > 200 && (
-                <div className="p-4 text-center text-sm text-gray-600 bg-gray-50 border-t">
+                <div className="p-4 text-center text-sm text-gray-600">
                   Showing 200 of {displayedClients.length} clients.
                 </div>
               )}
@@ -348,17 +354,19 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
               {displayedClients.map((client, idx) => (
-                <div key={idx} className="rounded-xl border border-slate-200 bg-white/70 backdrop-blur p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div key={idx} className="rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow bg-white">
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-semibold text-slate-800 text-sm truncate max-w-[70%]">{client.firstName} {client.lastName}</div>
-                    <div className="text-xs font-semibold text-emerald-600">{formatCurrency(client.ltv || 0)}</div>
+                    <div className="text-xs font-semibold text-slate-700">{formatCurrency(client.ltv || 0)}</div>
                   </div>
                   <div className="text-xs text-slate-600 truncate" title={client.email}>{client.email}</div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">{client.firstVisitLocation || 'Unknown'}</span>
-                    {client.isNew && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{client.isNew}</span>}
-                    {client.conversionStatus && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">{client.conversionStatus}</span>}
-                    {client.retentionStatus && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">{client.retentionStatus}</span>}
+                  <div className="mt-2 text-xs text-slate-700 space-y-1">
+                    <div><strong>Trainer:</strong> {client.trainerName || '—'}</div>
+                    <div><strong>Class No:</strong> {client.classNo ?? '—'}</div>
+                    <div><strong>Location:</strong> {client.firstVisitLocation || '—'}</div>
+                    <div><strong>Membership:</strong> {client.membershipUsed || '—'}</div>
+                    <div><strong>Conversion:</strong> {client.conversionStatus || '—'}</div>
+                    <div><strong>Retention:</strong> {client.retentionStatus || '—'}</div>
                   </div>
                 </div>
               ))}
@@ -379,19 +387,27 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                 Targeted client conversion and retention analysis
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge className="bg-blue-100 text-blue-800 border-0">
-                {type === 'month' ? 'Monthly' : type === 'year' ? 'Yearly' : type === 'metric' ? 'Metric Analysis' : 'Analytics'}
-              </Badge>
-              <Button variant="outline" onClick={() => exportCSV(displayedClients)} className="gap-1">
-                <Download className="w-4 h-4" /> Export
-              </Button>
-              <Button variant="outline" onClick={() => copyEmails(displayedClients)} className="gap-1">
-                <Copy className="w-4 h-4" /> Emails
-              </Button>
-              <Button variant="outline" onClick={onClose}>
-                <X className="w-4 h-4" />
-              </Button>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-slate-700 to-slate-900 text-white px-3 py-1 text-xs shadow-sm">
+                <span className="font-medium">{type === 'month' ? 'Monthly' : type === 'year' ? 'Yearly' : type === 'metric' ? 'Metric Analysis' : 'Analytics'}</span>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-white rounded-full px-3 py-1 shadow-sm">
+                <span className="text-xs text-slate-600">Showing</span>
+                <span className="text-sm font-semibold text-slate-800">{formatNumber(displayedClients.length)}</span>
+                <span className="text-xs text-slate-400">of</span>
+                <span className="text-sm font-semibold text-slate-800">{formatNumber(clients.length)}</span>
+              </div>
+              <div className="flex items-center gap-2 ml-2">
+                <Button variant="ghost" onClick={() => exportCSV(displayedClients)} className="gap-1">
+                  <Download className="w-4 h-4" /> Export
+                </Button>
+                <Button variant="ghost" onClick={() => copyEmails(displayedClients)} className="gap-1">
+                  <Copy className="w-4 h-4" /> Emails
+                </Button>
+                <Button variant="ghost" onClick={onClose}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </DialogHeader>

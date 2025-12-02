@@ -385,47 +385,47 @@ export const LeadDataTable: React.FC<LeadDataTableProps> = ({ title, data }) => 
                 <ExpandableRow key={item.id} data={item} isSticky />
               ))}
             </TableBody>
-            <TableFooter className="sticky bottom-0 z-20 bg-gradient-to-r from-amber-100 to-orange-100 backdrop-blur-sm border-t-2 border-border">
+            <TableFooter className="sticky bottom-0 z-20 bg-slate-800 backdrop-blur-sm border-t-2 border-slate-600">
               <TableRow className="hover:bg-transparent">
-                <TableCell className="sticky left-0 bg-gradient-to-r from-amber-100 to-orange-100 z-30 border-r font-bold">
+                <TableCell className="sticky left-0 bg-slate-800 z-30 border-r border-slate-600 font-bold text-white">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="w-4 h-4" />
                     TOTALS
                   </div>
                 </TableCell>
-                <TableCell className="font-semibold">{new Set(data.map(d => d.source)).size} Sources</TableCell>
-                <TableCell className="font-semibold">{new Set(data.map(d => d.stage)).size} Stages</TableCell>
-                <TableCell className="font-bold">
+                <TableCell className="font-semibold text-white">{new Set(data.map(d => d.source)).size} Sources</TableCell>
+                <TableCell className="font-semibold text-white">{new Set(data.map(d => d.stage)).size} Stages</TableCell>
+                <TableCell className="font-bold text-white">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-green-600" />
+                    <DollarSign className="w-4 h-4 text-emerald-400" />
                     <AnimatedNumber 
                       value={totals.totalLTV} 
-                      className="font-mono text-green-600"
+                      className="font-mono text-emerald-400"
                       springOptions={{ bounce: 0, duration: 1500 }}
                     />
                   </div>
                 </TableCell>
-                <TableCell className="font-bold">
+                <TableCell className="font-bold text-white">
                   <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-blue-600" />
+                    <Target className="w-4 h-4 text-blue-400" />
                     <AnimatedNumber 
                       value={totals.totalVisits} 
-                      className="font-mono text-blue-600"
+                      className="font-mono text-blue-400"
                       springOptions={{ bounce: 0, duration: 1500 }}
                     />
                   </div>
                 </TableCell>
-                <TableCell className="font-bold">
+                <TableCell className="font-bold text-white">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-purple-600" />
-                    <span className="text-purple-600">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <span className="text-purple-400">
                       {totals.converted}/{totals.totalLeads} Converted
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="font-semibold">-</TableCell>
-                <TableCell className="font-semibold">{new Set(data.map(d => d.associate)).size} Associates</TableCell>
-                <TableCell>-</TableCell>
+                <TableCell className="font-semibold text-white">-</TableCell>
+                <TableCell className="font-semibold text-white">{new Set(data.map(d => d.associate)).size} Associates</TableCell>
+                <TableCell className="text-white">-</TableCell>
               </TableRow>
             </TableFooter>
           </Table>

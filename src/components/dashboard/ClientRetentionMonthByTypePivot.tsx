@@ -419,7 +419,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   return (
     <Card ref={containerRef} className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
       <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-indigo-700 to-purple-800 text-white pt-4">
+      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white pt-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">

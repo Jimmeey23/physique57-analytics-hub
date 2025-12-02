@@ -1,64 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { SalesData } from '@/types/dashboard';
+import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
+const logger = createLogger('useGoogleSheetsOptimized');
 
 const SPREADSHEET_ID = "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
 
-// In-memory cache for access token
-let cachedToken: { token: string; expiry: number } | null = null;
-
-const getAccessToken = async (): Promise<string> => {
-  // Return cached token if still valid
-  if (cachedToken && Date.now() < cachedToken.expiry) {
-    return cachedToken.token;
-  }
-
-  const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      client_id: GOOGLE_CONFIG.CLIENT_ID,
-      client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-      refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-      grant_type: 'refresh_token',
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to get access token');
-  }
-
-  const tokenData = await response.json();
-  
-  // Cache token for 50 minutes (tokens expire in 1 hour)
-  cachedToken = {
-    token: tokenData.access_token,
-    expiry: Date.now() + (50 * 60 * 1000)
-  };
-  
-  return tokenData.access_token;
-};
-
-const parseNumericValue = (value: string | number): number => {
-  if (typeof value === 'number') return isNaN(value) ? 0 : value;
-  if (!value || value === '') return 0;
-
-  const cleaned = value.toString().trim().replace(/[₹,\s]/g, '');
-  const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? 0 : parsed;
-};
-
 const fetchSalesData = async (): Promise<SalesData[]> => {
-  console.log('Fetching sales data from Google Sheets...');
-  const accessToken = await getAccessToken();
+  logger.info('Fetching sales data from Google Sheets...');
+  const accessToken = await getGoogleAccessToken();
   
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
@@ -183,7 +134,7 @@ const fetchSalesData = async (): Promise<SalesData[]> => {
     salesData.push(transformedItem);
   }
   
-  console.log('Transformed sales data:', salesData.length, 'rows');
+  logger.info(`Transformed sales data: ${salesData.length} rows`);
   return salesData;
 };
 

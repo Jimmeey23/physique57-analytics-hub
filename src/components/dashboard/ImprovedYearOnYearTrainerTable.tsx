@@ -12,6 +12,7 @@ import { TrainerMetricTabs } from './TrainerMetricTabs';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { TrainerMetricType as TMT } from '@/types/dashboard';
 import { ProcessedTrainerData, getMetricValue } from './TrainerDataProcessor';
+import { TrainerAvatar } from '@/utils/trainerAvatars';
 
 interface ImprovedYearOnYearTrainerTableProps {
   data: ProcessedTrainerData[];
@@ -373,16 +374,16 @@ export const ImprovedYearOnYearTrainerTable = ({
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-emerald-700 to-teal-900">
+            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <TableRow>
-                <TableHead className="font-bold text-white sticky left-0 bg-emerald-800 z-30 min-w-[200px]">
+                <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-30 min-w-[200px]">
                   Trainer
                 </TableHead>
                 {processedData.organizedMonths.map(({ display }) => (
-                  <TableHead key={display} className="text-center font-bold text-white min-w-[120px] border-l border-emerald-600">
+                  <TableHead key={display} className="text-center font-bold text-white min-w-[120px] border-l border-white/20">
                     <div className="flex flex-col">
                       <span className="text-sm">{display.split(' ')[0]}</span>
-                      <span className="text-emerald-200 text-xs">{display.split(' ')[1]}</span>
+                      <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </TableHead>
                 ))}
@@ -448,6 +449,7 @@ export const ImprovedYearOnYearTrainerTable = ({
                           >
                             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                           </Button>
+                          <TrainerAvatar name={trainer} size="sm" />
                           <span className="text-sm">{trainer}</span>
                         </div>
                       </TableCell>

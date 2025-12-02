@@ -205,7 +205,7 @@ export const FunnelLeadsFilterSection: React.FC<FunnelLeadsFilterSectionProps> =
 
   return (
     <Card className="bg-white/95 backdrop-blur-sm border border-slate-200 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-white">
             <Filter className="w-5 h-5" />

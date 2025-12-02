@@ -13,6 +13,7 @@ import { TrainerMetricTabs } from './TrainerMetricTabs';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { ProcessedTrainerData, getMetricValue } from './TrainerDataProcessor';
+import { TrainerAvatar } from '@/utils/trainerAvatars';
 
 interface MonthOnMonthTrainerTableProps {
   data: ProcessedTrainerData[];
@@ -571,6 +572,7 @@ export const MonthOnMonthTrainerTable = ({
                           >
                             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                           </Button>
+                          <TrainerAvatar name={trainer} size="sm" />
                           <span className="text-sm">{trainer}</span>
                         </div>
                       </TableCell>

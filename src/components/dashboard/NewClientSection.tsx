@@ -12,7 +12,7 @@ import { EnhancedClientConversionMetrics } from './EnhancedClientConversionMetri
 import { ConversionAnalyticsTables } from './ConversionAnalyticsTables';
 import { ClientConversionDataTable } from './ClientConversionDataTable';
 import { ClientConversionMonthOnMonthTable } from './ClientConversionMonthOnMonthTable';
-import { ClientConversionYearOnYearTable } from './ClientConversionYearOnYearTable';
+import { ClientConversionYearOnYearTable } from './ClientConversionYearOnYearTableV2';
 import { SourceDataModal } from '@/components/ui/SourceDataModal';
 import { DrillDownModal } from './DrillDownModal';
 import { Button } from '@/components/ui/button';

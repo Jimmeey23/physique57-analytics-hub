@@ -162,7 +162,7 @@ export const ClassAttendanceUtilizationTable: React.FC<ClassAttendanceUtilizatio
 
   return (
     <Card className="bg-white shadow-xl border-0 rounded-2xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-b-0">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white border-b-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-3 text-2xl">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -208,54 +208,30 @@ export const ClassAttendanceUtilizationTable: React.FC<ClassAttendanceUtilizatio
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200/60">
-                <TableHead className="font-bold text-slate-700 sticky left-0 bg-gradient-to-r from-slate-50 to-slate-100 z-10 border-r border-slate-200/60">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-600" />
-                    {views.find(v => v.id === selectedView)?.label.replace('By ', '')}
-                  </div>
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-10 border-r border-white/20">
+                  {views.find(v => v.id === selectedView)?.label.replace('By ', '')}
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                    Sessions
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Sessions
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Users className="w-4 h-4 text-green-600" />
-                    Avg Attendance
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Avg Attendance
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Target className="w-4 h-4 text-purple-600" />
-                    Fill Rate
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Fill Rate
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Zap className="w-4 h-4 text-orange-600" />
-                    Utilization
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Utilization
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    Performance
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Performance
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Zap className="w-4 h-4 text-pink-600" />
-                    Session Types
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Session Types
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                    Status
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Status
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -265,73 +241,55 @@ export const ClassAttendanceUtilizationTable: React.FC<ClassAttendanceUtilizatio
                 const StatusIcon = utilizationBadge.icon;
                 
                 return (
-                  <TableRow key={index} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r">
-                      <div className="flex flex-col">
-                        <span className="text-gray-900">{row[currentKey]}</span>
-                        <span className="text-xs text-gray-500">
-                          {row.formatCount} formats
-                        </span>
-                      </div>
+                  <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
+                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r whitespace-nowrap">
+                      <span className="text-gray-900 font-semibold">{row[currentKey]}</span>
+                      <span className="text-xs text-gray-500 ml-2">({row.formatCount} formats)</span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatNumber(row.totalSessions)}</span>
-                        <span className="text-xs text-gray-500">
-                          {formatNumber(row.totalCapacity)} capacity
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatNumber(row.totalSessions)}</span>
+                      <span className="text-xs text-gray-500 ml-1">/ {formatNumber(row.totalCapacity)}</span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatNumber(row.avgAttendance)}</span>
-                        <span className="text-xs text-gray-500">
-                          per session
-                        </span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{formatNumber(row.avgAttendance)}</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
-                        className={
-                          row.fillRate >= 80 ? 'bg-green-100 text-green-800' :
-                          row.fillRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }
+                        className={`attendance-badge ${
+                          row.fillRate >= 80 ? 'badge-soft-green' :
+                          row.fillRate >= 60 ? 'badge-soft-yellow' :
+                          'badge-soft-red'
+                        }`}
                       >
                         {formatPercentage(row.fillRate)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className={utilizationBadge.color}>
+                      <Badge className={`attendance-badge ${utilizationBadge.color}`}>
                         {formatPercentage(row.utilizationRate)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-center gap-1">
+                    <TableCell className="text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2 text-xs">
+                        <span className="flex items-center gap-0.5">
                           <CheckCircle className="w-3 h-3 text-green-600" />
-                          <span className="text-xs">{row.fullSessions} full</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-1">
+                          {row.fullSessions}
+                        </span>
+                        <span className="flex items-center gap-0.5">
                           <AlertTriangle className="w-3 h-3 text-yellow-600" />
-                          <span className="text-xs">{row.lowAttendanceSessions} low</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-1">
+                          {row.lowAttendanceSessions}
+                        </span>
+                        <span className="flex items-center gap-0.5">
                           <XCircle className="w-3 h-3 text-red-600" />
-                          <span className="text-xs">{row.emptySessions} empty</span>
-                        </div>
+                          {row.emptySessions}
+                        </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{row.formatCount}</span>
-                        <span className="text-xs text-gray-500">active</span>
-                      </div>
+                    <TableCell className="text-center whitespace-nowrap">
+                      <span className="font-medium">{row.formatCount}</span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center">
-                        <StatusIcon className="w-5 h-5" />
-                      </div>
+                      <StatusIcon className="w-4 h-4 mx-auto" />
                     </TableCell>
                   </TableRow>
                 );

@@ -301,16 +301,16 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
 
   return (
     <Card className="bg-white border-0 shadow-2xl">
-      <CardHeader className="bg-gradient-to-r from-orange-900 via-amber-800 to-orange-900 text-white">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <CardTitle className="text-2xl font-bold flex items-center gap-3">
-          <TrendingUp className="w-8 h-8 text-amber-300" />
+          <TrendingUp className="w-8 h-8 text-cyan-400" />
           Discount Breakdown Analytics
         </CardTitle>
       </CardHeader>
       
       <CardContent className="p-6">
         <Tabs defaultValue="product" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-orange-100 to-amber-100 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-1 rounded-xl">
             <TabsTrigger value="product" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
               <Package className="w-4 h-4 mr-2" />
               By Product

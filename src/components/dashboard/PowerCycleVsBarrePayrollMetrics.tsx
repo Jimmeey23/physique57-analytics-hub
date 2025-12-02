@@ -211,7 +211,7 @@ export const PowerCycleVsBarrePayrollMetrics: React.FC = () => {
             columns={monthlyColumns}
             maxHeight="500px"
             stickyHeader={true}
-            headerGradient="from-blue-600 to-purple-600"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
           />
         </CardContent>
       </Card>
@@ -232,7 +232,7 @@ export const PowerCycleVsBarrePayrollMetrics: React.FC = () => {
             columns={trainerColumns}
             maxHeight="600px"
             stickyHeader={true}
-            headerGradient="from-green-600 to-blue-600"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
           />
         </CardContent>
       </Card>

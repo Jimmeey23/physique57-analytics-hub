@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PayrollData } from '@/types/dashboard';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
-import { Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight, BarChart3, Zap, Activity, Dumbbell } from 'lucide-react';
+import { Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight, BarChart3, Zap, Activity, Dumbbell, ShrinkIcon, ExpandIcon } from 'lucide-react';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 
 interface PowerCycleBarreStrengthDataTablesProps {
   data: PayrollData[];
@@ -23,6 +25,19 @@ export const PowerCycleBarreStrengthDataTables: React.FC<PowerCycleBarreStrength
 }) => {
   const [activeTab, setActiveTab] = useState('trainer-breakdown');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'power-cycle-barre-strength-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
 
   // Trainer breakdown analysis
   const trainerBreakdown = useMemo(() => {
@@ -258,15 +273,30 @@ export const PowerCycleBarreStrengthDataTables: React.FC<PowerCycleBarreStrength
 
   return (
     <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader>
-        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-600" />
-          PowerCycle vs Barre vs Strength Analysis
-          <Badge variant="outline" className="bg-indigo-50 text-indigo-700">
-            35px row height
-          </Badge>
-        </CardTitle>
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-t-lg">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-indigo-400" />
+            PowerCycle vs Barre vs Strength Analysis
+            <Badge variant="outline" className="bg-white/20 text-white border-white/30">
+              35px row height
+            </Badge>
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CopyTableButton tableRef={tableRef} />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+              className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+              {isTableCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
+      {!isTableCollapsed && (
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="px-6">
@@ -300,19 +330,19 @@ export const PowerCycleBarreStrengthDataTables: React.FC<PowerCycleBarreStrength
               
               {Array.isArray(paginatedData) && paginatedData.length > 0 ? (
                 <>
-                  <Table>
-                    <TableHeader>
+                  <Table ref={tableRef} id={tableId}>
+                    <TableHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                       <TableRow>
-                        <TableHead>Trainer</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Month</TableHead>
-                        <TableHead>PC Sessions</TableHead>
-                        <TableHead>Barre Sessions</TableHead>
-                        <TableHead>Strength Sessions</TableHead>
-                        <TableHead>PC Revenue</TableHead>
-                        <TableHead>Barre Revenue</TableHead>
-                        <TableHead>Strength Revenue</TableHead>
-                        <TableHead>Total Revenue</TableHead>
+                        <TableHead className="text-white font-bold">Trainer</TableHead>
+                        <TableHead className="text-white font-bold">Location</TableHead>
+                        <TableHead className="text-white font-bold">Month</TableHead>
+                        <TableHead className="text-white font-bold">PC Sessions</TableHead>
+                        <TableHead className="text-white font-bold">Barre Sessions</TableHead>
+                        <TableHead className="text-white font-bold">Strength Sessions</TableHead>
+                        <TableHead className="text-white font-bold">PC Revenue</TableHead>
+                        <TableHead className="text-white font-bold">Barre Revenue</TableHead>
+                        <TableHead className="text-white font-bold">Strength Revenue</TableHead>
+                        <TableHead className="text-white font-bold">Total Revenue</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -531,6 +561,7 @@ export const PowerCycleBarreStrengthDataTables: React.FC<PowerCycleBarreStrength
           </TabsContent>
         </Tabs>
       </CardContent>
+      )}
     </Card>
   );
 };

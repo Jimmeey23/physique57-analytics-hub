@@ -244,17 +244,17 @@ export const SoldByMonthOnMonthTable: React.FC<SoldByMonthOnMonthTableProps> = (
       <CardContent className="p-0">
         <div className="overflow-x-auto rounded-lg">
           <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
-            <thead className="bg-gradient-to-r from-blue-700 to-blue-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
+            <thead className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white font-bold text-sm uppercase tracking-wider sticky top-0 z-20">
               <tr>
-                <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-blue-800 z-30">Sales Associate</th>
-                <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 min-w-24">Contribution %</th>
+                <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 bg-slate-800 z-30 border-r border-white/20">Sales Associate</th>
+                <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 min-w-24">Contribution %</th>
                 {monthlyData.map(({
                 key,
                 display
-              }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-blue-800 border-l border-blue-600 min-w-32">
+              }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 border-l border-white/20 min-w-32">
                     <div className="flex flex-col">
                       <span className="text-sm">{display.split(' ')[0]}</span>
-                      <span className="text-blue-200 text-xs">{display.split(' ')[1]}</span>
+                      <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>)}
               </tr>

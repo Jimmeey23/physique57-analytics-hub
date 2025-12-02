@@ -171,8 +171,8 @@ export const ClassAttendancePayrollTable: React.FC<ClassAttendancePayrollTablePr
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="text-white bg-gray-800">
-                <TableRow className="bg-gray-800 text-white border-b-4 border-red-800">
+              <TableHeader>
+                <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                   <TableHead onClick={() => handleSort('location')} className="cursor-pointer text-xs font-semibold text-slate-100 h-10 px-4">
                     Location
                   </TableHead>
@@ -194,7 +194,7 @@ export const ClassAttendancePayrollTable: React.FC<ClassAttendancePayrollTablePr
                   <TableHead onClick={() => handleSort('totalPaid')} className="cursor-pointer text-xs font-semibold text-slate-100 h-10 px-4">
                     Paid (₹)
                   </TableHead>
-                  <TableHead className="cursor-pointer text-xs font-semibold text-slate-700 h-10 px-4 text-center" onClick={() => handleSort('classAvgWithEmpty')}>
+                  <TableHead className="cursor-pointer text-xs font-semibold text-slate-100 h-10 px-4 text-center" onClick={() => handleSort('classAvgWithEmpty')}>
                     <Tooltip>
                       <TooltipTrigger className="flex items-center gap-1 text-white">
                         Avg w/ Empty
@@ -205,7 +205,7 @@ export const ClassAttendancePayrollTable: React.FC<ClassAttendancePayrollTablePr
                       </TooltipContent>
                     </Tooltip>
                   </TableHead>
-                  <TableHead className="cursor-pointer text-xs font-semibold text-slate-700 h-10 px-4 text-center" onClick={() => handleSort('classAvgWithoutEmpty')}>
+                  <TableHead className="cursor-pointer text-xs font-semibold text-slate-100 h-10 px-4 text-center" onClick={() => handleSort('classAvgWithoutEmpty')}>
                     <Tooltip>
                       <TooltipTrigger className="flex items-center gap-1 text-white">
                         Avg w/o Empty
@@ -231,7 +231,7 @@ export const ClassAttendancePayrollTable: React.FC<ClassAttendancePayrollTablePr
                 {processedData.map((row, index) => {
                 const trendKey = `${row.location}-${row.monthYear}`;
                 const trends = trendsData[trendKey] || {};
-                return <TableRow key={index} className="table-row-fixed hover:bg-blue-50/50 transition-colors border-b border-slate-100">
+                return <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors border-b border-slate-100">
                       <TableCell className="table-cell-compact text-xs font-medium text-slate-800">
                         <div className="table-cell-nowrap min-w-[140px]">
                           {row.location}

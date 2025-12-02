@@ -695,7 +695,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
 
       {/* --- Is New Analysis Table --- */}
       <Card className="bg-white shadow-xl border-0 overflow-hidden">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <UserCheck className="w-5 h-5" />
             Client Type Analysis (Is New Column)
@@ -708,7 +708,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
           <ModernDataTable
             data={isNewAnalysis.sort((a, b) => b.totalClients - a.totalClients)}
             columns={isNewColumns}
-            headerGradient="from-indigo-600 to-purple-600"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
             showFooter={false}
             maxHeight="400px"
             onRowClick={onDrillDown ? (row) => {
@@ -758,7 +758,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
 
       {/* --- Membership Performance Table --- */}
       <Card className="bg-white shadow-xl border-0 overflow-hidden">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Award className="w-5 h-5" />
             Membership Type Performance Analysis
@@ -771,7 +771,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
           <ModernDataTable
             data={membershipStats.sort((a, b) => b.totalClients - a.totalClients)}
             columns={membershipColumns}
-            headerGradient="from-purple-600 to-indigo-600"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
             showFooter={true}
             footerData={membershipTotals}
             maxHeight="400px"
@@ -799,7 +799,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
           <ModernDataTable
             data={trainerStats.sort((a, b) => b.conversionRate - a.conversionRate)}
             columns={trainerColumns}
-            headerGradient="from-green-600 to-teal-600"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
             showFooter={true}
             footerData={trainerTotals}
             maxHeight="400px"

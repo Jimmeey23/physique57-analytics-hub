@@ -121,7 +121,7 @@ export const EnhancedYearOnYearTrainerTable: React.FC<YearOnYearTrainerTableProp
           key={trainer.trainerName} 
           className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300"
         >
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white rounded-t-lg">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-xl font-bold">
                 <Users className="w-5 h-5" />

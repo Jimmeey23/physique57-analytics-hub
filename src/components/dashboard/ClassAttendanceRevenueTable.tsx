@@ -149,14 +149,14 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="font-semibold text-gray-900 sticky left-0 bg-gray-50 z-10">Class Format</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Total Revenue</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Avg Revenue</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Revenue/Attendee</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Selected Metric</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Payment Breakdown</TableHead>
-                <TableHead className="text-center font-semibold text-gray-900">Efficiency</TableHead>
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHead className="font-semibold text-slate-100 sticky left-0 z-10 bg-slate-800">Class Format</TableHead>
+                <TableHead className="text-center font-semibold text-slate-100">Total Revenue</TableHead>
+                <TableHead className="text-center font-semibold text-slate-100">Avg Revenue</TableHead>
+                <TableHead className="text-center font-semibold text-slate-100">Revenue/Attendee</TableHead>
+                <TableHead className="text-center font-semibold text-slate-100">Selected Metric</TableHead>
+                <TableHead className="text-center font-semibold text-slate-100">Payment Breakdown</TableHead>
+                <TableHead className="text-center font-semibold text-slate-100">Efficiency</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,8 +167,8 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
                 );
                 
                 return (
-                  <TableRow key={index} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r">
+                  <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
+                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-gray-900">{row.format}</span>
                         <span className="text-xs text-gray-500">

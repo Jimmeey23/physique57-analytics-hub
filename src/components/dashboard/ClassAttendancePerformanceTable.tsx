@@ -150,11 +150,11 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
     });
   };
   return <Card className="bg-white shadow-xl border-0 rounded-2xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white border-b-0">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white border-b-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="flex items-center gap-3 text-2xl">
+          <CardTitle className="flex items-center gap-3 text-xl">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <BarChart3 className="w-6 h-6" />
+              <BarChart3 className="w-5 h-5" />
             </div>
             <div>
               <div className="font-bold">Class Format Performance</div>
@@ -169,7 +169,7 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
         </div>
         
         {/* Metric Selector */}
-        <div className="flex flex-wrap gap-1 mt-6">
+        <div className="flex flex-wrap gap-1 mt-4">
           {metrics.map(metric => {
           const Icon = metric.icon;
           return <Button key={metric.id} variant={selectedMetric === metric.id ? 'secondary' : 'ghost'} size="sm" onClick={() => setSelectedMetric(metric.id)} className={`gap-2 text-sm transition-all duration-200 ${selectedMetric === metric.id ? 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
@@ -184,115 +184,72 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200/60">
-                <TableHead className="font-bold text-slate-700 sticky left-0 bg-gradient-to-r from-slate-50 to-slate-100 z-10 border-r border-slate-200/60">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-blue-600" />
-                    Class Format
-                  </div>
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-10 border-r border-white/20">
+                  Class Format
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Calendar className="w-4 h-4 text-green-600" />
-                    Sessions
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Sessions
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Users className="w-4 h-4 text-purple-600" />
-                    Capacity
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Capacity
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Activity className="w-4 h-4 text-orange-600" />
-                    Attendance
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Attendance
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <DollarSign className="w-4 h-4 text-emerald-600" />
-                    Revenue
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Revenue
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Target className="w-4 h-4 text-indigo-600" />
-                    {metrics.find(m => m.id === selectedMetric)?.label}
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  {metrics.find(m => m.id === selectedMetric)?.label}
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <Zap className="w-4 h-4 text-red-600" />
-                    Empty Sessions
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Empty Sessions
                 </TableHead>
-                <TableHead className="text-center font-bold text-slate-700">
-                  <div className="flex items-center justify-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-teal-600" />
-                    Performance
-                  </div>
+                <TableHead className="text-center font-bold text-white">
+                  Performance
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {performanceData.map((row, index) => <TableRow key={index} className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-200 cursor-pointer group" onClick={() => handleDrillDown(row.format, row)}>
-                  <TableCell className="font-medium sticky left-0 bg-white z-10 border-r border-slate-200/60 group-hover:bg-gradient-to-r group-hover:from-blue-50/50 group-hover:to-purple-50/50">
-                    <div className="flex items-center justify-between p-2">
-                      <div className="flex flex-col">
-                        <span className="text-slate-900 font-semibold text-base">{row.format}</span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <Activity className="w-3 h-3" />
-                          {formatPercentage(row.utilizationRate)} utilized
-                        </span>
+              {performanceData.map((row, index) => <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-all duration-200 cursor-pointer group" onClick={() => handleDrillDown(row.format, row)}>
+                  <TableCell className="font-medium sticky left-0 bg-white z-10 border-r border-slate-200/60 group-hover:bg-gray-50 whitespace-nowrap">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-900 font-semibold">{row.format}</span>
+                        <span className="text-xs text-slate-500">({formatPercentage(row.utilizationRate)})</span>
                       </div>
-                      <div className="p-1 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 group-hover:from-blue-200 group-hover:to-purple-200 transition-all">
-                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-600 transition-colors" />
-                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{formatNumber(row.totalSessions)}</span>
-                      <span className="text-xs text-gray-500">total</span>
-                    </div>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <span className="font-medium">{formatNumber(row.totalSessions)}</span>
+                  </TableCell>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <span className="font-medium">{formatNumber(row.totalCapacity)}</span>
+                  </TableCell>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <span className="font-medium">{formatNumber(row.totalCheckedIn)}</span>
+                  </TableCell>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <span className="font-medium">{formatCurrency(row.totalRevenue)}</span>
+                    <span className="text-xs text-gray-500 ml-1">({formatCurrency(row.avgRevenue)})</span>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{formatNumber(row.totalCapacity)}</span>
-                      <span className="text-xs text-gray-500">capacity</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{formatNumber(row.totalCheckedIn)}</span>
-                      <span className="text-xs text-gray-500">checked in</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{formatCurrency(row.totalRevenue)}</span>
-                      <span className="text-xs text-gray-500">{formatCurrency(row.avgRevenue)} avg</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge className={getMetricBadgeColor(row[selectedMetric], selectedMetric)}>
+                    <Badge className={`attendance-badge ${getMetricBadgeColor(row[selectedMetric], selectedMetric)}`}>
                       {getMetricValue(row, selectedMetric)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-red-600">{formatNumber(row.emptySessions)}</span>
-                      <span className="text-xs text-gray-500">empty</span>
-                    </div>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <span className="font-medium text-red-600">{formatNumber(row.emptySessions)}</span>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col gap-1">
-                      <Badge variant="outline" className="text-xs">
-                        {formatPercentage(row.fillRate)} fill
+                  <TableCell className="text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-2">
+                      <Badge variant="outline" className="attendance-badge text-xs">
+                        {formatPercentage(row.fillRate)}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {formatPercentage(row.showUpRate)} show-up
+                      <Badge variant="outline" className="attendance-badge text-xs">
+                        {formatPercentage(row.showUpRate)}
                       </Badge>
                     </div>
                   </TableCell>

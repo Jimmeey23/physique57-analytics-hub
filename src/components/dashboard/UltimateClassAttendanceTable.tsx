@@ -311,7 +311,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
   return (
     <>
     <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
-      <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3">
             <BarChart3 className="w-6 h-6" />

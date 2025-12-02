@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import { fetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('useSessionsDataDemo');
 
 export interface SessionData {
   trainerId: string;
@@ -112,51 +116,12 @@ const generateSampleData = (): SessionData[] => {
   return sampleData;
 };
 
-const GOOGLE_CONFIG = {
-  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-  CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-  REFRESH_TOKEN: import.meta.env.VITE_GOOGLE_REFRESH_TOKEN,
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
-};
-
 const SPREADSHEET_ID = "1i5GcTahIchSF6pLn0c2ZgqtQVYBG-Fqt7rGxIzD7qrA";
 
 export const useSessionsData = () => {
   const [data, setData] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const getAccessToken = async () => {
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      const tokenData = await response.json();
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
-  };
-
-  const parseNumericValue = (value: string | number): number => {
-    if (typeof value === 'number') return value;
-    if (!value || value === '') return 0;
-    
-    const cleaned = value.toString().replace(/,/g, '');
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : parsed;
-  };
 
   const fetchSessionsData = async () => {
     try {
@@ -165,23 +130,7 @@ export const useSessionsData = () => {
       
       // Try to fetch real data first
       try {
-        const accessToken = await getAccessToken();
-        
-        const response = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sessions?alt=json`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch sessions data');
-        }
-
-        const result = await response.json();
-        const rows = result.values || [];
+        const rows = await fetchGoogleSheet(SPREADSHEET_ID, 'Sessions');
         
         if (rows.length < 2) {
           throw new Error('No data available');
@@ -228,13 +177,13 @@ export const useSessionsData = () => {
 
         setData(sessionsData);
       } catch (fetchError) {
-        console.warn('Failed to fetch real data, using sample data:', fetchError);
+        logger.warn('Failed to fetch real data, using sample data:', fetchError);
         // Fall back to sample data
         const sampleData = generateSampleData();
         setData(sampleData);
       }
     } catch (err) {
-      console.error('Error in fetchSessionsData:', err);
+      logger.error('Error in fetchSessionsData:', err);
       // Use sample data as final fallback
       const sampleData = generateSampleData();
       setData(sampleData);

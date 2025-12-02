@@ -316,7 +316,7 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
 
   return (
     <Card className="bg-white shadow-lg border-0">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-700 to-teal-800 text-white">
+  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
           Year-on-Year Client Conversion Comparison
@@ -329,7 +329,7 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
         <ModernDataTable
           data={displayedData}
           columns={columns}
-          headerGradient="from-emerald-700 to-teal-800"
+          headerGradient="from-slate-800 via-slate-900 to-slate-800"
           showFooter={true}
           footerData={totals}
           maxHeight="600px"

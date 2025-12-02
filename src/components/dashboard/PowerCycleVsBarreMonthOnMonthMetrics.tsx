@@ -189,7 +189,7 @@ export const PowerCycleVsBarreMonthOnMonthMetrics: React.FC = () => {
           columns={columns}
           maxHeight="600px"
           stickyHeader={true}
-          headerGradient="from-indigo-600 to-purple-600"
+          headerGradient="from-slate-800 via-slate-900 to-slate-800"
         />
       </CardContent>
     </Card>

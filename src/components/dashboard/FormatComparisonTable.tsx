@@ -1,16 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PayrollData } from '@/types/dashboard';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { FormatFilters } from './FormatAnalysisFilters';
+import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { 
   TrendingUp,
   TrendingDown,
   Minus,
   Trophy,
   Target,
-  DollarSign
+  DollarSign,
+  ShrinkIcon,
+  ExpandIcon
 } from 'lucide-react';
 
 interface FormatComparisonTableProps {
@@ -19,6 +24,20 @@ interface FormatComparisonTableProps {
 }
 
 export const FormatComparisonTable: React.FC<FormatComparisonTableProps> = ({ data, filters }) => {
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  
+  // Table ref for copy functionality
+  const tableRef = useRef<HTMLTableElement>(null);
+  const tableId = 'format-comparison-table';
+  
+  // Register with metrics tables registry
+  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  
+  useEffect(() => {
+    registerTable(tableId, tableRef);
+    return () => unregisterTable(tableId);
+  }, [registerTable, unregisterTable]);
+  
   const comparisonData = useMemo(() => {
     // Apply filters to data first
     let filteredData = data;
@@ -174,14 +193,30 @@ export const FormatComparisonTable: React.FC<FormatComparisonTableProps> = ({ da
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          Format Performance Comparison
-        </CardTitle>
+    <Card className="w-full bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-t-lg">
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Target className="h-5 w-5 text-blue-400" />
+            Format Performance Comparison
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CopyTableButton tableRef={tableRef} />
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+              className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
+              {isTableCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
+      {!isTableCollapsed && (
+      <CardContent className="pt-4">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {formatsList.map((format, index) => (
@@ -207,13 +242,13 @@ export const FormatComparisonTable: React.FC<FormatComparisonTableProps> = ({ da
 
         {/* Detailed Comparison Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-gray-200 bg-gray-50/50">
-                <th className="px-4 py-3 text-left font-semibold text-gray-900">Metric</th>
-                <th className="px-4 py-3 text-center font-semibold text-blue-900">PowerCycle</th>
-                <th className="px-4 py-3 text-center font-semibold text-pink-900">Barre</th>
-                <th className="px-4 py-3 text-center font-semibold text-orange-900">Strength</th>
+          <table ref={tableRef} id={tableId} className="w-full unified-table">
+            <thead className="unified-table-header">
+              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <th className="px-4 py-3 text-left font-bold text-white uppercase text-xs tracking-wide">Metric</th>
+                <th className="px-4 py-3 text-center font-bold text-white uppercase text-xs tracking-wide border-l border-white/20">PowerCycle</th>
+                <th className="px-4 py-3 text-center font-bold text-white uppercase text-xs tracking-wide border-l border-white/20">Barre</th>
+                <th className="px-4 py-3 text-center font-bold text-white uppercase text-xs tracking-wide border-l border-white/20">Strength</th>
               </tr>
             </thead>
             <tbody>
@@ -296,6 +331,7 @@ export const FormatComparisonTable: React.FC<FormatComparisonTableProps> = ({ da
           </div>
         </div>
       </CardContent>
+      )}
     </Card>
   );
 };
