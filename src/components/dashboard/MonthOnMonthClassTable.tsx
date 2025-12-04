@@ -1086,62 +1086,62 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
             </TableBody>
           </Table>
         </div>
-      )}
 
-      {/* Summary Stats */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardContent className="p-4 text-center">
-              <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-              <div className="text-2xl font-bold text-blue-800">{availableMonths.length}</div>
-              <div className="text-sm text-blue-600">Months Tracked</div>
-            </CardContent>
-          </Card>
+        {/* Summary Stats */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardContent className="p-4 text-center">
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                <div className="text-2xl font-bold text-blue-800">{availableMonths.length}</div>
+                <div className="text-sm text-blue-600">Months Tracked</div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div>
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardContent className="p-4 text-center">
+                <Users className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                <div className="text-2xl font-bold text-green-800">
+                  {formatNumber(data.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}
+                </div>
+                <div className="text-sm text-green-600">Total Attendance</div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div>
+            <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardContent className="p-4 text-center">
+                <DollarSign className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
+                <div className="text-2xl font-bold text-indigo-800">
+                  {formatCurrency(data.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}
+                </div>
+                <div className="text-sm text-indigo-600">Total Revenue</div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div>
+            <Card className="bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardContent className="p-4 text-center">
+                <BarChart3 className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                <div className="text-2xl font-bold text-blue-900">
+                  {processedData.length}
+                </div>
+                <div className="text-sm text-blue-700">
+                  {groupBy === 'trainer' ? 'Trainers' : 
+                   groupBy === 'class' ? 'Classes' :
+                   groupBy === 'uniqueid1' ? 'UniqueID1' :
+                   groupBy === 'uniqueid2' ? 'UniqueID2' :
+                   groupBy === 'location' ? 'Locations' : 'Groups'}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        
-        <div>
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardContent className="p-4 text-center">
-              <Users className="w-8 h-8 mx-auto mb-2 text-green-600" />
-              <div className="text-2xl font-bold text-green-800">
-                {formatNumber(data.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}
-              </div>
-              <div className="text-sm text-green-600">Total Attendance</div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div>
-          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardContent className="p-4 text-center">
-              <DollarSign className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
-              <div className="text-2xl font-bold text-indigo-800">
-                {formatCurrency(data.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}
-              </div>
-              <div className="text-sm text-indigo-600">Total Revenue</div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div>
-          <Card className="bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardContent className="p-4 text-center">
-              <BarChart3 className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-              <div className="text-2xl font-bold text-blue-900">
-                {processedData.length}
-              </div>
-              <div className="text-sm text-blue-700">
-                {groupBy === 'trainer' ? 'Trainers' : 
-                 groupBy === 'class' ? 'Classes' :
-                 groupBy === 'uniqueid1' ? 'UniqueID1' :
-                 groupBy === 'uniqueid2' ? 'UniqueID2' :
-                 groupBy === 'location' ? 'Locations' : 'Groups'}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      )}
     </ModernTableWrapper>
 
     <PersistentTableFooter
