@@ -208,7 +208,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                 className={cn(
                   "text-xs font-semibold transition-all duration-200",
                   chartType === 'source' 
-                    ? "bg-white/30 text-white border-white/40 hover:bg-white/40" 
+                    ? "bg-green-700 text-white border-green-600 hover:bg-green-800" 
                     : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
                 )}
               >
@@ -222,7 +222,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                 className={cn(
                   "text-xs font-semibold transition-all duration-200",
                   chartType === 'stage' 
-                    ? "bg-white/30 text-white border-white/40 hover:bg-white/40" 
+                    ? "bg-green-700 text-white border-green-600 hover:bg-green-800" 
                     : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
                 )}
               >
@@ -236,7 +236,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                 className={cn(
                   "text-xs font-semibold transition-all duration-200",
                   chartType === 'timeline' 
-                    ? "bg-white/30 text-white border-white/40 hover:bg-white/40" 
+                    ? "bg-green-700 text-white border-green-600 hover:bg-green-800" 
                     : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
                 )}
               >
@@ -251,7 +251,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
               className={cn(
                 "cursor-pointer transition-all duration-200 hover:scale-105",
                 metricType === 'volume' 
-                  ? "bg-white/30 text-white border-white/40" 
+                  ? "bg-green-700 text-white border-green-600" 
                   : "bg-white/10 text-white/70 border-white/30 hover:bg-white/20"
               )}
               onClick={() => setMetricType('volume')}
@@ -263,7 +263,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
               className={cn(
                 "cursor-pointer transition-all duration-200 hover:scale-105",
                 metricType === 'conversion' 
-                  ? "bg-white/30 text-white border-white/40" 
+                  ? "bg-green-700 text-white border-green-600" 
                   : "bg-white/10 text-white/70 border-white/30 hover:bg-white/20"
               )}
               onClick={() => setMetricType('conversion')}
@@ -275,7 +275,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
               className={cn(
                 "cursor-pointer transition-all duration-200 hover:scale-105",
                 metricType === 'ltv' 
-                  ? "bg-white/30 text-white border-white/40" 
+                  ? "bg-green-700 text-white border-green-600" 
                   : "bg-white/10 text-white/70 border-white/30 hover:bg-white/20"
               )}
               onClick={() => setMetricType('ltv')}

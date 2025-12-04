@@ -159,10 +159,10 @@ export const FunnelStagePerformanceTable: React.FC<FunnelStagePerformanceTablePr
   ];
 
   return (
-    <Card className="w-full bg-white/90 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b">
-        <CardTitle className="flex items-center gap-2 text-slate-800">
-          <Activity className="w-6 h-6 text-purple-600 animate-pulse" />
+    <Card className="w-full bg-white border-2 border-purple-400 shadow-xl">
+      <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-b border-slate-700">
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Activity className="w-6 h-6 text-purple-400 animate-pulse" />
           Stage Performance Breakdown
         </CardTitle>
       </CardHeader>
@@ -177,6 +177,7 @@ export const FunnelStagePerformanceTable: React.FC<FunnelStagePerformanceTablePr
             footerData={totals}
             maxHeight="500px"
             className="rounded-none"
+            headerGradient="from-slate-900 via-blue-950 to-slate-900"
           />
         </div>
 

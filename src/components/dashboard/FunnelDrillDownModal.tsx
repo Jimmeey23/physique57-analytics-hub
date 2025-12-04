@@ -149,114 +149,122 @@ export const FunnelDrillDownModal: React.FC<FunnelDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4 border-b bg-gradient-to-r from-blue-50 to-purple-50 -m-6 p-6 mb-4">
+      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-white border-slate-200 shadow-2xl">
+        <DialogHeader className="pb-6 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white -m-6 mb-6 p-6 shadow-xl">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                <Users className="w-5 h-5 text-white" />
+              </div>
               {title} - Detailed Analysis
             </DialogTitle>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClose}
-              className="hover:bg-white/50"
+              className="text-white hover:bg-white/20"
             >
               <X className="w-4 h-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <div className="overflow-y-auto px-8 py-6 space-y-8" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+          
+          {/* Summary Cards */}
+          <div className="p-6 bg-white border-2 border-blue-400 rounded-xl shadow-lg">
+            <h3 className="text-lg font-semibold text-blue-700 mb-6 flex items-center gap-2 pb-4 border-b border-blue-200">
+              <Target className="w-5 h-5 text-blue-600" />
+              Key Performance Metrics
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="bg-white border-2 border-blue-500 shadow-md hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-5 h-5 text-blue-600" />
                 <div>
                   <div className="text-2xl font-bold text-blue-700">
                     {formatNumber(summary.totalLeads)}
                   </div>
-                  <div className="text-xs text-blue-600">Total Leads</div>
+                  <div className="text-xs text-slate-600 font-medium">Total Leads</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-white border-2 border-emerald-500 shadow-md hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-green-600" />
+                <UserCheck className="w-5 h-5 text-emerald-600" />
                 <div>
-                  <div className="text-2xl font-bold text-green-700">
+                  <div className="text-2xl font-bold text-emerald-700">
                     {formatNumber(summary.convertedLeads)}
                   </div>
-                  <div className="text-xs text-green-600">Converted</div>
+                  <div className="text-xs text-slate-600 font-medium">Converted</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="bg-white border-2 border-purple-500 shadow-md hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-purple-600" />
+                <Target className="w-5 h-5 text-purple-600" />
                 <div>
                   <div className="text-2xl font-bold text-purple-700">
                     {summary.conversionRate.toFixed(1)}%
                   </div>
-                  <div className="text-xs text-purple-600">Conv. Rate</div>
+                  <div className="text-xs text-slate-600 font-medium">Conv. Rate</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <Card className="bg-white border-2 border-rose-500 shadow-md hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-600" />
+                <Calendar className="w-5 h-5 text-rose-600" />
                 <div>
-                  <div className="text-2xl font-bold text-emerald-700">
+                  <div className="text-2xl font-bold text-rose-700">
                     {formatCurrency(summary.avgLTV)}
                   </div>
-                  <div className="text-xs text-emerald-600">Avg LTV</div>
+                  <div className="text-xs text-slate-600 font-medium">Avg LTV</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-white border-2 border-amber-500 shadow-md hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-orange-600" />
+                <TrendingUp className="w-5 h-5 text-amber-600" />
                 <div>
-                  <div className="text-2xl font-bold text-orange-700">
+                  <div className="text-2xl font-bold text-amber-700">
                     {summary.avgVisits.toFixed(1)}
                   </div>
-                  <div className="text-xs text-orange-600">Avg Visits</div>
+                  <div className="text-xs text-slate-600 font-medium">Avg Visits</div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+          </div>
 
-        {/* Lead Data Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Award className="w-5 h-5 text-blue-600" />
+          {/* Lead Data Table */}
+          <div className="p-6 bg-white border-2 border-emerald-400 rounded-xl shadow-lg">
+            <h3 className="text-lg font-semibold text-emerald-700 mb-6 flex items-center gap-2 pb-4 border-b border-emerald-200">
+              <Award className="w-5 h-5 text-emerald-600" />
               Lead Details ({formatNumber(data.length)} leads)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
+            </h3>
             <ModernDataTable
               data={data}
               columns={columns}
-              headerGradient="from-slate-800 via-slate-900 to-slate-800"
-              maxHeight="400px"
+              headerGradient="from-slate-900 via-blue-950 to-slate-900"
+              maxHeight="450px"
+              stickyHeader={true}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

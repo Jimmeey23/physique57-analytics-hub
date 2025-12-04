@@ -4,6 +4,7 @@ import { SalesData } from '@/types/dashboard';
 import { requestCache } from '@/utils/performanceOptimizations';
 import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
+import { rateLimitedFetch } from '@/utils/rateLimiter';
 
 const logger = createLogger('useGoogleSheets');
 
@@ -33,7 +34,7 @@ export const useGoogleSheets = () => {
         logger.info('Fetching sales data from Google Sheets...');
         const accessToken = await getGoogleAccessToken();
         
-        const response = await fetch(
+        const response = await rateLimitedFetch(
           `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
           {
             headers: {

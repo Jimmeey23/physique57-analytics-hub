@@ -179,11 +179,11 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
   }, [healthMetrics]);
 
   return (
-    <Card className="w-full bg-white/90 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b">
+    <Card className="w-full bg-white border-2 border-rose-400 shadow-xl">
+      <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-b border-slate-700">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-white">
-            <HeartHandshake className="w-6 h-6 text-red-400 animate-pulse" />
+            <HeartHandshake className="w-6 h-6 text-rose-400 animate-pulse" />
             Funnel Health Metrics
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
             stickyHeader={true}
             maxHeight="500px"
             className="rounded-none"
-            headerGradient="from-slate-800 via-slate-900 to-slate-800"
+            headerGradient="from-slate-900 via-blue-950 to-slate-900"
           />
         </div>
 

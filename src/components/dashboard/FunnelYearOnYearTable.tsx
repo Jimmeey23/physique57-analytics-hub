@@ -469,7 +469,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
               footerData={totals} 
               maxHeight="400px" 
               className="rounded-lg" 
-              headerGradient="from-slate-800 via-slate-900 to-slate-800" 
+              headerGradient="from-slate-900 via-blue-950 to-slate-900" 
               onRowClick={(row) => {
                 const filteredData = allData.filter(lead => lead.source === row.source);
                 onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');

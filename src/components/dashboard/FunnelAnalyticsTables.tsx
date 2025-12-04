@@ -270,28 +270,28 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="source" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-red-50 to-orange-50 p-2 rounded-2xl h-auto gap-2">
-          <TabsTrigger value="source" className="rounded-xl px-4 py-3 font-semibold text-sm">
+        <TabsList className="grid w-full grid-cols-6 bg-slate-100 p-2 rounded-2xl h-auto gap-2">
+          <TabsTrigger value="source" className="rounded-xl px-4 py-3 font-semibold text-sm data-[state=active]:bg-green-700 data-[state=active]:text-white">
             <Target className="w-4 h-4 mr-2" />
             By Source
           </TabsTrigger>
-          <TabsTrigger value="stage" className="rounded-xl px-4 py-3 font-semibold text-sm">
+          <TabsTrigger value="stage" className="rounded-xl px-4 py-3 font-semibold text-sm data-[state=active]:bg-green-700 data-[state=active]:text-white">
             <Activity className="w-4 h-4 mr-2" />
             By Stage
           </TabsTrigger>
-          <TabsTrigger value="span" className="rounded-xl px-4 py-3 font-semibold text-sm">
+          <TabsTrigger value="span" className="rounded-xl px-4 py-3 font-semibold text-sm data-[state=active]:bg-green-700 data-[state=active]:text-white">
             <Clock className="w-4 h-4 mr-2" />
             Conv. Span
           </TabsTrigger>
-          <TabsTrigger value="ltv" className="rounded-xl px-4 py-3 font-semibold text-sm">
+          <TabsTrigger value="ltv" className="rounded-xl px-4 py-3 font-semibold text-sm data-[state=active]:bg-green-700 data-[state=active]:text-white">
             <DollarSign className="w-4 h-4 mr-2" />
             LTV Analysis
           </TabsTrigger>
-          <TabsTrigger value="stages" className="rounded-xl px-4 py-3 font-semibold text-sm">
+          <TabsTrigger value="stages" className="rounded-xl px-4 py-3 font-semibold text-sm data-[state=active]:bg-green-700 data-[state=active]:text-white">
             <BarChart3 className="w-4 h-4 mr-2" />
             Top Stages
           </TabsTrigger>
-          <TabsTrigger value="proximity" className="rounded-xl px-4 py-3 font-semibold text-sm">
+          <TabsTrigger value="proximity" className="rounded-xl px-4 py-3 font-semibold text-sm data-[state=active]:bg-green-700 data-[state=active]:text-white">
             <MapPin className="w-4 h-4 mr-2" />
             Proximity
           </TabsTrigger>
@@ -380,7 +380,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('source', row)}
-                headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                headerGradient="from-slate-900 via-blue-950 to-slate-900"
                 maxHeight="400px"
               />
             </CardContent>
@@ -464,7 +464,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('stage', row)}
-                headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                headerGradient="from-slate-900 via-blue-950 to-slate-900"
                 maxHeight="400px"
               />
             </CardContent>
@@ -531,7 +531,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     )
                   }
                 ]}
-                headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                headerGradient="from-slate-900 via-blue-950 to-slate-900"
                 maxHeight="400px"
               />
             </CardContent>
@@ -599,7 +599,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('ltv', row)}
-                headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                headerGradient="from-slate-900 via-blue-950 to-slate-900"
                 maxHeight="400px"
               />
             </CardContent>
@@ -666,7 +666,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     )
                   }
                 ]}
-                headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                headerGradient="from-slate-900 via-blue-950 to-slate-900"
                 maxHeight="400px"
               />
             </CardContent>
@@ -741,7 +741,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('proximity', row)}
-                headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                headerGradient="from-slate-900 via-blue-950 to-slate-900"
                 maxHeight="400px"
               />
             </CardContent>
