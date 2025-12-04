@@ -454,7 +454,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th
-                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');

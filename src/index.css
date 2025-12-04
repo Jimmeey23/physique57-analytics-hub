@@ -1511,15 +1511,15 @@
 .location-tab-trigger[data-state="active"] {
   color: #ffffff;
   transform: translateY(-1px) scale(1.02);
-  /* Dynamic gradient driven by --tab-accent / --hero-accent */
+  /* Standard slate gradient */
   background: linear-gradient(
     135deg,
-    color-mix(in oklab, var(--tab-accent, var(--hero-accent, #7c3aed)) 70%, #1e1b4b) 0%,
-    color-mix(in oklab, var(--tab-accent, var(--hero-accent, #7c3aed)) 25%, #000000) 100%
+    #1e293b 0%,
+    #0f172a 100%
   );
-  /* Keep subtle sync with hero accent for border/glow */
-  border: 1px solid color-mix(in oklab, var(--tab-accent, var(--hero-accent, #7c3aed)) 35%, #0b1220);
-  box-shadow: 0 16px 36px color-mix(in oklab, var(--tab-accent, var(--hero-accent, #7c3aed)) 35%, transparent),
+  /* Slate border */
+  border: 1px solid #334155;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35),
               0 6px 20px rgba(0, 0, 0, 0.45),
               inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   /* Smoothly transition bg/border when accent changes */
@@ -1537,8 +1537,8 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(120% 120% at 20% 20%, color-mix(in oklab, var(--tab-accent, var(--hero-accent, #7c3aed)) 36%, transparent) 0%, transparent 60%),
-              radial-gradient(120% 120% at 80% 80%, color-mix(in oklab, var(--tab-accent, var(--hero-accent, #7c3aed)) 26%, transparent) 0%, transparent 60%);
+  background: radial-gradient(120% 120% at 20% 20%, rgba(30, 41, 59, 0.36) 0%, transparent 60%),
+              radial-gradient(120% 120% at 80% 80%, rgba(30, 41, 59, 0.26) 0%, transparent 60%);
   background-size: 200% 200%;
   animation: premium-gradient-move 6s ease-in-out infinite;
   opacity: 0.35;
