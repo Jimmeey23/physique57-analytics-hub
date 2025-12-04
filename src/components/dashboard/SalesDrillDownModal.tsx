@@ -111,8 +111,8 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       className: 'min-w-[150px]',
       render: (value: string, row: SalesData) => (
         <div>
-          <div className="font-medium text-gray-900">{value}</div>
-          <div className="text-xs text-gray-500">{row.customerEmail}</div>
+          <div className="font-semibold text-slate-900">{value}</div>
+          <div className="text-xs text-slate-500">{row.customerEmail}</div>
         </div>
       )
     },
@@ -122,8 +122,8 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       className: 'min-w-[120px]',
       render: (value: string, row: SalesData) => (
         <div>
-          <div className="font-medium">{value}</div>
-          <Badge variant="outline" className="text-xs mt-1">
+          <div className="font-medium text-slate-800">{value}</div>
+          <Badge variant="outline" className="text-xs mt-1 bg-slate-100 text-slate-700 border-slate-300">
             {row.cleanedCategory}
           </Badge>
         </div>
@@ -134,7 +134,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       header: 'Amount',
       align: 'right' as const,
       render: (value: number) => (
-        <span className="font-semibold text-emerald-600">
+        <span className="font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
           {formatCurrency(value)}
         </span>
       )
@@ -144,7 +144,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       header: 'Date',
       align: 'center' as const,
       render: (value: string) => (
-        <div className="text-sm">
+        <div className="text-sm text-slate-700 font-medium">
           {new Date(value).toLocaleDateString()}
         </div>
       )
@@ -154,7 +154,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       header: 'Payment',
       align: 'center' as const,
       render: (value: string) => (
-        <Badge variant="secondary">
+        <Badge className="bg-slate-100 text-slate-700 border-slate-300">
           {value || 'N/A'}
         </Badge>
       )
@@ -164,7 +164,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       header: 'Sold By',
       className: 'min-w-[100px]',
       render: (value: string) => (
-        <div className="text-sm text-gray-600 flex items-center gap-1">
+        <div className="text-sm text-slate-600 flex items-center gap-1 font-medium">
           <Users className="w-3 h-3" />
           {value}
         </div>
@@ -174,13 +174,15 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4 border-b bg-gradient-to-r from-blue-50 to-blue-100 -m-6 p-6 mb-4">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto bg-white border-slate-200 shadow-2xl">
+        <DialogHeader className="pb-6 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 -m-6 p-6 mb-6">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blue-600" />
-              {data.title || data.name} - Sales Analytics
-              <Badge variant="outline" className="ml-2 text-blue-600 border-blue-200 bg-blue-50">
+            <DialogTitle className="text-xl font-bold text-white flex items-center gap-3">
+              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <span>{data.title || data.name}</span>
+              <Badge className="ml-2 bg-white/20 text-white border-white/30 backdrop-blur-sm font-normal">
                 {data.type}
               </Badge>
             </DialogTitle>
@@ -188,7 +190,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
               variant="ghost" 
               size="sm" 
               onClick={onClose}
-              className="hover:bg-white/50"
+              className="text-white hover:bg-white/10 backdrop-blur-sm"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -197,71 +199,71 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
 
         {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <Card className="bg-gradient-to-br from-slate-900 to-blue-950 border-slate-700 shadow-lg hover:shadow-xl transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-600" />
-                <div>
-                  <div className="text-2xl font-bold text-emerald-700">
-                    {formatCurrency(analytics.totalRevenue)}
-                  </div>
-                  <div className="text-xs text-emerald-600">Total Revenue</div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-300 mb-1">
+                  <DollarSign className="w-4 h-4" />
+                  <span className="text-xs font-medium">Total Revenue</span>
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {formatCurrency(analytics.totalRevenue)}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-blue-600" />
-                <div>
-                  <div className="text-2xl font-bold text-blue-700">
-                    {formatNumber(analytics.totalTransactions)}
-                  </div>
-                  <div className="text-xs text-blue-600">Transactions</div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                  <ShoppingCart className="w-4 h-4" />
+                  <span className="text-xs font-medium">Transactions</span>
+                </div>
+                <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                  {formatNumber(analytics.totalTransactions)}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-700" />
-                <div>
-                  <div className="text-2xl font-bold text-blue-800">
-                    {formatNumber(analytics.uniqueCustomers)}
-                  </div>
-                  <div className="text-xs text-blue-700">Customers</div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                  <Users className="w-4 h-4" />
+                  <span className="text-xs font-medium">Customers</span>
+                </div>
+                <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                  {formatNumber(analytics.uniqueCustomers)}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-orange-600" />
-                <div>
-                  <div className="text-2xl font-bold text-orange-700">
-                    {formatCurrency(analytics.avgTransactionValue)}
-                  </div>
-                  <div className="text-xs text-orange-600">Avg Transaction</div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                  <Target className="w-4 h-4" />
+                  <span className="text-xs font-medium">Avg Transaction</span>
+                </div>
+                <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                  {formatCurrency(analytics.avgTransactionValue)}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200">
+          <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-rose-600" />
-                <div>
-                  <div className="text-2xl font-bold text-rose-700">
-                    {formatCurrency(analytics.avgRevenuePerCustomer)}
-                  </div>
-                  <div className="text-xs text-rose-600">Avg per Customer</div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-600 mb-1">
+                  <Award className="w-4 h-4" />
+                  <span className="text-xs font-medium">Avg per Customer</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">
+                  {formatCurrency(analytics.avgRevenuePerCustomer)}
                 </div>
               </div>
             </CardContent>
@@ -270,26 +272,26 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Monthly Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-600" />
+          <Card className="bg-white border-slate-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-900">
+                <Calendar className="w-5 h-5 text-slate-700" />
                 Monthly Performance
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <ScrollArea className="h-64">
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {Object.entries(analytics.monthlyData).map(([month, data]: [string, any]) => (
-                    <div key={month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={month} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all hover:shadow-md">
                       <div>
-                        <div className="font-medium">{month}</div>
-                        <div className="text-sm text-gray-600">
+                        <div className="font-semibold text-slate-900">{month}</div>
+                        <div className="text-sm text-slate-500 mt-1">
                           {formatNumber(data.transactions)} transactions • {formatNumber(data.uniqueCustomers)} customers
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-emerald-600">
+                        <div className="font-bold text-lg bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
                           {formatCurrency(data.revenue)}
                         </div>
                       </div>
@@ -301,32 +303,32 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
           </Card>
 
           {/* Top Customers */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-700" />
+          <Card className="bg-white border-slate-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-900">
+                <Users className="w-5 h-5 text-slate-700" />
                 Top Customers
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <ScrollArea className="h-64">
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {analytics.topCustomers.map((customer: any, index: number) => (
-                    <div key={customer.memberId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={customer.memberId} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all hover:shadow-md">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        <div className="w-9 h-9 bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-lg">
                           {index + 1}
                         </div>
                         <div>
-                          <div className="font-medium">{customer.name}</div>
-                          <div className="text-sm text-gray-600">{customer.email}</div>
+                          <div className="font-semibold text-slate-900">{customer.name}</div>
+                          <div className="text-xs text-slate-500">{customer.email}</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-emerald-600">
+                        <div className="font-bold text-lg bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
                           {formatCurrency(customer.revenue)}
                         </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-xs text-slate-500 mt-1">
                           {formatNumber(customer.transactions)} orders
                         </div>
                       </div>
@@ -339,18 +341,21 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
         </div>
 
         {/* Transaction Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Package className="w-5 h-5 text-green-600" />
-              Transaction Details ({formatNumber(rawData.length)} records)
+        <Card className="bg-white border-slate-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-b border-slate-700">
+            <CardTitle className="text-lg flex items-center gap-2 text-white">
+              <Package className="w-5 h-5" />
+              Transaction Details
+              <Badge className="ml-2 bg-white/20 text-white border-white/30 backdrop-blur-sm font-normal">
+                {formatNumber(rawData.length)} records
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ModernDataTable
               data={rawData}
               columns={tableColumns}
-              headerGradient="from-slate-800 via-slate-900 to-slate-800"
+              headerGradient="from-slate-900 via-blue-950 to-slate-900"
               maxHeight="400px"
             />
           </CardContent>

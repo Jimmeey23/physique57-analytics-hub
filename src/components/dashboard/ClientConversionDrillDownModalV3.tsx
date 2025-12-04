@@ -185,61 +185,71 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                                      'Overall conversion rate';
 
     return <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-white border border-slate-200/70 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="w-5 h-5 text-slate-500" />
-              <Badge variant="outline" className="text-xs">Total</Badge>
+        <Card className="bg-white border-2 border-blue-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-blue-600 mb-1">
+                <Users className="w-5 h-5 animate-pulse" />
+                <span className="text-xs font-semibold">Total</span>
+              </div>
+              <div className="text-3xl font-bold text-blue-700">{formatNumber(summary.totalMembers)}</div>
+              <div className="text-slate-600 text-sm font-medium">Total Members</div>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{formatNumber(summary.totalMembers)}</div>
-            <div className="text-slate-500 text-sm">Total Members</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200/70 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Target className="w-5 h-5 text-slate-500" />
-              <Badge variant="outline" className="text-xs">New</Badge>
+        <Card className="bg-white border-2 border-emerald-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-100">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                <Target className="w-5 h-5" />
+                <span className="text-xs font-semibold">New</span>
+              </div>
+              <div className="text-3xl font-bold text-emerald-700">{formatNumber(summary.newMembers)}</div>
+              <div className="text-slate-600 text-sm font-medium">{newMembersLabel}</div>
+              <div className="text-slate-500 text-xs mt-1">{newMembersDescription}</div>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{formatNumber(summary.newMembers)}</div>
-            <div className="text-slate-500 text-sm">{newMembersLabel}</div>
-            <div className="text-slate-400 text-xs mt-1">{newMembersDescription}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200/70 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Star className="w-5 h-5 text-slate-500" />
-              <Badge variant="outline" className="text-xs">Conv</Badge>
+        <Card className="bg-white border-2 border-purple-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-200">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-purple-600 mb-1">
+                <Star className="w-5 h-5" />
+                <span className="text-xs font-semibold">Conv</span>
+              </div>
+              <div className="text-3xl font-bold text-purple-700">{formatNumber(summary.convertedMembers)}</div>
+              <div className="text-slate-600 text-sm font-medium">Converted</div>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{formatNumber(summary.convertedMembers)}</div>
-            <div className="text-slate-500 text-sm">Converted</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200/70 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-5 h-5 text-slate-500" />
-              <Badge variant="outline" className="text-xs">Rate</Badge>
+        <Card className="bg-white border-2 border-amber-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-300">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-amber-600 mb-1">
+                <TrendingUp className="w-5 h-5" />
+                <span className="text-xs font-semibold">Rate</span>
+              </div>
+              <div className="text-3xl font-bold text-amber-700">{summary.conversionRate.toFixed(1)}%</div>
+              <div className="text-slate-600 text-sm font-medium">{conversionRateLabel}</div>
+              <div className="text-slate-500 text-xs mt-1">{conversionRateDescription}</div>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{summary.conversionRate.toFixed(1)}%</div>
-            <div className="text-slate-500 text-sm">{conversionRateLabel}</div>
-            <div className="text-slate-400 text-xs mt-1">{conversionRateDescription}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-slate-200/70 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign className="w-5 h-5 text-slate-500" />
-              <Badge variant="outline" className="text-xs">LTV</Badge>
+        <Card className="bg-white border-2 border-rose-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-400">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-rose-600 mb-1">
+                <DollarSign className="w-5 h-5" />
+                <span className="text-xs font-semibold">LTV</span>
+              </div>
+              <div className="text-3xl font-bold text-rose-700">{formatCurrency(summary.avgLTV)}</div>
+              <div className="text-slate-600 text-sm font-medium">Avg LTV</div>
+              <div className="text-slate-500 text-xs mt-1">Total: {formatCurrency(summary.totalLTV)}</div>
             </div>
-            <div className="text-2xl font-bold text-slate-900">{formatCurrency(summary.avgLTV)}</div>
-            <div className="text-slate-500 text-sm">Avg LTV</div>
-            <div className="text-slate-400 text-xs mt-1">Total: {formatCurrency(summary.totalLTV)}</div>
           </CardContent>
         </Card>
       </div>;
@@ -272,7 +282,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <div className="inline-flex rounded-full bg-slate-100 p-1">
               {(['all','new','converted','retained','highLTV'] as const).map(q => (
-                <button key={q} onClick={() => setQuickFilter(q)} className={`px-3 py-1.5 text-xs rounded-full transition-all ${quickFilter===q? 'bg-white shadow text-slate-900' : 'text-slate-600'}`}>
+                <button key={q} onClick={() => setQuickFilter(q)} className={`px-3 py-1.5 text-xs rounded-full transition-all ${quickFilter===q? 'bg-green-700 shadow text-white font-medium' : 'text-slate-600'}`}>
                   {q==='all'?'All': q==='new'?'New': q==='converted'?'Converted': q==='retained'?'Retained':'High LTV'}
                 </button>
               ))}
@@ -281,10 +291,10 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name or email" className="h-9 w-56 rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200" />
             </div>
             <div className="inline-flex rounded-full bg-slate-100 p-1">
-              <button onClick={()=>setViewMode('table')} className={`px-2 py-1.5 rounded-full ${viewMode==='table'?'bg-white shadow':''}`} title="Table View">
+              <button onClick={()=>setViewMode('table')} className={`px-2 py-1.5 rounded-full ${viewMode==='table'?'bg-green-700 shadow text-white':''}`} title="Table View">
                 <List className="w-4 h-4" />
               </button>
-              <button onClick={()=>setViewMode('cards')} className={`px-2 py-1.5 rounded-full ${viewMode==='cards'?'bg-white shadow':''}`} title="Card View">
+              <button onClick={()=>setViewMode('cards')} className={`px-2 py-1.5 rounded-full ${viewMode==='cards'?'bg-green-700 shadow text-white':''}`} title="Card View">
                 <LayoutGrid className="w-4 h-4" />
               </button>
             </div>
@@ -294,8 +304,8 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           {viewMode==='table' ? (
             <div className="max-h-96 overflow-y-auto">
               <Table>
-                <TableHeader className="sticky top-0 z-10">
-                  <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHeader className="sticky top-0 z-10 bg-slate-900">
+                  <TableRow className="bg-slate-900 border-slate-700">
                     <TableHead className="font-semibold text-slate-100 text-xs px-3">Name</TableHead>
                     <TableHead className="font-semibold text-slate-100 text-xs px-3">Email</TableHead>
                     <TableHead className="font-semibold text-slate-100 text-xs px-3">Trainer</TableHead>
@@ -376,35 +386,35 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
       </Card>;
   };
   return <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-white via-slate-50/50 to-white border border-white/60 shadow-[0_10px_40px_-10px_rgba(30,41,59,0.25)] backdrop-blur-xl">
-        <DialogHeader className="pb-6 border-b border-slate-200/60">
+      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-white border-slate-200 shadow-2xl">
+        <DialogHeader className="pb-6 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white -m-6 mb-6 p-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <BarChart3 className="w-5 h-5 text-white" />
+                </div>
                 {title} - Detailed Analysis
               </DialogTitle>
-              <p className="text-slate-600 mt-2 text-lg">
+              <p className="text-slate-300 mt-2 text-sm">
                 Targeted client conversion and retention analysis
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-slate-700 to-slate-900 text-white px-3 py-1 text-xs shadow-sm">
-                <span className="font-medium">{type === 'month' ? 'Monthly' : type === 'year' ? 'Yearly' : type === 'metric' ? 'Metric Analysis' : 'Analytics'}</span>
-              </div>
-              <div className="inline-flex items-center gap-2 bg-white rounded-full px-3 py-1 shadow-sm">
-                <span className="text-xs text-slate-600">Showing</span>
-                <span className="text-sm font-semibold text-slate-800">{formatNumber(displayedClients.length)}</span>
-                <span className="text-xs text-slate-400">of</span>
-                <span className="text-sm font-semibold text-slate-800">{formatNumber(clients.length)}</span>
-              </div>
-              <div className="flex items-center gap-2 ml-2">
-                <Button variant="ghost" onClick={() => exportCSV(displayedClients)} className="gap-1">
-                  <Download className="w-4 h-4" /> Export
+              <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                {type === 'month' ? 'Monthly' : type === 'year' ? 'Yearly' : type === 'metric' ? 'Metric Analysis' : 'Analytics'}
+              </Badge>
+              <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                {formatNumber(displayedClients.length)} of {formatNumber(clients.length)}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <Button size="sm" className="bg-white text-slate-900 hover:bg-slate-100 font-medium" onClick={() => exportCSV(displayedClients)}>
+                  <Download className="w-4 h-4 mr-1" /> Export
                 </Button>
-                <Button variant="ghost" onClick={() => copyEmails(displayedClients)} className="gap-1">
-                  <Copy className="w-4 h-4" /> Emails
+                <Button size="sm" className="bg-white text-slate-900 hover:bg-slate-100 font-medium" onClick={() => copyEmails(displayedClients)}>
+                  <Copy className="w-4 h-4 mr-1" /> Emails
                 </Button>
-                <Button variant="ghost" onClick={onClose}>
+                <Button size="sm" variant="ghost" className="text-white hover:bg-white/20" onClick={onClose}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -412,29 +422,41 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           </div>
         </DialogHeader>
         
-        <div className="pt-6 space-y-8">
-          {/* Metric Cards */}
-          {renderMetricCards()}
+        <div className="overflow-y-auto px-8 py-6 space-y-8" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+          
+          {/* Key Metrics Section */}
+          <div className="p-6 bg-white border-2 border-blue-400 rounded-xl shadow-lg">
+            <h3 className="text-lg font-semibold text-blue-700 mb-6 flex items-center gap-2 pb-4 border-b border-blue-200">
+              <BarChart3 className="w-5 h-5 text-blue-600" />
+              Key Performance Metrics
+            </h3>
+            {renderMetricCards()}
+          </div>
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded-xl p-1">
-              <TabsTrigger value="overview" className="gap-2">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-50 h-14 border-2 border-slate-200 rounded-lg p-1.5">
+              <TabsTrigger value="overview" className="gap-2 font-medium text-slate-600 data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                 <Star className="w-4 h-4" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="clients" className="gap-2">
+              <TabsTrigger value="clients" className="gap-2 font-medium text-slate-600 data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                 <Users className="w-4 h-4" />
                 Client Details
               </TabsTrigger>
-              <TabsTrigger value="insights" className="gap-2">
+              <TabsTrigger value="insights" className="gap-2 font-medium text-slate-600 data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                 <Zap className="w-4 h-4" />
                 Insights
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <TabsContent value="overview" className="mt-8">
+              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-lg space-y-6">
+                <h3 className="text-lg font-semibold text-amber-700 mb-6 flex items-center gap-2 pb-4 border-b border-amber-200">
+                  <Star className="w-5 h-5 text-amber-600" />
+                  Overview Analysis
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Card className="bg-white border border-slate-200/70 lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="text-slate-900">Summary Statistics</CardTitle>
@@ -548,31 +570,47 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   </CardContent>
                 </Card>
               )}
+              </div>
             </TabsContent>
 
-            <TabsContent value="clients">
-              {renderClientTable()}
+            <TabsContent value="clients" className="mt-8">
+              <div className="p-6 bg-white border-2 border-emerald-400 rounded-xl shadow-lg">
+                <h3 className="text-lg font-semibold text-emerald-700 mb-6 flex items-center gap-2 pb-4 border-b border-emerald-200">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  Client Details
+                </h3>
+                {renderClientTable()}
+              </div>
             </TabsContent>
 
-            <TabsContent value="insights">
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <TabsContent value="insights" className="mt-8">
+              <Card className="bg-white border-2 border-amber-400 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-purple-800">AI-Powered Insights</CardTitle>
+                  <CardTitle className="text-amber-700 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-amber-600" />
+                    AI-Powered Insights
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-purple-400">
-                      <h4 className="font-medium text-purple-800 mb-2">Key Metrics</h4>
-                      <ul className="text-sm text-purple-600 space-y-1">
+                    <div className="p-5 bg-slate-50 rounded-lg border-l-4 border-blue-600 shadow-sm">
+                      <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-blue-600" />
+                        Key Metrics
+                      </h4>
+                      <ul className="text-sm text-slate-700 space-y-1">
                         <li>• Total Revenue: {formatCurrency(summary.totalLTV)}</li>
                         <li>• Conversion Rate: {summary.conversionRate.toFixed(1)}%</li>
                         <li>• Retention Rate: {summary.retentionRate.toFixed(1)}%</li>
                         <li>• Average Customer Value: {formatCurrency(summary.avgLTV)}</li>
                       </ul>
                     </div>
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-orange-400">
-                      <h4 className="font-medium text-orange-800 mb-2">Performance Analysis</h4>
-                      <ul className="text-sm text-orange-600 space-y-1">
+                    <div className="p-5 bg-slate-50 rounded-lg border-l-4 border-emerald-600 shadow-sm">
+                      <h4 className="font-semibold text-emerald-700 mb-2 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-600" />
+                        Performance Analysis
+                      </h4>
+                      <ul className="text-sm text-slate-700 space-y-1">
                         <li>• {summary.conversionRate > 30 ? 'Strong' : summary.conversionRate > 15 ? 'Moderate' : 'Needs improvement'} conversion performance</li>
                         <li>• {summary.retentionRate > 70 ? 'Excellent' : summary.retentionRate > 50 ? 'Good' : 'Needs attention'} retention rate</li>
                         <li>• Customer lifetime value is {summary.avgLTV > 10000 ? 'high' : summary.avgLTV > 5000 ? 'moderate' : 'developing'}</li>

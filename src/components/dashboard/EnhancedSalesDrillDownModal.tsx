@@ -295,66 +295,50 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
   // Render enhanced metric cards
   const renderMetricCards = () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white border-2 border-emerald-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30">
-              <DollarSign className="w-7 h-7 text-white drop-shadow-lg" />
+      <Card className="bg-gradient-to-br from-slate-900 to-blue-950 text-white border-slate-700 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4">
+        <CardContent className="p-5">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-slate-300 mb-1">
+              <DollarSign className="w-4 h-4 animate-pulse" />
+              <span className="text-xs font-medium">Total Revenue</span>
             </div>
-            <Badge className="bg-emerald-800/80 text-white border border-white/30 text-xs font-bold px-3 py-1 rounded-full shadow-lg">Revenue</Badge>
-          </div>
-          <div className="text-3xl font-bold mb-1 drop-shadow-md">{formatCurrency(enhancedData.totalRevenue)}</div>
-          <div className="text-emerald-100 text-sm flex items-center gap-1">
-            <TrendingUp className="w-4 h-4 drop-shadow-sm" />
-            Total Revenue Generated
+            <div className="text-2xl font-bold text-white">{formatCurrency(enhancedData.totalRevenue)}</div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 text-white border-2 border-purple-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30">
-              <Users className="w-7 h-7 text-white drop-shadow-lg" />
+      <Card className="bg-white border-slate-200 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-100">
+        <CardContent className="p-5">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-slate-500 mb-1">
+              <Users className="w-4 h-4" />
+              <span className="text-xs font-medium">Customers</span>
             </div>
-            <Badge className="bg-purple-800/80 text-white border border-white/30 text-xs font-bold px-3 py-1 rounded-full shadow-lg">Customers</Badge>
-          </div>
-          <div className="text-3xl font-bold mb-1 drop-shadow-md">{formatNumber(enhancedData.uniqueCustomers)}</div>
-          <div className="text-purple-100 text-sm flex items-center gap-1">
-            <Target className="w-4 h-4 drop-shadow-sm" />
-            Unique Customers Served
+            <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">{formatNumber(enhancedData.uniqueCustomers)}</div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white border-2 border-blue-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30">
-              <ShoppingCart className="w-7 h-7 text-white drop-shadow-lg" />
+      <Card className="bg-white border-slate-200 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-200">
+        <CardContent className="p-5">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-slate-500 mb-1">
+              <ShoppingCart className="w-4 h-4" />
+              <span className="text-xs font-medium">Transactions</span>
             </div>
-            <Badge className="bg-blue-800/80 text-white border border-white/30 text-xs font-bold px-3 py-1 rounded-full shadow-lg">Volume</Badge>
-          </div>
-          <div className="text-3xl font-bold mb-1 drop-shadow-md">{formatNumber(enhancedData.totalTransactions)}</div>
-          <div className="text-blue-100 text-sm flex items-center gap-1 mt-1">
-            <Activity className="w-4 h-4 drop-shadow-sm" />
-            Total Transactions
+            <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">{formatNumber(enhancedData.totalTransactions)}</div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-amber-500 via-orange-500 to-orange-600 text-white border-2 border-amber-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30">
-              <BarChart3 className="w-7 h-7 text-white drop-shadow-lg" />
+      <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-300">
+        <CardContent className="p-5">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-slate-600 mb-1">
+              <BarChart3 className="w-4 h-4" />
+              <span className="text-xs font-medium">Avg Transaction</span>
             </div>
-            <Badge className="bg-orange-800/80 text-white border border-white/30 text-xs font-bold px-3 py-1 rounded-full shadow-lg">Average</Badge>
-          </div>
-          <div className="text-3xl font-bold mb-1 drop-shadow-md">{formatCurrency(enhancedData.avgTransactionValue)}</div>
-          <div className="text-orange-100 text-sm flex items-center gap-1 mt-1">
-            <Star className="w-4 h-4 drop-shadow-sm" />
-            Avg Transaction Value
+            <div className="text-2xl font-bold text-slate-900">{formatCurrency(enhancedData.avgTransactionValue)}</div>
           </div>
         </CardContent>
       </Card>
@@ -381,7 +365,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 shadow-lg hover:shadow-2xl transition-all duration-500 animate-in fade-in slide-in-from-left">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-800">
               <Clock className="w-5 h-5" />
@@ -389,24 +373,44 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={hourlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis />
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#1e3a8a" stopOpacity={0.9}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
+                <XAxis dataKey="hour" stroke="#64748b" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
                 <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  }}
                   formatter={(value, name) => [
                     name === 'revenue' ? formatCurrency(value as number) : formatNumber(value as number),
                     name === 'revenue' ? 'Revenue' : 'Transactions'
                   ]}
                 />
-                <Bar dataKey="transactions" fill="#3B82F6" name="transactions" />
+                <Bar 
+                  dataKey="transactions" 
+                  fill="url(#barGradient)" 
+                  name="transactions"
+                  radius={[8, 8, 0, 0]}
+                  animationDuration={1500}
+                  animationBegin={0}
+                  isAnimationActive={true}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 shadow-lg hover:shadow-2xl transition-all duration-500 animate-in fade-in slide-in-from-right">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-800">
               <CreditCard className="w-5 h-5" />
@@ -414,21 +418,54 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={300}>
               <RechartsPieChart>
+                <defs>
+                  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                    <feOffset dx="2" dy="2" result="offsetblur"/>
+                    <feComponentTransfer>
+                      <feFuncA type="linear" slope="0.3"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                      <feMergeNode/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
                 <Pie
                   dataKey="revenue"
                   data={paymentMethodData}
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={3}
                   label={({ method, percent }) => `${method}: ${(percent * 100).toFixed(0)}%`}
+                  labelLine={true}
+                  animationDuration={1500}
+                  animationBegin={0}
+                  isAnimationActive={true}
+                  style={{ filter: 'url(#shadow)' }}
                 >
                   {paymentMethodData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  }}
+                  formatter={(value) => formatCurrency(value as number)} 
+                />
               </RechartsPieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -629,29 +666,28 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] xl:w-[1200px] max-w-[95vw] max-h-[85vh] overflow-hidden bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-2xl">
-        <DialogHeader className="pb-6 border-b border-slate-200 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white -m-6 mb-6 p-6 rounded-t-lg shadow-xl">
+      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden bg-white border-slate-200 shadow-2xl">
+        <DialogHeader className="pb-6 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white -m-6 mb-6 p-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <BarChart3 className="w-5 h-5 text-white" />
+                </div>
                 {getTitle()}
               </DialogTitle>
-              <p className="text-slate-200 mt-2 text-lg">
+              <p className="text-slate-300 mt-2 text-sm">
                 {getSubtitle()}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Badge className="bg-green-500/90 text-white border-0 flex items-center gap-2 font-semibold">
+              <Badge className="bg-white/20 text-white border-white/30 flex items-center gap-2 backdrop-blur-sm">
                 <Filter className="w-4 h-4" />
                 All Historical Data
               </Badge>
-              <Badge className="bg-white/20 text-white border-0 flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                Live Analytics
-              </Badge>
               <Button
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
                 onClick={handleExport}
                 disabled={isExporting}
                 title="Export transactions and per-member behavior summary"
@@ -660,51 +696,74 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
                 Export CSV
               </Button>
               <Button 
-                variant="outline" 
+                variant="ghost"
                 onClick={onClose}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="text-white hover:bg-white/10 backdrop-blur-sm"
               >
                 Close
               </Button>
             </div>
           </div>
   </DialogHeader>
-  <div className="overflow-auto pr-1" style={{ maxHeight: 'calc(85vh - 140px)' }}>
-        
-        <div className="overflow-y-auto max-h-[calc(95vh-120px)] space-y-8 p-1">
-          {/* Enhanced Metric Cards */}
-          {renderMetricCards()}
+  
+  {/* Main Content Area */}
+  <div className="overflow-y-auto px-8 py-6 space-y-8" style={{ maxHeight: 'calc(95vh - 140px)' }}>
+    
+    {/* Key Metrics Section */}
+    <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+      <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
+        <BarChart3 className="w-5 h-5 text-slate-700" />
+        Key Performance Metrics
+      </h3>
+      {renderMetricCards()}
+    </div>
 
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-slate-100 h-12">
-              <TabsTrigger value="overview" className="gap-2 font-medium">
+    {/* Main Content Tabs */}
+    <Tabs defaultValue="overview" className="w-full">
+      <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-slate-100 to-slate-200 h-14 border-2 border-slate-300 rounded-lg p-1">
+              <TabsTrigger value="overview" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
                 <Star className="w-4 h-4" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-2 font-medium">
+              <TabsTrigger value="analytics" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
                 <BarChart3 className="w-4 h-4" />
                 Analytics
               </TabsTrigger>
-              <TabsTrigger value="customers" className="gap-2 font-medium">
+              <TabsTrigger value="customers" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
                 <Users className="w-4 h-4" />
                 Customers
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="gap-2 font-medium">
+              <TabsTrigger value="transactions" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
                 <Eye className="w-4 h-4" />
                 Transactions
               </TabsTrigger>
-              <TabsTrigger value="insights" className="gap-2 font-medium">
+              <TabsTrigger value="insights" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
                 <Zap className="w-4 h-4" />
                 Insights
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="space-y-6 mt-6">
-              {renderAnalyticsCharts()}
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="mt-8">
+              <div className="space-y-8">
+                
+                {/* Analytics Charts Section */}
+                <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
+                    <TrendingUp className="w-5 h-5 text-slate-700" />
+                    Analytics Overview
+                  </h3>
+                  {renderAnalyticsCharts()}
+                </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="bg-gradient-to-br from-blue-500 to-blue-700 text-white border-2 border-blue-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                {/* Performance Cards Section */}
+                <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
+                    <Award className="w-5 h-5 text-slate-700" />
+                    Performance Breakdown
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="bg-gradient-to-br from-slate-900 to-blue-950 text-white border-2 border-slate-700 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in zoom-in">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-3">
                       <div className="p-2 bg-white/20 rounded-lg">
@@ -716,78 +775,78 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-green-300" />
-                        <span className="text-blue-100 font-medium">Revenue Growth</span>
+                        <TrendingUp className="w-4 h-4 text-white" />
+                        <span className="text-slate-100 font-medium">Revenue Growth</span>
                       </div>
-                      <Badge className="bg-green-500/90 text-white border border-green-300 animate-pulse">
+                      <Badge className="bg-white/20 text-white border border-white/30 backdrop-blur-sm">
                         +{((enhancedData.totalRevenue / 1000000) * 1.5).toFixed(1)}%
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-blue-300" />
-                        <span className="text-blue-100 font-medium">Customer Retention</span>
+                        <Users className="w-4 h-4 text-white" />
+                        <span className="text-slate-100 font-medium">Customer Retention</span>
                       </div>
-                      <Badge className="bg-blue-500/90 text-white border border-blue-300">
+                      <Badge className="bg-white/20 text-white border border-white/30 backdrop-blur-sm">
                         {((enhancedData.uniqueCustomers / enhancedData.totalTransactions) * 100).toFixed(1)}%
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <Target className="w-4 h-4 text-purple-300" />
-                        <span className="text-blue-100 font-medium">Market Share</span>
+                        <Target className="w-4 h-4 text-white" />
+                        <span className="text-slate-100 font-medium">Market Share</span>
                       </div>
-                      <Badge className="bg-purple-500/90 text-white border border-purple-300">
+                      <Badge className="bg-white/20 text-white border border-white/30 backdrop-blur-sm">
                         {((enhancedData.totalRevenue / 10000000) * 100).toFixed(1)}%
                       </Badge>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white border-2 border-emerald-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                <Card className="bg-white border-2 border-slate-200 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in zoom-in delay-100">
                   <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-3">
-                      <div className="p-2 bg-white/20 rounded-lg">
+                    <CardTitle className="text-slate-900 flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-br from-slate-900 to-blue-950 rounded-lg">
                         <Target className="w-6 h-6 text-white" />
                       </div>
                       Key Metrics
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
+                    <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-orange-300" />
-                        <span className="text-emerald-100 font-medium">Conversion Rate</span>
+                        <BarChart3 className="w-4 h-4 text-slate-600" />
+                        <span className="text-slate-700 font-medium">Conversion Rate</span>
                       </div>
-                      <span className="font-bold text-white bg-white/20 px-3 py-1 rounded-full">
+                      <span className="font-bold text-slate-900 bg-slate-200 px-3 py-1 rounded-full">
                         {((enhancedData.totalTransactions / (enhancedData.uniqueCustomers * 2)) * 100).toFixed(1)}%
                       </span>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
+                    <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-yellow-300" />
-                        <span className="text-emerald-100 font-medium">Customer LTV</span>
+                        <DollarSign className="w-4 h-4 text-slate-600" />
+                        <span className="text-slate-700 font-medium">Customer LTV</span>
                       </div>
-                      <span className="font-bold text-white bg-white/20 px-3 py-1 rounded-full">
+                      <span className="font-bold text-slate-900 bg-slate-200 px-3 py-1 rounded-full">
                         {formatCurrency(enhancedData.avgTransactionValue * 3.5)}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
+                    <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-blue-300" />
-                        <span className="text-emerald-100 font-medium">Repeat Rate</span>
+                        <Activity className="w-4 h-4 text-slate-600" />
+                        <span className="text-slate-700 font-medium">Repeat Rate</span>
                       </div>
-                      <span className="font-bold text-white bg-white/20 px-3 py-1 rounded-full">
+                      <span className="font-bold text-slate-900 bg-slate-200 px-3 py-1 rounded-full">
                         {((enhancedData.uniqueCustomers / enhancedData.totalTransactions) * 150).toFixed(1)}%
                       </span>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white border-2 border-purple-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in zoom-in delay-200">
                   <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-3">
-                      <div className="p-2 bg-white/20 rounded-lg">
+                    <CardTitle className="text-slate-900 flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-br from-slate-900 to-blue-950 rounded-lg">
                         <PieChart className="w-6 h-6 text-white" />
                       </div>
                       Category Breakdown
@@ -795,73 +854,91 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {Object.entries(enhancedData.categoryBreakdown).slice(0, 3).map(([category, data]: [string, any], index) => {
-                      const colors = ['bg-pink-500/90', 'bg-indigo-500/90', 'bg-cyan-500/90'];
-                      const iconColors = ['text-pink-300', 'text-indigo-300', 'text-cyan-300'];
                       return (
-                        <div key={category} className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200 group">
+                        <div key={category} className="flex justify-between items-center p-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-all duration-200 group">
                           <div className="flex items-center gap-2">
-                            <ShoppingCart className={`w-4 h-4 ${iconColors[index]} group-hover:scale-110 transition-transform duration-200`} />
-                            <span className="text-purple-100 font-medium truncate">{category}</span>
+                            <ShoppingCart className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform duration-200" />
+                            <span className="text-slate-700 font-medium truncate">{category}</span>
                           </div>
                           <div className="text-right">
-                            <div className={`font-bold text-white px-2 py-1 rounded ${colors[index]} border border-white/30`}>{formatCurrency(data.revenue)}</div>
-                            <div className="text-xs text-purple-200 mt-1">{data.count} sales</div>
+                            <div className="font-bold text-slate-900 px-2 py-1 rounded bg-slate-200 border border-slate-300">{formatCurrency(data.revenue)}</div>
+                            <div className="text-xs text-slate-500 mt-1">{data.count} sales</div>
                           </div>
                         </div>
                       );
                     })}
                   </CardContent>
                 </Card>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="analytics" className="space-y-6 mt-6">
-              {renderAnalyticsCharts()}
+            <TabsContent value="analytics" className="mt-8">
+              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
+                  <BarChart3 className="w-5 h-5 text-slate-700" />
+                  Detailed Analytics
+                </h3>
+                {renderAnalyticsCharts()}
+              </div>
             </TabsContent>
 
-            <TabsContent value="customers" className="space-y-6 mt-6">
-              {renderCustomerAnalysis()}
+            <TabsContent value="customers" className="mt-8">
+              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
+                  <Users className="w-5 h-5 text-slate-700" />
+                  Customer Analysis
+                </h3>
+                {renderCustomerAnalysis()}
+              </div>
             </TabsContent>
 
-            <TabsContent value="transactions" className="space-y-6 mt-6">
-              {renderTransactionDetails()}
+            <TabsContent value="transactions" className="mt-8">
+              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
+                  <Eye className="w-5 h-5 text-slate-700" />
+                  Transaction Details
+                </h3>
+                {renderTransactionDetails()}
+              </div>
             </TabsContent>
 
-            <TabsContent value="insights" className="space-y-6 mt-6">
-              <div className="grid grid-cols-1 gap-6">
-                <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <TabsContent value="insights" className="mt-8">
+              <div className="space-y-6">
+                <Card className="bg-white border-2 border-slate-200 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-amber-800 flex items-center gap-2">
-                      <Zap className="w-5 h-5" />
+                    <CardTitle className="text-slate-900 flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-slate-700" />
                       AI-Powered Insights
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-blue-400">
-                      <div className="font-semibold text-blue-800 mb-1">Revenue Optimization</div>
-                      <div className="text-sm text-blue-600">
+                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-slate-900">
+                      <div className="font-semibold text-slate-900 mb-1">Revenue Optimization</div>
+                      <div className="text-sm text-slate-600">
                         Peak sales occur between 6-8 PM. Consider targeted promotions during this window.
                       </div>
                     </div>
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-green-400">
-                      <div className="font-semibold text-green-800 mb-1">Customer Behavior</div>
-                      <div className="text-sm text-green-600">
+                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-blue-950">
+                      <div className="font-semibold text-slate-900 mb-1">Customer Behavior</div>
+                      <div className="text-sm text-slate-600">
                         High-value customers prefer premium services. Upselling opportunities detected.
                       </div>
                     </div>
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-blue-400">
-                      <div className="font-semibold text-blue-800 mb-1">Market Trend</div>
-                      <div className="text-sm text-blue-600">
+                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-slate-700">
+                      <div className="font-semibold text-slate-900 mb-1">Market Trend</div>
+                      <div className="text-sm text-slate-600">
                         Increasing demand for digital payments. Mobile optimization recommended.
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300 shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-red-800 flex items-center gap-2">
-                      <Filter className="w-5 h-5" />
+                    <CardTitle className="text-slate-900 flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-slate-700" />
                       Recommendations
                     </CardTitle>
                   </CardHeader>
@@ -891,7 +968,6 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
               </div>
             </TabsContent>
           </Tabs>
-        </div>
         </div>
       </DialogContent>
     </Dialog>
