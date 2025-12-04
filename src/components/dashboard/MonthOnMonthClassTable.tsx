@@ -19,6 +19,7 @@ import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFoo
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { ModernTableWrapper, ModernGroupBadge } from './ModernTableWrapper';
 
 interface MonthOnMonthClassTableProps {
   data: SessionData[]; // This should be ALL data, ignoring current date filters
@@ -600,17 +601,9 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
 
       return {
         groupKey: `${groupKey}__child__${idx}`,
-        groupLabel: groupKey, // Keep the original group name unchanged
+        groupLabel: `${session.date} - ${session.cleanedClass || 'Unknown'} - ${session.trainerName || 'Unknown'}`,
         monthlyData,
-        totals,
-        sessionDetails: {
-          date: session.date,
-          time: session.time || 'N/A',
-          trainer: session.trainerName || 'N/A',
-          location: session.location || 'N/A',
-          teacher: session.trainerName || 'N/A',
-          session
-        }
+        totals
       };
     });
 
@@ -691,585 +684,471 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
-      <Card className="w-full shadow-2xl bg-white border-0 rounded-xl">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white relative overflow-hidden rounded-t-xl">
-            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                  <motion.div
-                    initial={{ rotate: 0 }}
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Sparkles className="w-6 h-6" />
-                  </motion.div>
-                  Month-on-Month Analytics
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <CopyTableButton tableRef={tableRef} />
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setIsTableCollapsed(!isTableCollapsed)}
-                    className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  >
-                    {isTableCollapsed ? <ExpandIcon className="w-4 h-4" /> : <ShrinkIcon className="w-4 h-4" />}
-                    {isTableCollapsed ? 'Expand' : 'Collapse'}
-                  </Button>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Badge variant="secondary" className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-                      {data.length} Total Sessions
-                    </Badge>
-                  </motion.div>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <CardContent className="p-6 bg-white backdrop-blur-sm">
-            {/* Controls */}
-            <motion.div 
-              className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200"
-              whileHover={{ scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center gap-4">
-                {/* Metric Selection */}
-                <motion.div 
-                  className="space-y-2"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4" />
-                    Metric
-                  </label>
-                  <Select value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricType)}>
-                    <SelectTrigger className="w-[180px] border-slate-300 focus:border-slate-400 shadow-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {metricOptions.map(option => {
-                        const Icon = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              <Icon className="w-4 h-4" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </motion.div>
-
-                {/* Group By Selection */}
-                <motion.div 
-                  className="space-y-2"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    <Building2 className="w-4 h-4" />
-                    Group By
-                  </label>
-                  <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByType)}>
-                    <SelectTrigger className="w-[200px] border-slate-300 focus:border-slate-400 shadow-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {groupOptions.map(option => {
-                        const Icon = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              <Icon className="w-4 h-4" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </motion.div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button
-                    variant={showGrowthRate ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowGrowthRate(!showGrowthRate)}
-                    className={cn(
-                      "transition-all duration-200",
-                      showGrowthRate 
-                        ? "bg-slate-600 hover:bg-slate-700" 
-                        : "border-slate-300 text-slate-700 hover:bg-slate-100"
-                    )}
-                  >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Growth %
-                  </Button>
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: 0.5 }}
-                >
-                  <Badge variant="outline" className="text-sm border-slate-300 text-slate-700 bg-slate-100">
-                    Date Filters Ignored
-                  </Badge>
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Month-on-Month Table */}
-            {!isTableCollapsed && (
-            <motion.div 
-              className="border border-slate-200 rounded-xl bg-white shadow-xl overflow-visible"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <div className="w-full overflow-x-auto overflow-y-auto max-h-[800px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
-                <Table ref={tableRef} id={tableId} className="min-w-[1400px] w-max">
-                  <TableHeader className="sticky top-0 z-20 shadow-sm border-b border-slate-200 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                    <TableRow>
-                      <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold`}>
-                        <div className="flex items-center gap-2">
-                          <Activity className="w-4 h-4 text-white" />
-                          {groupBy === 'trainer' ? 'Trainer' : 
-                           groupBy === 'class' ? 'Class' :
-                           groupBy === 'location' ? 'Location' :
-                           groupBy === 'day_time' ? 'Day & Time' :
-                           groupBy === 'uniqueid1' ? 'UniqueID1' :
-                           groupBy === 'uniqueid2' ? 'UniqueID2' :
-                           groupBy === 'trainer_class' ? 'Trainer & Class' : 'Category'}
-                        </div>
-                      </TableHead>
-
-                      {/* Additional detail columns for expanded rows */}
-                      <TableHead className="min-w-[100px] text-center font-bold text-white text-xs">
-                        Date
-                      </TableHead>
-                      <TableHead className="min-w-[80px] text-center font-bold text-white text-xs">
-                        Time
-                      </TableHead>
-                      <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
-                        Trainer
-                      </TableHead>
-                      <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
-                        Location
-                      </TableHead>
-                      <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
-                        Teacher
-                      </TableHead>                  {availableMonths.map(month => (
-                    <TableHead key={month.key} className={`text-center min-w-[120px] font-bold`}>
-                      <div className="space-y-1">
-                        <div className="font-semibold">{month.shortLabel}</div>
-                        {showGrowthRate && (
-                          <div className="text-xs text-gray-500">Growth %</div>
-                        )}
+    <ModernTableWrapper
+      title="Month-on-Month Analytics"
+      description="Track class attendance trends across months with detailed grouping options"
+      icon={<BarChart3 className="w-5 h-5" />}
+      totalItems={data.length}
+      showCollapseControls={true}
+      onCollapseAll={() => setExpandedRows(new Set())}
+      onExpandAll={() => {
+        const allRows = new Set<string>();
+        processedData.forEach(row => {
+          if (groupBy !== 'overall') {
+            allRows.add(row.groupKey);
+          }
+        });
+        setExpandedRows(allRows);
+      }}
+      showCopyButton={true}
+      tableRef={tableRef}
+      headerControls={
+        <div className="flex items-center gap-4 ml-auto">
+          {/* Metric Selection */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-white/70 flex items-center gap-2">
+              <BarChart3 className="w-3 h-3" />
+              Metric
+            </label>
+            <Select value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricType)}>
+              <SelectTrigger className="w-[150px] border-white/20 bg-white/10 text-white focus:border-white/40 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {metricOptions.map(option => {
+                  const Icon = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-3 h-3" />
+                        {option.label}
                       </div>
-                    </TableHead>
-                  ))}
-                  
-                  <TableHead className="text-center min-w-[120px] bg-slate-800 font-bold text-white">
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Group By Selection */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-white/70 flex items-center gap-2">
+              <Building2 className="w-3 h-3" />
+              Group By
+            </label>
+            <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByType)}>
+              <SelectTrigger className="w-[180px] border-white/20 bg-white/10 text-white focus:border-white/40 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {groupOptions.map(option => {
+                  const Icon = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-3 h-3" />
+                        {option.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Growth Rate Toggle */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button
+              variant={showGrowthRate ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowGrowthRate(!showGrowthRate)}
+              className={cn(
+                "transition-all duration-200 h-8 text-xs",
+                showGrowthRate 
+                  ? "bg-white text-slate-700 hover:bg-white/90" 
+                  : "border-white/20 text-white hover:bg-white/10"
+              )}
+            >
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Growth %
+            </Button>
+          </motion.div>
+
+          {/* Collapse/Expand Table */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsTableCollapsed(!isTableCollapsed)}
+            className="border-white/20 text-white hover:bg-white/10 h-8 text-xs"
+          >
+            {isTableCollapsed ? <ExpandIcon className="w-3 h-3" /> : <ShrinkIcon className="w-3 h-3" />}
+            {isTableCollapsed ? 'Expand' : 'Collapse'}
+          </Button>
+        </div>
+      }
+    >
+      {!isTableCollapsed && (
+        <div className="w-full overflow-x-auto overflow-y-auto max-h-[800px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
+          <Table ref={tableRef} id={tableId} className="min-w-[1400px] w-max">
+            <TableHeader className="sticky top-0 z-20 shadow-sm border-b border-slate-200 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+              <TableRow>
+                <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold`}>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-white" />
+                    {groupBy === 'trainer' ? 'Trainer' : 
+                     groupBy === 'class' ? 'Class' :
+                     groupBy === 'location' ? 'Location' :
+                     groupBy === 'day_time' ? 'Day & Time' :
+                     groupBy === 'uniqueid1' ? 'UniqueID1' :
+                     groupBy === 'uniqueid2' ? 'UniqueID2' :
+                     groupBy === 'trainer_class' ? 'Trainer & Class' : 'Category'}
+                  </div>
+                </TableHead>
+
+                {/* Additional detail columns for expanded rows */}
+                <TableHead className="min-w-[100px] text-center font-bold text-white text-xs">
+                  Date
+                </TableHead>
+                <TableHead className="min-w-[80px] text-center font-bold text-white text-xs">
+                  Time
+                </TableHead>
+                <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
+                  Trainer
+                </TableHead>
+                <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
+                  Location
+                </TableHead>
+                <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
+                  Teacher
+                </TableHead>
+                
+                {availableMonths.map(month => (
+                  <TableHead key={month.key} className={`text-center min-w-[120px] font-bold`}>
                     <div className="space-y-1">
-                      <div className="font-semibold">Total</div>
+                      <div className="font-semibold">{month.shortLabel}</div>
                       {showGrowthRate && (
-                        <div className="text-xs text-slate-300">Avg Growth</div>
+                        <div className="text-xs text-gray-500">Growth %</div>
                       )}
                     </div>
                   </TableHead>
-                </TableRow>
-              </TableHeader>
-              
-                <TableBody>
-                  <AnimatePresence>
-                    {processedData.map((row, rowIndex) => {
-                      const isExpanded = expandedRows.has(row.groupKey);
-                      const isExpandable = groupBy !== 'overall';
-                      const childRows = isExpanded ? getChildRowsForGroup(row.groupKey) : [];
+                ))}
+                
+                <TableHead className="text-center min-w-[120px] bg-slate-800 font-bold text-white">
+                  <div className="space-y-1">
+                    <div className="font-semibold">Total</div>
+                    {showGrowthRate && (
+                      <div className="text-xs text-slate-300">Avg Growth</div>
+                    )}
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
 
-                      return (
-                        <React.Fragment key={row.groupKey}>
-                          <motion.tr
-                            className={cn(
-                              "border-b transition-all duration-300 hover:shadow-md h-10 max-h-10 cursor-pointer",
-                              rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50",
-                              isExpandable ? "hover:bg-blue-50/30" : ""
-                            )}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.3, delay: rowIndex * 0.05 }}
-                            whileHover={{ 
-                              backgroundColor: isExpandable ? "rgba(59, 130, 246, 0.08)" : "rgba(59, 130, 246, 0.05)",
-                              transition: { duration: 0.2 }
-                            }}
-                            onClick={() => {
-                              if (isExpandable) {
-                                setExpandedRows(prev => {
-                                  const newSet = new Set(prev);
-                                  if (newSet.has(row.groupKey)) {
-                                    newSet.delete(row.groupKey);
-                                  } else {
-                                    newSet.add(row.groupKey);
-                                  }
-                                  return newSet;
-                                });
+            <TableBody>
+              <AnimatePresence>
+                {processedData.map((row, rowIndex) => {
+                  const isExpanded = expandedRows.has(row.groupKey);
+                  const isExpandable = groupBy !== 'overall';
+                  const childRows = isExpanded ? getChildRowsForGroup(row.groupKey) : [];
+
+                  return (
+                    <React.Fragment key={row.groupKey}>
+                      <motion.tr
+                        className={cn(
+                          "border-b transition-all duration-300 hover:shadow-md h-10 max-h-10 cursor-pointer",
+                          rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50",
+                          isExpandable ? "hover:bg-blue-50/30" : ""
+                        )}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3, delay: rowIndex * 0.05 }}
+                        whileHover={{ 
+                          backgroundColor: isExpandable ? "rgba(59, 130, 246, 0.08)" : "rgba(59, 130, 246, 0.05)",
+                          transition: { duration: 0.2 }
+                        }}
+                        onClick={() => {
+                          if (isExpandable) {
+                            setExpandedRows(prev => {
+                              const newSet = new Set(prev);
+                              if (newSet.has(row.groupKey)) {
+                                newSet.delete(row.groupKey);
+                              } else {
+                                newSet.add(row.groupKey);
                               }
-                            }}
+                              return newSet;
+                            });
+                          }
+                        }}
+                      >
+                        <TableCell className="sticky left-0 z-20 bg-white border-r font-medium whitespace-nowrap py-1.5">
+                          <div className="flex items-center gap-2">
+                            {isExpandable && (
+                              <motion.div
+                                animate={{ rotate: isExpanded ? 90 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center justify-center w-5"
+                              >
+                                <ExpandIcon className="w-4 h-4 text-blue-600" />
+                              </motion.div>
+                            )}
+                            {!isExpandable && <div className="w-5" />}
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                              {row.groupLabel.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-gray-900">{row.groupLabel}</span>
+                            <span className="text-xs text-gray-500">({row.totals.sessions})</span>
+                          </div>
+                        </TableCell>
+
+                        {/* Detail columns - empty for parent rows */}
+                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+
+                        {availableMonths.map((month, index) => {
+                          const monthData = row.monthlyData[month.key];
+                          const prevMonthData = index > 0 ? row.monthlyData[availableMonths[index - 1].key] : null;
+
+                          const getMetricNumeric = (md: MonthlyData, metric: MetricType): number => {
+                            switch (metric) {
+                              case 'attendance': return md.attendance;
+                              case 'sessions': return md.sessions;
+                              case 'revenue': return md.revenue;
+                              case 'fillRate': return md.fillRate;
+                              case 'classAverage': return md.classAverage;
+                              case 'capacity': return md.capacity;
+                              case 'bookingRate': return md.bookingRate;
+                              default: return md.attendance;
+                            }
+                          };
+
+                          const currentValue = getMetricNumeric(monthData, selectedMetric);
+                          const previousValue = prevMonthData ? getMetricNumeric(prevMonthData, selectedMetric) : 0;
+                          const growthRate = prevMonthData ? getGrowthRate(currentValue, previousValue) : 0;
+
+                          return (
+                            <TableCell key={month.key} className="text-center py-1.5 whitespace-nowrap">
+                              <span className="font-semibold text-gray-900">
+                                {getMetricValue(monthData, selectedMetric)}
+                              </span>
+                              {showGrowthRate && prevMonthData && (
+                                <span className={cn(
+                                  "text-xs font-medium ml-1",
+                                  growthRate > 0 ? "text-green-600" : growthRate < 0 ? "text-red-600" : "text-gray-500"
+                                )}>
+                                  {growthRate > 0 ? "↑" : growthRate < 0 ? "↓" : ""}
+                                  {formatPercentage(Math.abs(growthRate))}
+                                </span>
+                              )}
+                            </TableCell>
+                          );
+                        })}
+
+                        <TableCell className="text-center py-1.5 whitespace-nowrap">
+                          <span className="font-bold text-slate-800">
+                            {getMetricValue(row.totals, selectedMetric)}
+                          </span>
+                        </TableCell>
+                      </motion.tr>
+
+                      {/* Child Rows */}
+                      <AnimatePresence>
+                        {isExpanded && childRows.map((childRow, childIndex) => (
+                          <motion.tr
+                            key={childRow.groupKey}
+                            className="border-b bg-blue-50/40 h-9 max-h-9"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, delay: childIndex * 0.02 }}
                           >
-                            <TableCell className="sticky left-0 z-20 bg-white border-r font-medium whitespace-nowrap py-1.5">
+                            <TableCell className="sticky left-0 z-20 bg-blue-50/40 border-r font-medium whitespace-nowrap py-1 pl-12 text-sm">
                               <div className="flex items-center gap-2">
-                                {isExpandable && (
-                                  <motion.div
-                                    animate={{ rotate: isExpanded ? 90 : 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="flex items-center justify-center w-5"
-                                  >
-                                    <ExpandIcon className="w-4 h-4 text-blue-600" />
-                                  </motion.div>
-                                )}
-                                {!isExpandable && <div className="w-5" />}
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                                  {row.groupLabel.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="font-semibold text-gray-900">{row.groupLabel}</span>
-                                <span className="text-xs text-gray-500">({row.totals.sessions})</span>
+                                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-400" />
+                                <span className="text-gray-700">{childRow.groupLabel}</span>
                               </div>
                             </TableCell>
 
-                            {/* Empty cells for detail columns in parent rows */}
-                            <TableCell className="text-center py-1.5 text-sm text-gray-400">—</TableCell>
-                            <TableCell className="text-center py-1.5 text-sm text-gray-400">—</TableCell>
-                            <TableCell className="text-center py-1.5 text-sm text-gray-400">—</TableCell>
-                            <TableCell className="text-center py-1.5 text-sm text-gray-400">—</TableCell>
-                            <TableCell className="text-center py-1.5 text-sm text-gray-400">—</TableCell>
-                        
-                            {availableMonths.map((month, index) => {
-                              const monthData = row.monthlyData[month.key];
-                              const prevMonthData = index > 0 ? row.monthlyData[availableMonths[index - 1].key] : null;
+                            {/* Detail columns for child rows */}
+                            {childRow.sessionDetails && (
+                              <>
+                                <TableCell className="text-center py-1 text-sm text-gray-700">
+                                  {childRow.sessionDetails.date}
+                                </TableCell>
+                                <TableCell className="text-center py-1 text-sm text-gray-700">
+                                  {childRow.sessionDetails.time}
+                                </TableCell>
+                                <TableCell className="text-center py-1 text-sm text-gray-700">
+                                  {childRow.sessionDetails.trainer}
+                                </TableCell>
+                                <TableCell className="text-center py-1 text-sm text-gray-700">
+                                  {childRow.sessionDetails.location}
+                                </TableCell>
+                                <TableCell className="text-center py-1 text-sm text-gray-700">
+                                  {childRow.sessionDetails.teacher}
+                                </TableCell>
+                              </>
+                            )}
 
-                              const getMetricNumeric = (md: MonthlyData, metric: MetricType): number => {
-                                switch (metric) {
-                                  case 'attendance': return md.attendance;
-                                  case 'sessions': return md.sessions;
-                                  case 'revenue': return md.revenue;
-                                  case 'fillRate': return md.fillRate;
-                                  case 'classAverage': return md.classAverage;
-                                  case 'capacity': return md.capacity;
-                                  case 'bookingRate': return md.bookingRate;
-                                  default: return md.attendance;
-                                }
-                              };
-
-                              const currentValue = getMetricNumeric(monthData, selectedMetric);
-                              const previousValue = prevMonthData ? getMetricNumeric(prevMonthData, selectedMetric) : 0;
-                              const growthRate = prevMonthData ? getGrowthRate(currentValue, previousValue) : 0;
-
+                            {availableMonths.map((month) => {
+                              const monthData = childRow.monthlyData[month.key];
                               return (
-                                <TableCell key={month.key} className="text-center py-1.5 whitespace-nowrap">
-                                  <span className="font-semibold text-gray-900">
+                                <TableCell key={month.key} className="text-center py-1 whitespace-nowrap text-sm">
+                                  <span className="text-gray-800">
                                     {getMetricValue(monthData, selectedMetric)}
                                   </span>
-                                  {showGrowthRate && prevMonthData && (
-                                    <span className={cn(
-                                      "text-xs font-medium ml-1",
-                                      growthRate > 0 ? "text-green-600" : growthRate < 0 ? "text-red-600" : "text-gray-500"
-                                    )}>
-                                      {growthRate > 0 ? "↑" : growthRate < 0 ? "↓" : ""}
-                                      {formatPercentage(Math.abs(growthRate))}
-                                    </span>
-                                  )}
                                 </TableCell>
                               );
                             })}
-                        
-                            <TableCell className="text-center py-1.5 whitespace-nowrap">
-                              <span className="font-bold text-slate-800">
-                                {getMetricValue(row.totals, selectedMetric)}
+
+                            <TableCell className="text-center py-1 whitespace-nowrap text-sm">
+                              <span className="font-semibold text-slate-700">
+                                {getMetricValue(childRow.totals, selectedMetric)}
                               </span>
                             </TableCell>
                           </motion.tr>
-
-                          {/* Child Rows */}
-                          <AnimatePresence>
-                            {isExpanded && childRows.map((childRow, childIndex) => (
-                              <motion.tr
-                                key={childRow.groupKey}
-                                className="border-b bg-blue-50/30 h-auto"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2, delay: childIndex * 0.02 }}
-                              >
-                                <TableCell className="sticky left-0 z-20 bg-blue-50/30 border-r font-medium whitespace-nowrap py-2 pl-12 text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-400" />
-                                    <span className="text-gray-700">{childRow.groupLabel}</span>
-                                  </div>
-                                </TableCell>
-
-                                {/* Date Column */}
-                                {childRow.sessionDetails && (
-                                  <TableCell className="py-2 px-2 text-sm whitespace-nowrap border-r text-gray-700 bg-blue-50/20">
-                                    {childRow.sessionDetails.date}
-                                  </TableCell>
-                                )}
-
-                                {/* Time Column */}
-                                {childRow.sessionDetails && (
-                                  <TableCell className="py-2 px-2 text-sm whitespace-nowrap border-r text-gray-700 bg-blue-50/20">
-                                    {childRow.sessionDetails.time}
-                                  </TableCell>
-                                )}
-
-                                {/* Trainer Column */}
-                                {childRow.sessionDetails && (
-                                  <TableCell className="py-2 px-2 text-sm whitespace-nowrap border-r text-gray-700 bg-blue-50/20">
-                                    {childRow.sessionDetails.trainer}
-                                  </TableCell>
-                                )}
-
-                                {/* Location Column */}
-                                {childRow.sessionDetails && (
-                                  <TableCell className="py-2 px-2 text-sm whitespace-nowrap border-r text-gray-700 bg-blue-50/20">
-                                    {childRow.sessionDetails.location}
-                                  </TableCell>
-                                )}
-
-                                {/* Teacher Column */}
-                                {childRow.sessionDetails && (
-                                  <TableCell className="py-2 px-2 text-sm whitespace-nowrap border-r text-gray-700 bg-blue-50/20">
-                                    {childRow.sessionDetails.teacher}
-                                  </TableCell>
-                                )}
-
-                                {/* Monthly Metrics */}
-                                {availableMonths.map((month) => {
-                                  const monthData = childRow.monthlyData[month.key];
-                                  return (
-                                    <TableCell key={month.key} className="text-center py-2 whitespace-nowrap text-sm bg-blue-50/10">
-                                      <span className="text-gray-800">
-                                        {getMetricValue(monthData, selectedMetric)}
-                                      </span>
-                                    </TableCell>
-                                  );
-                                })}
-
-                                {/* Total */}
-                                <TableCell className="text-center py-2 whitespace-nowrap text-sm bg-blue-50/10">
-                                  <span className="font-semibold text-slate-700">
-                                    {getMetricValue(childRow.totals, selectedMetric)}
-                                  </span>
-                                </TableCell>
-                              </motion.tr>
-                            ))}
-                          </AnimatePresence>
-                        </React.Fragment>
-                      );
-                    })}
-                  </AnimatePresence>
-                {/* Totals row across all groups */}
-                <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-10 max-h-10">
-                  <TableCell className="sticky left-0 z-10 bg-slate-800 border-r text-white py-1.5">Totals</TableCell>
-                  {/* Empty cells for detail columns */}
-                  <TableCell className="text-center py-1.5 text-white">—</TableCell>
-                  <TableCell className="text-center py-1.5 text-white">—</TableCell>
-                  <TableCell className="text-center py-1.5 text-white">—</TableCell>
-                  <TableCell className="text-center py-1.5 text-white">—</TableCell>
-                  <TableCell className="text-center py-1.5 text-white">—</TableCell>
-                  {availableMonths.map((month) => {
-                    const totalsForMonth = processedData.reduce((acc, row) => {
-                      const md = row.monthlyData[month.key];
-                      acc.sessions += md.sessions;
-                      acc.attendance += md.attendance;
-                      acc.capacity += md.capacity;
-                      acc.revenue += md.revenue;
-                      acc.lateCancellations += md.lateCancellations;
-                      acc.booked += (md.booked || 0);
-                      return acc;
-                    }, { sessions:0, attendance:0, capacity:0, revenue:0, lateCancellations:0, booked:0 });
-                    const display = getMetricValue({
-                      month: month.key,
-                      monthLabel: month.label,
-                      sessions: totalsForMonth.sessions,
-                      attendance: totalsForMonth.attendance,
-                      capacity: totalsForMonth.capacity,
-                      revenue: totalsForMonth.revenue,
-                      fillRate: totalsForMonth.capacity>0 ? (totalsForMonth.attendance/totalsForMonth.capacity)*100 : 0,
-                      classAverage: totalsForMonth.sessions>0 ? (totalsForMonth.attendance/totalsForMonth.sessions) : 0,
-                      bookingRate: totalsForMonth.capacity>0 ? ((totalsForMonth.booked)/totalsForMonth.capacity)*100 : 0,
-                      lateCancellations: totalsForMonth.lateCancellations,
+                        ))}
+                      </AnimatePresence>
+                    </React.Fragment>
+                  );
+                })}
+              </AnimatePresence>
+              
+              {/* Totals row across all groups */}
+              <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-10 max-h-10">
+                <TableCell className="sticky left-0 z-10 bg-slate-800 border-r text-white py-1.5">Totals</TableCell>
+                {/* Empty detail columns */}
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                
+                {availableMonths.map((month) => {
+                  const totalsForMonth = processedData.reduce((acc, row) => {
+                    const md = row.monthlyData[month.key];
+                    acc.sessions += md.sessions;
+                    acc.attendance += md.attendance;
+                    acc.capacity += md.capacity;
+                    acc.revenue += md.revenue;
+                    acc.lateCancellations += md.lateCancellations;
+                    acc.booked += (md.booked || 0);
+                    return acc;
+                  }, { sessions:0, attendance:0, capacity:0, revenue:0, lateCancellations:0, booked:0 });
+                  const display = getMetricValue({
+                    month: month.key,
+                    monthLabel: month.label,
+                    sessions: totalsForMonth.sessions,
+                    attendance: totalsForMonth.attendance,
+                    capacity: totalsForMonth.capacity,
+                    revenue: totalsForMonth.revenue,
+                    fillRate: totalsForMonth.capacity>0 ? (totalsForMonth.attendance/totalsForMonth.capacity)*100 : 0,
+                    classAverage: totalsForMonth.sessions>0 ? (totalsForMonth.attendance/totalsForMonth.sessions) : 0,
+                    bookingRate: totalsForMonth.capacity>0 ? ((totalsForMonth.booked)/totalsForMonth.capacity)*100 : 0,
+                    lateCancellations: totalsForMonth.lateCancellations,
+                    uniqueClasses: 0,
+                    uniqueTrainers: 0,
+                    booked: totalsForMonth.booked
+                  }, selectedMetric);
+                  return (
+                    <TableCell key={`total-${month.key}`} className="text-center py-1.5">
+                      <span className="font-bold text-white">{display}</span>
+                    </TableCell>
+                  );
+                })}
+                
+                {/* Overall total (rightmost) */}
+                <TableCell className="text-center py-1.5">
+                  <span className="font-bold text-white">
+                    {getMetricValue({
+                      month: 'total',
+                      monthLabel: 'Total',
+                      sessions: processedData.reduce((s, r) => s + r.totals.sessions, 0),
+                      attendance: processedData.reduce((s, r) => s + r.totals.attendance, 0),
+                      capacity: processedData.reduce((s, r) => s + r.totals.capacity, 0),
+                      revenue: processedData.reduce((s, r) => s + r.totals.revenue, 0),
+                      fillRate: 0,
+                      classAverage: 0,
+                      bookingRate: 0,
+                      lateCancellations: processedData.reduce((s, r) => s + r.totals.lateCancellations, 0),
                       uniqueClasses: 0,
-                      uniqueTrainers: 0,
-                      booked: totalsForMonth.booked
-                    }, selectedMetric);
-                    return (
-                      <TableCell key={`total-${month.key}`} className="text-center py-1.5">
-                        <span className="font-bold text-white">{display}</span>
-                      </TableCell>
-                    );
-                  })}
-                  {/* Overall total (rightmost) */}
-                  <TableCell className="text-center py-1.5">
-                    <span className="font-bold text-white">
-                      {getMetricValue({
-                        month: 'total',
-                        monthLabel: 'Total',
-                        sessions: processedData.reduce((s, r) => s + r.totals.sessions, 0),
-                        attendance: processedData.reduce((s, r) => s + r.totals.attendance, 0),
-                        capacity: processedData.reduce((s, r) => s + r.totals.capacity, 0),
-                        revenue: processedData.reduce((s, r) => s + r.totals.revenue, 0),
-                        fillRate: 0,
-                        classAverage: 0,
-                        bookingRate: 0,
-                        lateCancellations: processedData.reduce((s, r) => s + r.totals.lateCancellations, 0),
-                        uniqueClasses: 0,
-                        uniqueTrainers: 0
-                      }, selectedMetric)}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-              </Table>
-            </div>
-          </motion.div>
-          )}
+                      uniqueTrainers: 0
+                    }, selectedMetric)}
+                  </span>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-          {/* Summary Stats */}
-          <motion.div 
-            className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardContent className="p-4 text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
-                  >
-                    <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                  </motion.div>
-                  <div className="text-2xl font-bold text-blue-800">{availableMonths.length}</div>
-                  <div className="text-sm text-blue-600">Months Tracked</div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: -1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardContent className="p-4 text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.7 }}
-                  >
-                    <Users className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                  </motion.div>
-                  <div className="text-2xl font-bold text-green-800">
-                    {formatNumber(data.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}
-                  </div>
-                  <div className="text-sm text-green-600">Total Attendance</div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardContent className="p-4 text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.8 }}
-                  >
-                    <DollarSign className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-                  </motion.div>
-                  <div className="text-2xl font-bold text-purple-800">
-                    {formatCurrency(data.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}
-                  </div>
-                  <div className="text-sm text-purple-600">Total Revenue</div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: -1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardContent className="p-4 text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.9 }}
-                  >
-                    <BarChart3 className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                  </motion.div>
-                  <div className="text-2xl font-bold text-blue-900">
-                    {processedData.length}
-                  </div>
-                  <div className="text-sm text-blue-700">
-                    {groupBy === 'trainer' ? 'Trainers' : 
-                     groupBy === 'class' ? 'Classes' :
-                     groupBy === 'uniqueid1' ? 'UniqueID1' :
-                     groupBy === 'uniqueid2' ? 'UniqueID2' :
-                     groupBy === 'location' ? 'Locations' : 'Groups'}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
-          </CardContent>
-        </motion.div>
+      {/* Summary Stats */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-4 text-center">
+              <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+              <div className="text-2xl font-bold text-blue-800">{availableMonths.length}</div>
+              <div className="text-sm text-blue-600">Months Tracked</div>
+            </CardContent>
+          </Card>
+        </div>
         
-        <PersistentTableFooter
-          tableId="month-on-month-class-attendance"
-          tableData={processedData}
-          tableName="Month-on-Month Class Attendance"
-          tableContext="Monthly class attendance trends and comparisons"
-        />
-      </Card>
-    </motion.div>
+        <div>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-4 text-center">
+              <Users className="w-8 h-8 mx-auto mb-2 text-green-600" />
+              <div className="text-2xl font-bold text-green-800">
+                {formatNumber(data.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}
+              </div>
+              <div className="text-sm text-green-600">Total Attendance</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div>
+          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-4 text-center">
+              <DollarSign className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
+              <div className="text-2xl font-bold text-indigo-800">
+                {formatCurrency(data.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}
+              </div>
+              <div className="text-sm text-indigo-600">Total Revenue</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div>
+          <Card className="bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardContent className="p-4 text-center">
+              <BarChart3 className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+              <div className="text-2xl font-bold text-blue-900">
+                {processedData.length}
+              </div>
+              <div className="text-sm text-blue-700">
+                {groupBy === 'trainer' ? 'Trainers' : 
+                 groupBy === 'class' ? 'Classes' :
+                 groupBy === 'uniqueid1' ? 'UniqueID1' :
+                 groupBy === 'uniqueid2' ? 'UniqueID2' :
+                 groupBy === 'location' ? 'Locations' : 'Groups'}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </ModernTableWrapper>
+
+    <PersistentTableFooter
+      tableId="month-on-month-class-attendance"
+      tableData={processedData}
+      tableName="Month-on-Month Class Attendance"
+      tableContext="Monthly class attendance trends and comparisons"
+    />
   );
 };
