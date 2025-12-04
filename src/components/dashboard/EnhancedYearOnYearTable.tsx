@@ -53,8 +53,21 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
   const { registerTable, unregisterTable } = useMetricsTablesRegistry();
   
   useEffect(() => {
-    registerTable(tableId, tableRef);
-    return () => unregisterTable(tableId);
+    if (tableRef.current) {
+      const getTextContent = () => {
+        if (tableRef.current) {
+          return tableRef.current.innerText || '';
+        }
+        return '';
+      };
+      
+      registerTable({
+        id: tableId,
+        getTextContent
+      });
+      
+      return () => unregisterTable(tableId);
+    }
   }, [registerTable, unregisterTable]);
 
   // Initialize all groups as expanded by default

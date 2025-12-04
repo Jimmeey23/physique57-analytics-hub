@@ -48,5 +48,20 @@ export const MetricsTablesRegistryProvider: React.FC<{ children: React.ReactNode
 
 export const useMetricsTablesRegistry = () => {
   const ctx = useContext(MetricsTablesRegistryContext);
-  return ctx;
+  if (!ctx) {
+    // Return safe defaults if context is not available
+    return {
+      register: () => {},
+      unregister: () => {},
+      registerTable: () => {},
+      unregisterTable: () => {},
+      getAllTabsContent: () => ''
+    };
+  }
+  // Also expose registerTable/unregisterTable aliases for compatibility
+  return {
+    ...ctx,
+    registerTable: ctx.register,
+    unregisterTable: ctx.unregister
+  };
 };

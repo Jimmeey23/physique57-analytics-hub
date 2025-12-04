@@ -34,8 +34,21 @@ export const FormatComparisonTable: React.FC<FormatComparisonTableProps> = ({ da
   const { registerTable, unregisterTable } = useMetricsTablesRegistry();
   
   useEffect(() => {
-    registerTable(tableId, tableRef);
-    return () => unregisterTable(tableId);
+    if (tableRef.current) {
+      const getTextContent = () => {
+        if (tableRef.current) {
+          return tableRef.current.innerText || '';
+        }
+        return '';
+      };
+      
+      registerTable({
+        id: tableId,
+        getTextContent
+      });
+      
+      return () => unregisterTable(tableId);
+    }
   }, [registerTable, unregisterTable]);
   
   const comparisonData = useMemo(() => {

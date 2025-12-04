@@ -73,8 +73,21 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
   const { registerTable, unregisterTable } = useMetricsTablesRegistry();
   
   useEffect(() => {
-    registerTable(tableId, tableRef);
-    return () => unregisterTable(tableId);
+    if (tableRef.current) {
+      const getTextContent = () => {
+        if (tableRef.current) {
+          return tableRef.current.innerText || '';
+        }
+        return '';
+      };
+      
+      registerTable({
+        id: tableId,
+        getTextContent
+      });
+      
+      return () => unregisterTable(tableId);
+    }
   }, [registerTable, unregisterTable]);
 
   // Apply location + non-date filters (independent of date range)
