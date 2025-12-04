@@ -75,7 +75,7 @@ const ClassAttendanceContent = () => {
         title="Class Attendance Analytics"
         subtitle="Comprehensive class utilization and attendance trend analysis across all sessions"
         metrics={heroMetrics}
-        onExportClick={() => console.log('Exporting attendance data...')}
+        onExportClick={() => {}}
       />
 
       <div className="container mx-auto px-6 py-8">

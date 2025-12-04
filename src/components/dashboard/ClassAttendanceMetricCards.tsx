@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Calendar, Target, TrendingUp, Star, Clock, Activity, Zap } from 'lucide-react';
+import { Users, Calendar, Target, TrendingUp, TrendingDown, Star, Clock, Activity, Zap } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { ClassAttendanceDrillDownModal } from './ClassAttendanceDrillDownModal';
+import { cn } from '@/lib/utils';
 
 interface ClassAttendanceMetricCardsProps {
   data: SessionData[];
@@ -87,66 +88,48 @@ export const ClassAttendanceMetricCards: React.FC<ClassAttendanceMetricCardsProp
       title: 'Total Sessions',
       value: formatNumber(metrics.totalSessions),
       icon: Calendar,
-      gradient: 'from-blue-600 to-cyan-600',
-      bgGradient: 'from-blue-50 to-cyan-50',
       description: `${formatNumber(metrics.nonEmptySessions)} with attendance • ${formatNumber(metrics.emptySessions)} empty`,
-      trend: '+12.3%',
-      iconBg: 'bg-blue-100',
+      change: 12.3,
       onClick: () => handleCardClick('total-sessions', 'Total Sessions', metrics.totalSessions)
     },
     {
       title: 'Total Attendance',
       value: formatNumber(metrics.totalAttendance),
       icon: Users,
-      gradient: 'from-green-600 to-emerald-600',
-      bgGradient: 'from-green-50 to-emerald-50',
       description: 'Total participants checked-in',
-      trend: '+8.7%',
-      iconBg: 'bg-green-100',
+      change: 8.7,
       onClick: () => handleCardClick('total-attendance', 'Total Attendance', metrics.totalAttendance)
     },
     {
       title: 'Average Attendance',
       value: formatNumber(metrics.avgAttendance),
       icon: Target,
-      gradient: 'from-purple-600 to-pink-600',
-      bgGradient: 'from-purple-50 to-pink-50',
       description: 'Per session average',
-      trend: '+5.2%',
-      iconBg: 'bg-purple-100',
+      change: 5.2,
       onClick: () => handleCardClick('average-attendance', 'Average Attendance', metrics.avgAttendance)
     },
     {
       title: 'Fill Rate',
       value: formatPercentage(metrics.fillRate),
       icon: TrendingUp,
-      gradient: 'from-orange-600 to-red-600',
-      bgGradient: 'from-orange-50 to-red-50',
       description: 'Capacity utilization rate',
-      trend: '+3.1%',
-      iconBg: 'bg-orange-100',
+      change: 3.1,
       onClick: () => handleCardClick('fill-rate', 'Fill Rate', metrics.fillRate)
     },
     {
       title: 'Class Formats',
       value: formatNumber(metrics.uniqueClasses),
       icon: Star,
-      gradient: 'from-indigo-600 to-blue-600',
-      bgGradient: 'from-indigo-50 to-blue-50',
       description: 'Unique class formats offered',
-      trend: '+2',
-      iconBg: 'bg-indigo-100',
+      change: 2.0,
       onClick: () => handleCardClick('class-formats', 'Class Formats', metrics.uniqueClasses)
     },
     {
       title: 'Revenue Per Session',
       value: formatCurrency(metrics.avgRevenue),
       icon: Zap,
-      gradient: 'from-emerald-600 to-teal-600',
-      bgGradient: 'from-emerald-50 to-teal-50',
       description: 'Average revenue generated',
-      trend: '+15.4%',
-      iconBg: 'bg-emerald-100',
+      change: 15.4,
       onClick: () => handleCardClick('revenue-per-session', 'Revenue Per Session', metrics.avgRevenue)
     }
   ];
@@ -154,69 +137,105 @@ export const ClassAttendanceMetricCards: React.FC<ClassAttendanceMetricCardsProp
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cards.map((card, index) => (
-          <Card 
-            key={index} 
-            className="group relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-700 hover:scale-[1.02] cursor-pointer animate-fade-in"
-            onClick={card.onClick}
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-          {/* Gradient Background */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
+        {cards.map((card, index) => {
+          const IconComponent = card.icon;
+          const isPositive = card.change > 0;
+          const isNegative = card.change < 0;
+          const cardIndex = index % 4;
           
-          {/* Animated Border */}
-          <div className={`absolute inset-0 bg-gradient-to-r ${card.gradient} opacity-0 group-hover:opacity-30 rounded-2xl blur-sm transition-all duration-700`}></div>
-          
-          {/* Floating Glow Effect */}
-          <div className={`absolute -inset-1 bg-gradient-to-r ${card.gradient} opacity-0 group-hover:opacity-20 rounded-2xl blur-xl transition-all duration-700`}></div>
-          
-          <CardContent className="relative p-6 z-10">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className={`p-3 rounded-2xl ${card.iconBg} group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg group-hover:shadow-xl`}>
-                <card.icon className={`w-6 h-6 text-transparent bg-gradient-to-r ${card.gradient} bg-clip-text group-hover:animate-pulse`} />
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs bg-white/60 backdrop-blur-sm border-white/20 group-hover:bg-white/80 transition-colors"
-                >
-                  Live
-                </Badge>
-                <Badge 
-                  className={`text-xs bg-gradient-to-r ${card.gradient} text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                >
-                  {card.trend}
-                </Badge>
-              </div>
-            </div>
+          return (
+            <Card
+              key={index}
+              className={cn(
+                "group relative overflow-hidden cursor-pointer transition-all duration-700",
+                "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+                cardIndex === 0 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+                cardIndex === 1 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+                cardIndex === 2 && "border-t-4 border-pink-700 hover:border-pink-700 shadow-lg",
+                cardIndex === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
+                "hover:shadow-2xl hover:shadow-slate-900/30",
+                "hover:-translate-y-2 hover:scale-[1.02]"
+              )}
+              onClick={card.onClick}
+            >
+              <CardContent className="p-6 relative">
+                <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                  <IconComponent className={cn(
+                    "w-12 h-12 transition-all duration-700",
+                    cardIndex === 0 && "text-green-700",
+                    cardIndex === 1 && "text-blue-700",
+                    cardIndex === 2 && "text-pink-700",
+                    cardIndex === 3 && "text-red-700",
+                    "group-hover:text-white/40"
+                  )} />
+                </div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-6">
+                      <div className={cn(
+                        "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                        cardIndex === 0 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                        cardIndex === 1 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                        cardIndex === 2 && "bg-gradient-to-br from-pink-700 to-pink-600 border-pink-900 text-white shadow-pink-200",
+                        cardIndex === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
+                        "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                      )}>
+                        <IconComponent className="w-6 h-6 drop-shadow-sm" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                          {card.title}
+                        </h3>
+                      </div>
+                    </div>
+                    
+                    <div className={cn(
+                      "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
+                      isPositive
+                        ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
+                        : isNegative
+                        ? "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
+                        : "bg-blue-50 text-blue-700 group-hover:bg-blue-400/30 group-hover:text-blue-100"
+                    )}>
+                      {isPositive && <TrendingUp className="w-3 h-3" />}
+                      {isNegative && <TrendingDown className="w-3 h-3" />}
+                      <span>
+                        {card.change > 0 ? '+' : ''}{card.change.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
 
-            {/* Content */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-slate-600 group-hover:text-slate-700 transition-colors">
-                  {card.title}
-                </h3>
-                <p className={`text-3xl font-bold text-transparent bg-gradient-to-r ${card.gradient} bg-clip-text mt-2`}>
-                  {card.value}
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${card.gradient}`}></div>
-                <p className="text-xs text-slate-500 group-hover:text-slate-600 transition-colors">
-                  {card.description}
-                </p>
-              </div>
-            </div>
-
-            {/* Floating Elements with Animation */}
-            <div className="absolute top-4 right-4 w-20 h-20 bg-gradient-to-br from-white/30 to-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm group-hover:animate-float"></div>
-            <div className="absolute bottom-4 left-4 w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm group-hover:animate-float-delayed"></div>
-            <div className="absolute top-1/2 left-1/2 w-6 h-6 bg-gradient-to-br from-white/40 to-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 blur-sm transform -translate-x-1/2 -translate-y-1/2 group-hover:animate-sparkle"></div>
-          </CardContent>
-          </Card>
-        ))}
+                  <div className="space-y-2">
+                    <p className={cn(
+                      "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                    )}>
+                      {card.value}
+                    </p>
+                    <p className={cn(
+                      "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+                    )}>
+                      vs previous period
+                    </p>
+                  </div>
+                </div>
+                
+                <div className={cn(
+                  "mt-4 p-3 border-t border-l-4 transition-all duration-700",
+                  "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
+                  cardIndex === 0 && "border-l-green-700",
+                  cardIndex === 1 && "border-l-blue-700",
+                  cardIndex === 2 && "border-l-pink-700",
+                  cardIndex === 3 && "border-l-red-700"
+                )}>
+                  <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
+                    {card.description}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Drill-down Modal */}

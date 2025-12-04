@@ -13,11 +13,6 @@ import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
 import { MetricsTablesRegistryProvider } from '@/contexts/MetricsTablesRegistryContext';
 import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
-import PrefetchOnIdle from "@/components/perf/PrefetchOnIdle";
-import HashJumpOnLoad from "@/components/perf/HashJumpOnLoad";
-import InitialLoadGate, { useInitialLoad } from "@/components/perf/InitialLoadGate";
-import ForceTopOnLoad from "@/components/perf/ForceTopOnLoad";
-import { NavigationLoader } from "@/components/perf/NavigationLoader";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Optimized lazy loading with preloading for critical pages
@@ -63,18 +58,6 @@ const LateCancellations = React.lazy(() =>
 const PatternsAndTrends = React.lazy(() => 
   import("./pages/PatternsAndTrends").then(module => ({ default: module.default }))
 );
-const HeroDemo = React.lazy(() => 
-  import("./pages/HeroDemo").then(module => ({ default: module.default }))
-);
-const GeminiAIDemoPage = React.lazy(() => 
-  import("./pages/GeminiAIDemo").then(module => ({ default: module.default }))
-);
-const TrainerDebug = React.lazy(() => 
-  import("./pages/TrainerDebug").then(module => ({ default: module.default }))
-);
-const DataExport = React.lazy(() => 
-  import("./pages/DataExport").then(module => ({ default: module.default }))
-);
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
 );
@@ -111,16 +94,10 @@ const App = () => {
         <GlobalFiltersProvider>
           <MetricsTablesRegistryProvider>
           <SectionNavigationProvider>
-          <NavigationLoader />
-          <ForceTopOnLoad />
-          <PrefetchOnIdle />
-          <HashJumpOnLoad />
           <GlobalLoader />
           <GlobalCommandPalette />
-          <InitialLoadGate>
-            <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}> {/* Blank white screen during chunk load */}
-              <FirstRouteReady>
-                <PageTransition>
+          <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}> {/* Blank white screen during chunk load */}
+            <PageTransition>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/executive-summary" element={<ExecutiveSummary />} />
@@ -137,17 +114,11 @@ const App = () => {
                     <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
                     <Route path="/late-cancellations" element={<LateCancellations />} />
                     <Route path="/patterns-trends" element={<PatternsAndTrends />} />
-                    <Route path="/hero-demo" element={<HeroDemo />} />
-                    <Route path="/gemini-ai-demo" element={<GeminiAIDemoPage />} />
-                    <Route path="/trainer-debug" element={<TrainerDebug />} />
-                    <Route path="/data-export" element={<DataExport />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </PageTransition>
-              </FirstRouteReady>
             </React.Suspense>
-          </InitialLoadGate>
           </SectionNavigationProvider>
           </MetricsTablesRegistryProvider>
         </GlobalFiltersProvider>
@@ -159,13 +130,3 @@ const App = () => {
 };
 
 export default App;
-
-function FirstRouteReady({ children }: { children: React.ReactNode }) {
-  const { markRouteReady } = useInitialLoad();
-  React.useEffect(() => {
-    // Signal that our first route content tree has mounted
-    const t = setTimeout(() => markRouteReady(), 0);
-    return () => clearTimeout(t);
-  }, [markRouteReady]);
-  return <>{children}</>;
-}

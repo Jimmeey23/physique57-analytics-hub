@@ -22,8 +22,16 @@ export const useLateCancellationsData = () => {
       
       const rows = await fetchGoogleSheet(SPREADSHEET_ID, 'Checkins');
       
+      logger.info('Late cancellations fetch result:', {
+        status: 'success',
+        rowsReceived: rows.length,
+        sheetId: SPREADSHEET_ID
+      });
+      
       if (rows.length < 2) {
+        logger.warn('No data rows found in Checkins sheet');
         setData([]);
+        setAllCheckins([]);
         return;
       }
 
@@ -31,20 +39,50 @@ export const useLateCancellationsData = () => {
   const processedData: LateCancellationsData[] = [];
   const rawCheckins: any[] = [];
       
-      if (rows.length < 2) {
+      const headers = rows[0];
+      
+      // Log headers for debugging
+      logger.info('Checkins sheet headers:', headers);
+      
+      // Find column indices by name (case-insensitive search)
+      const findIndex = (name: string) => headers.findIndex((h: string) => h?.toLowerCase() === name.toLowerCase());
+      
+      const memberIdIndex = findIndex('Member ID');
+      const firstNameIndex = findIndex('First Name');
+      const lastNameIndex = findIndex('Last Name');
+      const emailIndex = findIndex('Email');
+      const locationIndex = findIndex('Location');
+      const sessionNameIndex = findIndex('Session Name');
+      const teacherNameIndex = findIndex('Teacher Name');
+      const cleanedProductIndex = findIndex('Cleaned Product');
+      const cleanedCategoryIndex = findIndex('Cleaned Category');
+      const cleanedClassIndex = findIndex('Cleaned Class');
+      const paymentMethodIndex = findIndex('Payment Method Name');
+      const dateIndex = findIndex('Date (IST)');
+      const dayOfWeekIndex = findIndex('Day of Week');
+      const timeIndex = findIndex('Time');
+      const durationIndex = findIndex('Duration (Minutes)');
+      const capacityIndex = findIndex('Capacity');
+      const monthIndex = findIndex('Month');
+      const yearIndex = findIndex('Year');
+      const paidIndex = findIndex('Paid');
+      const isNewIndex = findIndex('Is New');
+      const isLateCancelledIndex = findIndex('Is Late Cancelled');
+      
+      if (isLateCancelledIndex === -1) {
+        logger.error('Is Late Cancelled column not found in headers:', headers);
         setData([]);
+        setAllCheckins([]);
         return;
       }
 
-      const headers = rows[0];
-  const lateCancelledIndex = headers.findIndex((h: string) => h === 'Is Late Cancelled');
-  const checkedInIndex = headers.findIndex((h: string) => h === 'Checked in');
-      
-      if (lateCancelledIndex === -1) {
-        logger.error('Is Late Cancelled column not found');
-        setData([]);
-        return;
-      }
+      logger.info('Column indices found:', {
+        memberIdIndex, firstNameIndex, lastNameIndex, emailIndex, locationIndex,
+        sessionNameIndex, teacherNameIndex, cleanedProductIndex, cleanedCategoryIndex,
+        cleanedClassIndex, paymentMethodIndex, dateIndex, dayOfWeekIndex, timeIndex,
+        durationIndex, capacityIndex, monthIndex, yearIndex, paidIndex, isNewIndex,
+        isLateCancelledIndex
+      });
 
       // Process data rows (skip header)
       for (let i = 1; i < rows.length; i++) {
@@ -55,72 +93,98 @@ export const useLateCancellationsData = () => {
         
         // Build raw checkin row (unfiltered)
         const rawRow = {
-          memberId: row[headers.findIndex((h: string) => h === 'Member ID')] || '',
-          firstName: row[headers.findIndex((h: string) => h === 'First Name')] || '',
-          lastName: row[headers.findIndex((h: string) => h === 'Last Name')] || '',
-          email: row[headers.findIndex((h: string) => h === 'Email')] || '',
-          location: row[headers.findIndex((h: string) => h === 'Location')] || '',
-          sessionName: row[headers.findIndex((h: string) => h === 'Session Name')] || '',
-          teacherName: row[headers.findIndex((h: string) => h === 'Teacher Name')] || '',
-          cleanedProduct: row[headers.findIndex((h: string) => h === 'Cleaned Product')] || '',
-          cleanedCategory: row[headers.findIndex((h: string) => h === 'Cleaned Category')] || '',
-          cleanedClass: row[headers.findIndex((h: string) => h === 'Cleaned Class')] || '',
-          paymentMethodName: row[headers.findIndex((h: string) => h === 'Payment Method Name')] || '',
-          dateIST: row[headers.findIndex((h: string) => h === 'Date (IST)')] || '',
-          dayOfWeek: row[headers.findIndex((h: string) => h === 'Day of Week')] || '',
-          time: row[headers.findIndex((h: string) => h === 'Time')] || '',
-          duration: parseNumericValue(row[headers.findIndex((h: string) => h === 'Duration (Minutes)')] || '0'),
-          capacity: parseNumericValue(row[headers.findIndex((h: string) => h === 'Capacity')] || '0'),
-          month: row[headers.findIndex((h: string) => h === 'Month')] || '',
-          year: parseNumericValue(row[headers.findIndex((h: string) => h === 'Year')] || '0'),
-          paidAmount: parseNumericValue(row[headers.findIndex((h: string) => h === 'Paid')] || '0'),
-          isNew: row[headers.findIndex((h: string) => h === 'Is New')] || '',
-          checkedIn: checkedInIndex >= 0 ? row[checkedInIndex] : '',
-          isLateCancelled: lateCancelledIndex >= 0 ? row[lateCancelledIndex] : '',
+          memberId: memberIdIndex >= 0 ? row[memberIdIndex] : '',
+          firstName: firstNameIndex >= 0 ? row[firstNameIndex] : '',
+          lastName: lastNameIndex >= 0 ? row[lastNameIndex] : '',
+          email: emailIndex >= 0 ? row[emailIndex] : '',
+          location: locationIndex >= 0 ? row[locationIndex] : '',
+          sessionName: sessionNameIndex >= 0 ? row[sessionNameIndex] : '',
+          teacherName: teacherNameIndex >= 0 ? row[teacherNameIndex] : '',
+          cleanedProduct: cleanedProductIndex >= 0 ? row[cleanedProductIndex] : '',
+          cleanedCategory: cleanedCategoryIndex >= 0 ? row[cleanedCategoryIndex] : '',
+          cleanedClass: cleanedClassIndex >= 0 ? row[cleanedClassIndex] : '',
+          paymentMethodName: paymentMethodIndex >= 0 ? row[paymentMethodIndex] : '',
+          dateIST: dateIndex >= 0 ? row[dateIndex] : '',
+          dayOfWeek: dayOfWeekIndex >= 0 ? row[dayOfWeekIndex] : '',
+          time: timeIndex >= 0 ? row[timeIndex] : '',
+          duration: durationIndex >= 0 ? parseNumericValue(row[durationIndex]) : 0,
+          capacity: capacityIndex >= 0 ? parseNumericValue(row[capacityIndex]) : 0,
+          month: monthIndex >= 0 ? row[monthIndex] : '',
+          year: yearIndex >= 0 ? parseNumericValue(row[yearIndex]) : 0,
+          paidAmount: paidIndex >= 0 ? parseNumericValue(row[paidIndex]) : 0,
+          isNew: isNewIndex >= 0 ? row[isNewIndex] : '',
+          isLateCancelled: isLateCancelledIndex >= 0 ? row[isLateCancelledIndex] : 'FALSE',
         };
         rawCheckins.push(rawRow);
         
-        // Only include rows where Is Late Cancelled = TRUE
-        if (row[lateCancelledIndex] !== 'TRUE') continue;
+        // Only include rows where Is Late Cancelled = TRUE (case-insensitive, trimmed)
+        const isLateCancelled = isLateCancelledIndex >= 0 ? String(row[isLateCancelledIndex]).trim().toUpperCase() : '';
+        
+        // Log first 10 rows for debugging
+        if (i <= 10) {
+          logger.info(`Row ${i} - Is Late Cancelled value: "${row[isLateCancelledIndex]}" (normalized: "${isLateCancelled}")`);
+        }
+        
+        if (isLateCancelled !== 'TRUE') continue;
         
         const dataRow: LateCancellationsData = {
-          memberId: row[headers.findIndex((h: string) => h === 'Member ID')] || '',
-          firstName: row[headers.findIndex((h: string) => h === 'First Name')] || '',
-          lastName: row[headers.findIndex((h: string) => h === 'Last Name')] || '',
-          email: row[headers.findIndex((h: string) => h === 'Email')] || '',
-          location: row[headers.findIndex((h: string) => h === 'Location')] || '',
-          sessionName: row[headers.findIndex((h: string) => h === 'Session Name')] || '',
-          teacherName: row[headers.findIndex((h: string) => h === 'Teacher Name')] || '',
-          cleanedProduct: row[headers.findIndex((h: string) => h === 'Cleaned Product')] || '',
-          cleanedCategory: row[headers.findIndex((h: string) => h === 'Cleaned Category')] || '',
-          cleanedClass: row[headers.findIndex((h: string) => h === 'Cleaned Class')] || '',
-          paymentMethodName: row[headers.findIndex((h: string) => h === 'Payment Method Name')] || '',
-          dateIST: row[headers.findIndex((h: string) => h === 'Date (IST)')] || '',
-          dayOfWeek: row[headers.findIndex((h: string) => h === 'Day of Week')] || '',
-          time: row[headers.findIndex((h: string) => h === 'Time')] || '',
-          duration: parseNumericValue(row[headers.findIndex((h: string) => h === 'Duration (Minutes)')] || '0'),
-          capacity: parseNumericValue(row[headers.findIndex((h: string) => h === 'Capacity')] || '0'),
-          month: row[headers.findIndex((h: string) => h === 'Month')] || '',
-          year: parseNumericValue(row[headers.findIndex((h: string) => h === 'Year')] || '0'),
-          paidAmount: parseNumericValue(row[headers.findIndex((h: string) => h === 'Paid')] || '0'),
-          isNew: row[headers.findIndex((h: string) => h === 'Is New')] || '',
+          memberId: memberIdIndex >= 0 ? row[memberIdIndex] : '',
+          firstName: firstNameIndex >= 0 ? row[firstNameIndex] : '',
+          lastName: lastNameIndex >= 0 ? row[lastNameIndex] : '',
+          email: emailIndex >= 0 ? row[emailIndex] : '',
+          location: locationIndex >= 0 ? row[locationIndex] : '',
+          sessionName: sessionNameIndex >= 0 ? row[sessionNameIndex] : '',
+          teacherName: teacherNameIndex >= 0 ? row[teacherNameIndex] : '',
+          cleanedProduct: cleanedProductIndex >= 0 ? row[cleanedProductIndex] : '',
+          cleanedCategory: cleanedCategoryIndex >= 0 ? row[cleanedCategoryIndex] : '',
+          cleanedClass: cleanedClassIndex >= 0 ? row[cleanedClassIndex] : '',
+          paymentMethodName: paymentMethodIndex >= 0 ? row[paymentMethodIndex] : '',
+          dateIST: dateIndex >= 0 ? row[dateIndex] : '',
+          dayOfWeek: dayOfWeekIndex >= 0 ? row[dayOfWeekIndex] : '',
+          time: timeIndex >= 0 ? row[timeIndex] : '',
+          duration: durationIndex >= 0 ? parseNumericValue(row[durationIndex]) : 0,
+          capacity: capacityIndex >= 0 ? parseNumericValue(row[capacityIndex]) : 0,
+          month: monthIndex >= 0 ? row[monthIndex] : '',
+          year: yearIndex >= 0 ? parseNumericValue(row[yearIndex]) : 0,
+          paidAmount: paidIndex >= 0 ? parseNumericValue(row[paidIndex]) : 0,
+          isNew: isNewIndex >= 0 ? row[isNewIndex] : '',
           tableType: 'checkins'
         };
         
         processedData.push(dataRow);
       }
 
-      logger.info('Processed late cancellations data sample:', processedData.slice(0, 5));
-      logger.info('Total late cancellations records:', processedData.length);
-      logger.info('Total raw checkins rows:', rawCheckins.length);
+      // Collect sample values from Is Late Cancelled column for debugging
+      const lateCancelledSamples = [];
+      for (let i = 1; i < Math.min(20, rows.length); i++) {
+        lateCancelledSamples.push({
+          row: i,
+          value: rows[i][isLateCancelledIndex],
+          normalized: String(rows[i][isLateCancelledIndex]).trim().toUpperCase()
+        });
+      }
+      
+      logger.info('Processed late cancellations data:', {
+        totalRecords: processedData.length,
+        totalRawCheckins: rawCheckins.length,
+        isLateCancelledColumnIndex: isLateCancelledIndex,
+        lateCancelledValueSamples: lateCancelledSamples,
+        sample: processedData.slice(0, 3)
+      });
       
       setData(processedData);
       setAllCheckins(rawCheckins);
       setError(null);
     } catch (err) {
-      logger.error('Error fetching late cancellations data:', err);
-      setError('Failed to load late cancellations data');
-      setData([]); // Clear data on error - no mock data as per requirements
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error('Error fetching late cancellations data:', {
+        error: errorMsg,
+        spreadsheetId: SPREADSHEET_ID,
+        sheetName: 'Checkins',
+        errorType: err instanceof Error ? err.constructor.name : typeof err
+      });
+      setError(`Failed to load late cancellations data: ${errorMsg}`);
+      setData([]);
       setAllCheckins([]);
     } finally {
       setLoading(false);

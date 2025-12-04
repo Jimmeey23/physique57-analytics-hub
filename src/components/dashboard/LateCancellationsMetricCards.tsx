@@ -46,6 +46,20 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
     const peakTimeSlot = Object.entries(timeDistribution).reduce((a, b) => 
       timeDistribution[a[0]] > timeDistribution[b[0]] ? a : b
     )?.[0] || 'N/A';
+    
+    // Calculate average paid amount and product impact
+    const totalPaidAmount = data.reduce((sum, item) => sum + (item.paidAmount || 0), 0);
+    const avgPaidPerCancellation = totalCancellations > 0 ? totalPaidAmount / totalCancellations : 0;
+    const totalRevenueLost = totalPaidAmount;
+    
+    // Calculate trainer impact
+    const trainerCancellations = data.reduce((acc, item) => {
+      acc[item.teacherName || 'Unknown'] = (acc[item.teacherName || 'Unknown'] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const mostAffectedTrainer = Object.entries(trainerCancellations).reduce((a, b) => 
+      trainerCancellations[a[0]] > trainerCancellations[b[0]] ? a : b
+    )?.[0] || 'N/A';
 
     return [
       {
@@ -126,6 +140,36 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
         uniqueMembers,
         uniqueLocations,
         showPercentage: false
+      },
+      {
+        title: "Revenue Lost",
+        value: `₹${formatNumber(Math.round(totalRevenueLost))}`,
+        change: -12.5,
+        icon: AlertTriangle,
+        color: "red",
+        description: "Total revenue impact from late cancellations",
+        rawData: data,
+        metricType: 'revenue-lost',
+        totalCancellations,
+        uniqueMembers,
+        totalRevenueLost,
+        avgPaidPerCancellation,
+        showPercentage: true
+      },
+      {
+        title: "Most Affected Trainer",
+        value: mostAffectedTrainer,
+        change: trainerCancellations[mostAffectedTrainer] || 0,
+        icon: Users,
+        color: "orange",
+        description: "Trainer with highest cancellation rate",
+        rawData: data,
+        metricType: 'top-trainer',
+        totalCancellations,
+        uniqueMembers,
+        trainerCancellations,
+        mostAffectedTrainer,
+        showPercentage: false
       }
     ];
   }, [data]);
@@ -158,7 +202,7 @@ export const LateCancellationsMetricCards: React.FC<LateCancellationsMetricCards
   if (metrics.length === 0) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(6)].map((_, index) => (
+        {[...Array(8)].map((_, index) => (
           <Card key={index} className="bg-white border border-gray-200 rounded-2xl shadow-lg animate-pulse">
             <CardContent className="p-6">
               <div className="h-24 bg-slate-100 rounded-xl"></div>

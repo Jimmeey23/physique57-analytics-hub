@@ -35,7 +35,7 @@ export const TABLE_STYLES = {
     cellBold: "font-semibold text-slate-900",
     cellMono: "font-mono",
     cellSticky: "sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20",
-    cellHover: "hover:bg-orange-50 cursor-pointer transition-all duration-200",
+    cellHover: "hover:bg-slate-50 cursor-pointer transition-all duration-200",
   },
   
   // Group/Category row styles

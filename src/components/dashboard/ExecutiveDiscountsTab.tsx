@@ -57,6 +57,8 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
   }, [data, selectedLocation]);
 
   // Process discount data with enhanced analytics
+  // IMPORTANT: Show metrics for ALL transactions, not just discounted ones
+  // This allows visibility into full sales picture even when no discounts are applied
   const discountAnalysis = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return {
       totalTransactions: 0,
@@ -69,7 +71,9 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
       locationBreakdown: [],
       categoryBreakdown: [],
       customerSegments: [],
-      staffPerformance: []
+      staffPerformance: [],
+      hasData: false,
+      message: 'No transaction data available for the selected period'
     };
 
     // Calculate discounted transactions with better logic
@@ -277,6 +281,12 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
       .sort((a: any, b: any) => b.totalDiscounts - a.totalDiscounts)
       .slice(0, 10);
 
+    // Determine if there are no discounts in the data
+    const hasDiscounts = discountedItems.length > 0;
+    const noDiscountMessage = hasDiscounts 
+      ? '' 
+      : 'No discounted transactions found. Showing transaction overview data.';
+
     return {
       totalTransactions,
       discountedTransactions,
@@ -287,7 +297,10 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
       monthlyTrends,
       locationBreakdown,
       categoryBreakdown,
-      staffPerformance
+      staffPerformance,
+      hasData: true,
+      hasDiscounts,
+      message: noDiscountMessage
     };
   }, [filteredData]);
 
@@ -408,6 +421,21 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
           </Card>
         ))}
       </div>
+
+      {/* No Discount Warning */}
+      {discountAnalysis.message && (
+        <Card className="border-l-4 border-yellow-400 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex gap-3">
+              <div className="text-yellow-600 font-semibold">ℹ️</div>
+              <div>
+                <p className="font-semibold text-gray-900">Note</p>
+                <p className="text-sm text-gray-700">{discountAnalysis.message}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Content based on selected view */}
       {selectedView === 'overview' && (

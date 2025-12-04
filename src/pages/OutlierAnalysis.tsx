@@ -38,18 +38,6 @@ const OutlierAnalysisContent = () => {
   const heroMetrics = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
-    console.log('🔍 Outlier Analysis - Total sales data records:', salesData.length);
-    
-    // Sample a few dates to understand the format
-    if (salesData.length > 0) {
-      console.log('📅 Sample payment dates:', salesData.slice(0, 5).map(item => ({
-        original: item.paymentDate,
-        parsed: new Date(item.paymentDate),
-        year: new Date(item.paymentDate).getFullYear(),
-        month: new Date(item.paymentDate).getMonth()
-      })));
-    }
-
     const april2025Data = salesData.filter(item => {
       if (!item.paymentDate) return false;
       const date = new Date(item.paymentDate);
@@ -66,14 +54,8 @@ const OutlierAnalysisContent = () => {
       return year === 2025 && month === 7; // August = month 7 (0-indexed)
     });
 
-    console.log('📊 April 2025 records:', april2025Data.length);
-    console.log('📊 August 2025 records:', august2025Data.length);
-
     const aprilRevenue = april2025Data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
     const augustRevenue = august2025Data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-    
-    console.log('💰 April 2025 revenue:', aprilRevenue);
-    console.log('💰 August 2025 revenue:', augustRevenue);
     
     const aprilTransactions = april2025Data.length;
     const augustTransactions = august2025Data.length;
@@ -165,7 +147,7 @@ const OutlierAnalysisContent = () => {
             title="Outlier Analysis: April & August 2025"
             subtitle="Deep dive into performance drivers, client acquisition patterns, and revenue composition for exceptional months"
             metrics={heroMetrics}
-            onExportClick={() => console.log('Exporting outlier analysis data...')}
+            onExportClick={() => {}}
           />
           <div className="container mx-auto px-6 py-8">
             <OutlierAnalysisSection 

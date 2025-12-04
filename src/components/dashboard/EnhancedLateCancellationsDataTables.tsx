@@ -249,25 +249,25 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
           <>
             <TableContainer>
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gradient-to-r from-red-600 to-orange-600 text-white">
                 <TableRow className="h-[35px]">
-                  <TableHead>Date</TableHead>
-                  <TableHead>Sessions</TableHead>
-                  <TableHead>Members</TableHead>
-                  <TableHead>Locations</TableHead>
-                  <TableHead>Formats</TableHead>
-                  <TableHead>Revenue</TableHead>
+                  <TableHead className="text-white font-bold">Date</TableHead>
+                  <TableHead className="text-white font-bold">Sessions</TableHead>
+                  <TableHead className="text-white font-bold">Members</TableHead>
+                  <TableHead className="text-white font-bold">Locations</TableHead>
+                  <TableHead className="text-white font-bold">Formats</TableHead>
+                  <TableHead className="text-white font-bold">Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageRows.map((r: any, idx: number) => (
-                  <TableRow key={idx} className="h-[35px] hover:bg-gray-50">
+                  <TableRow key={idx} className="h-[35px] hover:bg-red-50/30 transition-colors">
                     <TableCell className="font-medium">{(() => { const d = new Date(r.date); return isNaN(d.getTime()) ? '—' : d.toLocaleDateString(); })()}</TableCell>
-                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.count)}</Badge></TableCell>
-                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.uniqueMembers)}</Badge></TableCell>
-                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.uniqueLocations)}</Badge></TableCell>
-                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center">{formatNumber(r.uniqueFormats)}</Badge></TableCell>
-                    <TableCell className="text-slate-700">{formatCurrency(r.revenue)}</TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center bg-red-50 text-red-700 border-red-200">{formatNumber(r.count)}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center bg-orange-50 text-orange-700 border-orange-200">{formatNumber(r.uniqueMembers)}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center bg-red-50 text-red-700 border-red-200">{formatNumber(r.uniqueLocations)}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="min-w-[70px] justify-center bg-orange-50 text-orange-700 border-orange-200">{formatNumber(r.uniqueFormats)}</Badge></TableCell>
+                    <TableCell className="text-slate-700 font-semibold">{formatCurrency(r.revenue)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

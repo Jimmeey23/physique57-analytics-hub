@@ -401,13 +401,13 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left p-3 font-medium text-gray-700">Month</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Cancellations</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Previous Month</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Change</th>
-                      <th className="text-right p-3 font-medium text-gray-700">% Change</th>
-                      <th className="text-center p-3 font-medium text-gray-700">Trend</th>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="text-left p-3 font-medium text-white">Month</th>
+                      <th className="text-right p-3 font-medium text-white">Cancellations</th>
+                      <th className="text-right p-3 font-medium text-white">Previous Month</th>
+                      <th className="text-right p-3 font-medium text-white">Change</th>
+                      <th className="text-right p-3 font-medium text-white">% Change</th>
+                      <th className="text-center p-3 font-medium text-white">Trend</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -459,12 +459,12 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left p-3 font-medium text-gray-700">Membership Type</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Total</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Latest Month</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Change</th>
-                      <th className="text-center p-3 font-medium text-gray-700">Trend</th>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="text-left p-3 font-medium text-white">Membership Type</th>
+                      <th className="text-right p-3 font-medium text-white">Total</th>
+                      <th className="text-right p-3 font-medium text-white">Latest Month</th>
+                      <th className="text-right p-3 font-medium text-white">Change</th>
+                      <th className="text-center p-3 font-medium text-white">Trend</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -509,12 +509,12 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left p-3 font-medium text-gray-700">Class</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Total</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Latest Month</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Change</th>
-                      <th className="text-center p-3 font-medium text-gray-700">Trend</th>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="text-left p-3 font-medium text-white">Class</th>
+                      <th className="text-right p-3 font-medium text-white">Total</th>
+                      <th className="text-right p-3 font-medium text-white">Latest Month</th>
+                      <th className="text-right p-3 font-medium text-white">Change</th>
+                      <th className="text-center p-3 font-medium text-white">Trend</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -559,12 +559,12 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left p-3 font-medium text-gray-700">Trainer</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Total</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Latest Month</th>
-                      <th className="text-right p-3 font-medium text-gray-700">Change</th>
-                      <th className="text-center p-3 font-medium text-gray-700">Trend</th>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="text-left p-3 font-medium text-white">Trainer</th>
+                      <th className="text-right p-3 font-medium text-white">Total</th>
+                      <th className="text-right p-3 font-medium text-white">Latest Month</th>
+                      <th className="text-right p-3 font-medium text-white">Change</th>
+                      <th className="text-center p-3 font-medium text-white">Trend</th>
                     </tr>
                   </thead>
                   <tbody>

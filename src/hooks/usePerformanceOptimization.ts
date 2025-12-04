@@ -46,12 +46,7 @@ export const usePerformanceOptimization = () => {
         list.getEntries().forEach((entry) => {
           // Log long tasks for debugging (reduced threshold for better detection)
           if (entry.entryType === 'longtask' && entry.duration > LONG_TASK_THRESHOLD) {
-            // Throttle logs to at most once per 1000ms
-            const now = performance.now();
-            if (now - lastLogTime > 1000) {
-              lastLogTime = now;
-              console.warn('Long task detected:', Math.round(entry.duration) + 'ms', 'at', Math.round(entry.startTime));
-            }
+            // Long task detected - could add reporting here if needed
           }
         });
       });

@@ -50,7 +50,7 @@ const Sessions = () => {
           title="Sessions Analytics"
           subtitle="Comprehensive analysis of class sessions, attendance patterns, and performance insights"
           metrics={heroMetrics}
-          onExportClick={() => console.log('Exporting sessions data...')}
+          onExportClick={() => {}}
         />
         <main>
           <SessionsSection />

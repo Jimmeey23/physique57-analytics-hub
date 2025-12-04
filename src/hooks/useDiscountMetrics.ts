@@ -46,14 +46,34 @@ export function useDiscountMetrics(
   options?: Options
 ) {
   return useMemo(() => {
-    const base = (historicalData && historicalData.length > 0 ? historicalData : data) as SalesData[];
-    const compareEnd = options?.dateRange?.end
-      ? (typeof options.dateRange.end === 'string' ? new Date(options.dateRange.end) : (options.dateRange.end as Date))
-      : new Date();
+    // Debug logging
+    console.log('useDiscountMetrics input:', {
+      dataLength: data?.length || 0,
+      historicalDataLength: historicalData?.length || 0,
+      dateRange: options?.dateRange,
+      sampleData: data?.slice(0, 2).map(d => ({
+        paymentValue: d.paymentValue,
+        discountAmount: d.discountAmount,
+        paymentDate: d.paymentDate
+      }))
+    });
+
+    // Current period metrics come directly from `data` (which is already filtered)
+    // Historical/previous period comes from `historicalData` filtered by previous month
+    
+    // Determine comparison end date for period labeling
+    let compareEnd: Date;
+    if (options?.dateRange?.end) {
+      compareEnd = typeof options.dateRange.end === 'string' 
+        ? new Date(options.dateRange.end) 
+        : (options.dateRange.end as Date);
+    } else {
+      compareEnd = new Date();
+    }
+    
     const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
     const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
     const currentStart = monthStart(compareEnd);
-    const currentEnd = monthEnd(compareEnd);
     const prevAnchor = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 15);
     const prevStart = monthStart(prevAnchor);
     const prevEnd = monthEnd(prevAnchor);
@@ -62,8 +82,19 @@ export function useDiscountMetrics(
 
     const within = (d?: Date | null, start?: Date, end?: Date) => !!(d && start && end && d >= start && d <= end);
 
-    const current = base.filter((it) => within(parseDate((it as any).paymentDate), currentStart, currentEnd));
-    const previous = base.filter((it) => within(parseDate((it as any).paymentDate), prevStart, prevEnd));
+    // Current period: use data directly (it's already filtered by the dashboard)
+    const current = data;
+    
+    // Previous period: filter historicalData by the previous month
+    const histBase = (historicalData && historicalData.length > 0) ? historicalData : [];
+    const previous = histBase.filter((it) => within(parseDate((it as any).paymentDate), prevStart, prevEnd));
+    
+    console.log('useDiscountMetrics periods:', {
+      currentCount: current.length,
+      previousCount: previous.length,
+      prevStart: prevStart.toISOString(),
+      prevEnd: prevEnd.toISOString()
+    });
 
     // Compute metrics for a list
     const totals = (list: SalesData[]) => {
@@ -84,6 +115,7 @@ export function useDiscountMetrics(
 
       return {
         totalDiscounts,
+        totalRevenue,
         discountRate,
         discountedTransactions,
         customersWithDiscounts,
@@ -91,11 +123,19 @@ export function useDiscountMetrics(
         avgDiscountPerCustomer,
         discountPenetration,
         customerDiscountPenetration,
+        totalTransactions,
       };
     };
 
     const cur = totals(current);
     const prev = totals(previous);
+    
+    console.log('useDiscountMetrics computed:', {
+      curTotalDiscounts: cur.totalDiscounts,
+      curTotalRevenue: cur.totalRevenue,
+      curTransactions: cur.totalTransactions,
+      prevTotalDiscounts: prev.totalDiscounts
+    });
 
     const m: DiscountMetric[] = [
       {

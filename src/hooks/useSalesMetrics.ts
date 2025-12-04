@@ -47,11 +47,8 @@ export const useSalesMetrics = (
   const metrics = useMemo(() => {
     const compareMode: 'previousMonth' | 'previousPeriod' = options?.compareMode ?? 'previousMonth';
     if (!currentData || currentData.length === 0) {
-      console.log('No data available for sales metrics calculation');
       return [];
     }
-
-    console.log('Calculating sales metrics for', currentData.length, 'records');
 
     // Helper: robustly parse a payment date (handles DD/MM/YYYY and more)
     const parseDate = (d: any): Date | null => robustParseDate(typeof d === 'string' ? d : String(d));
@@ -198,12 +195,6 @@ export const useSalesMetrics = (
     };
 
     const revenueGrowth = calculateGrowth(currentRevenue, prevRevenue);
-    console.log('[SalesMetrics] Revenue MoM:', {
-      currentRevenue,
-      prevRevenue,
-      change: currentRevenue - prevRevenue,
-      percent: revenueGrowth.rate
-    });
     const transactionGrowth = calculateGrowth(currentTransactions, prevTransactions);
     const memberGrowth = calculateGrowth(currentMembers, prevMembers);
     const unitsGrowth = calculateGrowth(currentUnits, prevUnits);

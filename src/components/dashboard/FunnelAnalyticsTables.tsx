@@ -1,18 +1,13 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
-import { Badge } from '@/components/ui/badge';
 import { 
   Target, 
   Clock, 
   DollarSign, 
   Activity, 
   MapPin, 
-  Users, 
-  TrendingUp, 
   AlertTriangle,
-  UserCheck,
-  Calendar,
   BarChart3
 } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
@@ -35,7 +30,6 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   const ltvTableRef = useRef<HTMLDivElement>(null);
   const topStagesTableRef = useRef<HTMLDivElement>(null);
   const proximityTableRef = useRef<HTMLDivElement>(null);
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   // Conversion by Source Analytics
   const conversionBySource = useMemo(() => {
@@ -339,7 +333,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'source',
                     header: 'Source',
                     render: (value: string) => (
-                      <div className="font-semibold text-slate-800 min-w-[120px]">
+                      <div className="font-semibold text-slate-700 min-w-[120px]">
                         {value}
                       </div>
                     )
@@ -349,7 +343,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     header: 'Total Leads',
                     align: 'center' as const,
                     render: (value: number) => (
-                      <div className="font-medium text-blue-600">
+                      <div className="font-medium text-slate-700">
                         {formatNumber(value)}
                       </div>
                     )
@@ -359,7 +353,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     header: 'Converted',
                     align: 'center' as const,
                     render: (value: number) => (
-                      <div className="font-medium text-green-600">
+                      <div className="font-medium text-slate-700">
                         {formatNumber(value)}
                       </div>
                     )
@@ -368,27 +362,9 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'conversionRate',
                     header: 'Conv. Rate',
                     align: 'center' as const,
-                    render: (value: number, row: any) => (
-                      <div 
-                        className="relative group"
-                        onMouseEnter={() => setHoveredRow(`${row.source}-conv`)}
-                        onMouseLeave={() => setHoveredRow(null)}
-                      >
-                        <Badge 
-                          variant="outline" 
-                          className={`${
-                            value >= 15 ? 'text-green-600 border-green-200' :
-                            value >= 8 ? 'text-yellow-600 border-yellow-200' :
-                            'text-red-600 border-red-200'
-                          }`}
-                        >
-                          {value.toFixed(1)}%
-                        </Badge>
-                        {hoveredRow === `${row.source}-conv` && (
-                          <div className="absolute z-10 -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded">
-                            {value >= 15 ? '🔥 Excellent' : value >= 8 ? '👍 Good' : '⚠️ Needs Improvement'}
-                          </div>
-                        )}
+                    render: (value: number) => (
+                      <div className="font-medium text-slate-700">
+                        {value.toFixed(1)}%
                       </div>
                     )
                   },
@@ -397,7 +373,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     header: 'Avg LTV',
                     align: 'right' as const,
                     render: (value: number) => (
-                      <span className="font-semibold text-emerald-600">
+                      <span className="font-medium text-slate-700">
                         {formatCurrency(value)}
                       </span>
                     )
@@ -445,7 +421,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'stage',
                     header: 'Stage',
                     render: (value: string) => (
-                      <div className="font-semibold text-slate-800 min-w-[150px]">
+                      <div className="font-semibold text-slate-700 min-w-[150px]">
                         {value}
                       </div>
                     )
@@ -454,14 +430,16 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'totalLeads',
                     header: 'Total Leads',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'converted',
                     header: 'Converted',
                     align: 'center' as const,
                     render: (value: number) => (
-                      <span className="font-medium text-green-600">
+                      <span className="font-medium text-slate-700">
                         {formatNumber(value)}
                       </span>
                     )
@@ -471,16 +449,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     header: 'Conv. Rate',
                     align: 'center' as const,
                     render: (value: number) => (
-                      <Badge variant="outline" className="text-purple-600 border-purple-200">
+                      <span className="font-medium text-slate-700">
                         {value.toFixed(1)}%
-                      </Badge>
+                      </span>
                     )
                   },
                   {
                     key: 'avgLTV',
                     header: 'Avg LTV',
                     align: 'right' as const,
-                    render: (value: number) => formatCurrency(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
+                    )
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('stage', row)}
@@ -513,7 +493,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'timeRange',
                     header: 'Time Range',
                     render: (value: string) => (
-                      <div className="font-semibold text-slate-800">
+                      <div className="font-semibold text-slate-700">
                         {value}
                       </div>
                     )
@@ -522,25 +502,33 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'totalLeads',
                     header: 'Total Leads',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'converted',
                     header: 'Converted',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'conversionRate',
                     header: 'Conv. Rate',
                     align: 'center' as const,
-                    render: (value: number) => `${value.toFixed(1)}%`
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{value.toFixed(1)}%</span>
+                    )
                   },
                   {
                     key: 'avgLTV',
                     header: 'Avg LTV',
                     align: 'right' as const,
-                    render: (value: number) => formatCurrency(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
+                    )
                   }
                 ]}
                 headerGradient="from-slate-800 via-slate-900 to-slate-800"
@@ -572,7 +560,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'ltvRange',
                     header: 'LTV Range',
                     render: (value: string) => (
-                      <div className="font-semibold text-slate-800">
+                      <div className="font-semibold text-slate-700">
                         {value}
                       </div>
                     )
@@ -581,25 +569,33 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'totalLeads',
                     header: 'Total Leads',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'converted',
                     header: 'Converted',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'totalRevenue',
                     header: 'Total Revenue',
                     align: 'right' as const,
-                    render: (value: number) => formatCurrency(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
+                    )
                   },
                   {
                     key: 'avgVisits',
                     header: 'Avg Visits',
                     align: 'center' as const,
-                    render: (value: number) => value.toFixed(1)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{value.toFixed(1)}</span>
+                    )
                   }
                 ]}
                 onRowClick={(row) => handleRowClick('ltv', row)}
@@ -632,7 +628,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'stage',
                     header: 'Stage',
                     render: (value: string) => (
-                      <div className="font-semibold text-slate-800">
+                      <div className="font-semibold text-slate-700">
                         {value}
                       </div>
                     )
@@ -641,25 +637,33 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'leadCount',
                     header: 'Lead Count',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'converted',
                     header: 'Converted',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'conversionRate',
                     header: 'Conv. Rate',
                     align: 'center' as const,
-                    render: (value: number) => `${value.toFixed(1)}%`
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{value.toFixed(1)}%</span>
+                    )
                   },
                   {
                     key: 'avgLTV',
                     header: 'Avg LTV',
                     align: 'right' as const,
-                    render: (value: number) => formatCurrency(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
+                    )
                   }
                 ]}
                 headerGradient="from-slate-800 via-slate-900 to-slate-800"
@@ -691,7 +695,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'location',
                     header: 'Location',
                     render: (value: string) => (
-                      <div className="font-semibold text-slate-800 flex items-center gap-2">
+                      <div className="font-semibold text-slate-700 flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-400" />
                         {value}
                       </div>
@@ -702,7 +706,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     header: 'Proximity Issues',
                     align: 'center' as const,
                     render: (value: number) => (
-                      <span className="font-medium text-red-600">
+                      <span className="font-medium text-slate-700">
                         {formatNumber(value)}
                       </span>
                     )
@@ -711,23 +715,18 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     key: 'totalLeads',
                     header: 'Total Leads',
                     align: 'center' as const,
-                    render: (value: number) => formatNumber(value)
+                    render: (value: number) => (
+                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
+                    )
                   },
                   {
                     key: 'proximityRate',
                     header: 'Proximity Rate',
                     align: 'center' as const,
                     render: (value: number) => (
-                      <Badge 
-                        variant="outline" 
-                        className={`${
-                          value >= 20 ? 'text-red-600 border-red-200' :
-                          value >= 10 ? 'text-yellow-600 border-yellow-200' :
-                          'text-green-600 border-green-200'
-                        }`}
-                      >
+                      <span className="font-medium text-slate-700">
                         {value.toFixed(1)}%
-                      </Badge>
+                      </span>
                     )
                   },
                   {
@@ -735,7 +734,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     header: 'Impact Score',
                     align: 'right' as const,
                     render: (value: number) => (
-                      <span className="font-medium text-orange-600">
+                      <span className="font-medium text-slate-700">
                         {value.toFixed(1)}
                       </span>
                     )

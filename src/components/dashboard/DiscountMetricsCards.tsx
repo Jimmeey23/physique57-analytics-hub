@@ -6,6 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { TrendingDown, TrendingUp, Target, Percent, DollarSign, Users, ShoppingCart, AlertTriangle, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DiscountMetricsCardsProps {
   data: SalesData[];
@@ -105,135 +106,151 @@ export const DiscountMetricsCards: React.FC<DiscountMetricsCardsProps> = ({ data
       value: formatCurrency(metrics.totalDiscountAmount),
       subtitle: `${formatCurrency(metrics.revenueImpact)} potential revenue lost`,
       icon: DollarSign,
-      trend: -metrics.overallDiscountRate,
-      trendLabel: 'vs potential revenue',
-      color: 'bg-gradient-to-br from-red-50 to-orange-50',
-      iconColor: 'text-red-600',
-      borderColor: 'border-red-200',
-      hoverInfo: {
-        title: 'Discount Impact Details',
-        content: `Total discount amount given: ${formatCurrency(metrics.totalDiscountAmount)}. This represents ${metrics.overallDiscountRate.toFixed(1)}% of potential revenue. Revenue lost due to discounts: ${formatCurrency(metrics.revenueImpact)}.`
-      }
+      change: -metrics.overallDiscountRate,
+      description: `Total discount: ${formatCurrency(metrics.totalDiscountAmount)} | ${metrics.overallDiscountRate.toFixed(1)}% of potential revenue`
     },
     {
       title: 'Discount Penetration',
       value: `${metrics.discountPenetration.toFixed(1)}%`,
       subtitle: `${metrics.discountedTransactions} of ${metrics.totalTransactions} transactions`,
       icon: Target,
-      trend: metrics.discountPenetration - 25, // Assuming 25% is baseline
-      trendLabel: 'vs baseline',
-      color: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-      iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200',
-      hoverInfo: {
-        title: 'Penetration Analysis',
-        content: `${metrics.discountPenetration.toFixed(1)}% of all transactions included discounts. This affects ${metrics.uniqueCustomersWithDiscounts} unique customers. ${metrics.topDiscountCategory ? `Top category: ${metrics.topDiscountCategory.name} (${metrics.topDiscountCategory.count} transactions)` : 'No category data available'}.`
-      }
+      change: metrics.discountPenetration - 25,
+      description: `${metrics.discountedTransactions} discounted transactions | ${metrics.uniqueCustomersWithDiscounts} unique customers`
     },
     {
       title: 'Average Discount',
       value: formatCurrency(metrics.avgDiscountPerTransaction),
       subtitle: 'Per discounted transaction',
       icon: Percent,
-      trend: 5.2, // Placeholder trend
-      trendLabel: 'vs last period',
-      color: 'bg-gradient-to-br from-purple-50 to-violet-50',
-      iconColor: 'text-purple-600',
-      borderColor: 'border-purple-200',
-      hoverInfo: {
-        title: 'Average Discount Breakdown',
-        content: `Average discount per transaction: ${formatCurrency(metrics.avgDiscountPerTransaction)}. Average discount percentage: ${metrics.avgDiscountPercent.toFixed(1)}%. ${metrics.topDiscountStaff ? `Highest discount giver: ${metrics.topDiscountStaff.name} (${formatCurrency(metrics.topDiscountStaff.amount)} total)` : 'No staff data available'}.`
-      }
+      change: 5.2,
+      description: `Avg discount %: ${metrics.avgDiscountPercent.toFixed(1)}% | ${metrics.topDiscountStaff ? `Top: ${metrics.topDiscountStaff.name}` : ''}`
     },
     {
       title: 'Discount Rate',
       value: `${metrics.overallDiscountRate.toFixed(1)}%`,
       subtitle: 'Of total potential revenue',
       icon: TrendingDown,
-      trend: -metrics.overallDiscountRate,
-      trendLabel: 'impact on revenue',
-      color: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-      iconColor: 'text-amber-600',
-      borderColor: 'border-amber-200',
-      hoverInfo: {
-        title: 'Discount Rate Analysis',
-        content: `Overall discount rate: ${metrics.overallDiscountRate.toFixed(1)}% of potential revenue. This translates to ${formatCurrency(metrics.totalDiscountAmount)} in total discounts. Revenue efficiency: ${((metrics.totalRevenue / metrics.totalPotentialRevenue) * 100).toFixed(1)}%.`
-      }
+      change: -metrics.overallDiscountRate,
+      description: `Revenue efficiency: ${((metrics.totalRevenue / metrics.totalPotentialRevenue) * 100).toFixed(1)}%`
     },
     {
       title: 'Customer Impact',
       value: formatNumber(metrics.uniqueCustomersWithDiscounts),
       subtitle: 'Customers received discounts',
       icon: Users,
-      trend: 8.5,
-      trendLabel: 'customer satisfaction',
-      color: 'bg-gradient-to-br from-green-50 to-emerald-50',
-      iconColor: 'text-green-600',
-      borderColor: 'border-green-200',
-      hoverInfo: {
-        title: 'Customer Discount Analysis',
-        content: `${metrics.uniqueCustomersWithDiscounts} unique customers received discounts out of ${metrics.discountedTransactions} discounted transactions. Average discount per customer: ${formatCurrency(metrics.uniqueCustomersWithDiscounts > 0 ? metrics.totalDiscountAmount / metrics.uniqueCustomersWithDiscounts : 0)}.`
-      }
+      change: 8.5,
+      description: `Avg per customer: ${formatCurrency(metrics.uniqueCustomersWithDiscounts > 0 ? metrics.totalDiscountAmount / metrics.uniqueCustomersWithDiscounts : 0)}`
     },
     {
       title: 'Discount Frequency',
       value: `${(metrics.discountedTransactions / Math.max(metrics.uniqueCustomersWithDiscounts, 1)).toFixed(1)}`,
       subtitle: 'Avg discounts per customer',
       icon: ShoppingCart,
-      trend: -2.1,
-      trendLabel: 'frequency trend',
-      color: 'bg-gradient-to-br from-pink-50 to-rose-50',
-      iconColor: 'text-pink-600',
-      borderColor: 'border-pink-200',
-      hoverInfo: {
-        title: 'Discount Frequency Details',
-        content: `On average, customers who receive discounts get ${(metrics.discountedTransactions / Math.max(metrics.uniqueCustomersWithDiscounts, 1)).toFixed(1)} discounts each. Total discounted transactions: ${metrics.discountedTransactions}. This suggests ${(metrics.discountedTransactions / Math.max(metrics.uniqueCustomersWithDiscounts, 1)) > 1.5 ? 'frequent' : 'occasional'} discount usage patterns.`
-      }
+      change: -2.1,
+      description: `Total discounted: ${metrics.discountedTransactions} | ${(metrics.discountedTransactions / Math.max(metrics.uniqueCustomersWithDiscounts, 1)) > 1.5 ? 'Frequent' : 'Occasional'} usage`
     }
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {metricCards.map((metric, index) => (
-        <HoverCard key={metric.title}>
-          <HoverCardTrigger asChild>
-            <Card className={`${metric.color} ${metric.borderColor} border-2 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer`}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-700 group-hover:text-slate-900 flex items-center gap-2">
-                  {metric.title}
-                  <Info className="w-3 h-3 text-slate-400" />
-                </CardTitle>
-                <div className={`p-2 rounded-lg bg-white/50 ${metric.iconColor} group-hover:scale-110 transition-transform`}>
-                  <metric.icon className="h-5 w-5" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-2xl font-bold text-slate-900">
-                  {metric.value}
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs text-slate-600">{metric.subtitle}</p>
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant={metric.trend > 0 ? "default" : "destructive"}
-                      className="text-xs font-medium"
-                    >
-                      {metric.trend > 0 ? '+' : ''}{metric.trend.toFixed(1)}%
-                    </Badge>
-                    <span className="text-xs text-slate-500">{metric.trendLabel}</span>
+      {metricCards.map((metric, index) => {
+        const IconComponent = metric.icon;
+        const isPositive = metric.change > 0;
+        const isNegative = metric.change < 0;
+        const cardIndex = index % 4;
+        
+        return (
+          <Card
+            key={metric.title}
+            className={cn(
+              "group relative overflow-hidden cursor-pointer transition-all duration-700",
+              "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+              cardIndex === 0 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+              cardIndex === 1 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+              cardIndex === 2 && "border-t-4 border-pink-700 hover:border-pink-700 shadow-lg",
+              cardIndex === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
+              "hover:shadow-2xl hover:shadow-slate-900/30",
+              "hover:-translate-y-2 hover:scale-[1.02]"
+            )}
+          >
+            <CardContent className="p-6 relative">
+              <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                <IconComponent className={cn(
+                  "w-12 h-12 transition-all duration-700",
+                  cardIndex === 0 && "text-green-700",
+                  cardIndex === 1 && "text-blue-700",
+                  cardIndex === 2 && "text-pink-700",
+                  cardIndex === 3 && "text-red-700",
+                  "group-hover:text-white/40"
+                )} />
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                      cardIndex === 0 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                      cardIndex === 1 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                      cardIndex === 2 && "bg-gradient-to-br from-pink-700 to-pink-600 border-pink-900 text-white shadow-pink-200",
+                      cardIndex === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
+                      "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                    )}>
+                      <IconComponent className="w-6 h-6 drop-shadow-sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                        {metric.title}
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <div className={cn(
+                    "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
+                    isPositive
+                      ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
+                      : isNegative
+                      ? "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
+                      : "bg-blue-50 text-blue-700 group-hover:bg-blue-400/30 group-hover:text-blue-100"
+                  )}>
+                    {isPositive && <TrendingUp className="w-3 h-3" />}
+                    {isNegative && <TrendingDown className="w-3 h-3" />}
+                    <span>
+                      {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </HoverCardTrigger>
-          <HoverCardContent className="w-80">
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold">{metric.hoverInfo.title}</h4>
-              <p className="text-sm text-slate-600">{metric.hoverInfo.content}</p>
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      ))}
+
+                <div className="space-y-2">
+                  <p className={cn(
+                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                  )}>
+                    {metric.value}
+                  </p>
+                  <p className={cn(
+                    "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+                  )}>
+                    {metric.subtitle}
+                  </p>
+                </div>
+              </div>
+              
+              <div className={cn(
+                "mt-4 p-3 border-t border-l-4 transition-all duration-700",
+                "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
+                cardIndex === 0 && "border-l-green-700",
+                cardIndex === 1 && "border-l-blue-700",
+                cardIndex === 2 && "border-l-pink-700",
+                cardIndex === 3 && "border-l-red-700"
+              )}>
+                <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
+                  {metric.description}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

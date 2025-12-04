@@ -113,18 +113,22 @@ export const useGoogleSheets = () => {
             grossRevenue: parseNumericValue(rawItem['Payment Value'] || rawItem['paymentValue'] || 0),
             
             // Handle discount columns with multiple possible names
+            // Priority: Check primary discount columns first, then sale-level totals, then item-level values
             mrpPreTax: parseNumericValue(
               rawItem['Mrp - Pre Tax'] || rawItem['MRP Pre Tax'] || rawItem['MRP_Pre_Tax'] || 
-              rawItem['mrpPreTax'] || rawItem['MrpPreTax'] || rawItem['Pre Tax MRP'] || 0
+              rawItem['mrpPreTax'] || rawItem['MrpPreTax'] || rawItem['Pre Tax MRP'] || 
+              rawItem['Sale Item Unit Price Excluding VAT'] || 0
             ),
             mrpPostTax: parseNumericValue(
               rawItem['Mrp - Post Tax'] || rawItem['MRP Post Tax'] || rawItem['MRP_Post_Tax'] || 
-              rawItem['mrpPostTax'] || rawItem['MrpPostTax'] || rawItem['Post Tax MRP'] || 0
+              rawItem['mrpPostTax'] || rawItem['MrpPostTax'] || rawItem['Post Tax MRP'] || 
+              rawItem['Sale Item Unit Price Including VAT'] || 0
             ),
             discountAmount: parseNumericValue(
               rawItem['Discount Amount -Mrp- Payment Value'] || rawItem['Discount Amount'] || 
               rawItem['discount_amount'] || rawItem['discountAmount'] || rawItem['DiscountAmount'] ||
-              rawItem['Discount_Amount'] || rawItem['Total Discount'] || 0
+              rawItem['Discount_Amount'] || rawItem['Total Discount'] || rawItem['Discount Value In Currency'] || rawItem['Discount Value'] || rawItem['Discount Value (In Currency)'] || 
+              rawItem['Sale Total Discount Value'] || rawItem['Sale Total Discount'] || rawItem['Sale Item Unit Discount Value'] || 0
             ),
             discountPercentage: parseNumericValue(
               rawItem['Discount Percentage - discount amount/mrp*100'] || rawItem['Discount Percentage'] || 
@@ -137,13 +141,22 @@ export const useGoogleSheets = () => {
             secMembershipEndDate: rawItem['Sec. Membership End Date'] || rawItem['Sec Membership End Date'] || '',
             secMembershipTotalClasses: parseNumericValue(rawItem['Sec. Membership Total Classes'] || 0),
             secMembershipClassesLeft: parseNumericValue(rawItem['Sec. Membership Classes Left'] || 0),
-            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || 0)
+            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || 0),
+            // Additional discount indicators
+            discountType: rawItem['Discount Code'] ? 'code' : undefined,
+            isPromotional: !!(rawItem['Discount Code'] || rawItem['Purchase Type'] === 'promotional')
           };
 
           // Compute fallback discount metrics when missing
+          const itemUnitDiscount = parseNumericValue(rawItem['Sale Item Unit Discount Value'] || 0);
           const mrp = transformedItem.mrpPostTax && transformedItem.mrpPostTax > 0
             ? transformedItem.mrpPostTax
             : (transformedItem.mrpPreTax || 0);
+
+          // If discountAmount is still 0 but item-level discount exists, use it
+          if ((transformedItem.discountAmount || 0) <= 0 && itemUnitDiscount > 0) {
+            transformedItem.discountAmount = itemUnitDiscount;
+          }
 
           // Fallback: derive discountAmount from MRP vs payment when column is missing/0
           if ((transformedItem.discountAmount || 0) <= 0 && mrp > 0 && (transformedItem.paymentValue || 0) > 0 && mrp > (transformedItem.paymentValue || 0)) {
@@ -185,11 +198,41 @@ export const useGoogleSheets = () => {
       if (!isMountedRef.current) return;
       
       logger.debug('Transformed sales data sample:', salesData.slice(0, 3));
-      logger.debug('Sample discount data:', {
-        discountAmount: salesData[0]?.discountAmount,
-        discountPercentage: salesData[0]?.discountPercentage,
-        mrpPreTax: salesData[0]?.mrpPreTax,
-        mrpPostTax: salesData[0]?.mrpPostTax
+      
+      // Enhanced debug logging for discount data (show more header/field variants to aid debugging)
+      const discountedItems = salesData.filter(item => (item.discountAmount || 0) > 0 || (item.discountPercentage || 0) > 0);
+      // Detect discount/mrp-like headers to help debugging
+      const foundDiscountHeaders = headers.filter((h: string) => /discount/i.test(h));
+      const foundMrpHeaders = headers.filter((h: string) => /mrp|mrp post|mrp - post|post tax/i.test(h));
+
+      const sampleRowValuesForFoundHeaders: Record<string, any> = {};
+      if (rows[1]) {
+        headers.forEach((header: string, idx: number) => {
+          if (foundDiscountHeaders.includes(header) || foundMrpHeaders.includes(header)) {
+            sampleRowValuesForFoundHeaders[header] = rows[1][idx] || null;
+          }
+        });
+      }
+
+      console.log('useGoogleSheets - Data summary:', {
+        totalRecords: salesData.length,
+        recordsWithDiscounts: discountedItems.length,
+        samplePaymentDates: salesData.slice(0, 5).map(d => d.paymentDate),
+        sampleRawHeaders: headers ? headers.slice(0, 30) : undefined,
+        sampleRawRow: rows[1] ? rows[1].slice(0, 30) : undefined,
+        foundDiscountHeaders,
+        foundMrpHeaders,
+        sampleRowValuesForFoundHeaders,
+        sampleDiscountData: salesData.slice(0, 5).map(d => ({
+          date: d.paymentDate,
+          paymentValue: d.paymentValue,
+          mrpPreTax: d.mrpPreTax,
+          mrpPostTax: d.mrpPostTax,
+          discountAmount: d.discountAmount,
+          discountPercentage: d.discountPercentage,
+          discountValueInCurrency: d['Discount Value In Currency'] || d['discountValueInCurrency'] || undefined,
+          location: d.calculatedLocation
+        }))
       });
       
       // Update state with processed data

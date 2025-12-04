@@ -80,6 +80,12 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
 
   const formatFooterValue = (value: any) => {
     if (value === null || value === undefined) return '';
+    // Handle objects (like nested month data) - return empty string
+    if (typeof value === 'object') {
+      // If it's an object with a specific value we want to display, handle it
+      // Otherwise return empty to avoid [object Object]
+      return '';
+    }
     if (typeof value === 'number') {
       // Check if it's a percentage (typically 0-100 range with decimals)
       if (value >= 0 && value <= 100 && !Number.isInteger(value)) {
@@ -273,7 +279,21 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                       <span className="text-sm font-bold text-white">
                         {footerData[column.key] === 'TOTALS' || footerData[column.key] === 'TOTAL' 
                           ? footerData[column.key] 
-                          : formatFooterValue(footerData[column.key])}
+                          : column.render && typeof footerData[column.key] === 'object'
+                            ? (() => {
+                                const rendered = column.render(footerData[column.key], footerData);
+                                // Strip out any text color classes and force white
+                                if (React.isValidElement(rendered)) {
+                                  return React.cloneElement(rendered as React.ReactElement<any>, {
+                                    className: cn(
+                                      (rendered as React.ReactElement<any>).props?.className?.replace(/text-slate-\d+/g, '').replace(/text-blue-\d+/g, '').replace(/text-green-\d+/g, ''),
+                                      'text-white'
+                                    )
+                                  });
+                                }
+                                return rendered;
+                              })()
+                            : formatFooterValue(footerData[column.key])}
                       </span>
                     </div>
                   </TableCell>

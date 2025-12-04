@@ -95,20 +95,6 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
       const avgLTV = stat.clientCount > 0 ? stat.totalLTV / stat.clientCount : 0;
       const emptyClassRate = stat.totalSessions > 0 ? (stat.totalEmptySessions / stat.totalSessions) * 100 : 0;
       
-      // Debug logging for trainers
-      if (stat.name && stat.totalSessions > 0) {
-        console.log(`Trainer ${stat.name}:`, {
-          totalSessions: stat.totalSessions,
-          totalEmptySessions: stat.totalEmptySessions,
-          totalCustomers: stat.totalCustomers,
-          totalNew: stat.totalNew,
-          totalConverted: stat.totalConverted,
-          conversionRate,
-          classAverage,
-          emptyClassRate
-        });
-      }
-      
       return {
         ...stat,
         conversionRate,

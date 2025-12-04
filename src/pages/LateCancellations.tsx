@@ -38,10 +38,23 @@ const LateCancellations = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
   
-  // Get unique locations for tabs
+  // Get unique locations for tabs - use allCheckins if no late cancellations data
   const locations = useMemo(() => {
-    if (!Array.isArray(lateCancellationsData)) return [];
-    const uniqueLocations = Array.from(new Set(lateCancellationsData.map(item => item?.location).filter(Boolean)));
+    const dataToCheck = Array.isArray(lateCancellationsData) && lateCancellationsData.length > 0 
+      ? lateCancellationsData 
+      : (Array.isArray(allCheckins) ? allCheckins : []);
+    
+    if (dataToCheck.length === 0) {
+      // Always show default locations even if no data
+      return [
+        { id: 'all', name: 'All Locations' },
+        { id: 'kwality', name: 'Kwality House' },
+        { id: 'supreme', name: 'Supreme HQ' },
+        { id: 'kenkere', name: 'Kenkere House' }
+      ];
+    }
+    
+    const uniqueLocations = Array.from(new Set(dataToCheck.map(item => item?.location).filter(Boolean)));
     return [
       { id: 'all', name: 'All Locations' },
       { id: 'kwality', name: 'Kwality House' },
@@ -52,7 +65,7 @@ const LateCancellations = () => {
       loc.id === 'supreme' ? ul.includes('Supreme') :
       loc.id === 'kenkere' ? ul.includes('Kenkere') : false
     ));
-  }, [lateCancellationsData]);
+  }, [lateCancellationsData, allCheckins]);
   
   // Helper functions for consistent date parsing
   const parseItemDate = (dateStr: string): Date | null => {
@@ -166,17 +179,11 @@ const LateCancellations = () => {
           startDate.setHours(0, 0, 0, 0);
           endDate = new Date(now.getFullYear(), now.getMonth(), 0);
           endDate.setHours(0, 0, 0, 0);
-          console.log('Previous month filter:', { 
-            startDate: startDate.toISOString().split('T')[0], 
-            endDate: endDate.toISOString().split('T')[0],
-            totalRecords: filtered.length
-          });
           filtered = filtered.filter(item => {
             const itemDate = parseItemDate(item?.dateIST);
             if (!itemDate) return false;
             return itemDate >= startDate && itemDate <= endDate;
           });
-          console.log('After prev-month filter:', filtered.length);
           return filtered;
         case '3m':
           startDate.setMonth(now.getMonth() - 3);
@@ -197,18 +204,12 @@ const LateCancellations = () => {
           if (dateRange.start || dateRange.end) {
             const customStart = dateRange.start ? normalizeDate(new Date(dateRange.start)) : new Date('2020-01-01');
             const customEnd = dateRange.end ? normalizeDate(new Date(dateRange.end)) : normalizeDate(now);
-            console.log('Custom date filter:', { 
-              startDate: customStart.toISOString().split('T')[0], 
-              endDate: customEnd.toISOString().split('T')[0],
-              totalRecords: filtered.length
-            });
             filtered = filtered.filter(item => {
               const itemDate = parseItemDate(item?.dateIST);
               if (!itemDate) return false;
               return itemDate >= customStart && itemDate <= customEnd;
             });
           }
-          console.log('After custom filter:', filtered.length);
           return filtered;
         default:
           return filtered;
@@ -414,7 +415,30 @@ const LateCancellations = () => {
   }, [allCheckins, activeLocation, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, selectedTimeframe, dateRange]);
 
   const heroMetrics = useMemo(() => {
-    if (!filteredData || filteredData.length === 0) return [];
+    // If no late cancellations, show total checkins across locations
+    if (!filteredData || filteredData.length === 0) {
+      if (!filteredCheckins || filteredCheckins.length === 0) {
+        return [{ location: 'No Data', label: 'Available', value: '—' }];
+      }
+      
+      const locations = [
+        { key: 'Kwality', name: 'Kwality' },
+        { key: 'Supreme', name: 'Supreme' },
+        { key: 'Kenkere', name: 'Kenkere' }
+      ];
+
+      return locations.map(location => {
+        const locationData = filteredCheckins.filter(item => 
+          item.location?.includes(location.key)
+        );
+        
+        return {
+          location: location.name,
+          label: 'Total Checkins',
+          value: formatNumber(locationData.length)
+        };
+      });
+    }
 
     const locations = [
       { key: 'Kwality', name: 'Kwality' },
@@ -431,11 +455,11 @@ const LateCancellations = () => {
       
       return {
         location: location.name,
-        label: 'Filtered Cancellations',
+        label: 'Late Cancellations',
         value: formatNumber(totalCancellations)
       };
     });
-  }, [filteredData]);
+  }, [filteredData, filteredCheckins]);
 
   useEffect(() => {
     setLoading(loading, 'Loading late cancellations data...');
@@ -468,23 +492,26 @@ const LateCancellations = () => {
           {/* Location Tabs */}
           <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full mb-8">
             <div className="flex items-start justify-center mb-8">
-              <TabsList className="location-tabs grid w-full max-w-4xl overflow-visible" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
+              <TabsList className="location-tabs grid w-full max-w-4xl overflow-visible bg-gradient-to-r from-red-600 to-orange-600 p-1 rounded-2xl shadow-lg" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
                 {locations.map(location => {
                   const parts = location.name.split(',').map(s => s.trim());
                   const mainName = parts[0] || location.name;
                   const subName = parts[1] || '';
+                  const isActive = activeLocation === location.id;
                   return (
                     <TabsTrigger
                       key={location.id}
                       value={location.id}
-                      className="location-tab-trigger group data-[state=active]:[--tab-accent:var(--hero-accent)]"
+                      className={`location-tab-trigger group transition-all duration-300 rounded-xl font-bold text-sm sm:text-base py-3 data-[state=active]:bg-white data-[state=active]:text-red-700 data-[state=active]:shadow-md ${
+                        !isActive ? 'text-white hover:bg-white/10' : ''
+                      }`}
                     >
                       <span className="relative z-10 flex flex-col items-center leading-tight">
-                        <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">
+                        <span className="flex items-center gap-2 font-extrabold">
                           {mainName}
                         </span>
                         {subName && (
-                          <span className="text-xs sm:text-sm opacity-90">{subName}</span>
+                          <span className="text-xs opacity-90">{subName}</span>
                         )}
                       </span>
                     </TabsTrigger>
@@ -499,6 +526,18 @@ const LateCancellations = () => {
             {locations.map(location => (
               <TabsContent key={location.id} value={location.id} className="space-y-8">
                 <div className="space-y-8">
+                  {/* No Data Message */}
+                  {lateCancellationsData.length === 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                      <p className="text-blue-900 font-medium">
+                        No late cancellations recorded in the selected period.
+                      </p>
+                      <p className="text-blue-700 text-sm mt-2">
+                        Showing all checkins for reference. Adjust filters to view different date ranges.
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* Enhanced Filter Section */}
                   <EnhancedLateCancellationsFilterSection
                     selectedLocation="all"

@@ -446,12 +446,17 @@
 
 .unified-table tfoot td,
 .unified-table tr.totals-row td {
-  @apply px-3 py-2 text-sm font-bold border-r border-slate-600 last:border-r-0;
+  @apply px-3 py-2 text-sm font-bold border-r border-slate-600 last:border-r-0 text-white;
+}
+
+.unified-table tfoot td span,
+.unified-table tr.totals-row td span {
+  @apply text-white;
 }
 
 .unified-table tfoot td.sticky-col,
 .unified-table tr.totals-row td.sticky-col {
-  @apply bg-slate-800 border-r border-slate-600 z-30;
+  @apply bg-slate-800 border-r border-slate-600 z-30 text-white;
 }
 
 /* Growth indicators */
@@ -515,7 +520,7 @@
 
 /* Metric value cells with hover effect */
 .metric-cell {
-  @apply hover:bg-orange-50 cursor-pointer transition-all duration-200;
+  @apply hover:bg-slate-50 cursor-pointer transition-all duration-200;
 }
 
 /* Tab Modern Styling */

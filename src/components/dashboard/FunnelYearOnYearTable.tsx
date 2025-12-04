@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BarChart3, TrendingUp, TrendingDown, Filter } from 'lucide-react';
+import { Calendar, BarChart3, TrendingUp, TrendingDown, Filter, Eye, Percent } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { ModernTableWrapper } from './ModernTableWrapper';
+import { Button } from '@/components/ui/button';
 interface FunnelYearOnYearTableProps {
   allData: LeadsData[]; // Use all data, not filtered
   onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
@@ -19,6 +20,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('totalLeads');
   const [viewMode, setViewMode] = useState<'values' | 'growth'>('values');
+  const tableRef = useRef<HTMLTableElement>(null);
 
   const tableVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -144,7 +146,8 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
       return months.some(monthInfo => source[`${monthInfo.name}_${currentYear}`]?.totalLeads > 0 || source[`${monthInfo.name}_${currentYear - 1}`]?.totalLeads > 0);
     });
   }, [allData]);
-  const totals = useMemo(() => {
+  // Raw totals with nested metrics (for calculations)
+  const rawTotals = useMemo(() => {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
@@ -221,6 +224,46 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     });
     return result;
   }, [processedData]);
+
+  // Pre-formatted footer data that extracts the selected metric for display
+  const totals = useMemo(() => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    const months = [] as { month: number; name: string }[];
+    for (let month = 1; month <= currentMonth; month++) {
+      const monthName = new Date(currentYear, month - 1).toLocaleString('default', { month: 'short' });
+      months.push({ month, name: monthName });
+    }
+    
+    const result: any = {
+      source: 'TOTALS'
+    };
+    
+    months.forEach(monthInfo => {
+      const currentData = rawTotals[`${monthInfo.name}_${currentYear}`];
+      const previousData = rawTotals[`${monthInfo.name}_${currentYear - 1}`];
+      
+      if (viewMode === 'growth') {
+        // In growth mode, show YoY growth percentage
+        const currentVal = currentData?.[selectedMetric] || 0;
+        const previousVal = previousData?.[selectedMetric] || 0;
+        if (previousVal > 0) {
+          const growth = ((currentVal - previousVal) / previousVal) * 100;
+          result[`${monthInfo.name}_${currentYear}`] = growth > 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+        } else {
+          result[`${monthInfo.name}_${currentYear}`] = '-';
+        }
+        result[`${monthInfo.name}_${currentYear - 1}`] = '—';
+      } else {
+        // In values mode, show the formatted metric value
+        result[`${monthInfo.name}_${currentYear}`] = formatValue(currentData, selectedMetric);
+        result[`${monthInfo.name}_${currentYear - 1}`] = formatValue(previousData, selectedMetric);
+      }
+    });
+    
+    return result;
+  }, [rawTotals, selectedMetric, viewMode]);
   const formatValue = (value: any, metric: MetricType) => {
     if (typeof value !== 'object' || !value) return '-';
     const metricValue = value[metric];
@@ -286,7 +329,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   const columns = [{
     key: 'source',
     header: 'Lead Source',
-    render: (value: string) => <div className="font-semibold text-slate-800 min-w-[120px] truncate">
+    render: (value: string) => <div className="font-semibold text-slate-700 min-w-[120px] truncate">
           {value === 'TOTALS' ? (
             <span className="text-slate-900 font-extrabold uppercase tracking-wide">TOTALS</span>
           ) : (
@@ -331,7 +374,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
       }
       // Values view: show the metric value
       return (
-        <div className="text-center font-medium text-xs">
+        <div className="text-center font-medium text-xs text-slate-700">
           {formatValue(value, selectedMetric)}
         </div>
       );
@@ -367,7 +410,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
       // Values view: show the previous year's value only
       return (
         <div className="text-center">
-          <div className="font-medium text-slate-600 text-xs">
+          <div className="font-medium text-slate-700 text-xs">
             {formatValue(value, selectedMetric)}
           </div>
         </div>
@@ -383,100 +426,36 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
       animate="visible"
       className="w-full"
     >
-      <Card className="w-full bg-gradient-to-br from-white via-red-50/30 to-red-100/40 backdrop-blur-sm border-red-200/50 shadow-xl shadow-red-100/20">
-        <CardHeader className="pb-4">
-          <motion.div 
-            variants={headerVariants}
-            className="flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
-                <BarChart3 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Year-on-Year Source Performance</h3>
-                <p className="text-sm text-gray-600">Historical comparison across years by source</p>
-              </div>
-            </div>
-            <Badge 
-              variant="outline" 
-              className="bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-700 border-red-300/50 backdrop-blur-sm"
+      <ModernTableWrapper
+        title="Year-on-Year Source Performance"
+        description={`Historical comparison across years by source - ${metricTabs.find(t => t.value === selectedMetric)?.label || selectedMetric}`}
+        icon={<BarChart3 className="w-5 h-5 text-white" />}
+        totalItems={processedData.length}
+        showDisplayToggle={true}
+        displayMode={viewMode}
+        onDisplayModeChange={(mode) => setViewMode(mode as 'values' | 'growth')}
+        showCollapseControls={false}
+        tableRef={tableRef}
+        headerControls={
+          <div className="flex items-center gap-2">
+            <select 
+              className="border border-white/30 bg-white/10 text-white rounded-md px-2 py-1 text-xs"
+              value={selectedMetric}
+              onChange={(e) => setSelectedMetric(e.target.value as MetricType)}
             >
-              <Calendar className="w-3 h-3 mr-1" />
-              Historical Analysis
-            </Badge>
-          </motion.div>
-          <motion.div 
-            variants={headerVariants}
-            className="flex items-center gap-2 text-xs text-slate-600 mt-2"
-          >
-            <Filter className="w-3 h-3" />
-            <span>
-              Showing {processedData.length} sources across {monthsForColumns.length} months
-            </span>
-          </motion.div>
-        </CardHeader>
-
-        <CardContent className="pt-0">
-          {/* Metric Selector */}
-          <motion.div 
-            className="p-4 mb-4 border border-red-200/50 rounded-lg bg-gradient-to-r from-red-50/30 to-orange-50/30 backdrop-blur-sm"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Tabs value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricType)}>
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1 bg-white/80 backdrop-blur-sm">
-                {metricTabs.map((tab) => (
-                  <TabsTrigger 
-                    key={tab.value} 
-                    value={tab.value} 
-                    className="text-xs p-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-200"
-                  >
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            
-            <div className="mt-3 flex items-center gap-2 flex-wrap">
-              <Badge 
-                variant="outline" 
-                className="bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-700 border-red-300/50"
-              >
-                <BarChart3 className="w-3 h-3 mr-1" />
-                {metricTabs.find(t => t.value === selectedMetric)?.label}
-              </Badge>
-
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-[11px] text-slate-600">View:</span>
-                <div className="inline-flex rounded-md overflow-hidden border border-red-200/60 bg-white/70 backdrop-blur px-0.5">
-                  <button
-                    className={cn(
-                      'px-2 py-1 text-[11px] font-medium transition-colors',
-                      viewMode === 'values' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' : 'text-slate-700'
-                    )}
-                    onClick={() => setViewMode('values')}
-                  >
-                    Values
-                  </button>
-                  <button
-                    className={cn(
-                      'px-2 py-1 text-[11px] font-medium transition-colors',
-                      viewMode === 'growth' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' : 'text-slate-700'
-                    )}
-                    onClick={() => setViewMode('growth')}
-                  >
-                    % Growth
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
+              {metricTabs.map((tab) => (
+                <option key={tab.value} value={tab.value} className="text-slate-900">
+                  {tab.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+      >
+        <div className="pt-0">
           {/* Table */}
           <motion.div 
-            className="max-h-[500px] overflow-auto rounded-lg border border-red-200/50"
+            className="overflow-auto rounded-lg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
@@ -490,7 +469,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
               footerData={totals} 
               maxHeight="400px" 
               className="rounded-lg" 
-              headerGradient="from-slate-800 to-indigo-900" 
+              headerGradient="from-slate-800 via-slate-900 to-slate-800" 
               onRowClick={(row) => {
                 const filteredData = allData.filter(lead => lead.source === row.source);
                 onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
@@ -507,7 +486,9 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                 const prevField = `${recentMonthKey}_${currentYear - 1}`;
                 const withCurr = processedData.filter(r => r[currField]?.[selectedMetric] > 0);
                 if (!withCurr.length) return <div className="text-xs text-slate-500">No notable points for the latest month.</div>;
-                const top = [...withCurr].sort((a,b) => (b[currField][selectedMetric] - a[currField][selectedMetric]))[0];
+                const top = [...withCurr].sort((a,b) => (b[currField]?.[selectedMetric] || 0) - (a[currField]?.[selectedMetric] || 0))[0];
+                if (!top) return <div className="text-xs text-slate-500">No data available.</div>;
+                // Use rawTotals for calculations (has nested metrics)
                 const growth = (top[currField] && top[prevField] && top[prevField][selectedMetric]) ? ((top[currField][selectedMetric] - top[prevField][selectedMetric]) / top[prevField][selectedMetric]) * 100 : 0;
                 return (
                   <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
@@ -518,8 +499,8 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
               })()}
             </div>
           </motion.div>
-        </CardContent>
-      </Card>
+        </div>
+      </ModernTableWrapper>
     </motion.div>
   );
 };

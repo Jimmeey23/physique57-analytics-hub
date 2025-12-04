@@ -1,8 +1,7 @@
 /**
  * Centralized Logging Utility
  * 
- * Provides consistent logging across the application with
- * environment-aware log levels and formatting.
+ * Provides consistent, production-optimized logging across the application.
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -16,11 +15,10 @@ interface LogEntry {
 }
 
 const isProd = import.meta.env.PROD;
-const isDebug = import.meta.env.VITE_DEBUG === 'true';
 
-// Log history for debugging (keeps last 100 entries)
+// Log history for debugging (keeps last 50 entries in production, 100 in dev)
 const logHistory: LogEntry[] = [];
-const MAX_LOG_HISTORY = 100;
+const MAX_LOG_HISTORY = isProd ? 50 : 100;
 
 const addToHistory = (entry: LogEntry) => {
   logHistory.push(entry);
@@ -29,21 +27,12 @@ const addToHistory = (entry: LogEntry) => {
   }
 };
 
-const formatMessage = (level: LogLevel, source: string | undefined, message: string): string => {
-  const timestamp = new Date().toISOString();
-  const prefix = source ? `[${source}]` : '';
-  return `${timestamp} [${level.toUpperCase()}]${prefix} ${message}`;
-};
-
 const shouldLog = (level: LogLevel): boolean => {
   if (isProd) {
-    // In production, only log warnings and errors
+    // In production, only log errors and warnings
     return level === 'warn' || level === 'error';
   }
-  if (level === 'debug') {
-    // Debug logs only when explicitly enabled
-    return isDebug;
-  }
+  // In development, log all levels
   return true;
 };
 
@@ -52,53 +41,46 @@ const shouldLog = (level: LogLevel): boolean => {
  */
 export const createLogger = (source?: string) => ({
   debug: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
     const entry: LogEntry = { level: 'debug', message, data, timestamp: new Date(), source };
     addToHistory(entry);
-    
-    if (shouldLog('debug')) {
-      if (data !== undefined) {
-        console.log(formatMessage('debug', source, message), data);
-      } else {
-        console.log(formatMessage('debug', source, message));
-      }
+    if (data !== undefined) {
+      console.log(`[${source || 'App'}] ${message}`, data);
+    } else {
+      console.log(`[${source || 'App'}] ${message}`);
     }
   },
 
   info: (message: string, data?: any) => {
+    if (!shouldLog('info')) return;
     const entry: LogEntry = { level: 'info', message, data, timestamp: new Date(), source };
     addToHistory(entry);
-    
-    if (shouldLog('info')) {
-      if (data !== undefined) {
-        console.info(formatMessage('info', source, message), data);
-      } else {
-        console.info(formatMessage('info', source, message));
-      }
+    if (data !== undefined) {
+      console.info(`[${source || 'App'}] ${message}`, data);
+    } else {
+      console.info(`[${source || 'App'}] ${message}`);
     }
   },
 
   warn: (message: string, data?: any) => {
+    if (!shouldLog('warn')) return;
     const entry: LogEntry = { level: 'warn', message, data, timestamp: new Date(), source };
     addToHistory(entry);
-    
-    if (shouldLog('warn')) {
-      if (data !== undefined) {
-        console.warn(formatMessage('warn', source, message), data);
-      } else {
-        console.warn(formatMessage('warn', source, message));
-      }
+    if (data !== undefined) {
+      console.warn(`[${source || 'App'}] ${message}`, data);
+    } else {
+      console.warn(`[${source || 'App'}] ${message}`);
     }
   },
 
   error: (message: string, error?: any) => {
     const entry: LogEntry = { level: 'error', message, data: error, timestamp: new Date(), source };
     addToHistory(entry);
-    
     // Always log errors
     if (error !== undefined) {
-      console.error(formatMessage('error', source, message), error);
+      console.error(`[${source || 'App'}] ${message}`, error);
     } else {
-      console.error(formatMessage('error', source, message));
+      console.error(`[${source || 'App'}] ${message}`);
     }
   },
 });

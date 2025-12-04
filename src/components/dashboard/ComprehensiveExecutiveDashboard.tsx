@@ -967,7 +967,7 @@ export const ComprehensiveExecutiveDashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                  <ExecutiveDiscountsTab data={previousMonthData.sales} selectedLocation={selectedLocation} />
+                  <ExecutiveDiscountsTab data={previousMonthData.discounts} selectedLocation={selectedLocation} />
                 </TabsContent>
 
                 {/* Tab 7: Sessions Overview */}

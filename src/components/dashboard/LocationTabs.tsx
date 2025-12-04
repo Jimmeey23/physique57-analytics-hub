@@ -97,23 +97,10 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
   return (
     <div className="space-y-6">
       {/* Location Tabs */}
-      <div className="rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-md p-8 shadow-lg">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Location Filter</h3>
-            <p className="text-base text-slate-600">
-              Select a location to filter all analytics and tables below
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-slate-900">{locationStats.length}</div>
-            <div className="text-sm text-slate-500 font-medium">Active Locations</div>
-          </div>
-        </div>
-
-        {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
-        <div className="flex justify-center mb-8" id="location-tabs">
-          <div className="w-full max-w-4xl">
+      <div className="rounded-2xl border border-red-200 bg-white/95 backdrop-blur-md p-6 shadow-xl">
+        {/* Enhanced Location Tabs - unified styling (matching Sales) */}
+        <div className="flex justify-center mb-6" id="location-tabs">
+          <div className="w-full max-w-6xl">
             {/* InfoPopover - positioned next to location tabs */}
             {showInfoPopover && (
               <div className="flex items-center justify-between mb-4">
@@ -121,17 +108,19 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
                 <InfoPopover context={infoPopoverContext} locationId={selectedLocation} />
               </div>
             )}
-            <div className="grid grid-cols-4 location-tabs">
+            <div className="grid grid-cols-4 location-tabs gap-3">
               {/* All Locations Tab */}
               <button
                 onClick={() => onLocationChange('all')}
-                className={`location-tab-trigger group ${selectedLocation === 'all' ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                data-state={selectedLocation === 'all' ? 'active' : 'inactive'}
+                className={cn(
+                  "px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center min-h-[80px] border-2",
+                  selectedLocation === 'all'
+                    ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white border-red-600 shadow-lg scale-105'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-red-400 hover:shadow-md'
+                )}
               >
-                <span className="relative z-10 flex flex-col items-center leading-tight">
-                  <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">All Locations</span>
-                  <span className="text-xs sm:text-sm opacity-90">({totalSessions} sessions)</span>
-                </span>
+                <span className="font-extrabold text-base">All Locations</span>
+                <span className="text-xs opacity-90 mt-1">({totalSessions} sessions)</span>
               </button>
 
               {/* Individual Location Tabs - Top 3 */}
@@ -139,13 +128,15 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
                 <button
                   key={stat.location}
                   onClick={() => onLocationChange(stat.location)}
-                  className={`location-tab-trigger group ${selectedLocation === stat.location ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                  data-state={selectedLocation === stat.location ? 'active' : 'inactive'}
+                  className={cn(
+                    "px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center min-h-[80px] border-2",
+                    selectedLocation === stat.location
+                      ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white border-red-600 shadow-lg scale-105'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-red-400 hover:shadow-md'
+                  )}
                 >
-                  <span className="relative z-10 flex flex-col items-center leading-tight">
-                    <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{getLocationShortName(stat.location)}</span>
-                    <span className="text-xs sm:text-sm opacity-90">({stat.count} sessions)</span>
-                  </span>
+                  <span className="font-extrabold text-base">{getLocationShortName(stat.location)}</span>
+                  <span className="text-xs opacity-90 mt-1">({stat.count} sessions)</span>
                 </button>
               ))}
             </div>
@@ -160,7 +151,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
 
       {/* Additional Location Stats Summary */}
       {selectedLocation !== 'all' && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 shadow-sm">
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-4 border border-red-200 shadow-sm mt-4">
           <div className="flex items-center gap-3">
             {getLocationIcon(selectedLocation)}
             <div>
@@ -173,7 +164,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
               variant="outline"
               size="sm"
               onClick={() => onLocationChange('all')}
-              className="ml-auto"
+              className="ml-auto hover:bg-red-50 hover:border-red-400 hover:text-red-700"
             >
               View All Locations
             </Button>

@@ -280,11 +280,11 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell className="font-semibold">All Formats</TableCell>
+              <TableCell className="font-semibold text-white">All Formats</TableCell>
               {years.map((y, idx) => (
-                <TableCell key={idx} className="text-right">{renderTotalValue(y)}</TableCell>
+                <TableCell key={idx} className="text-right text-white">{renderTotalValue(y)}</TableCell>
               ))}
-              <TableCell className="text-right">{computeTotalsYoYDelta()}</TableCell>
+              <TableCell className="text-right text-white">{computeTotalsYoYDelta()}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>

@@ -523,10 +523,10 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       <CardContent className="p-0 rounded-b-xl">
         <div className="relative w-full overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl" style={{ display: 'block' }}>
           <Table className="min-w-[2000px] w-max">
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-              <TableRow className="border-b-2 border-slate-700 shadow-lg">
+            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-red-600 to-orange-600">
+              <TableRow className="border-b-2 border-red-700 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[200px] sticky left-0 z-30 h-10 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[200px] sticky left-0 z-30 h-10 bg-gradient-to-r from-red-600 to-orange-600"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
@@ -549,7 +549,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[80px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-10"
                   onClick={() => handleSort('period')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -559,7 +559,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[100px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[100px] h-10"
                   onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -569,7 +569,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[130px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-10"
                   onClick={() => handleSort('classType')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -579,7 +579,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[80px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-10"
                   onClick={() => handleSort('day')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -589,7 +589,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[70px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[70px] h-10"
                   onClick={() => handleSort('time')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -599,7 +599,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-blue-200 transition-colors w-[130px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-10"
                   onClick={() => handleSort('location')}
                 >
                   <div className="flex items-center gap-1 justify-center">

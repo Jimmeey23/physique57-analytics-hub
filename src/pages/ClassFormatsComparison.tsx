@@ -50,14 +50,6 @@ const ClassFormatsComparison: React.FC = () => {
 
   useEffect(() => {
     setLoading(loading || checkinsLoading || payrollLoading, 'Loading class format comparison data...');
-    console.log('ClassFormatsComparison - Data Status:', {
-      sessionsData: data?.length || 0,
-      sessionsLoading: loading,
-      checkins: allCheckins?.length || 0,
-      checkinsLoading,
-      payrollData: payrollData?.length || 0,
-      payrollLoading
-    });
   }, [loading, checkinsLoading, payrollLoading, setLoading, data, allCheckins, payrollData]);
 
   // NOTE: We must read filters within the provider. We'll render an inner component below.

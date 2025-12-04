@@ -297,19 +297,19 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={3} className="font-bold">
+                <TableCell colSpan={3} className="font-bold text-white">
                   Summary ({formatNumber(summaryStats.totalTransactions)} transactions)
                 </TableCell>
-                <TableCell className="text-right font-bold">
+                <TableCell className="text-right font-bold text-white">
                   {formatCurrency(summaryStats.totalMrp)}
                 </TableCell>
-                <TableCell className="text-right font-bold text-slate-700">
+                <TableCell className="text-right font-bold text-white">
                   -{formatCurrency(summaryStats.totalDiscount)}
                 </TableCell>
-                <TableCell className="text-right font-bold">
+                <TableCell className="text-right font-bold text-white">
                   {formatPercentage(summaryStats.avgDiscountPercentage)}
                 </TableCell>
-                <TableCell className="text-right font-bold text-slate-700">
+                <TableCell className="text-right font-bold text-white">
                   {formatCurrency(summaryStats.totalRevenue)}
                 </TableCell>
                 <TableCell colSpan={3}></TableCell>

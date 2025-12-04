@@ -9,11 +9,6 @@ const NotFound = () => {
   useEffect(() => {
     // Immediately signal page is ready (no data loading needed for 404)
     setLoading(false);
-    
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
   }, [location.pathname, setLoading]);
 
   return (

@@ -1,22 +1,20 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Users, 
   Target, 
   Calendar, 
   MapPin, 
-  TrendingUp, 
+  TrendingUp,
+  TrendingDown,
   DollarSign, 
   Activity, 
   CheckCircle,
   Clock,
   AlertTriangle,
   Eye,
-  Zap,
-  Info
+  Zap
 } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatCurrency } from '@/utils/formatters';
@@ -28,8 +26,6 @@ interface FunnelMetricCardsProps {
 }
 
 export const FunnelMetricCards: React.FC<FunnelMetricCardsProps> = ({ data, onCardClick }) => {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-
   const metrics = useMemo(() => {
     if (!data || !data.length) {
       return {
@@ -100,21 +96,19 @@ export const FunnelMetricCards: React.FC<FunnelMetricCardsProps> = ({ data, onCa
     title, 
     value, 
     icon: Icon, 
-    color, 
+    colorIndex,
     subtitle, 
-    trend,
     format = 'number',
-    tooltip
+    description
   }: {
     id: string;
     title: string;
     value: number;
     icon: React.ElementType;
-    color: string;
+    colorIndex: number;
     subtitle?: string;
-    trend?: number;
     format?: 'number' | 'currency' | 'percentage';
-    tooltip: string;
+    description: string;
   }) => {
     const formatValue = (val: number) => {
       switch (format) {
@@ -124,256 +118,169 @@ export const FunnelMetricCards: React.FC<FunnelMetricCardsProps> = ({ data, onCa
       }
     };
 
-    const isHovered = hoveredCard === id;
-
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Card 
-              className={cn(
-                "group relative overflow-hidden transition-all duration-500 cursor-pointer transform-gpu",
-                "bg-gradient-to-br from-white via-slate-50 to-white border-0 shadow-lg hover:shadow-2xl",
-                isHovered ? "scale-105 -translate-y-2" : "hover:scale-102"
-              )}
-              onMouseEnter={() => setHoveredCard(id)}
-              onMouseLeave={() => setHoveredCard(null)}
-              onClick={() => onCardClick?.(title, data, id)}
-            >
-              {/* Animated background */}
-              <div className={cn(
-                "absolute inset-0 opacity-0 transition-opacity duration-500",
-                isHovered && "opacity-10",
-                color.replace('from-', 'bg-gradient-to-br from-').replace('to-', 'to-')
-              )} />
-              
-              {/* Floating particles effect - Fixed glitching */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <Card
+        className={cn(
+          "group relative overflow-hidden cursor-pointer transition-all duration-700",
+          "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+          colorIndex % 4 === 0 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+          colorIndex % 4 === 1 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+          colorIndex % 4 === 2 && "border-t-4 border-pink-700 hover:border-pink-700 shadow-lg", 
+          colorIndex % 4 === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
+          "hover:shadow-2xl hover:shadow-slate-900/30",
+          "hover:-translate-y-2 hover:scale-[1.02]"
+        )}
+        onClick={() => onCardClick?.(title, data, id)}
+      >
+        <CardContent className="p-6 relative">
+          <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+            <Icon className={cn(
+              "w-12 h-12 transition-all duration-700",
+              colorIndex % 4 === 0 && "text-green-700",
+              colorIndex % 4 === 1 && "text-blue-700",
+              colorIndex % 4 === 2 && "text-pink-700",
+              colorIndex % 4 === 3 && "text-red-700",
+              "group-hover:text-white/40"
+            )} />
+          </div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-6">
                 <div className={cn(
-                  "absolute w-2 h-2 rounded-full opacity-20 transition-all duration-1000",
-                  isHovered ? "animate-bounce" : "transform translate-y-0",
-                  color.replace('from-', 'bg-').split(' ')[0].replace('-400', '-300')
-                )} style={{ top: '20%', left: '80%', animationDelay: isHovered ? '0s' : 'unset' }} />
-                <div className={cn(
-                  "absolute w-1 h-1 rounded-full opacity-30 transition-all duration-1000",
-                  isHovered ? "animate-pulse" : "opacity-20",
-                  color.replace('to-', 'bg-').split(' ')[1].replace('-600', '-400')
-                )} style={{ top: '60%', left: '15%', animationDelay: isHovered ? '0.5s' : 'unset' }} />
-                <div className={cn(
-                  "absolute w-1.5 h-1.5 rounded-full opacity-25 transition-all duration-1000",
-                  isHovered ? "animate-ping" : "opacity-15",
-                  color.replace('from-', 'bg-').split(' ')[0].replace('-400', '-200')
-                )} style={{ top: '80%', left: '70%', animationDelay: isHovered ? '1s' : 'unset' }} />
-              </div>
-              
-              <CardContent className="p-6 relative z-10">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={cn(
-                        "p-3 rounded-xl transition-all duration-500 shadow-lg",
-                        color.replace('from-', 'bg-').replace('-400', '-100').split(' ')[0],
-                        color.replace('to-', 'text-').replace('-600', '-600').split(' ')[1],
-                        isHovered && "rotate-12 scale-110"
-                      )}>
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-slate-700 leading-tight">{title}</h3>
-                        {subtitle && (
-                          <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className={cn(
-                        "text-3xl font-black transition-all duration-500",
-                        color.replace('to-', 'text-').replace('-600', '-700').split(' ')[1],
-                        isHovered && "scale-110"
-                      )}>
-                        {formatValue(value)}
-                      </div>
-                      
-                      {trend !== undefined && (
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className={cn(
-                            "w-4 h-4 transition-colors duration-300",
-                            trend > 0 ? "text-green-600" : trend < 0 ? "text-red-600" : "text-slate-600"
-                          )} />
-                          <span className={cn(
-                            "text-sm font-semibold",
-                            trend > 0 ? "text-green-600" : trend < 0 ? "text-red-600" : "text-slate-600"
-                          )}>
-                            {trend > 0 ? '+' : ''}{trend.toFixed(1)}%
-                          </span>
-                          <span className="text-xs text-slate-500">vs last period</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <Info className="w-4 h-4 text-slate-400" />
-                  </div>
+                  "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                  colorIndex % 4 === 0 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                  colorIndex % 4 === 1 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                  colorIndex % 4 === 2 && "bg-gradient-to-br from-pink-700 to-pink-600 border-pink-900 text-white shadow-pink-200",
+                  colorIndex % 4 === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
+                  "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                )}>
+                  <Icon className="w-6 h-6 drop-shadow-sm" />
                 </div>
-                
-                {/* Progress bar for percentage metrics */}
-                {format === 'percentage' && (
-                  <div className="mt-4">
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className={cn(
-                          "h-2 rounded-full transition-all duration-1000 ease-out",
-                          color.replace('from-', 'bg-gradient-to-r from-').replace('to-', 'to-')
-                        )}
-                        style={{ 
-                          width: isHovered ? `${Math.min(value, 100)}%` : '0%',
-                          transitionDelay: '200ms'
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
-            <p className="text-sm">{tooltip}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                    {title}
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className={cn(
+                "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+              )}>
+                {formatValue(value)}
+              </p>
+              <p className={cn(
+                "text-xs text-slate-500 group-hover:text-slate-200 transition-colors"
+              )}>
+                {subtitle}
+              </p>
+            </div>
+          </div>
+          
+          <div className={cn(
+            "mt-4 p-3 border-t border-l-4 transition-all duration-700",
+            "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
+            colorIndex % 4 === 0 && "border-l-green-700",
+            colorIndex % 4 === 1 && "border-l-blue-700",
+            colorIndex % 4 === 2 && "border-l-pink-700",
+            colorIndex % 4 === 3 && "border-l-red-700"
+          )}>
+            <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
+              {description}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          id="leadsReceived"
-          title="Leads Received"
-          value={metrics.leadsReceived}
-          icon={Users}
-          color="from-blue-400 to-blue-600"
-          subtitle="Total incoming leads"
-          tooltip="Total number of leads received in the selected period"
-        />
-        
-        <MetricCard
-          id="trialsCompleted"
-          title="Trials Completed"
-          value={metrics.trialsCompleted}
-          icon={CheckCircle}
-          color="from-green-400 to-green-600"
-          subtitle="Successful trial sessions"
-          tooltip="Number of trial sessions that were successfully completed"
-        />
-        
-        <MetricCard
-          id="trialsScheduled"
-          title="Trials Scheduled"
-          value={metrics.trialsScheduled}
-          icon={Calendar}
-          color="from-purple-400 to-purple-600"
-          subtitle="Scheduled trial sessions"
-          tooltip="Total number of trial sessions scheduled"
-        />
-        
-        <MetricCard
-          id="proximityIssues"
-          title="Proximity Issues"
-          value={metrics.proximityIssues}
-          icon={MapPin}
-          color="from-red-400 to-red-600"
-          subtitle="Location-related concerns"
-          tooltip="Leads lost due to location or proximity concerns"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          id="convertedLeads"
-          title="Converted Leads"
-          value={metrics.convertedLeads}
-          icon={Target}
-          color="from-emerald-400 to-emerald-600"
-          subtitle="Successfully converted"
-          tooltip="Number of leads successfully converted to paying members"
-        />
-        
-        <MetricCard
-          id="trialToMemberRate"
-          title="Trial → Member Rate"
-          value={metrics.trialToMemberConversion}
-          icon={TrendingUp}
-          color="from-cyan-400 to-cyan-600"
-          subtitle="Trial conversion efficiency"
-          format="percentage"
-          tooltip="Percentage of completed trials that converted to memberships"
-        />
-        
-        <MetricCard
-          id="leadToTrialRate"
-          title="Lead → Trial Rate"
-          value={metrics.leadToTrialConversion}
-          icon={Activity}
-          color="from-indigo-400 to-indigo-600"
-          subtitle="Lead engagement rate"
-          format="percentage"
-          tooltip="Percentage of leads that scheduled and completed trials"
-        />
-        
-        <MetricCard
-          id="leadToMemberRate"
-          title="Lead → Member Rate"
-          value={metrics.leadToMemberConversion}
-          icon={Zap}
-          color="from-yellow-400 to-yellow-600"
-          subtitle="Overall conversion rate"
-          format="percentage"
-          tooltip="Overall percentage of leads converted to paying members"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricCard
-          id="avgLTV"
-          title="Average LTV"
-          value={metrics.avgLTV}
-          icon={DollarSign}
-          color="from-green-400 to-green-600"
-          subtitle="Lifetime value per lead"
-          format="currency"
-          tooltip="Average lifetime value generated per lead"
-        />
-        
-        <MetricCard
-          id="avgVisitsPerLead"
-          title="Avg Visits/Lead"
-          value={metrics.avgVisitsPerLead}
-          icon={Eye}
-          color="from-orange-400 to-orange-600"
-          subtitle="Engagement frequency"
-          tooltip="Average number of visits per lead during the funnel process"
-        />
-        
-        <MetricCard
-          id="pipelineHealth"
-          title="Pipeline Health"
-          value={metrics.pipelineHealth}
-          icon={metrics.pipelineHealth >= 70 ? CheckCircle : metrics.pipelineHealth >= 50 ? Clock : AlertTriangle}
-          color={
-            metrics.pipelineHealth >= 70 
-              ? "from-green-400 to-green-600"
-              : metrics.pipelineHealth >= 50 
-              ? "from-yellow-400 to-yellow-600"
-              : "from-red-400 to-red-600"
-          }
-          subtitle="Overall funnel performance"
-          format="percentage"
-          tooltip="Composite score based on conversion rates, engagement, and lead quality"
-        />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <MetricCard
+        id="leadsReceived"
+        title="Leads Received"
+        value={metrics.leadsReceived}
+        icon={Users}
+        colorIndex={0}
+        subtitle="Total incoming leads"
+        description="Total number of leads received in the selected period"
+      />
+      
+      <MetricCard
+        id="trialsCompleted"
+        title="Trials Completed"
+        value={metrics.trialsCompleted}
+        icon={CheckCircle}
+        colorIndex={1}
+        subtitle="Successful trial sessions"
+        description="Number of trial sessions that were successfully completed"
+      />
+      
+      <MetricCard
+        id="convertedLeads"
+        title="Converted Leads"
+        value={metrics.convertedLeads}
+        icon={Target}
+        colorIndex={2}
+        subtitle="Successfully converted"
+        description="Number of leads successfully converted to paying members"
+      />
+      
+      <MetricCard
+        id="trialToMemberRate"
+        title="Trial → Member %"
+        value={metrics.trialToMemberConversion}
+        icon={TrendingUp}
+        colorIndex={3}
+        subtitle="Trial conversion efficiency"
+        format="percentage"
+        description="Percentage of completed trials that converted to memberships"
+      />
+      
+      <MetricCard
+        id="leadToMemberRate"
+        title="Lead → Member %"
+        value={metrics.leadToMemberConversion}
+        icon={Zap}
+        colorIndex={0}
+        subtitle="Overall conversion rate"
+        format="percentage"
+        description="Overall percentage of leads converted to paying members"
+      />
+      
+      <MetricCard
+        id="avgLTV"
+        title="Average LTV"
+        value={metrics.avgLTV}
+        icon={DollarSign}
+        colorIndex={1}
+        subtitle="Lifetime value per lead"
+        format="currency"
+        description="Average lifetime value generated per lead"
+      />
+      
+      <MetricCard
+        id="avgVisitsPerLead"
+        title="Avg Visits/Lead"
+        value={metrics.avgVisitsPerLead}
+        icon={Eye}
+        colorIndex={2}
+        subtitle="Engagement frequency"
+        description="Average number of visits per lead during the funnel process"
+      />
+      
+      <MetricCard
+        id="pipelineHealth"
+        title="Pipeline Health"
+        value={metrics.pipelineHealth}
+        icon={metrics.pipelineHealth >= 70 ? CheckCircle : metrics.pipelineHealth >= 50 ? Clock : AlertTriangle}
+        colorIndex={3}
+        subtitle="Overall funnel performance"
+        format="percentage"
+        description="Composite score based on conversion rates, engagement, and lead quality"
+      />
     </div>
   );
 };

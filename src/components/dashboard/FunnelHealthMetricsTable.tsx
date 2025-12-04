@@ -114,7 +114,7 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
       key: 'metric',
       header: 'Health Metric',
       render: (value: string) => (
-        <div className="font-semibold text-slate-800 min-w-[200px] text-left">
+        <div className="font-semibold text-slate-700 min-w-[200px] text-left">
           {value}
         </div>
       ),
@@ -124,7 +124,7 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
       key: 'value',
       header: 'Current Value',
       render: (value: number, item: any) => (
-        <div className="text-center font-bold text-blue-600">
+        <div className="text-center font-medium text-slate-700">
           {formatValue(item)}
         </div>
       ),
@@ -134,7 +134,7 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
       key: 'benchmark',
       header: 'Benchmark',
       render: (value: number, item: any) => (
-        <div className="text-center font-medium text-slate-600">
+        <div className="text-center font-medium text-slate-700">
           {item.metric.includes('Rate') || item.metric.includes('Coverage') || item.metric.includes('Efficiency') 
             ? `${value}%` 
             : item.metric.includes('LTV') 
@@ -159,7 +159,7 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
       key: 'description',
       header: 'Description',
       render: (value: string) => (
-        <div className="text-sm text-slate-600 max-w-[200px]">
+        <div className="text-sm text-slate-700 max-w-[200px]">
           {value}
         </div>
       ),
@@ -180,14 +180,14 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
 
   return (
     <Card className="w-full bg-white/90 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-slate-800">
-            <HeartHandshake className="w-6 h-6 text-red-600 animate-pulse" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <HeartHandshake className="w-6 h-6 text-red-400 animate-pulse" />
             Funnel Health Metrics
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Overall Health:</span>
+            <span className="text-sm text-slate-300">Overall Health:</span>
             <Badge 
               className={cn(
                 "text-lg px-4 py-2 font-black",
@@ -210,6 +210,7 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
             stickyHeader={true}
             maxHeight="500px"
             className="rounded-none"
+            headerGradient="from-slate-800 via-slate-900 to-slate-800"
           />
         </div>
 

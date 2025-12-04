@@ -13,25 +13,11 @@ const DiscountsPromotions: React.FC = () => {
   const { setLoading } = useGlobalLoading();
   const { data: salesData, loading, error } = useSalesData();
   
-  // Debug: Log salesData directly from hook
-  useEffect(() => {
-    console.log('DiscountsPromotions - useSalesData returned:', {
-      loading,
-      error,
-      totalRecords: salesData?.length || 0,
-      sample: salesData?.slice(0, 3),
-      hasData: !!salesData && salesData.length > 0
-    });
-  }, [salesData, loading, error]);
-  
   // Transform sales data for discount analysis
   const discountData = useMemo(() => {
     if (!salesData) {
-      console.log('discountData - salesData is null/undefined');
       return [];
     }
-    
-    console.log('discountData - processing', salesData.length, 'records');
     
     return salesData.map((item: any) => {
       // Parse numeric values safely
@@ -72,16 +58,44 @@ const DiscountsPromotions: React.FC = () => {
   const heroMetrics = useMemo(() => {
     if (!discountData || discountData.length === 0) return [];
 
-    // Get previous month date range
-    const now = new Date();
-    const firstDayPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    // Import parseDate for consistent date handling
+    const parseDateStr = (dateStr: string): Date | null => {
+      if (!dateStr || dateStr.trim() === '') return null;
+      try {
+        // Handle DD/MM/YYYY format with optional time
+        if (dateStr.includes('/')) {
+          const datePart = dateStr.split(' ')[0].trim();
+          const parts = datePart.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+              return new Date(year, month - 1, day);
+            }
+          }
+        }
+        // Handle YYYY-MM-DD format
+        if (dateStr.includes('-')) {
+          const date = new Date(dateStr);
+          if (!isNaN(date.getTime())) return date;
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    };
 
-    // Filter data for previous month
-    const previousMonthData = discountData.filter(item => {
+    // Always use previous month
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    // Filter data for that month
+    const monthData = discountData.filter(item => {
       if (!item.paymentDate) return false;
-      const itemDate = new Date(item.paymentDate);
-      return itemDate >= firstDayPreviousMonth && itemDate <= lastDayPreviousMonth;
+      const itemDate = parseDateStr(item.paymentDate);
+      return itemDate && itemDate >= firstDayOfMonth && itemDate <= lastDayOfMonth;
     });
 
     const locations = [
@@ -91,7 +105,7 @@ const DiscountsPromotions: React.FC = () => {
     ];
 
     return locations.map(location => {
-      const locationData = previousMonthData.filter(item => 
+      const locationData = monthData.filter(item => 
         location.key === 'Kenkere House' 
           ? item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House'
           : item.calculatedLocation === location.key

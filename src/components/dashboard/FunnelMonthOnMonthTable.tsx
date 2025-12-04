@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Calendar, ChevronDown, ChevronUp, Eye, Filter, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { BarChart3, Calendar, ChevronDown, ChevronUp, Eye, Filter, Minus, TrendingDown, TrendingUp, ShrinkIcon, ExpandIcon, Percent } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { cn } from '@/lib/utils';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { ModernTableWrapper } from './ModernTableWrapper';
 
 type GroupKey = 'source' | 'stage' | 'center' | 'channel' | 'associate';
 type MetricType = 'totalLeads' | 'trialsCompleted' | 'trialsScheduled' | 'convertedLeads' | 'ltv' | 'avgVisits';
@@ -103,49 +103,41 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
   const tableVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
   const headerVariants = { hidden: { opacity: 0, y: -10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, delay: 0.2 } } };
 
+  const tableRef = useRef<HTMLTableElement>(null);
+
   return (
     <motion.div variants={tableVariants} initial="hidden" animate="visible" className="w-full">
-      <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
-        <CardHeader className="pb-4">
-          <motion.div variants={headerVariants} className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-slate-900 to-indigo-900 rounded-lg shadow-lg"><BarChart3 className="w-5 h-5 text-white" /></div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Month-on-Month Performance</h3>
-                <p className="text-sm text-gray-600">Historical trends by group and metric</p>
-              </div>
-            </div>
-            <Badge variant="outline" className="bg-gradient-to-r from-indigo-500/10 to-blue-500/10 text-indigo-700 border-indigo-300/50 backdrop-blur-sm"><Calendar className="w-3 h-3 mr-1" />Historical</Badge>
-          </motion.div>
-          <motion.div variants={headerVariants} className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-2">
-            <Filter className="w-3 h-3" />
-            <span>Showing {processedData.length} groups across {months.length} months</span>
-            <div className="flex items-center gap-2 ml-auto">
-              <select className="border rounded-md px-2 py-1 text-xs" value={groupKey} onChange={e => setGroupKey(e.target.value as GroupKey)}>
-                <option value="source">Group: Source</option>
-                <option value="stage">Group: Stage</option>
-                <option value="center">Group: Center</option>
-                <option value="channel">Group: Channel</option>
-                <option value="associate">Group: Associate</option>
-              </select>
-              <select className="border rounded-md px-2 py-1 text-xs" value={metric} onChange={e => setMetric(e.target.value as MetricType)}>
-                <option value="totalLeads">Metric: Total Leads</option>
-                <option value="trialsCompleted">Metric: Trials Completed</option>
-                <option value="trialsScheduled">Metric: Trials Scheduled</option>
-                <option value="convertedLeads">Metric: Converted Leads</option>
-                <option value="ltv">Metric: Avg LTV</option>
-                <option value="avgVisits">Metric: Avg Visits</option>
-              </select>
-              <div className="flex items-center gap-1 text-xs">
-                <span className="font-medium">View:</span>
-                <Button size="sm" variant={viewMode === 'values' ? 'default' : 'outline'} onClick={() => setViewMode('values')}>Values</Button>
-                <Button size="sm" variant={viewMode === 'growth' ? 'default' : 'outline'} onClick={() => setViewMode('growth')}>Growth%</Button>
-              </div>
-              {/* Expand/Collapse removed in column view */}
-            </div>
-          </motion.div>
-        </CardHeader>
-        <CardContent className="pt-0">
+      <ModernTableWrapper
+        title="Month-on-Month Performance"
+        description={`Historical trends by ${groupKey} and ${metric}`}
+        icon={<BarChart3 className="w-5 h-5 text-white" />}
+        totalItems={processedData.length}
+        showDisplayToggle={true}
+        displayMode={viewMode}
+        onDisplayModeChange={(mode) => setViewMode(mode as 'values' | 'growth')}
+        showCollapseControls={false}
+        tableRef={tableRef}
+        headerControls={
+          <div className="flex items-center gap-2">
+            <select className="border border-white/30 bg-white/10 text-white rounded-md px-2 py-1 text-xs" value={groupKey} onChange={e => setGroupKey(e.target.value as GroupKey)}>
+              <option value="source" className="text-slate-900">Group: Source</option>
+              <option value="stage" className="text-slate-900">Group: Stage</option>
+              <option value="center" className="text-slate-900">Group: Center</option>
+              <option value="channel" className="text-slate-900">Group: Channel</option>
+              <option value="associate" className="text-slate-900">Group: Associate</option>
+            </select>
+            <select className="border border-white/30 bg-white/10 text-white rounded-md px-2 py-1 text-xs" value={metric} onChange={e => setMetric(e.target.value as MetricType)}>
+              <option value="totalLeads" className="text-slate-900">Metric: Total Leads</option>
+              <option value="trialsCompleted" className="text-slate-900">Metric: Trials Completed</option>
+              <option value="trialsScheduled" className="text-slate-900">Metric: Trials Scheduled</option>
+              <option value="convertedLeads" className="text-slate-900">Metric: Converted Leads</option>
+              <option value="ltv" className="text-slate-900">Metric: Avg LTV</option>
+              <option value="avgVisits" className="text-slate-900">Metric: Avg Visits</option>
+            </select>
+          </div>
+        }
+      >
+        <div className="pt-0">
           <motion.div className="overflow-x-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
             {
               // Build ModernDataTable columns dynamically per month
@@ -171,7 +163,7 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
                   align: 'left' as const,
                   className: 'min-w-[160px] sticky left-0 bg-white',
                   render: (value: string) => (
-                    <div className="font-semibold text-slate-800 truncate">{value}</div>
+                    <div className="font-semibold text-slate-700 truncate">{value}</div>
                   )
                 },
                 ...displayMonths.map((mKey, idx) => ({
@@ -182,7 +174,7 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
                   render: (_: any, row: any) => {
                     if (viewMode === 'values') {
                       const v = metricVal(row.months.get(mKey));
-                      return <div className="text-xs font-medium text-slate-800">{metric === 'ltv' || metric === 'avgVisits' ? v.toFixed(1) : formatNumber(v)}</div>;
+                      return <div className="text-xs font-medium text-slate-700">{metric === 'ltv' || metric === 'avgVisits' ? v.toFixed(1) : formatNumber(v)}</div>;
                     }
                     // growth mode vs previous displayed month
                     const prevKey = displayMonths[idx - 1];
@@ -216,7 +208,28 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
                   }
                 });
               });
-              const footerData = { group: 'TOTALS', months: totalsMap } as any;
+
+              // Pre-format footer data to extract the selected metric value for each month
+              const footerData: Record<string, any> = { group: 'TOTALS' };
+              displayMonths.forEach((mKey, idx) => {
+                const bucket = totalsMap.get(mKey);
+                if (viewMode === 'values') {
+                  const v = metricVal(bucket);
+                  footerData[mKey] = metric === 'ltv' || metric === 'avgVisits' ? v.toFixed(1) : formatNumber(v);
+                } else {
+                  // growth mode vs previous displayed month
+                  const prevKey = displayMonths[idx - 1];
+                  if (!prevKey) {
+                    footerData[mKey] = '-';
+                  } else {
+                    const curr = metricVal(bucket);
+                    const prevBucket = totalsMap.get(prevKey);
+                    const prev = metricVal(prevBucket);
+                    const growth = prev > 0 ? ((curr - prev) / prev) * 100 : 0;
+                    footerData[mKey] = growth === 0 ? '0.0%' : `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+                  }
+                }
+              });
 
               const table = (
                 <ModernDataTable
@@ -228,7 +241,7 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
                   footerData={footerData}
                   maxHeight="480px"
                   className="rounded-lg"
-                  headerGradient="from-slate-800 to-indigo-900"
+                  headerGradient="from-slate-800 via-slate-900 to-slate-800"
                 />
               );
               // Simple AI notes based on displayed metric
@@ -270,8 +283,8 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
               );
             })()}
           </motion.div>
-        </CardContent>
-      </Card>
+        </div>
+      </ModernTableWrapper>
     </motion.div>
   );
 };

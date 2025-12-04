@@ -529,7 +529,7 @@ export const ConversionAnalyticsTables: React.FC<ConversionAnalyticsTablesProps>
                     {sortList(classTypeList, 'conversions').map((classType, index) => (
                       <TableRow 
                         key={classType.classType}
-                        className="hover:bg-orange-50 cursor-pointer transition-colors"
+                        className="hover:bg-slate-50 cursor-pointer transition-colors"
                         onClick={() => handleItemClick(classType, 'classType')}
                       >
                         <TableCell className="font-medium">{classType.classType}</TableCell>

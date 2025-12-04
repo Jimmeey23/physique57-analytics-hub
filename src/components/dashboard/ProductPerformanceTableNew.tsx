@@ -448,7 +448,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                       return (
                         <td 
                           key={key} 
-                          className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 hover:bg-orange-100/50 cursor-pointer transition-all duration-200"
+                          className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 hover:bg-slate-100 cursor-pointer transition-all duration-200"
                           onClick={(e) => {
                             e.stopPropagation();
                             onRowClick?.({
@@ -516,7 +516,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                           return (
                             <td 
                               key={key} 
-                              className="px-6 py-3 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-orange-100 cursor-pointer transition-all duration-300"
+                              className="px-6 py-3 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-slate-100 cursor-pointer transition-all duration-300"
                               title={growthPercentage ? `${growthPercentage}% vs previous month` : ''}
                               onClick={(e) => {
                                 e.stopPropagation(); // Prevent row click

@@ -39,14 +39,6 @@ const pages: { group: string; items: QuickLink[] }[] = [
       { label: "Late Cancellations", to: "/late-cancellations", keywords: ["late", "cxl", "cancellations"] },
     ],
   },
-  {
-    group: "Demos",
-    items: [
-      { label: "Hero Demo", to: "/hero-demo", keywords: ["hero", "motion"] },
-      { label: "Gemini AI Demo", to: "/gemini-ai-demo", keywords: ["gemini", "ai"] },
-      { label: "Gemini Test", to: "/gemini-test", keywords: ["gemini", "test"] },
-    ],
-  },
 ];
 
 export function GlobalCommandPalette() {

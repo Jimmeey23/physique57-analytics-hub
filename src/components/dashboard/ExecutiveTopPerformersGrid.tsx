@@ -208,7 +208,7 @@ export const ExecutiveTopPerformersGrid: React.FC<ExecutiveTopPerformersGridProp
 
       {/* Top Clients by LTV */}
       <Card className="shadow-xl border-0">
-        <CardHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
             Top Clients by LTV

@@ -55,21 +55,21 @@ export const EnhancedClassAttendanceFilterSection: React.FC<EnhancedClassAttenda
   };
 
   return (
-    <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl mb-8 overflow-hidden">
+    <Card className="bg-gradient-to-br from-white/95 to-slate-50/95 backdrop-blur-sm border-red-200 shadow-lg mb-8 overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardContent className="p-6 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300">
+          <CardContent className="p-6 cursor-pointer hover:bg-gradient-to-r hover:from-red-50/50 hover:to-orange-50/50 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-lg">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 shadow-lg">
                   <Filter className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-gray-800">Advanced Class Analytics Filters</h3>
-                  <p className="text-sm text-gray-600 mt-1">Configure comprehensive filters to analyze class performance and attendance patterns</p>
+                  <h3 className="font-bold text-xl text-slate-900">Advanced Class Analytics Filters</h3>
+                  <p className="text-sm text-slate-600 mt-1">Configure comprehensive filters to analyze class performance and attendance patterns</p>
                 </div>
                 {hasActiveFilters && (
-                  <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border-blue-200 px-3 py-1 text-sm font-semibold">
+                  <Badge variant="secondary" className="bg-gradient-to-r from-red-100 to-orange-100 text-red-800 border-red-300 px-3 py-1 text-sm font-semibold ml-auto">
                     {activeFilterCount} active filters
                   </Badge>
                 )}
@@ -83,14 +83,14 @@ export const EnhancedClassAttendanceFilterSection: React.FC<EnhancedClassAttenda
                       e.stopPropagation();
                       clearAllFiltersWithMinClasses();
                     }}
-                    className="gap-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors font-medium"
+                    className="gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors font-medium border-red-200"
                   >
                     <X className="w-4 h-4" />
                     Clear All Filters
                   </Button>
                 )}
-                <div className="p-2 rounded-lg bg-gray-100 transition-transform duration-200">
-                  {isOpen ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+                <div className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-orange-100 transition-transform duration-200">
+                  {isOpen ? <ChevronUp className="w-5 h-5 text-red-600" /> : <ChevronDown className="w-5 h-5 text-red-600" />}
                 </div>
               </div>
             </div>

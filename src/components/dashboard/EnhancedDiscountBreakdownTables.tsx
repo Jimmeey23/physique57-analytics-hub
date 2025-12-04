@@ -272,20 +272,20 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={2} className="font-bold">Total (Top 10)</TableCell>
-                  <TableCell className="text-center font-bold">
+                  <TableCell colSpan={2} className="font-bold text-white">Total (Top 10)</TableCell>
+                  <TableCell className="text-center font-bold text-white">
                     {formatNumber(productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.transactions, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-slate-700">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.totalDiscount, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold">
+                  <TableCell className="text-right font-bold text-white">
                     {formatPercentage(
                       productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.avgDiscountPercentage, 0) / 
                       Math.min(10, productBreakdown.length)
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-slate-700">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(productBreakdown.slice(0, 10).reduce((sum, item) => sum + item.totalRevenue, 0))}
                   </TableCell>
                   <TableCell colSpan={2}></TableCell>
@@ -394,29 +394,29 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell className="font-bold">Total</TableCell>
-                  <TableCell className="text-center font-bold">
+                  <TableCell className="font-bold text-white">Total</TableCell>
+                  <TableCell className="text-center font-bold text-white">
                     {formatNumber(locationBreakdown.reduce((sum, item) => sum + item.transactions, 0))}
                   </TableCell>
-                  <TableCell className="text-center font-bold">
+                  <TableCell className="text-center font-bold text-white">
                     {formatNumber(locationBreakdown.reduce((sum, item) => sum + item.uniqueCustomers, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-slate-700">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(locationBreakdown.reduce((sum, item) => sum + item.totalDiscount, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold">
+                  <TableCell className="text-right font-bold text-white">
                     {formatPercentage(
                       locationBreakdown.reduce((sum, item) => sum + item.avgDiscountPercentage, 0) / 
                       locationBreakdown.length
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(
                       locationBreakdown.reduce((sum, item) => sum + item.avgDiscountPerTransaction, 0) / 
                       locationBreakdown.length
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-slate-700">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(locationBreakdown.reduce((sum, item) => sum + item.totalRevenue, 0))}
                   </TableCell>
                   <TableCell></TableCell>
@@ -526,26 +526,26 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell className="font-bold">Total</TableCell>
-                  <TableCell className="text-center font-bold">
+                  <TableCell className="font-bold text-white">Total</TableCell>
+                  <TableCell className="text-center font-bold text-white">
                     {formatNumber(staffBreakdown.reduce((sum, item) => sum + item.transactions, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-red-600">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(staffBreakdown.reduce((sum, item) => sum + item.totalDiscount, 0))}
                   </TableCell>
-                  <TableCell className="text-right font-bold">
+                  <TableCell className="text-right font-bold text-white">
                     {formatPercentage(
                       staffBreakdown.reduce((sum, item) => sum + item.avgDiscountPercentage, 0) / 
                       staffBreakdown.length
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(
                       staffBreakdown.reduce((sum, item) => sum + item.discountRate, 0) / 
                       staffBreakdown.length
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-green-600">
+                  <TableCell className="text-right font-bold text-white">
                     {formatCurrency(staffBreakdown.reduce((sum, item) => sum + item.totalRevenue, 0))}
                   </TableCell>
                   <TableCell colSpan={2}></TableCell>

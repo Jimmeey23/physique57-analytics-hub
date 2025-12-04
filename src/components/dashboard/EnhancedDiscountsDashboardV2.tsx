@@ -12,6 +12,7 @@ import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { parseDate } from '@/utils/dateUtils';
 
 interface EnhancedDiscountsDashboardV2Props {
   data: SalesData[];
@@ -70,29 +71,97 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     type: string;
   }>({ isOpen: false, title: '', data: [], type: '' });
 
-  // Debug: Log received data
+  // Debug: Log received data with available months
   useEffect(() => {
-    console.log('EnhancedDiscountsDashboardV2 received data:', {
-      totalRecords: data?.length || 0,
-      sample: data?.slice(0, 3),
-      samplePaymentDates: data?.slice(0, 5).map(d => d.paymentDate),
-      sampleLocations: [...new Set(data?.slice(0, 50).map(d => d.calculatedLocation))]
-    });
+    if (data?.length > 0) {
+      // Analyze what months have data
+      const monthCounts: Record<string, number> = {};
+      data.forEach(d => {
+        if (d.paymentDate) {
+          const parsed = parseDate(d.paymentDate);
+          if (parsed) {
+            const key = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}`;
+            monthCounts[key] = (monthCounts[key] || 0) + 1;
+          }
+        }
+      });
+      
+      const sortedMonths = Object.entries(monthCounts).sort((a, b) => b[0].localeCompare(a[0]));
+      
+      console.log('EnhancedDiscountsDashboardV2 received data:', {
+        totalRecords: data?.length || 0,
+        samplePaymentDates: data?.slice(0, 5).map(d => d.paymentDate),
+        availableMonths: sortedMonths.slice(0, 10), // Top 10 most recent months
+        latestMonth: sortedMonths[0]?.[0]
+      });
+    }
   }, [data]);
 
-  // Set default date range to previous month only after initial data check
+  // Get the most recent month with data
+  const getLatestMonthWithData = () => {
+    if (!data || data.length === 0) return null;
+    
+    let latestDate: Date | null = null;
+    
+    data.forEach(d => {
+      if (d.paymentDate) {
+        const parsed = parseDate(d.paymentDate);
+        if (parsed && (!latestDate || parsed > latestDate)) {
+          latestDate = parsed;
+        }
+      }
+    });
+    
+    if (!latestDate) return null;
+    
+    const firstDay = new Date(latestDate.getFullYear(), latestDate.getMonth(), 1);
+    const lastDay = new Date(latestDate.getFullYear(), latestDate.getMonth() + 1, 0);
+    
+    return {
+      start: `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`,
+      end: `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`
+    };
+  };
+
+  // Set default date range - prefer previous month, but fall back to latest month with data
   useEffect(() => {
-    // Only set previous month filter if we have data
     if (data && data.length > 0) {
       const previousMonth = getPreviousMonthDateRange();
-      console.log('Setting default date range:', previousMonth);
-      setFilters(prev => ({
-        ...prev,
-        dateRange: {
-          start: previousMonth.start,
-          end: previousMonth.end
+      
+      // Check if previous month has data
+      const prevStart = new Date(previousMonth.start);
+      const prevEnd = new Date(previousMonth.end);
+      prevEnd.setHours(23, 59, 59, 999);
+      
+      const hasDataInPreviousMonth = data.some(d => {
+        if (!d.paymentDate) return false;
+        const parsed = parseDate(d.paymentDate);
+        return parsed && parsed >= prevStart && parsed <= prevEnd;
+      });
+      
+      if (hasDataInPreviousMonth) {
+        console.log('Using previous month (has data):', previousMonth);
+        setFilters(prev => ({
+          ...prev,
+          dateRange: {
+            start: previousMonth.start,
+            end: previousMonth.end
+          }
+        }));
+      } else {
+        // Fall back to latest month with data
+        const latestMonth = getLatestMonthWithData();
+        if (latestMonth) {
+          console.log('Previous month has no data. Using latest month with data:', latestMonth);
+          setFilters(prev => ({
+            ...prev,
+            dateRange: {
+              start: latestMonth.start,
+              end: latestMonth.end
+            }
+          }));
         }
-      }));
+      }
     }
   }, [data]);
 
@@ -134,48 +203,11 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
         filtered = filtered.filter(item => {
           if (!item.paymentDate) return false;
           
-          let itemDate: Date;
-          
-          // Handle multiple date formats robustly
-          const dateStr = item.paymentDate.toString().trim();
-          
-          if (dateStr.includes('/')) {
-            // Remove time part if present
-            const datePart = dateStr.split(' ')[0];
-            const parts = datePart.split('/');
-            
-            // Determine format based on part values
-            if (parts.length === 3) {
-              const [p1, p2, p3] = parts.map(p => parseInt(p));
-              
-              // If first part > 31, it's YYYY/MM/DD
-              if (p1 > 31) {
-                itemDate = new Date(p1, p2 - 1, p3);
-              }
-              // If third part > 31, it's DD/MM/YYYY
-              else if (p3 > 31) {
-                itemDate = new Date(p3, p2 - 1, p1);
-              }
-              // If middle part > 12, it's DD/MM/YYYY (month can't be > 12)
-              else if (p2 > 12) {
-                itemDate = new Date(p3, p1 - 1, p2);
-              }
-              // Otherwise assume DD/MM/YYYY (most common format)
-              else {
-                itemDate = new Date(p3, p2 - 1, p1);
-              }
-            } else {
-              itemDate = new Date(dateStr);
-            }
-          } else if (dateStr.includes('-')) {
-            // ISO format YYYY-MM-DD
-            itemDate = new Date(dateStr);
-          } else {
-            itemDate = new Date(dateStr);
-          }
+          // Use centralized parseDate utility for consistent parsing
+          const itemDate = parseDate(item.paymentDate);
           
           if (!itemDate || isNaN(itemDate.getTime())) {
-            console.log('Invalid date for item:', item.paymentDate);
+            // Debug only first few invalid dates
             return false;
           }
           
@@ -257,13 +289,29 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   };
 
   const resetFilters = () => {
+    // Check if previous month has data, otherwise use latest month with data
     const previousMonth = getPreviousMonthDateRange();
+    const prevStart = new Date(previousMonth.start);
+    const prevEnd = new Date(previousMonth.end);
+    prevEnd.setHours(23, 59, 59, 999);
+    
+    const hasDataInPreviousMonth = data.some(d => {
+      if (!d.paymentDate) return false;
+      const parsed = parseDate(d.paymentDate);
+      return parsed && parsed >= prevStart && parsed <= prevEnd;
+    });
+    
+    let dateRange = { start: previousMonth.start, end: previousMonth.end };
+    
+    if (!hasDataInPreviousMonth) {
+      const latestMonth = getLatestMonthWithData();
+      if (latestMonth) {
+        dateRange = latestMonth;
+      }
+    }
     
     setFilters({
-      dateRange: {
-        start: previousMonth.start,
-        end: previousMonth.end
-      },
+      dateRange,
       category: [],
       product: [],
       soldBy: [],

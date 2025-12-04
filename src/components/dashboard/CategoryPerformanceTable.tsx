@@ -251,14 +251,14 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
       <CardContent className="p-0">
         <div className="overflow-x-auto rounded-lg">
             <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
-              <thead className="bg-gradient-to-r from-orange-700 to-orange-900 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
-                <tr className="bg-indigo-900">
-                  <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 z-30 bg-violet-900">Category</th>
-                  <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 bg-violet-900 min-w-24">Contribution %</th>
+              <thead className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
+                <tr>
+                  <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 z-30 bg-slate-800 border-r border-white/20">Category</th>
+                  <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 border-r border-white/20 min-w-24">Contribution %</th>
                   {monthlyData.map(({
                   key,
                   display
-                }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 border-l border-indigo-600 min-w-32 bg-violet-900">
+                }) => <th key={key} className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 border-r border-white/20 min-w-32">
                       <div className="flex flex-col">
                         <span className="text-sm">{display.split(' ')[0]}</span>
                         <span className="text-xs text-yellow-300">{display.split(' ')[1]}</span>

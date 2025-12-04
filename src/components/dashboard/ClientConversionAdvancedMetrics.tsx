@@ -721,7 +721,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
 
       {/* --- Hosted Class Month-on-Month Table --- */}
       <Card className="bg-white shadow-lg border-0">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-pink-600 to-orange-600 text-white">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
             Hosted Class Conversions (Month-on-Month)

@@ -311,7 +311,7 @@ export const LeadDataTable: React.FC<LeadDataTableProps> = ({ title, data }) => 
 
   return (
     <Card className="bg-white shadow-xl border-0 overflow-hidden rounded-2xl">
-      <CardHeader className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 border-b border-slate-200">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b border-slate-200">
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center gap-2 text-xl font-bold">
             <BarChart3 className="w-6 h-6 text-white" />
@@ -322,7 +322,7 @@ export const LeadDataTable: React.FC<LeadDataTableProps> = ({ title, data }) => 
               <Eye className="w-3 h-3" />
               Live Data
             </Badge>
-            <Badge variant="secondary" className="text-indigo-600 border-white bg-white/90">
+            <Badge variant="secondary" className="text-slate-600 border-white bg-white/90">
               {data.length} Leads
             </Badge>
           </div>

@@ -347,7 +347,31 @@ export const MonthOnMonthDiscountTable: React.FC<MonthOnMonthDiscountTableProps>
     });
   });
   
-  const footerData = { group: 'TOTALS', months: totalsMap };
+  // Pre-format footer data for display
+  const footerData: Record<string, any> = { group: 'TOTALS' };
+  months.forEach((monthKey, idx) => {
+    const monthData = totalsMap.get(monthKey);
+    if (viewMode === 'values') {
+      footerData[monthKey] = formatMetricValue(monthData, metric);
+    } else {
+      // Growth mode
+      const prevMonthKey = months[idx - 1];
+      if (!prevMonthKey) {
+        footerData[monthKey] = '-';
+      } else {
+        const current = getMetricValue(monthData);
+        const previous = getMetricValue(totalsMap.get(prevMonthKey));
+        if (previous === 0 && current === 0) {
+          footerData[monthKey] = '0%';
+        } else if (previous === 0) {
+          footerData[monthKey] = '+100%';
+        } else {
+          const growth = ((current - previous) / previous) * 100;
+          footerData[monthKey] = `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+        }
+      }
+    }
+  });
 
   const tableVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
   const headerVariants = { hidden: { opacity: 0, y: -10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, delay: 0.2 } } };
@@ -447,7 +471,7 @@ export const MonthOnMonthDiscountTable: React.FC<MonthOnMonthDiscountTableProps>
               footerData={footerData}
               maxHeight="500px"
               className="rounded-lg"
-              headerGradient="from-slate-800 to-indigo-900"
+              headerGradient="from-slate-800 via-slate-900 to-slate-800"
               tableId="month-on-month-discount-analysis"
             />
           </motion.div>
