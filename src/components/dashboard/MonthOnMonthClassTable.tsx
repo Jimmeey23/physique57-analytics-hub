@@ -1086,7 +1086,6 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
             </TableBody>
           </Table>
         </div>
-      )}
 
       {/* Summary Stats */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
