@@ -97,7 +97,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
   return (
     <div className="space-y-6">
       {/* Location Tabs */}
-      <div className="rounded-2xl border border-red-200 bg-white/95 backdrop-blur-md p-6 shadow-xl">
+      <div className="rounded-2xl border border-slate-300 bg-white/95 backdrop-blur-md p-6 shadow-xl">
         {/* Enhanced Location Tabs - unified styling (matching Sales) */}
         <div className="flex justify-center mb-6" id="location-tabs">
           <div className="w-full max-w-6xl">
@@ -115,8 +115,8 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
                 className={cn(
                   "px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center min-h-[80px] border-2",
                   selectedLocation === 'all'
-                    ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white border-red-600 shadow-lg scale-105'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-red-400 hover:shadow-md'
+                    ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white border-slate-600 shadow-lg scale-105'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:shadow-md'
                 )}
               >
                 <span className="font-extrabold text-base">All Locations</span>
@@ -131,8 +131,8 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
                   className={cn(
                     "px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center min-h-[80px] border-2",
                     selectedLocation === stat.location
-                      ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white border-red-600 shadow-lg scale-105'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-red-400 hover:shadow-md'
+                      ? 'bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white border-slate-600 shadow-lg scale-105'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:shadow-md'
                   )}
                 >
                   <span className="font-extrabold text-base">{getLocationShortName(stat.location)}</span>
@@ -151,7 +151,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
 
       {/* Additional Location Stats Summary */}
       {selectedLocation !== 'all' && (
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-4 border border-red-200 shadow-sm mt-4">
+        <div className="bg-gradient-to-r from-slate-100 to-slate-50 rounded-xl p-4 border border-slate-300 shadow-sm mt-4">
           <div className="flex items-center gap-3">
             {getLocationIcon(selectedLocation)}
             <div>

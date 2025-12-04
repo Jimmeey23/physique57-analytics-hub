@@ -26,7 +26,7 @@ interface MonthOnMonthClassTableProps {
 }
 
 type MetricType = 'attendance' | 'sessions' | 'revenue' | 'fillRate' | 'classAverage' | 'capacity' | 'bookingRate';
-type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall' | 'am_pm' | 'timeslot' | 'class_time' | 'day_time' | 'trainer_time' | 'class_day' | 'trainer_day' | 'time_location' | 'class_location';
+type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall' | 'am_pm' | 'timeslot' | 'class_time' | 'trainer_time' | 'class_day' | 'trainer_day' | 'time_location' | 'class_location' | 'class_day_time_location' | 'trainer_class_day' | 'trainer_location' | 'class_trainer_location' | 'day_location' | 'time_trainer' | 'time_class_location' | 'day_time_trainer' | 'trainer_am_pm' | 'class_am_pm' | 'location_am_pm' | 'class_day_time' | 'trainer_day_time' | 'trainer_class_time' | 'location_day_time' | 'timeslot_location' | 'timeslot_trainer' | 'timeslot_class';
 
 interface MonthlyData {
   month: string;
@@ -60,10 +60,11 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
   data, 
   location 
 }) => {
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>('attendance');
-  const [groupBy, setGroupBy] = useState<GroupByType>('overall');
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>('classAverage');
+  const [groupBy, setGroupBy] = useState<GroupByType>('class_day_time_location');
   const [showGrowthRate, setShowGrowthRate] = useState(false);
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
   // Table ref for copy functionality
   const tableRef = useRef<HTMLTableElement>(null);
@@ -126,7 +127,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       months.add(monthKey);
     });
     
-    return Array.from(months).sort().map(monthKey => {
+    return Array.from(months).sort().reverse().map(monthKey => {
       const [year, month] = monthKey.split('-');
       const monthIndex = parseInt(month) - 1;
       return {
@@ -196,6 +197,90 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
         case 'class_location':
           groupKey = `${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'}`;
           break;
+        case 'class_day_time_location':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek} ${session.time} - ${session.location || 'Unknown'}`;
+          break;
+        case 'trainer_class_day':
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
+        case 'trainer_location':
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'class_trainer_location':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.trainerName || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'day_location':
+          groupKey = `${session.dayOfWeek} - ${session.location || 'Unknown'}`;
+          break;
+        case 'time_trainer':
+          groupKey = `${session.time} - ${session.trainerName || 'Unknown'}`;
+          break;
+        case 'time_class_location':
+          groupKey = `${session.time} - ${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'day_time_trainer':
+          groupKey = `${session.dayOfWeek} ${session.time} - ${session.trainerName || 'Unknown'}`;
+          break;
+        case 'trainer_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          groupKey = `${session.trainerName || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'class_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'location_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          groupKey = `${session.location || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'class_day_time':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'trainer_day_time':
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'trainer_class_time':
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.cleanedClass || 'Unknown'} - ${session.time}`;
+          break;
+        case 'location_day_time':
+          groupKey = `${session.location || 'Unknown'} - ${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'timeslot_location': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          let slot = '';
+          if (h >= 5 && h < 9) slot = 'Early Morning (5-9)';
+          else if (h >= 9 && h < 12) slot = 'Morning (9-12)';
+          else if (h >= 12 && h < 17) slot = 'Afternoon (12-17)';
+          else if (h >= 17 && h < 21) slot = 'Evening (17-21)';
+          else slot = 'Late Night (21-5)';
+          groupKey = `${slot} - ${session.location || 'Unknown'}`;
+          break;
+        }
+        case 'timeslot_trainer': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          let slot = '';
+          if (h >= 5 && h < 9) slot = 'Early Morning (5-9)';
+          else if (h >= 9 && h < 12) slot = 'Morning (9-12)';
+          else if (h >= 12 && h < 17) slot = 'Afternoon (12-17)';
+          else if (h >= 17 && h < 21) slot = 'Evening (17-21)';
+          else slot = 'Late Night (21-5)';
+          groupKey = `${slot} - ${session.trainerName || 'Unknown'}`;
+          break;
+        }
+        case 'timeslot_class': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          let slot = '';
+          if (h >= 5 && h < 9) slot = 'Early Morning (5-9)';
+          else if (h >= 9 && h < 12) slot = 'Morning (9-12)';
+          else if (h >= 12 && h < 17) slot = 'Afternoon (12-17)';
+          else if (h >= 17 && h < 21) slot = 'Evening (17-21)';
+          else slot = 'Late Night (21-5)';
+          groupKey = `${slot} - ${session.cleanedClass || 'Unknown'}`;
+          break;
+        }
         case 'overall':
         default:
           groupKey = 'Overall';
@@ -288,6 +373,234 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
     return result.sort((a, b) => b.totals.attendance - a.totals.attendance);
   }, [workingData, groupBy, availableMonths]);
 
+  // Get individual child rows for an expanded group (showing individual sessions per month)
+  const getChildRowsForGroup = (groupKey: string): GroupedRow[] => {
+    const groupedSessions = new Map<string, SessionData[]>();
+    
+    // Re-filter data for this specific group
+    workingData.forEach(session => {
+      let sessionGroupKey = 'Overall';
+      switch (groupBy) {
+        case 'trainer':
+          sessionGroupKey = session.trainerName || 'Unknown Trainer';
+          break;
+        case 'class':
+          sessionGroupKey = session.cleanedClass || 'Unknown Class';
+          break;
+        case 'location':
+          sessionGroupKey = session.location || 'Unknown Location';
+          break;
+        case 'day_time':
+          sessionGroupKey = `${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'trainer_class':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.cleanedClass || 'Unknown'}`;
+          break;
+        case 'uniqueid1':
+          sessionGroupKey = session.uniqueId1 || 'Unknown UniqueID1';
+          break;
+        case 'uniqueid2':
+          sessionGroupKey = session.uniqueId2 || 'Unknown UniqueID2';
+          break;
+        case 'am_pm': {
+          const hour = parseInt(session.time?.split(':')[0] || '0');
+          sessionGroupKey = hour < 12 ? 'AM' : 'PM';
+          break;
+        }
+        case 'timeslot': {
+          const sessionHour = parseInt(session.time?.split(':')[0] || '0');
+          if (sessionHour >= 5 && sessionHour < 9) sessionGroupKey = 'Early Morning (5-9)';
+          else if (sessionHour >= 9 && sessionHour < 12) sessionGroupKey = 'Morning (9-12)';
+          else if (sessionHour >= 12 && sessionHour < 17) sessionGroupKey = 'Afternoon (12-17)';
+          else if (sessionHour >= 17 && sessionHour < 21) sessionGroupKey = 'Evening (17-21)';
+          else sessionGroupKey = 'Late Night (21-5)';
+          break;
+        }
+        case 'class_time':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.time}`;
+          break;
+        case 'trainer_time':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.time}`;
+          break;
+        case 'class_day':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
+        case 'trainer_day':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
+        case 'time_location':
+          sessionGroupKey = `${session.time} - ${session.location || 'Unknown'}`;
+          break;
+        case 'class_location':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'class_day_time_location':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek} ${session.time} - ${session.location || 'Unknown'}`;
+          break;
+        case 'trainer_class_day':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
+        case 'trainer_location':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'class_trainer_location':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.trainerName || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'day_location':
+          sessionGroupKey = `${session.dayOfWeek} - ${session.location || 'Unknown'}`;
+          break;
+        case 'time_trainer':
+          sessionGroupKey = `${session.time} - ${session.trainerName || 'Unknown'}`;
+          break;
+        case 'time_class_location':
+          sessionGroupKey = `${session.time} - ${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'}`;
+          break;
+        case 'day_time_trainer':
+          sessionGroupKey = `${session.dayOfWeek} ${session.time} - ${session.trainerName || 'Unknown'}`;
+          break;
+        case 'trainer_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'class_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'location_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          sessionGroupKey = `${session.location || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'class_day_time':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'trainer_day_time':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'trainer_class_time':
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.cleanedClass || 'Unknown'} - ${session.time}`;
+          break;
+        case 'location_day_time':
+          sessionGroupKey = `${session.location || 'Unknown'} - ${session.dayOfWeek} ${session.time}`;
+          break;
+        case 'timeslot_location': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          let slot = '';
+          if (h >= 5 && h < 9) slot = 'Early Morning (5-9)';
+          else if (h >= 9 && h < 12) slot = 'Morning (9-12)';
+          else if (h >= 12 && h < 17) slot = 'Afternoon (12-17)';
+          else if (h >= 17 && h < 21) slot = 'Evening (17-21)';
+          else slot = 'Late Night (21-5)';
+          sessionGroupKey = `${slot} - ${session.location || 'Unknown'}`;
+          break;
+        }
+        case 'timeslot_trainer': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          let slot = '';
+          if (h >= 5 && h < 9) slot = 'Early Morning (5-9)';
+          else if (h >= 9 && h < 12) slot = 'Morning (9-12)';
+          else if (h >= 12 && h < 17) slot = 'Afternoon (12-17)';
+          else if (h >= 17 && h < 21) slot = 'Evening (17-21)';
+          else slot = 'Late Night (21-5)';
+          sessionGroupKey = `${slot} - ${session.trainerName || 'Unknown'}`;
+          break;
+        }
+        case 'timeslot_class': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          let slot = '';
+          if (h >= 5 && h < 9) slot = 'Early Morning (5-9)';
+          else if (h >= 9 && h < 12) slot = 'Morning (9-12)';
+          else if (h >= 12 && h < 17) slot = 'Afternoon (12-17)';
+          else if (h >= 17 && h < 21) slot = 'Evening (17-21)';
+          else slot = 'Late Night (21-5)';
+          sessionGroupKey = `${slot} - ${session.cleanedClass || 'Unknown'}`;
+          break;
+        }
+        case 'overall':
+        default:
+          sessionGroupKey = 'Overall';
+          break;
+      }
+      
+      if (sessionGroupKey === groupKey) {
+        if (!groupedSessions.has(sessionGroupKey)) {
+          groupedSessions.set(sessionGroupKey, []);
+        }
+        groupedSessions.get(sessionGroupKey)!.push(session);
+      }
+    });
+
+    // Now create a row for each individual session within this group
+    const allSessions = groupedSessions.get(groupKey) || [];
+    const childRows: GroupedRow[] = allSessions.map((session, idx) => {
+      const monthlyData: Record<string, MonthlyData> = {};
+      
+      availableMonths.forEach(month => {
+        monthlyData[month.key] = {
+          month: month.key,
+          monthLabel: month.label,
+          sessions: 0,
+          attendance: 0,
+          capacity: 0,
+          revenue: 0,
+          fillRate: 0,
+          classAverage: 0,
+          bookingRate: 0,
+          lateCancellations: 0,
+          uniqueClasses: 0,
+          uniqueTrainers: 0,
+          booked: 0
+        };
+      });
+
+      const date = new Date(session.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (monthlyData[monthKey]) {
+        const monthData = monthlyData[monthKey];
+        monthData.sessions = 1;
+        monthData.attendance = session.checkedInCount || 0;
+        monthData.capacity = session.capacity || 0;
+        monthData.revenue = session.totalPaid || 0;
+        monthData.fillRate = monthData.capacity > 0 ? (monthData.attendance / monthData.capacity) * 100 : 0;
+        monthData.classAverage = monthData.attendance;
+        monthData.booked = session.bookedCount || 0;
+        monthData.bookingRate = monthData.capacity > 0 ? (monthData.booked / monthData.capacity) * 100 : 0;
+        monthData.lateCancellations = session.lateCancelledCount || 0;
+      }
+
+      const totals: MonthlyData = {
+        month: 'total',
+        monthLabel: 'Total',
+        sessions: 1,
+        attendance: session.checkedInCount || 0,
+        capacity: session.capacity || 0,
+        revenue: session.totalPaid || 0,
+        lateCancellations: session.lateCancelledCount || 0,
+        fillRate: 0,
+        classAverage: session.checkedInCount || 0,
+        bookingRate: 0,
+        uniqueClasses: 0,
+        uniqueTrainers: 0,
+        booked: session.bookedCount || 0
+      };
+
+      totals.fillRate = totals.capacity > 0 ? (totals.attendance / totals.capacity) * 100 : 0;
+      totals.bookingRate = totals.capacity > 0 ? (totals.booked / totals.capacity) * 100 : 0;
+
+      return {
+        groupKey: `${groupKey}__child__${idx}`,
+        groupLabel: `${session.date} - ${session.cleanedClass || 'Unknown'} - ${session.trainerName || 'Unknown'}`,
+        monthlyData,
+        totals
+      };
+    });
+
+    return childRows.sort((a, b) => b.totals.attendance - a.totals.attendance);
+  };
+
   const getMetricValue = (monthData: MonthlyData, metric: MetricType): string => {
     switch (metric) {
       case 'attendance':
@@ -299,7 +612,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       case 'fillRate':
         return formatPercentage(monthData.fillRate);
       case 'classAverage':
-        return formatNumber(monthData.classAverage);
+        return monthData.classAverage.toFixed(1);
       case 'capacity':
         return formatNumber(monthData.capacity);
       case 'bookingRate':
@@ -325,22 +638,40 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
   ];
 
   const groupOptions = [
+    { value: 'class_day_time_location', label: 'Class + Day + Time + Location', icon: BarChart3 },
     { value: 'overall', label: 'Overall', icon: BarChart3 },
-    { value: 'trainer', label: 'By Trainer', icon: Users },
     { value: 'class', label: 'By Class', icon: Activity },
+    { value: 'trainer', label: 'By Trainer', icon: Users },
     { value: 'location', label: 'By Location', icon: MapPin },
+    { value: 'day_time', label: 'By Day & Time', icon: Clock },
+    { value: 'class_day_time', label: 'Class + Day + Time', icon: Activity },
+    { value: 'trainer_class_day', label: 'Trainer + Class + Day', icon: Users },
+    { value: 'trainer_location', label: 'Trainer + Location', icon: Users },
+    { value: 'class_trainer_location', label: 'Class + Trainer + Location', icon: Activity },
+    { value: 'day_location', label: 'Day + Location', icon: MapPin },
     { value: 'am_pm', label: 'By AM/PM', icon: Clock },
     { value: 'timeslot', label: 'By Timeslot', icon: Clock },
-    { value: 'day_time', label: 'By Day & Time', icon: Clock },
-    { value: 'class_time', label: 'By Class & Time', icon: Activity },
-    { value: 'trainer_time', label: 'By Trainer & Time', icon: Users },
-    { value: 'class_day', label: 'By Class & Day', icon: Activity },
-    { value: 'trainer_day', label: 'By Trainer & Day', icon: Users },
-    { value: 'time_location', label: 'By Time & Location', icon: MapPin },
-    { value: 'class_location', label: 'By Class & Location', icon: Building2 },
-    { value: 'trainer_class', label: 'By Trainer & Class', icon: Target },
-    { value: 'uniqueid1', label: 'Group by Class', icon: Target },
-    { value: 'uniqueid2', label: 'Group by Class & Trainer', icon: Users }
+    { value: 'class_time', label: 'Class + Time', icon: Activity },
+    { value: 'trainer_time', label: 'Trainer + Time', icon: Users },
+    { value: 'class_day', label: 'Class + Day', icon: Activity },
+    { value: 'trainer_day', label: 'Trainer + Day', icon: Users },
+    { value: 'time_location', label: 'Time + Location', icon: MapPin },
+    { value: 'class_location', label: 'Class + Location', icon: Building2 },
+    { value: 'trainer_class', label: 'Trainer + Class', icon: Target },
+    { value: 'time_trainer', label: 'Time + Trainer', icon: Clock },
+    { value: 'time_class_location', label: 'Time + Class + Location', icon: Clock },
+    { value: 'day_time_trainer', label: 'Day + Time + Trainer', icon: Clock },
+    { value: 'trainer_am_pm', label: 'Trainer + AM/PM', icon: Users },
+    { value: 'class_am_pm', label: 'Class + AM/PM', icon: Activity },
+    { value: 'location_am_pm', label: 'Location + AM/PM', icon: MapPin },
+    { value: 'trainer_day_time', label: 'Trainer + Day + Time', icon: Users },
+    { value: 'trainer_class_time', label: 'Trainer + Class + Time', icon: Users },
+    { value: 'location_day_time', label: 'Location + Day + Time', icon: MapPin },
+    { value: 'timeslot_location', label: 'Timeslot + Location', icon: MapPin },
+    { value: 'timeslot_trainer', label: 'Timeslot + Trainer', icon: Clock },
+    { value: 'timeslot_class', label: 'Timeslot + Class', icon: Clock },
+    { value: 'uniqueid1', label: 'Group by Class (ID1)', icon: Target },
+    { value: 'uniqueid2', label: 'Group by Class & Trainer (ID2)', icon: Users }
   ];
 
   return (
@@ -349,14 +680,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-purple-50/30 border-0 rounded-xl">
+      <Card className="w-full shadow-2xl bg-white border-0 rounded-xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white relative overflow-hidden rounded-t-xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm"></div>
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-3 text-xl font-bold">
@@ -399,10 +730,10 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <CardContent className="p-6 bg-gradient-to-br from-white/95 to-slate-50/95 backdrop-blur-sm">
+          <CardContent className="p-6 bg-white backdrop-blur-sm">
             {/* Controls */}
             <motion.div 
-              className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100"
+              className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200"
               whileHover={{ scale: 1.01 }}
               transition={{ duration: 0.2 }}
             >
@@ -413,12 +744,12 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <label className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <BarChart3 className="w-4 h-4" />
                     Metric
                   </label>
                   <Select value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricType)}>
-                    <SelectTrigger className="w-[180px] border-purple-200 focus:border-purple-400 shadow-sm">
+                    <SelectTrigger className="w-[180px] border-slate-300 focus:border-slate-400 shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -443,12 +774,12 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <label className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <Building2 className="w-4 h-4" />
                     Group By
                   </label>
                   <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByType)}>
-                    <SelectTrigger className="w-[200px] border-purple-200 focus:border-purple-400 shadow-sm">
+                    <SelectTrigger className="w-[200px] border-slate-300 focus:border-slate-400 shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -480,8 +811,8 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                     className={cn(
                       "transition-all duration-200",
                       showGrowthRate 
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" 
-                        : "border-purple-200 text-purple-700 hover:bg-purple-50"
+                        ? "bg-slate-600 hover:bg-slate-700" 
+                        : "border-slate-300 text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <TrendingUp className="w-4 h-4 mr-2" />
@@ -494,7 +825,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.5 }}
                 >
-                  <Badge variant="outline" className="text-sm border-purple-200 text-purple-700 bg-purple-50">
+                  <Badge variant="outline" className="text-sm border-slate-300 text-slate-700 bg-slate-100">
                     Date Filters Ignored
                   </Badge>
                 </motion.div>
@@ -504,15 +835,15 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
             {/* Month-on-Month Table */}
             {!isTableCollapsed && (
             <motion.div 
-              className="border border-purple-100 rounded-xl bg-white shadow-xl overflow-visible"
+              className="border border-slate-200 rounded-xl bg-white shadow-xl overflow-visible"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="w-full overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
+              <div className="w-full overflow-x-auto overflow-y-auto max-h-[800px] custom-scrollbar rounded-xl" style={{ display: 'block' }}>
                 <Table ref={tableRef} id={tableId} className="min-w-[1400px] w-max">
-                  <TableHeader className="sticky top-0 z-20 shadow-sm border-b-2">
-                    <TableRow className={`${getTableHeaderClasses('attendance')}`}>
+                  <TableHeader className="sticky top-0 z-20 shadow-sm border-b border-slate-200 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                    <TableRow>
                       <TableHead className={`min-w-[200px] sticky left-0 z-30 bg-slate-800/95 backdrop-blur-sm border-r font-bold`}>
                         <div className="flex items-center gap-2">
                           <Activity className="w-4 h-4 text-white" />
@@ -550,80 +881,149 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               
                 <TableBody>
                   <AnimatePresence>
-                    {processedData.map((row, rowIndex) => (
-                      <motion.tr
-                        key={row.groupKey}
-                        className={cn(
-                          "border-b transition-all duration-300 hover:shadow-md h-10 max-h-10",
-                          rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50"
-                        )}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ duration: 0.3, delay: rowIndex * 0.05 }}
-                        whileHover={{ 
-                          backgroundColor: "rgba(59, 130, 246, 0.05)",
-                          scale: 1.005,
-                          transition: { duration: 0.2 }
-                        }}
-                      >
-                        <TableCell className="sticky left-0 z-20 bg-white border-r font-medium whitespace-nowrap py-1.5">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                              {row.groupLabel.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="font-semibold text-gray-900">{row.groupLabel}</span>
-                            <span className="text-xs text-gray-500">({row.totals.sessions})</span>
-                          </div>
-                        </TableCell>
-                    
-                    {availableMonths.map((month, index) => {
-                      const monthData = row.monthlyData[month.key];
-                      const prevMonthData = index > 0 ? row.monthlyData[availableMonths[index - 1].key] : null;
-
-                      const getMetricNumeric = (md: MonthlyData, metric: MetricType): number => {
-                        switch (metric) {
-                          case 'attendance': return md.attendance;
-                          case 'sessions': return md.sessions;
-                          case 'revenue': return md.revenue;
-                          case 'fillRate': return md.fillRate;
-                          case 'classAverage': return md.classAverage;
-                          case 'capacity': return md.capacity;
-                          case 'bookingRate': return md.bookingRate;
-                          default: return md.attendance;
-                        }
-                      };
-
-                      const currentValue = getMetricNumeric(monthData, selectedMetric);
-                      const previousValue = prevMonthData ? getMetricNumeric(prevMonthData, selectedMetric) : 0;
-                      const growthRate = prevMonthData ? getGrowthRate(currentValue, previousValue) : 0;
+                    {processedData.map((row, rowIndex) => {
+                      const isExpanded = expandedRows.has(row.groupKey);
+                      const isExpandable = groupBy !== 'overall';
+                      const childRows = isExpanded ? getChildRowsForGroup(row.groupKey) : [];
 
                       return (
-                        <TableCell key={month.key} className="text-center py-1.5 whitespace-nowrap">
-                          <span className="font-semibold text-gray-900">
-                            {getMetricValue(monthData, selectedMetric)}
-                          </span>
-                          {showGrowthRate && prevMonthData && (
-                            <span className={cn(
-                              "text-xs font-medium ml-1",
-                              growthRate > 0 ? "text-green-600" : growthRate < 0 ? "text-red-600" : "text-gray-500"
-                            )}>
-                              {growthRate > 0 ? "↑" : growthRate < 0 ? "↓" : ""}
-                              {formatPercentage(Math.abs(growthRate))}
-                            </span>
-                          )}
-                        </TableCell>
+                        <React.Fragment key={row.groupKey}>
+                          <motion.tr
+                            className={cn(
+                              "border-b transition-all duration-300 hover:shadow-md h-10 max-h-10 cursor-pointer",
+                              rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50",
+                              isExpandable ? "hover:bg-blue-50/30" : ""
+                            )}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.3, delay: rowIndex * 0.05 }}
+                            whileHover={{ 
+                              backgroundColor: isExpandable ? "rgba(59, 130, 246, 0.08)" : "rgba(59, 130, 246, 0.05)",
+                              scale: 1.005,
+                              transition: { duration: 0.2 }
+                            }}
+                            onClick={() => {
+                              if (isExpandable) {
+                                setExpandedRows(prev => {
+                                  const newSet = new Set(prev);
+                                  if (newSet.has(row.groupKey)) {
+                                    newSet.delete(row.groupKey);
+                                  } else {
+                                    newSet.add(row.groupKey);
+                                  }
+                                  return newSet;
+                                });
+                              }
+                            }}
+                          >
+                            <TableCell className="sticky left-0 z-20 bg-white border-r font-medium whitespace-nowrap py-1.5">
+                              <div className="flex items-center gap-2">
+                                {isExpandable && (
+                                  <motion.div
+                                    animate={{ rotate: isExpanded ? 90 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="flex items-center justify-center w-5"
+                                  >
+                                    <ExpandIcon className="w-4 h-4 text-blue-600" />
+                                  </motion.div>
+                                )}
+                                {!isExpandable && <div className="w-5" />}
+                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                                  {row.groupLabel.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="font-semibold text-gray-900">{row.groupLabel}</span>
+                                <span className="text-xs text-gray-500">({row.totals.sessions})</span>
+                              </div>
+                            </TableCell>
+                        
+                            {availableMonths.map((month, index) => {
+                              const monthData = row.monthlyData[month.key];
+                              const prevMonthData = index > 0 ? row.monthlyData[availableMonths[index - 1].key] : null;
+
+                              const getMetricNumeric = (md: MonthlyData, metric: MetricType): number => {
+                                switch (metric) {
+                                  case 'attendance': return md.attendance;
+                                  case 'sessions': return md.sessions;
+                                  case 'revenue': return md.revenue;
+                                  case 'fillRate': return md.fillRate;
+                                  case 'classAverage': return md.classAverage;
+                                  case 'capacity': return md.capacity;
+                                  case 'bookingRate': return md.bookingRate;
+                                  default: return md.attendance;
+                                }
+                              };
+
+                              const currentValue = getMetricNumeric(monthData, selectedMetric);
+                              const previousValue = prevMonthData ? getMetricNumeric(prevMonthData, selectedMetric) : 0;
+                              const growthRate = prevMonthData ? getGrowthRate(currentValue, previousValue) : 0;
+
+                              return (
+                                <TableCell key={month.key} className="text-center py-1.5 whitespace-nowrap">
+                                  <span className="font-semibold text-gray-900">
+                                    {getMetricValue(monthData, selectedMetric)}
+                                  </span>
+                                  {showGrowthRate && prevMonthData && (
+                                    <span className={cn(
+                                      "text-xs font-medium ml-1",
+                                      growthRate > 0 ? "text-green-600" : growthRate < 0 ? "text-red-600" : "text-gray-500"
+                                    )}>
+                                      {growthRate > 0 ? "↑" : growthRate < 0 ? "↓" : ""}
+                                      {formatPercentage(Math.abs(growthRate))}
+                                    </span>
+                                  )}
+                                </TableCell>
+                              );
+                            })}
+                        
+                            <TableCell className="text-center py-1.5 whitespace-nowrap">
+                              <span className="font-bold text-slate-800">
+                                {getMetricValue(row.totals, selectedMetric)}
+                              </span>
+                            </TableCell>
+                          </motion.tr>
+
+                          {/* Child Rows */}
+                          <AnimatePresence>
+                            {isExpanded && childRows.map((childRow, childIndex) => (
+                              <motion.tr
+                                key={childRow.groupKey}
+                                className="border-b bg-blue-50/40 h-9 max-h-9"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2, delay: childIndex * 0.02 }}
+                              >
+                                <TableCell className="sticky left-0 z-20 bg-blue-50/40 border-r font-medium whitespace-nowrap py-1 pl-12 text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-400" />
+                                    <span className="text-gray-700">{childRow.groupLabel}</span>
+                                  </div>
+                                </TableCell>
+
+                                {availableMonths.map((month) => {
+                                  const monthData = childRow.monthlyData[month.key];
+                                  return (
+                                    <TableCell key={month.key} className="text-center py-1 whitespace-nowrap text-sm">
+                                      <span className="text-gray-800">
+                                        {getMetricValue(monthData, selectedMetric)}
+                                      </span>
+                                    </TableCell>
+                                  );
+                                })}
+
+                                <TableCell className="text-center py-1 whitespace-nowrap text-sm">
+                                  <span className="font-semibold text-slate-700">
+                                    {getMetricValue(childRow.totals, selectedMetric)}
+                                  </span>
+                                </TableCell>
+                              </motion.tr>
+                            ))}
+                          </AnimatePresence>
+                        </React.Fragment>
                       );
                     })}
-                    
-                    <TableCell className="text-center py-1.5 whitespace-nowrap">
-                      <span className="font-bold text-slate-800">
-                        {getMetricValue(row.totals, selectedMetric)}
-                      </span>
-                    </TableCell>
-                  </motion.tr>
-                ))}
-                </AnimatePresence>
+                  </AnimatePresence>
                 {/* Totals row across all groups */}
                 <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-10 max-h-10">
                   <TableCell className="sticky left-0 z-10 bg-slate-800 border-r text-white py-1.5">Totals</TableCell>
@@ -757,19 +1157,19 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               whileHover={{ scale: 1.05, rotate: -1 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <Card className="bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardContent className="p-4 text-center">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.5, delay: 0.9 }}
                   >
-                    <BarChart3 className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                    <BarChart3 className="w-8 h-8 mx-auto mb-2 text-blue-600" />
                   </motion.div>
-                  <div className="text-2xl font-bold text-orange-800">
+                  <div className="text-2xl font-bold text-blue-900">
                     {processedData.length}
                   </div>
-                  <div className="text-sm text-orange-600">
+                  <div className="text-sm text-blue-700">
                     {groupBy === 'trainer' ? 'Trainers' : 
                      groupBy === 'class' ? 'Classes' :
                      groupBy === 'uniqueid1' ? 'UniqueID1' :
