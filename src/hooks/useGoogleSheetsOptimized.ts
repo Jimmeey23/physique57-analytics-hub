@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { SalesData } from '@/types/dashboard';
 import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
-import { rateLimitedFetch } from '@/utils/rateLimiter';
 
 const logger = createLogger('useGoogleSheetsOptimized');
 
@@ -12,7 +11,7 @@ const fetchSalesData = async (): Promise<SalesData[]> => {
   logger.info('Fetching sales data from Google Sheets...');
   const accessToken = await getGoogleAccessToken();
   
-  const response = await rateLimitedFetch(
+  const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
     {
       headers: {
@@ -139,18 +138,15 @@ const fetchSalesData = async (): Promise<SalesData[]> => {
   return salesData;
 };
 
-// Optimized hook using React Query with extended caching for Sheets quota
+// Optimized hook using React Query
 export const useGoogleSheetsOptimized = () => {
   const query = useQuery({
     queryKey: ['sales-data'],
     queryFn: fetchSalesData,
-    staleTime: 15 * 60 * 1000, // 15 minutes (increased to reduce API calls)
-    gcTime: 60 * 60 * 1000, // 60 minutes (increased cache time)
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // Don't refetch when component mounts if data exists
-    refetchOnReconnect: false, // Don't refetch on reconnect to save quota
-    retry: 2, // Reduced retries to save quota
-    retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000),
+    retry: 3,
   });
 
   return {

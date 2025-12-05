@@ -4,23 +4,22 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Stale-while-revalidate strategy with longer cache for Sheets data
-      staleTime: 10 * 60 * 1000, // 10 minutes - data is fresh (increased from 5)
-      gcTime: 60 * 60 * 1000, // 60 minutes - keep in cache (increased from 30)
+      // Stale-while-revalidate strategy
+      staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache
       
       // Performance optimizations
       refetchOnWindowFocus: false, // Don't refetch on tab focus to save API calls
-      refetchOnReconnect: false, // Don't auto-refetch on reconnect to save quota
-      refetchOnMount: false, // Don't refetch when component mounts if data exists
-      retry: 2, // Reduced from 3 to save quota
-      retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000), // Longer delays
+      refetchOnReconnect: true, // Refetch when internet reconnects
+      retry: 3, // Retry failed requests 3 times
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
       
       // Network optimizations
       networkMode: 'online', // Only run queries when online
     },
     mutations: {
-      retry: 1, // Reduced from 2
-      retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 10000),
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   },
 });

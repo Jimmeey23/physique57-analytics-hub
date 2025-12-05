@@ -13,32 +13,6 @@ const GOOGLE_CONFIG = {
 const SHEET_ID = process.env.NOTES_SHEET_ID || "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
 const NOTES_SHEET_NAME = process.env.NOTES_SHEET_NAME || 'Notes';
 
-// Simple in-memory cache with TTL
-const cache = new Map();
-const CACHE_TTL = 30000; // 30 seconds
-
-function getCacheKey(tableKey, location, period, sectionId) {
-  return `${tableKey || '*'}_${location || '*'}_${period || '*'}_${sectionId || '*'}`;
-}
-
-function getFromCache(key) {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
-  }
-  cache.delete(key);
-  return null;
-}
-
-function setCache(key, data) {
-  cache.set(key, { data, timestamp: Date.now() });
-  // Cleanup old cache entries
-  if (cache.size > 100) {
-    const oldestKeys = Array.from(cache.keys()).slice(0, 50);
-    oldestKeys.forEach(k => cache.delete(k));
-  }
-}
-
 async function getAccessToken() {
   const params = new URLSearchParams({
     client_id: GOOGLE_CONFIG.CLIENT_ID,
@@ -110,15 +84,6 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       const { tableKey, location, period, sectionId } = req.query;
-      
-      // Check cache first
-      const cacheKey = getCacheKey(tableKey, location, period, sectionId);
-      const cachedData = getFromCache(cacheKey);
-      if (cachedData) {
-        console.log('Returning cached notes data');
-        return res.status(200).json({ notes: cachedData, cached: true });
-      }
-      
       const range = `${NOTES_SHEET_NAME}!A2:I10000`;
       const getResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
@@ -131,19 +96,12 @@ export default async function handler(req, res) {
         rowNumber: idx + 2,
         timestamp: r[0], tableKey: r[1], location: r[2], period: r[3], sectionId: r[4], author: r[5], note: r[6], summary: r[7], version: r[8]
       })).filter(x => (!tableKey || x.tableKey === tableKey) && (!location || x.location === location) && (!period || x.period === period) && (!sectionId || x.sectionId === sectionId));
-      
-      // Store in cache
-      setCache(cacheKey, items);
-      
       return res.status(200).json({ notes: items });
     }
 
     if (req.method === 'POST') {
       const { tableKey, location, period, sectionId, author, note, summary, row } = req.body || {};
       if (!tableKey) return res.status(400).json({ error: 'tableKey required' });
-
-      // Clear cache on write
-      cache.clear();
 
       // If row provided, update specific range, else append
       if (row && typeof row === 'number') {
@@ -169,9 +127,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      // Clear cache on delete
-      cache.clear();
-      
       // Delete a specific row (1-based). Accept from query or body. Prevent deleting header row.
       const rowParam = (req.query && (req.query.row || req.query.rowNumber)) ?? (req.body && (req.body.row || req.body.rowNumber));
       const row = Number(rowParam);
