@@ -50,7 +50,7 @@ export const usePayrollData = () => {
 
   const fetchPayrollData = async () => {
     try {
-      console.log('Fetching payroll data from Google Sheets...');
+      // Fetching payroll data from Google Sheets
       setIsLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(

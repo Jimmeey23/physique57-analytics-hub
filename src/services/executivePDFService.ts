@@ -146,15 +146,8 @@ export class ExecutivePDFReportGenerator {
     // Filter data for this location and period
     this.locationData = this.filterDataForLocation(allData, this.config.locationName);
     
-    console.log(`📊 Generating PDF for ${this.config.locationName} (${this.config.monthYear}):`, {
-      sales: this.locationData.sales.length,
-      sessions: this.locationData.sessions.length,
-      payroll: this.locationData.payroll.length,
-      newClients: this.locationData.newClients.length,
-      leads: this.locationData.leads.length,
-      discounts: this.locationData.discounts.length
-    });
-
+    // PDF generation started for location and month
+    
     // Generate all sections
     this.addCoverPage();
     this.addNewPage();

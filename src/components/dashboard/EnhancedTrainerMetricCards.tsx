@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import { 
   Users, 
   Activity, 
@@ -290,27 +290,23 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
                   </p>
                 </div>
 
-                {/* Top Trainers Avatars */}
+                {/* Top Trainers */}
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex -space-x-2">
                     {topTrainers.slice(0, 3).map((trainer, idx) => (
-                      <Avatar 
+                      <div 
                         key={trainer}
                         className={cn(
                           "border-2 border-white group-hover:border-slate-800 transition-all duration-500",
-                          "w-8 h-8",
                           "hover:z-10 hover:scale-110"
                         )}
                       >
-                        <AvatarFallback className={cn(
-                          "text-xs font-semibold",
-                          idx === 0 && "bg-gradient-to-br from-blue-500 to-blue-600 text-white",
-                          idx === 1 && "bg-gradient-to-br from-green-500 to-green-600 text-white",
-                          idx === 2 && "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
-                        )}>
-                          {getInitials(trainer)}
-                        </AvatarFallback>
-                      </Avatar>
+                        <TrainerNameCell 
+                          name={trainer} 
+                          className="w-8 h-8 text-xs"
+                          showName={false}
+                        />
+                      </div>
                     ))}
                   </div>
                   <span className="text-xs text-slate-600 group-hover:text-slate-300 transition-colors">

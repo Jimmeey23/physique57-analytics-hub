@@ -37,12 +37,12 @@ export class DirectGeminiService {
   private modelId: string;
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSy-REDACTED_GEMINI_KEY';
+    this.apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
     this.modelId = 'gemini-flash-latest'; // Matching your bash reference
     
     if (!this.apiKey) {
-      throw new Error('Gemini API key is not configured');
+      throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in your environment variables.');
     }
   }
 

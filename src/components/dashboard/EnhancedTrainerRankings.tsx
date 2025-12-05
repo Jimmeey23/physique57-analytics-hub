@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import { Trophy, Medal, Award, Crown, Star, TrendingUp, Users, Target, Activity, DollarSign, Zap, SortAsc, SortDesc, ArrowUpDown } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
@@ -252,7 +253,9 @@ export const EnhancedTrainerRankings: React.FC<EnhancedTrainerRankingsProps> = (
                   {/* Trainer Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 truncate">{trainer.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <TrainerNameCell name={trainer.name} className="font-bold text-gray-900" showName={true} />
+                      </div>
                       {isTopThree && (
                         <Badge className="bg-yellow-100 text-yellow-800 text-xs animate-pulse">
                           <Star className="w-3 h-3 mr-1" />

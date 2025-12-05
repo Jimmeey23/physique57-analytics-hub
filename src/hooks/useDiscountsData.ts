@@ -7,18 +7,12 @@ export const useDiscountsData = () => {
   const { data: salesData, loading, error } = useGoogleSheets();
   const [discountData, setDiscountData] = useState<SalesData[]>([]);
   
-  // Add debug logging
-  useEffect(() => {
-    console.log('Discounts hook - loading:', loading, 'error:', error, 'salesData length:', salesData?.length || 0);
-    if (error) {
-      console.error('Sales data error in discounts hook:', error);
-    }
-  }, [loading, error, salesData]);
+  // Process sales data for discounts analysis
 
   useEffect(() => {
     if (salesData && salesData.length > 0) {
       try {
-        console.log('Processing sales data for discounts...', salesData.length, 'items');
+        // Processing sales data for discounts
         
         const processedData: SalesData[] = salesData.map((item: any) => {
           // Parse date correctly - handle DD/MM/YYYY HH:mm:ss format
@@ -241,15 +235,7 @@ export const useDiscountsData = () => {
           .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
           .slice(0, 5000); // Limit to last 5000 transactions for performance
 
-        console.log('Total processed items:', processedData.length);
-        console.log('Items with discounts:', discountedItemsEnhanced.length);
-        console.log('Final data shown:', finalData.length);
-        
-        if (finalData.length > 0) {
-          console.log('Sample item:', finalData[0]);
-          console.log('Sample discount amount:', finalData[0].discountAmount);
-          console.log('Sample discount percentage:', finalData[0].discountPercentage);
-        }
+        // Final data processed
         
         setDiscountData(finalData);
       } catch (error) {
@@ -257,7 +243,7 @@ export const useDiscountsData = () => {
         setDiscountData([]);
       }
     } else {
-      console.log('No sales data available for discount processing');
+      // No sales data available for discount processing
       setDiscountData([]);
     }
   }, [salesData]);

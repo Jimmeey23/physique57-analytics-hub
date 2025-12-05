@@ -52,12 +52,7 @@ export const useGoogleSheets = () => {
       
       const rows = result.values || [];
       
-      console.log('useGoogleSheets - Raw data from Google Sheets:', {
-        totalRows: rows.length,
-        hasHeaders: rows.length > 0,
-        headers: rows[0]?.slice(0, 10), // First 10 headers
-        sampleRow: rows[1]?.slice(0, 10) // First 10 columns of first data row
-      });
+      // Raw data from Google Sheets received
       
       if (rows.length < 2) {
         if (isMountedRef.current) {

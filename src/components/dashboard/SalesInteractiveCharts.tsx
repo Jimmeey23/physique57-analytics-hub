@@ -61,7 +61,7 @@ interface SalesInteractiveChartsProps {
   data: SalesData[];
 }
 
-export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = ({ data }) => {
+export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = React.memo(({ data }) => {
   const [timeRange, setTimeRange] = useState('6m');
   const [activeChart, setActiveChart] = useState('revenue');
   const [productMetric, setProductMetric] = useState('revenue');
@@ -439,4 +439,6 @@ export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = ({ 
       </CardContent>
     </Card>
   );
-};
+});
+
+SalesInteractiveCharts.displayName = 'SalesInteractiveCharts';

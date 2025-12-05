@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UniformTrainerTable } from './UniformTrainerTable';
+import { ModernTableWrapper } from './ModernTableWrapper';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 interface TrainerYearOnYearTableProps {
   data: ProcessedTrainerData[];
   onRowClick?: (trainer: string, data: any) => void;
@@ -126,12 +126,14 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
         </Tooltip>
       </TooltipProvider>
     ),
-    className: 'font-semibold min-w-[240px]',
+    className: 'min-w-[240px]',
     sortable: true,
-    render: (value: string, row: any) => <div>
-          <div className="font-medium text-slate-800">{value}</div>
-          
-        </div>
+    render: (value: string, row: any) => (
+      <div className="flex flex-col gap-1">
+        <TrainerNameCell name={value} className="text-nowrap" />
+        <div className="text-xs text-slate-500 ml-10">{row.location}</div>
+      </div>
+    )
   }, {
     key: 'currentSessions' as const,
     header: (
@@ -289,30 +291,65 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
   totals.currentAvgClassSize = totals.currentSessions > 0 ? totals.currentCustomers / totals.currentSessions : 0;
   totals.previousAvgClassSize = totals.previousSessions > 0 ? totals.previousCustomers / totals.previousSessions : 0;
   totals.classSizeGrowth = totals.previousAvgClassSize > 0 ? (totals.currentAvgClassSize - totals.previousAvgClassSize) / totals.previousAvgClassSize * 100 : 0;
-  return <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-900 text-white">
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          Trainer Year-on-Year Performance Comparison
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {new Date().getFullYear()} vs {new Date().getFullYear() - 1}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <UniformTrainerTable
-          data={sortedYoY}
-          columns={columns}
-          onRowClick={handleRowClick}
-          headerGradient="from-emerald-800 via-emerald-900 to-teal-900"
-          showFooter={true}
-          footerData={totals}
-          stickyHeader={true}
-          onSort={handleSort}
-          sortField={sortConfig.key}
-          sortDirection={sortConfig.direction}
-          tableId="Trainer Year-on-Year Performance Comparison"
-        />
-      </CardContent>
-    </Card>;
+  return (
+    <ModernTableWrapper
+      title="Trainer Year-on-Year Performance Comparison"
+      description={`Performance comparison for ${sortedYoY.length} trainers: ${new Date().getFullYear()} vs ${new Date().getFullYear() - 1}`}
+      icon={<BarChart3 className="w-5 h-5" />}
+      totalItems={sortedYoY.length}
+    >
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 text-white">
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={column.key}
+                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
+                      column.className || ''
+                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
+                    onClick={() => column.sortable !== false && handleSort(column.key)}
+                    style={{ height: '40px' }}
+                  >
+                    <div className="flex items-center gap-1">
+                      {column.header}
+                      {sortConfig.key === column.key && (
+                        sortConfig.direction === 'asc' ? (
+                          <TrendingUp className="w-3 h-3" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3" />
+                        )
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedYoY.map((row, index) => (
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(row)}
+                  style={{ height: '40px' }}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-4 py-2 text-sm whitespace-nowrap ${
+                        column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ModernTableWrapper>
+  );
 };

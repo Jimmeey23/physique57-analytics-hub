@@ -523,10 +523,10 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       <CardContent className="p-0 rounded-b-xl">
         <div className="relative w-full overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl" style={{ display: 'block' }}>
           <Table className="min-w-[2000px] w-max">
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-red-600 to-orange-600">
-              <TableRow className="border-b-2 border-red-700 shadow-lg">
+            <TableHeader className="sticky top-0 z-20">
+              <TableRow className="bg-gradient-to-r from-red-600 to-orange-600 border-b-2 border-red-700 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[200px] sticky left-0 z-30 h-10 bg-gradient-to-r from-red-600 to-orange-600"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[200px] sticky left-0 z-30 h-10"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
@@ -713,21 +713,21 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   <React.Fragment key={group.groupKey}>
                     {/* Group header row */}
                     <TableRow 
-                      className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors border-l-4 border-l-blue-600 cursor-pointer max-h-[40px]"
+                      className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-blue-600 cursor-pointer max-h-[40px]"
                       onClick={() => toggleGroup(group.groupKey)}
                     >
-                      <TableCell className="py-2 sticky left-0 z-20 bg-gradient-to-r from-blue-50 to-indigo-50 group-hover:from-blue-100 group-hover:to-indigo-100 transition-colors max-h-[40px]">
+                      <TableCell className="py-2 sticky left-0 z-20 bg-white hover:bg-gray-50 transition-colors max-h-[40px]">
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
                             {group.isExpanded ? 
-                              <ChevronDown className="h-4 w-4" /> : 
-                              <ChevronRight className="h-4 w-4" />
+                              <ChevronDown className="h-4 w-4 text-black" /> : 
+                              <ChevronRight className="h-4 w-4 text-black" />
                             }
                           </Button>
                           <TrainerAvatar name={group.groupLabel} />
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-slate-900 truncate">{group.groupLabel}</div>
-                            <div className="text-xs text-slate-500 truncate">
+                            <div className="font-semibold text-black truncate">{group.groupLabel}</div>
+                            <div className="text-xs text-gray-600 truncate">
                               {group.aggregatedMetrics.totalClasses} classes
                             </div>
                           </div>
@@ -850,7 +850,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                     {group.isExpanded && group.sessions.map((session, index) => (
                       <TableRow 
                         key={`${group.groupKey}-${index}`}
-                        className="bg-white hover:bg-blue-50 transition-colors border-l-4 border-l-transparent hover:border-l-blue-300"
+                        className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-transparent hover:border-l-gray-300"
                       >
                         <TableCell className="py-2 pl-12 max-h-[40px]">
                           <div className="flex items-center gap-2">
@@ -858,7 +858,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                               <TrainerAvatar name={session.trainerName || 'Unknown'} />
                             </div>
                             <div className="truncate">
-                              <div className="text-sm font-medium text-slate-800 truncate">{session.trainerName}</div>
+                              <div className="text-sm font-medium text-black truncate">{session.trainerName}</div>
                             </div>
                           </div>
                         </TableCell>
@@ -868,7 +868,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           </Badge>
                         </TableCell>
                         <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm font-medium text-slate-700 truncate">
+                          <div className="text-sm font-medium text-black truncate">
                             {formatDate(session.date)}
                           </div>
                         </TableCell>
@@ -878,17 +878,17 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           </div>
                         </TableCell>
                         <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm text-slate-600 truncate">
+                          <div className="text-sm text-black truncate">
                             {session.dayOfWeek}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm font-medium text-slate-700 truncate">
+                          <div className="text-sm font-medium text-black truncate">
                             {session.time}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm text-slate-600 truncate">
+                          <div className="text-sm text-black truncate">
                             {session.location}
                           </div>
                         </TableCell>
@@ -953,13 +953,13 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 paginatedData.map((session: ProcessedSession, index) => (
                   <TableRow 
                     key={index}
-                    className="bg-white hover:bg-blue-50 transition-colors border-l-4 border-l-transparent hover:border-l-blue-300"
+                    className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-transparent hover:border-l-gray-300"
                   >
                     <TableCell className="py-4">
                       <div className="flex items-center gap-3">
                         <TrainerAvatar name={session.trainerName || 'Unknown'} />
                         <div>
-                          <div className="font-medium text-slate-800">{session.trainerName}</div>
+                          <div className="font-medium text-black">{session.trainerName}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -969,7 +969,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="font-medium text-slate-700">
+                      <div className="font-medium text-black">
                         {formatDate(session.date)}
                       </div>
                     </TableCell>
@@ -977,17 +977,17 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                       <ClassTypeBadge type={session.cleanedClass || 'Unknown'} />
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="text-slate-600">
+                      <div className="text-black">
                         {session.dayOfWeek}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="font-medium text-slate-700">
+                      <div className="font-medium text-black">
                         {session.time}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="text-slate-600 truncate max-w-[120px]">
+                      <div className="text-black truncate max-w-[120px]">
                         {session.location}
                       </div>
                     </TableCell>

@@ -104,7 +104,7 @@ export const useDiscountAnalysis = () => {
         setDiscountData([]);
       }
     } else {
-      console.log('No sales data available for discount analysis');
+      // No sales data available for discount analysis
       setDiscountData([]);
     }
   }, [salesData]);

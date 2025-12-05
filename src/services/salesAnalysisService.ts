@@ -90,11 +90,7 @@ export class SalesAnalysisService {
       return date.getMonth() + 1 === month && date.getFullYear() === year;
     });
     
-    console.log(`filterDataByMonth(${month}/${year}):`, {
-      inputRecords: data.length,
-      outputRecords: filtered.length,
-      sampleDates: data.slice(0, 5).map(d => d.paymentDate)
-    });
+    // Filtering data by month
     
     return filtered;
   }

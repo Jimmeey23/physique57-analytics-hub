@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ModernTableWrapper } from './ModernTableWrapper';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { OptimizedTable } from '@/components/ui/OptimizedTable';
@@ -8,6 +8,7 @@ import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Target, Award, A
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
 interface TrainerDetailedPerformanceTableProps {
   data: any[];
@@ -44,16 +45,13 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
       align: 'left' as const,
       render: (value: any) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-            {value?.charAt(0)?.toUpperCase() || 'T'}
-          </div>
           <div>
-            <p className="font-semibold text-slate-800">{value}</p>
+            <TrainerNameCell name={value} className="text-nowrap" />
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleTrainerClick(value)}
-              className="text-xs text-blue-600 hover:text-blue-800 p-0 h-auto"
+              className="text-xs text-blue-600 hover:text-blue-800 p-0 h-auto ml-10"
             >
               <Eye className="w-3 h-3 mr-1" />
               View Details
@@ -200,16 +198,13 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
   }
 
   return (
-    <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent flex items-center gap-2">
-          <div className="animate-spin">
-            <BarChart3 className="w-6 h-6 text-blue-600" />
-          </div>
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <ModernTableWrapper
+      title={title}
+      description={`Detailed performance analytics for ${processedData.length} trainers with efficiency metrics`}
+      icon={<BarChart3 className="w-5 h-5" />}
+      totalItems={processedData.length}
+    >
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <OptimizedTable
           data={processedData}
           columns={columns}
@@ -272,7 +267,7 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </ModernTableWrapper>
   );
 };

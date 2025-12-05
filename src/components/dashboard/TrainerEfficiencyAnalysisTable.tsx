@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UniformTrainerTable } from './UniformTrainerTable';
+import { ModernTableWrapper } from './ModernTableWrapper';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Zap, Clock, Target, TrendingUp, TrendingDown, Award } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
 interface TrainerEfficiencyAnalysisTableProps {
   data: ProcessedTrainerData[];
@@ -165,12 +165,12 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
       key: 'trainerName' as const,
       header: 'Trainer',
       sortable: true,
-      className: 'font-semibold min-w-[160px]',
+      className: 'min-w-[160px]',
       render: (value: string, row: any) => (
-        <div>
-          <div className="font-medium text-slate-800">{value}</div>
-          <div className="text-sm text-slate-500">{row.location}</div>
-          <Badge className={`mt-1 text-xs ${
+        <div className="flex flex-col gap-1">
+          <TrainerNameCell name={value} className="text-nowrap" />
+          <div className="text-xs text-slate-500 ml-10">{row.location}</div>
+          <Badge className={`mt-1 text-xs ml-10 w-fit ${
             row.productivityRank === 'S+' ? 'bg-purple-100 text-purple-800' :
             row.productivityRank === 'A+' ? 'bg-green-100 text-green-800' :
             row.productivityRank === 'A' ? 'bg-blue-100 text-blue-800' :
@@ -436,44 +436,83 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
   }, [efficiencyData]);
 
   return (
-    <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-orange-700 via-orange-800 to-red-900 text-white">
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="w-5 h-5" />
-          Trainer Efficiency & Productivity Analysis
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {efficiencyData.length} Trainers
-          </Badge>
-        </CardTitle>
-        <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-white/80">Avg Efficiency</div>
-            <div className="text-xl font-bold">{summaryStats.avgEfficiency.toFixed(0)}</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-white/80">Top Performers</div>
-            <div className="text-xl font-bold">{summaryStats.topPerformers}</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-white/80">Avg Utilization</div>
-            <div className="text-xl font-bold">{summaryStats.avgCapacityUtilization.toFixed(1)}%</div>
+    <ModernTableWrapper
+      title="Trainer Efficiency & Productivity Analysis"
+      description={`Efficiency analysis for ${efficiencyData.length} trainers with productivity ranking system`}
+      icon={<Zap className="w-5 h-5" />}
+      totalItems={efficiencyData.length}
+    >
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        {/* Summary Stats Header */}
+        <div className="bg-gradient-to-r from-blue-800 via-blue-900 to-slate-900 text-white p-4 rounded-t-lg">
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="bg-white/10 rounded-lg p-3">
+              <div className="text-white/80">Avg Efficiency</div>
+              <div className="text-xl font-bold">{summaryStats.avgEfficiency.toFixed(0)}</div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3">
+              <div className="text-white/80">Top Performers</div>
+              <div className="text-xl font-bold">{summaryStats.topPerformers}</div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3">
+              <div className="text-white/80">Avg Utilization</div>
+              <div className="text-xl font-bold">{summaryStats.avgCapacityUtilization.toFixed(1)}%</div>
+            </div>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <UniformTrainerTable
-          data={efficiencyData}
-          columns={columns}
-          onSort={handleSort}
-          sortField={sortConfig.key}
-          sortDirection={sortConfig.direction}
-          onRowClick={handleRowClick}
-          headerGradient="from-orange-800 via-orange-900 to-red-900"
-          showFooter={false}
-          stickyHeader={true}
-          tableId="Trainer Efficiency & Productivity Analysis"
-        />
-      </CardContent>
-    </Card>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-blue-800 via-blue-900 to-slate-900 text-white">
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={column.key}
+                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
+                      column.className || ''
+                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
+                    onClick={() => column.sortable !== false && handleSort(column.key)}
+                    style={{ height: '40px' }}
+                  >
+                    <div className="flex items-center gap-1">
+                      {column.header}
+                      {sortConfig.key === column.key && (
+                        sortConfig.direction === 'asc' ? (
+                          <TrendingUp className="w-3 h-3" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3" />
+                        )
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {efficiencyData.map((row, index) => (
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(row)}
+                  style={{ height: '40px' }}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-4 py-2 text-sm whitespace-nowrap ${
+                        column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ModernTableWrapper>
   );
 };

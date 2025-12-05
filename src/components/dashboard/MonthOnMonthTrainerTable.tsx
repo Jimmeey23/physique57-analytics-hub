@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ModernTableWrapper } from './ModernTableWrapper';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { TrainerMetricTabs } from './TrainerMetricTabs';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { ProcessedTrainerData, getMetricValue } from './TrainerDataProcessor';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
 interface MonthOnMonthTrainerTableProps {
   data: ProcessedTrainerData[];
@@ -218,11 +219,16 @@ export const MonthOnMonthTrainerTable = ({
 
   if (!data.length) {
     return (
-      <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-        <CardContent className="p-6">
-          <p className="text-center text-slate-600">No trainer data available for month-on-month comparison</p>
-        </CardContent>
-      </Card>
+      <ModernTableWrapper
+        title="Month-on-Month Trainer Analysis"
+        description="No trainer data available for month-on-month comparison"
+        icon={<BarChart3 className="w-5 h-5" />}
+        totalItems={0}
+      >
+        <div className="p-8 text-center text-slate-600">
+          No trainer data available for analysis
+        </div>
+      </ModernTableWrapper>
     );
   }
 
@@ -408,39 +414,37 @@ export const MonthOnMonthTrainerTable = ({
   }, [processedData]);
 
   return (
-    <Card ref={containerRef} className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="pb-4 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-t-lg">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <BarChart3 className="w-6 h-6" />
-              Month-on-Month Trainer Analysis
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge className="bg-white/20 text-white border-white/30">
-                Individual Monthly Columns
-              </Badge>
-              <CopyTableButton
-                tableRef={containerRef as any}
-                tableName={tableId}
-                size="sm"
-                onCopyAllTabs={async () => generateAllTabsContent}
-              />
+    <ModernTableWrapper
+      title="Month-on-Month Trainer Analysis"
+      description={`Individual month performance for ${Object.keys(processedData.trainerGroups).length} trainers • ${processedData.months.length} months tracked • Sorted by most recent`}
+      icon={<BarChart3 className="w-5 h-5" />}
+      totalItems={Object.keys(processedData.trainerGroups).length}
+    >
+      <div ref={containerRef} className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {/* Metrics Tabs and Controls Header */}
+        <div className="pb-4 bg-white rounded-t-lg p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                  Individual Monthly Columns
+                </Badge>
+                <CopyTableButton
+                  tableRef={containerRef as any}
+                  tableName={tableId}
+                  size="sm"
+                  onCopyAllTabs={async () => generateAllTabsContent}
+                />
+              </div>
             </div>
+            <TrainerMetricTabs value={selectedMetric} onValueChange={setSelectedMetric} />
           </div>
-          <p className="text-blue-100 text-sm">
-            Individual month performance for {Object.keys(processedData.trainerGroups).length} trainers • {processedData.months.length} months tracked • Sorted by most recent
-          </p>
-          <TrainerMetricTabs value={selectedMetric} onValueChange={setSelectedMetric} />
         </div>
-      </CardHeader>
-
-      <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-900 via-slate-800 to-gray-900">
-              <TableRow className="border-none">
-                <TableHead className="font-bold text-white sticky left-0 bg-slate-900/95 backdrop-blur-sm z-30 min-w-[240px]">
+            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600">
+              <TableRow className="border-none" style={{ height: '40px' }}>
+                <TableHead className="font-bold text-white sticky left-0 bg-purple-600/95 backdrop-blur-sm z-30 min-w-[240px] h-10">
                   Trainer
                 </TableHead>
                 {processedData.months.map((month) => (
@@ -557,8 +561,9 @@ export const MonthOnMonthTrainerTable = ({
                     <TableRow 
                       className="hover:bg-slate-50/50 transition-colors border-b cursor-pointer"
                       onClick={() => handleRowClick(trainer)}
+                      style={{ height: '40px' }}
                     >
-                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r min-w-[240px]">
+                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r min-w-[240px]" style={{ height: '40px' }}>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -571,11 +576,11 @@ export const MonthOnMonthTrainerTable = ({
                           >
                             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                           </Button>
-                          <span className="text-sm">{trainer}</span>
+                          <TrainerNameCell name={trainer} className="text-nowrap" />
                         </div>
                       </TableCell>
                       {values.map((value, index) => (
-                        <TableCell key={`${trainer}-${index}`} className="text-center text-sm font-medium text-slate-800">
+                        <TableCell key={`${trainer}-${index}`} className="text-center text-sm font-medium text-slate-800" style={{ height: '40px' }}>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger className="cursor-help">{formatValue(value, selectedMetric)}</TooltipTrigger>
@@ -788,7 +793,7 @@ export const MonthOnMonthTrainerTable = ({
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </ModernTableWrapper>
   );
 };

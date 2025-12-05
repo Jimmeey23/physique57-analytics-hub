@@ -44,7 +44,7 @@ export async function crawlAllData(
   options: CrawlOptions = {}
 ): Promise<ExtractedData> {
   try {
-    console.log('Starting data crawl...', { options, dataSources: Object.keys(dataSources) });
+    // Starting data crawl process
     
     const {
       pages = Object.keys(PAGE_REGISTRY),
@@ -65,7 +65,7 @@ export async function crawlAllData(
         continue;
       }
       
-      console.log(`Crawling page: ${pageName}`);
+      // Crawling page data
       processedPages.add(pageName);
 
       // Crawl each location for this page
@@ -80,7 +80,7 @@ export async function crawlAllData(
           extractedTables.push(...pageData.tables);
           extractedMetrics.push(...pageData.metrics);
           
-          console.log(`✓ ${pageName} - ${location}: ${pageData.tables.length} tables, ${pageData.metrics.length} metrics`);
+          // Page data crawled successfully
         } catch (error) {
           console.error(`Error crawling ${pageName} - ${location}:`, error);
           // Continue with other pages/locations
@@ -100,10 +100,7 @@ export async function crawlAllData(
       },
     };
     
-    console.log('Data crawl complete!', { 
-      totalTables: result.summary.totalTables,
-      totalMetrics: result.summary.totalMetrics 
-    });
+    // Data crawl completed successfully
     
     return result;
     

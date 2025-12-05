@@ -39,7 +39,7 @@ interface ClientConversionInteractiveChartsProps {
 type ChartType = 'monthly' | 'conversion' | 'ltv' | 'retention';
 type ViewType = 'bar' | 'line' | 'pie' | 'area';
 
-export const ClientConversionInteractiveCharts: React.FC<ClientConversionInteractiveChartsProps> = ({ data }) => {
+export const ClientConversionInteractiveCharts: React.FC<ClientConversionInteractiveChartsProps> = React.memo(({ data }) => {
   const [activeChart, setActiveChart] = useState<ChartType>('monthly');
   const [viewType, setViewType] = useState<ViewType>('bar');
 
@@ -385,4 +385,6 @@ export const ClientConversionInteractiveCharts: React.FC<ClientConversionInterac
       </CardContent>
     </Card>
   );
-};
+});
+
+ClientConversionInteractiveCharts.displayName = 'ClientConversionInteractiveCharts';

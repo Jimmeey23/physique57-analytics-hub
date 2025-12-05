@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UniformTrainerTable } from './UniformTrainerTable';
+import { ModernTableWrapper } from './ModernTableWrapper';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { Users, Activity, Target, TrendingUp } from 'lucide-react';
+import { Users, Activity, Target, TrendingUp, TrendingDown, UserCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
 interface TrainerPerformanceDetailTableProps {
   data: ProcessedTrainerData[];
@@ -157,12 +157,11 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
           </Tooltip>
         </TooltipProvider>
       ),
-      sortable: true,
-      className: 'font-semibold min-w-[160px]',
+      className: 'min-w-[180px]',
       render: (value: string, row: any) => (
-        <div>
-          <div className="font-medium text-slate-800">{value}</div>
-          <div className="text-sm text-slate-500">{row.location}</div>
+        <div className="flex flex-col gap-1">
+          <TrainerNameCell name={value} className="text-nowrap" />
+          <div className="text-xs text-slate-500 ml-10">{row.location}</div>
         </div>
       )
     },
@@ -373,30 +372,64 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
   };
 
   return (
-    <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Trainer Performance Detail Analysis
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {processedTableData.length} Trainers
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-          <UniformTrainerTable
-            data={processedTableData}
-            columns={columns}
-            onRowClick={handleRowClick}
-            headerGradient="from-purple-600 to-indigo-600"
-            showFooter={false}
-            stickyHeader={true}
-            onSort={handleSort}
-            sortField={sortConfig.key}
-            sortDirection={sortConfig.direction}
-            tableId="Trainer Performance Detail Analysis"
-          />
-      </CardContent>
-    </Card>
+    <ModernTableWrapper
+      title="Trainer Performance Detail Analysis"
+      description={`Comprehensive performance metrics for ${processedTableData.length} trainers`}
+      icon={<UserCheck className="w-5 h-5" />}
+      totalItems={processedTableData.length}
+    >
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600 text-white">
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={column.key}
+                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
+                      column.className || ''
+                    }`}
+                    onClick={() => column.sortable !== false && handleSort(column.key)}
+                    style={{ height: '40px' }}
+                  >
+                    <div className="flex items-center gap-1">
+                      {column.header}
+                      {sortConfig.key === column.key && (
+                        sortConfig.direction === 'asc' ? (
+                          <TrendingUp className="w-3 h-3" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3" />
+                        )
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {processedTableData.map((row, index) => (
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(row)}
+                  style={{ height: '40px' }}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-4 py-2 text-sm whitespace-nowrap ${
+                        column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ModernTableWrapper>
   );
 };

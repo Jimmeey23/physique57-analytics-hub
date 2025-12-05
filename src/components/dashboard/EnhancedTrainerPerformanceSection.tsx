@@ -3,18 +3,22 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePayrollData } from '@/hooks/usePayrollData';
+import { useSessionsData } from '@/hooks/useSessionsData';
+import { useCheckinsData } from '@/hooks/useCheckinsData';
+import { TrainerNameCell, getTrainerImage } from '@/components/ui/TrainerAvatar';
 import { TrainerYearOnYearTable } from './TrainerYearOnYearTable';
 import { TrainerPerformanceDetailTable } from './TrainerPerformanceDetailTable';
 import { TrainerEfficiencyAnalysisTable } from './TrainerEfficiencyAnalysisTable';
 import { MonthOnMonthTrainerTable } from './MonthOnMonthTrainerTable';
 import { DynamicTrainerDrillDownModal } from './DynamicTrainerDrillDownModal';
+import { ModernTrainerDrillDownModal } from './ModernTrainerDrillDownModal';
 import { TrainerFilterSection } from './TrainerFilterSection';
 import { TrainerMetricTabs } from './TrainerMetricTabs';
 import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal } from 'lucide-react';
+import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal, Maximize2, Download, RotateCcw } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +27,12 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 
 export const EnhancedTrainerPerformanceSection = () => {
   const { data: payrollData, isLoading, error } = usePayrollData();
+  const { data: sessionsData } = useSessionsData();
+  const { data: checkinsData } = useCheckinsData();
   const [selectedTab, setSelectedTab] = useState('month-on-month');
   const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
+  const [clickedMetric, setClickedMetric] = useState<string | null>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [isRendering, setIsRendering] = useState(true);
@@ -95,18 +102,33 @@ export const EnhancedTrainerPerformanceSection = () => {
   }, [baseProcessed, filters.location, filters.trainer, selectedLocation]);
 
   const handleRowClick = (trainer: string, data: any) => {
-    // Get individual session data for this trainer
-    const trainerSessions = payrollData?.filter(session => 
+    // Get individual session data for this trainer from both sources
+    const trainerPayroll = payrollData?.filter(session => 
       session.teacherName === trainer && 
       (!filters.location || session.location === filters.location) &&
       (!filters.month || session.monthYear === filters.month)
     ) || [];
     
+    const trainerSessions = sessionsData?.filter(session => 
+      session.teacherName === trainer &&
+      (!filters.location || session.location === filters.location) &&
+      (!filters.month || session.monthYear === filters.month)
+    ) || [];
+    
+    const trainerCheckins = checkinsData?.filter(checkin => 
+      checkin.teacherName === trainer &&
+      (!filters.location || checkin.location === filters.location) &&
+      (!filters.month || checkin.month === filters.month)
+    ) || [];
+    
     setSelectedTrainer(trainer);
+    setClickedMetric('classes');
     setDrillDownData({
       ...data,
-      individualSessions: trainerSessions,
-      trainerName: trainer
+      individualSessions: trainerSessions.length > 0 ? trainerSessions : trainerPayroll,
+      checkins: trainerCheckins,
+      trainerName: trainer,
+      hasDetailedSessions: trainerSessions.length > 0
     });
   };
 
@@ -309,8 +331,9 @@ export const EnhancedTrainerPerformanceSection = () => {
         <EnhancedTrainerMetricCards 
           data={processedData} 
           onCardClick={(title, data) => {
-            // Open drill-down modal with trainer data
+            // Open drill-down modal with trainer data and remember clicked metric
             setSelectedTrainer(title);
+            setClickedMetric(title);
             setDrillDownData(data);
           }}
         />
@@ -324,15 +347,29 @@ export const EnhancedTrainerPerformanceSection = () => {
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
           
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  Monthly Performance Trends
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="w-5 h-5" />
                 </div>
-                <div className="text-xs text-slate-500 font-normal">Revenue & session growth over time</div>
+                <div>
+                  <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                    Monthly Performance Trends
+                  </div>
+                  <div className="text-xs text-slate-500 font-normal">Revenue & session growth over time</div>
+                </div>
+              </div>
+              {/* Interactive Chart Controls */}
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="bg-white/50 hover:bg-blue-50 border-blue-200">
+                  <Maximize2 className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" className="bg-white/50 hover:bg-blue-50 border-blue-200">
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" className="bg-white/50 hover:bg-blue-50 border-blue-200">
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
               </div>
             </CardTitle>
           </CardHeader>
@@ -419,15 +456,29 @@ export const EnhancedTrainerPerformanceSection = () => {
           <div className="absolute -inset-1 bg-gradient-to-r from-green-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
           
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-green-600 to-green-700 rounded-lg text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Activity className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-lg font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-                  Sessions vs Members
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-green-600 to-green-700 rounded-lg text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Activity className="w-5 h-5" />
                 </div>
-                <div className="text-xs text-slate-500 font-normal">Comparative analysis by month</div>
+                <div>
+                  <div className="text-lg font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                    Sessions vs Members
+                  </div>
+                  <div className="text-xs text-slate-500 font-normal">Comparative analysis by month</div>
+                </div>
+              </div>
+              {/* Interactive Chart Controls */}
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="bg-white/50 hover:bg-green-50 border-green-200">
+                  <Maximize2 className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" className="bg-white/50 hover:bg-green-50 border-green-200">
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" className="bg-white/50 hover:bg-green-50 border-green-200">
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
               </div>
             </CardTitle>
           </CardHeader>
@@ -528,7 +579,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                   key={key}
                   size="sm"
                   variant={rankingMetric === key ? 'default' : 'ghost'}
-                  className={rankingMetric === key ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-100'}
+                  className={rankingMetric === key ? 'bg-black text-white' : 'text-slate-700 hover:bg-slate-100'}
                   onClick={() => setRankingMetric(key)}
                 >
                   <Icon className="w-3 h-3 mr-1" /> {label}
@@ -542,7 +593,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                   key={n}
                   size="sm"
                   variant={rankingCount === n ? 'default' : 'ghost'}
-                  className={rankingCount === n ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}
+                  className={rankingCount === n ? 'bg-purple-800 text-white' : 'text-slate-700 hover:bg-slate-100'}
                   onClick={() => setRankingCount(n)}
                 >
                   {n}
@@ -573,25 +624,42 @@ export const EnhancedTrainerPerformanceSection = () => {
                     onClick={() => handleRowClick(t.name, t)}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className={
-                        `w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center shadow-lg text-white ` +
-                        (index === 0
-                          ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500'
-                          : index === 1
-                          ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500'
-                          : index === 2
-                          ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600'
-                          : 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700')
-                      }>
-                        {index === 0 ? (
-                          <Crown className="w-6 h-6" />
-                        ) : index === 1 ? (
-                          <Trophy className="w-6 h-6" />
-                        ) : index === 2 ? (
-                          <Medal className="w-5 h-5" />
-                        ) : (
-                          <span className="text-sm font-bold">{index + 1}</span>
-                        )}
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <div className="w-full h-full rounded-full overflow-hidden border-4 shadow-lg" style={{
+                          borderColor: index === 0 ? '#f59e0b' : index === 1 ? '#9ca3af' : index === 2 ? '#d97706' : '#3b82f6'
+                        }}>
+                          <img 
+                            src={getTrainerImage(t.name)}
+                            alt={t.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const initials = t.name.split(' ').map((n: string) => n[0]).join('');
+                              target.parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br ${index === 0 ? 'from-yellow-400 to-orange-500' : index === 1 ? 'from-gray-300 to-gray-500' : index === 2 ? 'from-amber-400 to-amber-600' : 'from-blue-500 to-blue-700'} flex items-center justify-center text-white text-lg font-bold">${initials}</div>`;
+                            }}
+                          />
+                        </div>
+                        <div className={
+                          `absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center shadow-md text-white text-xs font-bold border-2 border-white ` +
+                          (index === 0
+                            ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500'
+                            : index === 1
+                            ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500'
+                            : index === 2
+                            ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600'
+                            : 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700')
+                        }>
+                          {index === 0 ? (
+                            <Crown className="w-4 h-4" />
+                          ) : index === 1 ? (
+                            <Trophy className="w-4 h-4" />
+                          ) : index === 2 ? (
+                            <Medal className="w-3 h-3" />
+                          ) : (
+                            <span>{index + 1}</span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={t.name}>{t.name}</p>
@@ -647,8 +715,23 @@ export const EnhancedTrainerPerformanceSection = () => {
                     onClick={() => handleRowClick(t.name, t)}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center shadow-lg text-white bg-gradient-to-br from-red-500 via-rose-600 to-red-700">
-                        <span className="text-sm font-bold">{index + 1}</span>
+                      <div className="relative w-14 h-14 flex-shrink-0">
+                        <div className="w-full h-full rounded-full overflow-hidden border-4 border-red-500 shadow-lg">
+                          <img 
+                            src={getTrainerImage(t.name)}
+                            alt={t.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const initials = t.name.split(' ').map((n: string) => n[0]).join('');
+                              target.parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center text-white text-sm font-bold">${initials}</div>`;
+                            }}
+                          />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-red-500 via-rose-600 to-red-700 flex items-center justify-center shadow-md text-white text-xs font-bold border-2 border-white">
+                          <span>{index + 1}</span>
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={t.name}>{t.name}</p>
@@ -692,7 +775,7 @@ export const EnhancedTrainerPerformanceSection = () => {
         <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 p-1 rounded-xl shadow-sm h-14">
           <TabsTrigger
             value="month-on-month"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-gray-800"
           >
             <Calendar className="w-4 h-4" />
             Month-on-Month
@@ -713,7 +796,7 @@ export const EnhancedTrainerPerformanceSection = () => {
           </TabsTrigger>
           <TabsTrigger
             value="performance-detail"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-purple-700"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 data-[state=active]:bg-purple-800 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-purple-900"
           >
             <Award className="w-4 h-4" />
             Performance
@@ -805,11 +888,20 @@ export const EnhancedTrainerPerformanceSection = () => {
 
       {/* Dynamic Drill Down Modal */}
       {selectedTrainer && drillDownData && (
-        <DynamicTrainerDrillDownModal
-          isOpen={!!selectedTrainer}
+        <ModernTrainerDrillDownModal
+          isOpen={!!drillDownData}
           onClose={closeDrillDown}
           trainerName={selectedTrainer}
           trainerData={drillDownData}
+          initialTab={(() => {
+            if (!clickedMetric) return 'overview';
+            const cm = clickedMetric.toString().toLowerCase();
+            if (cm.includes('session') || cm.includes('sessions') || cm.includes('classes')) return 'classes';
+            if (cm.includes('revenue') || cm.includes('$') || cm.includes('paid')) return 'overview';
+            if (cm.includes('attend') || cm.includes('customer') || cm.includes('attendees')) return 'performance';
+            return 'overview';
+          })()}
+          highlightMetric={clickedMetric}
         />
       )}
     </div>

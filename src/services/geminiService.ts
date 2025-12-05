@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getPreviousMonthPeriod } from '@/utils/dateUtils';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 // Types
 export interface TableSummaryOptions {
@@ -100,7 +101,7 @@ class GeminiServiceImpl {
       const stats = this.extractTableStatistics(data, columns);
       const { label, prevLabel } = this.resolveFocusPeriod(data, columns);
 
-      const prompt = `Analyze this ${tableName || 'business'} data with EXCLUSIVE FOCUS on ${label} performance and provide 5 detailed key insights:\n\nData: ${data.length} rows\nKey metrics: ${Object.values(stats.numericColumns).map((stat: any) => `${stat.header}: ${this.formatCurrency(stat.sum)}`).join(', ')}\n\n${label} FOCUS REQUIREMENTS for insights:\n1. Start each insight with "${label}:" when referring to performance data\n2. Include ${label} vs ${prevLabel} comparisons (month-over-month) if available\n3. Show how ${label} ranks against other months in the dataset\n4. Highlight ${label} specific performance metrics and achievements\n5. Compare ${label} to historical averages and identify trends\n\nProvide exactly 5 detailed bullet points focusing EXCLUSIVELY on ${label} performance with specific numbers, percentages, and month-over-month comparisons for the Indian fitness/wellness market:`;
+      const prompt = `Analyze this ${tableName || 'business'} data with EXCLUSIVE FOCUS on ${label} performance and provide 5 detailed key insights:\n\nData: ${data.length} rows\nKey metrics: ${Object.values(stats.numericColumns).map((stat: any) => `${stat.header}: ${formatCurrency(stat.sum)}`).join(', ')}\n\n${label} FOCUS REQUIREMENTS for insights:\n1. Start each insight with "${label}:" when referring to performance data\n2. Include ${label} vs ${prevLabel} comparisons (month-over-month) if available\n3. Show how ${label} ranks against other months in the dataset\n4. Highlight ${label} specific performance metrics and achievements\n5. Compare ${label} to historical averages and identify trends\n\nProvide exactly 5 detailed bullet points focusing EXCLUSIVELY on ${label} performance with specific numbers, percentages, and month-over-month comparisons for the Indian fitness/wellness market:`;
 
       const text = await this.callModelWithRetries(prompt);
       return this.extractBulletPoints(text, 5);
@@ -126,7 +127,7 @@ class GeminiServiceImpl {
       prompt += `\n**${focusLabel} QUANTITATIVE METRICS & FINANCIAL INDICATORS:**\n\n`;
       Object.entries(stats.numericColumns).forEach(([, stat]: [string, any]) => {
         const formatValue = (val: number) => {
-          if (stat.type === 'currency') return this.formatCurrency(val);
+          if (stat.type === 'currency') return formatCurrency(val);
           if (stat.type === 'percentage') return `${val.toFixed(1)}%`;
           return this.formatNumber(val);
         };
@@ -177,7 +178,7 @@ class GeminiServiceImpl {
         const rowData = columns.map(col => {
           const value = row[col.key];
           if (value === null || value === undefined) return 'N/A';
-          if (col.type === 'currency' && typeof value === 'number') return this.formatCurrency(value);
+          if (col.type === 'currency' && typeof value === 'number') return formatCurrency(value);
           if (col.type === 'number' && typeof value === 'number') return this.formatNumber(value);
           if (col.type === 'date' && value) return new Date(value).toLocaleDateString('en-IN');
           return String(value);
@@ -315,14 +316,10 @@ class GeminiServiceImpl {
     }
     throw lastError || new Error('AI generation failed');
   }
-
-  public formatCurrency(value: number): string { return `₹${value.toLocaleString('en-IN')}`; }
-  public formatNumber(value: number): string { return value.toLocaleString('en-IN'); }
 }
 
 // Initialize Google Generative AI and export singleton instance
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-if (!apiKey) { console.error('Gemini API key missing. Set VITE_GEMINI_API_KEY in environment.'); }
 const genAI = new GoogleGenerativeAI(apiKey);
 
 let model: any;

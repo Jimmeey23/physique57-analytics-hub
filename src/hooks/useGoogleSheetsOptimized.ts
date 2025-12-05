@@ -160,4 +160,6 @@ export const useGoogleSheetsOptimized = () => {
 };
 
 // Backwards compatible export
-export const useGoogleSheets = useGoogleSheetsOptimized;
+// Re-export as default to replace the original hook
+export default useGoogleSheetsOptimized;
+export { useGoogleSheetsOptimized as useGoogleSheets };

@@ -100,7 +100,7 @@ const SummaryCard: React.FC<{ context: string; locationId: 'kwality' | 'supreme'
   );
 };
 
-export const ComprehensiveExecutiveDashboard = () => {
+export const ComprehensiveExecutiveDashboard = React.memo(() => {
   const [showSourceData, setShowSourceData] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -470,7 +470,7 @@ export const ComprehensiveExecutiveDashboard = () => {
             rate: safeArray(previousMonthData.sessions).length > 0
               ? (safeArray(previousMonthData.lateCancellations).length / safeArray(previousMonthData.sessions).length) * 100
               : 0,
-            pattern: 'Peak times: Early morning and evening classes', // TODO: Replace with real pattern if available
+            pattern: 'Peak times: Early morning and evening classes',
           },
           summaries: {
             executive: getSummaryText('executive', locationId),
@@ -1097,4 +1097,6 @@ export const ComprehensiveExecutiveDashboard = () => {
       `}</style>
     </div>
   );
-};
+});
+
+ComprehensiveExecutiveDashboard.displayName = 'ComprehensiveExecutiveDashboard';

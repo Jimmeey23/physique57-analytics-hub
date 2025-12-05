@@ -119,7 +119,7 @@ export const useSalesMetrics = (
     }
 
     // Build datasets from base (prefer historicalData) so both months are computed consistently
-    console.log('[SalesMetrics] Base records for MoM (location-only expected):', base.length);
+    // Base records for MoM analysis
     const currentPeriodData = base.filter((it) => {
       const d = parseDate((it as any).paymentDate);
       return d && d >= currentStart && d <= currentEnd;
@@ -130,9 +130,7 @@ export const useSalesMetrics = (
       return d && d >= prevStart && d <= prevEnd;
     });
 
-  console.log('[SalesMetrics] Mode:', compareMode, 'Anchor:', anchorDate.toISOString());
-  console.log('Current range:', currentStart?.toISOString(), 'to', currentEnd?.toISOString(), 'Current count:', currentPeriodData.length);
-  console.log('Previous range:', prevStart.toISOString(), 'to', prevEnd.toISOString(), 'Prev count:', previousPeriodData.length);
+  // Sales metrics comparison analysis
 
     // Helper to coerce numeric fields (handles numeric strings)
     const num = (v: any): number => {
@@ -369,7 +367,7 @@ export const useSalesMetrics = (
       }
     ];
 
-    console.log('Final calculated sales metrics:', calculatedMetrics.map(m => ({ title: m.title, value: m.value, change: m.change })));
+    // Final sales metrics calculated
 
     return calculatedMetrics;
   }, [currentData, historicalData, options?.dateRange?.start, options?.dateRange?.end, filters?.dateRange?.start, filters?.dateRange?.end, options?.compareMode]);
