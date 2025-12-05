@@ -1,153 +1,42 @@
 import { useState, useEffect } from 'react';
 import { PayrollData } from '@/types/dashboard';
+import { fetchGoogleSheet, parseNumericValue, SPREADSHEET_IDS } from '@/utils/googleAuth';
+import { createLogger } from '@/utils/logger';
 
-// Load sensitive values from environment — do NOT commit secrets to repo.
-const GOOGLE_CONFIG = {
-  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
-  CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '',
-  REFRESH_TOKEN: import.meta.env.VITE_GOOGLE_REFRESH_TOKEN || '',
-  TOKEN_URL: 'https://oauth2.googleapis.com/token',
-};
+const logger = createLogger('usePayrollData');
 
-const SPREADSHEET_ID = import.meta.env.VITE_PAYROLL_SPREADSHEET_ID || '149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI';
+// Flag to prevent multiple simultaneous fetches
+let isFetching = false;
 
 export const usePayrollData = () => {
   const [data, setData] = useState<PayrollData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getAccessToken = async () => {
-    try {
-      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CONFIG.CLIENT_ID,
-          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
-          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
-          grant_type: 'refresh_token',
-        }),
-      });
-      const tokenData = await response.json();
-      return tokenData.access_token as string;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
-    }
-  };
-
-  const parseNumericValue = (value: string | number): number => {
-    if (typeof value === 'number') return isNaN(value) ? 0 : value;
-    if (!value || value === '') return 0;
-    const cleaned = value.toString().replace(/[^0-9.-]/g, '');
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? 0 : parsed;
-  };
-
   const fetchPayrollData = async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetching) {
+      logger.warn('Fetch already in progress, skipping...');
+      return;
+    }
+    
     try {
-      console.log('Fetching payroll data from Google Sheets...');
+      isFetching = true;
+      logger.info('Fetching payroll data from Google Sheets...');
       setIsLoading(true);
-      const accessToken = await getAccessToken();
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Payroll?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
       );
+      
+      const fetchPromise = fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'Payroll');
+      const rows = await Promise.race([fetchPromise, timeoutPromise]) as any[][];
+      
+      logger.info(`Received ${rows.length} rows from Google Sheets`);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch payroll data: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const rows: any[] = result.values || [];
-
-      // If no rows returned, provide a local development fallback dataset
       if (rows.length < 2) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn('No rows returned from Sheets; using local SAMPLE_PAYROLL for development.');
-          const SAMPLE_PAYROLL: PayrollData[] = [
-            {
-              teacherId: 't1',
-              teacherName: 'Asha Kapoor',
-              teacherEmail: 'asha@example.com',
-              location: 'Kwality House, Kemps Corner',
-              cycleSessions: 4,
-              emptyCycleSessions: 0,
-              nonEmptyCycleSessions: 4,
-              cycleCustomers: 28,
-              cyclePaid: 5600,
-              barreSessions: 2,
-              emptyBarreSessions: 0,
-              nonEmptyBarreSessions: 2,
-              barreCustomers: 12,
-              barrePaid: 2400,
-              strengthSessions: 3,
-              emptyStrengthSessions: 0,
-              nonEmptyStrengthSessions: 3,
-              strengthCustomers: 18,
-              strengthPaid: 3600,
-              totalSessions: 9,
-              totalEmptySessions: 0,
-              totalNonEmptySessions: 9,
-              totalCustomers: 58,
-              totalPaid: 11600,
-              monthYear: '2025-11',
-              unique: 'u1',
-              new: 4,
-              retained: 10,
-              retention: '17.2%',
-              converted: 6,
-              conversion: '10.3%',
-              conversionRate: 10.3,
-              retentionRate: 17.2,
-              newCustomers: 4,
-              classAverageInclEmpty: 58 / 9,
-              classAverageExclEmpty: 58 / 9,
-            },
-            {
-              teacherId: 't2',
-              teacherName: 'Rohan Mehta',
-              teacherEmail: 'rohan@example.com',
-              location: 'Supreme HQ, Bandra',
-              cycleSessions: 6,
-              emptyCycleSessions: 1,
-              nonEmptyCycleSessions: 5,
-              cycleCustomers: 40,
-              cyclePaid: 8000,
-              barreSessions: 0,
-              emptyBarreSessions: 0,
-              nonEmptyBarreSessions: 0,
-              barreCustomers: 0,
-              barrePaid: 0,
-              strengthSessions: 4,
-              emptyStrengthSessions: 0,
-              nonEmptyStrengthSessions: 4,
-              strengthCustomers: 28,
-              strengthPaid: 5600,
-              totalSessions: 10,
-              totalEmptySessions: 1,
-              totalNonEmptySessions: 9,
-              totalCustomers: 68,
-              totalPaid: 13600,
-              monthYear: '2025-11',
-              unique: 'u2',
-              new: 2,
-              retained: 8,
-              retention: '11.8%',
-              converted: 3,
-              conversion: '4.4%',
-              conversionRate: 4.4,
-              retentionRate: 11.8,
-              newCustomers: 2,
-              classAverageInclEmpty: 68 / 10,
-              classAverageExclEmpty: 68 / 9,
-            }
-          ];
-          setData(SAMPLE_PAYROLL);
-          setError(null);
-          return;
-        }
-
+        logger.warn('Insufficient data rows (less than 2), returning empty data');
         setData([]);
         setError(null);
         return;
@@ -178,13 +67,14 @@ export const usePayrollData = () => {
         const totalCustomers = parseNumericValue(row[22]);
         const totalPaid = parseNumericValue(row[23]);
 
-        const converted = parseNumericValue(row[26]);
-        const conversionRateRaw = parseNumericValue(row[27]);
-        const conversionRate = conversionRateRaw <= 1 && conversionRateRaw > 0 ? conversionRateRaw * 100 : conversionRateRaw;
-        const retained = parseNumericValue(row[28]);
-        const retentionRateRaw = parseNumericValue(row[29]);
-        const retentionRate = retentionRateRaw <= 1 && retentionRateRaw > 0 ? retentionRateRaw * 100 : retentionRateRaw;
-        const newMembers = parseNumericValue(row[30]);
+  const converted = parseNumericValue(row[26]);
+  // Normalize percentage-like fields: Sheets UNFORMATTED_VALUE returns 0-1 for % cells
+  const conversionRateRaw = parseNumericValue(row[27]);
+  const conversionRate = conversionRateRaw <= 1 && conversionRateRaw > 0 ? conversionRateRaw * 100 : conversionRateRaw;
+  const retained = parseNumericValue(row[28]);
+  const retentionRateRaw = parseNumericValue(row[29]);
+  const retentionRate = retentionRateRaw <= 1 && retentionRateRaw > 0 ? retentionRateRaw * 100 : retentionRateRaw;
+  const newMembers = parseNumericValue(row[30]);
 
         return {
           teacherId: row[0] || '',
@@ -219,6 +109,7 @@ export const usePayrollData = () => {
           monthYear: row[24] || '',
           unique: row[25] || '',
           converted,
+          // Store human-readable strings for compatibility, ensure one decimal place
           conversion: `${conversionRate.toFixed(1)}%`,
           retained,
           retention: `${retentionRate.toFixed(1)}%`,
@@ -230,13 +121,18 @@ export const usePayrollData = () => {
         } as PayrollData;
       });
 
+      logger.info(`Successfully transformed ${payrollData.length} payroll records`);
+      logger.info(`Sample record:`, payrollData[0]);
       setData(payrollData);
       setError(null);
     } catch (err) {
-      console.error('Error fetching payroll data:', err);
-      setError('Failed to load payroll data');
+      logger.error('Error fetching payroll data:', err);
+      console.error('Detailed error:', err);
+      setError(`Failed to load payroll data: ${err instanceof Error ? err.message : String(err)}`);
+      setData([]);
     } finally {
       setIsLoading(false);
+      isFetching = false;
     }
   };
 
