@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { X, Download, Share2, TrendingUp, TrendingDown, Users, Calendar, Target, Activity, BarChart3 } from 'lucide-react';
 import { 
   LineChart, 
   Line, 
-  BarChart,
-  Bar,
+  BarChart, 
+  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -18,10 +19,30 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Area,
+  AreaChart
 } from 'recharts';
-import { getTrainerAvatar, getTrainerInitials } from '@/utils/trainerAvatars';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Users, 
+  DollarSign, 
+  Target, 
+  Calendar,
+  Award,
+  Activity,
+  Clock,
+  Star,
+  Zap,
+  BarChart3,
+  Download,
+  Share2
+} from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { ProcessedTrainerData } from './TrainerDataProcessor';
+import { SourceDataModal } from '@/components/ui/SourceDataModal';
+import { IndividualSessionsTable } from './IndividualSessionsTable';
+import { motion } from 'framer-motion';
 
 interface DynamicTrainerDrillDownModalProps {
   isOpen: boolean;
@@ -30,697 +51,532 @@ interface DynamicTrainerDrillDownModalProps {
   trainerData: any;
 }
 
-// Theme colors - Attractive blue and silver palette
-const PRIMARY_BLUE = '#0f4c81';      // Rich ocean blue - main brand color
-const PRIMARY_BLUE_DARK = '#0a3a63'; // Darker blue for hover/accents
-const PRIMARY_BLUE_LIGHT = '#1a6cb3'; // Lighter blue for gradients
-const SILVER = '#94a3b8';
-const SILVER_LIGHT = '#e2e8f0';
-const SILVER_DARK = '#64748b';
-const WHITE = '#ffffff';
-
 export const DynamicTrainerDrillDownModal: React.FC<DynamicTrainerDrillDownModalProps> = ({
   isOpen,
   onClose,
   trainerName,
   trainerData
 }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [sourceDataOpen, setSourceDataOpen] = useState(false);
 
-  const processedData = useMemo(() => {
+  const getTrainerAvatar = (trainerName: string) => {
+    const hash = trainerName.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    const avatarId = Math.abs(hash) % 10;
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarId}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  };
+
+  // Dynamic data processing based on actual trainer data
+  const dynamicMetrics = useMemo(() => {
     if (!trainerData) return null;
 
-    const monthlyData = trainerData.monthlyData || {};
-    const months = trainerData.months || Object.keys(monthlyData);
+    // Extract actual data from trainerData object
+    const actualSessions = trainerData.totalSessions || trainerData.currentSessions || 0;
+    const actualRevenue = trainerData.totalRevenue || trainerData.currentRevenue || 0;
+    const actualCustomers = trainerData.totalCustomers || trainerData.currentCustomers || 0;
+    
+    // Calculate derived metrics from actual data
+    const avgClassSize = actualSessions > 0 ? actualCustomers / actualSessions : 0;
+    const revenuePerSession = actualSessions > 0 ? actualRevenue / actualSessions : 0;
+    const revenuePerCustomer = actualCustomers > 0 ? actualRevenue / actualCustomers : 0;
+    
+    // Calculate fill rate based on sessions and average capacity
+    const estimatedCapacity = actualSessions * 12; // Assuming avg 12 capacity per class
+    const fillRate = estimatedCapacity > 0 ? (actualCustomers / estimatedCapacity) * 100 : 0;
+    
+    // Calculate growth rates if previous data exists
+    const prevSessions = trainerData.previousSessions || 0;
+    const prevRevenue = trainerData.previousRevenue || 0;
+    const prevCustomers = trainerData.previousCustomers || 0;
+    
+    const sessionGrowth = prevSessions > 0 ? ((actualSessions - prevSessions) / prevSessions) * 100 : 0;
+    const revenueGrowth = prevRevenue > 0 ? ((actualRevenue - prevRevenue) / prevRevenue) * 100 : 0;
+    const customerGrowth = prevCustomers > 0 ? ((actualCustomers - prevCustomers) / prevCustomers) * 100 : 0;
 
-    let totalSessions = 0;
-    let totalCustomers = 0;
-    let totalRevenue = 0;
-    let totalEmptySessions = 0;
-    let totalNonEmptySessions = 0;
-    let cycleSessions = 0;
-    let barreSessions = 0;
-    let strengthSessions = 0;
-    let cycleRevenue = 0;
-    let barreRevenue = 0;
-    let strengthRevenue = 0;
-    let newMembers = 0;
-    let convertedMembers = 0;
-    let retainedMembers = 0;
-
-    const monthlyTrend: { month: string; sessions: number; customers: number; revenue: number; fillRate: number }[] = [];
-
-    months.forEach((month: string) => {
-      const data = monthlyData[month];
-      if (data) {
-        totalSessions += data.totalSessions || 0;
-        totalCustomers += data.totalCustomers || 0;
-        totalRevenue += data.totalPaid || 0;
-        totalEmptySessions += data.emptySessions || 0;
-        totalNonEmptySessions += data.nonEmptySessions || 0;
-        cycleSessions += data.cycleSessions || 0;
-        barreSessions += data.barreSessions || 0;
-        strengthSessions += data.strengthSessions || 0;
-        cycleRevenue += data.cycleRevenue || 0;
-        barreRevenue += data.barreRevenue || 0;
-        strengthRevenue += data.strengthRevenue || 0;
-        newMembers += data.newMembers || 0;
-        convertedMembers += data.convertedMembers || 0;
-        retainedMembers += data.retainedMembers || 0;
-
-        const fillRate = data.totalSessions > 0 
-          ? ((data.nonEmptySessions || 0) / (data.totalSessions || 1)) * 100 
-          : 0;
-
-        monthlyTrend.push({
-          month: month.split('-')[0] || month.split(' ')[0] || month,
-          sessions: data.totalSessions || 0,
-          customers: data.totalCustomers || 0,
-          revenue: data.totalPaid || 0,
-          fillRate: Math.min(fillRate, 100)
+    // Create monthly trend data based on actual monthly records when available
+    let monthlyData: Array<{month: string; sessions: number; revenue: number; customers: number; fillRate: number; retention: number; conversion: number;}> = [];
+    if (trainerData?.monthlyData && Array.isArray(trainerData.months)) {
+      // If MonthOnMonthTrainerTable provided detailed monthlyData in drilldown
+      monthlyData = trainerData.months.map((mKey: string) => {
+        const rec = trainerData.monthlyData[mKey] || {};
+        const sessions = rec.totalSessions || rec.sessions || 0;
+        const revenue = rec.totalPaid || rec.revenue || 0;
+        const customers = rec.totalCustomers || rec.customers || 0;
+        const capacity = (rec.capacity) || sessions * 20;
+        const fr = capacity > 0 ? (customers / capacity) * 100 : 0;
+        const retention = rec.retentionRate ?? 0;
+        const conversion = rec.conversionRate ?? 0;
+        return {
+          month: (mKey.includes('-') ? new Date(mKey + '-01') : new Date()).toLocaleDateString('en-US', { month: 'short' }),
+          sessions,
+          revenue,
+          customers,
+          fillRate: fr,
+          retention,
+          conversion
+        };
+      });
+    } else {
+      // Fallback: evenly distribute actual totals without randomness
+      const monthsCount = 6;
+      for (let i = monthsCount - 1; i >= 0; i--) {
+        const month = new Date();
+        month.setMonth(month.getMonth() - i);
+        const monthName = month.toLocaleDateString('en-US', { month: 'short' });
+        monthlyData.push({
+          month: monthName,
+          sessions: Math.floor(actualSessions / monthsCount),
+          revenue: Math.floor(actualRevenue / monthsCount),
+          customers: Math.floor(actualCustomers / monthsCount),
+          fillRate,
+          retention: 0,
+          conversion: 0
         });
       }
-    });
-
-    if (trainerData.totalSessions) totalSessions = trainerData.totalSessions;
-    if (trainerData.totalCustomers) totalCustomers = trainerData.totalCustomers;
-    if (trainerData.totalRevenue) totalRevenue = trainerData.totalRevenue;
-    if (trainerData.cycleSessions) cycleSessions = trainerData.cycleSessions;
-    if (trainerData.barreSessions) barreSessions = trainerData.barreSessions;
-    if (trainerData.strengthSessions) strengthSessions = trainerData.strengthSessions;
-
-    const classAverage = totalNonEmptySessions > 0 ? totalCustomers / totalNonEmptySessions : 0;
-    const fillRate = totalSessions > 0 ? ((totalNonEmptySessions / totalSessions) * 100) : 0;
-    const revenuePerSession = totalSessions > 0 ? totalRevenue / totalSessions : 0;
-    const conversionRate = newMembers > 0 ? (convertedMembers / newMembers) * 100 : 0;
-    const retentionRate = newMembers > 0 ? (retainedMembers / newMembers) * 100 : 0;
-
-    const currentMonthData = monthlyData[months[0]] || {};
-    const previousMonthData = monthlyData[months[1]] || {};
-
-    const sessionsChange = previousMonthData.totalSessions 
-      ? ((currentMonthData.totalSessions - previousMonthData.totalSessions) / previousMonthData.totalSessions) * 100 
-      : 0;
-    const customersChange = previousMonthData.totalCustomers 
-      ? ((currentMonthData.totalCustomers - previousMonthData.totalCustomers) / previousMonthData.totalCustomers) * 100 
-      : 0;
-    const revenueChange = previousMonthData.totalPaid 
-      ? ((currentMonthData.totalPaid - previousMonthData.totalPaid) / previousMonthData.totalPaid) * 100 
-      : 0;
-
-    const formatDistribution = [
-      { name: 'Cycle', value: cycleSessions, color: PRIMARY_BLUE },
-      { name: 'Barre', value: barreSessions, color: SILVER_DARK },
-      { name: 'Strength', value: strengthSessions, color: SILVER }
-    ].filter(item => item.value > 0);
+    }
 
     return {
-      totalSessions,
-      totalCustomers,
-      totalRevenue,
-      totalEmptySessions,
-      totalNonEmptySessions,
-      classAverage,
-      fillRate,
+      actualSessions,
+      actualRevenue,
+      actualCustomers,
+      avgClassSize,
       revenuePerSession,
-      conversionRate,
-      retentionRate,
-      sessionsChange,
-      customersChange,
-      revenueChange,
-      formatDistribution,
-      monthlyTrend: monthlyTrend.reverse(),
-      cycleSessions,
-      barreSessions,
-      strengthSessions,
-      cycleRevenue,
-      barreRevenue,
-      strengthRevenue,
-      newMembers,
-      convertedMembers,
-      retainedMembers,
-      location: trainerData.location || 'All Locations',
-      months
+      revenuePerCustomer,
+      fillRate,
+      sessionGrowth,
+      revenueGrowth,
+      customerGrowth,
+      monthlyData
     };
   }, [trainerData]);
 
-  const sessionsData = useMemo(() => {
-    if (!trainerData?.monthlyData) return [];
+  // Performance score calculation based on actual data
+  const performanceScore = useMemo(() => {
+    if (!dynamicMetrics) return 0;
     
-    const sessions: any[] = [];
-    const monthlyData = trainerData.monthlyData || {};
+    // Weighted performance score based on actual metrics
+    const fillRateScore = Math.min(dynamicMetrics.fillRate / 95 * 100, 100);
+    const revenueScore = Math.min((dynamicMetrics.actualRevenue / 30000) * 100, 100);
+    const sessionScore = Math.min((dynamicMetrics.actualSessions / 100) * 100, 100);
+    const classSizeScore = Math.min((dynamicMetrics.avgClassSize / 15) * 100, 100);
     
-    Object.entries(monthlyData).forEach(([month, data]: [string, any]) => {
-      sessions.push({
-        date: month,
-        trainer: trainerName,
-        checkIns: data.totalCustomers || 0,
-        empty: data.emptySessions || 0,
-        fillRate: data.totalSessions > 0 
-          ? Math.round(((data.nonEmptySessions || 0) / data.totalSessions) * 100) 
-          : 0,
-        sessions: data.totalSessions || 0,
-        revenue: data.totalPaid || 0
-      });
-    });
+    return (fillRateScore * 0.3 + revenueScore * 0.3 + sessionScore * 0.25 + classSizeScore * 0.15);
+  }, [dynamicMetrics]);
 
-    return sessions.sort((a, b) => {
-      const dateA = new Date(a.date.replace('-', ' '));
-      const dateB = new Date(b.date.replace('-', ' '));
-      return dateB.getTime() - dateA.getTime();
-    });
-  }, [trainerData, trainerName]);
+  const performanceData = [
+    { 
+      name: 'Fill Rate', 
+      value: dynamicMetrics?.fillRate || 0, 
+      color: '#3B82F6',
+      target: 85,
+      description: 'Class capacity utilization'
+    },
+    { 
+      name: 'Revenue Efficiency', 
+      value: dynamicMetrics ? Math.min((dynamicMetrics.revenuePerSession / 300) * 100, 100) : 0, 
+      color: '#10B981',
+      target: 80,
+      description: 'Revenue per session performance'
+    },
+    { 
+      name: 'Client Engagement', 
+      value: dynamicMetrics ? Math.min((dynamicMetrics.avgClassSize / 12) * 100, 100) : 0, 
+      color: '#F59E0B',
+      target: 75,
+      description: 'Average class size vs capacity'
+    },
+    { 
+      name: 'Consistency', 
+      value: dynamicMetrics ? Math.max(60, 100 - Math.abs(dynamicMetrics.sessionGrowth - 10)) : 0, 
+      color: '#8B5CF6',
+      target: 70,
+      description: 'Session delivery consistency'
+    }
+  ];
 
-  if (!processedData) return null;
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'];
+
+  // Dynamic format distribution based on trainer data
+  const totalSess = (trainerData?.cycleSessions || 0) + (trainerData?.barreSessions || 0) + (trainerData?.strengthSessions || 0);
+  const formatDistribution = [
+    { 
+      name: 'Cycle', 
+      value: trainerData?.cycleSessions || 0, 
+      percentage: totalSess > 0 ? Math.round(((trainerData?.cycleSessions || 0) / totalSess) * 100) : 0,
+      color: '#3B82F6' 
+    },
+    { 
+      name: 'Barre', 
+      value: trainerData?.barreSessions || 0, 
+      percentage: totalSess > 0 ? Math.round(((trainerData?.barreSessions || 0) / totalSess) * 100) : 0,
+      color: '#10B981' 
+    },
+    { 
+      name: 'Strength', 
+      value: trainerData?.strengthSessions || 0, 
+      percentage: totalSess > 0 ? Math.round(((trainerData?.strengthSessions || 0) / totalSess) * 100) : 0,
+      color: '#F59E0B' 
+    }
+  ];
+
+  const getPerformanceLevel = (score: number) => {
+    if (score >= 90) return { label: 'Exceptional', color: 'bg-emerald-100 text-emerald-800', icon: '🏆' };
+    if (score >= 80) return { label: 'Excellent', color: 'bg-green-100 text-green-800', icon: '⭐' };
+    if (score >= 70) return { label: 'Good', color: 'bg-blue-100 text-blue-800', icon: '👍' };
+    if (score >= 60) return { label: 'Average', color: 'bg-yellow-100 text-yellow-800', icon: '📊' };
+    return { label: 'Needs Improvement', color: 'bg-red-100 text-red-800', icon: '📈' };
+  };
+
+  const performanceLevel = getPerformanceLevel(performanceScore);
+
+  if (!dynamicMetrics) {
+    return null;
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="p-0 border-0 shadow-2xl rounded-xl"
-        style={{ 
-          width: '95vw',
-          maxWidth: '1400px',
-          height: '90vh',
-          maxHeight: '900px',
-          overflow: 'hidden'
-        }}
-      >
-        <div className="flex h-full">
-          {/* Left Side - Trainer Profile */}
-          <div 
-            className="w-[300px] min-w-[300px] flex flex-col relative"
-            style={{ backgroundColor: PRIMARY_BLUE }}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="absolute top-3 right-3 z-30 rounded-full w-7 h-7 p-0 hover:bg-white/20 text-white border border-white/30"
-            >
-              <X className="w-3.5 h-3.5" />
-            </Button>
-
-            {/* Trainer Image */}
-            <div className="p-5 pt-10">
-              <div 
-                className="w-full rounded-xl overflow-hidden shadow-lg"
-                style={{ aspectRatio: '1', backgroundColor: PRIMARY_BLUE_DARK }}
-              >
-                <img
-                  src={getTrainerAvatar(trainerName)}
-                  alt={trainerName}
-                  className="w-full h-full object-cover object-top"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div 
-                  className="w-full h-full items-center justify-center hidden"
-                  style={{ backgroundColor: PRIMARY_BLUE_DARK }}
-                >
-                  <span className="text-5xl font-bold text-white/40">
-                    {getTrainerInitials(trainerName)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Trainer Info */}
-            <div className="px-5 pb-3 text-white">
-              <h1 className="text-xl font-bold">{trainerName}</h1>
-              <p className="text-sm" style={{ color: SILVER_LIGHT }}>{processedData.location}</p>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="px-5 pb-5 flex-1">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="text-[10px] uppercase tracking-wider" style={{ color: SILVER_LIGHT }}>Sessions</div>
-                  <div className="text-lg font-bold text-white">{formatNumber(processedData.totalSessions)}</div>
-                </div>
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="text-[10px] uppercase tracking-wider" style={{ color: SILVER_LIGHT }}>Members</div>
-                  <div className="text-lg font-bold text-white">{formatNumber(processedData.totalCustomers)}</div>
-                </div>
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="text-[10px] uppercase tracking-wider" style={{ color: SILVER_LIGHT }}>Revenue</div>
-                  <div className="text-lg font-bold text-white">{formatCurrency(processedData.totalRevenue)}</div>
-                </div>
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="text-[10px] uppercase tracking-wider" style={{ color: SILVER_LIGHT }}>Fill Rate</div>
-                  <div className="text-lg font-bold text-white">{processedData.fillRate.toFixed(1)}%</div>
-                </div>
-              </div>
-              
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: SILVER_LIGHT }}>Class Average</span>
-                  <span className="text-white font-medium">{processedData.classAverage.toFixed(1)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: SILVER_LIGHT }}>Rev/Session</span>
-                  <span className="text-white font-medium">{formatCurrency(processedData.revenuePerSession)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: SILVER_LIGHT }}>Empty Sessions</span>
-                  <span className="text-white font-medium">{processedData.totalEmptySessions}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Content */}
-          <div className="flex-1 flex flex-col" style={{ backgroundColor: WHITE }}>
-            {/* Header */}
-            <div 
-              className="p-4 flex justify-between items-center shrink-0"
-              style={{ borderBottom: `1px solid ${SILVER_LIGHT}` }}
-            >
-              <div>
-                <h2 className="text-lg font-bold" style={{ color: PRIMARY_BLUE }}>{trainerName} Analytics</h2>
-                <p className="text-xs" style={{ color: SILVER }}>{processedData.months?.length || 0} months of data</p>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-xs h-8"
-                  style={{ borderColor: SILVER_LIGHT, color: SILVER_DARK }}
-                >
-                  <Share2 className="w-3 h-3 mr-1" />
-                  Share
-                </Button>
-                <Button 
-                  size="sm" 
-                  className="text-xs h-8 text-white"
-                  style={{ backgroundColor: PRIMARY_BLUE }}
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  Export
-                </Button>
-              </div>
-            </div>
-
-            {/* Metric Cards */}
-            <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${SILVER_LIGHT}` }}>
-              <div className="grid grid-cols-5 gap-2">
-                {[
-                  { label: 'Sessions', value: formatNumber(processedData.totalSessions), change: processedData.sessionsChange },
-                  { label: 'Members', value: formatNumber(processedData.totalCustomers), change: processedData.customersChange },
-                  { label: 'Class Avg', value: processedData.classAverage.toFixed(1), change: null },
-                  { label: 'Fill Rate', value: `${processedData.fillRate.toFixed(0)}%`, change: null },
-                  { label: 'Revenue', value: formatCurrency(processedData.totalRevenue), change: processedData.revenueChange }
-                ].map((metric, idx) => (
-                  <div 
-                    key={idx} 
-                    className="rounded-lg p-3 text-white"
-                    style={{ backgroundColor: PRIMARY_BLUE }}
-                  >
-                    <div className="text-[10px] uppercase tracking-wider" style={{ color: SILVER_LIGHT }}>{metric.label}</div>
-                    <div className="text-xl font-bold">{metric.value}</div>
-                    {metric.change !== null && (
-                      <div className="text-[10px] flex items-center gap-0.5" style={{ color: SILVER_LIGHT }}>
-                        {metric.change >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-                        {Math.abs(metric.change).toFixed(1)}%
-                      </div>
-                    )}
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="w-16 h-16 border-2 border-blue-200">
+                  <AvatarImage src={getTrainerAvatar(trainerName)} />
+                  <AvatarFallback className="text-lg font-bold bg-blue-100 text-blue-800">
+                    {trainerName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <DialogTitle className="text-3xl font-bold text-slate-800">{trainerName}</DialogTitle>
+                  <div className="flex items-center gap-3 mt-2">
+                    <Badge className={performanceLevel.color}>
+                      {performanceLevel.icon} {performanceLevel.label}
+                    </Badge>
+                    <Badge variant="outline" className="text-slate-600">
+                      Performance Score: {performanceScore.toFixed(0)}/100
+                    </Badge>
+                    <Badge variant="outline" className="text-slate-600">
+                      {trainerData.location || 'All Locations'}
+                    </Badge>
                   </div>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 bg-slate-100">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Overview</TabsTrigger>
+              <TabsTrigger value="performance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Performance</TabsTrigger>
+              <TabsTrigger value="trends" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Trends</TabsTrigger>
+              <TabsTrigger value="sessions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Individual Sessions</TabsTrigger>
+              <TabsTrigger value="insights" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Insights</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6 mt-6">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-4 gap-6"
+              >
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-600 rounded-lg">
+                        <Activity className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-blue-800">Total Sessions</span>
+                        <div className="text-2xl font-bold text-blue-900">
+                          {formatNumber(dynamicMetrics.actualSessions)}
+                        </div>
+                        <div className={`text-xs ${dynamicMetrics.sessionGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {dynamicMetrics.sessionGrowth >= 0 ? '+' : ''}{dynamicMetrics.sessionGrowth.toFixed(1)}% vs last period
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-600 rounded-lg">
+                        <Users className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-green-800">Total Members</span>
+                        <div className="text-2xl font-bold text-green-900">
+                          {formatNumber(dynamicMetrics.actualCustomers)}
+                        </div>
+                        <div className={`text-xs ${dynamicMetrics.customerGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {dynamicMetrics.customerGrowth >= 0 ? '+' : ''}{dynamicMetrics.customerGrowth.toFixed(1)}% growth rate
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-600 rounded-lg">
+                        <DollarSign className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-purple-800">Total Revenue</span>
+                        <div className="text-2xl font-bold text-purple-900">
+                          {formatCurrency(dynamicMetrics.actualRevenue)}
+                        </div>
+                        <div className={`text-xs ${dynamicMetrics.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {dynamicMetrics.revenueGrowth >= 0 ? '+' : ''}{dynamicMetrics.revenueGrowth.toFixed(1)}% vs target
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-orange-600 rounded-lg">
+                        <Target className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-orange-800">Fill Rate</span>
+                        <div className="text-2xl font-bold text-orange-900">
+                          {dynamicMetrics.fillRate.toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-orange-600">
+                          Avg: {dynamicMetrics.avgClassSize.toFixed(1)} per class
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-blue-600" />
+                      Performance Metrics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={performanceData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={110}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {performanceData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-green-600" />
+                      Class Format Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={formatDistribution}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `${value} sessions`} />
+                        <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="performance" className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {performanceData.map((item, index) => (
+                  <Card key={item.name}>
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-slate-700">{item.name}</span>
+                          <span className="text-lg font-bold" style={{ color: item.color }}>
+                            {item.value.toFixed(1)}%
+                          </span>
+                        </div>
+                        <Progress value={item.value} className="h-3" />
+                        <div className="text-xs text-slate-500">
+                          Target: {item.target}% | {item.description}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </div>
 
-            {/* Tabs with Scrollable Content */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <div className="px-4 pt-3 shrink-0">
-                <TabsList 
-                  className="grid w-full grid-cols-4 p-1 rounded-lg h-9"
-                  style={{ backgroundColor: SILVER_LIGHT }}
-                >
-                  {['overview', 'breakdown', 'trends', 'sessions'].map((tab) => (
-                    <TabsTrigger 
-                      key={tab}
-                      value={tab} 
-                      className="text-xs rounded-md capitalize transition-all data-[state=active]:text-white data-[state=active]:shadow-md"
-                      style={{ 
-                        color: activeTab === tab ? WHITE : SILVER_DARK,
-                        backgroundColor: activeTab === tab ? PRIMARY_BLUE : 'transparent'
-                      }}
-                    >
-                      {tab === 'sessions' ? `Sessions (${sessionsData.length})` : tab}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-
-              {/* Scrollable Tab Content */}
-              <div className="flex-1 overflow-y-auto p-4">
-                {/* Overview Tab */}
-                <TabsContent value="overview" className="mt-0 space-y-4 h-auto">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Performance Metrics */}
-                    <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                      <CardHeader className="pb-2 pt-4 px-4">
-                        <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                          <Activity className="w-4 h-4" />
-                          Performance Metrics
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-4 pb-4">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="rounded-lg p-3" style={{ backgroundColor: `${PRIMARY_BLUE}10` }}>
-                            <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: SILVER }}>Rev/Session</div>
-                            <div className="text-lg font-bold" style={{ color: PRIMARY_BLUE }}>{formatCurrency(processedData.revenuePerSession)}</div>
-                          </div>
-                          <div className="rounded-lg p-3" style={{ backgroundColor: `${PRIMARY_BLUE}10` }}>
-                            <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: SILVER }}>Empty Sessions</div>
-                            <div className="text-lg font-bold" style={{ color: PRIMARY_BLUE }}>{formatNumber(processedData.totalEmptySessions)}</div>
-                          </div>
-                          <div className="rounded-lg p-3" style={{ backgroundColor: `${PRIMARY_BLUE}10` }}>
-                            <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: SILVER }}>Conversion</div>
-                            <div className="text-lg font-bold" style={{ color: PRIMARY_BLUE }}>{processedData.conversionRate.toFixed(1)}%</div>
-                          </div>
-                          <div className="rounded-lg p-3" style={{ backgroundColor: `${PRIMARY_BLUE}10` }}>
-                            <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: SILVER }}>Retention</div>
-                            <div className="text-lg font-bold" style={{ color: PRIMARY_BLUE }}>{processedData.retentionRate.toFixed(1)}%</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Format Distribution */}
-                    <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                      <CardHeader className="pb-2 pt-4 px-4">
-                        <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                          <BarChart3 className="w-4 h-4" />
-                          Class Format Distribution
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-4 pb-4">
-                        {processedData.formatDistribution.length > 0 ? (
-                          <div className="h-40">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={processedData.formatDistribution}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={40}
-                                  outerRadius={60}
-                                  paddingAngle={2}
-                                  dataKey="value"
-                                >
-                                  {processedData.formatDistribution.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip formatter={(value: number) => formatNumber(value)} />
-                                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </div>
-                        ) : (
-                          <div className="h-40 flex items-center justify-center" style={{ color: SILVER }}>
-                            No format data available
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Key Performance Indicators</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-blue-800">
+                        {formatCurrency(dynamicMetrics.revenuePerSession)}
+                      </div>
+                      <div className="text-sm text-blue-600">Revenue/Session</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-green-800">
+                        {dynamicMetrics.avgClassSize.toFixed(1)}
+                      </div>
+                      <div className="text-sm text-green-600">Avg Class Size</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <Target className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-purple-800">
+                        {formatCurrency(dynamicMetrics.revenuePerCustomer)}
+                      </div>
+                      <div className="text-sm text-purple-600">Revenue/Customer</div>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <TrendingUp className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-orange-800">
+                        {dynamicMetrics.revenueGrowth.toFixed(1)}%
+                      </div>
+                      <div className="text-sm text-orange-600">Revenue Growth</div>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  {/* Member Metrics */}
-                  <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                    <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                        <Users className="w-4 h-4" />
-                        Member Acquisition & Retention
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                      <div className="grid grid-cols-3 gap-4">
-                        {[
-                          { label: 'New Members', value: processedData.newMembers },
-                          { label: 'Converted', value: processedData.convertedMembers },
-                          { label: 'Retained', value: processedData.retainedMembers }
-                        ].map((item, idx) => (
-                          <div 
-                            key={idx} 
-                            className="rounded-lg p-3"
-                            style={{ border: `1px solid ${SILVER_LIGHT}` }}
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs" style={{ color: SILVER }}>{item.label}</span>
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs"
-                                style={{ borderColor: PRIMARY_BLUE, color: PRIMARY_BLUE }}
-                              >
-                                {formatNumber(item.value)}
-                              </Badge>
-                            </div>
-                            <div 
-                              className="h-1.5 rounded-full"
-                              style={{ backgroundColor: SILVER_LIGHT }}
-                            >
-                              <div 
-                                className="h-full rounded-full"
-                                style={{ 
-                                  width: `${processedData.newMembers > 0 ? (item.value / processedData.newMembers) * 100 : 0}%`,
-                                  backgroundColor: PRIMARY_BLUE
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+            <TabsContent value="trends" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>6-Month Performance Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={dynamicMetrics.monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={3} name="Revenue" />
+                      <Line type="monotone" dataKey="sessions" stroke="#10B981" strokeWidth={2} name="Sessions" />
+                      <Line type="monotone" dataKey="customers" stroke="#F59E0B" strokeWidth={2} name="Customers" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                {/* Format Breakdown Tab */}
-                <TabsContent value="breakdown" className="mt-0 space-y-4 h-auto">
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { name: 'Cycle', sessions: processedData.cycleSessions, revenue: processedData.cycleRevenue },
-                      { name: 'Barre', sessions: processedData.barreSessions, revenue: processedData.barreRevenue },
-                      { name: 'Strength', sessions: processedData.strengthSessions, revenue: processedData.strengthRevenue }
-                    ].map((format, idx) => (
-                      <Card key={idx} style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                        <CardHeader className="pb-2 pt-4 px-4">
-                          <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PRIMARY_BLUE }} />
-                            {format.name} Classes
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 pb-4 space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span style={{ color: SILVER }}>Sessions</span>
-                            <span className="font-semibold" style={{ color: PRIMARY_BLUE }}>{formatNumber(format.sessions)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span style={{ color: SILVER }}>Revenue</span>
-                            <span className="font-semibold" style={{ color: PRIMARY_BLUE }}>{formatCurrency(format.revenue)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span style={{ color: SILVER }}>% of Total</span>
-                            <span className="font-semibold" style={{ color: PRIMARY_BLUE }}>
-                              {processedData.totalSessions > 0 ? ((format.sessions / processedData.totalSessions) * 100).toFixed(1) : 0}%
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+            <TabsContent value="sessions" className="space-y-6 mt-6">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <IndividualSessionsTable
+                  sessions={trainerData?.individualSessions || []}
+                  trainerName={trainerName}
+                />
+              </motion.div>
+            </TabsContent>
 
-                  {/* Revenue by Format Chart */}
-                  <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                    <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-sm font-semibold" style={{ color: PRIMARY_BLUE }}>Revenue by Class Format</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                      <div className="h-52">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={[
-                            { name: 'Cycle', sessions: processedData.cycleSessions, revenue: processedData.cycleRevenue },
-                            { name: 'Barre', sessions: processedData.barreSessions, revenue: processedData.barreRevenue },
-                            { name: 'Strength', sessions: processedData.strengthSessions, revenue: processedData.strengthRevenue }
-                          ]}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={SILVER_LIGHT} />
-                            <XAxis dataKey="name" stroke={SILVER} fontSize={11} />
-                            <YAxis yAxisId="left" stroke={PRIMARY_BLUE} fontSize={11} />
-                            <YAxis yAxisId="right" orientation="right" stroke={SILVER} fontSize={11} />
-                            <Tooltip 
-                              formatter={(value: number, name: string) => name === 'revenue' ? formatCurrency(value) : formatNumber(value)}
-                              contentStyle={{ backgroundColor: WHITE, border: `1px solid ${SILVER_LIGHT}`, borderRadius: '8px', fontSize: '11px' }}
-                            />
-                            <Legend wrapperStyle={{ fontSize: '11px' }} />
-                            <Bar yAxisId="left" dataKey="sessions" fill={PRIMARY_BLUE} name="Sessions" radius={[4, 4, 0, 0]} />
-                            <Bar yAxisId="right" dataKey="revenue" fill={SILVER} name="Revenue" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* Trends Tab */}
-                <TabsContent value="trends" className="mt-0 space-y-4 h-auto">
-                  <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                    <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                        <TrendingUp className="w-4 h-4" />
-                        Monthly Performance Trends
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                      {processedData.monthlyTrend.length > 0 ? (
-                        <div className="h-56">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={processedData.monthlyTrend}>
-                              <CartesianGrid strokeDasharray="3 3" stroke={SILVER_LIGHT} />
-                              <XAxis dataKey="month" stroke={SILVER} fontSize={11} />
-                              <YAxis yAxisId="left" stroke={PRIMARY_BLUE} fontSize={11} />
-                              <YAxis yAxisId="right" orientation="right" stroke={SILVER} fontSize={11} />
-                              <Tooltip 
-                                formatter={(value: number, name: string) => {
-                                  if (name === 'revenue') return formatCurrency(value);
-                                  if (name === 'fillRate') return `${value.toFixed(1)}%`;
-                                  return formatNumber(value);
-                                }}
-                                contentStyle={{ backgroundColor: WHITE, border: `1px solid ${SILVER_LIGHT}`, borderRadius: '8px', fontSize: '11px' }}
-                              />
-                              <Legend wrapperStyle={{ fontSize: '11px' }} />
-                              <Line yAxisId="left" type="monotone" dataKey="sessions" stroke={PRIMARY_BLUE} strokeWidth={2} name="Sessions" dot={{ fill: PRIMARY_BLUE, r: 3 }} />
-                              <Line yAxisId="left" type="monotone" dataKey="customers" stroke={PRIMARY_BLUE_LIGHT} strokeWidth={2} name="Customers" dot={{ fill: PRIMARY_BLUE_LIGHT, r: 3 }} />
-                              <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={SILVER} strokeWidth={2} name="Revenue" dot={{ fill: SILVER, r: 3 }} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <div className="h-56 flex items-center justify-center" style={{ color: SILVER }}>
-                          No trend data available
-                        </div>
+            <TabsContent value="insights" className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-green-700">Strengths</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {dynamicMetrics.fillRate > 80 && (
+                        <li className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-green-600" />
+                          <span>Strong class fill rate performance</span>
+                        </li>
                       )}
-                    </CardContent>
-                  </Card>
-
-                  <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                    <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                        <Target className="w-4 h-4" />
-                        Fill Rate Trend
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                      {processedData.monthlyTrend.length > 0 ? (
-                        <div className="h-40">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={processedData.monthlyTrend}>
-                              <CartesianGrid strokeDasharray="3 3" stroke={SILVER_LIGHT} />
-                              <XAxis dataKey="month" stroke={SILVER} fontSize={11} />
-                              <YAxis stroke={SILVER} fontSize={11} domain={[0, 100]} />
-                              <Tooltip 
-                                formatter={(value: number) => `${value.toFixed(1)}%`}
-                                contentStyle={{ backgroundColor: WHITE, border: `1px solid ${SILVER_LIGHT}`, borderRadius: '8px', fontSize: '11px' }}
-                              />
-                              <Bar dataKey="fillRate" fill={PRIMARY_BLUE} name="Fill Rate %" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <div className="h-40 flex items-center justify-center" style={{ color: SILVER }}>
-                          No fill rate data available
-                        </div>
+                      {dynamicMetrics.revenueGrowth > 0 && (
+                        <li className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-green-600" />
+                          <span>Positive revenue growth trend</span>
+                        </li>
                       )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      {dynamicMetrics.avgClassSize > 8 && (
+                        <li className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-green-600" />
+                          <span>Good average class size</span>
+                        </li>
+                      )}
+                    </ul>
+                  </CardContent>
+                </Card>
 
-                {/* Sessions Tab */}
-                <TabsContent value="sessions" className="mt-0 h-auto">
-                  <Card style={{ border: `1px solid ${SILVER_LIGHT}` }}>
-                    <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: PRIMARY_BLUE }}>
-                        <Calendar className="w-4 h-4" />
-                        Session History by Month
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr style={{ borderBottom: `1px solid ${SILVER_LIGHT}`, backgroundColor: `${PRIMARY_BLUE}08` }}>
-                              <th className="text-left py-2.5 px-3 font-semibold" style={{ color: PRIMARY_BLUE }}>Month</th>
-                              <th className="text-center py-2.5 px-3 font-semibold" style={{ color: PRIMARY_BLUE }}>Sessions</th>
-                              <th className="text-center py-2.5 px-3 font-semibold" style={{ color: PRIMARY_BLUE }}>Check-ins</th>
-                              <th className="text-center py-2.5 px-3 font-semibold" style={{ color: PRIMARY_BLUE }}>Empty</th>
-                              <th className="text-center py-2.5 px-3 font-semibold" style={{ color: PRIMARY_BLUE }}>Fill Rate</th>
-                              <th className="text-right py-2.5 px-3 font-semibold" style={{ color: PRIMARY_BLUE }}>Revenue</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sessionsData.length > 0 ? (
-                              sessionsData.map((session, index) => (
-                                <tr 
-                                  key={index} 
-                                  className="hover:bg-slate-50 transition-colors"
-                                  style={{ borderBottom: `1px solid ${SILVER_LIGHT}` }}
-                                >
-                                  <td className="py-2.5 px-3 font-medium" style={{ color: PRIMARY_BLUE }}>{session.date}</td>
-                                  <td className="py-2.5 px-3 text-center" style={{ color: SILVER_DARK }}>{session.sessions}</td>
-                                  <td className="py-2.5 px-3 text-center font-medium" style={{ color: PRIMARY_BLUE }}>{session.checkIns}</td>
-                                  <td className="py-2.5 px-3 text-center" style={{ color: SILVER_DARK }}>{session.empty}</td>
-                                  <td className="py-2.5 px-3 text-center">
-                                    <Badge 
-                                      variant="outline" 
-                                      className="text-xs"
-                                      style={{ borderColor: PRIMARY_BLUE, color: PRIMARY_BLUE }}
-                                    >
-                                      {session.fillRate}%
-                                    </Badge>
-                                  </td>
-                                  <td className="py-2.5 px-3 text-right font-medium" style={{ color: PRIMARY_BLUE }}>{formatCurrency(session.revenue)}</td>
-                                </tr>
-                              ))
-                            ) : (
-                              <tr>
-                                <td colSpan={6} className="py-8 text-center" style={{ color: SILVER }}>
-                                  No session data available
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                          {sessionsData.length > 0 && (
-                            <tfoot>
-                              <tr style={{ backgroundColor: `${PRIMARY_BLUE}10` }}>
-                                <td className="py-2.5 px-3 font-bold" style={{ color: PRIMARY_BLUE }}>TOTALS</td>
-                                <td className="py-2.5 px-3 text-center font-bold" style={{ color: PRIMARY_BLUE }}>{processedData.totalSessions}</td>
-                                <td className="py-2.5 px-3 text-center font-bold" style={{ color: PRIMARY_BLUE }}>{processedData.totalCustomers}</td>
-                                <td className="py-2.5 px-3 text-center font-bold" style={{ color: SILVER_DARK }}>{processedData.totalEmptySessions}</td>
-                                <td className="py-2.5 px-3 text-center">
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs"
-                                    style={{ borderColor: PRIMARY_BLUE, color: PRIMARY_BLUE }}
-                                  >
-                                    {processedData.fillRate.toFixed(1)}%
-                                  </Badge>
-                                </td>
-                                <td className="py-2.5 px-3 text-right font-bold" style={{ color: PRIMARY_BLUE }}>{formatCurrency(processedData.totalRevenue)}</td>
-                              </tr>
-                            </tfoot>
-                          )}
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-orange-700">Growth Opportunities</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {dynamicMetrics.fillRate < 75 && (
+                        <li className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-orange-600" />
+                          <span>Focus on improving class fill rates</span>
+                        </li>
+                      )}
+                      {dynamicMetrics.revenuePerSession < 250 && (
+                        <li className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-orange-600" />
+                          <span>Opportunity to increase revenue per session</span>
+                        </li>
+                      )}
+                      <li className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-orange-600" />
+                        <span>Consider specialized class offerings</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
               </div>
-            </Tabs>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      <SourceDataModal
+        open={sourceDataOpen}
+        onOpenChange={setSourceDataOpen}
+        sources={[{
+          name: 'Trainer Performance',
+          sheetName: 'Payroll Data',
+          spreadsheetId: 'trainer-performance-sheet',
+          data: dynamicMetrics.monthlyData
+        }]}
+      />
+    </>
   );
 };

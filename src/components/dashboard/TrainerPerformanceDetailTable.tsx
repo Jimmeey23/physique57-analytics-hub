@@ -388,7 +388,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
             data={processedTableData}
             columns={columns}
             onRowClick={handleRowClick}
-            headerGradient="from-slate-800 via-slate-900 to-slate-800"
+            headerGradient="from-purple-600 to-indigo-600"
             showFooter={false}
             stickyHeader={true}
             onSort={handleSort}

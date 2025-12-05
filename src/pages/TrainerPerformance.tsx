@@ -78,7 +78,7 @@ const TrainerPerformance = () => {
             title="Trainer Performance Analytics"
             subtitle="Comprehensive trainer performance metrics, insights, and development opportunities"
             metrics={heroMetrics}
-            onExportClick={() => {}}
+            onExportClick={() => console.log('Exporting trainer data...')}
           />
         </div>
 

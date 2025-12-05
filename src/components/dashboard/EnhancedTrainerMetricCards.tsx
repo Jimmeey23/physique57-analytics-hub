@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrainerAvatar } from '@/utils/trainerAvatars';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Users, 
   Activity, 
@@ -204,6 +204,11 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
       .map(([name]) => name);
   }, [data]);
 
+  // Helper to get trainer initials
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {metricCards.slice(0, 8).map((card, index) => {
@@ -289,15 +294,23 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex -space-x-2">
                     {topTrainers.slice(0, 3).map((trainer, idx) => (
-                      <TrainerAvatar 
+                      <Avatar 
                         key={trainer}
-                        name={trainer}
-                        size="sm"
                         className={cn(
                           "border-2 border-white group-hover:border-slate-800 transition-all duration-500",
+                          "w-8 h-8",
                           "hover:z-10 hover:scale-110"
                         )}
-                      />
+                      >
+                        <AvatarFallback className={cn(
+                          "text-xs font-semibold",
+                          idx === 0 && "bg-gradient-to-br from-blue-500 to-blue-600 text-white",
+                          idx === 1 && "bg-gradient-to-br from-green-500 to-green-600 text-white",
+                          idx === 2 && "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                        )}>
+                          {getInitials(trainer)}
+                        </AvatarFallback>
+                      </Avatar>
                     ))}
                   </div>
                   <span className="text-xs text-slate-600 group-hover:text-slate-300 transition-colors">
