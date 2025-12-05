@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrainerAvatar } from '@/utils/trainerAvatars';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { 
@@ -57,6 +57,15 @@ export const EnhancedTrainerDrillDownModal: React.FC<EnhancedTrainerDrillDownMod
   trainerData
 }) => {
   const [sourceDataOpen, setSourceDataOpen] = useState(false);
+
+  const getTrainerAvatar = (trainerName: string) => {
+    const hash = trainerName.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    const avatarId = Math.abs(hash) % 10;
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarId}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  };
 
   // Enhanced data processing
   const processedMetrics = useMemo(() => {
@@ -139,7 +148,12 @@ export const EnhancedTrainerDrillDownModal: React.FC<EnhancedTrainerDrillDownMod
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <TrainerAvatar name={trainerName} size="lg" showTooltip className="border-2 border-blue-200" />
+                <Avatar className="w-16 h-16 border-2 border-blue-200">
+                  <AvatarImage src={getTrainerAvatar(trainerName)} />
+                  <AvatarFallback className="text-lg font-bold bg-blue-100 text-blue-800">
+                    {trainerName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <DialogTitle className="text-3xl font-bold text-slate-800">{trainerName}</DialogTitle>
                   <div className="flex items-center gap-3 mt-2">

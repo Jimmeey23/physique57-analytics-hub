@@ -23,22 +23,6 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 
 export const EnhancedTrainerPerformanceSection = () => {
   const { data: payrollData, isLoading, error } = usePayrollData();
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[EnhancedTrainerPerformanceSection] Component state:', {
-      isLoading,
-      hasError: !!error,
-      errorMessage: error,
-      dataLength: payrollData?.length || 0,
-      hasSampleData: payrollData && payrollData.length > 0 ? payrollData[0] : null
-    });
-    
-    if (!isLoading && payrollData && payrollData.length > 0) {
-      console.log('[EnhancedTrainerPerformanceSection] Data loaded successfully, will process...');
-    }
-  }, [isLoading, error, payrollData]);
-  
   const [selectedTab, setSelectedTab] = useState('month-on-month');
   const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
@@ -53,22 +37,13 @@ export const EnhancedTrainerPerformanceSection = () => {
 
   // Base processed data
   const baseProcessed = useMemo(() => {
-    if (!payrollData || payrollData.length === 0) {
-      console.log('[EnhancedTrainerPerformanceSection] No payroll data to process');
-      return [];
-    }
-    console.log('[EnhancedTrainerPerformanceSection] Processing trainer data, input length:', payrollData.length);
-    const processed = processTrainerData(payrollData);
-    console.log('[EnhancedTrainerPerformanceSection] Processed data length:', processed.length);
-    return processed;
+    if (!payrollData || payrollData.length === 0) return [];
+    return processTrainerData(payrollData);
   }, [payrollData]);
 
   // Data with all filters applied (including month) for cards, charts, efficiency, and detail tables
   const processedData = useMemo(() => {
     let data = [...baseProcessed];
-    console.log('[EnhancedTrainerPerformanceSection] Starting filter process, base data length:', data.length);
-    console.log('[EnhancedTrainerPerformanceSection] Filters:', { selectedLocation, filters });
-    
     // Apply location (tabs) and explicit location filter
     if (selectedLocation !== 'All Locations') {
       data = data.filter(d => {
@@ -80,7 +55,6 @@ export const EnhancedTrainerPerformanceSection = () => {
         // For other locations, use exact match
         return location === selectedLocation;
       });
-      console.log('[EnhancedTrainerPerformanceSection] After location filter:', data.length);
     }
     if (filters.location) {
       data = data.filter(d => d.location === filters.location);
@@ -92,9 +66,7 @@ export const EnhancedTrainerPerformanceSection = () => {
     // Apply month filter
     if (filters.month) {
       data = data.filter(d => d.monthYear === filters.month);
-      console.log('[EnhancedTrainerPerformanceSection] After month filter:', data.length);
     }
-    console.log('[EnhancedTrainerPerformanceSection] Final processed data length:', data.length);
     return data;
   }, [baseProcessed, filters, selectedLocation]);
 
@@ -248,39 +220,19 @@ export const EnhancedTrainerPerformanceSection = () => {
 
   // Handle rendering state - wait for data to be processed before showing content
   useEffect(() => {
-    console.log('[EnhancedTrainerPerformanceSection] Rendering state check:', {
-      isLoading,
-      hasPayrollData: !!payrollData,
-      payrollDataLength: payrollData?.length || 0,
-      hasProcessedData: processedData.length > 0,
-      processedDataLength: processedData.length,
-      isRendering
-    });
-    
     if (!isLoading && payrollData && payrollData.length > 0 && processedData.length > 0) {
       // Give a small delay to ensure all heavy computations are done
       const timer = setTimeout(() => {
-        console.log('[EnhancedTrainerPerformanceSection] Setting content ready (isRendering=false)');
         setIsRendering(false);
       }, 100);
       return () => clearTimeout(timer);
     } else if (!isLoading && (!payrollData || payrollData.length === 0)) {
       // If there's no data, stop rendering immediately
-      console.log('[EnhancedTrainerPerformanceSection] No data, setting isRendering=false');
       setIsRendering(false);
     }
   }, [isLoading, payrollData, processedData]);
 
-  console.log('[EnhancedTrainerPerformanceSection] Render decision:', {
-    isLoading,
-    isRendering,
-    willReturnNull: isLoading || isRendering,
-    hasError: !!error,
-    hasProcessedData: processedData.length > 0
-  });
-
   if (isLoading || isRendering) {
-    console.log('[EnhancedTrainerPerformanceSection] Returning null (still loading/rendering)');
     return null; // Global loader handles this
   }
 

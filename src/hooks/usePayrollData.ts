@@ -1,48 +1,76 @@
 import { useState, useEffect } from 'react';
 import { PayrollData } from '@/types/dashboard';
-import { fetchGoogleSheet, parseNumericValue, SPREADSHEET_IDS } from '@/utils/googleAuth';
-import { createLogger } from '@/utils/logger';
 
-const logger = createLogger('usePayrollData');
+const GOOGLE_CONFIG = {
+  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
+  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
+  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
+  TOKEN_URL: "https://oauth2.googleapis.com/token"
+};
 
-// Flag to prevent multiple simultaneous fetches
-let isFetching = false;
+const SPREADSHEET_ID = "1kDV0j7JQZCvBAu-asBkgA_9j0L90jAQFwdhQrRh4_kw";
 
 export const usePayrollData = () => {
   const [data, setData] = useState<PayrollData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPayrollData = async () => {
-    // Prevent multiple simultaneous fetches
-    if (isFetching) {
-      logger.warn('Fetch already in progress, skipping...');
-      return;
-    }
-    
+  const getAccessToken = async () => {
     try {
-      isFetching = true;
-      logger.info('Fetching payroll data from Google Sheets...');
-      setIsLoading(true);
-      
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
-      );
-      
-      const fetchPromise = fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'Payroll');
-      const rows = await Promise.race([fetchPromise, timeoutPromise]) as any[][];
-      
-      logger.info(`Received ${rows.length} rows from Google Sheets`);
+      const response = await fetch(GOOGLE_CONFIG.TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: GOOGLE_CONFIG.CLIENT_ID,
+          client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
+          refresh_token: GOOGLE_CONFIG.REFRESH_TOKEN,
+          grant_type: 'refresh_token',
+        }),
+      });
+      const tokenData = await response.json();
+      return tokenData.access_token as string;
+    } catch (error) {
+      console.error('Error getting access token:', error);
+      throw error;
+    }
+  };
 
+  const parseNumericValue = (value: string | number): number => {
+    // Accept numbers directly
+    if (typeof value === 'number') {
+      // Sheets with UNFORMATTED_VALUE will already give numbers
+      return isNaN(value) ? 0 : value;
+    }
+    if (!value || value === '') return 0;
+    // Strip everything except digits, minus and decimal point
+    const cleaned = value.toString().replace(/[^0-9.-]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const fetchPayrollData = async () => {
+    try {
+      console.log('Fetching payroll data from Google Sheets...');
+      setIsLoading(true);
+      const accessToken = await getAccessToken();
+      const response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Payroll?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch payroll data: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const rows: any[] = result.values || [];
       if (rows.length < 2) {
-        logger.warn('Insufficient data rows (less than 2), returning empty data');
         setData([]);
         setError(null);
         return;
       }
 
-      const payrollData: PayrollData[] = rows.slice(1).map((row: any[]) => {
+  const payrollData: PayrollData[] = rows.slice(1).map((row: any[]) => {
         const cycleSessions = parseNumericValue(row[4]);
         const emptyCycleSessions = parseNumericValue(row[5]);
         const nonEmptyCycleSessions = parseNumericValue(row[6]);
@@ -121,18 +149,13 @@ export const usePayrollData = () => {
         } as PayrollData;
       });
 
-      logger.info(`Successfully transformed ${payrollData.length} payroll records`);
-      logger.info(`Sample record:`, payrollData[0]);
       setData(payrollData);
       setError(null);
     } catch (err) {
-      logger.error('Error fetching payroll data:', err);
-      console.error('Detailed error:', err);
-      setError(`Failed to load payroll data: ${err instanceof Error ? err.message : String(err)}`);
-      setData([]);
+      console.error('Error fetching payroll data:', err);
+      setError('Failed to load payroll data');
     } finally {
       setIsLoading(false);
-      isFetching = false;
     }
   };
 
