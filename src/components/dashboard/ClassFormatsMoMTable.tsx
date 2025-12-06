@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -18,10 +19,22 @@ const toCanonical = (s?: string) => {
 interface ClassFormatsMoMTableProps {
   sessions: SessionData[];
   checkins: any[]; // raw checkins rows
+  onDrillDown?: (data: { format: string; month: string; metric: string; value: number }) => void;
 }
 
-export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sessions, checkins }) => {
+export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sessions, checkins, onDrillDown }) => {
   const [metric, setMetric] = useState<'sessions' | 'checkins' | 'revenue' | 'fillRate' | 'lateCancelled'>('sessions');
+
+  const handleCellClick = (format: string, month: string, value: number) => {
+    if (onDrillDown) {
+      onDrillDown({
+        format,
+        month,
+        metric,
+        value
+      });
+    }
+  };
 
   const toYYYYMM = (input?: string): string | null => {
     if (!input) return null;
@@ -256,20 +269,39 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
     <Card className="bg-white shadow-sm border border-gray-200">
       <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-lg font-semibold text-gray-800">Month-on-Month Comparison</CardTitle>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Metric</span>
-          <Select value={metric} onValueChange={(v: any) => setMetric(v)}>
-            <SelectTrigger className="h-8 w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sessions">Sessions Taught</SelectItem>
-              <SelectItem value="checkins">Check-ins</SelectItem>
-              <SelectItem value="revenue">Revenue</SelectItem>
-              <SelectItem value="lateCancelled">Late Cancelled</SelectItem>
-              <SelectItem value="fillRate">Fill Rate</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap gap-1">
+          <Button
+            variant={metric === 'sessions' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setMetric('sessions')}
+            className="h-8"
+          >
+            Sessions
+          </Button>
+          <Button
+            variant={metric === 'checkins' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setMetric('checkins')}
+            className="h-8"
+          >
+            Check-ins
+          </Button>
+          <Button
+            variant={metric === 'revenue' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setMetric('revenue')}
+            className="h-8"
+          >
+            Revenue
+          </Button>
+          <Button
+            variant={metric === 'fillRate' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setMetric('fillRate')}
+            className="h-8"
+          >
+            Fill Rate
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -284,15 +316,27 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(['powercycle','barre','strength'] as Canonical[]).map(fmt => (
-              <TableRow key={fmt}>
-                <TableCell className="font-medium capitalize">{fmt === 'powercycle' ? 'PowerCycle' : fmt}</TableCell>
-                {months.map((m, idx) => (
-                  <TableCell key={idx} className="text-right">{renderValue(m, fmt)}</TableCell>
-                ))}
-                <TableCell className="text-right">{computeMoMDelta(fmt)}</TableCell>
-              </TableRow>
-            ))}
+            {(['powercycle','barre','strength'] as Canonical[]).map(fmt => {
+              const formatName = fmt === 'powercycle' ? 'PowerCycle' : fmt;
+              return (
+                <TableRow key={fmt}>
+                  <TableCell className="font-medium capitalize">{formatName}</TableCell>
+                  {months.map((m, idx) => {
+                    const value = renderValue(m, fmt);
+                    return (
+                      <TableCell 
+                        key={idx} 
+                        className="text-right cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => handleCellClick(formatName, m, parseFloat(String(value).replace(/[^0-9.-]/g, '')) || 0)}
+                      >
+                        {value}
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="text-right">{computeMoMDelta(fmt)}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
           <TableFooter>
             <TableRow>

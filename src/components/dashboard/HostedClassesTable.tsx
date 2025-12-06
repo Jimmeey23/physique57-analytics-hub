@@ -15,7 +15,7 @@ export const HostedClassesTable: React.FC<HostedClassesTableProps> = ({ data }) 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'attendance' | 'revenue' | 'trainer'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [filterLocation, setFilterLocation] = useState('all');
+  const [filterLocation, setFilterLocation] = useState('kwality');
 
   const locations = useMemo(() => {
     if (!data) return [];

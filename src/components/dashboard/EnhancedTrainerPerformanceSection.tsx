@@ -10,16 +10,17 @@ import { TrainerYearOnYearTable } from './TrainerYearOnYearTable';
 import { TrainerPerformanceDetailTable } from './TrainerPerformanceDetailTable';
 import { TrainerEfficiencyAnalysisTable } from './TrainerEfficiencyAnalysisTable';
 import { MonthOnMonthTrainerTable } from './MonthOnMonthTrainerTable';
-import { DynamicTrainerDrillDownModal } from './DynamicTrainerDrillDownModal';
-import { ModernTrainerDrillDownModal } from './ModernTrainerDrillDownModal';
+import { ComprehensiveTrainerDrillDown } from './ComprehensiveTrainerDrillDown';
 import { TrainerFilterSection } from './TrainerFilterSection';
 import { TrainerMetricTabs } from './TrainerMetricTabs';
 import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal, Maximize2, Download, RotateCcw } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -102,33 +103,36 @@ export const EnhancedTrainerPerformanceSection = () => {
   }, [baseProcessed, filters.location, filters.trainer, selectedLocation]);
 
   const handleRowClick = (trainer: string, data: any) => {
-    // Get individual session data for this trainer from both sources
-    const trainerPayroll = payrollData?.filter(session => 
-      session.teacherName === trainer && 
-      (!filters.location || session.location === filters.location) &&
-      (!filters.month || session.monthYear === filters.month)
-    ) || [];
-    
-    const trainerSessions = sessionsData?.filter(session => 
-      session.teacherName === trainer &&
-      (!filters.location || session.location === filters.location) &&
-      (!filters.month || session.monthYear === filters.month)
-    ) || [];
-    
-    const trainerCheckins = checkinsData?.filter(checkin => 
-      checkin.teacherName === trainer &&
-      (!filters.location || checkin.location === filters.location) &&
-      (!filters.month || checkin.month === filters.month)
-    ) || [];
+    // Simply pass the data directly - the modal will handle processing
+    // The data object already contains all the processed trainer information
+    console.log('🔍 Trainer clicked:', trainer, data);
+    // Determine context strictly by source type
+    const clickType = data?.type || 'generic';
+    const effectiveLocation = data.location || (filters.location || selectedLocation);
+    let effectiveMonth = '';
+    if (clickType === 'trainer-month-cell') {
+      // Only month-table cell clicks enforce a month context
+      effectiveMonth = data.monthYear || filters.month || '';
+    } else if (clickType === 'trainer-efficiency') {
+      // Efficiency table should show the most recent month data, not filtered month
+      effectiveMonth = data.monthYear || '';
+    } else {
+      // Other sources only use the globally selected month if explicitly set
+      effectiveMonth = filters.month || '';
+    }
     
     setSelectedTrainer(trainer);
-    setClickedMetric('classes');
+    setClickedMetric('overview');
     setDrillDownData({
+      // Spread all existing processed data
       ...data,
-      individualSessions: trainerSessions.length > 0 ? trainerSessions : trainerPayroll,
-      checkins: trainerCheckins,
+      // Ensure trainerName is set
       trainerName: trainer,
-      hasDetailedSessions: trainerSessions.length > 0
+      location: effectiveLocation,
+      monthYear: data.monthYear || effectiveMonth,
+      contextFilters: { location: effectiveLocation, month: effectiveMonth },
+      // Add raw payroll data for this trainer
+      rawPayrollRecords: (payrollData || []).filter(r => r.teacherName === trainer),
     });
   };
 
@@ -284,36 +288,23 @@ export const EnhancedTrainerPerformanceSection = () => {
   return (
     <div className="space-y-6">
       {/* Enhanced Location Tabs - matching Client Retention styling */}
-      <div className="flex justify-center items-start mb-8" id="location-tabs">
-        <div className="w-full max-w-4xl">
-          <div className="grid grid-cols-4 location-tabs">
-            {[
-              { id: 'All Locations', name: 'All Locations', sub: `(${new Set(processedData.map(d => d.trainerName)).size} trainers)` },
-              { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${new Set(processedData.filter(d => d.location === 'Kwality House, Kemps Corner').map(d => d.trainerName)).size})` },
-              { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${new Set(processedData.filter(d => d.location === 'Supreme HQ, Bandra').map(d => d.trainerName)).size})` },
-              { id: 'Kenkere House', name: 'Kenkere House', sub: `Bengaluru (${new Set(processedData.filter(d => d.location.includes('Kenkere')).map(d => d.trainerName)).size})` },
-            ].map(loc => (
-              <button
-                key={loc.id}
-                onClick={() => setSelectedLocation(loc.id)}
-                className={`location-tab-trigger group ${selectedLocation === loc.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                data-state={selectedLocation === loc.id ? 'active' : 'inactive'}
-              >
-                <span className="relative z-10 flex flex-col items-center leading-tight">
-                  <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{loc.name}</span>
-                  <span className="text-xs sm:text-sm opacity-90">{loc.sub}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="ml-3 mt-1">
-          <InfoPopover
-            context="trainer-performance-overview"
-            locationId={selectedLocation === 'All Locations' ? 'all' : selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 'kenkere'}
-          />
-        </div>
-      </div>
+      <StudioLocationTabs 
+        activeLocation={selectedLocation === 'All Locations' ? 'all' : 
+          selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
+          selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
+          selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}
+        onLocationChange={(locationId) => {
+          const locationMap: Record<string, string> = {
+            'all': 'All Locations',
+            'kwality': 'Kwality House, Kemps Corner',
+            'supreme': 'Supreme HQ, Bandra',
+            'kenkere': 'Kenkere House'
+          };
+          setSelectedLocation(locationMap[locationId] || 'All Locations');
+        }}
+        showInfoPopover={true}
+        infoPopoverContext="trainer-performance-overview"
+      />
 
       {/* Filter Section */}
   <div className="glass-card modern-card-hover p-6 rounded-2xl mb-6" id="filters">
@@ -332,9 +323,12 @@ export const EnhancedTrainerPerformanceSection = () => {
           data={processedData} 
           onCardClick={(title, data) => {
             // Open drill-down modal with trainer data and remember clicked metric
-            setSelectedTrainer(title);
+            const trainerName = title;
+            const effectiveLocation = data.location || (filters.location || selectedLocation);
+            const effectiveMonth = filters.month || '';
+            setSelectedTrainer(trainerName);
             setClickedMetric(title);
-            setDrillDownData(data);
+            setDrillDownData({ ...data, trainerName, location: effectiveLocation, monthYear: effectiveMonth, type: 'metric-card', contextFilters: { location: effectiveLocation, month: effectiveMonth } });
           }}
         />
       </div>
@@ -621,7 +615,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                   <div
                     key={t.name}
                     className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-emerald-200/70 min-h-[88px]"
-                    onClick={() => handleRowClick(t.name, t)}
+                    onClick={() => handleRowClick(t.name, { ...t, type: 'ranking-item' })}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className="relative w-16 h-16 flex-shrink-0">
@@ -678,10 +672,10 @@ export const EnhancedTrainerPerformanceSection = () => {
                     </div>
                     <div className="text-right flex-shrink-0 ml-4">
                       <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors whitespace-nowrap">
-                        {rankingMetric === 'revenue' ? formatCurrency(t.totalRevenue)
+                        {rankingMetric === 'revenue' ? formatRevenue(t.totalRevenue)
                           : rankingMetric === 'sessions' ? formatNumber(t.totalSessions)
                           : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
-                          : rankingMetric === 'efficiency' ? formatCurrency(t.efficiency)
+                          : rankingMetric === 'efficiency' ? formatRevenue(t.efficiency)
                           : rankingMetric === 'classAvg' ? (t.classAvg).toFixed(1)
                           : rankingMetric === 'conversion' ? `${t.conversionRate.toFixed(1)}%`
                           : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
@@ -712,7 +706,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                   <div
                     key={t.name}
                     className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-rose-200/70 min-h-[88px]"
-                    onClick={() => handleRowClick(t.name, t)}
+                    onClick={() => handleRowClick(t.name, { ...t, type: 'ranking-item' })}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className="relative w-14 h-14 flex-shrink-0">
@@ -750,10 +744,10 @@ export const EnhancedTrainerPerformanceSection = () => {
                     </div>
                     <div className="text-right flex-shrink-0 ml-4">
                       <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors whitespace-nowrap">
-                        {rankingMetric === 'revenue' ? formatCurrency(t.totalRevenue)
+                        {rankingMetric === 'revenue' ? formatRevenue(t.totalRevenue)
                           : rankingMetric === 'sessions' ? formatNumber(t.totalSessions)
                           : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
-                          : rankingMetric === 'efficiency' ? formatCurrency(t.efficiency)
+                          : rankingMetric === 'efficiency' ? formatRevenue(t.efficiency)
                           : rankingMetric === 'classAvg' ? (t.classAvg).toFixed(1)
                           : rankingMetric === 'conversion' ? `${t.conversionRate.toFixed(1)}%`
                           : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
@@ -864,7 +858,7 @@ export const EnhancedTrainerPerformanceSection = () => {
           </div>
           
           <TrainerEfficiencyAnalysisTable
-            data={processedData}
+            data={processedDataNoMonth}
             onRowClick={handleRowClick}
           />
         </TabsContent>
@@ -886,22 +880,16 @@ export const EnhancedTrainerPerformanceSection = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dynamic Drill Down Modal */}
+      {/* Comprehensive Trainer Drill Down */}
       {selectedTrainer && drillDownData && (
-        <ModernTrainerDrillDownModal
+        <ComprehensiveTrainerDrillDown
           isOpen={!!drillDownData}
           onClose={closeDrillDown}
           trainerName={selectedTrainer}
           trainerData={drillDownData}
-          initialTab={(() => {
-            if (!clickedMetric) return 'overview';
-            const cm = clickedMetric.toString().toLowerCase();
-            if (cm.includes('session') || cm.includes('sessions') || cm.includes('classes')) return 'classes';
-            if (cm.includes('revenue') || cm.includes('$') || cm.includes('paid')) return 'overview';
-            if (cm.includes('attend') || cm.includes('customer') || cm.includes('attendees')) return 'performance';
-            return 'overview';
-          })()}
-          highlightMetric={clickedMetric}
+          allPayrollData={payrollData || []}
+          allSessionsData={sessionsData || []}
+          filters={drillDownData.contextFilters || { location: selectedLocation, month: filters.month || '' }}
         />
       )}
     </div>

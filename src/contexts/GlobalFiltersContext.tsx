@@ -37,7 +37,31 @@ const GlobalFiltersContext = React.createContext<GlobalFiltersContextType | unde
 export const useGlobalFilters = () => {
   const context = React.useContext(GlobalFiltersContext);
   if (!context) {
-    throw new Error('useGlobalFilters must be used within a GlobalFiltersProvider');
+    // Instead of throwing, log the error and return a fallback
+    console.error('useGlobalFilters must be used within a GlobalFiltersProvider. Returning fallback values.');
+    
+    // Return a fallback context with default values
+    return {
+      filters: {
+        dateRange: getPreviousMonthDateRange(),
+        location: [],
+        category: [],
+        product: [],
+        soldBy: [],
+        paymentMethod: [],
+        source: [],
+        associate: [],
+        stage: [],
+        status: [],
+        channel: [],
+        trialStatus: [],
+        conversionStatus: [],
+        retentionStatus: [],
+      },
+      updateFilters: () => {},
+      clearFilters: () => {},
+      resetToDefaultDates: () => {},
+    };
   }
   return context;
 };

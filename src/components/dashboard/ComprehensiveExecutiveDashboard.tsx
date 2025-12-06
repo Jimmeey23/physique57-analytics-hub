@@ -36,7 +36,7 @@ import { EnhancedExecutiveDataTables } from './EnhancedExecutiveDataTables';
 import { ExecutiveTopPerformersGrid } from './ExecutiveTopPerformersGrid';
 import { ExecutiveDiscountsTab } from './ExecutiveDiscountsTab';
 import { ExecutiveFilterSection } from './ExecutiveFilterSection';
-import { ExecutiveLocationTabs } from './ExecutiveLocationTabs';
+import { StudioLocationTabs } from '../ui/StudioLocationTabs';
 import { PowerCycleBarreStrengthComparison } from './PowerCycleBarreStrengthComparison';
 import { SourceDataModal } from '@/components/ui/SourceDataModal';
 import { ExpirationMetricCards } from './ExpirationMetricCards';
@@ -594,7 +594,14 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
         </div>
 
         {/* Location Tabs - Easy Switching Between Locations */}
-        <ExecutiveLocationTabs availableLocations={availableLocations} />
+        <StudioLocationTabs 
+          activeLocation={selectedLocation || 'all'}
+          onLocationChange={(locationId) => {
+            updateFilters({ location: locationId === 'all' ? null : locationId });
+          }}
+          showInfoPopover={true}
+          infoPopoverContext="executive-overview"
+        />
 
         {/* Quick Summary Metrics Banner */}
         <Card className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white border-0 shadow-2xl">

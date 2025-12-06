@@ -22,7 +22,7 @@ import {
   Eye
 } from 'lucide-react';
 import { PayrollData } from '@/types/dashboard';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatPercentage, formatRevenue } from '@/utils/formatters';
 
 interface DetailedClassAnalyticsTableProps {
   data: PayrollData[];
@@ -236,7 +236,7 @@ export const DetailedClassAnalyticsTable: React.FC<DetailedClassAnalyticsTablePr
             </div>
           </div>
           <Badge className={`${color} text-white`}>
-            {formatCurrency(processedData.reduce((sum, item) => sum + item.revenue, 0))} revenue
+            {formatRevenue(processedData.reduce((sum, item) => sum + item.revenue, 0))} revenue
           </Badge>
         </div>
 

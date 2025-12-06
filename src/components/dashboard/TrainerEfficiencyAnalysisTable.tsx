@@ -153,9 +153,29 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
 
   const handleRowClick = (rowData: any) => {
     if (onRowClick) {
+      // Find the most recent month data for this trainer to provide specific context
+      const trainerRecords = data.filter(r => r.trainerName === rowData.trainerName);
+      const mostRecentRecord = trainerRecords.sort((a, b) => 
+        (b.monthKey || '').localeCompare(a.monthKey || '')
+      )[0];
+      
       onRowClick(rowData.trainerName, {
-        ...rowData,
-        type: 'trainer-efficiency'
+        // Use the most recent month's specific data instead of aggregated totals
+        ...mostRecentRecord,
+        // Add efficiency metrics from aggregated data
+        efficiencyScore: rowData.efficiencyScore,
+        capacityUtilization: rowData.capacityUtilization,
+        revenuePerHour: rowData.revenuePerHour,
+        avgClassFill: rowData.avgClassFill,
+        customerRetention: rowData.customerRetention,
+        productivityRank: rowData.productivityRank,
+        monthYear: mostRecentRecord?.monthYear || mostRecentRecord?.month || '',
+        location: mostRecentRecord?.location || rowData.location || '',
+        type: 'trainer-efficiency',
+        contextFilters: {
+          location: mostRecentRecord?.location || rowData.location || '',
+          month: mostRecentRecord?.monthYear || mostRecentRecord?.month || ''
+        }
       });
     }
   };

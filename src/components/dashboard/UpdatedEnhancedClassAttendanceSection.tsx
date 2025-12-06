@@ -14,7 +14,7 @@ import { MonthOnMonthClassTable } from './MonthOnMonthClassTable';
 import { DualRankingLists } from './DualRankingLists';
 import { InteractivePerformanceAnalytics } from './InteractivePerformanceAnalytics';
 import { DrillDownAnalyticsModal } from './DrillDownAnalyticsModal';
-import { LocationTabs } from './LocationTabs';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { ClassFormatAnalytics } from './ClassFormatAnalytics';
 import { FormatFocusedAnalytics } from './FormatFocusedAnalytics';
 
@@ -25,7 +25,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('kwality');
   const [activeTab, setActiveTab] = useState<string>('comprehensive');
 
   const handleDrillDown = (data: any) => {
@@ -45,119 +45,116 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Location Filter Tabs */}
-      <LocationTabs 
-        data={filteredData}
-        selectedLocation={selectedLocation}
+      <StudioLocationTabs 
+        activeLocation={selectedLocation}
         onLocationChange={setSelectedLocation}
         showInfoPopover={true}
         infoPopoverContext="class-attendance-overview"
-      >
-        {(locationFilteredData) => (
-          <>
-            {/* Enhanced Metric Cards */}
-            <div className="space-y-6">
-              <ModernMetricCards 
-                data={locationFilteredData}
-                payrollData={payrollData}
-                onMetricClick={handleDrillDown}
-              />
-            </div>
+      />
+      
+      <>
+        {/* Enhanced Metric Cards */}
+        <div className="space-y-6">
+          <ModernMetricCards 
+            data={filteredData}
+            payrollData={payrollData}
+            onMetricClick={handleDrillDown}
+          />
+        </div>
 
-            {/* Filter Section - hidden on Analytics tab to avoid duplicate filters */}
-            {activeTab !== 'analytics' && (
-              <EnhancedClassAttendanceFilterSection data={locationFilteredData} />
-            )}
-
-            {/* Main Analytics Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="modern-tabs grid grid-cols-6 w-full">
-                <TabsTrigger 
-                  value="comprehensive" 
-                  className="modern-tab-trigger tab-variant-blue"
-                >
-                  Comprehensive
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="month-on-month"
-                  className="modern-tab-trigger tab-variant-emerald"
-                >
-                  Month-on-Month
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="rankings"
-                  className="modern-tab-trigger tab-variant-purple"
-                >
-                  Rankings
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="performance"
-                  className="modern-tab-trigger tab-variant-blue"
-                >
-                  Performance
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics"
-                  className="modern-tab-trigger tab-variant-rose"
-                >
-                  Analytics
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="insights"
-                  className="modern-tab-trigger tab-variant-purple"
-                >
-                  Insights
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="comprehensive" className="mt-6">
-                <AdvancedClassAttendanceTable 
-                  data={locationFilteredData}
-                  location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-                  onDrillDown={handleDrillDown}
-                />
-              </TabsContent>
-
-              <TabsContent value="month-on-month" className="mt-6">
-                <MonthOnMonthClassTable 
-                  data={sessionsData || []} // Use unfiltered data as requested
-                  location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-                />
-              </TabsContent>
-
-              <TabsContent value="rankings" className="mt-6">
-                <DualRankingLists 
-                  data={locationFilteredData}
-                  location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-                />
-              </TabsContent>
-
-              <TabsContent value="performance" className="mt-6">
-                <InteractivePerformanceAnalytics 
-                  data={locationFilteredData}
-                  onDrillDown={handleDrillDown}
-                />
-              </TabsContent>
-
-              <TabsContent value="analytics" className="mt-6">
-                <FormatFocusedAnalytics data={locationFilteredData} />
-              </TabsContent>
-
-              <TabsContent value="insights" className="mt-6">
-                <Card className="bg-white border-slate-200">
-                  <CardContent className="p-8 text-center">
-                    <h3 className="text-lg font-semibold text-slate-700 mb-2">
-                      AI-Powered Insights
-                    </h3>
-                    <p className="text-slate-500">
-                      Machine learning-driven recommendations and business insights will be displayed here.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </>
+        {/* Filter Section - hidden on Analytics tab to avoid duplicate filters */}
+        {activeTab !== 'analytics' && (
+          <EnhancedClassAttendanceFilterSection data={filteredData} />
         )}
-      </LocationTabs>
+
+        {/* Main Analytics Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="modern-tabs grid grid-cols-6 w-full">
+            <TabsTrigger 
+              value="comprehensive" 
+              className="modern-tab-trigger tab-variant-blue"
+            >
+              Comprehensive
+            </TabsTrigger>
+            <TabsTrigger 
+              value="month-on-month"
+              className="modern-tab-trigger tab-variant-emerald"
+            >
+              Month-on-Month
+            </TabsTrigger>
+            <TabsTrigger 
+              value="rankings"
+              className="modern-tab-trigger tab-variant-purple"
+            >
+              Rankings
+            </TabsTrigger>
+            <TabsTrigger 
+              value="performance"
+              className="modern-tab-trigger tab-variant-blue"
+            >
+              Performance
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics"
+              className="modern-tab-trigger tab-variant-rose"
+            >
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="insights"
+              className="modern-tab-trigger tab-variant-purple"
+            >
+              Insights
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="comprehensive" className="mt-6">
+            <AdvancedClassAttendanceTable 
+              data={filteredData}
+              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
+              onDrillDown={handleDrillDown}
+            />
+          </TabsContent>
+
+          <TabsContent value="month-on-month" className="mt-6">
+            <MonthOnMonthClassTable 
+              data={sessionsData || []} // Use unfiltered data as requested
+              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
+            />
+          </TabsContent>
+
+          <TabsContent value="rankings" className="mt-6">
+            <DualRankingLists 
+              data={filteredData}
+              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
+            />
+          </TabsContent>
+
+          <TabsContent value="performance" className="mt-6">
+            <InteractivePerformanceAnalytics 
+              data={filteredData}
+              onDrillDown={handleDrillDown}
+            />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            <FormatFocusedAnalytics data={filteredData} />
+          </TabsContent>
+
+          <TabsContent value="insights" className="mt-6">
+            <Card className="bg-white border-slate-200">
+              <CardContent className="p-8 text-center">
+                <h3 className="text-lg font-semibold text-slate-700 mb-2">
+                  AI-Powered Insights
+                </h3>
+                <p className="text-slate-500">
+                  Machine learning-driven recommendations and business insights will be displayed here.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </>
 
       {/* Drill-Down Modal */}
       <DrillDownAnalyticsModal

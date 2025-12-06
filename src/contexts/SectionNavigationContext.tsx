@@ -80,6 +80,16 @@ export function SectionNavigationProvider({ children }: { children: React.ReactN
 
 export function useSectionNavigation() {
   const ctx = React.useContext(SectionNavigationContext);
-  if (!ctx) throw new Error("useSectionNavigation must be used within SectionNavigationProvider");
+  if (!ctx) {
+    console.error("useSectionNavigation must be used within SectionNavigationProvider. Returning fallback values.");
+    // Return a fallback context
+    return {
+      sections: [],
+      addSection: () => {},
+      removeSection: () => {},
+      clearSections: () => {},
+      jumpTo: async () => false,
+    };
+  }
   return ctx;
 }

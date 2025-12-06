@@ -269,12 +269,12 @@ export const ClassFormatAnalysisTable: React.FC<ClassFormatAnalysisTableProps> =
                   </td>
                   <td className="text-center py-4 text-slate-700">{item.totalAttendance.toLocaleString()}</td>
                   <td className="text-center py-4">
-                    <Badge variant={
-                      item.fillRate >= 80 ? 'default' :
-                      item.fillRate >= 60 ? 'secondary' : 'outline'
-                    }>
+                    <span className={`font-semibold ${
+                      item.fillRate >= 80 ? 'text-green-600' :
+                      item.fillRate >= 60 ? 'text-blue-600' : 'text-red-600'
+                    }`}>
                       {item.fillRate}%
-                    </Badge>
+                    </span>
                   </td>
                   <td className="text-right py-4 font-semibold text-green-600">
                     ₹{item.avgRevenue.toLocaleString()}

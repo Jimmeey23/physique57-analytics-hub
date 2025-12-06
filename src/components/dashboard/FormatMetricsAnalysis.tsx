@@ -10,6 +10,7 @@ import { FormatAnalysisFilters, FormatFilters } from './FormatAnalysisFilters';
 import { MonthOnMonthAnalysis } from './MonthOnMonthAnalysis';
 import { LocationAnalysis } from './LocationAnalysis';
 import { FormatDrillDownModal } from './FormatDrillDownModal';
+import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import { 
   Activity, 
   Users, 
@@ -51,6 +52,7 @@ interface FormatMetricsAnalysisProps {
 }
 
 export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ data }) => {
+  const { filters: sessionFilters } = useSessionsFilters();
   const [filters, setFilters] = useState<FormatFilters>({
     dateRange: {
       start: '',
@@ -65,6 +67,33 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
 
   const filteredData = useMemo(() => {
     let result = data;
+    
+    // Apply SessionsFilters first
+    if (sessionFilters) {
+      result = result.filter((item: PayrollData) => {
+        // Apply trainer filter
+        if (sessionFilters.trainers.length > 0 && !sessionFilters.trainers.includes(item.teacherName || '')) {
+          return false;
+        }
+        
+        // Apply class type filter
+        if (sessionFilters.classTypes.length > 0 && !sessionFilters.classTypes.includes(item.cleanedClass || '')) {
+          return false;
+        }
+        
+        // Apply day of week filter
+        if (sessionFilters.dayOfWeek.length > 0 && !sessionFilters.dayOfWeek.includes(item.dayOfWeek || '')) {
+          return false;
+        }
+        
+        // Apply time slot filter
+        if (sessionFilters.timeSlots.length > 0 && !sessionFilters.timeSlots.includes(item.time || '')) {
+          return false;
+        }
+        
+        return true;
+      });
+    }
     
     // Filter by locations
     if (filters.locations.length > 0) {
@@ -117,10 +146,9 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
       }
     }
 
+    
     return result;
-  }, [data, filters]);
-
-  const getMonthIndex = (monthName: string): number => {
+  }, [data, filters, sessionFilters]);  const getMonthIndex = (monthName: string): number => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months.indexOf(monthName.substring(0, 3));
   };
@@ -274,7 +302,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
-          {format === 'currency' ? formatCurrency(value) :
+          {format === 'currency' ? formatNumber(value) :
            format === 'percentage' ? formatPercentage(value) :
            formatNumber(value)}
         </div>
@@ -338,7 +366,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
               </div>
               <span className="font-semibold text-gray-700">Revenue Earned</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-2">{formatCurrency(metrics.revenueEarned)}</div>
+            <div className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(metrics.revenueEarned)}</div>
             <div className="text-sm text-gray-600">Total revenue generated</div>
           </CardContent>
         </Card>
@@ -433,15 +461,15 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm">Sessions Scheduled</span>
-                  <Badge variant="secondary">{formatNumber(metrics.sessionsScheduled)}</Badge>
+                  <span className="font-semibold text-slate-700">{formatNumber(metrics.sessionsScheduled)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Empty Sessions</span>
-                  <Badge variant="destructive">{formatNumber(metrics.emptySessions)}</Badge>
+                  <span className="font-semibold text-red-600">{formatNumber(metrics.emptySessions)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Non-Empty Sessions</span>
-                  <Badge variant="default">{formatNumber(metrics.nonEmptySessions)}</Badge>
+                  <span className="font-semibold text-blue-600">{formatNumber(metrics.nonEmptySessions)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Fill Rate</span>
@@ -479,11 +507,11 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm">Revenue Earned</span>
-                  <Badge variant="secondary">{formatCurrency(metrics.revenueEarned)}</Badge>
+                  <Badge variant="secondary">{formatNumber(metrics.revenueEarned)}</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Revenue per Seat</span>
-                  <Badge variant="default">{formatCurrency(metrics.revenuePerSeat)}</Badge>
+                  <Badge variant="default">{formatNumber(metrics.revenuePerSeat)}</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Capacity Utilization</span>
@@ -491,7 +519,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Revenue Lost/Cancellation</span>
-                  <Badge variant="destructive">{formatCurrency(metrics.revenueLostPerCancellation)}</Badge>
+                  <Badge variant="destructive">{formatNumber(metrics.revenueLostPerCancellation)}</Badge>
                 </div>
               </div>
             </div>
@@ -527,28 +555,28 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
                          filters.compareBy === 'location' ? 'locations' : 'overview'} 
             className="w-full">
         
-        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200">
-          <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
+        <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 grid w-full grid-cols-6 h-auto">
+          <TabsTrigger value="overview" className="flex-1 text-center flex items-center gap-2 py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="comparison" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="comparison" className="flex-1 text-center flex items-center gap-2 py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
             <Target className="h-4 w-4" />
             <span className="hidden sm:inline">Comparison</span>
           </TabsTrigger>
-          <TabsTrigger value="monthly" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="monthly" className="flex-1 text-center flex items-center gap-2 py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Monthly</span>
           </TabsTrigger>
-          <TabsTrigger value="locations" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="locations" className="flex-1 text-center flex items-center gap-2 py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
             <MapPin className="h-4 w-4" />
             <span className="hidden sm:inline">Locations</span>
           </TabsTrigger>
-          <TabsTrigger value="cycle" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="cycle" className="flex-1 text-center flex items-center gap-2 py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
             <Zap className="h-4 w-4" />
             <span className="hidden sm:inline">PowerCycle</span>
           </TabsTrigger>
-          <TabsTrigger value="barre" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="barre" className="flex-1 text-center flex items-center gap-2 py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Barre</span>
           </TabsTrigger>
@@ -584,7 +612,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-blue-100">
                       <div className="text-xs text-blue-700 font-medium">Revenue</div>
-                      <div className="text-lg font-bold text-blue-900">{formatCurrency(formatMetrics.cycle.revenueEarned)}</div>
+                      <div className="text-lg font-bold text-blue-900">{formatNumber(formatMetrics.cycle.revenueEarned)}</div>
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-blue-100">
                       <div className="text-xs text-blue-700 font-medium">Fill Rate</div>
@@ -632,7 +660,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-pink-100">
                       <div className="text-xs text-pink-700 font-medium">Revenue</div>
-                      <div className="text-lg font-bold text-pink-900">{formatCurrency(formatMetrics.barre.revenueEarned)}</div>
+                      <div className="text-lg font-bold text-pink-900">{formatNumber(formatMetrics.barre.revenueEarned)}</div>
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-pink-100">
                       <div className="text-xs text-pink-700 font-medium">Fill Rate</div>
@@ -680,7 +708,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-orange-100">
                       <div className="text-xs text-orange-700 font-medium">Revenue</div>
-                      <div className="text-lg font-bold text-orange-900">{formatCurrency(formatMetrics.strength.revenueEarned)}</div>
+                      <div className="text-lg font-bold text-orange-900">{formatNumber(formatMetrics.strength.revenueEarned)}</div>
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-orange-100">
                       <div className="text-xs text-orange-700 font-medium">Fill Rate</div>

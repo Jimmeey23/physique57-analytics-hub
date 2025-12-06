@@ -174,192 +174,233 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto bg-white border-slate-200 shadow-2xl">
-        <DialogHeader className="pb-6 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 -m-6 p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-white flex items-center gap-3">
-              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
-                <BarChart3 className="w-5 h-5 text-white" />
+      <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200/50 shadow-2xl backdrop-blur-xl rounded-2xl overflow-hidden">
+        <DialogHeader className="flex-shrink-0 pb-6 border-b border-slate-200/30 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 -m-6 p-8 mb-0 relative overflow-hidden">
+          {/* Premium background pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-slate-900/20" />
+          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)' }} />
+          
+          <div className="flex items-center justify-between relative z-10">
+            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
+                <BarChart3 className="w-6 h-6 text-white" />
               </div>
-              <span>{data.title || data.name}</span>
-              <Badge className="ml-2 bg-white/20 text-white border-white/30 backdrop-blur-sm font-normal">
-                {data.type}
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
+                  {data.title || data.name}
+                </span>
+                <Badge className="self-start bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 backdrop-blur-md font-medium px-3 py-1 rounded-full text-xs">
+                  {data.type}
+                </Badge>
+              </div>
             </DialogTitle>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClose}
-              className="text-white hover:bg-white/10 backdrop-blur-sm"
+              className="text-white hover:bg-white/10 backdrop-blur-sm rounded-xl p-2 transition-all duration-200 hover:scale-105"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </Button>
           </div>
         </DialogHeader>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-slate-900 to-blue-950 border-slate-700 shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-slate-300 mb-1">
-                  <DollarSign className="w-4 h-4" />
-                  <span className="text-xs font-medium">Total Revenue</span>
+        {/* Scrollable Content Container */}
+        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 lg:space-y-8">
+          {/* Metric Cards Grid - Improved Responsive Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
+            {/* Revenue Card */}
+            <Card className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group min-h-[120px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
+                <div className="flex items-center gap-3 text-slate-300 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-white/10 to-white/5 rounded-lg shrink-0">
+                    <DollarSign className="w-4 h-4 lg:w-5 lg:h-5" />
+                  </div>
+                  <span className="text-xs lg:text-sm font-medium tracking-wide">Total Revenue</span>
                 </div>
-                <div className="text-2xl font-bold text-white">
+                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent leading-tight">
                   {formatCurrency(analytics.totalRevenue)}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-slate-500 mb-1">
-                  <ShoppingCart className="w-4 h-4" />
-                  <span className="text-xs font-medium">Transactions</span>
+            {/* Transactions Card */}
+            <Card className="bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group backdrop-blur-sm min-h-[120px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
+                <div className="flex items-center gap-3 text-slate-600 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg shrink-0">
+                    <ShoppingCart className="w-4 h-4 lg:w-5 lg:h-5" />
+                  </div>
+                  <span className="text-xs lg:text-sm font-medium tracking-wide">Transactions</span>
                 </div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent leading-tight">
                   {formatNumber(analytics.totalTransactions)}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-slate-500 mb-1">
-                  <Users className="w-4 h-4" />
-                  <span className="text-xs font-medium">Customers</span>
+            {/* Customers Card */}
+            <Card className="bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group backdrop-blur-sm min-h-[120px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
+                <div className="flex items-center gap-3 text-slate-600 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg shrink-0">
+                    <Users className="w-4 h-4 lg:w-5 lg:h-5" />
+                  </div>
+                  <span className="text-xs lg:text-sm font-medium tracking-wide">Customers</span>
                 </div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent leading-tight">
                   {formatNumber(analytics.uniqueCustomers)}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-slate-500 mb-1">
-                  <Target className="w-4 h-4" />
-                  <span className="text-xs font-medium">Avg Transaction</span>
+            {/* Avg Transaction Card */}
+            <Card className="bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group backdrop-blur-sm min-h-[120px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
+                <div className="flex items-center gap-3 text-slate-600 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg shrink-0">
+                    <Target className="w-4 h-4 lg:w-5 lg:h-5" />
+                  </div>
+                  <span className="text-xs lg:text-sm font-medium tracking-wide">Avg Transaction</span>
                 </div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent leading-tight">
                   {formatCurrency(analytics.avgTransactionValue)}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-slate-600 mb-1">
-                  <Award className="w-4 h-4" />
-                  <span className="text-xs font-medium">Avg per Customer</span>
+            {/* Avg per Customer Card */}
+            <Card className="bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-50 border border-emerald-200/70 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group md:col-span-2 lg:col-span-1 min-h-[120px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
+                <div className="flex items-center gap-3 text-emerald-700 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-emerald-200 to-emerald-300 rounded-lg shrink-0">
+                    <Award className="w-4 h-4 lg:w-5 lg:h-5" />
+                  </div>
+                  <span className="text-xs lg:text-sm font-medium tracking-wide">Avg per Customer</span>
                 </div>
-                <div className="text-2xl font-bold text-slate-900">
+                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 bg-clip-text text-transparent leading-tight">
                   {formatCurrency(analytics.avgRevenuePerCustomer)}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Monthly Performance */}
-          <Card className="bg-white border-slate-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-              <CardTitle className="text-lg flex items-center gap-2 text-slate-900">
-                <Calendar className="w-5 h-5 text-slate-700" />
-                Monthly Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <ScrollArea className="h-64">
-                <div className="space-y-2">
+          {/* Analytics Sections - Improved Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+            {/* Monthly Performance */}
+            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border border-slate-200/50 shadow-xl backdrop-blur-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/30 relative overflow-hidden p-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent" />
+                <CardTitle className="text-lg lg:text-xl flex items-center gap-3 text-white relative z-10">
+                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent font-bold tracking-wide">
+                    Monthly Performance
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                   {Object.entries(analytics.monthlyData).map(([month, data]: [string, any]) => (
-                    <div key={month} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all hover:shadow-md">
-                      <div>
-                        <div className="font-semibold text-slate-900">{month}</div>
-                        <div className="text-sm text-slate-500 mt-1">
+                    <div key={month} className="flex items-center justify-between p-4 lg:p-5 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/80 rounded-xl border border-slate-200/50 hover:border-slate-300/70 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm group">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-900 text-base lg:text-lg group-hover:text-indigo-900 transition-colors truncate">{month}</div>
+                        <div className="text-xs lg:text-sm text-slate-600 mt-1 lg:mt-2 font-medium">
                           {formatNumber(data.transactions)} transactions • {formatNumber(data.uniqueCustomers)} customers
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-lg bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                      <div className="text-right ml-4 shrink-0">
+                        <div className="font-bold text-lg lg:text-xl xl:text-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
                           {formatCurrency(data.revenue)}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Top Customers */}
-          <Card className="bg-white border-slate-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-              <CardTitle className="text-lg flex items-center gap-2 text-slate-900">
-                <Users className="w-5 h-5 text-slate-700" />
-                Top Customers
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <ScrollArea className="h-64">
-                <div className="space-y-2">
+            {/* Top Customers */}
+            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border border-slate-200/50 shadow-xl backdrop-blur-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/30 relative overflow-hidden p-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent" />
+                <CardTitle className="text-lg lg:text-xl flex items-center gap-3 text-white relative z-10">
+                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent font-bold tracking-wide">
+                    Top Customers
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                   {analytics.topCustomers.map((customer: any, index: number) => (
-                    <div key={customer.memberId} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white rounded-lg border border-slate-200 hover:border-slate-300 transition-all hover:shadow-md">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-lg">
+                    <div key={customer.memberId} className="flex items-center gap-4 p-4 lg:p-5 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/80 rounded-xl border border-slate-200/50 hover:border-slate-300/70 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm group">
+                      <div className="shrink-0">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl flex items-center justify-center text-sm lg:text-lg font-bold shadow-lg group-hover:scale-105 transition-transform duration-300">
                           {index + 1}
                         </div>
-                        <div>
-                          <div className="font-semibold text-slate-900">{customer.name}</div>
-                          <div className="text-xs text-slate-500">{customer.email}</div>
-                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-lg bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-900 text-base lg:text-lg group-hover:text-indigo-900 transition-colors truncate">{customer.name}</div>
+                        <div className="text-xs lg:text-sm text-slate-600 font-medium truncate">{customer.email}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-bold text-lg lg:text-xl xl:text-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
                           {formatCurrency(customer.revenue)}
                         </div>
-                        <div className="text-xs text-slate-500 mt-1">
+                        <div className="text-xs lg:text-sm text-slate-600 mt-1 font-medium">
                           {formatNumber(customer.transactions)} orders
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Transaction Details */}
-        <Card className="bg-white border-slate-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-b border-slate-700">
-            <CardTitle className="text-lg flex items-center gap-2 text-white">
-              <Package className="w-5 h-5" />
-              Transaction Details
-              <Badge className="ml-2 bg-white/20 text-white border-white/30 backdrop-blur-sm font-normal">
-                {formatNumber(rawData.length)} records
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ModernDataTable
-              data={rawData}
-              columns={tableColumns}
-              headerGradient="from-slate-900 via-blue-950 to-slate-900"
-              maxHeight="400px"
-            />
-          </CardContent>
-        </Card>
+          {/* Transaction Details - Enhanced Layout */}
+          <div className="w-full">
+            <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border border-slate-200/50 shadow-xl backdrop-blur-sm rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/30 relative overflow-hidden p-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent" />
+                <CardTitle className="text-lg lg:text-xl flex items-center gap-3 text-white relative z-10">
+                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent font-bold tracking-wide">
+                      Transaction Details
+                    </span>
+                    <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 backdrop-blur-md font-medium px-3 py-1 rounded-full text-xs">
+                      {formatNumber(rawData.length)} records
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="border-t border-slate-200/30 bg-white/50 backdrop-blur-sm">
+                  <div className="max-h-96 overflow-auto">
+                    <ModernDataTable
+                      data={rawData}
+                      columns={tableColumns}
+                      headerGradient="from-slate-900 via-indigo-950 to-slate-900"
+                      maxHeight="none"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

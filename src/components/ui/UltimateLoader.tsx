@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
 
 interface UltimateLoaderProps {
   onComplete?: () => void;
@@ -12,77 +13,132 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
   title = "PHYSIQUE 57",
   subtitle = "Analytics Hub"
 }) => {
+  const location = useLocation();
   const [imgFailed, setImgFailed] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const logoSrcs = ['/physique57-logo.png', '/placeholder.svg'];
 
-  // Dynamic messages based on subtitle/page type
-  const getLoadingMessages = () => {
-    const subtitleLower = subtitle.toLowerCase();
+  // Enhanced progress simulation that completes exactly when page is ready
+  useEffect(() => {
+    let progressTimer: NodeJS.Timeout;
+    let completed = false;
     
-    if (subtitleLower.includes('sales')) {
+    const startProgress = () => {
+      progressTimer = setInterval(() => {
+        setProgress(prev => {
+          if (completed) return 100;
+          
+          // Smooth progress that slows down near completion
+          const increment = prev > 95 ? 0.2 : prev > 85 ? 0.8 : Math.max(1.2, (100 - prev) * 0.15);
+          const newProgress = Math.min(99, prev + increment); // Stop at 99%
+          return newProgress;
+        });
+      }, 60);
+    };
+
+    const completeLoading = () => {
+      if (completed) return;
+      completed = true;
+      clearInterval(progressTimer);
+      
+      // Set to 100% and immediately complete
+      setProgress(100);
+      onComplete?.();
+    };
+
+    startProgress();
+
+    // Complete after minimum 1.8 seconds for smooth UX
+    const minTimer = setTimeout(completeLoading, 1800);
+
+    return () => {
+      clearInterval(progressTimer);
+      clearTimeout(minTimer);
+    };
+  }, [onComplete]);
+
+  // Dynamic messages based on current route
+  const getLoadingMessages = () => {
+    const path = location.pathname.toLowerCase();
+    
+    if (path.includes('sales')) {
       return [
         'Analyzing revenue trends...',
         'Processing sales data...',
-        'Calculating ATV...',
-        'Preparing insights...'
+        'Calculating ATV metrics...',
+        'Loading sales insights...'
       ];
-    } else if (subtitleLower.includes('discount')) {
+    } else if (path.includes('discount')) {
       return [
         'Loading discount analytics...',
         'Analyzing promotion impact...',
         'Processing offer data...',
-        'Calculating ROI...'
+        'Calculating discount ROI...'
       ];
-    } else if (subtitleLower.includes('funnel') || subtitleLower.includes('lead')) {
+    } else if (path.includes('funnel') || path.includes('lead')) {
       return [
         'Mapping conversion funnel...',
         'Analyzing lead pipeline...',
         'Processing prospect data...',
-        'Tracking conversions...'
+        'Tracking lead conversions...'
       ];
-    } else if (subtitleLower.includes('retention')) {
+    } else if (path.includes('retention')) {
       return [
         'Analyzing member retention...',
         'Processing loyalty metrics...',
-        'Tracking engagement...',
+        'Tracking engagement patterns...',
         'Calculating retention rates...'
       ];
-    } else if (subtitleLower.includes('attendance') || subtitleLower.includes('class')) {
+    } else if (path.includes('attendance') || path.includes('class')) {
       return [
         'Loading class schedules...',
         'Analyzing attendance patterns...',
-        'Processing bookings...',
-        'Tracking capacity...'
+        'Processing class bookings...',
+        'Tracking studio capacity...'
       ];
-    } else if (subtitleLower.includes('cancellation')) {
+    } else if (path.includes('cancellation')) {
       return [
-        'Analyzing cancellations...',
+        'Analyzing late cancellations...',
         'Processing timing data...',
-        'Identifying patterns...',
-        'Calculating impact...'
+        'Identifying usage patterns...',
+        'Calculating policy impact...'
       ];
-    } else if (subtitleLower.includes('payroll')) {
+    } else if (path.includes('payroll')) {
       return [
         'Loading payroll data...',
         'Calculating compensation...',
         'Processing instructor hours...',
-        'Preparing reports...'
+        'Preparing payroll reports...'
       ];
-    } else if (subtitleLower.includes('expiration')) {
+    } else if (path.includes('expiration')) {
       return [
-        'Tracking expirations...',
+        'Tracking member expirations...',
         'Analyzing renewal patterns...',
-        'Processing member data...',
-        'Identifying opportunities...'
+        'Processing membership data...',
+        'Identifying retention opportunities...'
+      ];
+    } else if (path.includes('executive') || path.includes('summary')) {
+      return [
+        'Preparing executive summary...',
+        'Aggregating key metrics...',
+        'Processing studio performance...',
+        'Loading dashboard overview...'
+      ];
+    } else if (path.includes('patterns') || path.includes('trends')) {
+      return [
+        'Analyzing usage patterns...',
+        'Processing trend data...',
+        'Identifying insights...',
+        'Loading trend analysis...'
       ];
     } else {
       return [
-        'Loading analytics...',
-        'Processing data...',
-        'Preparing dashboard...',
+        'Loading analytics dashboard...',
+        'Processing studio data...',
+        'Preparing insights...',
         'Almost ready...'
       ];
     }
@@ -96,309 +152,266 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
       setCurrentMessageIndex((prev) => (prev + 1) % loadingMessages.length);
     }, 800);
 
-    // Auto-complete after animation duration
-    const timer = setTimeout(() => {
-      onComplete?.();
-    }, 3500);
-
     return () => {
       clearInterval(messageInterval);
-      clearTimeout(timer);
     };
-  }, [onComplete, loadingMessages.length]);
+  }, [loadingMessages.length]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white overflow-hidden flex items-center justify-center">
-      {/* Subtle gradient accent shadows in background */}
-      <div className="absolute inset-0 pointer-events-none">
+    <motion.div 
+      className="fixed inset-0 z-[9999] overflow-hidden flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      style={{
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 25%, #f1f5f9 50%, #f8fafc 75%, #ffffff 100%)',
+        backgroundSize: '400% 400%',
+        animation: 'gradientShift 8s ease infinite'
+      }}
+    >
+      {/* Subtle animated background elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Single refined gradient blob */}
         <motion.div
-          className="absolute top-1/4 left-1/4 w-[32rem] h-[32rem] rounded-full blur-3xl opacity-[0.08]"
+          className="absolute rounded-full blur-3xl"
           style={{
-            background: "radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(37,99,235,0.2) 40%, transparent 70%)"
+            width: '35rem',
+            height: '35rem',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(37,99,235,0.04) 40%, transparent 70%)'
           }}
+          initial={{ x: '20%', y: '20%', scale: 0.8 }}
           animate={{
-            x: [0, 80, 0],
-            y: [0, 40, 0],
-            scale: [1, 1.15, 1],
+            x: ['20%', '80%', '20%'],
+            y: ['20%', '70%', '20%'],
+            scale: [0.8, 1.1, 0.8]
           }}
           transition={{
-            duration: 10,
+            duration: 20,
             repeat: Infinity,
             ease: "easeInOut",
           }}
         />
+        
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-[0.08]"
+          className="absolute rounded-full blur-3xl"
           style={{
-            background: "radial-gradient(circle, rgba(99,102,241,0.4) 0%, rgba(79,70,229,0.2) 40%, transparent 70%)"
+            width: '30rem',
+            height: '30rem',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, rgba(37,99,235,0.03) 40%, transparent 70%)'
           }}
+          initial={{ x: '60%', y: '60%', scale: 1.0 }}
           animate={{
-            x: [0, -80, 0],
-            y: [0, -40, 0],
-            scale: [1, 1.2, 1],
+            x: ['60%', '30%', '60%'],
+            y: ['60%', '30%', '60%'],
+            scale: [1.0, 0.8, 1.0]
           }}
           transition={{
-            duration: 12,
+            duration: 25,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 1.5,
+            delay: 3
           }}
         />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-[24rem] h-[24rem] rounded-full blur-3xl opacity-[0.06] -translate-x-1/2 -translate-y-1/2"
-          style={{
-            background: "radial-gradient(circle, rgba(147,197,253,0.3) 0%, rgba(96,165,250,0.15) 50%, transparent 70%)"
-          }}
-          animate={{
-            scale: [1, 1.25, 1],
-            opacity: [0.06, 0.1, 0.06],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5,
-          }}
-        />
-      </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-        className="relative z-10"
-      >
-        {/* Main container with enhanced animations */}
-        <motion.div className="relative">
-          {/* Premium glow effect wrapper */}
+        {/* Subtle floating dots */}
+        {Array.from({ length: 15 }).map((_, i) => (
           <motion.div
-            className="relative flex items-center justify-center"
+            key={i}
+            className="absolute w-1 h-1 bg-slate-300/40 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
             animate={{
-              filter: ['drop-shadow(0 10px 30px rgba(59, 130, 246, 0.12))', 'drop-shadow(0 15px 40px rgba(59, 130, 246, 0.2))', 'drop-shadow(0 10px 30px rgba(59, 130, 246, 0.12))']
+              y: [0, -15, 0],
+              opacity: [0.2, 0.6, 0.2],
+              scale: [1, 1.2, 1]
             }}
             transition={{
-              duration: 3,
+              duration: Math.random() * 4 + 4,
               repeat: Infinity,
-              ease: "easeInOut",
+              delay: Math.random() * 3,
+              ease: "easeInOut"
             }}
-          >
-            {/* Refined glossy shine effect overlay */}
-            <motion.div
-              className="absolute inset-0 z-20 pointer-events-none rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, transparent 0%, transparent 45%, rgba(255,255,255,0.35) 50%, transparent 55%, transparent 100%)',
-              }}
-              animate={{
-                x: ['-150%', '150%'],
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                repeatDelay: 0.5,
-                ease: "easeInOut"
-              }}
-            />
-            {/* Logo Image or Fallback SVG */}
-            {!imgFailed ? (
-              <motion.div 
-                className="relative w-56 h-56 flex items-center justify-center z-10"
-                animate={{
-                  scale: [1, 1.02, 1],
-                  filter: ['brightness(1)', 'brightness(1.08)', 'brightness(1)']
-                }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <img
-                  src={logoSrcs[srcIndex]}
-                  alt="Physique 57"
-                  className="w-full h-full object-contain"
-                  onError={() => {
-                    if (srcIndex < logoSrcs.length - 1) {
-                      setSrcIndex(srcIndex + 1);
-                    } else {
-                      setImgFailed(true);
-                    }
-                  }}
-                />
-              </motion.div>
-            ) : (
-              <svg
-                width="260"
-                height="260"
-                viewBox="0 0 500 500"
-                className="relative"
-              >
-                <defs>
-                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#00A8E8" />
-                    <stop offset="50%" stopColor="#0077B6" />
-                    <stop offset="100%" stopColor="#023E8A" />
-                  </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                
-                {/* Large 5 */}
-                <motion.path
-                  d="M 180 100 L 270 100 C 280 100 285 105 285 115 L 280 160 L 180 170 L 175 210 C 175 210 180 205 200 205 L 250 205 C 280 205 290 215 285 245 L 275 300 C 270 330 260 340 230 340 L 150 340 L 155 310 L 235 310 C 245 310 250 305 252 295 L 257 265 C 258 255 253 250 243 250 L 180 250 C 150 250 140 240 145 210 L 160 120 C 165 105 170 100 180 100 Z"
-                  fill="url(#logoGradient)"
-                  filter="url(#glow)"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                />
-                
-                {/* Large 7 */}
-                <motion.path
-                  d="M 270 160 L 390 160 C 400 160 405 165 405 175 C 405 180 404 185 403 190 L 320 390 L 280 390 L 365 195 L 275 195 L 270 160 Z"
-                  fill="url(#logoGradient)"
-                  filter="url(#glow)"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
-                />
-                
-                {/* PHYSIQUE text */}
-                <motion.text
-                  x="50"
-                  y="260"
-                  fontSize="42"
-                  fontWeight="900"
-                  fill="#03045E"
-                  letterSpacing="2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.8 }}
-                >
-                  PHYSIQUE
-                </motion.text>
-                
-                {/* Registered trademark */}
-                <motion.circle
-                  cx="460"
-                  cy="250"
-                  r="12"
-                  stroke="#03045E"
-                  strokeWidth="2"
-                  fill="none"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 1 }}
-                />
-                <motion.text
-                  x="460"
-                  y="256"
-                  fontSize="14"
-                  fontWeight="bold"
-                  fill="#03045E"
-                  textAnchor="middle"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 1 }}
-                >
-                  ®
-                </motion.text>
-              </svg>
-            )}
-          </motion.div>
-        </motion.div>
-      </motion.div>
+          />
+        ))}
+      </div>
 
-      {/* Bottom text - Premium refined styling */}
-      <motion.div
-        className="absolute bottom-20 text-center px-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.7 }}
+      {/* Main content container */}
+      <motion.div 
+        className="relative z-10 flex flex-col items-center gap-8 px-8 py-12"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ 
+          duration: 0.8, 
+          ease: [0.23, 1, 0.32, 1],
+          delay: 0.2
+        }}
       >
-        <div className="inline-flex flex-col items-center gap-3.5 px-8 py-6">
-          {/* Brand title - Smaller, more refined */}
-          <motion.div
-            className="text-slate-800 text-xl md:text-2xl font-bold tracking-[0.15em] uppercase"
-            style={{
-              textShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
-              letterSpacing: '0.18em'
-            }}
+        {/* Clean logo without background */}
+        <motion.div 
+          className="relative"
+          animate={{ 
+            y: [0, -8, 0]
+          }}
+          transition={{ 
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          {/* Logo content */}
+          <AnimatePresence mode="wait">
+            {!imgFailed ? (
+              <motion.img
+                key="logo"
+                src={logoSrcs[srcIndex]}
+                alt={title}
+                className="w-24 h-24 object-contain drop-shadow-lg"
+                onError={() => {
+                  if (srcIndex < logoSrcs.length - 1) {
+                    setSrcIndex(prev => prev + 1);
+                  } else {
+                    setImgFailed(true);
+                  }
+                }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3 }}
+              />
+            ) : (
+              <motion.div
+                key="fallback"
+                className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3 }}
+              >
+                P57
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Clean typography */}
+        <motion.div 
+          className="text-center space-y-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <motion.h1 
+            className="text-4xl md:text-5xl font-black tracking-tight text-slate-800"
             animate={{
               opacity: [0.9, 1, 0.9],
             }}
             transition={{
-              duration: 2.5,
+              duration: 3,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: "easeInOut"
             }}
           >
             {title}
-          </motion.div>
+          </motion.h1>
+          
+          <motion.h2 
+            className="text-xl md:text-2xl font-light text-slate-600 tracking-wide"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            {subtitle}
+          </motion.h2>
+        </motion.div>
 
-          {/* Subtitle - Smaller, elegant */}
-          {subtitle && (
+        {/* Refined progress indicator */}
+        <motion.div
+          className="w-80 space-y-4"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          {/* Progress bar */}
+          <div 
+            className="relative h-2 rounded-full overflow-hidden bg-slate-100 border border-slate-200"
+          >
             <motion.div
-              className="text-slate-500 text-xs md:text-sm font-medium tracking-wider uppercase"
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600"
               style={{
-                textShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
-                letterSpacing: '0.12em'
+                boxShadow: '0 0 20px rgba(59,130,246,0.3)'
               }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.75 }}
-              transition={{ delay: 0.65 }}
-            >
-              {subtitle}
-            </motion.div>
-          )}
+              initial={{ width: 0 }}
+              animate={{ 
+                width: `${progress}%`
+              }}
+              transition={{
+                width: { duration: 0.3, ease: "easeOut" }
+              }}
+            />
+            
+            {/* Subtle shimmer effect */}
+            <motion.div
+              className="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-transparent via-white/60 to-transparent"
+              animate={{
+                x: ['-64px', '384px']
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
 
-          {/* Dynamic loading message - Compact and refined */}
+          {/* Progress percentage */}
+          <motion.div 
+            className="text-center"
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <span className="text-slate-600 font-medium text-lg">
+              {Math.round(progress)}%
+            </span>
+          </motion.div>
+        </motion.div>
+
+        {/* Clean loading messages */}
+        <motion.div
+          className="text-center min-h-[3rem] flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={currentMessageIndex}
-              className="text-blue-600 text-sm md:text-base font-semibold tracking-wide mt-1"
-              style={{
-                textShadow: '0 2px 8px rgba(37, 99, 235, 0.18)',
-              }}
-              initial={{ opacity: 0, y: 8 }}
+              className="text-slate-500 text-lg font-medium tracking-wide"
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5 }}
             >
               {loadingMessages[currentMessageIndex]}
             </motion.div>
           </AnimatePresence>
-
-          {/* Loading dots - Smaller, more refined */}
-          <motion.div className="flex items-center justify-center gap-2 pt-3">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
-                style={{
-                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
-                }}
-                animate={{
-                  y: [0, -8, 0],
-                  opacity: [0.6, 1, 0.6],
-                  scale: [1, 1.15, 1],
-                }}
-                transition={{
-                  duration: 1.1,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </motion.div>
-        </div>
+        </motion.div>
       </motion.div>
-    </div>
+
+      {/* Simple CSS animations */}
+      <style jsx>{`
+        @keyframes gradientShift {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+      `}</style>
+    </motion.div>
   );
 };
 

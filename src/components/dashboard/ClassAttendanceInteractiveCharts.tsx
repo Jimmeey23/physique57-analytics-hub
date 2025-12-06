@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ComposedChart, Area, AreaChart } from 'recharts';
 import { BarChart3, TrendingUp, PieChart as PieChartIcon, Activity, Calendar, Target, Users, DollarSign } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface ClassAttendanceInteractiveChartsProps {
   data: SessionData[];
@@ -157,7 +157,7 @@ export const ClassAttendanceInteractiveCharts: React.FC<ClassAttendanceInteracti
                 entry.name.includes('Rate') || entry.name.includes('Percentage') 
                   ? formatPercentage(entry.value)
                   : entry.name.includes('Revenue') 
-                    ? formatCurrency(entry.value)
+                    ? formatNumber(entry.value)
                     : formatNumber(entry.value)
               }
             </p>
@@ -385,7 +385,7 @@ export const ClassAttendanceInteractiveCharts: React.FC<ClassAttendanceInteracti
                 <BarChart data={chartData.revenueAnalysis}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="format" angle={-45} textAnchor="end" height={100} />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                  <YAxis tickFormatter={(value) => formatNumber(value)} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="totalRevenue" fill="#F59E0B" name="Total Revenue" />
                 </BarChart>

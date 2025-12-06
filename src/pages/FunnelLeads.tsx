@@ -22,6 +22,7 @@ import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { LeadsFilterOptions } from '@/types/leads';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -238,32 +239,12 @@ export default function FunnelLeads() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
-        <div className="flex items-start justify-center mb-8" id="location-tabs">
-          <div className="w-full max-w-4xl">
-            <div className="grid grid-cols-4 location-tabs">
-              {locations.map(location => {
-                const count = tabCounts[location.id as keyof typeof tabCounts] || 0;
-                
-                return (
-                  <button
-                    key={location.id}
-                    onClick={() => setActiveLocation(location.id)}
-                    className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                    data-state={activeLocation === location.id ? 'active' : 'inactive'}
-                  >
-                    <span className="relative z-10 flex flex-col items-center leading-tight">
-                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{location.name}</span>
-                      <span className="text-xs sm:text-sm opacity-90">{location.fullName} ({count})</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="ml-3 mt-1">
-            <InfoPopover context="funnel-leads-overview" locationId={activeLocation} />
-          </div>
-        </div>
+        <StudioLocationTabs 
+          activeLocation={activeLocation}
+          onLocationChange={setActiveLocation}
+          showInfoPopover={true}
+          infoPopoverContext="funnel-leads-overview"
+        />
 
         {/* Content Sections */}
         <div className="space-y-8">
@@ -309,28 +290,28 @@ export default function FunnelLeads() {
           <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
             <CardContent className="p-4 w-full">
               <Tabs defaultValue="analytics" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-50 p-1.5 rounded-xl shadow-md border border-slate-200">
+                <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-800 to-slate-700 p-1.5 rounded-xl shadow-lg border border-slate-600">
                   <TabsTrigger 
                     value="analytics" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
                   >
                     Analytics
                   </TabsTrigger>
                   <TabsTrigger 
                     value="mom" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
                   >
                     Month-on-Month
                   </TabsTrigger>
                   <TabsTrigger 
                     value="yoy" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
                   >
                     Year-on-Year
                   </TabsTrigger>
                   <TabsTrigger 
                     value="health" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
                   >
                     Health Metrics
                   </TabsTrigger>
@@ -342,7 +323,7 @@ export default function FunnelLeads() {
 
                 <TabsContent value="mom" className="mt-4">
                   {/* Uses ALL location data, independent from page date filters */}
-                  <FunnelMonthOnMonthTable data={locationFilteredData} />
+                  <FunnelMonthOnMonthTable data={locationFilteredData} onDrillDown={handleDrillDown} />
                 </TabsContent>
 
                 <TabsContent value="yoy" className="mt-4">

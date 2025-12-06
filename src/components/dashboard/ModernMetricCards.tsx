@@ -107,7 +107,7 @@ export const ModernMetricCards: React.FC<ModernMetricCardsProps> = ({
       {
         id: 'earned-revenue',
         title: 'Earned Revenue',
-        value: formatCurrency(totalRevenue),
+        value: formatNumber(totalRevenue),
         subtitle: `From ${formatNumber(totalSessions)} sessions`,
         change: ((totalRevenue - previousRevenue) / previousRevenue) * 100,
         trend: totalRevenue > previousRevenue ? 'up' : 'down',
@@ -286,7 +286,7 @@ export const ModernMetricCards: React.FC<ModernMetricCardsProps> = ({
       {
         id: 'unpaid-amount',
         title: 'Unpaid Amount',
-        value: formatCurrency(totalUnpaid),
+        value: formatNumber(totalUnpaid),
         subtitle: `${formatPercentage(unpaidRate)} of total owed`,
         change: -8.2, // Mock improvement
         trend: 'down', // Good trend for unpaid
@@ -395,86 +395,92 @@ export const ModernMetricCards: React.FC<ModernMetricCardsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {metrics.map((metric) => {
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {metrics.map((metric, index) => {
         const IconComponent = metric.icon;
-        const isPositiveTrend = metric.trend === 'up';
-        const isTrendGood = 
-          (metric.id.includes('empty') || metric.id.includes('cancellation') || metric.id.includes('unpaid')) 
-            ? metric.trend === 'down' 
-            : metric.trend === 'up';
+        const isPositive = metric.change && metric.change > 0;
+        const isNegative = metric.change && metric.change < 0;
 
         return (
           <Card
             key={metric.id}
             className={cn(
-              "bg-white shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer",
-              "border border-slate-200 hover:border-slate-300 group relative overflow-hidden"
+              "group relative overflow-hidden cursor-pointer transition-all duration-700",
+              "bg-white hover:bg-gradient-to-br hover:from-gray-900 hover:via-slate-900 hover:to-slate-900",
+              index % 4 === 0 && "border-t-4 border-green-700 hover:border-green-700 shadow-lg",
+              index % 4 === 1 && "border-t-4 border-blue-700 hover:border-blue-700 shadow-lg",
+              index % 4 === 2 && "border-t-4 border-pink-700 hover:border-pink-700 shadow-lg",
+              index % 4 === 3 && "border-t-4 border-red-700 hover:border-red-700 shadow-lg",
+              "hover:shadow-2xl hover:shadow-slate-900/30",
+              "hover:-translate-y-2 hover:scale-[1.02]"
             )}
             onClick={() => handleMetricClick(metric)}
           >
-            {/* Gradient accent line */}
-            <div className={cn(
-              "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r",
-              metric.gradient
-            )} />
-
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className={cn(
-                  "p-3 rounded-xl bg-gradient-to-r shadow-sm group-hover:shadow-md transition-shadow",
-                  metric.gradient,
-                  "text-white"
-                )}>
-                  <IconComponent className="w-5 h-5" />
-                </div>
-                
-                {metric.change !== undefined && (
-                  <div className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-                    isTrendGood 
-                      ? "bg-green-50 text-green-700 border border-green-200" 
-                      : "bg-red-50 text-red-700 border border-red-200"
-                  )}>
-                    {isPositiveTrend ? (
-                      <ArrowUpRight className="w-3 h-3" />
-                    ) : (
-                      <ArrowDownRight className="w-3 h-3" />
-                    )}
-                    {Math.abs(metric.change).toFixed(1)}%
+            <CardContent className="p-6 relative">
+              <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                <IconComponent className={cn(
+                  "w-12 h-12 transition-all duration-700",
+                  index % 4 === 0 && "text-green-700",
+                  index % 4 === 1 && "text-blue-700",
+                  index % 4 === 2 && "text-pink-700",
+                  index % 4 === 3 && "text-red-700",
+                  "group-hover:text-white/40"
+                )} />
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-6">
+                    <div className={cn(
+                      "p-4 rounded-2xl transition-all duration-700 border-1 shadow-md",
+                      index % 4 === 0 && "bg-gradient-to-br from-green-700 to-green-600 border-green-900 text-white shadow-green-200",
+                      index % 4 === 1 && "bg-gradient-to-br from-blue-700 to-blue-600 border-blue-900 text-white shadow-blue-200",
+                      index % 4 === 2 && "bg-gradient-to-br from-pink-700 to-pink-600 border-pink-900 text-white shadow-pink-200",
+                      index % 4 === 3 && "bg-gradient-to-br from-red-700 to-red-600 border-red-900 text-white shadow-red-200",
+                      "group-hover:bg-white/20 group-hover:border-white/40 group-hover:text-white group-hover:shadow-white/20"
+                    )}>
+                      <IconComponent className="w-6 h-6 drop-shadow-sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg text-slate-900 group-hover:text-white/95 transition-colors duration-700">
+                        {metric.title}
+                      </h3>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              <CardTitle className="text-sm font-medium text-slate-600 mt-3 leading-tight">
-                {metric.title}
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className="pt-0">
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-slate-900 leading-none">
-                  {metric.value}
+                  
+                  {metric.change !== undefined && (
+                    <div className={cn(
+                      "flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-700",
+                      isPositive
+                        ? "bg-green-50 text-green-700 group-hover:bg-green-400/30 group-hover:text-green-100"
+                        : isNegative
+                        ? "bg-red-50 text-red-700 group-hover:bg-red-400/30 group-hover:text-red-100"
+                        : "bg-blue-50 text-blue-700 group-hover:bg-blue-400/30 group-hover:text-blue-100"
+                    )}>
+                      {isPositive && <TrendingUp className="w-3 h-3" />}
+                      {isNegative && <TrendingDown className="w-3 h-3" />}
+                      <span>
+                        {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
                 </div>
-                
-                {metric.subtitle && (
-                  <p className="text-sm text-slate-500 leading-tight">
-                    {metric.subtitle}
-                  </p>
-                )}
-              </div>
 
-              {/* Hover indicator */}
-              <div className="flex justify-end mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreHorizontal className="w-4 h-4 text-slate-400" />
+                <div className="space-y-2">
+                  <p className={cn(
+                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                  )}>
+                    {metric.value}
+                  </p>
+                  
+                  {metric.subtitle && (
+                    <p className="text-sm text-slate-500 group-hover:text-white/80 transition-colors duration-700">
+                      {metric.subtitle}
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
-
-            {/* Subtle hover gradient overlay */}
-            <div className={cn(
-              "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none",
-              metric.gradient
-            )} />
           </Card>
         );
       })}

@@ -84,3 +84,22 @@ export const formatASV = (value: number): string => {
 export const formatUPT = (value: number): string => {
   return value.toFixed(1); // 1 decimal place
 };
+
+// Revenue formatter with max 1 decimal place (no currency symbol)
+export const formatRevenue = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) return '0.0';
+  
+  const absValue = Math.abs(value);
+  
+  if (absValue < 1000) {
+    return value.toFixed(1);
+  } else if (absValue >= 10000000) {
+    return `${(value / 10000000).toFixed(1)}Cr`;
+  } else if (absValue >= 100000) {
+    return `${(value / 100000).toFixed(1)}L`;
+  } else if (absValue >= 1000) {
+    return `${(value / 1000).toFixed(1)}K`;
+  }
+  
+  return value.toFixed(1);
+};

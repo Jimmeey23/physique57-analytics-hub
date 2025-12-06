@@ -12,6 +12,7 @@ import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { parseDate } from '@/utils/dateUtils';
 
 interface EnhancedDiscountsDashboardV2Props {
@@ -347,35 +348,12 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
 
       {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
       <div className="container mx-auto px-6 space-y-6">
-        <div className="flex items-start justify-center mb-8" id="location-tabs">
-          <div className="w-full max-w-4xl">
-            <div className="grid grid-cols-4 location-tabs">
-              {locations.map(location => {
-                const parts = location.name.split(',').map(s => s.trim());
-                const mainName = parts[0] || location.name;
-                const subName = parts[1] || '';
-                const count = tabCounts[location.id as keyof typeof tabCounts] || 0;
-                
-                return (
-                  <button
-                    key={location.id}
-                    onClick={() => setActiveLocation(location.id)}
-                    className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                    data-state={activeLocation === location.id ? 'active' : 'inactive'}
-                  >
-                    <span className="relative z-10 flex flex-col items-center leading-tight">
-                      <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{mainName}</span>
-                      <span className="text-xs sm:text-sm opacity-90">{subName} ({count})</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="ml-4 mt-1">
-            <InfoPopover context="discounts-promotions-overview" locationId={activeLocation} />
-          </div>
-        </div>
+        <StudioLocationTabs 
+          activeLocation={activeLocation}
+          onLocationChange={setActiveLocation}
+          showInfoPopover={true}
+          infoPopoverContext="discounts-promotions-overview"
+        />
 
         {/* Content Sections */}
         <div className="space-y-8">

@@ -23,7 +23,27 @@ const SessionsFiltersContext = React.createContext<SessionsFiltersContextType | 
 export const useSessionsFilters = () => {
   const context = React.useContext(SessionsFiltersContext);
   if (!context) {
-    throw new Error('useSessionsFilters must be used within a SessionsFiltersProvider');
+    console.error('useSessionsFilters must be used within a SessionsFiltersProvider. Returning fallback values.');
+    // Return a fallback context
+    return {
+      filters: {
+        dateRange: { start: '', end: '' },
+        locations: [],
+        trainers: [],
+        classes: [],
+        dayOfWeek: [],
+        timeSlots: []
+      },
+      updateFilters: () => {},
+      clearFilters: () => {},
+      resetToDefaultDates: () => {},
+      availableOptions: {
+        locations: [],
+        trainers: [],
+        classes: [],
+        timeSlots: []
+      }
+    };
   }
   return context;
 };

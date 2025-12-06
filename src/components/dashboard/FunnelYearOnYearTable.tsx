@@ -225,6 +225,26 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     return result;
   }, [processedData]);
 
+  // Helper function to format values based on metric type
+  const formatValue = (value: any, metric: MetricType) => {
+    if (typeof value !== 'object' || !value) return '-';
+    const metricValue = value[metric];
+    if (metricValue === undefined || metricValue === 0) return '-';
+    switch (metric) {
+      case 'ltv':
+        return metricValue < 1000 ? `₹${Math.round(metricValue)}` : formatCurrency(metricValue);
+      case 'trialToMemberRate':
+      case 'leadToTrialRate':
+      case 'leadToMemberRate':
+      case 'pipelineHealth':
+        return `${metricValue.toFixed(1)}%`;
+      case 'avgVisits':
+        return metricValue.toFixed(1);
+      default:
+        return metricValue.toLocaleString('en-IN');
+    }
+  };
+
   // Pre-formatted footer data that extracts the selected metric for display
   const totals = useMemo(() => {
     const currentDate = new Date();
@@ -264,24 +284,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
     
     return result;
   }, [rawTotals, selectedMetric, viewMode]);
-  const formatValue = (value: any, metric: MetricType) => {
-    if (typeof value !== 'object' || !value) return '-';
-    const metricValue = value[metric];
-    if (metricValue === undefined || metricValue === 0) return '-';
-    switch (metric) {
-      case 'ltv':
-        return metricValue < 1000 ? `₹${Math.round(metricValue)}` : formatCurrency(metricValue);
-      case 'trialToMemberRate':
-      case 'leadToTrialRate':
-      case 'leadToMemberRate':
-      case 'pipelineHealth':
-        return `${metricValue.toFixed(1)}%`;
-      case 'avgVisits':
-        return metricValue.toFixed(1);
-      default:
-        return metricValue.toLocaleString('en-IN');
-    }
-  };
+
   const metricTabs = [{
     value: 'totalLeads',
     label: 'Total Leads'

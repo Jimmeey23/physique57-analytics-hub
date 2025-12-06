@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart3, TrendingUp, Target, Users, Calendar, DollarSign, Activity, Zap, ChevronRight } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { ClassAttendanceDrillDownModal } from './ClassAttendanceDrillDownModal';
 interface ClassAttendancePerformanceTableProps {
   data: SessionData[];
@@ -111,7 +111,7 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
       case 'avgRevenue':
       case 'revenuePerAttendee':
       case 'efficiency':
-        return formatCurrency(value);
+        return formatNumber(value);
       case 'fillRate':
       case 'showUpRate':
       case 'utilizationRate':
@@ -232,8 +232,8 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
                     <span className="font-medium">{formatNumber(row.totalCheckedIn)}</span>
                   </TableCell>
                   <TableCell className="text-center whitespace-nowrap">
-                    <span className="font-medium">{formatCurrency(row.totalRevenue)}</span>
-                    <span className="text-xs text-gray-500 ml-1">({formatCurrency(row.avgRevenue)})</span>
+                    <span className="font-medium">{formatNumber(row.totalRevenue)}</span>
+                    <span className="text-xs text-gray-500 ml-1">({formatNumber(row.avgRevenue)})</span>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge className={`attendance-badge ${getMetricBadgeColor(row[selectedMetric], selectedMetric)}`}>

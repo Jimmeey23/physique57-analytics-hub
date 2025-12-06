@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Calendar, Target, TrendingUp, TrendingDown, Star, Clock, Activity, Zap } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { ClassAttendanceDrillDownModal } from './ClassAttendanceDrillDownModal';
 import { cn } from '@/lib/utils';
 
@@ -126,7 +126,7 @@ export const ClassAttendanceMetricCards: React.FC<ClassAttendanceMetricCardsProp
     },
     {
       title: 'Revenue Per Session',
-      value: formatCurrency(metrics.avgRevenue),
+      value: formatNumber(metrics.avgRevenue),
       icon: Zap,
       description: 'Average revenue generated',
       change: 15.4,

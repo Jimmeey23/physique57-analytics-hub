@@ -9,7 +9,6 @@ import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/Enha
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
 import { LateCancellationsMonthOnMonthTable } from '@/components/dashboard/LateCancellationsMonthOnMonthTable';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Home, XCircle } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -17,6 +16,8 @@ import { InfoPopover } from '@/components/ui/InfoPopover';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber } from '@/utils/formatters';
+import '@/components/dashboard/trainer-performance-styles.css';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 
 const LateCancellations = () => {
   const { data: lateCancellationsData, allCheckins, loading } = useLateCancellationsData();
@@ -489,96 +490,65 @@ const LateCancellations = () => {
       {/* Main Content */}
       <div className="relative">
         <div className="container mx-auto px-6 py-8">
-          {/* Location Tabs */}
-          <Tabs value={activeLocation} onValueChange={setActiveLocation} className="w-full mb-8">
-            <div className="flex items-start justify-center mb-8">
-              <TabsList className="location-tabs grid w-full max-w-4xl overflow-visible bg-gradient-to-r from-red-600 to-orange-600 p-1 rounded-2xl shadow-lg" style={{ gridTemplateColumns: `repeat(${locations.length}, 1fr)` }}>
-                {locations.map(location => {
-                  const parts = location.name.split(',').map(s => s.trim());
-                  const mainName = parts[0] || location.name;
-                  const subName = parts[1] || '';
-                  const isActive = activeLocation === location.id;
-                  return (
-                    <TabsTrigger
-                      key={location.id}
-                      value={location.id}
-                      className={`location-tab-trigger group transition-all duration-300 rounded-xl font-bold text-sm sm:text-base py-3 data-[state=active]:bg-white data-[state=active]:text-red-700 data-[state=active]:shadow-md ${
-                        !isActive ? 'text-white hover:bg-white/10' : ''
-                      }`}
-                    >
-                      <span className="relative z-10 flex flex-col items-center leading-tight">
-                        <span className="flex items-center gap-2 font-extrabold">
-                          {mainName}
-                        </span>
-                        {subName && (
-                          <span className="text-xs opacity-90">{subName}</span>
-                        )}
-                      </span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-              <div className="ml-3 mt-1">
-                <InfoPopover context="late-cancellations-overview" locationId={activeLocation} />
-              </div>
-            </div>
+          {/* Location Tabs - New Animated Component */}
+          <StudioLocationTabs
+            activeLocation={activeLocation}
+            onLocationChange={setActiveLocation}
+            className="mb-8"
+          />
 
-            {locations.map(location => (
-              <TabsContent key={location.id} value={location.id} className="space-y-8">
-                <div className="space-y-8">
-                  {/* No Data Message */}
-                  {lateCancellationsData.length === 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                      <p className="text-blue-900 font-medium">
-                        No late cancellations recorded in the selected period.
-                      </p>
-                      <p className="text-blue-700 text-sm mt-2">
-                        Showing all checkins for reference. Adjust filters to view different date ranges.
-                      </p>
-                    </div>
-                  )}
-                  
-                  {/* Enhanced Filter Section */}
-                  <EnhancedLateCancellationsFilterSection
-                    selectedLocation="all"
-                    onLocationChange={() => {}}
-                    selectedTimeframe={selectedTimeframe}
-                    onTimeframeChange={setSelectedTimeframe}
-                    selectedTrainer={selectedTrainer}
-                    onTrainerChange={setSelectedTrainer}
-                    selectedClass={selectedClass}
-                    onClassChange={setSelectedClass}
-                    selectedProduct={selectedProduct}
-                    onProductChange={setSelectedProduct}
-                    selectedTimeSlot={selectedTimeSlot}
-                    onTimeSlotChange={setSelectedTimeSlot}
-                    dateRange={dateRange}
-                    onDateRangeChange={setDateRange}
-                    data={lateCancellationsData}
-                    onClearFilters={clearAllFilters}
-                  />
-                  
-                  {/* Metric Cards */}
-                  <LateCancellationsMetricCards data={filteredData} onMetricClick={handleDrillDownClick} />
-                  
-                  {/* Interactive Charts */}
-                  <LateCancellationsInteractiveCharts data={chartData} />
-                  
-                  {/* Enhanced Top/Bottom Lists */}
-                  <EnhancedLateCancellationsTopBottomLists data={filteredData} />
-                  
-                  {/* Month on Month Analysis Table */}
-                  <LateCancellationsMonthOnMonthTable 
-                    data={chartData} 
-                    onRowClick={handleDrillDownClick} 
-                  />
-                  
-                  {/* Enhanced Detailed Data Tables with Pagination */}
-                  <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownClick} />
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+          {/* Content for Selected Location */}
+          <div className="space-y-8">
+            {/* No Data Message */}
+            {lateCancellationsData.length === 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                <p className="text-blue-900 font-medium">
+                  No late cancellations recorded in the selected period.
+                </p>
+                <p className="text-blue-700 text-sm mt-2">
+                  Showing all checkins for reference. Adjust filters to view different date ranges.
+                </p>
+              </div>
+            )}
+            
+            {/* Enhanced Filter Section */}
+            <EnhancedLateCancellationsFilterSection
+              selectedLocation="all"
+              onLocationChange={() => {}}
+              selectedTimeframe={selectedTimeframe}
+              onTimeframeChange={setSelectedTimeframe}
+              selectedTrainer={selectedTrainer}
+              onTrainerChange={setSelectedTrainer}
+              selectedClass={selectedClass}
+              onClassChange={setSelectedClass}
+              selectedProduct={selectedProduct}
+              onProductChange={setSelectedProduct}
+              selectedTimeSlot={selectedTimeSlot}
+              onTimeSlotChange={setSelectedTimeSlot}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              data={lateCancellationsData}
+              onClearFilters={clearAllFilters}
+            />
+            
+            {/* Metric Cards */}
+            <LateCancellationsMetricCards data={filteredData} onMetricClick={handleDrillDownClick} />
+            
+            {/* Interactive Charts */}
+            <LateCancellationsInteractiveCharts data={chartData} />
+            
+            {/* Enhanced Top/Bottom Lists */}
+            <EnhancedLateCancellationsTopBottomLists data={filteredData} />
+            
+            {/* Month on Month Analysis Table */}
+            <LateCancellationsMonthOnMonthTable 
+              data={chartData} 
+              onRowClick={handleDrillDownClick} 
+            />
+            
+            {/* Enhanced Detailed Data Tables with Pagination */}
+            <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownClick} />
+          </div>
         </div>
       </div>
       

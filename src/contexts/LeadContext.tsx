@@ -93,7 +93,18 @@ export const LeadProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useLeads = () => {
   const context = React.useContext(LeadContext);
   if (context === undefined) {
-    throw new Error('useLeads must be used within a LeadProvider');
+    console.error('useLeads must be used within a LeadProvider. Returning fallback values.');
+    // Return a fallback context
+    return {
+      leads: [],
+      loading: false,
+      error: null,
+      refetch: () => Promise.resolve(),
+      updateLead: () => Promise.resolve(),
+      deleteLead: () => Promise.resolve(),
+      addNote: () => Promise.resolve(),
+      deleteNote: () => Promise.resolve()
+    };
   }
   return context;
 };

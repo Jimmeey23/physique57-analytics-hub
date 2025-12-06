@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Calendar, Users, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 
 interface ExpirationAnalyticsSectionProps {
   data: ExpirationData[];
@@ -229,38 +230,12 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
   return (
     <div className="space-y-6">
       {/* Enhanced Location Tabs - matching Sales tab structure */}
-      <div className="flex justify-center mb-8" id="location-tabs">
-        <div className="w-full max-w-4xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex-1"></div>
-            <InfoPopover context="expiration-analytics-overview" locationId={activeLocation} />
-          </div>
-          <div className="grid grid-cols-4 location-tabs">
-            {locations.map(location => {
-              const parts = location.name.split(',').map(s => s.trim());
-              const mainName = parts[0] || location.name;
-              const subName = parts[1] || '';
-              const countKey = location.id === 'kenkere' ? 'kenkere' : location.id as keyof typeof tabCounts;
-              const count = tabCounts[countKey] || 0;
-              
-              return (
-                <button
-                  key={location.id}
-                  onClick={() => setActiveLocation(location.id)}
-                  className={`location-tab-trigger group ${activeLocation === location.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                  data-state={activeLocation === location.id ? 'active' : 'inactive'}
-                  style={activeLocation === location.id ? { '--tab-accent': 'var(--hero-accent, #3b82f6)' } as React.CSSProperties : undefined}
-                >
-                  <span className="relative z-10 flex flex-col items-center leading-tight">
-                    <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{mainName}</span>
-                    <span className="text-xs sm:text-sm opacity-90">{subName} ({count})</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <StudioLocationTabs 
+        activeLocation={activeLocation}
+        onLocationChange={setActiveLocation}
+        showInfoPopover={true}
+        infoPopoverContext="expiration-analytics-overview"
+      />
 
       {/* Main Content */}
       <div className="space-y-8">

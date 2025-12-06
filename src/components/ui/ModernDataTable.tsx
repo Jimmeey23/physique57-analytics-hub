@@ -150,10 +150,11 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
           <TableRow className={cn(
             "border-none",
             compact ? "h-10" : "h-12",
-            "bg-gradient-to-r",
-            gradientClass,
-            "relative"
-          )}>
+            "relative",
+            gradientClass.includes('from-') ? `bg-gradient-to-r ${gradientClass}` : ''
+          )} style={!gradientClass.includes('from-') ? {
+            background: `linear-gradient(to right, rgb(51 65 85), rgb(15 23 42), rgb(51 65 85))`
+          } : undefined}>
             {columns.map((column, colIndex) => {
               const isSticky = column.sticky || colIndex === 0;
               const isLastColumn = colIndex === columns.length - 1;
@@ -165,15 +166,20 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 <TableHead 
                   key={column.key} 
                   className={cn(
-                    TABLE_STYLES.header.cell,
+                    "px-3 text-left text-white font-bold text-xs uppercase tracking-wide border-r border-white/20 last:border-r-0",
                     compact ? "py-2" : "py-3",
-                    column.align === 'center' && TABLE_STYLES.header.cellCenter,
+                    column.align === 'center' && 'text-center',
                     column.align === 'right' && 'text-right',
                     column.sortable && 'cursor-pointer hover:bg-white/10 transition-colors',
-                    isSticky && TABLE_STYLES.header.cellSticky,
+                    isSticky && 'sticky left-0 z-40 border-r border-white/20',
                     sanitizedHeaderClass,
                     isLastColumn && tableId && "pr-12" // Extra padding for copy button
                   )}
+                  style={isSticky ? {
+                    background: gradientClass.includes('from-') ? 
+                      `linear-gradient(to right, ${gradientClass.split(' ').slice(1).join(' ')})` :
+                      'linear-gradient(to right, rgb(51 65 85), rgb(15 23 42))'
+                  } : undefined}
                   onClick={() => handleSort(column)}
                   style={{ minWidth: '80px' }}
                 >

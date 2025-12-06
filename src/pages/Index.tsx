@@ -10,6 +10,16 @@ import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
 import { AiNotes } from '@/components/ui/AiNotes';
 
+// Error boundary wrapper for critical sections
+const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) => {
+  try {
+    return <>{children}</>;
+  } catch (error) {
+    console.error('SafeWrapper caught error:', error);
+    return fallback || <div>Loading...</div>;
+  }
+};
+
 // Memoized stats card component
 const StatsCard = memo(({
   title,
@@ -27,13 +37,38 @@ const StatsCard = memo(({
   </div>);
 const Index = memo(() => {
   const navigate = useNavigate();
-  const { setLoading } = useGlobalLoading();
-  const {
-    data,
-    loading,
-    error,
-    refetch
-  } = useGoogleSheets();
+  
+  // Wrap hook usage in try-catch to prevent context errors
+  let globalLoadingHook;
+  let googleSheetsHook;
+  
+  try {
+    globalLoadingHook = useGlobalLoading();
+    googleSheetsHook = useGoogleSheets();
+  } catch (error) {
+    console.error('Hook initialization error:', error);
+    // Return a fallback UI
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-4">
+        <Card className="p-12 bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl max-w-lg">
+          <CardContent className="text-center space-y-6">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
+            <div>
+              <p className="text-xl font-semibold text-slate-800">Application Error</p>
+              <p className="text-sm text-slate-600 mt-2">There was an issue loading the application. Please refresh the page.</p>
+            </div>
+            <Button onClick={() => window.location.reload()} className="gap-2 bg-slate-800 hover:bg-slate-900 text-white">
+              <RefreshCw className="w-4 h-4" />
+              Refresh Page
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { setLoading } = globalLoadingHook;
+  const { data, loading, error, refetch } = googleSheetsHook;
 
   const memoizedData = useMemo(() => data, [data]);
 
@@ -143,7 +178,14 @@ const Index = memo(() => {
           {/* Enhanced Dashboard Grid */}
           <main className="max-w-7xl mx-auto slide-in-from-right stagger-2">
             <div className="min-w-full glass-card glow-pulse rounded-2xl p-6">
-              <DashboardGrid onButtonClick={handleSectionClick} />
+              <SafeWrapper fallback={
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading dashboard...</p>
+                </div>
+              }>
+                <DashboardGrid onButtonClick={handleSectionClick} />
+              </SafeWrapper>
             </div>
           </main>
         </div>

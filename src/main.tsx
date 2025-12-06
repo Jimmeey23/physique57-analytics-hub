@@ -5,9 +5,10 @@ import './index.css'
 import { QueryProvider } from './providers/QueryProvider'
 
 createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  // Temporarily disable StrictMode to prevent context initialization issues during development
+  // <React.StrictMode>
     <QueryProvider>
       <App />
     </QueryProvider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

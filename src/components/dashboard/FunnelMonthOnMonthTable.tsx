@@ -13,9 +13,10 @@ type MetricType = 'totalLeads' | 'trialsCompleted' | 'trialsScheduled' | 'conver
 
 interface FunnelMonthOnMonthTableProps {
   data: LeadsData[];
+  onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
 }
 
-const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data }) => {
+const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data, onDrillDown }) => {
   const [groupKey, setGroupKey] = useState<GroupKey>('source');
   const [metric, setMetric] = useState<MetricType>('totalLeads');
   const [viewMode, setViewMode] = useState<'values' | 'growth'>('values');
@@ -242,6 +243,14 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data 
                   maxHeight="480px"
                   className="rounded-lg"
                   headerGradient="from-slate-800 via-slate-900 to-slate-800"
+                  onRowClick={onDrillDown ? (row) => {
+                    // Filter data based on the group value and pass to drill down
+                    const filteredData = data.filter(lead => {
+                      const leadValue = ((lead as any)[groupKey] as string) || 'Unknown';
+                      return leadValue === row.group;
+                    });
+                    onDrillDown(`${groupKey}: ${row.group}`, filteredData, 'month-on-month');
+                  } : undefined}
                 />
               );
               // Simple AI notes based on displayed metric

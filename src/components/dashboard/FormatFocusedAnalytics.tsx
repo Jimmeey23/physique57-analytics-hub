@@ -463,7 +463,7 @@ const FormatBlock: React.FC<{
                   <TableCell className="h-10">{r.label}</TableCell>
                   {visibleCols.sessions && (
                     <TableCell className="text-center h-10">
-                      <Badge variant="outline" className="metric-badge badge-soft-slate">{formatNumber(r.sessions)}</Badge>
+                      <span className="font-semibold text-slate-700">{formatNumber(r.sessions)}</span>
                     </TableCell>
                   )}
                   {visibleCols.attendance && (

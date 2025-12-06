@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Zap, Target, TrendingUp, AlertTriangle, CheckCircle, XCircle, BarChart3, Activity } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface ClassAttendanceEfficiencyTableProps {
   data: SessionData[];
@@ -291,8 +291,8 @@ export const ClassAttendanceEfficiencyTable: React.FC<ClassAttendanceEfficiencyT
                       </div>
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <span className="font-medium">{formatCurrency(row.totalRevenue || 0)}</span>
-                      <span className="text-xs text-gray-500 ml-1">({formatCurrency(row.avgRevenue || 0)})</span>
+                      <span className="font-medium">{formatNumber(row.totalRevenue || 0)}</span>
+                      <span className="text-xs text-gray-500 ml-1">({formatNumber(row.avgRevenue || 0)})</span>
                     </TableCell>
                     {selectedView === 'performance' && (
                       <TableCell className="text-center whitespace-nowrap">

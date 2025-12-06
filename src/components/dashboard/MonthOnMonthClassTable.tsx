@@ -12,7 +12,7 @@ import {
   ArrowUp, ArrowDown, Clock, MapPin, Sparkles, ShrinkIcon, ExpandIcon 
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { getTableHeaderClasses } from '@/utils/colorThemes';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
@@ -27,7 +27,7 @@ interface MonthOnMonthClassTableProps {
 }
 
 type MetricType = 'attendance' | 'sessions' | 'revenue' | 'fillRate' | 'classAverage' | 'capacity' | 'bookingRate';
-type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall' | 'am_pm' | 'timeslot' | 'class_time' | 'trainer_time' | 'class_day' | 'trainer_day' | 'time_location' | 'class_location' | 'class_day_time_location' | 'trainer_class_day' | 'trainer_location' | 'class_trainer_location' | 'day_location' | 'time_trainer' | 'time_class_location' | 'day_time_trainer' | 'trainer_am_pm' | 'class_am_pm' | 'location_am_pm' | 'class_day_time' | 'trainer_day_time' | 'trainer_class_time' | 'location_day_time' | 'timeslot_location' | 'timeslot_trainer' | 'timeslot_class';
+type GroupByType = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'uniqueid1' | 'uniqueid2' | 'overall' | 'am_pm' | 'timeslot' | 'class_time' | 'trainer_time' | 'class_day' | 'trainer_day' | 'time_location' | 'class_location' | 'class_day_time_location' | 'trainer_class_day' | 'trainer_location' | 'class_trainer_location' | 'day_location' | 'time_trainer' | 'time_class_location' | 'day_time_trainer' | 'trainer_am_pm' | 'class_am_pm' | 'location_am_pm' | 'class_day_time' | 'trainer_day_time' | 'trainer_class_time' | 'location_day_time' | 'timeslot_location' | 'timeslot_trainer' | 'timeslot_class' | 'trainer_location_am_pm' | 'class_location_day';
 
 interface MonthlyData {
   month: string;
@@ -290,6 +290,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           groupKey = `${slot} - ${session.cleanedClass || 'Unknown'}`;
           break;
         }
+        case 'trainer_location_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          groupKey = `${session.trainerName || 'Unknown'} - ${session.location || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'class_location_day':
+          groupKey = `${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
         case 'overall':
         default:
           groupKey = 'Overall';
@@ -527,6 +535,14 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
           sessionGroupKey = `${slot} - ${session.cleanedClass || 'Unknown'}`;
           break;
         }
+        case 'trainer_location_am_pm': {
+          const h = parseInt(session.time?.split(':')[0] || '0');
+          sessionGroupKey = `${session.trainerName || 'Unknown'} - ${session.location || 'Unknown'} - ${h < 12 ? 'AM' : 'PM'}`;
+          break;
+        }
+        case 'class_location_day':
+          sessionGroupKey = `${session.cleanedClass || 'Unknown'} - ${session.location || 'Unknown'} - ${session.dayOfWeek}`;
+          break;
         case 'overall':
         default:
           sessionGroupKey = 'Overall';
@@ -617,7 +633,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
       case 'sessions':
         return formatNumber(monthData.sessions);
       case 'revenue':
-        return formatCurrency(monthData.revenue);
+        return formatNumber(monthData.revenue);
       case 'fillRate':
         return formatPercentage(monthData.fillRate);
       case 'classAverage':
@@ -680,7 +696,9 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
     { value: 'timeslot_trainer', label: 'Timeslot + Trainer', icon: Clock },
     { value: 'timeslot_class', label: 'Timeslot + Class', icon: Clock },
     { value: 'uniqueid1', label: 'Group by Class (ID1)', icon: Target },
-    { value: 'uniqueid2', label: 'Group by Class & Trainer (ID2)', icon: Users }
+    { value: 'uniqueid2', label: 'Group by Class & Trainer (ID2)', icon: Users },
+    { value: 'trainer_location_am_pm', label: 'Trainer + Location + AM/PM', icon: Users },
+    { value: 'class_location_day', label: 'Class + Location + Day', icon: Activity }
   ];
 
   return (
@@ -809,22 +827,26 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                   </div>
                 </TableHead>
 
-                {/* Additional detail columns for expanded rows */}
-                <TableHead className="min-w-[100px] text-center font-bold text-white text-xs">
-                  Date
-                </TableHead>
-                <TableHead className="min-w-[80px] text-center font-bold text-white text-xs">
-                  Time
-                </TableHead>
-                <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
-                  Trainer
-                </TableHead>
-                <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
-                  Location
-                </TableHead>
-                <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
-                  Teacher
-                </TableHead>
+                {/* Additional detail columns for expanded rows - only show if there are expanded rows */}
+                {expandedRows.size > 0 && (
+                  <>
+                    <TableHead className="min-w-[100px] text-center font-bold text-white text-xs">
+                      Date
+                    </TableHead>
+                    <TableHead className="min-w-[80px] text-center font-bold text-white text-xs">
+                      Time
+                    </TableHead>
+                    <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
+                      Trainer
+                    </TableHead>
+                    <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
+                      Location
+                    </TableHead>
+                    <TableHead className="min-w-[120px] text-center font-bold text-white text-xs">
+                      Teacher
+                    </TableHead>
+                  </>
+                )}
                 
                 {availableMonths.map(month => (
                   <TableHead key={month.key} className={`text-center min-w-[120px] font-bold`}>
@@ -905,12 +927,16 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                           </div>
                         </TableCell>
 
-                        {/* Detail columns - empty for parent rows */}
-                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
-                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
-                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
-                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
-                        <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                        {/* Detail columns - only show for parent rows when there are expanded rows */}
+                        {expandedRows.size > 0 && (
+                          <>
+                            <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                            <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                            <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                            <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                            <TableCell className="text-center py-1.5 text-gray-400">-</TableCell>
+                          </>
+                        )}
 
                         {availableMonths.map((month, index) => {
                           const monthData = row.monthlyData[month.key];
@@ -963,39 +989,35 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                         {isExpanded && childRows.map((childRow, childIndex) => (
                           <motion.tr
                             key={childRow.groupKey}
-                            className="border-b bg-blue-50/40 h-9 max-h-9"
+                            className="border-b h-9 max-h-9"
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2, delay: childIndex * 0.02 }}
                           >
-                            <TableCell className="sticky left-0 z-20 bg-blue-50/40 border-r font-medium whitespace-nowrap py-1 pl-12 text-sm">
+                            <TableCell className="sticky left-0 z-20 bg-white border-r font-medium whitespace-nowrap py-1 pl-12 text-sm">
                               <div className="flex items-center gap-2">
                                 <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-400" />
                                 <span className="text-gray-700">{childRow.groupLabel}</span>
                               </div>
                             </TableCell>
 
-                            {/* Detail columns for child rows */}
-                            {childRow.sessionDetails && (
-                              <>
-                                <TableCell className="text-center py-1 text-sm text-gray-700">
-                                  {childRow.sessionDetails.date}
-                                </TableCell>
-                                <TableCell className="text-center py-1 text-sm text-gray-700">
-                                  {childRow.sessionDetails.time}
-                                </TableCell>
-                                <TableCell className="text-center py-1 text-sm text-gray-700">
-                                  {childRow.sessionDetails.trainer}
-                                </TableCell>
-                                <TableCell className="text-center py-1 text-sm text-gray-700">
-                                  {childRow.sessionDetails.location}
-                                </TableCell>
-                                <TableCell className="text-center py-1 text-sm text-gray-700">
-                                  {childRow.sessionDetails.teacher}
-                                </TableCell>
-                              </>
-                            )}
+                            {/* Detail columns for child rows - always show to maintain alignment */}
+                            <TableCell className="text-center py-1 text-sm text-gray-700">
+                              {childRow.sessionDetails?.date || '-'}
+                            </TableCell>
+                            <TableCell className="text-center py-1 text-sm text-gray-700">
+                              {childRow.sessionDetails?.time || '-'}
+                            </TableCell>
+                            <TableCell className="text-center py-1 text-sm text-gray-700">
+                              {childRow.sessionDetails?.trainer || '-'}
+                            </TableCell>
+                            <TableCell className="text-center py-1 text-sm text-gray-700">
+                              {childRow.sessionDetails?.location || '-'}
+                            </TableCell>
+                            <TableCell className="text-center py-1 text-sm text-gray-700">
+                              {childRow.sessionDetails?.teacher || '-'}
+                            </TableCell>
 
                             {availableMonths.map((month) => {
                               const monthData = childRow.monthlyData[month.key];
@@ -1024,12 +1046,16 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               {/* Totals row across all groups */}
               <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-10 max-h-10">
                 <TableCell className="sticky left-0 z-10 bg-slate-800 border-r text-white py-1.5">Totals</TableCell>
-                {/* Empty detail columns */}
-                <TableCell />
-                <TableCell />
-                <TableCell />
-                <TableCell />
-                <TableCell />
+                {/* Empty detail columns - only show when there are expanded rows */}
+                {expandedRows.size > 0 && (
+                  <>
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                  </>
+                )}
                 
                 {availableMonths.map((month) => {
                   const totalsForMonth = processedData.reduce((acc, row) => {

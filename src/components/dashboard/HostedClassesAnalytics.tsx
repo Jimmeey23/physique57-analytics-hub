@@ -56,7 +56,7 @@ export const HostedClassesAnalytics: React.FC<HostedClassesAnalyticsProps> = ({ 
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [selectedLocation, setSelectedLocation] = useState<string>('all');
+  const [selectedLocation, setSelectedLocation] = useState<string>('kwality');
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, 'Hosted Classes Analytics');
 

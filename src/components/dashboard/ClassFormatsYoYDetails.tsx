@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 
 interface Props {
   sessions: SessionData[];
@@ -102,7 +102,7 @@ const ClassFormatsYoYDetails: React.FC<Props> = ({ sessions }) => {
                     <TableCell className="text-right">{formatNumber(r.late)}</TableCell>
                     <TableCell className="text-right">{formatNumber(r.cap)}</TableCell>
                     <TableCell className="text-right">{fill.toFixed(1)}%</TableCell>
-                    <TableCell className="text-right">{formatCurrency(r.rev)}</TableCell>
+                    <TableCell className="text-right">{formatRevenue(r.rev)}</TableCell>
                   </TableRow>
                 );
               })}

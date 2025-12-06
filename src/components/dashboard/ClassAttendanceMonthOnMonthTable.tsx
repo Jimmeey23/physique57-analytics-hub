@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar, TrendingUp, TrendingDown, Minus, Target, Users, DollarSign, Activity } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { PayrollData } from '@/types/dashboard';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface ClassAttendanceMonthOnMonthTableProps {
   data: SessionData[];
@@ -102,7 +102,7 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
     switch (metricId) {
       case 'revenue':
       case 'avgRevenue':
-        return formatCurrency(value);
+        return formatNumber(value);
       case 'fillRate':
       case 'showUpRate':
       case 'utilizationRate':
@@ -190,8 +190,8 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
                       <span className="text-xs text-gray-500 ml-1">/ {formatNumber(row.capacity)}</span>
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <span className="font-medium">{formatCurrency(row.revenue)}</span>
-                      <span className="text-xs text-gray-500 ml-1">({formatCurrency(row.avgRevenue)} avg)</span>
+                      <span className="font-medium">{formatNumber(row.revenue)}</span>
+                      <span className="text-xs text-gray-500 ml-1">({formatNumber(row.avgRevenue)} avg)</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 

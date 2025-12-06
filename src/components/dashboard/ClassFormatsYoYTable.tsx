@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -20,12 +21,24 @@ const toCanonical = (s?: string) => {
 interface ClassFormatsYoYTableProps {
   sessions: SessionData[];
   checkins: any[]; // raw checkins rows
+  onDrillDown?: (data: { format: string; year: string; metric: string; value: number }) => void;
 }
 
-export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sessions, checkins }) => {
+export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sessions, checkins, onDrillDown }) => {
   const [metric, setMetric] = useState<'sessions' | 'checkins' | 'revenue' | 'fillRate' | 'lateCancelled'>('sessions');
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, 'Year-on-Year Comparison');
+
+  const handleCellClick = (format: string, year: string, value: number) => {
+    if (onDrillDown) {
+      onDrillDown({
+        format,
+        year,
+        metric,
+        value
+      });
+    }
+  };
 
   const years = useMemo(() => {
     const parseYear = (input?: string): string | null => {
@@ -235,19 +248,40 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
       <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-lg font-semibold text-gray-800">Year-on-Year Comparison</CardTitle>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Metric</span>
-          <Select value={metric} onValueChange={(v: any) => setMetric(v)}>
-            <SelectTrigger className="h-8 w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sessions">Sessions Taught</SelectItem>
-              <SelectItem value="checkins">Check-ins</SelectItem>
-              <SelectItem value="revenue">Revenue</SelectItem>
-              <SelectItem value="lateCancelled">Late Cancelled</SelectItem>
-              <SelectItem value="fillRate">Fill Rate</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-1">
+            <Button
+              variant={metric === 'sessions' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMetric('sessions')}
+              className="h-8"
+            >
+              Sessions
+            </Button>
+            <Button
+              variant={metric === 'checkins' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMetric('checkins')}
+              className="h-8"
+            >
+              Check-ins
+            </Button>
+            <Button
+              variant={metric === 'revenue' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMetric('revenue')}
+              className="h-8"
+            >
+              Revenue
+            </Button>
+            <Button
+              variant={metric === 'fillRate' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMetric('fillRate')}
+              className="h-8"
+            >
+              Fill Rate
+            </Button>
+          </div>
           <CopyTableButton 
             tableRef={tableContainerRef as any}
             tableName="Year-on-Year Comparison"
@@ -268,15 +302,27 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(['powercycle','barre','strength'] as Canonical[]).map(fmt => (
-              <TableRow key={fmt}>
-                <TableCell className="font-medium capitalize">{fmt === 'powercycle' ? 'PowerCycle' : fmt}</TableCell>
-                {years.map((y, idx) => (
-                  <TableCell key={idx} className="text-right">{renderValue(y, fmt)}</TableCell>
-                ))}
-                <TableCell className="text-right">{computeYoYDelta(fmt)}</TableCell>
-              </TableRow>
-            ))}
+            {(['powercycle','barre','strength'] as Canonical[]).map(fmt => {
+              const formatName = fmt === 'powercycle' ? 'PowerCycle' : fmt;
+              return (
+                <TableRow key={fmt}>
+                  <TableCell className="font-medium capitalize">{formatName}</TableCell>
+                  {years.map((y, idx) => {
+                    const value = renderValue(y, fmt);
+                    return (
+                      <TableCell 
+                        key={idx} 
+                        className="text-right cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => handleCellClick(formatName, y, parseFloat(String(value).replace(/[^0-9.-]/g, '')) || 0)}
+                      >
+                        {value}
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="text-right">{computeYoYDelta(fmt)}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
           <TableFooter>
             <TableRow>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { OptimizedTable } from '@/components/ui/OptimizedTable';
 import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Target, Award, Activity, Eye, BarChart3, Zap } from 'lucide-react';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
@@ -129,7 +129,7 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
       align: 'center' as const,
       render: (value: any) => (
         <div className="text-center">
-          <div className="font-bold text-slate-900">{formatCurrency(value || 0)}</div>
+          <div className="font-bold text-slate-900">{formatRevenue(value || 0)}</div>
           <Badge variant="outline" className="text-xs mt-1 border-yellow-200 text-yellow-700">
             <DollarSign className="w-3 h-3 mr-1" />
             Efficiency
@@ -143,7 +143,7 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
       align: 'center' as const,
       render: (value: any) => (
         <div className="text-center">
-          <div className="font-bold text-slate-900">{formatCurrency(value || 0)}</div>
+          <div className="font-bold text-slate-900">{formatRevenue(value || 0)}</div>
           <Badge variant="outline" className="text-xs mt-1 border-indigo-200 text-indigo-700">
             <Target className="w-3 h-3 mr-1" />
             Value
@@ -157,7 +157,7 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
       align: 'right' as const,
       render: (value: any) => (
         <div className="text-right">
-          <div className="font-bold text-slate-900 text-lg">{formatCurrency(value || 0)}</div>
+          <div className="font-bold text-slate-900 text-lg">{formatRevenue(value || 0)}</div>
           <Badge variant="outline" className="text-xs mt-1 border-green-200 text-green-700">
             <Award className="w-3 h-3 mr-1" />
             Total

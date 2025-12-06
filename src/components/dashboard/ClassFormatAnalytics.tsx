@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatPercentage, formatRevenue } from '@/utils/formatters';
 import { TrendingUp, TrendingDown, Activity, Users, DollarSign, Target } from 'lucide-react';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 
@@ -148,7 +148,7 @@ export const ClassFormatAnalytics: React.FC<ClassFormatAnalyticsProps> = ({ data
                   </div>
                 </TableCell>
                 <TableCell className="text-center py-2">
-                  <Badge variant="outline" className="metric-badge badge-soft-slate">{cls.sessions}</Badge>
+                  <span className="font-semibold text-slate-700">{cls.sessions}</span>
                 </TableCell>
                 <TableCell className="text-center py-2 font-semibold text-blue-700">{cls.attendance}</TableCell>
                 <TableCell className="text-center py-2 text-slate-600">{cls.capacity}</TableCell>
@@ -164,7 +164,7 @@ export const ClassFormatAnalytics: React.FC<ClassFormatAnalyticsProps> = ({ data
                   </Badge>
                 </TableCell>
                 <TableCell className="text-center py-2 text-slate-700">{cls.avgAttendance.toFixed(1)}</TableCell>
-                <TableCell className="text-center py-2 font-semibold text-green-700">{formatCurrency(cls.revenue)}</TableCell>
+                <TableCell className="text-center py-2 font-semibold text-green-700">{formatRevenue(cls.revenue)}</TableCell>
               </TableRow>
             ))}
             {/* Totals Row */}
@@ -179,7 +179,7 @@ export const ClassFormatAnalytics: React.FC<ClassFormatAnalyticsProps> = ({ data
               <TableCell className="text-center py-2">
                 {(classes.reduce((sum, c) => sum + c.attendance, 0) / classes.reduce((sum, c) => sum + c.sessions, 0)).toFixed(1)}
               </TableCell>
-              <TableCell className="text-center py-2 text-green-800">{formatCurrency(classes.reduce((sum, c) => sum + c.revenue, 0))}</TableCell>
+              <TableCell className="text-center py-2 text-green-800">{formatRevenue(classes.reduce((sum, c) => sum + c.revenue, 0))}</TableCell>
             </TableRow>
           </TableBody>
         </Table>

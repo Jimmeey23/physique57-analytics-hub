@@ -3,8 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, Users, Target, Calendar } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, Area, AreaChart } from 'recharts';
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Users, Target, Calendar, RotateCcw, Download, ZoomIn, Maximize2, Filter, Clock, IndianRupee } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -190,162 +190,210 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Main Chart - Left Side */}
-      <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white border-0">
-          <div className="flex flex-col gap-4">
-            <CardTitle className="flex items-center gap-3 text-white text-lg font-bold">
-              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                <BarChart3 className="w-5 h-5 text-white" />
+      <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden relative group">
+        {/* 3D Card Effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-purple-600/5 rounded-xl transform translate-x-1 translate-y-1 -z-10 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800/5 to-slate-900/5 rounded-xl transform translate-x-0.5 translate-y-0.5 -z-10" />
+        
+        <CardHeader className="bg-gradient-to-r from-red-700 via-red-800 to-red-900 text-white border-0 relative overflow-hidden">
+          {/* 3D Header Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          
+          <div className="flex flex-col gap-4 relative z-10">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-3 text-white text-lg font-bold">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg border border-white/20">
+                  <BarChart3 className="w-5 h-5 text-white drop-shadow-lg" />
+                </div>
+                {chartType === 'source' ? 'Lead Source Analytics' : chartType === 'stage' ? 'Funnel Stage Analytics' : 'Timeline Trend Analysis'}
+              </CardTitle>
+              
+              {/* Interactive Controls */}
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm">
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm">
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm">
+                  <Maximize2 className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm">
+                  <Download className="w-4 h-4" />
+                </Button>
               </div>
-              {chartType === 'source' ? 'Lead Source Analytics' : chartType === 'stage' ? 'Funnel Stage Analytics' : 'Timeline Trend Analysis'}
-            </CardTitle>
+            </div>
             
-            <div className="flex flex-wrap gap-2">
+            {/* Chart Type Selector */}
+            <div className="flex gap-2 bg-black/20 rounded-xl p-2 border border-white/10 backdrop-blur-sm">
               <Button
-                variant={chartType === 'source' ? 'secondary' : 'outline'}
                 size="sm"
+                variant={chartType === 'source' ? 'default' : 'ghost'}
                 onClick={() => setChartType('source')}
-                className={cn(
-                  "text-xs font-semibold transition-all duration-200",
+                className={`transition-all duration-300 shadow-lg ${
                   chartType === 'source' 
-                    ? "bg-green-700 text-white border-green-600 hover:bg-green-800" 
-                    : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
-                )}
+                    ? 'bg-white text-red-900 hover:bg-white/90 shadow-xl border border-white/20' 
+                    : 'text-white hover:bg-white/10 border border-white/20'
+                }`}
               >
-                <Users className="w-3 h-3 mr-1" />
-                Sources
+                <Users className="w-4 h-4 mr-2" />
+                Source
               </Button>
               <Button
-                variant={chartType === 'stage' ? 'secondary' : 'outline'}
                 size="sm"
+                variant={chartType === 'stage' ? 'default' : 'ghost'}
                 onClick={() => setChartType('stage')}
-                className={cn(
-                  "text-xs font-semibold transition-all duration-200",
+                className={`transition-all duration-300 shadow-lg ${
                   chartType === 'stage' 
-                    ? "bg-green-700 text-white border-green-600 hover:bg-green-800" 
-                    : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
-                )}
+                    ? 'bg-white text-red-900 hover:bg-white/90 shadow-xl border border-white/20' 
+                    : 'text-white hover:bg-white/10 border border-white/20'
+                }`}
               >
-                <Target className="w-3 h-3 mr-1" />
-                Stages
+                <Filter className="w-4 h-4 mr-2" />
+                Stage
               </Button>
               <Button
-                variant={chartType === 'timeline' ? 'secondary' : 'outline'}
                 size="sm"
+                variant={chartType === 'timeline' ? 'default' : 'ghost'}
                 onClick={() => setChartType('timeline')}
-                className={cn(
-                  "text-xs font-semibold transition-all duration-200",
+                className={`transition-all duration-300 shadow-lg ${
                   chartType === 'timeline' 
-                    ? "bg-green-700 text-white border-green-600 hover:bg-green-800" 
-                    : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
-                )}
+                    ? 'bg-white text-red-900 hover:bg-white/90 shadow-xl border border-white/20' 
+                    : 'text-white hover:bg-white/10 border border-white/20'
+                }`}
               >
-                <Calendar className="w-3 h-3 mr-1" />
+                <Clock className="w-4 h-4 mr-2" />
                 Timeline
               </Button>
             </div>
-          
-          <div className="flex flex-wrap gap-2">
+          </div>
+        </CardHeader>
+        
+        {/* Metric Type Selector */}
+        <div className="px-6 pt-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+          <div className="flex flex-wrap gap-2 pb-4">
             <Badge 
               variant={metricType === 'volume' ? 'secondary' : 'outline'}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:scale-105",
+                "cursor-pointer transition-all duration-300 hover:scale-105 shadow-sm",
                 metricType === 'volume' 
-                  ? "bg-green-700 text-white border-green-600" 
-                  : "bg-white/10 text-white/70 border-white/30 hover:bg-white/20"
+                  ? "bg-red-700 text-white border-red-600 shadow-red-200" 
+                  : "bg-white text-slate-600 border-slate-300 hover:bg-red-50 hover:border-red-300"
               )}
               onClick={() => setMetricType('volume')}
             >
+              <TrendingUp className="w-3 h-3 mr-1" />
               Volume
             </Badge>
             <Badge 
               variant={metricType === 'conversion' ? 'secondary' : 'outline'}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:scale-105",
+                "cursor-pointer transition-all duration-300 hover:scale-105 shadow-sm",
                 metricType === 'conversion' 
-                  ? "bg-green-700 text-white border-green-600" 
-                  : "bg-white/10 text-white/70 border-white/30 hover:bg-white/20"
+                  ? "bg-red-700 text-white border-red-600 shadow-red-200" 
+                  : "bg-white text-slate-600 border-slate-300 hover:bg-red-50 hover:border-red-300"
               )}
               onClick={() => setMetricType('conversion')}
             >
+              <Target className="w-3 h-3 mr-1" />
               Conversion
             </Badge>
             <Badge 
               variant={metricType === 'ltv' ? 'secondary' : 'outline'}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:scale-105",
+                "cursor-pointer transition-all duration-300 hover:scale-105 shadow-sm",
                 metricType === 'ltv' 
-                  ? "bg-green-700 text-white border-green-600" 
-                  : "bg-white/10 text-white/70 border-white/30 hover:bg-white/20"
+                  ? "bg-red-700 text-white border-red-600 shadow-red-200" 
+                  : "bg-white text-slate-600 border-slate-300 hover:bg-red-50 hover:border-red-300"
               )}
               onClick={() => setMetricType('ltv')}
             >
+              <IndianRupee className="w-3 h-3 mr-1" />
               LTV
             </Badge>
           </div>
-          </div>
-        </CardHeader>
+        </div>
         
-        <CardContent className="p-6 bg-gradient-to-br from-slate-50 to-white">
-          <div className="h-80 relative">
-            <div className="absolute top-0 right-0 text-xs text-slate-500 font-medium">
+        <CardContent className="p-6 bg-gradient-to-br from-slate-50 to-white relative overflow-hidden">
+          {/* 3D Content Background Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-purple-600/10 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-red-500/10 to-transparent rounded-full blur-xl" />
+          
+          <div className="h-80 relative z-10">
+            <div className="absolute top-0 right-0 text-xs text-slate-500 font-medium bg-white/80 px-2 py-1 rounded-md backdrop-blur-sm shadow-sm">
               {getMetricLabel()}
             </div>
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'timeline' ? (
-                <LineChart data={chartData}>
+                <AreaChart data={chartData}>
                   <defs>
-                    <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4}/>
-                      <stop offset="50%" stopColor="#ea580c" stopOpacity={0.2}/>
+                    {/* 3D Gradient Effects */}
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#dc2626" stopOpacity={0.8}/>
+                      <stop offset="50%" stopColor="#ea580c" stopOpacity={0.4}/>
                       <stop offset="95%" stopColor="#f97316" stopOpacity={0.1}/>
                     </linearGradient>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#b91c1c" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={1}/>
+                    </linearGradient>
+                    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#dc2626" floodOpacity="0.3"/>
+                    </filter>
                   </defs>
-                  <CartesianGrid strokeDasharray="2 4" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
                   <XAxis 
                     dataKey="name" 
                     stroke="#475569"
                     fontSize={11}
-                    fontWeight={500}
+                    fontWeight={600}
                     tickFormatter={(value) => String(value).slice(-5)}
                   />
-                  <YAxis stroke="#475569" fontSize={11} fontWeight={500} />
+                  <YAxis stroke="#475569" fontSize={11} fontWeight={600} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line 
+                  <Area 
                     type="monotone" 
                     dataKey={metricType} 
-                    stroke="#dc2626" 
+                    stroke="url(#lineGradient)" 
                     strokeWidth={4}
-                    dot={{ fill: '#dc2626', strokeWidth: 3, r: 6 }}
-                    activeDot={{ r: 10, fill: '#b91c1c', stroke: '#ffffff', strokeWidth: 3 }}
-                    fill="url(#lineGradient)"
+                    fill="url(#areaGradient)"
+                    filter="url(#shadow)"
+                    dot={{ fill: '#dc2626', strokeWidth: 3, r: 6, filter: 'url(#shadow)' }}
+                    activeDot={{ r: 8, fill: '#b91c1c', stroke: '#ffffff', strokeWidth: 4 }}
                   />
-                </LineChart>
+                </AreaChart>
               ) : (
                 <BarChart data={chartData}>
                   <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#dc2626" stopOpacity={0.9}/>
-                      <stop offset="50%" stopColor="#ea580c" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f97316" stopOpacity={0.7}/>
+                    {/* Enhanced 3D Bar Gradient */}
+                    <linearGradient id="barGradient3D" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#dc2626" stopOpacity={1}/>
+                      <stop offset="50%" stopColor="#b91c1c" stopOpacity={0.9}/>
+                      <stop offset="100%" stopColor="#991b1b" stopOpacity={0.8}/>
                     </linearGradient>
+                    <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="3" dy="3" stdDeviation="4" floodColor="#dc2626" floodOpacity="0.4"/>
+                    </filter>
                   </defs>
-                  <CartesianGrid strokeDasharray="2 4" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
                   <XAxis 
                     dataKey="name" 
                     stroke="#475569"
                     fontSize={11}
-                    fontWeight={500}
+                    fontWeight={600}
                     angle={-45}
                     textAnchor="end"
                     height={80}
                   />
-                  <YAxis stroke="#475569" fontSize={11} fontWeight={500} />
+                  <YAxis stroke="#475569" fontSize={11} fontWeight={600} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar 
                     dataKey={metricType} 
-                    fill="url(#barGradient)"
-                    radius={[8, 8, 0, 0]}
+                    fill="url(#barGradient3D)" 
+                    radius={[6, 6, 0, 0]}
+                    filter="url(#barShadow)"
                   />
                 </BarChart>
               )}
@@ -354,53 +402,107 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
         </CardContent>
       </Card>
 
-      {/* Enhanced Pie Chart - Right Side */}
-      <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-orange-800 via-red-800 to-red-900 text-white border-0">
-          <CardTitle className="flex items-center gap-3 text-white text-lg font-bold">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <PieChartIcon className="w-5 h-5 text-white" />
+      {/* Enhanced 3D Pie Chart - Right Side */}
+      <Card className="w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden relative group">
+        {/* 3D Card Effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/5 to-red-600/5 rounded-xl transform translate-x-1 translate-y-1 -z-10 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800/5 to-slate-900/5 rounded-xl transform translate-x-0.5 translate-y-0.5 -z-10" />
+        
+        <CardHeader className="bg-gradient-to-r from-orange-700 via-red-700 to-red-800 text-white border-0 relative overflow-hidden">
+          {/* 3D Header Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          
+          <div className="flex items-center justify-between relative z-10">
+            <CardTitle className="flex items-center gap-3 text-white text-lg font-bold">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg border border-white/20">
+                <PieChartIcon className="w-5 h-5 text-white drop-shadow-lg" />
+              </div>
+              Conversion Status Distribution
+            </CardTitle>
+            
+            {/* Interactive Controls */}
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm">
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm">
+                <Download className="w-4 h-4" />
+              </Button>
             </div>
-            Conversion Status Distribution
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="p-6 bg-gradient-to-br from-slate-50 to-white">
-          <div className="h-80">
+        
+        <CardContent className="p-6 bg-gradient-to-br from-slate-50 to-white relative overflow-hidden">
+          {/* 3D Content Background Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/5 to-red-600/10 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-500/10 to-transparent rounded-full blur-xl" />
+          
+          <div className="h-80 relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                <defs>
+                  {/* Enhanced 3D Pie Shadows */}
+                  <filter id="pieShadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="4" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.3"/>
+                  </filter>
+                  <filter id="pieInnerShadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.2"/>
+                  </filter>
+                </defs>
                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={120}
-                  paddingAngle={4}
+                  labelLine={false}
+                  outerRadius={100}
+                  innerRadius={40}
+                  fill="#8884d8"
                   dataKey="value"
-                  animationBegin={0}
-                  animationDuration={1500}
+                  filter="url(#pieShadow)"
+                  label={({ name, percentage }) => `${name} (${percentage}%)`}
                 >
                   {pieData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={entry.color}
+                      fill={entry.color} 
                       stroke="#ffffff"
                       strokeWidth={3}
+                      filter="url(#pieInnerShadow)"
                     />
                   ))}
                 </Pie>
                 <Tooltip content={<PieTooltip />} />
                 <Legend 
                   verticalAlign="bottom" 
-                  height={60}
-                  wrapperStyle={{ fontSize: '13px', fontWeight: 600 }}
-                  formatter={(value, entry: any) => (
-                    <span style={{ color: entry.color, fontWeight: 700 }}>
-                      {value} ({entry.payload.percentage}%)
-                    </span>
-                  )}
+                  height={36}
+                  iconType="circle"
+                  wrapperStyle={{
+                    paddingTop: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          
+          {/* Enhanced Statistics Summary */}
+          <div className="mt-6 pt-4 border-t border-slate-200">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                <div className="text-2xl font-bold text-green-700">
+                  {pieData.find(item => item.name.toLowerCase().includes('converted'))?.value || 0}
+                </div>
+                <div className="text-xs text-green-600 font-medium">Converted</div>
+              </div>
+              <div className="text-center p-3 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border border-red-200">
+                <div className="text-2xl font-bold text-red-700">
+                  {pieData.find(item => !item.name.toLowerCase().includes('converted'))?.value || 0}
+                </div>
+                <div className="text-xs text-red-600 font-medium">Pending</div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

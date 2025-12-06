@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ModernTableWrapper } from './ModernTableWrapper';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import { Users, Activity, Target, TrendingUp, TrendingDown, UserCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -141,6 +141,8 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
     if (onRowClick) {
       onRowClick(rowData.trainerName, {
         ...rowData,
+        monthYear: rowData.monthYear || rowData.month || '',
+        location: rowData.location || '',
         type: 'trainer-performance'
       });
     }

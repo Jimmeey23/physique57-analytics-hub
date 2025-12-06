@@ -19,6 +19,7 @@ import { SessionsFilterSection } from './SessionsFilterSection';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { AiNotes } from '@/components/ui/AiNotes';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 
 const locations = [
   { id: 'all', name: 'All Locations', fullName: 'All Locations' },
@@ -235,81 +236,66 @@ export const SessionsSection: React.FC = () => {
         </div>
 
         {/* Location Tabs and Content */}
-        <Card className={`${designTokens.card.background} ${designTokens.card.shadow} ${designTokens.card.border} overflow-hidden`}>
-          <CardContent className="p-2">
-            <div className="flex items-center justify-end pr-2 pt-2">
-              {/* One info icon per active location */}
-              <InfoPopover context="sessions-overview" locationId={activeLocation} />
+        <StudioLocationTabs 
+          activeLocation={activeLocation}
+          onLocationChange={setActiveLocation}
+          showInfoPopover={true}
+          infoPopoverContext="sessions-overview"
+        />
+        
+        <Card className={`${designTokens.card.background} ${designTokens.card.shadow} ${designTokens.card.border} overflow-hidden mt-6`}>
+          <CardContent className="p-6 space-y-8">
+            <SessionsMetricCards data={filteredData} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ImprovedSessionsTopBottomLists 
+                data={filteredData} 
+                title="Top Performing Classes"
+                type="classes"
+                variant="top"
+                initialCount={10}
+              />
+              <ImprovedSessionsTopBottomLists 
+                data={filteredData} 
+                title="Bottom Performing Classes"
+                type="classes"
+                variant="bottom"
+                initialCount={10}
+              />
             </div>
-            <Tabs value={activeLocation} onValueChange={handleLocationChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-2 rounded-2xl h-auto gap-2">
-                {locations.map((location) => (
-                  <TabsTrigger
-                    key={location.id}
-                    value={location.id}
-                    className="rounded-xl px-6 py-4 font-semibold text-sm transition-all duration-300"
-                  >
-                    <LocationTab location={location} isActive={activeLocation === location.id} />
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {locations.map((location) => (
-                <TabsContent key={location.id} value={location.id} className="space-y-8 mt-8">
-                  <SessionsMetricCards data={filteredData} />
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <ImprovedSessionsTopBottomLists 
-                      data={filteredData} 
-                      title="Top Performing Classes"
-                      type="classes"
-                      variant="top"
-                      initialCount={10}
-                    />
-                    <ImprovedSessionsTopBottomLists 
-                      data={filteredData} 
-                      title="Bottom Performing Classes"
-                      type="classes"
-                      variant="bottom"
-                      initialCount={10}
-                    />
-                  </div>
-                  
-                  <SessionsAttendanceAnalytics data={filteredData} />
-                  
-                  {/* AI Notes for Attendance Analytics */}
-                  <AiNotes 
-                    tableKey="sessions:attendanceAnalytics" 
-                    location={location.id} 
-                    period="current" 
-                    sectionId="sessions-attendance" 
-                    author="Sessions Analyst" 
-                  />
-                  
-                  <ClassFormatAnalysis data={filteredData} />
-                  
-                  {/* AI Notes for Class Format Analysis */}
-                  <AiNotes 
-                    tableKey="sessions:classFormatAnalysis" 
-                    location={location.id} 
-                    period="current" 
-                    sectionId="sessions-class-format" 
-                    author="Sessions Analyst" 
-                  />
-                  
-                  <SessionsGroupedTable data={filteredData} />
-                  
-                  {/* AI Notes for Sessions Grouped Table */}
-                  <AiNotes 
-                    tableKey="sessions:groupedTable" 
-                    location={location.id} 
-                    period="current" 
-                    sectionId="sessions-grouped" 
-                    author="Sessions Analyst" 
-                  />
-                </TabsContent>
-              ))}
-            </Tabs>
+            
+            <SessionsAttendanceAnalytics data={filteredData} />
+            
+            {/* AI Notes for Attendance Analytics */}
+            <AiNotes 
+              tableKey="sessions:attendanceAnalytics" 
+              location={activeLocation} 
+              period="current" 
+              sectionId="sessions-attendance" 
+              author="Sessions Analyst" 
+            />
+            
+            <ClassFormatAnalysis data={filteredData} />
+            
+            {/* AI Notes for Class Format Analysis */}
+            <AiNotes 
+              tableKey="sessions:classFormatAnalysis" 
+              location={activeLocation} 
+              period="current" 
+              sectionId="sessions-class-format" 
+              author="Sessions Analyst" 
+            />
+            
+            <SessionsGroupedTable data={filteredData} />
+            
+            {/* AI Notes for Sessions Grouped Table */}
+            <AiNotes 
+              tableKey="sessions:groupedTable" 
+              location={activeLocation} 
+              period="current" 
+              sectionId="sessions-grouped" 
+              author="Sessions Analyst" 
+            />
           </CardContent>
         </Card>
       </div>

@@ -20,7 +20,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,

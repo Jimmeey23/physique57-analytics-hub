@@ -18,7 +18,7 @@ import {
   RefreshCw, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
@@ -636,7 +636,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                       
                       {selectedColumns.has('revenue') && (
                         <TableCell className="text-center font-semibold">
-                          {formatCurrency(group.metrics.totalRevenue)}
+                          {formatNumber(group.metrics.totalRevenue)}
                         </TableCell>
                       )}
                       
@@ -671,7 +671,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                                       {session.checkedInCount}/{session.capacity}
                                     </Badge>
                                     <Badge variant="outline" className="text-xs">
-                                      {formatCurrency(session.totalPaid || 0)}
+                                      {formatNumber(session.totalPaid || 0)}
                                     </Badge>
                                   </div>
                                 </div>

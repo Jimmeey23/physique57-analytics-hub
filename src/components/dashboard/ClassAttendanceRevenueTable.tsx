@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, TrendingUp, Target, BarChart3, Zap, Users, Calendar } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface ClassAttendanceRevenueTableProps {
   data: SessionData[];
@@ -88,7 +88,7 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
       case 'avgRevenue':
       case 'revenuePerAttendee':
       case 'revenuePerCapacity':
-        return formatCurrency(value);
+        return formatNumber(value);
       case 'revenueEfficiency':
       case 'paidAttendeeRate':
       case 'fillRate':
@@ -178,7 +178,7 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col">
-                        <span className="font-medium text-green-600">{formatCurrency(row.totalRevenue)}</span>
+                        <span className="font-medium text-green-600">{formatNumber(row.totalRevenue)}</span>
                         <span className="text-xs text-gray-500">
                           {formatNumber(row.revenueGeneratingSessions)} revenue sessions
                         </span>
@@ -186,13 +186,13 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col">
-                        <span className="font-medium">{formatCurrency(row.avgRevenue)}</span>
+                        <span className="font-medium">{formatNumber(row.avgRevenue)}</span>
                         <span className="text-xs text-gray-500">per session</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col">
-                        <span className="font-medium">{formatCurrency(row.revenuePerAttendee)}</span>
+                        <span className="font-medium">{formatNumber(row.revenuePerAttendee)}</span>
                         <span className="text-xs text-gray-500">per attendee</span>
                       </div>
                     </TableCell>

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Users } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
+import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { InfoPopover } from '@/components/ui/InfoPopover';
@@ -518,33 +519,23 @@ const ClientRetention = () => {
             <SectionTimelineNav />
             
             {/* Enhanced Location Tabs - unified styling (moved above filters) */}
-            <div className="flex items-start justify-center mb-8" id="location-tabs">
-              <div className="w-full max-w-4xl">
-                <div className="grid grid-cols-4 location-tabs">
-                  {[
-                    { id: 'All Locations', name: 'All Locations', sub: `(${tabCounts.all})` },
-                    { id: 'Kwality House, Kemps Corner', name: 'Kwality House', sub: `Kemps Corner (${tabCounts.kwality})` },
-                    { id: 'Supreme HQ, Bandra', name: 'Supreme HQ', sub: `Bandra (${tabCounts.supreme})` },
-                    { id: 'Kenkere House, Bengaluru', name: 'Kenkere House', sub: `Bengaluru (${tabCounts.kenkere})` },
-                  ].map(loc => (
-                    <button
-                      key={loc.id}
-                      onClick={() => setSelectedLocation(loc.id)}
-                      className={`location-tab-trigger group ${selectedLocation === loc.id ? 'data-[state=active]:[--tab-accent:var(--hero-accent)]' : ''}`}
-                      data-state={selectedLocation === loc.id ? 'active' : 'inactive'}
-                    >
-                      <span className="relative z-10 flex flex-col items-center leading-tight">
-                        <span className="flex items-center gap-2 font-extrabold text-base sm:text-lg">{loc.name}</span>
-                        <span className="text-xs sm:text-sm opacity-90">{loc.sub}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="ml-3 mt-1">
-                <InfoPopover context="client-retention-overview" locationId={selectedLocation === 'All Locations' ? 'all' : selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 'kenkere'} />
-              </div>
-            </div>
+            <StudioLocationTabs 
+              activeLocation={selectedLocation === 'All Locations' ? 'all' : 
+                selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
+                selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
+                selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}
+              onLocationChange={(locationId) => {
+                const locationMap: Record<string, string> = {
+                  'all': 'All Locations',
+                  'kwality': 'Kwality House, Kemps Corner',
+                  'supreme': 'Supreme HQ, Bandra',
+                  'kenkere': 'Kenkere House, Bengaluru'
+                };
+                setSelectedLocation(locationMap[locationId] || 'All Locations');
+              }}
+              showInfoPopover={true}
+              infoPopoverContext="client-retention-overview"
+            />
 
             {/* Enhanced Filter Section */}
             <div className="glass-card modern-card-hover p-6 rounded-2xl" id="filters">

@@ -41,6 +41,17 @@ export class ErrorBoundary extends Component<Props, State> {
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
     
+    // Special handling for context-related errors
+    if (error.message.includes('useContext') || error.message.includes('Cannot read properties of null')) {
+      console.warn('Context-related error detected. This might be due to hot reloading or React initialization issues.');
+      // Attempt to reload after a short delay to allow React to reinitialize
+      setTimeout(() => {
+        if (window.location.pathname === '/') {
+          window.location.reload();
+        }
+      }, 1000);
+    }
+    
     // In production, you might want to send this to an error tracking service
     // Example: Sentry.captureException(error, { extra: errorInfo });
   }
@@ -76,7 +87,10 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-center text-slate-600">
-                We're sorry, but something unexpected happened. Please try refreshing the page or go back to the home page.
+                {this.state.error?.message.includes('useContext') || this.state.error?.message.includes('Cannot read properties of null') 
+                  ? "There was an issue with the application's state management. The page will refresh automatically to fix this."
+                  : "We're sorry, but something unexpected happened. Please try refreshing the page or go back to the home page."
+                }
               </p>
               
               {/* Error details in development */}

@@ -26,7 +26,7 @@ export const OutlierAnalysisSection: React.FC<OutlierAnalysisSectionProps> = ({
   newClientData = []
 }) => {
   const [activeMonth, setActiveMonth] = useState<'april' | 'august'>('april');
-  const [activeLocation, setActiveLocation] = useState<string>('all');
+  const [activeLocation, setActiveLocation] = useState<string>('kwality');
 
   const availableLocations = useMemo(() => {
     const monthConfig = activeMonth === 'april' 

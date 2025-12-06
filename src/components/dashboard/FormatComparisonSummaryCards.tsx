@@ -17,12 +17,25 @@ const mapToCanonical = (s: SessionData): CanonicalFormat => {
 
 interface FormatComparisonSummaryCardsProps {
   data: SessionData[];
+  onDrillDown?: (data: { format: string; metric: string; value: number }) => void;
 }
 
-export const FormatComparisonSummaryCards: React.FC<FormatComparisonSummaryCardsProps> = ({ data }) => {
+export const FormatComparisonSummaryCards: React.FC<FormatComparisonSummaryCardsProps> = ({ data, onDrillDown }) => {
+  const handleCardClick = (format: string, metric: string, value: number) => {
+    if (onDrillDown) {
+      onDrillDown({ format, metric, value });
+    }
+  };
+
   const stats = useMemo(() => {
     const groups: Record<CanonicalFormat, SessionData[]> = { powercycle: [], barre: [], strength: [], other: [] };
     data.forEach(s => groups[mapToCanonical(s)].push(s));
+
+    const handleCardClick = (format: string, metric: string, value: number) => {
+      if (onDrillDown) {
+        onDrillDown({ format, metric, value });
+      }
+    };
 
     const calc = (arr: SessionData[]) => {
       const sessions = arr.length;
@@ -99,7 +112,11 @@ export const FormatComparisonSummaryCards: React.FC<FormatComparisonSummaryCards
       {cards.map((c) => {
         const s = (stats as any)[c.key];
         return (
-          <Card key={c.key} className={`relative overflow-hidden bg-white border-2 border-slate-100 shadow-lg rounded-3xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1`}>
+          <Card 
+            key={c.key} 
+            className={`relative overflow-hidden bg-white border-2 border-slate-100 shadow-lg rounded-3xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer`}
+            onClick={() => handleCardClick(c.title, 'overview', s.sessions)}
+          >
             {/* Gradient accent background */}
             <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${c.gradient}`}></div>
             
@@ -133,7 +150,7 @@ export const FormatComparisonSummaryCards: React.FC<FormatComparisonSummaryCards
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-black text-slate-900">
-                      {formatCurrency(s.revenue)}
+                      {formatNumber(s.revenue)}
                     </div>
                     <div className="text-xs font-semibold text-slate-600 mt-1">Revenue</div>
                   </div>

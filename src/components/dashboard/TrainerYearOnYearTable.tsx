@@ -112,6 +112,8 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     if (onRowClick) {
       onRowClick(rowData.trainerName, {
         ...rowData,
+        monthYear: rowData.monthYear || '',
+        location: rowData.location || '',
         type: 'year-on-year-comparison'
       });
     }

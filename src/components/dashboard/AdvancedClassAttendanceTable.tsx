@@ -15,7 +15,7 @@ import {
   ChevronRight, RefreshCw, Grid, List, MoreHorizontal, X
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 interface AdvancedClassAttendanceTableProps {
@@ -447,7 +447,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
     
     if (typeof value === 'number') {
       if (column.key.includes('Revenue') || column.key.includes('revenue')) {
-        return formatCurrency(value);
+        return formatNumber(value);
       }
       if (column.key.includes('Rate') || column.key.includes('rate') || column.key.includes('Percentage')) {
         return formatPercentage(value);

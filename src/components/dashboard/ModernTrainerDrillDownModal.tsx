@@ -48,7 +48,7 @@ import {
   TrendingDown,
   Zap
 } from 'lucide-react';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 
 interface ModernTrainerDrillDownModalProps {
   isOpen: boolean;
@@ -352,10 +352,10 @@ export function ModernTrainerDrillDownModal({
                   <span className="text-xs font-medium text-green-100">Total Revenue</span>
                 </div>
                 <div className="text-xl font-bold">
-                  {formatCurrency(processedMetrics.totals.revenue)}
+                  {formatRevenue(processedMetrics.totals.revenue)}
                 </div>
                 <div className="text-xs text-green-200 mt-1">
-                  Avg: {formatCurrency(avgRevenuePerSession)}/session
+                  Avg: {formatRevenue(avgRevenuePerSession)}/session
                 </div>
               </div>
               
@@ -470,7 +470,7 @@ export function ModernTrainerDrillDownModal({
                         <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">YTD</Badge>
                       </div>
                       <p className="text-sm text-white/90 font-medium mb-1">Total Revenue</p>
-                      <p className="text-3xl font-bold text-white">{formatCurrency(processedMetrics.totals.revenue)}</p>
+                      <p className="text-3xl font-bold text-white">{formatRevenue(processedMetrics.totals.revenue)}</p>
                       <div className="mt-3 flex items-center gap-2 text-xs text-white/80">
                         <TrendingUp className="w-3 h-3" />
                         <span>Primary metric</span>
@@ -524,7 +524,7 @@ export function ModernTrainerDrillDownModal({
                         <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30">Avg</Badge>
                       </div>
                       <p className="text-sm text-white/90 font-medium mb-1">Avg/Session</p>
-                      <p className="text-3xl font-bold text-white">{formatCurrency(avgRevenuePerSession)}</p>
+                      <p className="text-3xl font-bold text-white">{formatRevenue(avgRevenuePerSession)}</p>
                       <div className="mt-3 flex items-center gap-2 text-xs text-white/80">
                         <Target className="w-3 h-3" />
                         <span>Per class</span>
@@ -559,10 +559,10 @@ export function ModernTrainerDrillDownModal({
                           {processedMetrics.monthly.map((month, idx) => (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="px-4 py-3 font-medium text-slate-900">{month.month}</td>
-                              <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatCurrency(month.revenue)}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatRevenue(month.revenue)}</td>
                               <td className="px-4 py-3 text-right text-slate-700">{formatNumber(month.sessions)}</td>
                               <td className="px-4 py-3 text-right text-slate-700">{formatNumber(month.customers)}</td>
-                              <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(month.revenue / month.sessions)}</td>
+                              <td className="px-4 py-3 text-right text-slate-700">{formatRevenue(month.revenue / month.sessions)}</td>
                               <td className="px-4 py-3 text-right text-slate-700">{(month.customers / month.sessions).toFixed(1)}</td>
                             </tr>
                           ))}
@@ -592,7 +592,7 @@ export function ModernTrainerDrillDownModal({
                               <p className="font-semibold text-slate-900">{loc.name}</p>
                               <p className="text-sm text-slate-600">{loc.sessions} sessions · {loc.customers} attendees</p>
                             </div>
-                            <p className="text-lg font-bold text-emerald-600">{formatCurrency(loc.revenue)}</p>
+                            <p className="text-lg font-bold text-emerald-600">{formatRevenue(loc.revenue)}</p>
                           </div>
                         ))}
                       </div>
@@ -616,7 +616,7 @@ export function ModernTrainerDrillDownModal({
                               <p className="font-semibold text-slate-900">{cls.name}</p>
                               <p className="text-sm text-slate-600">{cls.sessions} sessions · {cls.customers} attendees</p>
                             </div>
-                            <p className="text-lg font-bold text-blue-600">{formatCurrency(cls.value)}</p>
+                            <p className="text-lg font-bold text-blue-600">{formatRevenue(cls.value)}</p>
                           </div>
                         ))}
                       </div>
@@ -662,7 +662,7 @@ export function ModernTrainerDrillDownModal({
                         </div>
                         <span className="text-sm font-medium text-green-800">Avg Revenue/Session</span>
                       </div>
-                      <p className="text-3xl font-bold text-green-900">{formatCurrency(avgRevenuePerSession)}</p>
+                      <p className="text-3xl font-bold text-green-900">{formatRevenue(avgRevenuePerSession)}</p>
                       <p className="text-sm text-green-600 mt-1">
                         {avgRevenuePerSession > 1500 ? '↑ Above Average' : '↓ Below Average'}
                       </p>
@@ -712,7 +712,7 @@ export function ModernTrainerDrillDownModal({
                         All Classes ({processedMetrics.classes.length})
                       </div>
                       <Badge variant="outline" className="text-sm">
-                        Total: {formatCurrency(processedMetrics.totals.revenue)}
+                        Total: {formatRevenue(processedMetrics.totals.revenue)}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -754,13 +754,13 @@ export function ModernTrainerDrillDownModal({
                                 </Badge>
                               </td>
                               <td className="px-3 py-3 text-right text-sm font-semibold text-slate-900">
-                                {formatCurrency(cls.revenue)}
+                                {formatRevenue(cls.revenue)}
                               </td>
                               <td className="px-3 py-3 text-right text-sm font-medium text-slate-700">
                                 {cls.customers}
                               </td>
                               <td className="px-3 py-3 text-right text-sm text-slate-700">
-                                {cls.customers > 0 ? formatCurrency(cls.revenue / cls.customers) : '-'}
+                                {cls.customers > 0 ? formatRevenue(cls.revenue / cls.customers) : '-'}
                               </td>
                             </tr>
                           ))}
@@ -769,13 +769,13 @@ export function ModernTrainerDrillDownModal({
                           <tr>
                             <td colSpan={6} className="px-3 py-3 text-sm text-slate-900">TOTALS</td>
                             <td className="px-3 py-3 text-right text-sm text-slate-900">
-                              {formatCurrency(processedMetrics.totals.revenue)}
+                              {formatRevenue(processedMetrics.totals.revenue)}
                             </td>
                             <td className="px-3 py-3 text-right text-sm text-slate-900">
                               {formatNumber(processedMetrics.totals.customers)}
                             </td>
                             <td className="px-3 py-3 text-right text-sm text-slate-900">
-                              {formatCurrency(processedMetrics.totals.revenue / processedMetrics.totals.customers)}
+                              {formatRevenue(processedMetrics.totals.revenue / processedMetrics.totals.customers)}
                             </td>
                           </tr>
                         </tfoot>

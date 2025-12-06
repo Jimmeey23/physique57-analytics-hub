@@ -8,7 +8,7 @@ import {
   Clock, MapPin, Filter, Download, Maximize2, PieChart, LineChart
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatPercentage, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatPercentage, formatNumber, formatRevenue } from '@/utils/formatters';
 
 interface SuperInteractiveChartsProps {
   data: SessionData[];
@@ -352,7 +352,7 @@ export const SuperInteractiveCharts: React.FC<SuperInteractiveChartsProps> = ({ 
                   <div className="text-xs text-blue-600">Fill Rate</div>
                 </div>
                 <div className="text-center p-2 bg-green-50 rounded">
-                  <div className="font-semibold text-green-700">{formatCurrency(trainer.revenue)}</div>
+                  <div className="font-semibold text-green-700">{formatRevenue(trainer.revenue)}</div>
                   <div className="text-xs text-green-600">Revenue</div>
                 </div>
                 <div className="text-center p-2 bg-purple-50 rounded">

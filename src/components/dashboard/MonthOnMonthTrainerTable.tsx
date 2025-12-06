@@ -580,7 +580,26 @@ export const MonthOnMonthTrainerTable = ({
                         </div>
                       </TableCell>
                       {values.map((value, index) => (
-                        <TableCell key={`${trainer}-${index}`} className="text-center text-sm font-medium text-slate-800" style={{ height: '40px' }}>
+                        <TableCell 
+                          key={`${trainer}-${index}`} 
+                          className="text-center text-sm font-medium text-slate-800 hover:bg-slate-50 cursor-pointer" 
+                          style={{ height: '40px' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!onRowClick) return;
+                            const month = processedData.months[index];
+                            const trainerMonthMap = (processedData.trainerGroups as any)[trainer] || {};
+                            const rec = trainerMonthMap[month] || {};
+                            const payload = {
+                              ...rec,
+                              trainerName: trainer,
+                              monthYear: month,
+                              location: rec.location || (values.length ? (trainerMonthMap[processedData.months[0]]?.location || '') : ''),
+                              type: 'trainer-month-cell'
+                            };
+                            onRowClick(trainer, payload);
+                          }}
+                        >
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger className="cursor-help">{formatValue(value, selectedMetric)}</TooltipTrigger>

@@ -5,7 +5,7 @@ import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
-import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { formatNumber } from '@/utils/formatters';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 const ClassAttendanceContent = () => {
@@ -51,8 +51,8 @@ const ClassAttendanceContent = () => {
       {
         location: 'Revenue',
         label: 'Earned Revenue', 
-        value: formatCurrency(totalRevenue),
-        subValue: `${formatCurrency(totalRevenue / totalSessions)} avg/session`
+        value: formatNumber(totalRevenue),
+        subValue: `${formatNumber(totalRevenue / totalSessions)} avg/session`
       },
       {
         location: 'Coverage',

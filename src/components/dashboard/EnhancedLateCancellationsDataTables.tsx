@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LateCancellationsData } from '@/types/dashboard';
-import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { formatNumber, formatCurrency, formatRevenue } from '@/utils/formatters';
 import { AlertTriangle, Users, Calendar, Package, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import CopyTableButton from '@/components/ui/CopyTableButton';
@@ -636,11 +636,27 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                   onClick={() => {
                     try {
                       if (onDrillDown && member) {
+                        // Filter all data for this specific member using multiple field matches
+                        const memberData = data.filter(item => {
+                          // Check various ways the member could be identified
+                          const memberName = member.memberName || `${member.firstName || ''} ${member.lastName || ''}`.trim();
+                          const itemMemberName = item.memberName || `${item.firstName || ''} ${item.lastName || ''}`.trim();
+                          
+                          return (
+                            (item.memberName && member.memberName && item.memberName === member.memberName) ||
+                            (item.memberId && member.memberId && item.memberId === member.memberId) ||
+                            (item.email && member.email && item.email === member.email) ||
+                            (memberName && itemMemberName && memberName === itemMemberName)
+                          );
+                        });
+                        
+                        console.log('Member data found:', memberData.length, 'items for', member);
+                        
                         onDrillDown({
                           type: 'member',
-                          title: `Member: ${member.memberName || 'Unknown'}`,
+                          title: `Member: ${member.memberName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown'} (${memberData.length} cancellations)`,
                           data: member,
-                          rawData: member.cancellations || member.sessionDetails || []
+                          rawData: memberData
                         });
                       }
                     } catch (error) {
@@ -1119,11 +1135,11 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                     <TableCell className="h-[35px] py-2">{formatNumber(trainer.uniqueMembers)}</TableCell>
                     <TableCell className="h-[35px] py-2">{formatNumber(trainer.uniqueClasses)}</TableCell>
                     <TableCell className="h-[35px] py-2">{formatNumber(trainer.uniqueLocations)}</TableCell>
-                    <TableCell className="h-[35px] py-2">{formatCurrency(trainer.revenue || 0)}</TableCell>
+                    <TableCell className="h-[35px] py-2">{formatRevenue(trainer.revenue || 0)}</TableCell>
                     <TableCell className="h-[35px] py-2">
-                      <Badge variant="outline">
+                      <span className="font-medium text-slate-700">
                         {trainer.avgCancellationsPerSession.toFixed(1)}
-                      </Badge>
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}

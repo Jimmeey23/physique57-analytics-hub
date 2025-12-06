@@ -36,11 +36,13 @@ import { SessionData } from '@/hooks/useSessionsData';
 
 interface SessionsFilterSectionProps {
   data: SessionData[];
+  defaultCollapsed?: boolean;
 }
 
-export const SessionsFilterSection: React.FC<SessionsFilterSectionProps> = ({ data }) => {
+export const SessionsFilterSection: React.FC<SessionsFilterSectionProps> = ({ data, defaultCollapsed = false }) => {
   const { filters, updateFilters, clearFilters } = useSessionsFilters();
   const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // Extract unique filter options from data
   const filterOptions = useMemo(() => {
@@ -227,11 +229,12 @@ export const SessionsFilterSection: React.FC<SessionsFilterSectionProps> = ({ da
 
   return (
     <Card className="bg-background shadow-sm border">
-      <CardHeader className="border-b pb-4">
+      <CardHeader className="border-b pb-4 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Filter className="w-5 h-5 text-primary" />
             Session Filters
+            <ChevronDown className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
           </CardTitle>
           <div className="flex items-center gap-2">
             {activeFilterCount > 0 && (
@@ -253,7 +256,8 @@ export const SessionsFilterSection: React.FC<SessionsFilterSectionProps> = ({ da
         </div>
       </CardHeader>
       
-      <CardContent className="p-6">
+      {!isCollapsed && (
+        <CardContent className="p-6">
         <Tabs defaultValue="filters" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="filters">Filter Options</TabsTrigger>
@@ -364,7 +368,8 @@ export const SessionsFilterSection: React.FC<SessionsFilterSectionProps> = ({ da
             </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 };

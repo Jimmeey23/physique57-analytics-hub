@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
@@ -262,7 +262,7 @@ const ClassFormatsMoMDetails: React.FC<Props> = ({ sessions }) => {
                     <TableCell className="text-right font-semibold">{formatCurrency(tRev)}</TableCell>
                     <TableCell className="text-right font-semibold">{formatNumber(tSess > 0 ? tChk / tSess : 0)}</TableCell>
                     <TableCell className="text-right font-semibold">{formatNumber((tSess - tEmpty) > 0 ? tChk / (tSess - tEmpty) : 0)}</TableCell>
-                    <TableCell className="text-right font-semibold">{formatCurrency(tSess > 0 ? tRev / tSess : 0)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatRevenue(tSess > 0 ? tRev / tSess : 0)}</TableCell>
                   </TableRow>
                 );
                 return out;
