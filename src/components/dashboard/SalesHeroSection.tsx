@@ -1,6 +1,6 @@
 import React from 'react';
 import SalesMotionHero from '@/components/ui/SalesMotionHero';
-import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
+import { EnhancedRobustDataExportModal } from './EnhancedRobustDataExportModal';
 import { useNavigate } from 'react-router-dom';
 import { useSalesMetrics } from '@/hooks/useSalesMetrics';
 import { SalesData } from '@/types/dashboard';
@@ -11,13 +11,35 @@ interface SalesHeroSectionProps {
   dateRange?: { start: string | Date; end: string | Date };
   currentLocation: string;
   locationName: string;
+  currentTab?: string;
+  activeMetric?: string;
+  filters?: any;
 }
 
-export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, historicalData, dateRange, currentLocation, locationName }) => {
+export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ 
+  data, 
+  historicalData, 
+  dateRange, 
+  currentLocation, 
+  locationName,
+  currentTab = 'Overview',
+  activeMetric,
+  filters
+}) => {
   const { metrics } = useSalesMetrics(data, historicalData, { dateRange });
   const [heroColor, setHeroColor] = React.useState<string>('#3b82f6');
+  const [isExportModalOpen, setIsExportModalOpen] = React.useState(false);
   const navigate = useNavigate();
   const exportOpenRef = React.useRef<{ open: () => void }>(null);
+
+  // Expose open function via ref
+  React.useEffect(() => {
+    if (exportOpenRef.current) {
+      exportOpenRef.current = {
+        open: () => setIsExportModalOpen(true)
+      };
+    }
+  }, []);
 
   // Make hero accent available globally so components outside the hero (like location tabs) can react.
   React.useEffect(() => {
@@ -71,13 +93,20 @@ export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, histor
       secondaryAction={{ label: 'Export All Sales Data', onClick: () => exportOpenRef.current?.open() }}
         compact
         onColorChange={setHeroColor}
-        extra={<ComprehensiveSalesExportButton 
-          data={data} 
-          currentLocation={currentLocation} 
-          locationName={locationName}
-          renderTrigger={false}
-          openRef={exportOpenRef}
-        />}
+        extra={
+          <>
+            <EnhancedRobustDataExportModal
+              isOpen={isExportModalOpen}
+              onClose={() => setIsExportModalOpen(false)}
+              currentTab={currentTab}
+              currentLocation={currentLocation}
+              locationName={locationName}
+              data={data}
+            />
+            {/* Hidden element for ref compatibility */}
+            <div ref={exportOpenRef} style={{ display: 'none' }} />
+          </>
+        }
       />
     </div>
   );
