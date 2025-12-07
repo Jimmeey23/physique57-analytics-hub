@@ -26,6 +26,16 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   data,
   onDrillDown
 }) => {
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+    table: string;
+  }>({
+    key: 'totalLeads',
+    direction: 'desc',
+    table: 'source'
+  });
+
   const sourceTableRef = useRef<HTMLTableElement>(null);
   const stageTableRef = useRef<HTMLTableElement>(null);
   const spanTableRef = useRef<HTMLTableElement>(null);
@@ -33,6 +43,33 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   const topStagesTableRef = useRef<HTMLTableElement>(null);
   const proximityTableRef = useRef<HTMLTableElement>(null);
   const registry = useMetricsTablesRegistry();
+
+  // Handle sorting
+  const handleSort = (key: string, table: string) => {
+    setSortConfig(prevConfig => ({
+      key,
+      table,
+      direction: prevConfig.key === key && prevConfig.table === table && prevConfig.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  // Sort data based on configuration
+  const sortData = (data: any[], table: string) => {
+    if (sortConfig.table !== table) return data;
+    
+    return [...data].sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortConfig.direction === 'desc' 
+          ? bVal.localeCompare(aVal)
+          : aVal.localeCompare(bVal);
+      }
+      
+      return sortConfig.direction === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+  };
 
   // Handle row click for drill down
   const handleRowClick = (type: string, row: any) => {
@@ -266,8 +303,16 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
       proximityIssues: stats.proximityIssues,
       proximityRate: stats.totalLeads > 0 ? (stats.proximityIssues / stats.totalLeads) * 100 : 0,
       impactScore: stats.proximityIssues * (stats.proximityIssues / stats.totalLeads) * 100
-    })).sort((a, b) => b.proximityIssues - a.proximityIssues);
+    })).sort((a, b) => b.totalLeads - a.totalLeads);
   }, [data]);
+
+  // Apply sorting to data
+  const sortedSourceData = useMemo(() => sortData(conversionBySource, 'source'), [conversionBySource, sortConfig]);
+  const sortedStageData = useMemo(() => sortData(conversionByStage, 'stage'), [conversionByStage, sortConfig]);
+  const sortedTimespanData = useMemo(() => sortData(conversionSpanAnalytics, 'timespan'), [conversionSpanAnalytics, sortConfig]);
+  const sortedLtvData = useMemo(() => sortData(ltvAnalytics, 'ltv'), [ltvAnalytics, sortConfig]);
+  const sortedTopStagesData = useMemo(() => sortData(mostCommonStages, 'topstages'), [mostCommonStages, sortConfig]);
+  const sortedProximityData = useMemo(() => sortData(proximityAnalytics, 'proximity'), [proximityAnalytics, sortConfig]);
 
   return (
     <div className="space-y-6">
@@ -326,25 +371,35 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                           <span>Source</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                          onClick={() => handleSort('totalLeads', 'source')}
+                          title="Sort by Total Leads">
                         Total Leads
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                          onClick={() => handleSort('converted', 'source')}
+                          title="Sort by Converted">
                         Converted
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                          onClick={() => handleSort('conversionRate', 'source')}
+                          title="Sort by Conversion Rate">
                         Conv. Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                          onClick={() => handleSort('avgLTV', 'source')}
+                          title="Sort by Average LTV">
                         Avg LTV
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                          onClick={() => handleSort('leadQuality', 'source')}
+                          title="Sort by Quality Score">
                         Quality Score
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {conversionBySource.map((row, index) => (
+                    {sortedSourceData.map((row, index) => (
                       <tr
                         key={row.source}
                         className="hover:bg-gray-50 cursor-pointer h-9 max-h-9"
@@ -393,33 +448,33 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {formatNumber(conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0))}
+                          {formatNumber(sortedSourceData.reduce((sum, row) => sum + row.totalLeads, 0))}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {formatNumber(conversionBySource.reduce((sum, row) => sum + row.converted, 0))}
+                          {formatNumber(sortedSourceData.reduce((sum, row) => sum + row.converted, 0))}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {conversionBySource.length > 0 ? 
-                            ((conversionBySource.reduce((sum, row) => sum + row.converted, 0) / 
-                              conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)) * 100).toFixed(1) : '0.0'}%
+                          {sortedSourceData.length > 0 ? 
+                            ((sortedSourceData.reduce((sum, row) => sum + row.converted, 0) / 
+                              sortedSourceData.reduce((sum, row) => sum + row.totalLeads, 0)) * 100).toFixed(1) : '0.0'}%
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {formatCurrency(conversionBySource.length > 0 ? 
-                            (conversionBySource.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
-                             conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)) : 0)}
+                          {formatCurrency(sortedSourceData.length > 0 ? 
+                            (sortedSourceData.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
+                             sortedSourceData.reduce((sum, row) => sum + row.totalLeads, 0)) : 0)}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {conversionBySource.length > 0 ? 
-                            (conversionBySource.reduce((sum, row) => sum + row.leadQuality * row.totalLeads, 0) / 
-                             conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)).toFixed(1) : '0.0'}
+                          {sortedSourceData.length > 0 ? 
+                            (sortedSourceData.reduce((sum, row) => sum + row.leadQuality * row.totalLeads, 0) / 
+                             sortedSourceData.reduce((sum, row) => sum + row.totalLeads, 0)).toFixed(1) : '0.0'}
                         </div>
                       </td>
                     </tr>
@@ -475,7 +530,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {conversionByStage.map((row, index) => (
+                    {sortedStageData.map((row, index) => (
                       <tr
                         key={row.stage}
                         className="hover:bg-gray-50 cursor-pointer h-9 max-h-9"
@@ -524,33 +579,33 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {formatNumber(conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0))}
+                          {formatNumber(sortedStageData.reduce((sum, row) => sum + row.totalLeads, 0))}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {formatNumber(conversionByStage.reduce((sum, row) => sum + row.converted, 0))}
+                          {formatNumber(sortedStageData.reduce((sum, row) => sum + row.converted, 0))}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {conversionByStage.length > 0 ? 
-                            ((conversionByStage.reduce((sum, row) => sum + row.converted, 0) / 
-                              conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)) * 100).toFixed(1) : '0.0'}%
+                          {sortedStageData.length > 0 ? 
+                            ((sortedStageData.reduce((sum, row) => sum + row.converted, 0) / 
+                              sortedStageData.reduce((sum, row) => sum + row.totalLeads, 0)) * 100).toFixed(1) : '0.0'}%
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {formatCurrency(conversionByStage.length > 0 ? 
-                            (conversionByStage.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
-                             conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)) : 0)}
+                          {formatCurrency(sortedStageData.length > 0 ? 
+                            (sortedStageData.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
+                             sortedStageData.reduce((sum, row) => sum + row.totalLeads, 0)) : 0)}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
                         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
-                          {conversionByStage.length > 0 ? 
-                            (conversionByStage.reduce((sum, row) => sum + row.stageEfficiency * row.totalLeads, 0) / 
-                             conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)).toFixed(1) : '0.0'}
+                          {sortedStageData.length > 0 ? 
+                            (sortedStageData.reduce((sum, row) => sum + row.stageEfficiency * row.totalLeads, 0) / 
+                             sortedStageData.reduce((sum, row) => sum + row.totalLeads, 0)).toFixed(1) : '0.0'}
                         </div>
                       </td>
                     </tr>
@@ -578,8 +633,70 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="p-4 text-center text-slate-600">
-                Time Analytics - Table temporarily unavailable
+              <div className="overflow-x-auto" data-table="funnel-timespan-analytics">
+                <table ref={spanTableRef} className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-white" />
+                          <span>Time Range</span>
+                        </div>
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Total Leads
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Converted
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Conv. Rate
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Avg LTV
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Efficiency
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {sortedTimespanData.map((row, index) => (
+                      <tr key={row.timeRange} className="hover:bg-gray-50 h-9 max-h-9">
+                        <td className="px-6 py-2 font-semibold text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-white border-r border-gray-200">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.timeRange}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.totalLeads)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.converted)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.conversionRate.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatCurrency(row.avgLTV)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.efficiency.toFixed(1)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
@@ -602,8 +719,70 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="p-4 text-center text-slate-600">
-                LTV Analytics - Table temporarily unavailable
+              <div className="overflow-x-auto" data-table="funnel-ltv-analytics">
+                <table ref={ltvTableRef} className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-white" />
+                          <span>LTV Range</span>
+                        </div>
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Total Leads
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Converted
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Conv. Rate
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Total Revenue
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Avg Visits
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {sortedLtvData.map((row, index) => (
+                      <tr key={row.ltvRange} className="hover:bg-gray-50 h-9 max-h-9">
+                        <td className="px-6 py-2 font-semibold text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-white border-r border-gray-200">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.ltvRange}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.totalLeads)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.converted)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.conversionRate.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatCurrency(row.totalRevenue)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.avgVisits.toFixed(1)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
@@ -626,8 +805,70 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="p-4 text-center text-slate-600">
-                Top Stages Analytics - Table temporarily unavailable
+              <div className="overflow-x-auto" data-table="funnel-topstages-analytics">
+                <table ref={topStagesTableRef} className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-white" />
+                          <span>Stage</span>
+                        </div>
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Lead Count
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Percentage
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Converted
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Conv. Rate
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Avg LTV
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {sortedTopStagesData.map((row, index) => (
+                      <tr key={row.stage} className="hover:bg-gray-50 h-9 max-h-9">
+                        <td className="px-6 py-2 font-semibold text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-white border-r border-gray-200">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.stage}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.leadCount)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.percentage.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.converted)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.conversionRate.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatCurrency(row.avgLTV)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
@@ -650,8 +891,67 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="p-4 text-center text-slate-600">
-                Proximity Analytics - Table temporarily unavailable
+              <div className="overflow-x-auto" data-table="funnel-proximity-analytics">
+                <table ref={proximityTableRef} className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-white" />
+                          <span>Location</span>
+                        </div>
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Total Leads
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Proximity Issues
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Proximity Rate
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Impact Score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {sortedProximityData.map((row, index) => (
+                      <tr
+                        key={row.location}
+                        className="hover:bg-gray-50 cursor-pointer h-9 max-h-9"
+                        onClick={() => handleRowClick('proximity', row)}
+                      >
+                        <td className="px-6 py-2 font-semibold text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-white border-r border-gray-200">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis flex items-center space-x-2">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <span>{row.location}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.totalLeads)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.proximityIssues)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.proximityRate.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.impactScore.toFixed(1)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
