@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, FolderOpen, TrendingUp, TrendingDown, BarCha
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface CategoryPerformanceTableNewProps {
   data: SalesData[];
@@ -27,6 +28,9 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -335,6 +339,17 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
         tableRef={tableRef}
         showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
+        contextInfo={{
+          selectedMetric: selectedMetric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            displayMode: displayMode,
+            totalItems: processedData.length,
+            sortBy: sortKey,
+            sortDirection: sortDir
+          }
+        }}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">

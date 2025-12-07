@@ -59,20 +59,6 @@ const locations = [{
   fullName: 'Kenkere House, Bengaluru'
 }];
 
-// Helper function to get display name for tabs
-const getTabDisplayName = (tabValue: string): string => {
-  const tabNames: Record<string, string> = {
-    'monthOnMonth': 'Month-on-Month Analysis',
-    'yearOnYear': 'Year-on-Year Analysis', 
-    'productPerformance': 'Product Performance',
-    'categoryPerformance': 'Category Analysis',
-    'soldByAnalysis': 'Sales Representative Analysis',
-    'paymentMethodAnalysis': 'Payment Method Analysis',
-    'customerBehavior': 'Customer Behavior Analysis'
-  };
-  return tabNames[tabValue] || 'Sales Analytics';
-};
-
 export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data, onReady }) => {
   const { filters: globalFilters } = useGlobalFilters();
   const periodId = globalFilters?.dateRange
@@ -85,12 +71,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   const [drillDownType, setDrillDownType] = useState<'metric' | 'product' | 'category' | 'member' | 'soldBy' | 'paymentMethod'>('metric');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeYoyMetric, setActiveYoyMetric] = useState<YearOnYearMetricType>('revenue');
-  const [currentTab, setCurrentTab] = useState('monthOnMonth');
-
-  // Track tab changes for export context
-  const handleTabChange = (value: string) => {
-    setCurrentTab(value);
-  };
 
   // Debug CSS variables
   React.useEffect(() => {
@@ -744,9 +724,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           dateRange={filters.dateRange}
           currentLocation={activeLocation}
           locationName={locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations'}
-          currentTab={getTabDisplayName(currentTab)}
-          activeMetric={activeYoyMetric}
-          filters={filters}
         />
       </SectionAnchor>
 
@@ -775,33 +752,27 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           </SectionAnchor>
 
           <SectionAnchor id="sales-metrics" label="Metrics">
-            <div data-metric="sales-hero-metrics">
-              <SalesAnimatedMetricCards 
-                data={filteredData} 
-                historicalData={metricsHistoricData}
-                dateRange={filters.dateRange}
-                onMetricClick={handleMetricClick}
-                locationId={activeLocation}
-              />
-            </div>
+            <SalesAnimatedMetricCards 
+              data={filteredData} 
+              historicalData={metricsHistoricData}
+              dateRange={filters.dateRange}
+              onMetricClick={handleMetricClick}
+              locationId={activeLocation}
+            />
           </SectionAnchor>
 
               <SectionAnchor id="sales-charts" label="Charts">
-                <div data-chart="sales-interactive-charts">
-                  <SalesInteractiveCharts data={allHistoricData} />
-                </div>
+                <SalesInteractiveCharts data={allHistoricData} />
               </SectionAnchor>
 
               <SectionAnchor id="sales-sellers" label="Top & Bottom Sellers">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-xl font-semibold text-gray-900">Top & Bottom Sellers</h2>
                 </div>
-                <div data-ranking="top-bottom-sellers">
-                  <UnifiedTopBottomSellers data={filteredData} />
-                </div>
+                <UnifiedTopBottomSellers data={filteredData} />
               </SectionAnchor>
 
-                <Tabs defaultValue="monthOnMonth" value={currentTab} onValueChange={handleTabChange} className="w-full">
+                <Tabs defaultValue="monthOnMonth" className="w-full">
                   <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 flex w-full max-w-7xl mx-auto overflow-hidden">
                     {/* Uniform trigger styling for consistent size/width/spacing across tabs */}
                     <TabsTrigger value="monthOnMonth" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
@@ -838,17 +809,15 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
                       </div>
-                      <div data-table="month-on-month">
-                        <MonthOnMonthTableNew 
-                          data={allHistoricData} 
-                          onRowClick={handleRowClick} 
-                          collapsedGroups={collapsedGroups} 
-                          // Adapter to match MonthOnMonthTableNew's onGroupToggle signature (Set<string>)
-                          onGroupToggle={React.useCallback((groups: Set<string>) => setCollapsedGroups(new Set(groups)), [])} 
-                          selectedMetric={activeYoyMetric} 
-                          onReady={markReady}
-                        />
-                      </div>
+                      <MonthOnMonthTableNew 
+                        data={allHistoricData} 
+                        onRowClick={handleRowClick} 
+                        collapsedGroups={collapsedGroups} 
+                        // Adapter to match MonthOnMonthTableNew's onGroupToggle signature (Set<string>)
+                        onGroupToggle={React.useCallback((groups: Set<string>) => setCollapsedGroups(new Set(groups)), [])} 
+                        selectedMetric={activeYoyMetric} 
+                        onReady={markReady}
+                      />
                     </SectionAnchor>
                   </TabsContent>
 
@@ -863,14 +832,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
                       </div>
-                      <div data-table="year-on-year">
-                        <EnhancedYearOnYearTableNew 
-                          data={allHistoricData} 
-                          onRowClick={handleRowClick} 
-                          selectedMetric={activeYoyMetric} 
-                          onReady={markReady}
-                        />
-                      </div>
+                      <EnhancedYearOnYearTableNew 
+                        data={allHistoricData} 
+                        onRowClick={handleRowClick} 
+                        selectedMetric={activeYoyMetric} 
+                        onReady={markReady}
+                      />
                     </SectionAnchor>
                   </TabsContent>
 
@@ -882,14 +849,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
                     </div>
-                    <div data-table="product-performance">
-                      <ProductPerformanceTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </div>
+                    <ProductPerformanceTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -901,14 +866,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Category Performance Analysis</h2>
                     </div>
-                    <div data-table="category-analysis">
-                      <CategoryPerformanceTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </div>
+                    <CategoryPerformanceTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -920,14 +883,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Sold By Analysis</h2>
                     </div>
-                    <div data-table="sold-by">
-                      <SoldByMonthOnMonthTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </div>
+                    <SoldByMonthOnMonthTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -939,14 +900,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Payment Method Analysis</h2>
                     </div>
-                    <div data-table="payment-methods">
-                      <PaymentMethodMonthOnMonthTableNew 
-                        data={allHistoricData} 
-                        onRowClick={handleRowClick} 
-                        selectedMetric={activeYoyMetric} 
-                        onReady={markReady}
-                      />
-                    </div>
+                    <PaymentMethodMonthOnMonthTableNew 
+                      data={allHistoricData} 
+                      onRowClick={handleRowClick} 
+                      selectedMetric={activeYoyMetric} 
+                      onReady={markReady}
+                    />
                   </SectionAnchor>
                 </TabsContent>
 
@@ -959,9 +918,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       <h2 className="text-2xl font-bold text-gray-900">Customer Behavior</h2>
                     </div>
                     {/* Use allHistoricData to make this tab independent from the date filters */}
-                    <div data-table="customer-behavior">
-                      <CustomerBehaviorMonthOnMonthTable data={allHistoricData} onReady={markReady} onRowClick={handleRowClick} />
-                    </div>
+                    <CustomerBehaviorMonthOnMonthTable data={allHistoricData} onReady={markReady} onRowClick={handleRowClick} />
                   </SectionAnchor>
                 </TabsContent>
               </Tabs>

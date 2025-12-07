@@ -11,6 +11,13 @@ interface CopyTableButtonProps {
   size?: 'sm' | 'md' | 'lg';
   showDropdown?: boolean; // If false, defaults to HTML copy on click
   onCopyAllTabs?: () => Promise<string>; // Function to generate content for all tabs
+  // Additional context for enhanced text export
+  contextInfo?: {
+    selectedMetric?: string;
+    dateRange?: { start: string; end: string };
+    filters?: Record<string, any>;
+    additionalInfo?: Record<string, any>;
+  };
 }
 
 export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
@@ -19,7 +26,8 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
   className = '',
   size = 'sm',
   showDropdown = true,
-  onCopyAllTabs
+  onCopyAllTabs,
+  contextInfo
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -338,8 +346,67 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       // Find the actual table or extract data from the component
       const table = tableElement.querySelector('table') || tableElement;
       
+      // Build comprehensive header with context information
       let textContent = `${tableName}\n`;
-      textContent += `Exported on ${new Date().toLocaleDateString()}\n\n`;
+      textContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+      
+      // Add context information if provided
+      if (contextInfo) {
+        textContent += `\n--- Export Context ---\n`;
+        
+        // Add selected metric
+        if (contextInfo.selectedMetric) {
+          textContent += `Selected Metric: ${contextInfo.selectedMetric}\n`;
+        }
+        
+        // Add date range
+        if (contextInfo.dateRange) {
+          const { start, end } = contextInfo.dateRange;
+          if (start && end) {
+            textContent += `Date Range: ${start} to ${end}\n`;
+          }
+        }
+        
+        // Add active filters
+        if (contextInfo.filters) {
+          const activeFilters: string[] = [];
+          Object.entries(contextInfo.filters).forEach(([key, value]) => {
+            if (value && Array.isArray(value) && value.length > 0) {
+              activeFilters.push(`${key.charAt(0).toUpperCase() + key.slice(1)}: ${value.join(', ')}`);
+            } else if (value && typeof value === 'string' && value !== 'All' && value !== '') {
+              activeFilters.push(`${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`);
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              // Handle nested objects like dateRange
+              const subFilters = Object.entries(value)
+                .filter(([_, v]) => v && v !== '')
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(', ');
+              if (subFilters) {
+                activeFilters.push(`${key.charAt(0).toUpperCase() + key.slice(1)}: ${subFilters}`);
+              }
+            }
+          });
+          
+          if (activeFilters.length > 0) {
+            textContent += `Active Filters: ${activeFilters.join('; ')}\n`;
+          } else {
+            textContent += `Active Filters: None\n`;
+          }
+        }
+        
+        // Add any additional info
+        if (contextInfo.additionalInfo) {
+          Object.entries(contextInfo.additionalInfo).forEach(([key, value]) => {
+            if (value) {
+              textContent += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}\n`;
+            }
+          });
+        }
+        
+        textContent += `\n--- Table Data ---\n`;
+      } else {
+        textContent += `\n`;
+      }
       
       // Extract headers
       const headers: string[] = [];
@@ -354,29 +421,105 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
         textContent += headers.map(() => '---').join('\t') + '\n';
       }
       
-      // Extract data rows
+      // Extract data rows with enhanced grouped row detection
       const dataRows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
       dataRows.forEach(row => {
-        // Check if this is a grouped/category row but NOT the totals row
-        const isGroupRow = row.classList.contains('bg-slate-100') || 
-                           row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
-                           row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null;
-        const isTotalsRow = row.classList.contains('bg-slate-800') || 
-                            row.textContent?.includes('TOTALS') ||
-                            row.textContent?.includes('Total');
+        // Enhanced detection for grouped/category rows
+        const isGroupRow = (
+          // Common group row styling classes
+          row.classList.contains('bg-slate-100') || 
+          row.classList.contains('bg-gray-100') ||
+          row.classList.contains('bg-slate-50') ||
+          row.classList.contains('group-row') ||
+          row.classList.contains('category-row') ||
+          row.classList.contains('section-header') ||
+          
+          // Detect expand/collapse buttons (chevron icons)
+          row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
+          row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null ||
+          row.querySelector('[data-lucide="chevron-right"], [data-lucide="chevron-down"]') !== null ||
+          
+          // Detect if row has data attributes indicating it's a group
+          row.hasAttribute('data-group') ||
+          row.hasAttribute('data-category') ||
+          row.hasAttribute('data-section') ||
+          
+          // Detect if first cell spans multiple columns (common in group headers)
+          (() => {
+            const firstCell = row.querySelector('td:first-child, th:first-child');
+            return firstCell && (
+              firstCell.getAttribute('colspan') && parseInt(firstCell.getAttribute('colspan') || '1') > 1
+            );
+          })() ||
+          
+          // Detect common group row text patterns
+          (() => {
+            const rowText = row.textContent?.trim().toLowerCase() || '';
+            return (
+              rowText.includes('expand') ||
+              rowText.includes('collapse') ||
+              rowText.includes('show more') ||
+              rowText.includes('show less') ||
+              (rowText.includes('items') && !rowText.match(/\d+\s+items/)) // Avoid matching actual data like "5 items sold"
+            );
+          })()
+        );
         
-        // Skip group rows but include totals
+        // Enhanced detection for totals/summary rows (these should be included)
+        const isTotalsRow = (
+          row.classList.contains('bg-slate-800') || 
+          row.classList.contains('bg-gray-800') ||
+          row.classList.contains('bg-slate-900') ||
+          row.classList.contains('totals-row') ||
+          row.classList.contains('summary-row') ||
+          row.classList.contains('footer-row') ||
+          (() => {
+            const rowText = row.textContent?.trim() || '';
+            return (
+              rowText.includes('TOTALS') ||
+              rowText.includes('TOTAL') ||
+              rowText.includes('Total') ||
+              rowText.includes('Sum') ||
+              rowText.includes('Summary') ||
+              rowText.includes('Grand Total') ||
+              rowText.includes('Subtotal') ||
+              // Check if first cell indicates a total
+              (() => {
+                const firstCell = row.querySelector('td:first-child, th:first-child');
+                const firstCellText = firstCell?.textContent?.trim().toLowerCase() || '';
+                return (
+                  firstCellText === 'total' ||
+                  firstCellText === 'totals' ||
+                  firstCellText === 'grand total' ||
+                  firstCellText === 'summary' ||
+                  firstCellText.startsWith('total ')
+                );
+              })()
+            );
+          })()
+        );
+        
+        // Skip group rows but always include totals rows and regular data rows
         if (isGroupRow && !isTotalsRow) {
           return;
         }
         
+        // Extract cell data
         const cells = row.querySelectorAll('td, th');
         const rowData: string[] = [];
         cells.forEach(cell => {
-          const text = cell.textContent?.trim() || '';
-          rowData.push(text);
+          // Skip cells that are just expand/collapse buttons
+          const hasOnlyButton = cell.querySelector('button') && !cell.textContent?.trim().replace(/[\s\n\r]+/g, '').length;
+          if (hasOnlyButton) {
+            rowData.push(''); // Add empty cell for button columns
+          } else {
+            const text = cell.textContent?.trim() || '';
+            rowData.push(text);
+          }
         });
-        if (rowData.length > 0) {
+        
+        // Only add row if it has meaningful content
+        if (rowData.length > 0 && rowData.some(cell => cell !== '')) {
           textContent += rowData.join('\t') + '\n';
         }
       });

@@ -13,6 +13,13 @@ interface TableCardProps {
   headerControls?: React.ReactNode;
   onCopyAllTabs?: () => Promise<string>; // optional explicit override
   disableAutoRegistry?: boolean;
+  // Enhanced context information for copying
+  contextInfo?: {
+    selectedMetric?: string;
+    dateRange?: { start: string; end: string };
+    filters?: Record<string, any>;
+    additionalInfo?: Record<string, any>;
+  };
 }
 
 export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
@@ -23,7 +30,8 @@ export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
   showCopyButton = true,
   headerControls,
   onCopyAllTabs,
-  disableAutoRegistry = false
+  disableAutoRegistry = false,
+  contextInfo
 }, ref) => {
   const tableRef = useRef<HTMLDivElement>(null);
   const metricsRegistry = useMetricsTablesRegistry();
@@ -85,6 +93,7 @@ export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
                       (() => onCopyAllTabs().then(r => r)) :
                       (metricsRegistry ? async () => metricsRegistry.getAllTabsContent() : undefined)
                   }
+                  contextInfo={contextInfo}
                 />
               )}
             </div>

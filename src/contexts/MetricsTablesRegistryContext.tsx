@@ -27,13 +27,24 @@ export const MetricsTablesRegistryProvider: React.FC<{ children: React.ReactNode
   const getAllTabsContent = useCallback(() => {
     const parts: string[] = [];
     const dateStamp = new Date().toLocaleDateString();
-    parts.push(`All Metrics Export\nDate: ${dateStamp}`);
+    const timeStamp = new Date().toLocaleTimeString();
+    parts.push(`All Metrics Export`);
+    parts.push(`Generated on: ${dateStamp} at ${timeStamp}`);
+    parts.push(`Total Tables: ${tablesRef.current.size}`);
+    parts.push(`\n${'='.repeat(60)}\n`);
+    
     tablesRef.current.forEach((table, id) => {
       try {
-        parts.push(`\n=== ${id} ===`);
+        parts.push(`\n${'-'.repeat(40)}`);
+        parts.push(`TABLE: ${id}`);
+        parts.push(`${'-'.repeat(40)}`);
         parts.push(table.getTextContent());
+        parts.push(`\n`);
       } catch (err) {
-        parts.push(`(Failed to extract table: ${id})`);
+        parts.push(`\n${'-'.repeat(40)}`);
+        parts.push(`TABLE: ${id} (FAILED TO EXTRACT)`);
+        parts.push(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        parts.push(`${'-'.repeat(40)}\n`);
       }
     });
     return parts.join('\n');

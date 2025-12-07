@@ -7,6 +7,7 @@ import { LeadsData } from '@/types/leads';
 import { cn } from '@/lib/utils';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { ModernTableWrapper } from './ModernTableWrapper';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 type GroupKey = 'source' | 'stage' | 'center' | 'channel' | 'associate';
 type MetricType = 'totalLeads' | 'trialsCompleted' | 'trialsScheduled' | 'convertedLeads' | 'ltv' | 'avgVisits';
@@ -22,6 +23,9 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
   const [viewMode, setViewMode] = useState<'values' | 'growth'>('values');
   const [sortBy, setSortBy] = useState<'group' | 'total'>('total');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const handleSort = (column: 'group' | 'total') => {
     if (sortBy === column) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
@@ -118,6 +122,19 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
         onDisplayModeChange={(mode) => setViewMode(mode as 'values' | 'growth')}
         showCollapseControls={false}
         tableRef={tableRef}
+        contextInfo={{
+          selectedMetric: metric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            groupKey: groupKey,
+            metric: metric,
+            viewMode: viewMode,
+            sortBy: sortBy,
+            sortOrder: sortOrder,
+            totalItems: processedData.length
+          }
+        }}
         headerControls={
           <div className="flex items-center gap-2">
             <select className="border border-white/30 bg-white/10 text-white rounded-md px-2 py-1 text-xs" value={groupKey} onChange={e => setGroupKey(e.target.value as GroupKey)}>

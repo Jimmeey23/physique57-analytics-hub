@@ -9,6 +9,7 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface TrainerDetailedPerformanceTableProps {
   data: any[];
@@ -21,6 +22,9 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
 }) => {
   const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>('totalRevenue');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const processedData = React.useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -203,6 +207,16 @@ export const TrainerDetailedPerformanceTable: React.FC<TrainerDetailedPerformanc
       description={`Detailed performance analytics for ${processedData.length} trainers with efficiency metrics`}
       icon={<BarChart3 className="w-5 h-5" />}
       totalItems={processedData.length}
+      contextInfo={{
+        selectedMetric: sortBy,
+        dateRange: copyContext.dateRange,
+        filters: copyContext.filters,
+        additionalInfo: {
+          selectedTrainer: selectedTrainer,
+          sortBy: sortBy,
+          totalTrainers: processedData.length
+        }
+      }}
     >
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <OptimizedTable

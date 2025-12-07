@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import CopyTableButton from '@/components/ui/CopyTableButton';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface ExecutiveDataTablesGridProps {
   data: {
@@ -31,6 +32,9 @@ export const ExecutiveDataTablesGrid: React.FC<ExecutiveDataTablesGridProps> = (
   const sessionsTableRef = useRef<HTMLDivElement>(null);
   const newClientsTableRef = useRef<HTMLDivElement>(null);
   const leadsTableRef = useRef<HTMLDivElement>(null);
+  
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
   // Sales Performance Table
   const salesColumns = [
     { key: 'customerName', header: 'Customer', align: 'left' as const },

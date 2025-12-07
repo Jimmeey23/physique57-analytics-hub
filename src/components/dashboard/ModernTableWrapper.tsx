@@ -29,6 +29,13 @@ interface ModernTableWrapperProps {
   tableRef?: React.RefObject<HTMLTableElement>;
   onCopyAllTabs?: () => Promise<string>; // explicit override
   disableAutoRegistry?: boolean; // opt-out of automatic registry + copy all tabs
+  // Enhanced context information for copying
+  contextInfo?: {
+    selectedMetric?: string;
+    dateRange?: { start: string; end: string };
+    filters?: Record<string, any>;
+    additionalInfo?: Record<string, any>;
+  };
 }
 
 const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
@@ -50,7 +57,8 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
   showCopyButton = true,
   tableRef,
   onCopyAllTabs,
-  disableAutoRegistry = false
+  disableAutoRegistry = false,
+  contextInfo
 }) => {
   const internalTableRef = useRef<HTMLDivElement>(null);
   const metricsRegistry = useMetricsTablesRegistry();
@@ -191,6 +199,7 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
                     (() => onCopyAllTabs().then(r => r)) :
                     (metricsRegistry ? async () => metricsRegistry.getAllTabsContent() : undefined)
                 }
+                contextInfo={contextInfo}
               />
             )}
 

@@ -7,6 +7,7 @@ import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 type Canonical = 'powercycle' | 'barre' | 'strength' | 'other';
 
@@ -28,6 +29,9 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
   const [metric, setMetric] = useState<'sessions' | 'checkins' | 'revenue' | 'fillRate' | 'lateCancelled'>('sessions');
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, 'Year-on-Year Comparison');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const handleCellClick = (format: string, year: string, value: number) => {
     if (onDrillDown) {
@@ -287,6 +291,16 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
             tableName="Year-on-Year Comparison"
             size="sm"
             onCopyAllTabs={async () => getAllTabsText()}
+            contextInfo={{
+              selectedMetric: metric,
+              dateRange: copyContext.dateRange,
+              filters: copyContext.filters,
+              additionalInfo: {
+                metric: metric,
+                yearsCompared: years,
+                totalFormats: canonicals.length
+              }
+            }}
           />
         </div>
       </CardHeader>

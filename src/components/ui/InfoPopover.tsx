@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import DOMPurify, { type Config as DomPurifyConfig } from 'dompurify';
-import { Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, GripHorizontal, Copy, Download, Link as LinkIcon } from 'lucide-react';
+import { 
+  Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, 
+  GripHorizontal, Copy, Download, Link as LinkIcon, Wand2, Palette, BarChart3, 
+  PieChart, LineChart, Settings, Code2, Eye, EyeOff, Zap, Sparkles, Layers
+} from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -899,6 +903,19 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const suppressOpenRef = useRef(false);
   // Multi-view mode: 'summary' | 'raw' | 'json'
   const [viewMode, setViewMode] = useState<'summary' | 'raw' | 'json'>('summary');
+  // Tab state for October/November content
+  const [activeTab, setActiveTab] = useState<'october' | 'november'>('october');
+  const [novemberContent, setNovemberContent] = useState<string>('');
+  const [isEditingNovember, setIsEditingNovember] = useState(false);
+  const [isSavingNovember, setIsSavingNovember] = useState(false);
+  
+  // Advanced sidebar features state
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
+  const [autoFormatEnabled, setAutoFormatEnabled] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'auto'>('light');
+  const [chartType, setChartType] = useState<'bar' | 'pie' | 'line' | 'none'>('none');
+  const [isGeneratingChart, setIsGeneratingChart] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   
   const { toast } = useToast();
 
@@ -1464,6 +1481,280 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     }
   };
 
+  // November content management functions
+  const handleSaveNovemberContent = async () => {
+    setIsSavingNovember(true);
+    try {
+      const storageKey = `november-content-${context}-${locationId}`;
+      localStorage.setItem(storageKey, novemberContent);
+      setIsEditingNovember(false);
+      
+      toast({
+        title: "November data saved",
+        description: "Your November content has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving November content:', error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save November content. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNovember(false);
+    }
+  };
+
+  const handleCancelNovemberEdit = () => {
+    setIsEditingNovember(false);
+    // Reset to stored value
+    const storageKey = `november-content-${context}-${locationId}`;
+    const stored = localStorage.getItem(storageKey);
+    setNovemberContent(stored || '');
+  };
+
+  // Load November content from localStorage on mount
+  useEffect(() => {
+    const storageKey = `november-content-${context}-${locationId}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      setNovemberContent(stored);
+    }
+  }, [context, locationId]);
+
+  // Advanced Features Functions
+  const handleAutoFormat = useCallback(() => {
+    const currentContent = isEditingNovember ? novemberContent : editContent;
+    if (!currentContent) return;
+    
+    try {
+      // Enhanced auto-format with multiple formatting options
+      let formatted = currentContent;
+      
+      // HTML formatting
+      if (currentContent.includes('<') && currentContent.includes('>')) {
+        formatted = currentContent
+          .replace(/></g, '>\n<') // Add line breaks between tags
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/;\s*/g, '; ') // Format CSS
+          .replace(/{\s*/g, '{\n  ') // Format CSS blocks
+          .replace(/;\s*}/g, ';\n}')
+          .replace(/,\s*/g, ', ') // Format function parameters
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map((line, index, lines) => {
+            // Add proper indentation based on nesting level
+            const openTags = (lines.slice(0, index).join('').match(/</g) || []).length;
+            const closeTags = (lines.slice(0, index).join('').match(/>/g) || []).length;
+            const nestLevel = Math.max(0, Math.floor((openTags - closeTags) / 2));
+            return '  '.repeat(nestLevel) + line;
+          })
+          .join('\n');
+      } else {
+        // Text formatting for non-HTML content
+        formatted = currentContent
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(line => {
+            // Auto-capitalize sentences
+            return line.replace(/^\w/, char => char.toUpperCase())
+                      .replace(/\.\s+\w/g, match => match.toUpperCase());
+          })
+          .join('\n');
+      }
+      
+      if (isEditingNovember) {
+        setNovemberContent(formatted);
+      } else {
+        setEditContent(formatted);
+      }
+      
+      toast({
+        title: "Content formatted",
+        description: "Content has been auto-formatted with improved structure.",
+      });
+    } catch (error) {
+      toast({
+        title: "Format failed",
+        description: "Unable to format content. Please check syntax.",
+        variant: "destructive",
+      });
+    }
+  }, [isEditingNovember, novemberContent, editContent, toast]);
+
+  const handleGenerateChart = useCallback(async () => {
+    if (chartType === 'none') return;
+    
+    setIsGeneratingChart(true);
+    try {
+      // Extract data from current content for chart generation
+      const contentText = customContent || convertItemsToString();
+      const numbers = contentText.match(/\d+(?:\.\d+)?/g)?.slice(0, 6) || ['10', '20', '30', '40', '50'];
+      const labels = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'].slice(0, numbers.length);
+      
+      let chartHtml = '';
+      const chartId = `chart-${Date.now()}`;
+      
+      if (chartType === 'bar') {
+        chartHtml = `
+          <div class="chart-container" style="width: 100%; height: 300px; margin: 20px 0;">
+            <canvas id="${chartId}" width="400" height="200"></canvas>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+              const ctx${chartId} = document.getElementById('${chartId}').getContext('2d');
+              new Chart(ctx${chartId}, {
+                type: 'bar',
+                data: {
+                  labels: ${JSON.stringify(labels)},
+                  datasets: [{
+                    label: '${context} Analytics',
+                    data: ${JSON.stringify(numbers.map(Number))},
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: '${context.charAt(0).toUpperCase() + context.slice(1)} Performance'
+                    }
+                  }
+                }
+              });
+            </script>
+          </div>`;
+      } else if (chartType === 'pie') {
+        chartHtml = `
+          <div class="chart-container" style="width: 100%; height: 300px; margin: 20px 0;">
+            <canvas id="${chartId}" width="400" height="200"></canvas>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+              const ctx${chartId} = document.getElementById('${chartId}').getContext('2d');
+              new Chart(ctx${chartId}, {
+                type: 'pie',
+                data: {
+                  labels: ${JSON.stringify(labels)},
+                  datasets: [{
+                    data: ${JSON.stringify(numbers.map(Number))},
+                    backgroundColor: [
+                      'rgba(99, 102, 241, 0.8)',
+                      'rgba(34, 197, 94, 0.8)',
+                      'rgba(245, 158, 11, 0.8)',
+                      'rgba(239, 68, 68, 0.8)',
+                      'rgba(168, 85, 247, 0.8)'
+                    ]
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: '${context.charAt(0).toUpperCase() + context.slice(1)} Distribution'
+                    }
+                  }
+                }
+              });
+            </script>
+          </div>`;
+      } else if (chartType === 'line') {
+        chartHtml = `
+          <div class="chart-container" style="width: 100%; height: 300px; margin: 20px 0;">
+            <canvas id="${chartId}" width="400" height="200"></canvas>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+              const ctx${chartId} = document.getElementById('${chartId}').getContext('2d');
+              new Chart(ctx${chartId}, {
+                type: 'line',
+                data: {
+                  labels: ${JSON.stringify(labels)},
+                  datasets: [{
+                    label: '${context} Trend',
+                    data: ${JSON.stringify(numbers.map(Number))},
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: '${context.charAt(0).toUpperCase() + context.slice(1)} Trend Analysis'
+                    }
+                  }
+                }
+              });
+            </script>
+          </div>`;
+      }
+      
+      const currentContent = isEditingNovember ? novemberContent : editContent;
+      const newContent = currentContent + '\n\n' + chartHtml;
+      
+      if (isEditingNovember) {
+        setNovemberContent(newContent);
+      } else {
+        setEditContent(newContent);
+      }
+      
+      toast({
+        title: "Chart generated",
+        description: `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} chart added to content.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Chart generation failed",
+        description: "Unable to generate chart. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingChart(false);
+    }
+  }, [chartType, customContent, convertItemsToString, context, isEditingNovember, novemberContent, editContent, toast]);
+
+  const handleApplyTheme = useCallback(() => {
+    const currentContent = isEditingNovember ? novemberContent : editContent;
+    if (!currentContent) return;
+    
+    let themedContent = currentContent;
+    
+    if (selectedTheme === 'dark') {
+      themedContent = `
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #f8fafc; padding: 24px; border-radius: 12px; font-family: 'Inter', sans-serif;">
+          ${currentContent}
+        </div>`;
+    } else if (selectedTheme === 'light') {
+      themedContent = `
+        <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e293b; padding: 24px; border-radius: 12px; font-family: 'Inter', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          ${currentContent}
+        </div>`;
+    } else if (selectedTheme === 'auto') {
+      themedContent = `
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 24px; border-radius: 12px; font-family: 'Inter', sans-serif; box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);">
+          ${currentContent}
+        </div>`;
+    }
+    
+    if (isEditingNovember) {
+      setNovemberContent(themedContent);
+    } else {
+      setEditContent(themedContent);
+    }
+    
+    toast({
+      title: "Theme applied",
+      description: `${selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1)} theme applied to content.`,
+    });
+  }, [selectedTheme, isEditingNovember, novemberContent, editContent, toast]);
+
   // Toggle pin state
   const handleTogglePin = () => {
     setIsPinned(!isPinned);
@@ -1840,6 +2131,18 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
                     Custom
                   </span>
                 )}
+
+                {/* Advanced Tools Toggle */}
+                <Button
+                  size="sm"
+                  variant={showAdvancedTools ? "secondary" : "ghost"}
+                  onClick={() => setShowAdvancedTools(!showAdvancedTools)}
+                  title="Toggle advanced tools"
+                  className="h-7 w-7 p-0"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </Button>
+
                 {/* Extra Features: Copy / Export / Share / Compact / Sidebar Toggle */}
                 <Button
                   size="sm"
@@ -1984,6 +2287,117 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
               </div>
             </div>
 
+            {/* Advanced Tools Panel for Modal */}
+            {showAdvancedTools && (
+              <div className="shrink-0 px-5 py-3 bg-gradient-to-r from-slate-50 to-indigo-50 border-b border-slate-200">
+                <div className="space-y-3">
+                  {/* Auto Formatter */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm font-medium text-slate-700">Auto Format</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleAutoFormat}
+                      disabled={!editContent && !isEditingNovember}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Format
+                    </Button>
+                  </div>
+                  
+                  {/* Theme Selector */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm font-medium text-slate-700">Theme</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {(['light', 'dark', 'auto'] as const).map((theme) => (
+                        <button
+                          key={theme}
+                          onClick={() => setSelectedTheme(theme)}
+                          className={`px-2 py-1 rounded text-xs transition-colors ${
+                            selectedTheme === theme 
+                              ? 'bg-indigo-600 text-white' 
+                              : 'bg-white text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {theme === 'auto' ? 'Auto' : theme.charAt(0).toUpperCase() + theme.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Chart Generator */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm font-medium text-slate-700">Charts</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {[
+                        { type: 'bar', icon: BarChart3 },
+                        { type: 'pie', icon: PieChart },
+                        { type: 'line', icon: LineChart }
+                      ].map(({ type, icon: Icon }) => (
+                        <button
+                          key={type}
+                          onClick={() => setChartType(type as any)}
+                          className={`p-1.5 rounded transition-colors ${
+                            chartType === type 
+                              ? 'bg-indigo-600 text-white' 
+                              : 'bg-white text-slate-600 hover:bg-slate-100'
+                          }`}
+                          title={`${type.charAt(0).toUpperCase() + type.slice(1)} chart`}
+                        >
+                          <Icon className="w-3 h-3" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-2 border-t border-slate-200">
+                    <Button
+                      size="sm"
+                      onClick={handleApplyTheme}
+                      disabled={!editContent && !isEditingNovember}
+                      className="flex-1 h-8 text-xs bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <Layers className="w-3 h-3 mr-1" />
+                      Apply Theme
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleGenerateChart}
+                      disabled={chartType === 'none' || isGeneratingChart}
+                      className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
+                    >
+                      {isGeneratingChart ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3 mr-1" />
+                      )}
+                      Add Chart
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPreviewMode(!previewMode)}
+                      className="h-8 px-3"
+                      title="Toggle preview mode"
+                    >
+                      {previewMode ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Content - Scrollable */}
             <div
               className="flex-1 overflow-y-auto px-5 py-4"
@@ -2080,58 +2494,213 @@ Your complete HTML documents will render in an iframe with full support for exte
                     )}
                   </div>
                 </div>
-              ) : customContent ? (
-                <div className="space-y-3">
-                  {renderHtmlContent(customContent)}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleEdit}
-                      className="gap-1.5 flex-1"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleRestore}
-                      className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Restore
-                    </Button>
-                  </div>
-                </div>
               ) : (
                 <div className="space-y-2.5">
-                  {renderContentByMode(items)}
+                  {/* Tab Navigation */}
+                  <div className="flex items-center gap-1 border-b border-slate-200 pb-3">
+                    <button
+                      onClick={() => setActiveTab('october')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeTab === 'october'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      October
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('november')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeTab === 'november'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      November
+                    </button>
+                  </div>
 
-                  {!isEditing && !customContent && (
-                    <div className="pt-3 border-t border-slate-200 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleEdit}
-                        className="gap-1.5 flex-1 hover:bg-indigo-50 hover:border-indigo-300"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                        Customize Content
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setIsSidebar(false);
-                          setOpen(true);
-                        }}
-                        className="gap-1.5 hover:bg-blue-50 hover:border-blue-300"
-                        title="Open as popout modal"
-                      >
-                        <Maximize2 className="w-3.5 h-3.5" />
-                        Pop Out
-                      </Button>
+                  {/* Tab Content */}
+                  {activeTab === 'october' ? (
+                    <div className="space-y-2.5">
+                      {/* October content - show custom content if exists, otherwise default content */}
+                      {customContent ? (
+                        <div className="space-y-3">
+                          {renderHtmlContent(customContent)}
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleEdit}
+                              className="gap-1.5 flex-1"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleRestore}
+                              className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Restore
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {renderContentByMode(items)}
+                          {!isEditing && (
+                            <div className="pt-3 border-t border-slate-200 flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleEdit}
+                                className="gap-1.5 flex-1 hover:bg-indigo-50 hover:border-indigo-300"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                Customize Content
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setIsSidebar(false);
+                                  setOpen(true);
+                                }}
+                                className="gap-1.5 hover:bg-blue-50 hover:border-blue-300"
+                                title="Open as popout modal"
+                              >
+                                <Maximize2 className="w-3.5 h-3.5" />
+                                Pop Out
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {/* November content tab */}
+                      {isEditingNovember ? (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                              <Edit2 className="w-4 h-4 text-green-600" />
+                              Edit November Data
+                            </label>
+                            <div className="text-xs text-slate-600 bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+                              <strong className="text-green-900">📝 November Data Entry:</strong> 
+                              <ul className="mt-2 ml-4 space-y-1">
+                                <li>✅ Add metrics, insights, and analysis for November</li>
+                                <li>✅ Supports HTML formatting and styling</li>
+                                <li>✅ Data is saved separately for each table and location</li>
+                                <li>✅ Compare with October data in the October tab</li>
+                              </ul>
+                            </div>
+                            <Textarea
+                              value={novemberContent}
+                              onChange={(e) => setNovemberContent(e.target.value)}
+                              className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-lg resize-none"
+                              placeholder="Enter November data and insights here... 
+
+Examples:
+• Performance metrics and KPIs
+• New trends or patterns observed
+• Comparative analysis with October
+• Action items and recommendations
+
+HTML formatting supported for rich content!"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                            <div className="flex gap-2 flex-1">
+                              <Button
+                                size="sm"
+                                onClick={handleSaveNovemberContent}
+                                disabled={isSavingNovember}
+                                className="gap-2 flex-1 bg-green-600 hover:bg-green-700"
+                              >
+                                {isSavingNovember ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-3.5 h-3.5" />
+                                    Save November Data
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelNovemberEdit}
+                                disabled={isSavingNovember}
+                              >
+                                <X className="w-3.5 h-3.5 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {novemberContent ? (
+                            <>
+                              <div className="prose prose-sm max-w-none">
+                                {(() => {
+                                  if (typeof window !== 'undefined' && novemberContent.trim()) {
+                                    const sanitizedContent = DOMPurify.sanitize(novemberContent, DOMPURIFY_OPTS);
+                                    return (
+                                      <div 
+                                        className="text-sm leading-relaxed text-slate-700"
+                                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                                      />
+                                    );
+                                  }
+                                  return (
+                                    <div className="text-sm text-slate-600 whitespace-pre-wrap">
+                                      {novemberContent}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              <div className="pt-3 border-t border-slate-200 flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setIsEditingNovember(true)}
+                                  className="gap-1.5 flex-1 hover:bg-green-50 hover:border-green-300"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  Edit November Data
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Edit2 className="w-8 h-8 text-green-600" />
+                              </div>
+                              <h3 className="text-lg font-medium text-slate-900 mb-2">No November Data</h3>
+                              <p className="text-sm text-slate-600 mb-4 max-w-sm mx-auto">
+                                Add November insights, metrics, and analysis specific to this context and location.
+                              </p>
+                              <Button
+                                size="sm"
+                                onClick={() => setIsEditingNovember(true)}
+                                className="gap-2 bg-green-600 hover:bg-green-700"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                Add November Data
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2169,17 +2738,138 @@ Your complete HTML documents will render in an iframe with full support for exte
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant={showAdvancedTools ? "secondary" : "ghost"}
+                onClick={() => setShowAdvancedTools(!showAdvancedTools)}
+                title="Toggle advanced tools"
+                className="h-7 w-7 p-0"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </Button>
               {headerControls}
               <Button size="sm" variant="ghost" onClick={closePopover}><X className="w-3.5 h-3.5" /></Button>
             </div>
           </div>
+          
+          {/* Advanced Tools Panel */}
+          {showAdvancedTools && (
+            <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-indigo-50 border-b border-slate-200">
+              <div className="space-y-3">
+                {/* Auto Formatter */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Wand2 className="w-4 h-4 text-indigo-600" />
+                    <span className="text-sm font-medium text-slate-700">Auto Format</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAutoFormat}
+                    disabled={!editContent && !isEditingNovember}
+                    className="h-8 px-3 text-xs"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Format
+                  </Button>
+                </div>
+                
+                {/* Theme Selector */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-indigo-600" />
+                    <span className="text-sm font-medium text-slate-700">Theme</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {(['light', 'dark', 'auto'] as const).map((theme) => (
+                      <button
+                        key={theme}
+                        onClick={() => setSelectedTheme(theme)}
+                        className={`px-2 py-1 rounded text-xs transition-colors ${
+                          selectedTheme === theme 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {theme === 'auto' ? 'Auto' : theme.charAt(0).toUpperCase() + theme.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Chart Generator */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-indigo-600" />
+                    <span className="text-sm font-medium text-slate-700">Charts</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {[
+                      { type: 'bar', icon: BarChart3 },
+                      { type: 'pie', icon: PieChart },
+                      { type: 'line', icon: LineChart }
+                    ].map(({ type, icon: Icon }) => (
+                      <button
+                        key={type}
+                        onClick={() => setChartType(type as any)}
+                        className={`p-1.5 rounded transition-colors ${
+                          chartType === type 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                        }`}
+                        title={`${type.charAt(0).toUpperCase() + type.slice(1)} chart`}
+                      >
+                        <Icon className="w-3 h-3" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2 border-t border-slate-200">
+                  <Button
+                    size="sm"
+                    onClick={handleApplyTheme}
+                    disabled={!editContent && !isEditingNovember}
+                    className="flex-1 h-8 text-xs bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <Layers className="w-3 h-3 mr-1" />
+                    Apply Theme
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleGenerateChart}
+                    disabled={chartType === 'none' || isGeneratingChart}
+                    className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
+                  >
+                    {isGeneratingChart ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <Zap className="w-3 h-3 mr-1" />
+                    )}
+                    Add Chart
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPreviewMode(!previewMode)}
+                    className="h-8 px-3"
+                    title="Toggle preview mode"
+                  >
+                    {previewMode ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div
             ref={sidebarRef}
             className="flex-1 min-h-0 flex flex-col"
             style={{ overflow: 'hidden' }}
           >
             <div className="p-4 shrink-0">
-              {/* small note area kept in header region inside sidebar */}
+              {/* Enhanced content area with preview mode support */}
             </div>
             <div className="flex-1 overflow-auto p-4" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
               {isLoading ? (
@@ -2191,12 +2881,38 @@ Your complete HTML documents will render in an iframe with full support for exte
                       <Edit2 className="w-4 h-4 text-indigo-600" />
                       Edit Content (HTML Supported)
                     </label>
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
-                      placeholder="Enter popover content here (supports HTML)..."
-                    />
+                    
+                    {previewMode ? (
+                      <div className="space-y-3">
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                          <div className="text-xs font-medium text-slate-600 mb-2 flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            Live Preview
+                          </div>
+                          <div 
+                            className="prose prose-sm max-w-none min-h-[200px]"
+                            dangerouslySetInnerHTML={{ 
+                              __html: typeof window !== 'undefined' && editContent.trim() 
+                                ? DOMPurify.sanitize(editContent, DOMPURIFY_OPTS)
+                                : '<div class="text-slate-400 italic">Start typing to see preview...</div>'
+                            }}
+                          />
+                        </div>
+                        <Textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="min-h-[200px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
+                          placeholder="Enter popover content here (supports HTML)..."
+                        />
+                      </div>
+                    ) : (
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg resize-none"
+                        placeholder="Enter popover content here (supports HTML)..."
+                      />
+                    )}
                   </div>
                   <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
                     <div className="flex gap-2 flex-1">
@@ -2242,58 +2958,214 @@ Your complete HTML documents will render in an iframe with full support for exte
                     )}
                   </div>
                 </div>
-              ) : customContent ? (
-                <div className="space-y-3">
-                  {renderHtmlContent(customContent)}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleEdit}
-                      className="gap-1.5 flex-1"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleRestore}
-                      className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Restore
-                    </Button>
-                  </div>
-                </div>
               ) : (
                 <div className="space-y-2.5">
-                  {renderContentByMode(items)}
-                  {!isEditing && !customContent && (
-                    <div className="pt-3 border-t border-slate-200 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleEdit}
-                        className="gap-1.5 flex-1 hover:bg-indigo-50 hover:border-indigo-300"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                        Customize Content
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          // Open as modal (close sidebar, open popover as modal)
-                          setIsSidebar(false);
-                          setOpen(true);
-                        }}
-                        className="gap-1.5 hover:bg-blue-50 hover:border-blue-300"
-                        title="Open as popout modal"
-                      >
-                        <Maximize2 className="w-3.5 h-3.5" />
-                        Pop Out
-                      </Button>
+                  {/* Tab Navigation */}
+                  <div className="flex items-center gap-1 border-b border-slate-200 pb-3">
+                    <button
+                      onClick={() => setActiveTab('october')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeTab === 'october'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      October
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('november')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeTab === 'november'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      November
+                    </button>
+                  </div>
+
+                  {/* Tab Content */}
+                  {activeTab === 'october' ? (
+                    <div className="space-y-2.5">
+                      {/* October content - show custom content if exists, otherwise default content */}
+                      {customContent ? (
+                        <div className="space-y-3">
+                          {renderHtmlContent(customContent)}
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleEdit}
+                              className="gap-1.5 flex-1"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleRestore}
+                              className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Restore
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {renderContentByMode(items)}
+                          {!isEditing && (
+                            <div className="pt-3 border-t border-slate-200 flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleEdit}
+                                className="gap-1.5 flex-1 hover:bg-indigo-50 hover:border-indigo-300"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                Customize Content
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // Open as modal (close sidebar, open popover as modal)
+                                  setIsSidebar(false);
+                                  setOpen(true);
+                                }}
+                                className="gap-1.5 hover:bg-blue-50 hover:border-blue-300"
+                                title="Open as popout modal"
+                              >
+                                <Maximize2 className="w-3.5 h-3.5" />
+                                Pop Out
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {/* November content tab */}
+                      {isEditingNovember ? (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                              <Edit2 className="w-4 h-4 text-green-600" />
+                              Edit November Data
+                            </label>
+                            <div className="text-xs text-slate-600 bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+                              <strong className="text-green-900">📝 November Data Entry:</strong> 
+                              <ul className="mt-2 ml-4 space-y-1">
+                                <li>✅ Add metrics, insights, and analysis for November</li>
+                                <li>✅ Supports HTML formatting and styling</li>
+                                <li>✅ Data is saved separately for each table and location</li>
+                                <li>✅ Compare with October data in the October tab</li>
+                              </ul>
+                            </div>
+                            <Textarea
+                              value={novemberContent}
+                              onChange={(e) => setNovemberContent(e.target.value)}
+                              className="min-h-[260px] font-mono text-xs border border-slate-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 rounded-lg resize-none"
+                              placeholder="Enter November data and insights here... 
+
+Examples:
+• Performance metrics and KPIs
+• New trends or patterns observed
+• Comparative analysis with October
+• Action items and recommendations
+
+HTML formatting supported for rich content!"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                            <div className="flex gap-2 flex-1">
+                              <Button
+                                size="sm"
+                                onClick={handleSaveNovemberContent}
+                                disabled={isSavingNovember}
+                                className="gap-2 flex-1 bg-green-600 hover:bg-green-700"
+                              >
+                                {isSavingNovember ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-3.5 h-3.5" />
+                                    Save November Data
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelNovemberEdit}
+                                disabled={isSavingNovember}
+                              >
+                                <X className="w-3.5 h-3.5 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {novemberContent ? (
+                            <>
+                              <div className="prose prose-sm max-w-none">
+                                {(() => {
+                                  if (typeof window !== 'undefined' && novemberContent.trim()) {
+                                    const sanitizedContent = DOMPurify.sanitize(novemberContent, DOMPURIFY_OPTS);
+                                    return (
+                                      <div 
+                                        className="text-sm leading-relaxed text-slate-700"
+                                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                                      />
+                                    );
+                                  }
+                                  return (
+                                    <div className="text-sm text-slate-600 whitespace-pre-wrap">
+                                      {novemberContent}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              <div className="pt-3 border-t border-slate-200 flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setIsEditingNovember(true)}
+                                  className="gap-1.5 flex-1 hover:bg-green-50 hover:border-green-300"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  Edit November Data
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Edit2 className="w-8 h-8 text-green-600" />
+                              </div>
+                              <h3 className="text-lg font-medium text-slate-900 mb-2">No November Data</h3>
+                              <p className="text-sm text-slate-600 mb-4 max-w-sm mx-auto">
+                                Add November insights, metrics, and analysis specific to this context and location.
+                              </p>
+                              <Button
+                                size="sm"
+                                onClick={() => setIsEditingNovember(true)}
+                                className="gap-2 bg-green-600 hover:bg-green-700"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                Add November Data
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

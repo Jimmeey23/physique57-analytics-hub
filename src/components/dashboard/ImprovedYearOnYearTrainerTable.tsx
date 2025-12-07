@@ -13,6 +13,7 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { TrainerMetricType as TMT } from '@/types/dashboard';
 import { ProcessedTrainerData, getMetricValue } from './TrainerDataProcessor';
 import { TrainerAvatar } from '@/utils/trainerAvatars';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface ImprovedYearOnYearTrainerTableProps {
   data: ProcessedTrainerData[];
@@ -27,6 +28,9 @@ export const ImprovedYearOnYearTrainerTable = ({
 }: ImprovedYearOnYearTrainerTableProps) => {
   const [selectedMetric, setSelectedMetric] = useState<TrainerMetricType>(defaultMetric);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   // Process data by trainer and month for year-on-year comparison
   const processedData = useMemo(() => {
@@ -365,6 +369,16 @@ export const ImprovedYearOnYearTrainerTable = ({
                 });
 
                 return allLines.join('\n');
+              }}
+              contextInfo={{
+                selectedMetric: selectedMetric,
+                dateRange: copyContext.dateRange,
+                filters: copyContext.filters,
+                additionalInfo: {
+                  defaultMetric: defaultMetric,
+                  expandedRows: Array.from(expandedRows),
+                  totalTrainers: Object.keys(processedData.trainerGroups).length
+                }
               }}
             />
           </div>

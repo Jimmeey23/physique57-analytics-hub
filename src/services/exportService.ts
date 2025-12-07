@@ -5,8 +5,8 @@
 
 import { ExtractedTable, ExtractedMetric, ExtractedData } from './dataExtraction';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 export type ExportFormat = 'pdf' | 'csv' | 'txt' | 'json' | 'excel';
 
@@ -273,7 +273,7 @@ export function exportToPDF(data: ExtractedData, filename: string = 'analytics-e
     ['Locations', data.summary.locations.join(', ')]
   ];
 
-  autoTable(doc, {
+  (doc as any).autoTable({
     startY: yPos,
     head: [['Category', 'Details']],
     body: statsData,
@@ -324,7 +324,7 @@ export function exportToPDF(data: ExtractedData, filename: string = 'analytics-e
       m.location || 'All Locations'
     ]);
 
-    autoTable(doc, {
+    (doc as any).autoTable({
       startY: yPos,
       head: [['Category', 'Metric Name', 'Current Value', 'Change', 'Location']],
       body: metricsData,
@@ -499,7 +499,7 @@ export function exportToPDF(data: ExtractedData, filename: string = 'analytics-e
       headerFontSize = 8;
     }
 
-    autoTable(doc, {
+    (doc as any).autoTable({
       startY: yPos,
       head: [table.headers],
       body: formattedRows,

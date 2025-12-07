@@ -4,6 +4,7 @@ import { ModernMetricTabs, ModernTableWrapper } from './ModernTableWrapper';
 import { Activity, Users, ShoppingCart, Clock, Percent, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface Props {
   data: SalesData[]; // Provide data independent of date filters
@@ -28,6 +29,9 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
   const [selectedMetric, setSelectedMetric] = useState<string>('purchaseFrequency');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -336,6 +340,16 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         onCopyAllTabs={generateAllTabsContent}
+        contextInfo={{
+          selectedMetric: selectedMetric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            displayMode: displayMode,
+            behaviorMetric: selectedMetric,
+            collapsedCategories: Array.from(collapsedCategories)
+          }
+        }}
       >
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">

@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown } from 'l
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface MonthOnMonthTableNewProps {
   data: SalesData[];
@@ -55,6 +56,9 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   // Keep local collapsed groups in sync if parent provides a controlled Set
   React.useEffect(() => {
@@ -448,6 +452,18 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
         tableRef={tableRef}
         showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
+        contextInfo={{
+          selectedMetric: selectedMetric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            displayMode: displayMode,
+            totalItems: processedData.reduce((sum, cat) => sum + cat.products.length, 0),
+            collapsedGroups: Array.from(localCollapsedGroups),
+            sortBy: sortKey,
+            sortDirection: sortDir
+          }
+        }}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">

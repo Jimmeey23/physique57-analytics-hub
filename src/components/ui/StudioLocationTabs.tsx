@@ -349,6 +349,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
+                      onClick={(e) => e.stopPropagation()} // Prevent location tab expansion when info icon is clicked
                     >
                       <div className="[&>*]:!bg-transparent [&>*]:!border-current [&>*]:!text-current">
                         <InfoPopover context={infoPopoverContext} locationId={activeLocation} />

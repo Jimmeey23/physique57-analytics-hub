@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
@@ -7,6 +7,7 @@ import { CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface PaymentMethodMonthOnMonthTableNewProps {
   data: SalesData[];
@@ -25,6 +26,10 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -260,10 +265,23 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         showCollapseControls={false}
+        tableRef={tableRef}
+        showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
+        contextInfo={{
+          selectedMetric: selectedMetric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            displayMode: displayMode,
+            totalItems: processedData.length,
+            sortBy: sortKey,
+            sortDirection: sortDir
+          }
+        }}
       >
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+          <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th

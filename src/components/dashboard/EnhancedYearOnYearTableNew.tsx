@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown, BarChart
 import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 const groupDataByCategory = (data: SalesData[]) => {
   return data.reduce((acc: Record<string, any>, item) => {
@@ -46,6 +47,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -411,6 +415,18 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
         tableRef={tableRef}
         showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
+        contextInfo={{
+          selectedMetric: selectedMetric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            displayMode: displayMode,
+            totalItems: processedData.length,
+            collapsedGroups: Array.from(localCollapsedGroups),
+            sortBy: sortKey,
+            sortDirection: sortDir
+          }
+        }}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">

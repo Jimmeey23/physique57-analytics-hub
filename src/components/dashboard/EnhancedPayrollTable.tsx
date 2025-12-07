@@ -14,6 +14,7 @@ import { formatCurrency, formatPercentage, formatNumber } from '@/utils/formatte
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface EnhancedPayrollTableProps {
   data: any[];
@@ -57,6 +58,9 @@ export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data
   // Table ref for copy functionality
   const tableRef = useRef<HTMLTableElement>(null);
   const tableId = 'enhanced-payroll-table';
+  
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
   
   // Register with metrics tables registry
   const { registerTable, unregisterTable } = useMetricsTablesRegistry();
@@ -371,7 +375,22 @@ export const EnhancedPayrollTable: React.FC<EnhancedPayrollTableProps> = ({ data
               Payroll Details
             </CardTitle>
             <div className="flex items-center gap-2">
-              <CopyTableButton tableRef={tableRef} />
+              <CopyTableButton 
+                tableRef={tableRef} 
+                contextInfo={{
+                  selectedMetric: sortColumn,
+                  dateRange: copyContext.dateRange,
+                  filters: copyContext.filters,
+                  additionalInfo: {
+                    viewMode: viewMode,
+                    sortColumn: sortColumn,
+                    sortDirection: sortDirection,
+                    showTopN: showTopN,
+                    location: location,
+                    selectedMonths: selectedMonths
+                  }
+                }}
+              />
               <Button 
                 variant="outline" 
                 size="sm" 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { getRankingDisplay } from '@/utils/rankingUtils';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface ProductPerformanceTableNewProps {
   data: SalesData[];
@@ -28,6 +29,9 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -359,6 +363,18 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
         tableRef={tableRef}
         showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
+        contextInfo={{
+          selectedMetric: selectedMetric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            displayMode: displayMode,
+            totalItems: processedData.reduce((sum, cat) => sum + cat.products.length, 0),
+            collapsedGroups: Array.from(localCollapsedGroups),
+            sortBy: sortKey,
+            sortDirection: sortDir
+          }
+        }}
       >
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">

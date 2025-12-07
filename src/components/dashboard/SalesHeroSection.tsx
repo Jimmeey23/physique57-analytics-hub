@@ -1,6 +1,6 @@
 import React from 'react';
 import SalesMotionHero from '@/components/ui/SalesMotionHero';
-import { EnhancedRobustDataExportModal } from './EnhancedRobustDataExportModal';
+import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
 import { useNavigate } from 'react-router-dom';
 import { useSalesMetrics } from '@/hooks/useSalesMetrics';
 import { SalesData } from '@/types/dashboard';
@@ -11,49 +11,40 @@ interface SalesHeroSectionProps {
   dateRange?: { start: string | Date; end: string | Date };
   currentLocation: string;
   locationName: string;
-  currentTab?: string;
-  activeMetric?: string;
-  filters?: any;
 }
 
-export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ 
-  data, 
-  historicalData, 
-  dateRange, 
-  currentLocation, 
-  locationName,
-  currentTab = 'Overview',
-  activeMetric,
-  filters
-}) => {
+export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, historicalData, dateRange, currentLocation, locationName }) => {
   const { metrics } = useSalesMetrics(data, historicalData, { dateRange });
   const [heroColor, setHeroColor] = React.useState<string>('#3b82f6');
-  const [isExportModalOpen, setIsExportModalOpen] = React.useState(false);
+  const lastUpdateRef = React.useRef<number>(0);
+  const lastSetColorRef = React.useRef<string>('#3b82f6');
   const navigate = useNavigate();
   const exportOpenRef = React.useRef<{ open: () => void }>(null);
 
-  // Expose open function via ref
-  React.useEffect(() => {
-    if (exportOpenRef.current) {
-      exportOpenRef.current = {
-        open: () => setIsExportModalOpen(true)
-      };
+  // Throttled color update to prevent excessive updates from animation
+  const throttledColorUpdate = React.useCallback((newColor: string) => {
+    const now = Date.now();
+    // Throttle to maximum 5 updates per second (200ms) and check if color actually changed
+    if (now - lastUpdateRef.current > 200 && newColor !== lastSetColorRef.current) {
+      lastUpdateRef.current = now;
+      lastSetColorRef.current = newColor;
+      setHeroColor(newColor);
     }
   }, []);
 
-  // Make hero accent available globally so components outside the hero (like location tabs) can react.
+  // Make hero accent available globally for other components (like tabs) but throttle DOM updates
   React.useEffect(() => {
     const root = document.documentElement;
-    const prev = root.style.getPropertyValue('--hero-accent');
-    root.style.setProperty('--hero-accent', heroColor);
-    console.log('Sales: Setting --hero-accent to:', heroColor);
+    const currentValue = root.style.getPropertyValue('--hero-accent');
+    
+    // Only update if the color has actually changed significantly
+    if (heroColor !== currentValue) {
+      root.style.setProperty('--hero-accent', heroColor);
+    }
+    
     return () => {
-      // Restore previous value on unmount to avoid leaking across pages
-      if (prev) {
-        root.style.setProperty('--hero-accent', prev);
-      } else {
-        root.style.removeProperty('--hero-accent');
-      }
+      // Clean up on unmount
+      root.style.removeProperty('--hero-accent');
     };
   }, [heroColor]);
 
@@ -92,21 +83,14 @@ export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({
       primaryAction={{ label: 'View Dashboard', onClick: () => navigate('/') }}
       secondaryAction={{ label: 'Export All Sales Data', onClick: () => exportOpenRef.current?.open() }}
         compact
-        onColorChange={setHeroColor}
-        extra={
-          <>
-            <EnhancedRobustDataExportModal
-              isOpen={isExportModalOpen}
-              onClose={() => setIsExportModalOpen(false)}
-              currentTab={currentTab}
-              currentLocation={currentLocation}
-              locationName={locationName}
-              data={data}
-            />
-            {/* Hidden element for ref compatibility */}
-            <div ref={exportOpenRef} style={{ display: 'none' }} />
-          </>
-        }
+        onColorChange={throttledColorUpdate}
+        extra={<ComprehensiveSalesExportButton 
+          data={data} 
+          currentLocation={currentLocation} 
+          locationName={locationName}
+          renderTrigger={false}
+          openRef={exportOpenRef}
+        />}
       />
     </div>
   );

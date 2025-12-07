@@ -9,6 +9,7 @@ import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Calendar, Users, T
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 interface MonthData {
   totalLeads: number;
@@ -33,6 +34,9 @@ export const ImprovedLeadMonthOnMonthTable: React.FC<ImprovedLeadMonthOnMonthTab
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const { getAllTabsText } = useRegisterTableForCopy(tableContainerRef as any, title);
+  
+  // Get context information for enhanced table copying
+  const copyContext = useTableCopyContext();
   
   const monthOnMonthData = useMemo(() => {
     if (!data || data.length === 0) return { monthData: {}, months: [] };
@@ -168,6 +172,16 @@ export const ImprovedLeadMonthOnMonthTable: React.FC<ImprovedLeadMonthOnMonthTab
               size="sm"
               className="text-white hover:bg-white/20"
               onCopyAllTabs={async () => getAllTabsText()}
+              contextInfo={{
+                selectedMetric: 'leadAnalysis',
+                dateRange: copyContext.dateRange,
+                filters: copyContext.filters,
+                additionalInfo: {
+                  expandedRows: Array.from(expandedRows),
+                  analysisType: 'month-on-month',
+                  totalMonths: monthOnMonthData.months.length
+                }
+              }}
             />
           </div>
         </CardHeader>

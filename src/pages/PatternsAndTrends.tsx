@@ -14,6 +14,7 @@ import SalesMotionHero from '@/components/ui/SalesMotionHero';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 import { MemberBehaviorPatterns } from '@/components/dashboard/MemberBehaviorPatterns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
@@ -690,6 +691,16 @@ export const PatternsAndTrends = () => {
 
     return { products, months, totalsRow };
   }, [deferredFilteredData, groupBy, deferredSalesData]);
+
+  // Get enhanced copy context with filters and metrics (after monthlyProductData is available)
+  const { contextInfo } = useTableCopyContext({
+    selectedMetric: METRICS.find(m => m.id === selectedMetric)?.label,
+    additionalInfo: {
+      groupBy: `${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}`,
+      totalProducts: monthlyProductData?.products?.length || 0,
+      totalMonths: monthlyProductData?.months?.length || 0
+    }
+  });
 
   // Custom function to get ALL metric tables data - placed after monthlyProductData
   const getAllMetricTablesText = React.useCallback(async () => {
@@ -1481,6 +1492,7 @@ export const PatternsAndTrends = () => {
                   tableName={`${METRICS.find(m => m.id === selectedMetric)?.label} by ${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} - Month on Month`}
                   size="sm"
                   onCopyAllTabs={getAllMetricTablesText}
+                  contextInfo={contextInfo}
                 />
               </div>
             </div>
@@ -1901,6 +1913,14 @@ export const PatternsAndTrends = () => {
                   tableName="Attendance Frequency Breakdown"
                   size="sm"
                   onCopyAllTabs={async () => getFrequencyText()}
+                  contextInfo={{
+                    ...contextInfo,
+                    additionalInfo: {
+                      ...contextInfo.additionalInfo,
+                      breakdownBy: frequencyBreakdownBy.charAt(0).toUpperCase() + frequencyBreakdownBy.slice(1),
+                      quickFilter: frequencyQuickFilterMonth !== 'All' ? frequencyQuickFilterMonth : undefined
+                    }
+                  }}
                 />
               </div>
             </CardHeader>
@@ -2124,6 +2144,14 @@ export const PatternsAndTrends = () => {
                     tableName="Late Cancellations Breakdown"
                     size="sm"
                     onCopyAllTabs={async () => getCancellationText()}
+                    contextInfo={{
+                      ...contextInfo,
+                      additionalInfo: {
+                        ...contextInfo.additionalInfo,
+                        breakdownBy: cancellationBreakdownBy.charAt(0).toUpperCase() + cancellationBreakdownBy.slice(1),
+                        quickFilter: cancellationQuickFilterMonth !== 'All' ? cancellationQuickFilterMonth : undefined
+                      }
+                    }}
                   />
                 </div>
               </div>
