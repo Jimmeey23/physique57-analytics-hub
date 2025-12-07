@@ -226,20 +226,20 @@ export const EnhancedFunnelRankings: React.FC<EnhancedFunnelRankingsProps> = ({ 
         </CardHeader>
         <CardContent>
           <Tabs value={activeType} onValueChange={(val) => setActiveType(val as 'source' | 'stage')} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-2 rounded-2xl shadow-lg border border-slate-200/30">
+            <TabsList className="bg-white/90 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl mx-auto overflow-visible grid grid-cols-2 gap-0.5">
               <TabsTrigger 
                 value="source" 
-                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+                className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
-                <Users className="w-4 h-4 mr-2" />
-                Lead Sources
+                <Crown className="w-4 h-4 shrink-0" />
+                <span className="text-sm leading-tight whitespace-nowrap">Lead Sources</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="stage" 
-                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+                className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
-                <Target className="w-4 h-4 mr-2" />
-                Funnel Stages
+                <Trophy className="w-4 h-4 shrink-0" />
+                <span className="text-sm leading-tight whitespace-nowrap">Funnel Stages</span>
               </TabsTrigger>
             </TabsList>
 

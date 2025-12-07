@@ -3,9 +3,9 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { ChevronDown, ChevronRight, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Users, TrendingUp, TrendingDown, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getRankingDisplay } from '@/utils/rankingUtils';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
 import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
@@ -30,6 +30,13 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
 
   // Get context information for enhanced table copying
   const copyContext = useTableCopyContext();
+
+  const getPreviousMonthKey = () => {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const previousMonthKey = getPreviousMonthKey();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -135,38 +142,7 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
   };
 
   const monthlyData = useMemo(() => {
-    const months = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Generate from October 2025 back to January 2024 (22 months total)
-    const currentDate = new Date(2025, 9, 1); // October 2025 (0-indexed)
-    const startDate = new Date(2024, 0, 1);   // January 2024 (0-indexed)
-    
-    let currentYear = currentDate.getFullYear();
-    let currentMonth = currentDate.getMonth();
-    
-    while (currentYear > startDate.getFullYear() || 
-           (currentYear === startDate.getFullYear() && currentMonth >= startDate.getMonth())) {
-      
-      const monthName = monthNames[currentMonth];
-      months.push({
-        key: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
-        display: `${monthName} ${currentYear}`,
-        year: currentYear,
-        month: currentMonth + 1,
-        quarter: Math.ceil((currentMonth + 1) / 3),
-        sortOrder: currentYear * 100 + (currentMonth + 1)
-      });
-      
-      // Move to previous month
-      currentMonth--;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      }
-    }
-    
-    return months;
+    return generateStandardMonthRange();
   }, []);
 
   const processedData = useMemo(() => {
@@ -212,8 +188,10 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
     return sellerData.sort(comparator);
   }, [data, selectedMetric, monthlyData, sortKey, sortDir]);
 
-  // monthlyData here is descending (current back). Use full range to Jan 2024.
-  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
+  const visibleMonths = useMemo(() => {
+    // Reverse monthlyData to show most recent month first (left to right)
+    return [...monthlyData].reverse();
+  }, [monthlyData]);
 
   // Notify parent when ready
   const [readySent, setReadySent] = React.useState(false);
@@ -325,12 +303,17 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
           }
         }}
       >
+<<<<<<< HEAD
         <div className="overflow-x-auto">
           <table ref={tableRef} className="min-w-full bg-white">
+=======
+        <div className="overflow-x-auto" data-table="sales-team-performance">
+          <table className="min-w-full bg-white">
+>>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th
-                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -343,22 +326,32 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
                   </div>
                 </th>
                 
-                {visibleMonths.map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => {
+                  const isPreviousMonth = key === previousMonthKey;
+                  return (
                   <th
                     key={key}
-                    className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                    className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
+                      isPreviousMonth 
+                        ? 'bg-blue-800 text-white' 
+                        : 'text-white'
+                    }`}
                     onClick={() => {
                       if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
                       else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
                     }}
-                    title={`Sort by ${display} (${sortDir})`}
+                    title={`Sort by ${display} (${sortDir})${isPreviousMonth ? ' - Main Month' : ''}`}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      <div className="flex items-center space-x-1">
+                        {isPreviousMonth && <Star className="w-3 h-3" />}
+                        <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      </div>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
 
@@ -366,7 +359,7 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
               {processedData.map((seller, sellerIndex) => (
                 <tr 
                   key={seller.seller}
-                  className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-10 max-h-10"
+                  className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-9 max-h-9"
                   onClick={() => onRowClick?.({
                     ...seller,
                     contextType: 'soldBy',
@@ -376,21 +369,11 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
                     }
                   })}
                 >
-                  <td className="w-80 px-4 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20 cursor-pointer transition-all duration-200">
-                    <div className="flex items-center space-x-2 min-h-6">
+                  <td className="w-80 px-4 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20 cursor-pointer transition-all duration-200 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <div className="flex items-center space-x-2 min-h-8">
                       <div className="flex items-center space-x-2 flex-1">
-                        <div className="shrink-0">{getRankingDisplay(sellerIndex + 1)}</div>
+                        <span className="text-slate-400 text-xs">•</span>
                         <span className="text-slate-700 font-medium text-sm truncate">{seller.seller}</span>
-                      </div>
-                      <div className="flex space-x-1.5">
-                        <ModernGroupBadge 
-                          count={seller.totalTransactions} 
-                          label="sales"
-                        />
-                        <ModernGroupBadge 
-                          count={seller.uniqueMembers} 
-                          label="members"
-                        />
                       </div>
                     </div>
                   </td>

@@ -4,7 +4,7 @@ import { ModernTableWrapper } from './ModernTableWrapper';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronRight, Info, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronRight, Info, BarChart3, Star } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { TrainerMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -443,8 +443,8 @@ export const MonthOnMonthTrainerTable = ({
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600">
-              <TableRow className="border-none" style={{ height: '40px' }}>
-                <TableHead className="font-bold text-white sticky left-0 bg-purple-600/95 backdrop-blur-sm z-30 min-w-[240px] h-10">
+              <TableRow className="border-none h-9 max-h-9" style={{ height: '35px' }}>
+                <TableHead className="font-bold text-white sticky left-0 bg-purple-600/95 backdrop-blur-sm z-30 min-w-[240px] h-9">
                   Trainer
                 </TableHead>
                 {processedData.months.map((month) => (
@@ -489,7 +489,7 @@ export const MonthOnMonthTrainerTable = ({
             </TableHeader>
             <TableBody>
               {/* Totals Row */}
-              <TableRow className="bg-gradient-to-r from-slate-100 to-slate-200 font-bold">
+              <TableRow className="bg-gradient-to-r from-slate-100 to-slate-200 font-bold h-9 max-h-9">
                 <TableCell className="font-bold text-slate-900 sticky left-0 bg-transparent z-10">
                   TOTAL
                 </TableCell>
@@ -559,11 +559,11 @@ export const MonthOnMonthTrainerTable = ({
                 return (
                   <React.Fragment key={trainer}>
                     <TableRow 
-                      className="hover:bg-slate-50/50 transition-colors border-b cursor-pointer"
+                      className="hover:bg-slate-50/50 transition-colors border-b cursor-pointer h-9 max-h-9"
                       onClick={() => handleRowClick(trainer)}
-                      style={{ height: '40px' }}
+                      style={{ height: '35px' }}
                     >
-                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r min-w-[240px]" style={{ height: '40px' }}>
+                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r min-w-[240px] whitespace-nowrap overflow-hidden text-ellipsis" style={{ height: '35px' }}>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -632,7 +632,7 @@ export const MonthOnMonthTrainerTable = ({
                     
                      {/* Expanded Row Details */}
                      {isExpanded && (
-                       <TableRow className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 animate-fade-in">
+                       <TableRow className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 animate-fade-in h-9 max-h-9">
                          <TableCell colSpan={processedData.months.length + 3} className="p-6">
                            <div className="space-y-6">
                              {/* Key Metrics Grid */}

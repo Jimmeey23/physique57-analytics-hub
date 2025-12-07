@@ -1,14 +1,16 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BarChart3, TrendingUp, TrendingDown, Filter, Eye, Percent } from 'lucide-react';
+import { Calendar, BarChart3, TrendingUp, TrendingDown, Filter, Eye, Percent, Star, Users, Target } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
-import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { ModernTableWrapper } from './ModernTableWrapper';
+import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { Button } from '@/components/ui/button';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { generateStandardMonthRange } from '@/utils/dateUtils';
 interface FunnelYearOnYearTableProps {
   allData: LeadsData[]; // Use all data, not filtered
   onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
@@ -20,7 +22,18 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('totalLeads');
   const [viewMode, setViewMode] = useState<'values' | 'growth'>('values');
+  const [sortKey, setSortKey] = useState<string>('total');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const tableRef = useRef<HTMLTableElement>(null);
+  const registry = useMetricsTablesRegistry();
+
+  // Register table for metrics
+  React.useEffect(() => {
+    if (tableRef.current) {
+      registry.registerTable('funnel-year-on-year-analysis', tableRef.current);
+    }
+    return () => registry.unregisterTable('funnel-year-on-year-analysis');
+  }, [registry]);
 
   const tableVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -456,6 +469,34 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
         }
       >
         <div className="pt-0">
+          {/* Metric Selector Tabs */}
+          <div className="flex flex-wrap items-center gap-4 p-4 bg-white rounded-lg border mb-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Metric</label>
+              <select 
+                value={selectedMetric} 
+                onChange={(e) => setSelectedMetric(e.target.value as MetricType)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {metricTabs.map((tab) => (
+                  <option key={tab.value} value={tab.value}>{tab.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">View Mode</label>
+              <select 
+                value={viewMode} 
+                onChange={(e) => setViewMode(e.target.value as 'values' | 'growth')}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="values">Values</option>
+                <option value="growth">Growth %</option>
+              </select>
+            </div>
+          </div>
+
           {/* Table */}
           <motion.div 
             className="overflow-auto rounded-lg"
@@ -463,26 +504,169 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <ModernDataTable 
-              data={processedData} 
-              columns={columns} 
-              loading={false} 
-              stickyHeader={true} 
-              showFooter={true} 
-              footerData={totals} 
-              maxHeight="400px" 
-              className="rounded-lg" 
-              headerGradient="from-slate-900 via-blue-950 to-slate-900" 
-              onRowClick={(row) => {
-                const filteredData = allData.filter(lead => lead.source === row.source);
-                onDrillDown?.(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
-              }} 
-            />
+            <div className="overflow-x-auto" data-table="funnel-year-on-year-analysis">
+              <table ref={tableRef} className="min-w-full bg-white">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                    <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none">
+                      <div className="flex items-center space-x-2">
+                        <Star className="w-4 h-4 text-white" />
+                        <span>Source</span>
+                      </div>
+                    </th>
+                    {monthsForColumns.map((monthInfo) => {
+                      const currentYear = new Date().getFullYear();
+                      return [
+                        <th
+                          key={`${monthInfo.name}_${currentYear}`}
+                          className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none text-white"
+                          onClick={() => {
+                            const key = `${monthInfo.name}_${currentYear}`;
+                            if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
+                            else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                          }}
+                          title={`Sort by ${monthInfo.name} ${currentYear} (${sortDir})`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center space-x-1">
+                              <Star className="w-3 h-3" />
+                              <span className="text-xs font-bold whitespace-nowrap">{monthInfo.name}</span>
+                            </div>
+                            <span className="text-slate-300 text-xs">{currentYear}</span>
+                          </div>
+                        </th>,
+                        <th
+                          key={`${monthInfo.name}_${currentYear - 1}`}
+                          className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none text-white"
+                          onClick={() => {
+                            const key = `${monthInfo.name}_${currentYear - 1}`;
+                            if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
+                            else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                          }}
+                          title={`Sort by ${monthInfo.name} ${currentYear - 1} (${sortDir})`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs font-bold whitespace-nowrap">{monthInfo.name}</span>
+                            <span className="text-slate-300 text-xs">{currentYear - 1}</span>
+                          </div>
+                        </th>
+                      ];
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {processedData.map((row, index) => (
+                    <tr 
+                      key={row.source}
+                      className="bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 border-b border-gray-200 transition-all duration-300 hover:shadow-lg animate-in slide-in-from-left-2 fade-in duration-300 cursor-pointer h-9 max-h-9"
+                      onClick={() => {
+                        if (onDrillDown) {
+                          const filteredData = allData.filter(lead => lead.source === row.source);
+                          onDrillDown(`Source: ${row.source} - Year Analysis`, filteredData, 'year-source');
+                        }
+                      }}
+                    >
+                      <td className="px-6 py-2 text-left sticky left-0 bg-white border-r border-gray-200 z-10 transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-slate-400 text-xs">•</span>
+                          <span className="text-slate-700 font-medium text-xs">{row.source}</span>
+                        </div>
+                      </td>
+                      {monthsForColumns.map((monthInfo) => {
+                        const currentYear = new Date().getFullYear();
+                        const currentValue = row[`${monthInfo.name}_${currentYear}`];
+                        const previousValue = row[`${monthInfo.name}_${currentYear - 1}`];
+                        
+                        return [
+                          <td 
+                            key={`${monthInfo.name}_${currentYear}`}
+                            className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-blue-100/60 cursor-pointer transition-all duration-200 whitespace-nowrap"
+                          >
+                            <div className="space-y-1">
+                              <div className="font-bold">
+                                {viewMode === 'values' ? formatValue(currentValue, selectedMetric) : (
+                                  (() => {
+                                    let growth: number | null = null;
+                                    if (currentValue && previousValue && typeof currentValue === 'object' && typeof previousValue === 'object') {
+                                      const current = currentValue[selectedMetric];
+                                      const previous = previousValue[selectedMetric];
+                                      if (current !== undefined && previous !== undefined && previous !== 0) {
+                                        growth = ((current - previous) / previous) * 100;
+                                      }
+                                    }
+                                    if (growth === null) return '—';
+                                    return (
+                                      <span className={growth > 0 ? 'text-emerald-600' : growth < 0 ? 'text-red-500' : 'text-gray-500'}>
+                                        {growth > 0 ? '+' : ''}{growth.toFixed(1)}%
+                                      </span>
+                                    );
+                                  })()
+                                )}
+                              </div>
+                            </div>
+                          </td>,
+                          <td 
+                            key={`${monthInfo.name}_${currentYear - 1}`}
+                            className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-blue-100/60 cursor-pointer transition-all duration-200 whitespace-nowrap"
+                          >
+                            <div className="space-y-1">
+                              <div className="font-bold">
+                                {viewMode === 'values' ? formatValue(previousValue, selectedMetric) : (
+                                  <span className="text-slate-400 text-xs">—</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        ];
+                      })}
+                    </tr>
+                  ))}
+                  
+                  {/* Totals Row */}
+                  <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400">
+                    <td className="px-6 py-3 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20 cursor-pointer hover:underline whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-cyan-400" />
+                        <span className="text-cyan-100 font-bold text-sm">TOTALS</span>
+                      </div>
+                    </td>
+                    {monthsForColumns.map((monthInfo) => {
+                      const currentYear = new Date().getFullYear();
+                      const currentTotal = totals[`${monthInfo.name}_${currentYear}`];
+                      const previousTotal = totals[`${monthInfo.name}_${currentYear - 1}`];
+                      
+                      return [
+                        <td 
+                          key={`totals_${monthInfo.name}_${currentYear}`}
+                          className="px-2 py-2 text-center text-sm font-bold text-white border-l border-slate-400 hover:bg-slate-700 cursor-pointer transition-all duration-200"
+                        >
+                          <div className="flex flex-col items-center space-y-0.5 min-h-6 justify-center">
+                            <span className="font-mono text-xs whitespace-nowrap">
+                              {formatValue(currentTotal, selectedMetric)}
+                            </span>
+                          </div>
+                        </td>,
+                        <td 
+                          key={`totals_${monthInfo.name}_${currentYear - 1}`}
+                          className="px-2 py-2 text-center text-sm font-bold text-white border-l border-slate-400 hover:bg-slate-700 cursor-pointer transition-all duration-200"
+                        >
+                          <div className="flex flex-col items-center space-y-0.5 min-h-6 justify-center">
+                            <span className="font-mono text-xs whitespace-nowrap">
+                              {formatValue(previousTotal, selectedMetric)}
+                            </span>
+                          </div>
+                        </td>
+                      ];
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
             <div className="border-t border-slate-200 p-4 bg-slate-50 rounded-b-xl mt-2">
               {(() => {
                 const currentDate = new Date();
                 const currentYear = currentDate.getFullYear();
-                // Pick the most recent month name we generated above
                 const recentMonthKey = monthsForColumns[monthsForColumns.length - 1]?.name;
                 if (!recentMonthKey) return <div className="text-xs text-slate-500">No data available.</div>;
                 const currField = `${recentMonthKey}_${currentYear}`;
@@ -491,7 +675,6 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                 if (!withCurr.length) return <div className="text-xs text-slate-500">No notable points for the latest month.</div>;
                 const top = [...withCurr].sort((a,b) => (b[currField]?.[selectedMetric] || 0) - (a[currField]?.[selectedMetric] || 0))[0];
                 if (!top) return <div className="text-xs text-slate-500">No data available.</div>;
-                // Use rawTotals for calculations (has nested metrics)
                 const growth = (top[currField] && top[prevField] && top[prevField][selectedMetric]) ? ((top[currField][selectedMetric] - top[prevField][selectedMetric]) / top[prevField][selectedMetric]) * 100 : 0;
                 return (
                   <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
@@ -502,6 +685,12 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
               })()}
             </div>
           </motion.div>
+          
+          <PersistentTableFooter
+            tableRef={tableRef}
+            filename="funnel-year-on-year-analysis"
+            sheetName="Funnel YoY Analysis"
+          />
         </div>
       </ModernTableWrapper>
     </motion.div>

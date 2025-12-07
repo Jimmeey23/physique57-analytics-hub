@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, TrendingUp, BarChart3, Users, DollarSign, 
   Target, Activity, Building2, Percent, RefreshCw, 
-  ArrowUp, ArrowDown, Clock, MapPin, Sparkles, ShrinkIcon, ExpandIcon 
+  ArrowUp, ArrowDown, Clock, MapPin, Sparkles, ShrinkIcon, ExpandIcon, Star 
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
@@ -881,7 +881,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
                     <React.Fragment key={row.groupKey}>
                       <motion.tr
                         className={cn(
-                          "border-b transition-all duration-300 hover:shadow-md h-10 max-h-10 cursor-pointer",
+                          "border-b transition-all duration-300 hover:shadow-md h-9 max-h-9 cursor-pointer",
                           rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50",
                           isExpandable ? "hover:bg-blue-50/30" : ""
                         )}
@@ -1044,7 +1044,7 @@ export const MonthOnMonthClassTable: React.FC<MonthOnMonthClassTableProps> = ({
               </AnimatePresence>
               
               {/* Totals row across all groups */}
-              <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-10 max-h-10">
+              <TableRow className="bg-slate-800 text-white font-bold border-t-2 h-9 max-h-9">
                 <TableCell className="sticky left-0 z-10 bg-slate-800 border-r text-white py-1.5">Totals</TableCell>
                 {/* Empty detail columns - only show when there are expanded rows */}
                 {expandedRows.size > 0 && (

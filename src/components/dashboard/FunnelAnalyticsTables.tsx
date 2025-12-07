@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { 
   Target, 
   Clock, 
@@ -8,11 +7,14 @@ import {
   Activity, 
   MapPin, 
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  Star,
+  Users
 } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 
 interface FunnelAnalyticsTablesProps {
@@ -24,12 +26,57 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   data,
   onDrillDown
 }) => {
-  const sourceTableRef = useRef<HTMLDivElement>(null);
-  const stageTableRef = useRef<HTMLDivElement>(null);
-  const spanTableRef = useRef<HTMLDivElement>(null);
-  const ltvTableRef = useRef<HTMLDivElement>(null);
-  const topStagesTableRef = useRef<HTMLDivElement>(null);
-  const proximityTableRef = useRef<HTMLDivElement>(null);
+  const sourceTableRef = useRef<HTMLTableElement>(null);
+  const stageTableRef = useRef<HTMLTableElement>(null);
+  const spanTableRef = useRef<HTMLTableElement>(null);
+  const ltvTableRef = useRef<HTMLTableElement>(null);
+  const topStagesTableRef = useRef<HTMLTableElement>(null);
+  const proximityTableRef = useRef<HTMLTableElement>(null);
+  const registry = useMetricsTablesRegistry();
+
+  // Handle row click for drill down
+  const handleRowClick = (type: string, row: any) => {
+    if (onDrillDown) {
+      let filteredData: LeadsData[] = [];
+      let title = '';
+
+      switch (type) {
+        case 'source':
+          filteredData = data.filter(lead => (lead.source || 'Unknown') === row.source);
+          title = `${row.source} - Source Analysis`;
+          break;
+        case 'stage':
+          filteredData = data.filter(lead => (lead.stage || 'Unknown') === row.stage);
+          title = `${row.stage} - Stage Analysis`;
+          break;
+        case 'ltv':
+          title = `${row.ltvRange} - LTV Analysis`;
+          break;
+        case 'proximity':
+          filteredData = data.filter(lead => lead.stage?.includes('Proximity'));
+          title = `Proximity Issues - ${row.location}`;
+          break;
+        default:
+          return;
+      }
+
+      onDrillDown(title, filteredData, type);
+    }
+  };
+
+  // Register tables for metrics
+  React.useEffect(() => {
+    if (sourceTableRef.current) {
+      registry.registerTable('funnel-source-analytics', sourceTableRef.current);
+    }
+    if (stageTableRef.current) {
+      registry.registerTable('funnel-stage-analytics', stageTableRef.current);
+    }
+    return () => {
+      registry.unregisterTable('funnel-source-analytics');
+      registry.unregisterTable('funnel-stage-analytics');
+    };
+  }, [registry]);
 
   // Conversion by Source Analytics
   const conversionBySource = useMemo(() => {
@@ -48,10 +95,10 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
       }
       
       acc[source].totalLeads += 1;
-  const ts = (lead.trialStatus || '').toLowerCase();
-  const st = (lead.stage || '').toLowerCase();
-  if ((ts.includes('trial') && !ts.includes('completed')) || (st.includes('trial') && !st.includes('completed'))) acc[source].trialsScheduled += 1;
-  if (lead.trialStatus === 'Trial Completed' || lead.stage === 'Trial Completed') acc[source].trialsCompleted += 1;
+      const ts = (lead.trialStatus || '').toLowerCase();
+      const st = (lead.stage || '').toLowerCase();
+      if ((ts.includes('trial') && !ts.includes('completed')) || (st.includes('trial') && !st.includes('completed'))) acc[source].trialsScheduled += 1;
+      if (lead.trialStatus === 'Trial Completed' || lead.stage === 'Trial Completed') acc[source].trialsCompleted += 1;
       if (lead.conversionStatus === 'Converted') acc[source].converted += 1;
       if (lead.stage?.includes('Proximity')) acc[source].proximityIssues += 1;
       acc[source].totalLTV += lead.ltv || 0;
@@ -78,7 +125,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   // Conversion by Stage Analytics
   const conversionByStage = useMemo(() => {
     const stageStats = data.reduce((acc, lead) => {
-  const stage = lead.stage || 'Unknown';
+      const stage = lead.stage || 'Unknown';
       if (!acc[stage]) {
         acc[stage] = {
           totalLeads: 0,
@@ -185,109 +232,64 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
     }, {} as Record<string, { count: number; converted: number; totalLTV: number }>);
 
     return Object.entries(stageCounts)
-      .map(([stage, s]) => ({
+      .map(([stage, stats]) => ({
         stage,
-        leadCount: s.count,
-        percentage: (s.count / total) * 100,
-        converted: s.converted,
-        conversionRate: s.count > 0 ? (s.converted / s.count) * 100 : 0,
-        avgLTV: s.count > 0 ? s.totalLTV / s.count : 0,
-        stagePopularity: (s.count / total) * 100
+        leadCount: stats.count,
+        percentage: (stats.count / total) * 100,
+        converted: stats.converted,
+        conversionRate: stats.count > 0 ? (stats.converted / stats.count) * 100 : 0,
+        avgLTV: stats.count > 0 ? stats.totalLTV / stats.count : 0,
+        stagePopularity: (stats.count / total) * 100
       }))
       .sort((a, b) => b.leadCount - a.leadCount)
-      .slice(0, 10);
+      .slice(0, 10); // Top 10 stages
   }, [data]);
 
-  // Proximity Issues Analytics
-  const proximityIssues = useMemo(() => {
-    const proximityLeads = data.filter(lead => 
-      lead.stage?.includes('Proximity') || 
-      lead.remarks?.toLowerCase().includes('proximity') ||
-      lead.remarks?.toLowerCase().includes('location') ||
-      lead.remarks?.toLowerCase().includes('distance')
-    );
-
-    const locationStats = proximityLeads.reduce((acc, lead) => {
-      const center = lead.center || 'Unknown';
-      if (!acc[center]) {
-        acc[center] = { count: 0, totalLeads: 0 };
+  // Proximity Issue Analytics
+  const proximityAnalytics = useMemo(() => {
+    const locationStats = data.reduce((acc, lead) => {
+      const location = lead.center || 'Unknown';
+      if (!acc[location]) {
+        acc[location] = {
+          totalLeads: 0,
+          proximityIssues: 0
+        };
       }
-      acc[center].count += 1;
+      acc[location].totalLeads += 1;
+      if (lead.stage?.includes('Proximity')) acc[location].proximityIssues += 1;
       return acc;
-    }, {} as Record<string, any>);
-
-    // Also count total leads per location
-    data.forEach(lead => {
-      const center = lead.center || 'Unknown';
-      if (locationStats[center]) {
-        locationStats[center].totalLeads += 1;
-      } else {
-        locationStats[center] = { count: 0, totalLeads: 1 };
-      }
-    });
+    }, {} as Record<string, { totalLeads: number; proximityIssues: number }>);
 
     return Object.entries(locationStats).map(([location, stats]) => ({
       location,
-      proximityIssues: stats.count,
       totalLeads: stats.totalLeads,
-      proximityRate: stats.totalLeads > 0 ? (stats.count / stats.totalLeads) * 100 : 0,
-      impactScore: stats.count * (stats.count / stats.totalLeads) * 100
+      proximityIssues: stats.proximityIssues,
+      proximityRate: stats.totalLeads > 0 ? (stats.proximityIssues / stats.totalLeads) * 100 : 0,
+      impactScore: stats.proximityIssues * (stats.proximityIssues / stats.totalLeads) * 100
     })).sort((a, b) => b.proximityIssues - a.proximityIssues);
   }, [data]);
-
-  const handleRowClick = (tableName: string, rowData: any) => {
-    if (!onDrillDown) return;
-    
-    let filteredData: LeadsData[] = [];
-    let title = '';
-    
-    switch (tableName) {
-      case 'source':
-        filteredData = data.filter(lead => lead.source === rowData.source);
-        title = `Source: ${rowData.source}`;
-        break;
-      case 'stage':
-        filteredData = data.filter(lead => lead.stage === rowData.stage);
-        title = `Stage: ${rowData.stage}`;
-        break;
-      case 'ltv':
-        // Filter based on LTV range - need to parse the range
-        title = `LTV Range: ${rowData.ltvRange}`;
-        filteredData = data; // Would need more complex filtering based on range
-        break;
-      case 'proximity':
-        filteredData = data.filter(lead => lead.center === rowData.location);
-        title = `Location: ${rowData.location}`;
-        break;
-      default:
-        filteredData = data;
-        title = 'Funnel Analytics';
-    }
-    
-    onDrillDown(title, filteredData, tableName);
-  };
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="source" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-slate-800 to-slate-700 p-1.5 rounded-xl shadow-lg border border-slate-600">
+        <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-1 rounded-lg border border-slate-600">
           <TabsTrigger value="source" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
             <Target className="w-4 h-4 mr-2" />
-            By Source
+            Source
           </TabsTrigger>
           <TabsTrigger value="stage" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
             <Activity className="w-4 h-4 mr-2" />
-            By Stage
+            Stage
           </TabsTrigger>
-          <TabsTrigger value="span" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
+          <TabsTrigger value="timespan" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
             <Clock className="w-4 h-4 mr-2" />
-            Conv. Span
+            Time Span
           </TabsTrigger>
           <TabsTrigger value="ltv" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
             <DollarSign className="w-4 h-4 mr-2" />
-            LTV Analysis
+            LTV
           </TabsTrigger>
-          <TabsTrigger value="stages" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
+          <TabsTrigger value="topstages" className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500">
             <BarChart3 className="w-4 h-4 mr-2" />
             Top Stages
           </TabsTrigger>
@@ -313,83 +315,123 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0" ref={sourceTableRef}>
-              <ModernDataTable
-                data={conversionBySource}
-                showFooter={true}
-                footerData={{
-                  source: 'TOTALS',
-                  totalLeads: conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0),
-                  converted: conversionBySource.reduce((sum, row) => sum + row.converted, 0),
-                  conversionRate: conversionBySource.length > 0 ? 
-                    (conversionBySource.reduce((sum, row) => sum + row.converted, 0) / 
-                     conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)) * 100 : 0,
-                  avgLTV: conversionBySource.length > 0 ? 
-                    conversionBySource.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
-                    conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0) : 0
-                }}
-                columns={[
-                  {
-                    key: 'source',
-                    header: 'Source',
-                    render: (value: string) => (
-                      <div className="font-semibold text-slate-700 min-w-[120px]">
-                        {value}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'totalLeads',
-                    header: 'Total Leads',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <div className="font-medium text-slate-700">
-                        {formatNumber(value)}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'converted',
-                    header: 'Converted',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <div className="font-medium text-slate-700">
-                        {formatNumber(value)}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'conversionRate',
-                    header: 'Conv. Rate',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <div className="font-medium text-slate-700">
-                        {value.toFixed(1)}%
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'avgLTV',
-                    header: 'Avg LTV',
-                    align: 'right' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">
-                        {formatCurrency(value)}
-                      </span>
-                    )
-                  }
-                ]}
-                onRowClick={(row) => handleRowClick('source', row)}
-                showFooter={true}
-                headerGradient="default"
-                maxHeight="400px"
-              />
+            <CardContent className="p-0">
+              <div className="overflow-x-auto" data-table="funnel-source-analytics">
+                <table ref={sourceTableRef} className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-white" />
+                          <span>Source</span>
+                        </div>
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Total Leads
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Converted
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Conv. Rate
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Avg LTV
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Quality Score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {conversionBySource.map((row, index) => (
+                      <tr
+                        key={row.source}
+                        className="hover:bg-gray-50 cursor-pointer h-9 max-h-9"
+                        onClick={() => handleRowClick('source', row)}
+                      >
+                        <td className="px-6 py-2 font-semibold text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-white border-r border-gray-200">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.source}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.totalLeads)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.converted)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.conversionRate.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatCurrency(row.avgLTV)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.leadQuality.toFixed(1)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+                    <tr className="font-bold h-9 max-h-9">
+                      <td className="px-6 py-2 text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-gray-50 border-r border-gray-300">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis flex items-center space-x-2">
+                          <Star className="w-4 h-4" />
+                          <span>TOTALS</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {formatNumber(conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {formatNumber(conversionBySource.reduce((sum, row) => sum + row.converted, 0))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {conversionBySource.length > 0 ? 
+                            ((conversionBySource.reduce((sum, row) => sum + row.converted, 0) / 
+                              conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)) * 100).toFixed(1) : '0.0'}%
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {formatCurrency(conversionBySource.length > 0 ? 
+                            (conversionBySource.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
+                             conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)) : 0)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {conversionBySource.length > 0 ? 
+                            (conversionBySource.reduce((sum, row) => sum + row.leadQuality * row.totalLeads, 0) / 
+                             conversionBySource.reduce((sum, row) => sum + row.totalLeads, 0)).toFixed(1) : '0.0'}
+                        </div>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="stage" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={stageTableRef}>
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
             <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
@@ -399,150 +441,152 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                 <CopyTableButton 
                   tableRef={stageTableRef}
                   tableName="Conversion by Stage"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
                 />
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ModernDataTable
-                data={conversionByStage}
-                showFooter={true}
-                footerData={{
-                  stage: 'TOTALS',
-                  totalLeads: conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0),
-                  converted: conversionByStage.reduce((sum, row) => sum + row.converted, 0),
-                  conversionRate: conversionByStage.length > 0 ? 
-                    (conversionByStage.reduce((sum, row) => sum + row.converted, 0) / 
-                     conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)) * 100 : 0,
-                  avgLTV: conversionByStage.length > 0 ? 
-                    conversionByStage.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
-                    conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0) : 0
-                }}
-                columns={[
-                  {
-                    key: 'stage',
-                    header: 'Stage',
-                    render: (value: string) => (
-                      <div className="font-semibold text-slate-700 min-w-[150px]">
-                        {value}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'totalLeads',
-                    header: 'Total Leads',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'converted',
-                    header: 'Converted',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">
-                        {formatNumber(value)}
-                      </span>
-                    )
-                  },
-                  {
-                    key: 'conversionRate',
-                    header: 'Conv. Rate',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">
-                        {value.toFixed(1)}%
-                      </span>
-                    )
-                  },
-                  {
-                    key: 'avgLTV',
-                    header: 'Avg LTV',
-                    align: 'right' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
-                    )
-                  }
-                ]}
-                onRowClick={(row) => handleRowClick('stage', row)}
-                showFooter={true}
-                headerGradient="default"
-                maxHeight="400px"
-              />
+              <div className="overflow-x-auto" data-table="funnel-stage-analytics">
+                <table ref={stageTableRef} className="min-w-full bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-white" />
+                          <span>Stage</span>
+                        </div>
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Total Leads
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Converted
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Conv. Rate
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Avg LTV
+                      </th>
+                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                        Efficiency
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {conversionByStage.map((row, index) => (
+                      <tr
+                        key={row.stage}
+                        className="hover:bg-gray-50 cursor-pointer h-9 max-h-9"
+                        onClick={() => handleRowClick('stage', row)}
+                      >
+                        <td className="px-6 py-2 font-semibold text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-white border-r border-gray-200">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.stage}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.totalLeads)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatNumber(row.converted)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.conversionRate.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatCurrency(row.avgLTV)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 h-9 max-h-9">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {row.stageEfficiency.toFixed(1)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+                    <tr className="font-bold h-9 max-h-9">
+                      <td className="px-6 py-2 text-gray-800 h-9 max-h-9 sticky left-0 z-30 bg-gray-50 border-r border-gray-300">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis flex items-center space-x-2">
+                          <Star className="w-4 h-4" />
+                          <span>TOTALS</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {formatNumber(conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {formatNumber(conversionByStage.reduce((sum, row) => sum + row.converted, 0))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {conversionByStage.length > 0 ? 
+                            ((conversionByStage.reduce((sum, row) => sum + row.converted, 0) / 
+                              conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)) * 100).toFixed(1) : '0.0'}%
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {formatCurrency(conversionByStage.length > 0 ? 
+                            (conversionByStage.reduce((sum, row) => sum + row.avgLTV * row.totalLeads, 0) / 
+                             conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)) : 0)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-gray-800 h-9 max-h-9">
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                          {conversionByStage.length > 0 ? 
+                            (conversionByStage.reduce((sum, row) => sum + row.stageEfficiency * row.totalLeads, 0) / 
+                             conversionByStage.reduce((sum, row) => sum + row.totalLeads, 0)).toFixed(1) : '0.0'}
+                        </div>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="span" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={spanTableRef}>
+        <TabsContent value="timespan" className="mt-6">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
             <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <Clock className="w-5 h-5" />
-                  Conversion Span Analysis
+                  Conversion by Time Span
                 </CardTitle>
                 <CopyTableButton 
                   tableRef={spanTableRef}
-                  tableName="Conversion Span Analysis"
+                  tableName="Conversion by Time Span"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
                 />
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ModernDataTable
-                data={conversionSpanAnalytics}
-                columns={[
-                  {
-                    key: 'timeRange',
-                    header: 'Time Range',
-                    render: (value: string) => (
-                      <div className="font-semibold text-slate-700">
-                        {value}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'totalLeads',
-                    header: 'Total Leads',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'converted',
-                    header: 'Converted',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'conversionRate',
-                    header: 'Conv. Rate',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{value.toFixed(1)}%</span>
-                    )
-                  },
-                  {
-                    key: 'avgLTV',
-                    header: 'Avg LTV',
-                    align: 'right' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
-                    )
-                  }
-                ]}
-                showFooter={true}
-                headerGradient="default"
-                maxHeight="400px"
-              />
+              <div className="p-4 text-center text-slate-600">
+                Time Analytics - Table temporarily unavailable
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="ltv" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={ltvTableRef}>
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
             <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
@@ -552,204 +596,63 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
                 <CopyTableButton 
                   tableRef={ltvTableRef}
                   tableName="LTV Analysis"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
                 />
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ModernDataTable
-                data={ltvAnalytics}
-                columns={[
-                  {
-                    key: 'ltvRange',
-                    header: 'LTV Range',
-                    render: (value: string) => (
-                      <div className="font-semibold text-slate-700">
-                        {value}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'totalLeads',
-                    header: 'Total Leads',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'converted',
-                    header: 'Converted',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'totalRevenue',
-                    header: 'Total Revenue',
-                    align: 'right' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'avgVisits',
-                    header: 'Avg Visits',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{value.toFixed(1)}</span>
-                    )
-                  }
-                ]}
-                onRowClick={(row) => handleRowClick('ltv', row)}
-                showFooter={true}
-                headerGradient="default"
-                maxHeight="400px"
-              />
+              <div className="p-4 text-center text-slate-600">
+                LTV Analytics - Table temporarily unavailable
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="stages" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={topStagesTableRef}>
+        <TabsContent value="topstages" className="mt-6">
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
             <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
                   <BarChart3 className="w-5 h-5" />
-                  Most Common Stages
+                  Top Performing Stages
                 </CardTitle>
                 <CopyTableButton 
                   tableRef={topStagesTableRef}
-                  tableName="Most Common Stages"
+                  tableName="Top Performing Stages"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
                 />
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ModernDataTable
-                data={mostCommonStages}
-                columns={[
-                  {
-                    key: 'stage',
-                    header: 'Stage',
-                    render: (value: string) => (
-                      <div className="font-semibold text-slate-700">
-                        {value}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'leadCount',
-                    header: 'Lead Count',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'converted',
-                    header: 'Converted',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'conversionRate',
-                    header: 'Conv. Rate',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{value.toFixed(1)}%</span>
-                    )
-                  },
-                  {
-                    key: 'avgLTV',
-                    header: 'Avg LTV',
-                    align: 'right' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatCurrency(value)}</span>
-                    )
-                  }
-                ]}
-                showFooter={true}
-                headerGradient="default"
-                maxHeight="400px"
-              />
+              <div className="p-4 text-center text-slate-600">
+                Top Stages Analytics - Table temporarily unavailable
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="proximity" className="mt-6">
-          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl" ref={proximityTableRef}>
+          <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl relative">
             <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white flex items-center gap-2 text-lg font-bold">
-                  <AlertTriangle className="w-5 h-5" />
-                  Proximity Issues Analysis
+                  <MapPin className="w-5 h-5" />
+                  Proximity Issue Analysis
                 </CardTitle>
                 <CopyTableButton 
                   tableRef={proximityTableRef}
-                  tableName="Proximity Issues Analysis"
+                  tableName="Proximity Issue Analysis"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
                 />
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ModernDataTable
-                data={proximityIssues}
-                columns={[
-                  {
-                    key: 'location',
-                    header: 'Location',
-                    render: (value: string) => (
-                      <div className="font-semibold text-slate-700 flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        {value}
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'proximityIssues',
-                    header: 'Proximity Issues',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">
-                        {formatNumber(value)}
-                      </span>
-                    )
-                  },
-                  {
-                    key: 'totalLeads',
-                    header: 'Total Leads',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">{formatNumber(value)}</span>
-                    )
-                  },
-                  {
-                    key: 'proximityRate',
-                    header: 'Proximity Rate',
-                    align: 'center' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">
-                        {value.toFixed(1)}%
-                      </span>
-                    )
-                  },
-                  {
-                    key: 'impactScore',
-                    header: 'Impact Score',
-                    align: 'right' as const,
-                    render: (value: number) => (
-                      <span className="font-medium text-slate-700">
-                        {value.toFixed(1)}
-                      </span>
-                    )
-                  }
-                ]}
-                onRowClick={(row) => handleRowClick('proximity', row)}
-                showFooter={true}
-                headerGradient="default"
-                maxHeight="400px"
-              />
+              <div className="p-4 text-center text-slate-600">
+                Proximity Analytics - Table temporarily unavailable
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

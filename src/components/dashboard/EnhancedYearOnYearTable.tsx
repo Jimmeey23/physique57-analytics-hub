@@ -400,7 +400,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
             </thead>
             <tbody>
               {processedData.map(categoryGroup => <React.Fragment key={categoryGroup.category}>
-                  <tr onClick={() => handleGroupToggle(categoryGroup.category)} className="bg-white hover:bg-gray-100 cursor-pointer border-b border-gray-200 group transition-colors duration-200 ease-in-out">
+                  <tr onClick={() => handleGroupToggle(categoryGroup.category)} className="group bg-slate-100 border-b border-slate-400 font-semibold hover:bg-slate-200 transition-all duration-200 h-9 max-h-9 cursor-pointer">
                     <td className="py-2 font-semibold text-gray-800 group-hover:text-gray-900 bg-white group-hover:bg-gray-100 sticky left-0 z-20 transition-colors duration-200 ease-in-out px-[10px] min-w-80 text-sm max-h-[35px] h-[35px] overflow-hidden">
                       <div className="flex justify-between items-center min-w-full text-md text-bold">
                         {localCollapsedGroups.has(categoryGroup.category) ? <ChevronRight className="w-4 h-4 mr-2 text-gray-500 transition-transform duration-200" /> : <ChevronDown className="w-4 h-4 mr-2 text-gray-500 transition-transform duration-200" />}
@@ -473,7 +473,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
                   </tr>
 
                   {!localCollapsedGroups.has(categoryGroup.category) && categoryGroup.products.map(product => <tr key={`${categoryGroup.category}-${product.product}`} className="hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors duration-200" onClick={() => onRowClick && onRowClick(product.rawData)}>
-                      <td className="px-8 py-3 text-sm text-gray-700 hover:text-blue-700 sticky left-0 bg-white hover:bg-blue-50 z-10 transition-colors duration-200">
+                      <td className="w-[30rem] px-8 py-3 text-sm text-gray-700 hover:text-blue-700 sticky left-0 bg-white hover:bg-blue-50 z-10 transition-colors duration-200 whitespace-nowrap overflow-hidden text-ellipsis">
                         <div className="flex items-center justify-between">
                           <span>{product.product}</span>
                           {['atv', 'auv', 'asv', 'upt'].includes(selectedMetric) && <Badge variant="outline" className="text-xs ml-2 border-blue-200 text-blue-700">

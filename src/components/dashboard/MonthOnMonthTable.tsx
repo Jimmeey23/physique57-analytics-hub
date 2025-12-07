@@ -339,7 +339,7 @@ export const MonthOnMonthTable: React.FC<MonthOnMonthTableProps> = ({
             <tbody>
               {processedData.map((categoryData, categoryIndex) => (
                 <React.Fragment key={categoryData.category}>
-                  <tr className="group bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-b-2 border-slate-300 font-semibold hover:from-slate-200 hover:via-blue-100 hover:to-indigo-100 transition-all duration-300 hover:shadow-lg animate-in slide-in-from-left-4 fade-in duration-500">
+                  <tr className="group bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-b-2 border-slate-300 font-semibold hover:from-slate-200 hover:via-blue-100 hover:to-indigo-100 transition-all duration-300 hover:shadow-lg animate-in slide-in-from-left-4 fade-in duration-500 h-9 max-h-9">
                     <td className="w-80 px-8 py-4 text-left sticky left-0 bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 group-hover:from-slate-200 group-hover:via-blue-100 group-hover:to-indigo-100 border-r border-slate-300 z-20 cursor-pointer transition-all duration-300 shadow-sm" onClick={e => {
                   // Check if click is on toggle button
                   const target = e.target as HTMLElement;

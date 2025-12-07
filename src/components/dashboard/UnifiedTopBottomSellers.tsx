@@ -99,11 +99,11 @@ export const UnifiedTopBottomSellers: React.FC<UnifiedTopBottomSellersProps> = (
           <CardTitle className="flex items-center gap-3 text-xl">
             {isTop ? (
               <>
-                <div className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500">
+                <div className="p-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500">
                   <Award className="w-5 h-5 text-white" />
                 </div>
                 <div>
-              <span className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 Top {displayCount} {config.label}
               </span>
                   <p className="text-sm text-slate-600 font-normal">{config.description}</p>
@@ -168,7 +168,7 @@ export const UnifiedTopBottomSellers: React.FC<UnifiedTopBottomSellersProps> = (
                 <div className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center shadow-lg",
                   isTop 
-                    ? 'bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 text-white'
+                    ? 'bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 text-white'
                     : 'bg-gradient-to-br from-red-500 via-rose-600 to-red-700 text-white'
                 )}>
                   {/* Beautiful ranking icons */}
@@ -305,34 +305,34 @@ export const UnifiedTopBottomSellers: React.FC<UnifiedTopBottomSellersProps> = (
         </CardHeader>
         <CardContent>
           <Tabs value={activeType} onValueChange={setActiveType} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-2 rounded-2xl shadow-lg border border-slate-200/30">
+            <TabsList className="bg-white/90 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl mx-auto overflow-visible grid grid-cols-4 gap-0.5">
               <TabsTrigger 
                 value="product" 
-                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+                className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
-                <Package className="w-4 h-4 mr-2" />
-                Products
+                <Package className="w-4 h-4 shrink-0" />
+                <span className="text-sm leading-tight whitespace-nowrap">Products</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="category" 
-                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+                className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
-                <Tag className="w-4 h-4 mr-2" />
-                Categories
+                <Tag className="w-4 h-4 shrink-0" />
+                <span className="text-sm leading-tight whitespace-nowrap">Categories</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="member" 
-                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+                className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
-                <Users className="w-4 h-4 mr-2" />
-                Members
+                <Users className="w-4 h-4 shrink-0" />
+                <span className="text-sm leading-tight whitespace-nowrap">Members</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="seller" 
-                className="text-sm font-bold transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl"
+                className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
               >
-                <UserCheck className="w-4 h-4 mr-2" />
-                Associates
+                <UserCheck className="w-4 h-4 shrink-0" />
+                <span className="text-sm leading-tight whitespace-nowrap">Associates</span>
               </TabsTrigger>
             </TabsList>
 
