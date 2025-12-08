@@ -14,15 +14,17 @@ import { FilterOptions } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
 
 interface AutoCloseFilterSectionProps {
-  filters: FilterOptions;
-  onFiltersChange: (filters: FilterOptions) => void;
+  filters: FilterOptions | any;
+  onFiltersChange: (filters: FilterOptions | any) => void;
   onReset: () => void;
+  type?: 'sales' | 'funnel';
 }
 
 export const AutoCloseFilterSection: React.FC<AutoCloseFilterSectionProps> = ({
   filters,
   onFiltersChange,
   onReset,
+  type = 'sales'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(

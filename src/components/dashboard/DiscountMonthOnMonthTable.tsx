@@ -1,7 +1,8 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { ModernTableWrapper, ModernMetricTabs } from './ModernTableWrapper';
+import { Star } from 'lucide-react';
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Calendar } from 'lucide-react';

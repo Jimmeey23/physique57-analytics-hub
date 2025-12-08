@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, TrendingUp, BarChart3, DollarSign, Users, ShoppingCart, Target, Package, Activity, Percent, Trophy, Medal, Award, Crown, Star, Eye, Percent as PercentIcon } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExpandIcon, ShrinkIcon, Filter, Calendar, TrendingUp, BarChart3, DollarSign, Users, ShoppingCart, Target, Package, Activity, Percent, Trophy, Medal, Award, Crown, Star, Eye, Receipt, BadgePercent, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
@@ -157,7 +157,7 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
                       : 'text-white/70 hover:bg-white/10'
                   }`}
                 >
-                  <PercentIcon className="w-3 h-3 mr-1" />
+                  <Percent className="w-3 h-3 mr-1" />
                   Growth
                 </Button>
               </div>
@@ -207,6 +207,11 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
           </div>
         </div>
       </CardHeader>
+
+      {/* Animated Color-Changing Border */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-400 animate-pulse duration-[3000ms]"></div>
+      </div>
 
       <CardContent className={TABLE_STYLES.card.content} ref={internalTableRef}>
         {children}
@@ -274,20 +279,20 @@ interface ModernMetricTabsProps {
   className?: string;
 }
 
-// Standard metrics for all tables
+// Professional metrics for business analysis
 export const STANDARD_METRICS = [
-  { key: 'revenue', label: 'Revenue', icon: <DollarSign className="w-4 h-4" /> },
-  { key: 'units', label: 'Units Sold', icon: <Package className="w-4 h-4" /> },
-  { key: 'transactions', label: 'Transactions', icon: <ShoppingCart className="w-4 h-4" /> },
-  { key: 'members', label: 'Members', icon: <Users className="w-4 h-4" /> },
-  { key: 'auv', label: 'AUV', icon: <TrendingUp className="w-4 h-4" /> },
-  { key: 'atv', label: 'ATV', icon: <Target className="w-4 h-4" /> },
-  { key: 'asv', label: 'ASV', icon: <Activity className="w-4 h-4" /> },
-  { key: 'upt', label: 'UPT', icon: <BarChart3 className="w-4 h-4" /> },
-  { key: 'vat', label: 'VAT', icon: <Percent className="w-4 h-4" /> },
-  { key: 'discountAmount', label: 'Discount ₹', icon: <DollarSign className="w-4 h-4" /> },
-  { key: 'discountPercentage', label: 'Discount %', icon: <Percent className="w-4 h-4" /> },
-  { key: 'purchaseFrequency', label: 'Purchase Freq.', icon: <Activity className="w-4 h-4" /> }
+  { key: 'revenue', label: 'Total Revenue', icon: <DollarSign className="w-4 h-4" /> },
+  { key: 'units', label: 'Volume Sold', icon: <Package className="w-4 h-4" /> },
+  { key: 'transactions', label: 'Transaction Count', icon: <ShoppingCart className="w-4 h-4" /> },
+  { key: 'members', label: 'Customer Base', icon: <Users className="w-4 h-4" /> },
+  { key: 'auv', label: 'Avg. User Value', icon: <TrendingUp className="w-4 h-4" /> },
+  { key: 'atv', label: 'Avg. Transaction Value', icon: <Target className="w-4 h-4" /> },
+  { key: 'asv', label: 'Avg. Session Value', icon: <Activity className="w-4 h-4" /> },
+  { key: 'upt', label: 'Units per Transaction', icon: <BarChart3 className="w-4 h-4" /> },
+  { key: 'vat', label: 'Tax Amount', icon: <Receipt className="w-4 h-4" /> },
+  { key: 'discountAmount', label: 'Discount Value', icon: <BadgePercent className="w-4 h-4" /> },
+  { key: 'discountPercentage', label: 'Discount Rate', icon: <Percent className="w-4 h-4" /> },
+  { key: 'purchaseFrequency', label: 'Purchase Interval', icon: <Clock className="w-4 h-4" /> }
 ];
 
 export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({

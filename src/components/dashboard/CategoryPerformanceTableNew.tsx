@@ -3,9 +3,8 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { ChevronDown, ChevronRight, FolderOpen, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target, Layers } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderOpen, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, ShoppingCart, Target, Layers, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getRankingDisplay } from '@/utils/rankingUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
 import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
@@ -29,8 +28,17 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
 
+<<<<<<< HEAD
   // Get context information for enhanced table copying
   const copyContext = useTableCopyContext();
+=======
+  const getPreviousMonthKey = () => {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const previousMonthKey = getPreviousMonthKey();
+>>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -351,12 +359,12 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
           }
         }}
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" data-table="category-performance-analysis">
           <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th
-                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -369,22 +377,32 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
                   </div>
                 </th>
                 
-                {visibleMonths.map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => {
+                  const isPreviousMonth = key === previousMonthKey;
+                  return (
                   <th
                     key={key}
-                    className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                    className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
+                      isPreviousMonth 
+                        ? 'bg-blue-800 text-white' 
+                        : 'text-white'
+                    }`}
                     onClick={() => {
                       if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
                       else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
                     }}
-                    title={`Sort by ${display} (${sortDir})`}
+                    title={`Sort by ${display} (${sortDir})${isPreviousMonth ? ' - Main Month' : ''}`}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      <div className="flex items-center space-x-1">
+                        {isPreviousMonth && <Star className="w-3 h-3" />}
+                        <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      </div>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
 
@@ -392,7 +410,7 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
               {processedData.map((category, categoryIndex) => (
                 <tr 
                   key={category.category}
-                  className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-10 max-h-10"
+                  className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-9 max-h-9"
                   onClick={() => onRowClick?.({
                     ...category,
                     contextType: 'category',
@@ -404,21 +422,10 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
                     contextDescription: `Complete performance analysis for ${category.category} category`
                   })}
                 >
-                  <td className="w-80 px-4 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20 cursor-pointer transition-all duration-200">
-                    <div className="flex items-center space-x-2 min-h-6">
+                  <td className="w-[30rem] px-4 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20 cursor-pointer transition-all duration-200 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <div className="flex items-center space-x-2 min-h-8">
                       <div className="flex items-center space-x-2 flex-1">
-                        <div className="shrink-0">{getRankingDisplay(categoryIndex + 1)}</div>
-                        <span className="text-slate-700 font-medium text-sm truncate">{category.category}</span>
-                      </div>
-                      <div className="flex space-x-1.5">
-                        <ModernGroupBadge 
-                          count={category.totalTransactions} 
-                          label="transactions"
-                        />
-                        <ModernGroupBadge 
-                          count={category.uniqueMembers} 
-                          label="members"
-                        />
+                        <span className="text-slate-700 font-medium text-sm whitespace-nowrap">{category.category}</span>
                       </div>
                     </div>
                   </td>

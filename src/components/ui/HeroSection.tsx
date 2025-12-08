@@ -2,9 +2,10 @@
 import React from 'react';
 import { Button } from './button';
 import { Badge } from './badge';
-import { Home, LucideIcon } from 'lucide-react';
+import { Home, LucideIcon, Download, Database, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatNumber } from '@/utils/formatters';
+import { HeroExportModal } from './HeroExportModal';
 
 interface HeroSectionProps {
   title: string;
@@ -88,6 +89,41 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 ))}
               </div>
             )}
+
+            {/* Advanced Export Modal */}
+            <div className="flex items-center justify-center gap-4 mt-8 animate-fade-in-up delay-700">
+              <HeroExportModal 
+                trigger={
+                  <Button 
+                    size="lg" 
+                    variant="secondary" 
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Smart Export Hub
+                    <Badge variant="secondary" className="ml-2 bg-blue-500/20 text-blue-100 border-blue-400/30">
+                      AI
+                    </Badge>
+                  </Button>
+                }
+              />
+              
+              <Button 
+                size="lg"
+                variant="outline"
+                className="bg-white/5 hover:bg-white/10 text-white border-white/30 backdrop-blur-sm transition-all duration-300"
+                onClick={() => {
+                  // Quick export functionality
+                  const tables = document.querySelectorAll('table[data-table]');
+                  if (tables.length > 0) {
+                    // Auto-detect and show count
+                  }
+                }}
+              >
+                <Database className="w-5 h-5 mr-2" />
+                Quick Export ({document.querySelectorAll('table[data-table]').length})
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -118,6 +154,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         
         .delay-500 {
           animation-delay: 0.5s;
+        }
+        
+        .delay-700 {
+          animation-delay: 0.7s;
         }
       `}</style>
     </div>

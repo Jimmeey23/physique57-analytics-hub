@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { ModernMetricTabs, ModernTableWrapper } from './ModernTableWrapper';
-import { Activity, Users, ShoppingCart, Clock, Percent, Calendar } from 'lucide-react';
+import { Activity, Users, ShoppingCart, Clock, Percent, Calendar, Star } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useTableCopyContext } from '@/hooks/useTableCopyContext';
@@ -58,6 +58,13 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
     }
     return months;
   }, []);
+  
+  const getPreviousMonthKey = () => {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const previousMonthKey = getPreviousMonthKey();
 
   const groupData = useMemo(() => {
     const catMap = new Map<string, Map<string, SalesData[]>>();
@@ -351,28 +358,36 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
           }
         }}
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" data-table="customer-behavior-analysis">
           <table className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20">
                   Category / Product
                 </th>
-                {monthKeys.map(({ key, display }) => (
-                  <th key={key} className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px]">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
-                      <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
-                    </div>
-                  </th>
-                ))}
+                {monthKeys.map(({ key, display }) => {
+                  const isPreviousMonth = key === previousMonthKey;
+                  return (
+                    <th key={key} className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] ${
+                      isPreviousMonth ? 'bg-blue-800 text-white' : 'text-white'
+                    }`}>
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-center space-x-1">
+                          {isPreviousMonth && <Star className="w-3 h-3" />}
+                          <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                        </div>
+                        <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
 
             <tbody>
               {processed.map(cat => (
                 <React.Fragment key={cat.category}>
-                  <tr className="bg-slate-100 border-b border-slate-300 font-semibold">
+                  <tr className="bg-slate-100 border-b border-slate-300 font-semibold h-9 max-h-9">
                     <td
                       className="w-[30rem] px-6 py-3 text-left sticky left-0 bg-gradient-to-r from-slate-100 via-blue-50 to-indigo-50 border-r border-slate-300 z-20 cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis"
                       onClick={() =>
@@ -429,7 +444,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                     })}
                   </tr>
                   {!collapsedCategories.has(cat.category) && cat.products.map(prod => (
-                    <tr key={`${cat.category}-${prod.product}`} className="bg-white hover:bg-blue-50 border-b border-gray-200 transition-all">
+                    <tr key={`${cat.category}-${prod.product}`} className="bg-white hover:bg-blue-50 border-b border-gray-200 transition-all h-9 max-h-9">
                       <td
                         className="w-[30rem] px-10 py-3 text-left sticky left-0 bg-white border-r border-gray-200 z-10 cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis"
                         onClick={() =>
@@ -492,7 +507,7 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
               ))}
 
               {/* Totals row across all categories/products per month */}
-              <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400">
+              <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-9 max-h-9">
                 <td
                   className="w-[30rem] px-6 py-3 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20 cursor-pointer hover:underline whitespace-nowrap"
                   onClick={() =>

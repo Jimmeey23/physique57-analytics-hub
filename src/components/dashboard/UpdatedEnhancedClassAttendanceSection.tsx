@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSessionsData } from '@/hooks/useSessionsData';
@@ -9,7 +9,7 @@ import { InfoPopover } from '@/components/ui/InfoPopover';
 // Import all the new enhanced components
 import { ModernMetricCards } from './ModernMetricCards';
 import { EnhancedClassAttendanceFilterSection } from './EnhancedClassAttendanceFilterSection';
-import { AdvancedClassAttendanceTable } from './ModernAdvancedClassAttendanceTable';
+import NewComprehensiveClassTable from './NewComprehensiveClassTable';
 import { MonthOnMonthClassTable } from './MonthOnMonthClassTable';
 import { DualRankingLists } from './DualRankingLists';
 import { InteractivePerformanceAnalytics } from './InteractivePerformanceAnalytics';
@@ -17,6 +17,10 @@ import { DrillDownAnalyticsModal } from './DrillDownAnalyticsModal';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { ClassFormatAnalytics } from './ClassFormatAnalytics';
 import { FormatFocusedAnalytics } from './FormatFocusedAnalytics';
+import { 
+  BarChart3, Calendar, Activity, TrendingUp, Lightbulb,
+  Target, Users, Clock, MapPin
+} from 'lucide-react';
 
 export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   const { data: sessionsData, loading } = useSessionsData();
@@ -27,6 +31,38 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('kwality');
   const [activeTab, setActiveTab] = useState<string>('comprehensive');
+
+  // Apply location filtering to the already filtered data
+  const locationFilteredData = useMemo(() => {
+    if (selectedLocation === 'all') {
+      return filteredData;
+    }
+    
+    const filtered = filteredData.filter(session => {
+      const sessionLocation = (session.location || '').toLowerCase().trim();
+      const targetLocation = selectedLocation.toLowerCase();
+      
+      // Handle various location name variations with exact and partial matching
+      if (targetLocation === 'kwality') {
+        return sessionLocation.includes('kwality') || 
+               sessionLocation.includes('kh') || 
+               sessionLocation.includes('kemps');
+      }
+      if (targetLocation === 'supreme') {
+        return sessionLocation.includes('supreme') || 
+               sessionLocation.includes('shq') || 
+               sessionLocation.includes('bandra');
+      }
+      if (targetLocation.includes('soho')) {
+        return sessionLocation.includes('soho');
+      }
+      
+      // Default partial match
+      return sessionLocation.includes(targetLocation);
+    });
+    
+    return filtered;
+  }, [filteredData, selectedLocation]);
 
   const handleDrillDown = (data: any) => {
     setDrillDownData(data);
@@ -56,7 +92,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
         {/* Enhanced Metric Cards */}
         <div className="space-y-6">
           <ModernMetricCards 
-            data={filteredData}
+            data={locationFilteredData}
             payrollData={payrollData}
             onMetricClick={handleDrillDown}
           />
@@ -64,53 +100,75 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
 
         {/* Filter Section - hidden on Analytics tab to avoid duplicate filters */}
         {activeTab !== 'analytics' && (
-          <EnhancedClassAttendanceFilterSection data={filteredData} />
+          <EnhancedClassAttendanceFilterSection data={locationFilteredData} />
         )}
+
+        {/* Rankings Section - styled like sales tab */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-semibold text-gray-900">Top & Bottom Performers</h2>
+          </div>
+          <div data-ranking="top-bottom-performers">
+            <DualRankingLists 
+              data={locationFilteredData}
+              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
+            />
+          </div>
+        </div>
 
         {/* Main Analytics Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="modern-tabs grid grid-cols-6 w-full">
+          <TabsList className="modern-tabs grid grid-cols-5 w-full bg-white/90 backdrop-blur-sm shadow-xl border border-slate-200 rounded-2xl p-2 relative z-50">
             <TabsTrigger 
               value="comprehensive" 
-              className="modern-tab-trigger tab-variant-blue"
+              className="modern-tab-trigger tab-variant-blue relative z-50"
             >
-              Comprehensive
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                <span>Comprehensive</span>
+              </div>
             </TabsTrigger>
             <TabsTrigger 
               value="month-on-month"
-              className="modern-tab-trigger tab-variant-emerald"
+              className="modern-tab-trigger tab-variant-emerald relative z-50"
             >
-              Month-on-Month
-            </TabsTrigger>
-            <TabsTrigger 
-              value="rankings"
-              className="modern-tab-trigger tab-variant-purple"
-            >
-              Rankings
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Month-on-Month</span>
+              </div>
             </TabsTrigger>
             <TabsTrigger 
               value="performance"
-              className="modern-tab-trigger tab-variant-blue"
+              className="modern-tab-trigger tab-variant-blue relative z-50"
             >
-              Performance
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                <span>Performance</span>
+              </div>
             </TabsTrigger>
             <TabsTrigger 
               value="analytics"
-              className="modern-tab-trigger tab-variant-rose"
+              className="modern-tab-trigger tab-variant-rose relative z-50"
             >
-              Analytics
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                <span>Analytics</span>
+              </div>
             </TabsTrigger>
             <TabsTrigger 
               value="insights"
-              className="modern-tab-trigger tab-variant-purple"
+              className="modern-tab-trigger tab-variant-purple relative z-50"
             >
-              Insights
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                <span>Insights</span>
+              </div>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="comprehensive" className="mt-6">
-            <AdvancedClassAttendanceTable 
-              data={filteredData}
+            <NewComprehensiveClassTable 
+              data={locationFilteredData}
               location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
               onDrillDown={handleDrillDown}
             />
@@ -118,27 +176,20 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
 
           <TabsContent value="month-on-month" className="mt-6">
             <MonthOnMonthClassTable 
-              data={sessionsData || []} // Use unfiltered data as requested
-              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-            />
-          </TabsContent>
-
-          <TabsContent value="rankings" className="mt-6">
-            <DualRankingLists 
-              data={filteredData}
+              data={locationFilteredData} // Use location-filtered data to respect filter selections
               location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
             />
           </TabsContent>
 
           <TabsContent value="performance" className="mt-6">
             <InteractivePerformanceAnalytics 
-              data={filteredData}
+              data={locationFilteredData}
               onDrillDown={handleDrillDown}
             />
           </TabsContent>
 
           <TabsContent value="analytics" className="mt-6">
-            <FormatFocusedAnalytics data={filteredData} />
+            <FormatFocusedAnalytics data={locationFilteredData} />
           </TabsContent>
 
           <TabsContent value="insights" className="mt-6">

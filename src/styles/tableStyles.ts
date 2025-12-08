@@ -10,27 +10,27 @@ export const TABLE_STYLES = {
   container: "relative overflow-auto rounded-xl border border-slate-200 shadow-sm",
   
   // Table base
-  table: "min-w-full bg-white",
+  table: "min-w-full bg-white font-sans",
   
   // Header styles - Dark slate gradient matching Sales tab
   header: {
     wrapper: "sticky top-0 z-30",
     row: "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800",
-    cell: "px-3 py-3 text-left text-white font-bold text-xs uppercase tracking-wide border-r border-white/20 last:border-r-0",
+    cell: "px-3 py-3 text-left text-white font-bold text-xs uppercase tracking-wide border-r border-white/20 last:border-r-0 font-sans",
     cellCenter: "text-center",
     cellSticky: "sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20",
     monthCell: "min-w-[90px] text-center",
     monthDisplay: "flex flex-col items-center",
-    monthText: "text-xs font-bold whitespace-nowrap",
-    yearText: "text-slate-300 text-xs",
+    monthText: "text-xs font-bold whitespace-nowrap font-sans",
+    yearText: "text-slate-300 text-xs font-sans",
   },
   
   // Body styles
   body: {
-    row: "bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200",
+    row: "bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 font-sans",
     rowAlternate: "bg-slate-50/50",
     rowClickable: "cursor-pointer hover:scale-[1.002] hover:shadow-sm",
-    cell: "px-3 py-2 text-sm text-slate-700 border-r border-gray-200/50 last:border-r-0",
+    cell: "px-3 py-2 text-sm text-slate-700 border-r border-gray-200/50 last:border-r-0 font-sans",
     cellCenter: "text-center",
     cellBold: "font-semibold text-slate-900",
     cellMono: "font-mono",

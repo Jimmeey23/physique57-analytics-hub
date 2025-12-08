@@ -3,9 +3,8 @@ import { SalesData, FilterOptions, YearOnYearMetricType } from '@/types/dashboar
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
-import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Calendar, TrendingUp, TrendingDown, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getRankingDisplay } from '@/utils/rankingUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
 import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
@@ -56,6 +55,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Get context information for enhanced table copying
   const copyContext = useTableCopyContext();
@@ -73,6 +73,14 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
       setLocalCollapsedGroups(new Set(collapsedGroups));
     }
   }, [collapsedGroups]);
+
+  // Get previous month key for highlighting
+  const getPreviousMonthKey = () => {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const previousMonthKey = getPreviousMonthKey();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -250,6 +258,15 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
     };
     return categories.sort(comparator);
   }, [data, selectedMetric, monthlyData, sortKey, sortDir]);
+
+  // Set all categories as collapsed by default on first load
+  React.useEffect(() => {
+    if (processedData.length > 0 && !isInitialized) {
+      const allCategories = new Set(processedData.map(cat => cat.category));
+      setLocalCollapsedGroups(allCategories);
+      setIsInitialized(true);
+    }
+  }, [processedData, isInitialized]);
 
   const toggleGroup = useCallback((groupKey: string) => {
     setLocalCollapsedGroups(prev => {
@@ -470,7 +487,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th
-                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-96 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-40 border-r border-white/20 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -483,22 +500,32 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                   </div>
                 </th>
                 
-                {visibleMonths.map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => {
+                  const isPreviousMonth = key === previousMonthKey;
+                  return (
                   <th
                     key={key}
-                    className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                    className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
+                      isPreviousMonth 
+                        ? 'bg-blue-800 text-white' 
+                        : 'text-white'
+                    }`}
                     onClick={() => {
                       if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
                       else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
                     }}
-                    title={`Sort by ${display} (${sortDir})`}
+                    title={`Sort by ${display} (${sortDir})${isPreviousMonth ? ' - Main Month' : ''}`}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      <div className="flex items-center space-x-1">
+                        {isPreviousMonth && <Star className="w-3 h-3" />}
+                        <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      </div>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
 
@@ -509,9 +536,9 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                 return (
                   <React.Fragment key={categoryGroup.category}>
                     {/* Category Row */}
-                    <tr className="group bg-slate-100 border-b border-slate-300 font-semibold hover:bg-slate-200 transition-all duration-200 h-10 max-h-10">
+                    <tr className="group bg-slate-100 border-b border-slate-400 font-semibold hover:bg-slate-200 transition-all duration-200 h-12">
                       <td 
-                        className="w-80 px-4 py-2 text-left sticky left-0 bg-slate-100 group-hover:bg-slate-200 border-r border-slate-300 z-20 cursor-pointer transition-all duration-200"
+                        className="w-96 px-4 py-2 text-left sticky left-0 bg-slate-100 group-hover:bg-slate-200 border-r border-slate-300 z-20 cursor-pointer transition-all duration-200"
                         onClick={(e) => {
                           const target = e.target as HTMLElement;
                           if (target.closest('button')) return;
@@ -525,7 +552,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                           });
                         }}
                       >
-                        <div className="flex items-center space-x-2 min-h-6">
+                        <div className="flex items-center space-x-2 min-h-8">
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -541,26 +568,22 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                             }
                           </Button>
                           <div className="flex items-center space-x-2 flex-1">
-                            {getRankingDisplay(categoryIndex + 1)}
                             <span className="font-bold text-sm text-slate-800 truncate">{categoryGroup.category}</span>
                           </div>
-                          <ModernGroupBadge 
-                            count={categoryGroup.products.length} 
-                            label="items"
-                          />
                         </div>
                       </td>
                       
                       {visibleMonths.map(({ key }, monthIndex) => {
                         const current = categoryGroup.monthlyValues[key] || 0;
-                        const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
-                        const previous = previousMonthKey ? (categoryGroup.monthlyValues[previousMonthKey] || 0) : 0;
+                        const previousMonthKeyData = visibleMonths[monthIndex + 1]?.key;
+                        const previous = previousMonthKeyData ? (categoryGroup.monthlyValues[previousMonthKeyData] || 0) : 0;
                         const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
+                        const isPreviousMonth = key === previousMonthKey;
                         
                         return (
                           <td 
                             key={key} 
-                            className="px-2 py-2 text-center text-sm font-bold text-slate-800 border-l border-slate-300 hover:bg-slate-100 cursor-pointer transition-all duration-200"
+                            className="px-2 py-2 text-center text-sm font-bold border-l transition-all duration-200 cursor-pointer text-slate-800 border-slate-300 hover:bg-slate-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               onRowClick?.({
@@ -600,35 +623,37 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                       categoryGroup.products.map((product, productIndex) => (
                         <tr 
                           key={`${categoryGroup.category}-${product.product}`}
-                          className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-10 max-h-10"
+                          className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-12"
                         >
-                          <td className="w-80 px-8 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-10 cursor-pointer transition-all duration-200"
-                            onClick={() => {
-                              onRowClick?.({
-                                drillDownContext: 'mom-product-all',
-                                filterCriteria: { product: product.product, category: categoryGroup.category },
-                                name: product.product,
-                                product: product.product,
-                                category: categoryGroup.category,
-                              });
-                            }}
-                          >
-                            <div className="flex items-center space-x-2 min-h-6">
-                              <div className="shrink-0">{getRankingDisplay(productIndex + 1)}</div>
+                        <td 
+                          className="w-96 px-8 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-10 cursor-pointer transition-all duration-200"
+                          onClick={() => {
+                            onRowClick?.({
+                              drillDownContext: 'mom-product-all',
+                              filterCriteria: { product: product.product, category: categoryGroup.category },
+                              name: product.product,
+                              product: product.product,
+                              category: categoryGroup.category,
+                            });
+                          }}
+                        >
+                          <div className="flex items-center space-x-2 min-h-8">
+                              <span className="text-slate-400 text-xs">→</span>
                               <span className="text-slate-700 font-medium text-sm truncate">{product.product}</span>
                             </div>
                           </td>
                           
                           {visibleMonths.map(({ key }, monthIndex) => {
                             const current = product.monthlyValues[key] || 0;
-                            const previousMonthKey = visibleMonths[monthIndex + 1]?.key;
-                            const previous = previousMonthKey ? (product.monthlyValues[previousMonthKey] || 0) : 0;
+                            const previousMonthKeyData = visibleMonths[monthIndex + 1]?.key;
+                            const previous = previousMonthKeyData ? (product.monthlyValues[previousMonthKeyData] || 0) : 0;
                             const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
+                            const isPreviousMonth = key === previousMonthKey;
                             
                             return (
                               <td 
                                 key={key} 
-                                className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-slate-100 cursor-pointer transition-all duration-200"
+                                className="px-2 py-2 text-center text-sm font-mono border-l border-gray-200 cursor-pointer transition-all duration-200 text-slate-700 hover:bg-slate-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onRowClick?.({
@@ -671,13 +696,14 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
               
               {/* Totals Row */}
               <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-10 max-h-10">
-                <td className="w-80 px-4 py-2 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20">
+                <td className="w-96 px-4 py-2 text-left sticky left-0 bg-slate-800 border-r border-slate-400 z-20">
                   <div className="flex items-center space-x-2 min-h-6">
                     <span className="font-bold text-sm text-white">TOTALS</span>
                   </div>
                 </td>
                 
                 {visibleMonths.map(({ key, year, month }) => {
+                  const isPreviousMonth = key === previousMonthKey;
                   // Derive from all data in the month so average-type metrics are correct
                   const monthItems = (data as SalesData[]).filter(item => {
                     const itemDate = parseDate(item.paymentDate);

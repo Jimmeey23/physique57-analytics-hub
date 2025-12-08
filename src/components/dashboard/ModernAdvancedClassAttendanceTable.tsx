@@ -14,9 +14,12 @@ import {
   MoreHorizontal, RefreshCw, Grid3x3, List, ChevronLeft
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import { cn } from '@/lib/utils';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
+import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
 
 interface AdvancedClassAttendanceTableProps {
   data: SessionData[];
@@ -75,6 +78,11 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [groupBy, setGroupBy] = useState<GroupByOption>('trainer');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Table registration for export functionality
+  const tableRef = React.useRef<HTMLDivElement>(null);
+  const tableId = `class-attendance-table-${location.toLowerCase().replace(/\s+/g, '-')}`;
+  const { getAllTabsText } = useRegisterTableForCopy(tableRef, `Class Attendance Analytics - ${location}`);
   const [expandAll, setExpandAll] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -322,6 +330,81 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
 
   const totalPages = Math.ceil((filteredData as any[]).length / itemsPerPage);
 
+  // Export handler
+  const handleExportCSV = React.useCallback(() => {
+    const headers = [
+      groupBy === 'trainer' ? 'Trainer' :
+      groupBy === 'class' ? 'Class Type' :
+      groupBy === 'location' ? 'Location' :
+      'Group',
+      'Period',
+      'Total Classes',
+      'Empty Classes', 
+      'Non-Empty Classes',
+      'Total Checked In',
+      'Avg All Classes',
+      'Avg Non-Empty',
+      'Late Cancels',
+      'Fill Rate %',
+      'Revenue',
+      'Revenue/Class',
+      'Revenue/Attendee'
+    ];
+    
+    const csvRows = [headers.join(',')];
+    
+    if (viewMode === 'flat') {
+      processedData.forEach(session => {
+        const row = [
+          session.trainerName || 'Unknown',
+          session.period || '',
+          '1', // Individual session counts as 1 class
+          (session.checkedInCount || 0) === 0 ? '1' : '0',
+          (session.checkedInCount || 0) > 0 ? '1' : '0',
+          session.checkedInCount || 0,
+          session.checkedInCount || 0,
+          (session.checkedInCount || 0) > 0 ? session.checkedInCount || 0 : 0,
+          session.lateCancelledCount || 0,
+          session.capacity ? ((session.checkedInCount || 0) / session.capacity * 100).toFixed(1) : '0',
+          (session.totalPaid || 0).toFixed(0),
+          (session.totalPaid || 0).toFixed(0),
+          (session.checkedInCount && session.checkedInCount > 0) ? ((session.totalPaid || 0) / session.checkedInCount).toFixed(0) : '0'
+        ];
+        csvRows.push(row.join(','));
+      });
+    } else {
+      groupedData.forEach(group => {
+        const row = [
+          group.groupLabel,
+          group.period,
+          group.aggregatedMetrics.totalClasses,
+          group.aggregatedMetrics.emptyClasses,
+          group.aggregatedMetrics.nonEmptyClasses,
+          group.aggregatedMetrics.totalCheckedIn,
+          group.aggregatedMetrics.avgAll.toFixed(1),
+          group.aggregatedMetrics.avgNonEmpty.toFixed(1),
+          group.aggregatedMetrics.lateCancels,
+          group.aggregatedMetrics.fillRate.toFixed(1),
+          group.aggregatedMetrics.totalRevenue.toFixed(0),
+          group.aggregatedMetrics.revenuePerClass.toFixed(0),
+          group.aggregatedMetrics.revenuePerAttendee.toFixed(0)
+        ];
+        csvRows.push(row.join(','));
+      });
+    }
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `class-attendance-${location.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, [processedData, groupedData, groupBy, location, viewMode]);
+
   // Event handlers
   const toggleGroup = useCallback((groupKey: string) => {
     setExpandedGroups(prev => {
@@ -368,36 +451,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
     return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
   };
 
-  const TrainerAvatar: React.FC<{ name: string }> = ({ name }) => {
-    const initials = name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500', 
-      'bg-purple-500',
-      'bg-red-500',
-      'bg-yellow-500',
-      'bg-indigo-500',
-      'bg-pink-500',
-      'bg-teal-500'
-    ];
-
-    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-
-    return (
-      <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium",
-        colors[colorIndex]
-      )}>
-        {initials}
-      </div>
-    );
-  };
+  // Remove the old TrainerAvatar component since we're importing the proper one
 
   const ClassTypeBadge: React.FC<{ type: string; count?: number }> = ({ type, count }) => {
     const getBadgeColor = (classType: string) => {
@@ -513,7 +567,12 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           )}
 
           {/* Export */}
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={handleExportCSV}
+          >
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
@@ -521,17 +580,22 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       </CardHeader>
 
       <CardContent className="p-0 rounded-b-xl">
-        <div className="relative w-full overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl" style={{ display: 'block' }}>
+        <div 
+          ref={tableRef}
+          className="relative w-full overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar border-t border-slate-200 rounded-b-xl" 
+          style={{ display: 'block' }}
+          data-table={tableId}
+        >
           <Table className="min-w-[2000px] w-max">
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="bg-gradient-to-r from-red-600 to-orange-600 border-b-2 border-red-700 shadow-lg">
+              <TableRow className="bg-gradient-to-r from-red-700 via-red-800 to-red-900 border-b-2 border-red-900 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[200px] sticky left-0 z-30 h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[200px] sticky left-0 z-30 h-9 max-h-9 bg-gradient-to-r from-red-700 to-red-900"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">
+                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                     {groupBy === 'trainer' ? 'TRAINER' :
                      groupBy === 'class' ? 'CLASS TYPE' :
                      groupBy === 'location' ? 'LOCATION' :
@@ -549,7 +613,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-9 max-h-9"
                   onClick={() => handleSort('period')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -559,7 +623,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[100px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[100px] h-9 max-h-9"
                   onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -569,7 +633,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-9 max-h-9"
                   onClick={() => handleSort('classType')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -579,7 +643,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-9 max-h-9"
                   onClick={() => handleSort('day')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -589,7 +653,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[70px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[70px] h-9 max-h-9"
                   onClick={() => handleSort('time')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -599,7 +663,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-10"
+                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-9 max-h-9"
                   onClick={() => handleSort('location')}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -608,97 +672,97 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                     {getSortIcon('location')}
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] h-10">
+                <TableHead className="font-bold text-white text-center w-[70px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <BarChart3 className="w-4 h-4 flex-shrink-0" />
                     CLASSES
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] h-10">
+                <TableHead className="font-bold text-white text-center w-[70px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Target className="w-4 h-4 flex-shrink-0 text-red-400" />
                     EMPTY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Target className="w-4 h-4 flex-shrink-0 text-green-400" />
                     NON-EMPTY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Users className="w-4 h-4 flex-shrink-0" />
                     CHECKED IN
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Activity className="w-4 h-4 flex-shrink-0" />
                     AVG (ALL)
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] h-10">
+                <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <TrendingUp className="w-4 h-4 flex-shrink-0" />
                     AVG (NON-E)
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[100px] h-10">
+                <TableHead className="font-bold text-white text-center w-[100px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0" />
                     REVENUE
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Clock className="w-4 h-4 flex-shrink-0 text-orange-400" />
                     LATE CANCEL
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0 text-green-400" />
                     PAYOUT
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] h-10">
+                <TableHead className="font-bold text-white text-center w-[70px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0 text-yellow-400" />
                     TIPS
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Building2 className="w-4 h-4 flex-shrink-0 text-blue-400" />
                     CAPACITY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
                     FILL RATE
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] h-10">
+                <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0 text-emerald-400" />
                     REV/CLASS
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[90px] h-10">
+                <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0 text-teal-400" />
                     REV/ATTEND
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Activity className="w-4 h-4 flex-shrink-0 text-cyan-400" />
                     CONSISTENCY
                   </div>
                 </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-10">
+                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <TrendingUp className="w-4 h-4 flex-shrink-0 text-indigo-400" />
                     SHOW-UP %
@@ -713,10 +777,10 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   <React.Fragment key={group.groupKey}>
                     {/* Group header row */}
                     <TableRow 
-                      className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-blue-600 cursor-pointer max-h-[40px]"
+                      className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-blue-600 cursor-pointer h-9 max-h-9"
                       onClick={() => toggleGroup(group.groupKey)}
                     >
-                      <TableCell className="py-2 sticky left-0 z-20 bg-white hover:bg-gray-50 transition-colors max-h-[40px]">
+                      <TableCell className="py-2 sticky left-0 z-20 bg-white hover:bg-gray-50 transition-colors h-9 max-h-9 whitespace-nowrap overflow-hidden text-ellipsis">
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
                             {group.isExpanded ? 
@@ -724,87 +788,87 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                               <ChevronRight className="h-4 w-4 text-black" />
                             }
                           </Button>
-                          <TrainerAvatar name={group.groupLabel} />
+                          <TrainerNameCell name={group.groupLabel} className="flex-shrink-0" showName={false} />
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-black truncate">{group.groupLabel}</div>
-                            <div className="text-xs text-gray-600 truncate">
+                            <div className="font-semibold text-black whitespace-nowrap overflow-hidden text-ellipsis">{group.groupLabel}</div>
+                            <div className="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis">
                               {group.aggregatedMetrics.totalClasses} classes
                             </div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 max-h-[40px]">
+                      <TableCell className="py-2 h-9 max-h-9">
                         <Badge variant="secondary" className="font-medium text-xs h-6">
                           {group.period}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
-                        <span className="truncate">Multiple</span>
+                      <TableCell className="py-2 text-slate-500 text-sm h-9 max-h-9">
+                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">Multiple</span>
                       </TableCell>
-                      <TableCell className="py-2 max-h-[40px]">
-                        <div className="text-slate-500 text-sm truncate">Multiple</div>
+                      <TableCell className="py-2 h-9 max-h-9">
+                        <div className="text-slate-500 text-sm whitespace-nowrap overflow-hidden text-ellipsis">Multiple</div>
                       </TableCell>
-                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
-                        <span className="truncate">Various</span>
+                      <TableCell className="py-2 text-slate-500 text-sm h-9 max-h-9">
+                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">Various</span>
                       </TableCell>
-                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
-                        <span className="truncate">Various</span>
+                      <TableCell className="py-2 text-slate-500 text-sm h-9 max-h-9">
+                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">Various</span>
                       </TableCell>
-                      <TableCell className="py-2 text-slate-500 text-sm max-h-[40px]">
-                        <span className="truncate">Multiple</span>
+                      <TableCell className="py-2 text-slate-500 text-sm h-9 max-h-9">
+                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">Multiple</span>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <Badge className="metric-badge badge-soft-blue text-xs h-6 px-2 font-bold">
                           {group.aggregatedMetrics.totalClasses}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <Badge className="metric-badge badge-soft-red text-xs h-6 px-2 font-bold">
                           {group.aggregatedMetrics.emptyClasses}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <Badge className="metric-badge badge-soft-green text-xs h-6 px-2 font-bold">
                           {group.aggregatedMetrics.nonEmptyClasses}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-bold text-slate-900 text-sm">
                           {group.aggregatedMetrics.totalCheckedIn}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-slate-700 text-sm">
                           {group.aggregatedMetrics.avgAll.toFixed(1)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-slate-700 text-sm">
                           {group.aggregatedMetrics.avgNonEmpty.toFixed(1)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-bold text-green-700 text-sm">
                           {formatCurrency(group.aggregatedMetrics.totalRevenue)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-orange-700 text-sm">
                           {group.aggregatedMetrics.totalLateCancels}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center text-slate-400 text-sm max-h-[40px]">
+                      <TableCell className="py-2 text-center text-slate-400 text-sm h-9 max-h-9">
                         -
                       </TableCell>
-                      <TableCell className="py-2 text-center text-slate-400 text-sm max-h-[40px]">
+                      <TableCell className="py-2 text-center text-slate-400 text-sm h-9 max-h-9">
                         -
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-blue-700 text-sm">
                           {formatNumber(group.aggregatedMetrics.totalCapacity)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <Badge className={cn(
                           "metric-badge text-xs h-6 px-2 font-bold",
                           group.aggregatedMetrics.fillRate >= 80 ? "badge-soft-green" :
@@ -814,17 +878,17 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           {group.aggregatedMetrics.fillRate.toFixed(1)}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-emerald-700 text-sm">
                           {formatCurrency(group.aggregatedMetrics.revenuePerClass)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-teal-700 text-sm">
                           {formatCurrency(group.aggregatedMetrics.revenuePerAttendee)}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <Badge className={cn(
                           "metric-badge text-xs h-6 px-2 font-bold",
                           group.aggregatedMetrics.consistency >= 80 ? "badge-soft-green" :
@@ -834,7 +898,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           {group.aggregatedMetrics.consistency.toFixed(1)}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-2 text-center max-h-[40px]">
+                      <TableCell className="py-2 text-center h-9 max-h-9">
                         <Badge className={cn(
                           "metric-badge text-xs h-6 px-2 font-bold",
                           group.aggregatedMetrics.showUpRate >= 90 ? "badge-soft-green" :
@@ -852,52 +916,52 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         key={`${group.groupKey}-${index}`}
                         className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-transparent hover:border-l-gray-300"
                       >
-                        <TableCell className="py-2 pl-12 max-h-[40px]">
+                        <TableCell className="py-2 pl-12 h-9 max-h-9">
                           <div className="flex items-center gap-2">
                             <div className="flex-shrink-0">
-                              <TrainerAvatar name={session.trainerName || 'Unknown'} />
+                              <TrainerNameCell name={session.trainerName || 'Unknown'} showName={false} />
                             </div>
-                            <div className="truncate">
-                              <div className="text-sm font-medium text-black truncate">{session.trainerName}</div>
+                            <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                              <div className="text-sm font-medium text-black whitespace-nowrap overflow-hidden text-ellipsis">{session.trainerName}</div>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 max-h-[40px]">
+                        <TableCell className="py-2 h-9 max-h-9">
                           <Badge variant="outline" className="text-xs h-6 px-2 font-bold">
                             {session.period}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm font-medium text-black truncate">
+                        <TableCell className="py-2 h-9 max-h-9">
+                          <div className="text-sm font-medium text-black whitespace-nowrap overflow-hidden text-ellipsis">
                             {formatDate(session.date)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 max-h-[40px]">
+                        <TableCell className="py-2 h-9 max-h-9">
                           <div className="text-xs">
                             <ClassTypeBadge type={session.cleanedClass || 'Unknown'} />
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm text-black truncate">
+                        <TableCell className="py-2 h-9 max-h-9">
+                          <div className="text-sm text-black whitespace-nowrap overflow-hidden text-ellipsis">
                             {session.dayOfWeek}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm font-medium text-black truncate">
+                        <TableCell className="py-2 h-9 max-h-9">
+                          <div className="text-sm font-medium text-black whitespace-nowrap overflow-hidden text-ellipsis">
                             {session.time}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 max-h-[40px]">
-                          <div className="text-sm text-black truncate">
+                        <TableCell className="py-2 h-9 max-h-9">
+                          <div className="text-sm text-black whitespace-nowrap overflow-hidden text-ellipsis">
                             {session.location}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <Badge variant="secondary" className="text-xs h-6 px-2 font-bold">
                             1
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <Badge className={cn(
                             "text-xs h-6 px-2 font-bold",
                             session.emptyClasses > 0 ? "badge-soft-red" : "badge-soft-slate"
@@ -905,7 +969,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                             {session.emptyClasses}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <Badge className={cn(
                             "text-xs h-6 px-2 font-bold",
                             session.nonEmptyClasses > 0 ? "badge-soft-green" : "badge-soft-slate"
@@ -913,35 +977,35 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                             {session.nonEmptyClasses}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <div className="text-sm font-medium text-slate-800">
                             {session.checkedInCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <div className="text-sm text-slate-600">
                             {session.checkedInCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <div className="text-sm text-slate-600">
                             {(session.checkedInCount || 0) > 0 ? (session.checkedInCount || 0) : '-'}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
-                          <div className="text-sm font-medium text-green-700 truncate">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-sm font-medium text-green-700 whitespace-nowrap overflow-hidden text-ellipsis">
                             {formatCurrency(session.totalPaid || 0)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center max-h-[40px]">
+                        <TableCell className="py-2 text-center h-9 max-h-9">
                           <div className="text-sm text-orange-600">
                             {session.lateCancelledCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center text-slate-400 max-h-[40px]">
+                        <TableCell className="py-2 text-center text-slate-400 h-9 max-h-9">
                           -
                         </TableCell>
-                        <TableCell className="py-2 text-center text-slate-400 max-h-[40px]">
+                        <TableCell className="py-2 text-center text-slate-400 h-9 max-h-9">
                           -
                         </TableCell>
                       </TableRow>
@@ -957,10 +1021,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   >
                     <TableCell className="py-4">
                       <div className="flex items-center gap-3">
-                        <TrainerAvatar name={session.trainerName || 'Unknown'} />
-                        <div>
-                          <div className="font-medium text-black">{session.trainerName}</div>
-                        </div>
+                        <TrainerNameCell name={session.trainerName || 'Unknown'} />
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
@@ -987,7 +1048,7 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="text-black truncate max-w-[120px]">
+                      <div className="text-black whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
                         {session.location}
                       </div>
                     </TableCell>
@@ -1048,46 +1109,46 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
               )}
               {/* Totals row */}
               <TableRow className="bg-gradient-to-r from-indigo-100 via-blue-100 to-indigo-100 border-t-4 border-indigo-500">
-                <TableCell className="sticky left-0 z-10 bg-gradient-to-r from-indigo-100 to-blue-100 py-2 max-h-[40px]">
+                <TableCell className="sticky left-0 z-10 bg-gradient-to-r from-indigo-100 to-blue-100 py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">TOTALS</span>
                 </TableCell>
                 {/* Period */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Date */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Class Type */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Day */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Time */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Location */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Classes */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.length)}</span>
                 </TableCell>
                 {/* Empty */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-red-700">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) === 0).length)}</span>
                 </TableCell>
                 {/* Non-Empty */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-green-700">{formatNumber(processedData.filter(s => (s.checkedInCount || 0) > 0).length)}</span>
                 </TableCell>
                 {/* Checked In */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0))}</span>
                 </TableCell>
                 {/* Avg (All) */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">{(() => {
                     const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
                     return (processedData.length > 0 ? (totalChecked / processedData.length).toFixed(1) : '0.0');
                   })()}</span>
                 </TableCell>
                 {/* Avg (Non-Empty) */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">{(() => {
                     const nonEmpty = processedData.filter(s => (s.checkedInCount || 0) > 0);
                     const totalChecked = nonEmpty.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
@@ -1095,23 +1156,23 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   })()}</span>
                 </TableCell>
                 {/* Revenue */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-green-700">{formatCurrency(processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0))}</span>
                 </TableCell>
                 {/* Late Cancels */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-orange-700">{formatNumber(processedData.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0))}</span>
                 </TableCell>
                 {/* Payout */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Tips */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Capacity */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.reduce((sum, s) => sum + (s.capacity || 0), 0))}</span>
                 </TableCell>
                 {/* Fill Rate */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-indigo-900">{(() => {
                     const totalCapacity = processedData.reduce((sum, s) => sum + (s.capacity || 0), 0);
                     const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
@@ -1120,14 +1181,14 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   })()}</span>
                 </TableCell>
                 {/* Rev/Class */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-green-700">{(() => {
                     const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
                     return processedData.length > 0 ? formatCurrency(totalRevenue / processedData.length) : formatCurrency(0);
                   })()}</span>
                 </TableCell>
                 {/* Rev/Attendee */}
-                <TableCell className="text-center py-2 max-h-[40px]">
+                <TableCell className="text-center py-2 h-9 max-h-9">
                   <span className="text-sm font-bold text-green-700">{(() => {
                     const totalRevenue = processedData.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
                     const totalChecked = processedData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
@@ -1135,9 +1196,9 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   })()}</span>
                 </TableCell>
                 {/* Consistency */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Show-up % */}
-                <TableCell className="py-2 max-h-[40px]"></TableCell>
+                <TableCell className="py-2 h-9 max-h-9"></TableCell>
               </TableRow>
             </TableBody>
           </Table>

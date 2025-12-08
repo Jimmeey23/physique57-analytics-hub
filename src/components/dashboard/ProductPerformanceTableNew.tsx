@@ -5,7 +5,6 @@ import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFoo
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ChevronDown, ChevronRight, ShoppingCart, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, Target, Trophy, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getRankingDisplay } from '@/utils/rankingUtils';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
 import { useTableCopyContext } from '@/hooks/useTableCopyContext';
@@ -29,6 +28,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Get context information for enhanced table copying
   const copyContext = useTableCopyContext();
@@ -127,6 +127,16 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
         return formatNumber(value);
     }
   };
+
+
+
+  // Get previous month key for highlighting
+  const getPreviousMonthKey = () => {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const previousMonthKey = getPreviousMonthKey();
 
   // Use standard 22-month range (October 2025 to January 2024)
   const monthlyData = useMemo(() => generateStandardMonthRange(), []);
@@ -233,6 +243,15 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
   const handleExpandAll = useCallback(() => {
     setLocalCollapsedGroups(new Set());
   }, []);
+
+  // Set all categories as collapsed by default on first load
+  React.useEffect(() => {
+    if (processedData.length > 0 && !isInitialized) {
+      const allCategories = new Set(processedData.map(cat => cat.category));
+      setLocalCollapsedGroups(allCategories);
+      setIsInitialized(true);
+    }
+  }, [processedData, isInitialized]);
 
   // Function to generate content for all metric tabs
   const generateAllTabsContent = useCallback(async () => {
@@ -376,12 +395,12 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
           }
         }}
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" data-table="product-performance-analysis">
           <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th
-                  className="w-80 px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -394,22 +413,32 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                   </div>
                 </th>
                 
-                                {visibleMonths.map(({ key, display }) => (
+                                {visibleMonths.map(({ key, display }) => {
+                  const isPreviousMonth = key === previousMonthKey;
+                  return (
                   <th
                     key={key}
-                    className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                    className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
+                      isPreviousMonth 
+                        ? 'bg-blue-800 text-white' 
+                        : 'text-white'
+                    }`}
                     onClick={() => {
                       if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
                       else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
                     }}
-                    title={`Sort by ${display} (${sortDir})`}
+                    title={`Sort by ${display} (${sortDir})${isPreviousMonth ? ' - Main Month' : ''}`}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      <div className="flex items-center space-x-1">
+                        {isPreviousMonth && <Star className="w-3 h-3" />}
+                        <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      </div>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
 
@@ -418,7 +447,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                 <React.Fragment key={categoryGroup.category}>
                   {/* Category Row */}
                   <tr 
-                    className="group bg-slate-100 border-b border-slate-300 font-semibold hover:bg-slate-200 transition-all duration-200 h-10 max-h-10 cursor-pointer"
+                    className="group bg-slate-100 border-b border-slate-400 font-semibold hover:bg-slate-200 transition-all duration-200 h-9 max-h-9 cursor-pointer"
                     onClick={() => onRowClick?.({
                       drillDownContext: 'product-category-total',
                       filterCriteria: { category: categoryGroup.category },
@@ -429,9 +458,9 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                     })}
                   >
                     <td 
-                      className="w-80 px-8 py-4 text-left sticky left-0 bg-gradient-to-r from-orange-100 via-red-50 to-pink-50 group-hover:from-orange-200 group-hover:via-red-100 group-hover:to-pink-100 border-r border-orange-300 z-20 transition-all duration-300 shadow-sm"
+                      className="w-[30rem] px-4 py-2 text-left sticky left-0 bg-slate-100 group-hover:bg-slate-200 border-r border-slate-300 z-20 transition-all duration-300 shadow-sm whitespace-nowrap overflow-hidden text-ellipsis"
                     >
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -439,19 +468,14 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                             e.stopPropagation();
                             toggleGroup(categoryGroup.category);
                           }} 
-                          className="p-2 h-8 w-8 rounded-full text-orange-600 hover:text-orange-800 hover:bg-white/50 transition-all duration-200"
+                          className="p-1 h-5 w-5 rounded text-slate-600 hover:text-slate-800 hover:bg-white/50 transition-all duration-200"
                         >
                           {localCollapsedGroups.has(categoryGroup.category) ? 
                             <ChevronRight className="w-5 h-5" /> : 
                             <ChevronDown className="w-5 h-5" />
                           }
                         </Button>
-                        <span className="font-bold text-lg text-orange-800">#{categoryIndex + 1} {categoryGroup.category}</span>
-                        <ModernGroupBadge 
-                          count={categoryGroup.products.length} 
-                          label="products" 
-                          variant="warning"
-                        />
+                        <span className="font-bold text-sm text-black">{categoryGroup.category}</span>
                       </div>
                     </td>
                     
@@ -504,7 +528,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                     categoryGroup.products.map((product, productIndex) => (
                       <tr 
                         key={`${categoryGroup.category}-${product.product}`}
-                        className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-10 max-h-10"
+                        className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-9 max-h-9"
                         onClick={() => onRowClick?.({
                           ...product,
                           contextType: 'product',
@@ -516,11 +540,11 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                           }
                         })}
                       >
-                        <td className="w-80 px-8 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-10 cursor-pointer transition-all duration-200">
-                          <div className="flex items-center space-x-2 min-h-6">
-                            <div className="shrink-0">{getRankingDisplay(productIndex + 1)}</div>
-                            <span className="text-slate-700 font-medium text-sm truncate">{product.product}</span>
-                          </div>
+                        <td className="w-[30rem] px-8 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-10 cursor-pointer transition-all duration-200">
+                            <div className="flex items-center space-x-2 min-h-8">
+                              <span className="text-slate-400 text-xs">→</span>
+                              <span className="text-slate-700 font-medium text-sm whitespace-nowrap">{product.product}</span>
+                            </div>
                         </td>
                         
                         {visibleMonths.map(({ key }, monthIndex) => {
@@ -586,7 +610,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
               
               {/* Totals Row */}
               <tr 
-                className="bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-10 max-h-10 cursor-pointer hover:bg-slate-700"
+                className="bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-12 cursor-pointer hover:bg-slate-700"
                 onClick={() => onRowClick?.({
                   drillDownContext: 'product-grand-total',
                   filterCriteria: {},
@@ -595,7 +619,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                   isGroup: true,
                 })}
               >
-                <td className="w-80 px-4 py-2 text-left sticky left-0 bg-slate-800 group-hover:bg-slate-700 border-r border-slate-400 z-20">
+                <td className="w-96 px-4 py-2 text-left sticky left-0 bg-slate-800 group-hover:bg-slate-700 border-r border-slate-400 z-20">
                   <div className="flex items-center space-x-2 min-h-6">
                     <span className="font-bold text-sm text-white">TOTALS</span>
                   </div>

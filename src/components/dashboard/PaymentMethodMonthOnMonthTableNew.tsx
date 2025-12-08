@@ -3,8 +3,7 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { CreditCard, TrendingUp, TrendingDown } from 'lucide-react';
-import { getRankingDisplay } from '@/utils/rankingUtils';
+import { CreditCard, TrendingUp, TrendingDown, Star } from 'lucide-react';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
 import { shallowEqual } from '@/utils/performanceUtils';
 import { useTableCopyContext } from '@/hooks/useTableCopyContext';
@@ -30,6 +29,13 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
 
   // Get context information for enhanced table copying
   const copyContext = useTableCopyContext();
+
+  const getPreviousMonthKey = () => {
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const previousMonthKey = getPreviousMonthKey();
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -298,22 +304,32 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
                   </div>
                 </th>
                 
-                {visibleMonths.map(({ key, display }) => (
+                {visibleMonths.map(({ key, display }) => {
+                  const isPreviousMonth = key === previousMonthKey;
+                  return (
                   <th
                     key={key}
-                    className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                    className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
+                      isPreviousMonth 
+                        ? 'bg-blue-800 text-white' 
+                        : 'text-white'
+                    }`}
                     onClick={() => {
                       if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
                       else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
                     }}
-                    title={`Sort by ${display} (${sortDir})`}
+                    title={`Sort by ${display} (${sortDir})${isPreviousMonth ? ' - Main Month' : ''}`}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      <div className="flex items-center space-x-1">
+                        {isPreviousMonth && <Star className="w-3 h-3" />}
+                        <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
+                      </div>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
 
@@ -321,7 +337,7 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
               {processedData.map((method, methodIndex) => (
                 <tr 
                   key={method.method}
-                  className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-10 max-h-10"
+                  className="bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 h-12"
                   onClick={() => onRowClick?.({
                     ...method,
                     contextType: 'paymentMethod',
@@ -332,20 +348,9 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
                   })}
                 >
                   <td className="w-80 px-4 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20 cursor-pointer transition-all duration-200">
-                    <div className="flex items-center space-x-2 min-h-6">
+                    <div className="flex items-center space-x-2 min-h-8">
                       <div className="flex items-center space-x-2 flex-1">
-                        <div className="shrink-0">{getRankingDisplay(methodIndex + 1)}</div>
                         <span className="text-slate-700 font-medium text-sm truncate">{method.method}</span>
-                      </div>
-                      <div className="flex space-x-1.5">
-                        <ModernGroupBadge 
-                          count={method.totalTransactions} 
-                          label="transactions"
-                        />
-                        <ModernGroupBadge 
-                          count={method.uniqueMembers} 
-                          label="members"
-                        />
                       </div>
                     </div>
                   </td>
