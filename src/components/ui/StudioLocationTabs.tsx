@@ -349,15 +349,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
-<<<<<<< HEAD
-                      onClick={(e) => e.stopPropagation()}
-=======
-<<<<<<< HEAD
                       onClick={(e) => e.stopPropagation()} // Prevent location tab expansion when info icon is clicked
-=======
-                      onClick={(e) => e.stopPropagation()}
->>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
->>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
                     >
                       <div className="[&>*]:!bg-transparent [&>*]:!border-current [&>*]:!text-current">
                         <InfoPopover context={infoPopoverContext} locationId={activeLocation} />
@@ -665,7 +657,6 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
                         className="flex items-center justify-center"
                         animate={colorAnimation}
                         transition={colorTransition}
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <div className="[&>*]:!bg-transparent [&>*]:!border-current [&>*]:!text-current">
                           <InfoPopover context={infoPopoverContext} locationId={activeLocation} />

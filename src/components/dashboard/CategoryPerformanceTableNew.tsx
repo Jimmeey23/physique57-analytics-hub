@@ -28,17 +28,15 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
   const [sortKey, setSortKey] = useState<string>('total');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
 
-<<<<<<< HEAD
   // Get context information for enhanced table copying
   const copyContext = useTableCopyContext();
-=======
+  
   const getPreviousMonthKey = () => {
     const now = new Date();
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
   };
   const previousMonthKey = getPreviousMonthKey();
->>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
 
   const parseDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;

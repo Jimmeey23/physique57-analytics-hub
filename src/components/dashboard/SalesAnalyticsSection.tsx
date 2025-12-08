@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Building2, Landmark, Building, Calendar, TrendingUp, ShoppingCart, Layers, Users, CreditCard, Target } from 'lucide-react';
+import { MapPin, Building2, Landmark, Building } from 'lucide-react';
 import { AutoCloseFilterSection } from './AutoCloseFilterSection';
 import { MetricCard } from './MetricCard';
 import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
@@ -772,55 +772,40 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 <UnifiedTopBottomSellers data={filteredData} />
               </SectionAnchor>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
                 <Tabs defaultValue="monthOnMonth" className="w-full">
                   <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 flex w-full max-w-7xl mx-auto overflow-hidden">
                     {/* Uniform trigger styling for consistent size/width/spacing across tabs */}
                     <TabsTrigger value="monthOnMonth" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
                       Month on Month
-=======
->>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
-                <Tabs defaultValue="monthOnMonth" value={currentTab} onValueChange={handleTabChange} className="w-full">
-                  <TabsList className="bg-white/90 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 w-full max-w-7xl mx-auto overflow-visible grid grid-cols-7 gap-0.5">
-                    {/* Improved trigger styling with horizontal layout and bigger text */}
-                    <TabsTrigger value="monthOnMonth" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <Calendar className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Monthly</span>
-<<<<<<< HEAD
-=======
->>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
->>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
                     </TabsTrigger>
-                    <TabsTrigger value="yearOnYear" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <TrendingUp className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Yearly</span>
+                    <TabsTrigger value="yearOnYear" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Year on Year
                     </TabsTrigger>
-                    <TabsTrigger value="productPerformance" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <ShoppingCart className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Products</span>
+                    <TabsTrigger value="productPerformance" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Product Performance
                     </TabsTrigger>
-                    <TabsTrigger value="categoryPerformance" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <Layers className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Categories</span>
+                    <TabsTrigger value="categoryPerformance" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Category Performance
                     </TabsTrigger>
-                    <TabsTrigger value="soldByAnalysis" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <Users className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Sales Team</span>
+                    <TabsTrigger value="soldByAnalysis" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Sold By
                     </TabsTrigger>
-                    <TabsTrigger value="paymentMethodAnalysis" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <CreditCard className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Payment</span>
+                    <TabsTrigger value="paymentMethodAnalysis" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Payment Methods
                     </TabsTrigger>
-                    <TabsTrigger value="customerBehavior" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                      <Target className="w-4 h-4 shrink-0" />
-                      <span className="text-sm leading-tight whitespace-nowrap">Behavior</span>
+                    <TabsTrigger value="customerBehavior" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Customer Behavior
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="monthOnMonth" className="mt-8">
-                    <SectionAnchor id="sales-mom" label="Month-on-Month" className="space-y-4">
+                    <SectionAnchor id="sales-mom" label="Month-on-Month" activate={() => {
+                      const trigger = document.querySelector("[role='tab'][data-state='active'][data-value='monthOnMonth']") as HTMLElement | null;
+                      if (!trigger) {
+                        const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                        t.find(el => el.getAttribute('data-value') === 'monthOnMonth')?.click();
+                      }
+                    }} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
                       </div>
@@ -837,7 +822,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                   </TabsContent>
 
                   <TabsContent value="yearOnYear" className="mt-8">
-                    <SectionAnchor id="sales-yoy" label="Year-on-Year" className="space-y-4">
+                    <SectionAnchor id="sales-yoy" label="Year-on-Year" activate={() => {
+                      const trigger = document.querySelector("[role='tab'][data-state='active'][data-value='yearOnYear']") as HTMLElement | null;
+                      if (!trigger) {
+                        const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                        t.find(el => el.getAttribute('data-value') === 'yearOnYear')?.click();
+                      }
+                    }} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-gray-900">Year-on-Year Analysis</h2>
                       </div>
@@ -851,7 +842,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                   </TabsContent>
 
                 <TabsContent value="productPerformance" className="mt-8">
-                  <SectionAnchor id="sales-product" label="Products" className="space-y-4">
+                  <SectionAnchor id="sales-product" label="Products" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'productPerformance')?.click();
+                  }} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
                     </div>
@@ -865,7 +859,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 </TabsContent>
 
                 <TabsContent value="categoryPerformance" className="mt-8">
-                  <SectionAnchor id="sales-category" label="Categories" className="space-y-4">
+                  <SectionAnchor id="sales-category" label="Categories" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'categoryPerformance')?.click();
+                  }} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Category Performance Analysis</h2>
                     </div>
@@ -879,7 +876,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 </TabsContent>
 
                 <TabsContent value="soldByAnalysis" className="mt-8">
-                  <SectionAnchor id="sales-soldby" label="Sold By" className="space-y-4">
+                  <SectionAnchor id="sales-soldby" label="Sold By" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'soldByAnalysis')?.click();
+                  }} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Sold By Analysis</h2>
                     </div>
@@ -893,7 +893,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 </TabsContent>
 
                 <TabsContent value="paymentMethodAnalysis" className="mt-8">
-                  <SectionAnchor id="sales-payment" label="Payment Methods" className="space-y-4">
+                  <SectionAnchor id="sales-payment" label="Payment Methods" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'paymentMethodAnalysis')?.click();
+                  }} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Payment Method Analysis</h2>
                     </div>
@@ -907,7 +910,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 </TabsContent>
 
                 <TabsContent value="customerBehavior" className="space-y-6">
-                  <SectionAnchor id="sales-customer" label="Customer Behavior">
+                  <SectionAnchor id="sales-customer" label="Customer Behavior" activate={() => {
+                    const t = Array.from(document.querySelectorAll("[role='tab']")) as HTMLElement[];
+                    t.find(el => el.getAttribute('data-value') === 'customerBehavior')?.click();
+                  }}>
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Customer Behavior</h2>
                     </div>
@@ -933,4 +939,3 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     </div>
   );
 };
-
