@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Building2, Landmark, Building } from 'lucide-react';
+import { MapPin, Building2, Landmark, Building, Calendar, TrendingUp, ShoppingCart, FolderOpen, Users, CreditCard, UserCheck } from 'lucide-react';
 import { AutoCloseFilterSection } from './AutoCloseFilterSection';
 import { MetricCard } from './MetricCard';
 import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
@@ -773,28 +773,35 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </SectionAnchor>
 
                 <Tabs defaultValue="monthOnMonth" className="w-full">
-                  <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 flex w-full max-w-7xl mx-auto overflow-hidden">
+                  <TabsList className="bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-2xl border-2 border-slate-200 flex w-full max-w-7xl mx-auto overflow-visible relative">
                     {/* Uniform trigger styling for consistent size/width/spacing across tabs */}
-                    <TabsTrigger value="monthOnMonth" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Month on Month
+                    <TabsTrigger value="monthOnMonth" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-600 data-[state=active]:via-blue-700 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <Calendar className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Month on Month</span>
                     </TabsTrigger>
-                    <TabsTrigger value="yearOnYear" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Year on Year
+                    <TabsTrigger value="yearOnYear" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-600 data-[state=active]:via-emerald-700 data-[state=active]:to-emerald-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <TrendingUp className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Year on Year</span>
                     </TabsTrigger>
-                    <TabsTrigger value="productPerformance" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Product Performance
+                    <TabsTrigger value="productPerformance" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-600 data-[state=active]:via-purple-700 data-[state=active]:to-purple-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <ShoppingCart className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Products</span>
                     </TabsTrigger>
-                    <TabsTrigger value="categoryPerformance" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Category Performance
+                    <TabsTrigger value="categoryPerformance" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-orange-600 data-[state=active]:via-orange-700 data-[state=active]:to-orange-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <FolderOpen className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Categories</span>
                     </TabsTrigger>
-                    <TabsTrigger value="soldByAnalysis" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Sold By
+                    <TabsTrigger value="soldByAnalysis" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-600 data-[state=active]:via-indigo-700 data-[state=active]:to-indigo-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <Users className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Sales Team</span>
                     </TabsTrigger>
-                    <TabsTrigger value="paymentMethodAnalysis" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Payment Methods
+                    <TabsTrigger value="paymentMethodAnalysis" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-teal-600 data-[state=active]:via-teal-700 data-[state=active]:to-teal-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <CreditCard className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Payments</span>
                     </TabsTrigger>
-                    <TabsTrigger value="customerBehavior" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Customer Behavior
+                    <TabsTrigger value="customerBehavior" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-600 data-[state=active]:via-pink-700 data-[state=active]:to-pink-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                      <UserCheck className="w-4 h-4" />
+                      <span className="whitespace-nowrap">Behavior</span>
                     </TabsTrigger>
                   </TabsList>
 

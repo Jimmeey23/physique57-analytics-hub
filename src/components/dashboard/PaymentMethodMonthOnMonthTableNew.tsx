@@ -349,9 +349,8 @@ export const PaymentMethodMonthOnMonthTableNewComponent: React.FC<PaymentMethodM
                 >
                   <td className="w-80 px-4 py-2 text-left sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20 cursor-pointer transition-all duration-200">
                     <div className="flex items-center space-x-2 min-h-8">
-                      <div className="flex items-center space-x-2 flex-1">
-                        <span className="text-slate-700 font-medium text-sm truncate">{method.method}</span>
-                      </div>
+                      <span className="text-slate-400 text-xs">→</span>
+                      <span className="text-slate-700 font-medium text-sm truncate">{method.method}</span>
                     </div>
                   </td>
                   

@@ -463,7 +463,10 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
                         }
                         title={`View all transactions for ${prod.product}`}
                       >
-                        <span className="text-slate-700 font-medium">{prod.product}</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-slate-400 text-xs">→</span>
+                          <span className="text-slate-700 font-medium text-xs">{prod.product}</span>
+                        </div>
                       </td>
                       {monthKeys.map(({ key }, idx) => {
                         const current = prod.monthlyValues[key] || 0;
