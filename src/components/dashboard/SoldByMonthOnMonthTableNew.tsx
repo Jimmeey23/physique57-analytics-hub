@@ -303,8 +303,18 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
           }
         }}
       >
+<<<<<<< HEAD
         <div className="overflow-x-auto" data-table="sales-team-performance">
           <table className="min-w-full bg-white">
+=======
+<<<<<<< HEAD
+        <div className="overflow-x-auto">
+          <table ref={tableRef} className="min-w-full bg-white">
+=======
+        <div className="overflow-x-auto" data-table="sales-team-performance">
+          <table className="min-w-full bg-white">
+>>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
+>>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th

@@ -167,7 +167,11 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
           </TabsList>
 
           <TabsContent value="comprehensive" className="mt-6">
+<<<<<<< HEAD
             <NewComprehensiveClassTable 
+=======
+            <AdvancedClassAttendanceTable 
+>>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
               data={locationFilteredData}
               location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
               onDrillDown={handleDrillDown}

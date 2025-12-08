@@ -773,12 +773,25 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               </SectionAnchor>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+                <Tabs defaultValue="monthOnMonth" className="w-full">
+                  <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 flex w-full max-w-7xl mx-auto overflow-hidden">
+                    {/* Uniform trigger styling for consistent size/width/spacing across tabs */}
+                    <TabsTrigger value="monthOnMonth" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
+                      Month on Month
+=======
+>>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
                 <Tabs defaultValue="monthOnMonth" value={currentTab} onValueChange={handleTabChange} className="w-full">
                   <TabsList className="bg-white/90 backdrop-blur-sm p-1.5 rounded-2xl shadow-xl border border-slate-200 w-full max-w-7xl mx-auto overflow-visible grid grid-cols-7 gap-0.5">
                     {/* Improved trigger styling with horizontal layout and bigger text */}
                     <TabsTrigger value="monthOnMonth" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
                       <Calendar className="w-4 h-4 shrink-0" />
                       <span className="text-sm leading-tight whitespace-nowrap">Monthly</span>
+<<<<<<< HEAD
+=======
+>>>>>>> f17f179 (feat: add HeroExportModal component with advanced table detection and export functionality)
+>>>>>>> c0df3408c7125dcedb5eedaa8e79e1ab22e2b124
                     </TabsTrigger>
                     <TabsTrigger value="yearOnYear" className="relative text-center px-3 py-3 font-semibold text-sm min-h-[60px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:z-10 data-[state=active]:scale-105 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
                       <TrendingUp className="w-4 h-4 shrink-0" />

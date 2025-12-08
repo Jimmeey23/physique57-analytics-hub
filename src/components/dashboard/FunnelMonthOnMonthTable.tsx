@@ -5,11 +5,9 @@ import { Button } from '@/components/ui/button';
 import { BarChart3, Calendar, ChevronDown, ChevronUp, Eye, Filter, Minus, TrendingDown, TrendingUp, ShrinkIcon, ExpandIcon, Percent, Star, Users, Target } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { cn } from '@/lib/utils';
-import { ModernTableWrapper, ModernMetricTabs } from './ModernTableWrapper';
-import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
-import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
-import { generateStandardMonthRange } from '@/utils/dateUtils';
-import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { ModernTableWrapper } from './ModernTableWrapper';
+import { useTableCopyContext } from '@/hooks/useTableCopyContext';
 
 type GroupKey = 'source' | 'stage' | 'center' | 'channel' | 'associate';
 type MetricType = 'totalLeads' | 'trialsCompleted' | 'trialsScheduled' | 'convertedLeads' | 'ltv' | 'avgVisits';
@@ -166,61 +164,60 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
         totalItems={processedData.length}
         showDisplayToggle={true}
         displayMode={viewMode}
-        onDisplayModeChange={setViewMode}
-        className="animate-in slide-in-from-bottom-8 fade-in duration-1000"
-        showCopyButton={true}
+        onDisplayModeChange={(mode) => setViewMode(mode as 'values' | 'growth')}
+        showCollapseControls={false}
+        tableRef={tableRef}
+        contextInfo={{
+          selectedMetric: metric,
+          dateRange: copyContext.dateRange,
+          filters: copyContext.filters,
+          additionalInfo: {
+            groupKey: groupKey,
+            metric: metric,
+            viewMode: viewMode,
+            sortBy: sortBy,
+            sortOrder: sortOrder,
+            totalItems: processedData.length
+          }
+        }}
+        headerControls={
+          <div className="flex items-center gap-2">
+            <select className="border border-white/30 bg-white/10 text-white rounded-md px-2 py-1 text-xs" value={groupKey} onChange={e => setGroupKey(e.target.value as GroupKey)}>
+              <option value="source" className="text-slate-900">Group: Source</option>
+              <option value="stage" className="text-slate-900">Group: Stage</option>
+              <option value="center" className="text-slate-900">Group: Center</option>
+              <option value="channel" className="text-slate-900">Group: Channel</option>
+              <option value="associate" className="text-slate-900">Group: Associate</option>
+            </select>
+            <select className="border border-white/30 bg-white/10 text-white rounded-md px-2 py-1 text-xs" value={metric} onChange={e => setMetric(e.target.value as MetricType)}>
+              <option value="totalLeads" className="text-slate-900">Metric: Total Leads</option>
+              <option value="trialsCompleted" className="text-slate-900">Metric: Trials Completed</option>
+              <option value="trialsScheduled" className="text-slate-900">Metric: Trials Scheduled</option>
+              <option value="convertedLeads" className="text-slate-900">Metric: Converted Leads</option>
+              <option value="ltv" className="text-slate-900">Metric: Avg LTV</option>
+              <option value="avgVisits" className="text-slate-900">Metric: Avg Visits</option>
+            </select>
+          </div>
+        }
       >
-        <div className="overflow-x-auto" data-table="funnel-month-on-month-analysis">
-          <table ref={tableRef} className="min-w-full bg-white">
-            <thead>
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none">
-                  <div className="flex items-center space-x-2">
-                    <Star className="w-4 h-4 text-white" />
-                    <span>{groupKey.charAt(0).toUpperCase() + groupKey.slice(1)}</span>
-                  </div>
-                </th>
-                {months.map(({ key, display }, index) => {
-                  const isPreviousMonth = key === previousMonthKey;
-                  return (
-                    <th
-                      key={key}
-                      className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
-                        isPreviousMonth 
-                          ? 'bg-blue-800 text-white' 
-                          : 'text-white'
-                      }`}
-                      onClick={() => {
-                        if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
-                        else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
-                      }}
-                      title={`Sort by ${display} (${sortDir})${isPreviousMonth ? ' - Main Month' : ''}`}
-                    >
-                      <div className="flex flex-col items-center">
-                        <div className="flex items-center space-x-1">
-                          {isPreviousMonth && <Star className="w-3 h-3" />}
-                          <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
-                        </div>
-                        <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {processedData.map((row, index) => {
-                const metricVal = (b: any): number => {
-                  if (!b) return 0;
-                  switch (metric) {
-                    case 'totalLeads': return b.totalLeads;
-                    case 'trialsCompleted': return b.trialsCompleted;
-                    case 'trialsScheduled': return b.trialsScheduled;
-                    case 'convertedLeads': return b.convertedLeads;
-                    case 'ltv': return b.totalLeads > 0 ? b.totalLTV / b.totalLeads : 0;
-                    case 'avgVisits': return b.totalLeads > 0 ? b.totalVisits / b.totalLeads : 0;
-                  }
-                };
+        <div className="pt-0">
+          <motion.div className="overflow-x-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+            {
+              // Build ModernDataTable columns dynamically per month
+            }
+            {(() => {
+              type Bucket = { totalLeads: number; trialsCompleted: number; trialsScheduled: number; convertedLeads: number; totalLTV: number; totalVisits: number };
+              const metricVal = (b: Bucket | undefined): number => {
+                if (!b) return 0;
+                switch (metric) {
+                  case 'totalLeads': return b.totalLeads;
+                  case 'trialsCompleted': return b.trialsCompleted;
+                  case 'trialsScheduled': return b.trialsScheduled;
+                  case 'convertedLeads': return b.convertedLeads;
+                  case 'ltv': return b.totalLeads > 0 ? b.totalLTV / b.totalLeads : 0;
+                  case 'avgVisits': return b.totalLeads > 0 ? b.totalVisits / b.totalLeads : 0;
+                }
+              };
 
                 return (
                   <tr 
