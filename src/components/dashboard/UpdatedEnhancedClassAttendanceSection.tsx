@@ -5,6 +5,7 @@ import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { InfoPopover } from '@/components/ui/InfoPopover';
+import { BarChart3, Calendar, Trophy, TrendingUp, Activity, Star, DollarSign, Users, Target } from 'lucide-react';
 
 // Import all the new enhanced components
 import { ModernMetricCards } from './ModernMetricCards';
@@ -55,11 +56,72 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
       <>
         {/* Enhanced Metric Cards */}
         <div className="space-y-6">
-          <ModernMetricCards 
-            data={filteredData}
-            payrollData={payrollData}
-            onMetricClick={handleDrillDown}
-          />
+          {filteredData && filteredData.length > 0 ? (
+            <ModernMetricCards 
+              data={filteredData}
+              payrollData={payrollData}
+              onMetricClick={handleDrillDown}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {(() => {
+                const totalRevenue = filteredData?.reduce((sum, s) => sum + (s.totalPaid || 0), 0) || 0;
+                const totalSessions = filteredData?.length || 0;
+                const totalAttendance = filteredData?.reduce((sum, s) => sum + (s.checkedInCount || 0), 0) || 0;
+                const totalCapacity = filteredData?.reduce((sum, s) => sum + (s.capacity || 0), 0) || 0;
+                const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity * 100) : 0;
+                
+                return (
+                  <>
+                    <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm opacity-90">Total Revenue</p>
+                            <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                          </div>
+                          <DollarSign className="h-8 w-8 opacity-80" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm opacity-90">Total Sessions</p>
+                            <p className="text-2xl font-bold">{totalSessions}</p>
+                          </div>
+                          <Calendar className="h-8 w-8 opacity-80" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm opacity-90">Total Attendance</p>
+                            <p className="text-2xl font-bold">{totalAttendance}</p>
+                          </div>
+                          <Users className="h-8 w-8 opacity-80" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-r from-orange-500 to-red-600 text-white">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm opacity-90">Fill Rate</p>
+                            <p className="text-2xl font-bold">{fillRate.toFixed(1)}%</p>
+                          </div>
+                          <Target className="h-8 w-8 opacity-80" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Filter Section - hidden on Analytics tab to avoid duplicate filters */}
@@ -67,91 +129,83 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
           <EnhancedClassAttendanceFilterSection data={filteredData} />
         )}
 
-        {/* Main Analytics Tabs */}
+        {/* Main Analytics Tabs - Restructured like Sales Tab */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="modern-tabs grid grid-cols-6 w-full">
+          <TabsList className="bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-2xl border-2 border-slate-200 flex w-full max-w-7xl mx-auto overflow-visible relative">
             <TabsTrigger 
               value="comprehensive" 
-              className="modern-tab-trigger tab-variant-blue"
+              className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-slate-800 data-[state=active]:via-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1"
             >
-              Comprehensive
-            </TabsTrigger>
-            <TabsTrigger 
-              value="month-on-month"
-              className="modern-tab-trigger tab-variant-emerald"
-            >
-              Month-on-Month
+              <BarChart3 className="w-4 h-4" />
+              <span className="whitespace-nowrap">Comprehensive</span>
             </TabsTrigger>
             <TabsTrigger 
               value="rankings"
-              className="modern-tab-trigger tab-variant-purple"
+              className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-slate-800 data-[state=active]:via-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1"
             >
-              Rankings
+              <Trophy className="w-4 h-4" />
+              <span className="whitespace-nowrap">Rankings</span>
             </TabsTrigger>
             <TabsTrigger 
               value="performance"
-              className="modern-tab-trigger tab-variant-blue"
+              className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-slate-800 data-[state=active]:via-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1"
             >
-              Performance
+              <TrendingUp className="w-4 h-4" />
+              <span className="whitespace-nowrap">Performance</span>
             </TabsTrigger>
             <TabsTrigger 
               value="analytics"
-              className="modern-tab-trigger tab-variant-rose"
+              className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-slate-800 data-[state=active]:via-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1"
             >
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger 
-              value="insights"
-              className="modern-tab-trigger tab-variant-purple"
-            >
-              Insights
+              <Activity className="w-4 h-4" />
+              <span className="whitespace-nowrap">Analytics</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="comprehensive" className="mt-6">
-            <AdvancedClassAttendanceTable 
-              data={filteredData}
-              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-              onDrillDown={handleDrillDown}
-            />
+          <TabsContent value="comprehensive" className="mt-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Comprehensive Class Analysis</h2>
+              </div>
+              <AdvancedClassAttendanceTable 
+                data={filteredData}
+                location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
+                onDrillDown={handleDrillDown}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="month-on-month" className="mt-6">
-            <MonthOnMonthClassTable 
-              data={sessionsData || []} // Use unfiltered data as requested
-              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-            />
+          <TabsContent value="rankings" className="mt-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Class & Trainer Rankings</h2>
+              </div>
+              <DualRankingLists 
+                data={filteredData}
+                location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="rankings" className="mt-6">
-            <DualRankingLists 
-              data={filteredData}
-              location={selectedLocation === 'all' ? 'All Locations' : selectedLocation}
-            />
+          <TabsContent value="performance" className="mt-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Performance Analytics</h2>
+              </div>
+              <InteractivePerformanceAnalytics 
+                data={filteredData}
+                onDrillDown={handleDrillDown}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="performance" className="mt-6">
-            <InteractivePerformanceAnalytics 
-              data={filteredData}
-              onDrillDown={handleDrillDown}
-            />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="mt-6">
-            <FormatFocusedAnalytics data={filteredData} />
-          </TabsContent>
-
-          <TabsContent value="insights" className="mt-6">
-            <Card className="bg-white border-slate-200">
-              <CardContent className="p-8 text-center">
-                <h3 className="text-lg font-semibold text-slate-700 mb-2">
-                  AI-Powered Insights
-                </h3>
-                <p className="text-slate-500">
-                  Machine learning-driven recommendations and business insights will be displayed here.
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="analytics" className="mt-8">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Format Analytics</h2>
+              </div>
+              <FormatFocusedAnalytics data={filteredData} />
+            </div>
           </TabsContent>
         </Tabs>
       </>

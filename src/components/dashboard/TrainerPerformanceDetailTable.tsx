@@ -383,16 +383,16 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600 text-white">
+            <thead className="bg-black text-white">
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
                     className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
                       column.className || ''
-                    }`}
+                    } ${index === 0 ? 'bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800' : 'bg-black'}`}
                     onClick={() => column.sortable !== false && handleSort(column.key)}
-                    style={{ height: '40px' }}
+                    style={{ height: '35px', maxHeight: '35px' }}
                   >
                     <div className="flex items-center gap-1">
                       {column.header}
@@ -414,7 +414,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
                   key={index}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleRowClick(row)}
-                  style={{ height: '40px' }}
+                  style={{ height: '35px', maxHeight: '35px' }}
                 >
                   {columns.map((column) => (
                     <td

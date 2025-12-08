@@ -388,31 +388,33 @@ export const ImprovedYearOnYearTrainerTable = ({
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-              <TableRow>
-                <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-30 min-w-[200px]">
-                  Trainer
+            <TableHeader className="sticky top-0 z-20">
+              <TableRow className="bg-black" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 z-30 min-w-[200px] border-r border-white/20" style={{ height: '35px' }}>
+                  <div className="flex items-center justify-center">
+                    <span className="text-white font-bold">Trainer</span>
+                  </div>
                 </TableHead>
                 {processedData.organizedMonths.map(({ display }) => (
-                  <TableHead key={display} className="text-center font-bold text-white min-w-[120px] border-l border-white/20">
+                  <TableHead key={display} className="text-center font-bold text-white bg-black min-w-[120px] border-l border-white/20" style={{ height: '35px' }}>
                     <div className="flex flex-col">
                       <span className="text-sm">{display.split(' ')[0]}</span>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-white min-w-[100px]">YoY Growth</TableHead>
-                <TableHead className="text-center font-bold text-white min-w-[120px]">Total</TableHead>
+                <TableHead className="text-center font-bold text-white bg-black min-w-[100px]" style={{ height: '35px' }}>YoY Growth</TableHead>
+                <TableHead className="text-center font-bold text-white bg-black min-w-[120px]" style={{ height: '35px' }}>Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {/* Totals Row */}
-              <TableRow className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b-2 font-bold">
-                <TableCell className="font-bold text-emerald-800 sticky left-0 bg-gradient-to-r from-emerald-50 to-teal-50 z-10">
+              <TableRow className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b-2 font-bold" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableCell className="font-bold text-emerald-800 sticky left-0 bg-gradient-to-r from-emerald-50 to-teal-50 z-10" style={{ height: '35px', maxHeight: '35px' }}>
                   TOTAL
                 </TableCell>
                 {processedData.organizedMonths.map(({ display }) => (
-                  <TableCell key={`total-${display}`} className="text-center font-bold text-emerald-800">
+                  <TableCell key={`total-${display}`} className="text-center font-bold text-emerald-800" style={{ height: '35px', maxHeight: '35px' }}>
                     {formatValue(monthlyTotals[display] || 0, selectedMetric)}
                   </TableCell>
                 ))}
@@ -448,9 +450,10 @@ export const ImprovedYearOnYearTrainerTable = ({
                   <React.Fragment key={trainer}>
                     <TableRow 
                       className="hover:bg-slate-50/50 transition-colors border-b cursor-pointer"
+                      style={{ height: '35px', maxHeight: '35px' }}
                       onClick={() => handleRowClick(trainer)}
                     >
-                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r">
+                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r" style={{ height: '35px', maxHeight: '35px' }}>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -468,11 +471,11 @@ export const ImprovedYearOnYearTrainerTable = ({
                         </div>
                       </TableCell>
                       {values.map((value, index) => (
-                        <TableCell key={`${trainer}-${index}`} className="text-center font-mono text-sm">
+                        <TableCell key={`${trainer}-${index}`} className="text-center font-mono text-sm" style={{ height: '35px', maxHeight: '35px' }}>
                           {formatValue(value, selectedMetric)}
                         </TableCell>
                       ))}
-                      <TableCell className="text-center">
+                      <TableCell className="text-center" style={{ height: '35px', maxHeight: '35px' }}>
                         <Badge
                           className={cn(
                             "flex items-center gap-1 w-fit mx-auto",
@@ -487,7 +490,7 @@ export const ImprovedYearOnYearTrainerTable = ({
                           {Math.abs(growth).toFixed(1)}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center font-bold text-slate-700">
+                      <TableCell className="text-center font-bold text-slate-700" style={{ height: '35px', maxHeight: '35px' }}>
                         {formatValue(trainerTotal, selectedMetric)}
                       </TableCell>
                     </TableRow>
@@ -495,7 +498,7 @@ export const ImprovedYearOnYearTrainerTable = ({
                      {/* Expanded Row Details */}
                      {isExpanded && (
                        <TableRow className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 animate-fade-in">
-                         <TableCell colSpan={processedData.organizedMonths.length + 3} className="p-6">
+                         <TableCell colSpan={processedData.organizedMonths.length + 3} className="p-6" style={{ minHeight: '200px' }}">
                            <div className="space-y-6">
                              {/* Core Metrics Grid */}
                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

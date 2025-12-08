@@ -14,13 +14,21 @@ interface ProductPerformanceTableNewProps {
   onRowClick: (row: any) => void;
   selectedMetric?: YearOnYearMetricType;
   onReady?: () => void;
+  contextInfo?: {
+    selectedMetric?: string;
+    dateRange?: { start: string; end: string };
+    location?: string;
+    filters?: Record<string, any>;
+    additionalInfo?: Record<string, any>;
+  };
 }
 
 export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTableNewProps> = ({
   data,
   onRowClick,
   selectedMetric: initialMetric = 'revenue',
-  onReady
+  onReady,
+  contextInfo
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -383,10 +391,12 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
         showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
-          selectedMetric: selectedMetric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          selectedMetric: contextInfo?.selectedMetric || selectedMetric,
+          dateRange: contextInfo?.dateRange || copyContext.dateRange,
+          location: contextInfo?.location,
+          filters: contextInfo?.filters || copyContext.filters,
           additionalInfo: {
+            ...contextInfo?.additionalInfo,
             displayMode: displayMode,
             totalItems: processedData.reduce((sum, cat) => sum + cat.products.length, 0),
             collapsedGroups: Array.from(localCollapsedGroups),
@@ -400,7 +410,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
             <thead className="sticky top-0 z-30">
               <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <th
-                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');

@@ -12,13 +12,12 @@ type SectionAnchorProps = {
 export function SectionAnchor({ id, label, activate, children, className }: SectionAnchorProps) {
   const { addSection, removeSection } = useSectionNavigation();
 
-  // Memoize the activate function to prevent unnecessary re-renders
-  const stableActivate = React.useCallback(activate || (() => {}), [activate]);
-
   React.useEffect(() => {
-    addSection({ id, label, activate: stableActivate, getElement: () => document.getElementById(id) });
+    // Use activate directly without memoization to prevent dependency issues
+    const activateFunction = activate || (() => {});
+    addSection({ id, label, activate: activateFunction, getElement: () => document.getElementById(id) });
     return () => removeSection(id);
-  }, [id, label, stableActivate]); // Remove addSection and removeSection from deps as they're memoized
+  }, [id, label]); // Only depend on id and label which are stable
 
   return (
     <section id={id} className={"scroll-mt-24 " + (className ?? "") }>

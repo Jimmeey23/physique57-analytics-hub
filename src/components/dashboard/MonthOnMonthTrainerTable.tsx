@@ -31,26 +31,35 @@ export const MonthOnMonthTrainerTable = ({
 
   const processedData = useMemo(() => {
     const trainerGroups: Record<string, Record<string, ProcessedTrainerData>> = {};
-    const monthSet = new Set<string>();
-
+    
     // Group data by trainer
     data.forEach(record => {
       if (!trainerGroups[record.trainerName]) {
         trainerGroups[record.trainerName] = {};
       }
       trainerGroups[record.trainerName][record.monthYear] = record;
-      monthSet.add(record.monthYear);
     });
 
-    // Sort months chronologically (most recent first) - each month as individual column
-    const months = Array.from(monthSet).sort((a, b) => {
-      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const toDate = (s: string) => {
-        if (s.includes('/')) { const [m,y] = s.split('/'); return new Date(parseInt(y), parseInt(m)-1, 1); }
-        const p = s.replace('-', ' ').split(' '); const mi = names.indexOf(p[0]); const yi = parseInt(p[1]); return new Date(yi, mi, 1);
-      };
-      return toDate(b).getTime() - toDate(a).getTime();
-    });
+    // Generate all months from Jan 2024 to current month
+    const months: string[] = [];
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
+    
+    // Start from January 2024
+    for (let year = 2024; year <= currentYear; year++) {
+      const startMonth = year === 2024 ? 0 : 0; // Start from January for all years
+      const endMonth = year === currentYear ? currentMonth : 11;
+      
+      for (let month = startMonth; month <= endMonth; month++) {
+        const monthKey = `${monthNames[month]}-${year}`;
+        months.push(monthKey);
+      }
+    }
+    
+    // Reverse to show most recent first
+    months.reverse();
 
     return { trainerGroups, months };
   }, [data]);
@@ -442,20 +451,50 @@ export const MonthOnMonthTrainerTable = ({
         </div>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600">
-              <TableRow className="border-none h-9 max-h-9" style={{ height: '35px' }}>
-                <TableHead className="font-bold text-white sticky left-0 bg-purple-600/95 backdrop-blur-sm z-30 min-w-[240px] h-9">
-                  Trainer
+            <TableHeader className="sticky top-0 z-20">
+              <TableRow className="border-none bg-black" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 backdrop-blur-sm z-30 min-w-[240px] border-r border-white/20" style={{ height: '35px' }}>
+                  <div className="flex items-center justify-center">
+                    <span className="text-white font-bold">Trainer</span>
+                  </div>
                 </TableHead>
-                {processedData.months.map((month) => (
-                  <TableHead key={month} className="text-center font-bold text-white min-w-[140px]">
-                    <div className="flex flex-col">
-                      <span className="text-sm">{month.split('-')[0] || month.split('/')[0]}</span>
-                      <span className="text-slate-300 text-xs">{month.split('-')[1] || month.split('/')[1]}</span>
-                    </div>
-                  </TableHead>
-                ))}
-                <TableHead className="text-center font-bold text-white min-w-[120px]">
+                {processedData.months.map((month, index) => {
+                  // Get the current previous month for highlighting - fix logic to properly identify main month
+                  const now = new Date();
+                  const currentMonth = now.getMonth(); // 0-indexed (0=Jan, 11=Dec)
+                  const currentYear = now.getFullYear();
+                  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                  
+                  // Previous month calculation
+                  let prevMonth = currentMonth - 1;
+                  let prevYear = currentYear;
+                  if (prevMonth < 0) {
+                    prevMonth = 11;
+                    prevYear = currentYear - 1;
+                  }
+                  
+                  const previousMonthKey = `${monthNames[prevMonth]}-${prevYear}`;
+                  const isMainMonth = month === previousMonthKey;
+                  
+                  return (
+                    <TableHead 
+                      key={month} 
+                      className={cn(
+                        "text-center font-bold min-w-[140px] whitespace-nowrap text-white bg-black",
+                        isMainMonth ? "border-b-2 border-yellow-400" : ""
+                      )}
+                      style={{ height: '35px' }}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        {isMainMonth && <Star className="w-3 h-3 text-yellow-400" />}
+                        <span className="text-sm font-bold">
+                          {month.replace('-', ' ')}
+                        </span>
+                      </div>
+                    </TableHead>
+                  );
+                })}
+                <TableHead className="text-center font-bold text-white bg-black min-w-[120px]" style={{ height: '35px' }}>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">MoM Change</TooltipTrigger>
@@ -463,7 +502,7 @@ export const MonthOnMonthTrainerTable = ({
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
-                <TableHead className="text-center font-bold text-white min-w-[140px]">
+                <TableHead className="text-center font-bold text-white min-w-[140px]" style={{ height: '35px' }}>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">Total</TooltipTrigger>
@@ -477,7 +516,7 @@ export const MonthOnMonthTrainerTable = ({
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
-                <TableHead className="text-right font-bold text-white min-w-[60px]">
+                <TableHead className="text-right font-bold text-white min-w-[60px]" style={{ height: '35px' }}>
                   <CopyTableButton
                     tableRef={containerRef as any}
                     tableName={tableId}
@@ -489,12 +528,12 @@ export const MonthOnMonthTrainerTable = ({
             </TableHeader>
             <TableBody>
               {/* Totals Row */}
-              <TableRow className="bg-gradient-to-r from-slate-100 to-slate-200 font-bold h-9 max-h-9">
-                <TableCell className="font-bold text-slate-900 sticky left-0 bg-transparent z-10">
+              <TableRow className="bg-slate-100 font-bold h-9 max-h-9" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableCell className="font-bold text-slate-900 sticky left-0 bg-slate-100 z-10 whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
                   TOTAL
                 </TableCell>
                 {processedData.months.map((month) => (
-                  <TableCell key={`total-${month}`} className="text-center font-bold text-slate-900">
+                  <TableCell key={`total-${month}`} className="text-center font-bold text-slate-900 whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
                     {formatValue(monthlyTotals[month] || 0, selectedMetric)}
                   </TableCell>
                 ))}
@@ -583,7 +622,7 @@ export const MonthOnMonthTrainerTable = ({
                         <TableCell 
                           key={`${trainer}-${index}`} 
                           className="text-center text-sm font-medium text-slate-800 hover:bg-slate-50 cursor-pointer" 
-                          style={{ height: '40px' }}
+                          style={{ height: '35px', maxHeight: '35px' }}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!onRowClick) return;
@@ -632,8 +671,8 @@ export const MonthOnMonthTrainerTable = ({
                     
                      {/* Expanded Row Details */}
                      {isExpanded && (
-                       <TableRow className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 animate-fade-in h-9 max-h-9">
-                         <TableCell colSpan={processedData.months.length + 3} className="p-6">
+                       <TableRow className="bg-slate-50/50 hover:bg-slate-50 animate-fade-in">
+                         <TableCell colSpan={processedData.months.length + 4} className="p-6" style={{ minHeight: '200px' }}>
                            <div className="space-y-6">
                              {/* Key Metrics Grid */}
                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

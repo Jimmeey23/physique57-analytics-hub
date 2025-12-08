@@ -16,6 +16,13 @@ interface MonthOnMonthTableNewProps {
   onGroupToggle?: (groups: Set<string>) => void;
   selectedMetric?: YearOnYearMetricType;
   onReady?: () => void;
+  contextInfo?: {
+    selectedMetric?: string;
+    dateRange?: { start: string; end: string };
+    location?: string;
+    filters?: Record<string, any>;
+    additionalInfo?: Record<string, any>;
+  };
 }
 
 const groupDataByCategory = (data: SalesData[]) => {
@@ -47,7 +54,8 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
   collapsedGroups = new Set(),
   onGroupToggle = () => {},
   selectedMetric: initialMetric = 'revenue',
-  onReady
+  onReady,
+  contextInfo
 }) => {
   const [selectedMetric, setSelectedMetric] = useState<YearOnYearMetricType>(initialMetric);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -470,10 +478,12 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
         showCopyButton={true}
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
-          selectedMetric: selectedMetric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          selectedMetric: contextInfo?.selectedMetric || selectedMetric,
+          dateRange: contextInfo?.dateRange || copyContext.dateRange,
+          location: contextInfo?.location,
+          filters: contextInfo?.filters || copyContext.filters,
           additionalInfo: {
+            ...contextInfo?.additionalInfo,
             displayMode: displayMode,
             totalItems: processedData.reduce((sum, cat) => sum + cat.products.length, 0),
             collapsedGroups: Array.from(localCollapsedGroups),

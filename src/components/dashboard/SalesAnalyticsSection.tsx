@@ -824,6 +824,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         onGroupToggle={React.useCallback((groups: Set<string>) => setCollapsedGroups(new Set(groups)), [])} 
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
+                        contextInfo={{
+                          selectedMetric: activeYoyMetric,
+                          dateRange: filters.dateRange,
+                          location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                          filters: {
+                            location: [activeLocation],
+                            category: filters.category,
+                            product: filters.product,
+                            soldBy: filters.soldBy,
+                            paymentMethod: filters.paymentMethod
+                          }
+                        }}
                       />
                     </SectionAnchor>
                   </TabsContent>
@@ -844,6 +856,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         onRowClick={handleRowClick} 
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
+                        contextInfo={{
+                          selectedMetric: activeYoyMetric,
+                          dateRange: filters.dateRange,
+                          location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                          filters: {
+                            location: [activeLocation],
+                            category: filters.category,
+                            product: filters.product,
+                            soldBy: filters.soldBy,
+                            paymentMethod: filters.paymentMethod
+                          }
+                        }}
                       />
                     </SectionAnchor>
                   </TabsContent>
@@ -861,6 +885,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
+                      contextInfo={{
+                        selectedMetric: activeYoyMetric,
+                        dateRange: filters.dateRange,
+                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                        filters: {
+                          location: [activeLocation],
+                          category: filters.category,
+                          product: filters.product,
+                          soldBy: filters.soldBy,
+                          paymentMethod: filters.paymentMethod
+                        }
+                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -878,6 +914,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
+                      contextInfo={{
+                        selectedMetric: activeYoyMetric,
+                        dateRange: filters.dateRange,
+                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                        filters: {
+                          location: [activeLocation],
+                          category: filters.category,
+                          product: filters.product,
+                          soldBy: filters.soldBy,
+                          paymentMethod: filters.paymentMethod
+                        }
+                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -895,6 +943,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
+                      contextInfo={{
+                        selectedMetric: activeYoyMetric,
+                        dateRange: filters.dateRange,
+                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                        filters: {
+                          location: [activeLocation],
+                          category: filters.category,
+                          product: filters.product,
+                          soldBy: filters.soldBy,
+                          paymentMethod: filters.paymentMethod
+                        }
+                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -912,6 +972,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
+                      contextInfo={{
+                        selectedMetric: activeYoyMetric,
+                        dateRange: filters.dateRange,
+                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                        filters: {
+                          location: [activeLocation],
+                          category: filters.category,
+                          product: filters.product,
+                          soldBy: filters.soldBy,
+                          paymentMethod: filters.paymentMethod
+                        }
+                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -925,7 +997,23 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       <h2 className="text-2xl font-bold text-gray-900">Customer Behavior</h2>
                     </div>
                     {/* Use allHistoricData to make this tab independent from the date filters */}
-                    <CustomerBehaviorMonthOnMonthTable data={allHistoricData} onReady={markReady} onRowClick={handleRowClick} />
+                    <CustomerBehaviorMonthOnMonthTable 
+                      data={allHistoricData} 
+                      onReady={markReady} 
+                      onRowClick={handleRowClick}
+                      contextInfo={{
+                        selectedMetric: activeYoyMetric,
+                        dateRange: filters.dateRange,
+                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
+                        filters: {
+                          location: [activeLocation],
+                          category: filters.category,
+                          product: filters.product,
+                          soldBy: filters.soldBy,
+                          paymentMethod: filters.paymentMethod
+                        }
+                      }}
+                    />
                   </SectionAnchor>
                 </TabsContent>
               </Tabs>

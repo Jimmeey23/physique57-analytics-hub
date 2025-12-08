@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { ImprovedYearOnYearTrainerTable } from './ImprovedYearOnYearTrainerTable';
 import { MonthOnMonthTrainerTable } from './MonthOnMonthTrainerTable';
-import { TrainerDrillDownModal } from './TrainerDrillDownModal';
+import { EnhancedTrainerDrillDownModal } from './EnhancedTrainerDrillDownModal';
+import { TrainerFilterSection } from './TrainerFilterSection';
 import { processTrainerData } from './TrainerDataProcessor';
 import { Users, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
@@ -14,20 +15,100 @@ export const TrainerPerformanceSection = () => {
   const [selectedTab, setSelectedTab] = useState('month-on-month');
   const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
+  const [selectedMonthYear, setSelectedMonthYear] = useState<string>('');
+  const [filters, setFilters] = useState<any>({});
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
 
+  // Process and filter data
   const processedData = useMemo(() => {
     if (!payrollData || payrollData.length === 0) return [];
-    return processTrainerData(payrollData);
-  }, [payrollData]);
+    
+    let data = processTrainerData(payrollData);
+    
+    // Apply enhanced filters
+    if (filters.location) {
+      data = data.filter(d => d.location === filters.location);
+    }
+    
+    if (filters.trainer) {
+      data = data.filter(d => d.trainerName === filters.trainer);
+    }
+    
+    if (filters.month) {
+      data = data.filter(d => d.monthYear === filters.month);
+    }
+    
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      data = data.filter(d => 
+        d.trainerName.toLowerCase().includes(searchLower) ||
+        (d.location || '').toLowerCase().includes(searchLower)
+      );
+    }
+    
+    if (filters.minSessions !== null) {
+      data = data.filter(d => d.totalSessions >= filters.minSessions);
+    }
+    
+    if (filters.maxSessions !== null) {
+      data = data.filter(d => d.totalSessions <= filters.maxSessions);
+    }
+    
+    if (filters.minRevenue !== null) {
+      data = data.filter(d => d.totalPaid >= filters.minRevenue);
+    }
+    
+    if (filters.maxRevenue !== null) {
+      data = data.filter(d => d.totalPaid <= filters.maxRevenue);
+    }
+    
+    if (filters.performanceLevel) {
+      // Sort by total revenue to determine performance levels
+      const sortedByRevenue = [...data].sort((a, b) => b.totalPaid - a.totalPaid);
+      const total = sortedByRevenue.length;
+      const topQuartile = Math.ceil(total * 0.25);
+      const bottomQuartile = Math.ceil(total * 0.25);
+      
+      if (filters.performanceLevel === 'high') {
+        data = data.filter(d => sortedByRevenue.indexOf(d) < topQuartile);
+      } else if (filters.performanceLevel === 'low') {
+        data = data.filter(d => sortedByRevenue.indexOf(d) >= (total - bottomQuartile));
+      } else if (filters.performanceLevel === 'medium') {
+        data = data.filter(d => {
+          const index = sortedByRevenue.indexOf(d);
+          return index >= topQuartile && index < (total - bottomQuartile);
+        });
+      }
+    }
+    
+    if (filters.classType) {
+      // Filter based on class type dominance
+      if (filters.classType === 'cycle') {
+        data = data.filter(d => d.cycleSessions > d.barreSessions && d.cycleSessions > (d.strengthSessions || 0));
+      } else if (filters.classType === 'barre') {
+        data = data.filter(d => d.barreSessions > d.cycleSessions && d.barreSessions > (d.strengthSessions || 0));
+      } else if (filters.classType === 'strength') {
+        data = data.filter(d => (d.strengthSessions || 0) > d.cycleSessions && (d.strengthSessions || 0) > d.barreSessions);
+      }
+    }
+    
+    return data;
+  }, [payrollData, filters]);
 
   const handleRowClick = (trainer: string, data: any) => {
     setSelectedTrainer(trainer);
     setDrillDownData(data);
+    // Get the most recent month or default to current previous month
+    const now = new Date();
+    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthYearKey = `${previousMonth.toLocaleDateString('en-US', { month: 'short' })}-${previousMonth.getFullYear()}`;
+    setSelectedMonthYear(data.monthYear || monthYearKey);
   };
 
   const closeDrillDown = () => {
     setSelectedTrainer(null);
     setDrillDownData(null);
+    setSelectedMonthYear('');
   };
 
   if (isLoading) {
@@ -68,21 +149,39 @@ export const TrainerPerformanceSection = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filter Section */}
+      <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
+        <CardContent className="p-6">
+          <TrainerFilterSection
+            data={processedData.flatMap(p => p.data?.map(d => ({ 
+              teacherName: d.trainerName, 
+              location: d.location, 
+              monthYear: d.monthYear,
+              totalSessions: d.totalSessions,
+              totalPaid: d.totalPaid
+            })) || []) || []}
+            onFiltersChange={setFilters}
+            isCollapsed={isFiltersCollapsed}
+            onToggleCollapse={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
+          />
+        </CardContent>
+      </Card>
+
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200 p-1 rounded-xl shadow-sm h-14">
+        <TabsList className="bg-slate-50 border border-slate-200 p-1 rounded-xl shadow-sm grid grid-cols-2 w-full h-16">
           <TabsTrigger
             value="month-on-month"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+            className="flex items-center justify-center gap-2 px-3 py-2 font-semibold text-sm transition-all duration-200 data-[state=active]:bg-slate-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-100 rounded-lg mx-1"
           >
             <Calendar className="w-4 h-4" />
-            Month-on-Month Analysis
+            <span className="whitespace-nowrap text-xs sm:text-sm">Month-on-Month</span>
           </TabsTrigger>
           <TabsTrigger
             value="year-on-year"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50 data-[state=active]:hover:bg-blue-700"
+            className="flex items-center justify-center gap-2 px-3 py-2 font-semibold text-sm transition-all duration-200 data-[state=active]:bg-slate-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-100 rounded-lg mx-1"
           >
             <TrendingUp className="w-4 h-4" />
-            Year-on-Year Comparison
+            <span className="whitespace-nowrap text-xs sm:text-sm">Year-on-Year</span>
           </TabsTrigger>
         </TabsList>
 
@@ -104,11 +203,12 @@ export const TrainerPerformanceSection = () => {
       </Tabs>
 
       {selectedTrainer && drillDownData && (
-        <TrainerDrillDownModal
+        <EnhancedTrainerDrillDownModal
           isOpen={!!selectedTrainer}
           onClose={closeDrillDown}
           trainerName={selectedTrainer}
           trainerData={drillDownData}
+          monthYear={selectedMonthYear}
         />
       )}
     </div>

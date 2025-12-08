@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import DOMPurify, { type Config as DomPurifyConfig } from 'dompurify';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { 
   Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, 
   GripHorizontal, Copy, Download, Link as LinkIcon, Wand2, Palette, BarChart3, 
@@ -909,6 +911,33 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const [isEditingNovember, setIsEditingNovember] = useState(false);
   const [isSavingNovember, setIsSavingNovember] = useState(false);
   
+  // Rich text editor configuration for November content
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      [{ font: [] }],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ color: [] }, { background: [] }],
+      [{ script: 'sub' }, { script: 'super' }],
+      [{ list: 'ordered' }, { list: 'bullet' }, { list: 'check' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      [{ align: [] }],
+      ['blockquote', 'code-block'],
+      ['link', 'image'],
+      ['clean']
+    ],
+    clipboard: {
+      matchVisual: false,
+    }
+  };
+  
+  const quillFormats = [
+    'header', 'font', 'size', 'bold', 'italic', 'underline', 'strike',
+    'color', 'background', 'script', 'list', 'indent', 'align',
+    'blockquote', 'code-block', 'link', 'image'
+  ];
+  
   // Advanced sidebar features state
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [autoFormatEnabled, setAutoFormatEnabled] = useState(false);
@@ -1003,39 +1032,40 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     }
   }, [salesData, context, lastGenerated]);
 
-  // Determine which content to display - memoized to prevent constant re-renders
-  const items = React.useMemo(() => {
-    // Debug logging
-    console.log('InfoPopover - Content Selection:', {
-      context,
-      locationId,
-      hasSalesData: !!salesData,
-      salesDataLength: salesData?.length || 0,
-      hasDynamicSummary: !!dynamicSummary,
-      hasCustomContent: !!customContent,
-      isKwality,
-      isSupreme,
-      isKenkere,
-      isAll
-    });
-    
-    if (context === 'sales-overview' && dynamicSummary && !customContent) {
-      // Use dynamic summary
-      console.log('Using DYNAMIC summary');
-      return [generateDynamicSummaryUI(dynamicSummary, locationId)];
-    } else if (customContent) {
-      // Use custom saved content
-      console.log('Using CUSTOM content');
-      return [customContent];
-    } else if (context === 'sales-overview' && isKwality) {
-      console.log('Using KWALITY static summary');
-      return locationSummaryMap[context];
-    } else if (context === 'sales-overview' && isSupreme) {
-      console.log('Using SUPREME static summary');
-      return locationSummaryMap[context];
-    } else if (context === 'sales-overview' && (isKenkere || isAll)) {
-      // For Kenkere and All Locations, create custom overview
-      return [
+  // Determine which content to display
+  let items: React.ReactNode[];
+  
+  // Debug logging
+  console.log('InfoPopover - Content Selection:', {
+    context,
+    locationId,
+    hasSalesData: !!salesData,
+    salesDataLength: salesData?.length || 0,
+    hasDynamicSummary: !!dynamicSummary,
+    hasCustomContent: !!customContent,
+    isKwality,
+    isSupreme,
+    isKenkere,
+    isAll
+  });
+  
+  if (context === 'sales-overview' && dynamicSummary && !customContent) {
+    // Use dynamic summary
+    console.log('Using DYNAMIC summary');
+    items = [generateDynamicSummaryUI(dynamicSummary, locationId)];
+  } else if (customContent) {
+    // Use custom saved content
+    console.log('Using CUSTOM content');
+    items = [customContent];
+  } else if (context === 'sales-overview' && isKwality) {
+    console.log('Using KWALITY static summary');
+    items = locationSummaryMap[context];
+  } else if (context === 'sales-overview' && isSupreme) {
+    console.log('Using SUPREME static summary');
+    items = locationSummaryMap[context];
+  } else if (context === 'sales-overview' && (isKenkere || isAll)) {
+    // For Kenkere and All Locations, create custom overview
+    items = [
       <div key={`${locationId}-oct-2025`} className="space-y-4">
         <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-l-4 border-slate-600 p-4 rounded-r-lg">
           <h4 className="font-bold text-slate-900 mb-2">📊 October 2025 Performance Summary</h4>
@@ -1122,12 +1152,10 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
         </div>
       </div>
     ];
-      return items;
   } else {
     const fallbackItems = locationSummaryMap[context] ?? getLocationSummaryMap('all')[context];
-    return fallbackItems ?? [];
+    items = fallbackItems ?? [];
   }
-  }, [context, locationId, dynamicSummary, customContent, isKwality, isSupreme, isKenkere, isAll, salesData]);
 
   // Load custom content from Google Drive on mount
   useEffect(() => {
@@ -1668,59 +1696,108 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   `;
 
   // Helper function to render HTML (handles both complete documents and snippets)
-  const renderHtmlContent = (html: string, context?: 'sidebar' | 'modal') => {
-    console.log('renderHtmlContent called with:', { 
-      htmlLength: html?.length, 
-      context, 
-      startsWithDoctype: html?.toLowerCase().startsWith('<!doctype html>'),
-      startsWithHtml: html?.toLowerCase().startsWith('<html'),
-      htmlPreview: html?.substring(0, 100)
-    });
-    
+  const renderHtmlContent = (html: string) => {
     if (typeof window === 'undefined') {
       return <div dangerouslySetInnerHTML={{ __html: html }} />;
     }
 
-    // Check if this is a complete HTML document or a large/layout fragment
+    // Check if this is a complete HTML document
     const trimmedHtml = html.trim();
-    const lowered = trimmedHtml.toLowerCase();
-    // Treat as a complete document when it clearly contains head/meta/link/style tags,
-    // or when it's a large fragment or starts with a layout element (aside/section/div)
-    const looksLikeDoc = lowered.startsWith('<!doctype html>') || lowered.startsWith('<html') ||
-               lowered.includes('<head') || lowered.includes('<meta') || lowered.includes('<link') ||
-               lowered.includes('<style') || lowered.includes('<body');
-    const largeFragment = trimmedHtml.length > 5000;
-    const startsWithLayout = /^\s*<\s*(aside|section|header|footer|div)\b/i.test(trimmedHtml);
-    const isCompleteDocument = looksLikeDoc || largeFragment || startsWithLayout;
-    
-    console.log('Document detection:', { isCompleteDocument, trimmedLength: trimmedHtml.length });
+    const isCompleteDocument = trimmedHtml.toLowerCase().startsWith('<!doctype html>') || 
+                               trimmedHtml.toLowerCase().startsWith('<html');
     
     if (isCompleteDocument) {
-      // Simple, stable iframe that doesn't recreate
-      // Adjust height based on context (sidebar vs modal)
-      const iframeHeight = context === 'sidebar' ? '500px' : '600px';
+      // For complete HTML documents, render in an iframe for full isolation
+      // Use a component to ensure proper lifecycle management
+      const IframeRenderer = () => {
+        const iframeRef = React.useRef<HTMLIFrameElement>(null);
+        
+        React.useEffect(() => {
+          const iframe = iframeRef.current;
+          if (!iframe) return;
+          
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!iframeDoc) return;
+          
+          // Write the complete HTML document with custom styles
+          iframeDoc.open();
+          // Inject custom styles into the document head if possible
+          let modifiedHtml = html;
+          if (html.includes('</head>')) {
+            modifiedHtml = html.replace('</head>', `<style>${customInfoPopoverStyles.replace('.info-popover-content ', '')}</style></head>`);
+          } else if (html.includes('<body>')) {
+            modifiedHtml = html.replace('<body>', `<body><style>${customInfoPopoverStyles.replace('.info-popover-content ', '')}</style>`);
+          }
+          iframeDoc.write(modifiedHtml);
+          iframeDoc.close();
+          
+          // Auto-resize iframe to content height
+          const resizeIframe = () => {
+            if (iframe && iframeDoc.body) {
+              // Get the full scrollable height including all content
+              const height = Math.max(
+                iframeDoc.body.scrollHeight,
+                iframeDoc.body.offsetHeight,
+                iframeDoc.documentElement.clientHeight,
+                iframeDoc.documentElement.scrollHeight,
+                iframeDoc.documentElement.offsetHeight
+              );
+              iframe.style.height = `${Math.max(height + 20, 400)}px`;
+            }
+          };
+          
+          // Multiple resize attempts to handle dynamic content loading
+          const timeouts = [100, 300, 500, 1000, 2000];
+          const timeoutIds = timeouts.map(delay => setTimeout(resizeIframe, delay));
+          
+          // Listen for load events in the iframe
+          if (iframeDoc.body) {
+            iframeDoc.addEventListener('load', resizeIframe, true);
+            
+            // Add mutation observer to track content changes
+            const observer = new MutationObserver(() => {
+              setTimeout(resizeIframe, 50);
+            });
+            observer.observe(iframeDoc.body, { 
+              childList: true, 
+              subtree: true, 
+              attributes: true 
+            });
+            
+            // Cleanup function
+            return () => {
+              timeoutIds.forEach(id => clearTimeout(id));
+              observer.disconnect();
+              iframeDoc.removeEventListener('load', resizeIframe, true);
+            };
+          }
+          
+          return () => {
+            timeoutIds.forEach(id => clearTimeout(id));
+          };
+        }, [html]);
+        
+        return (
+          <div className="custom-html-iframe-container" style={{ width: '100%', overflow: 'hidden' }}>
+            <iframe
+              ref={iframeRef}
+              className="custom-html-iframe"
+              style={{
+                width: '100%',
+                minHeight: '400px',
+                border: 'none',
+                borderRadius: '8px',
+                backgroundColor: 'white',
+                display: 'block'
+              }}
+              sandbox="allow-scripts allow-same-origin"
+              title="Custom HTML Content"
+            />
+          </div>
+        );
+      };
       
-      console.log('Rendering iframe with height:', iframeHeight);
-      
-      return (
-        <div className="custom-html-iframe-container" style={{ width: '100%', overflow: 'hidden' }}>
-          <iframe
-            key={`html-${context || 'default'}-${btoa(html.substring(0, 50)).replace(/[^a-zA-Z0-9]/g, '')}`}
-            srcDoc={html}
-            style={{
-              width: '100%',
-              minHeight: '400px',
-              height: iframeHeight,
-              border: 'none',
-              borderRadius: '8px',
-              backgroundColor: 'white',
-              display: 'block'
-            }}
-            sandbox="allow-scripts allow-same-origin"
-            title="Custom HTML Content"
-          />
-        </div>
-      );
+      return <IframeRenderer />;
     }
     
     // Regular HTML snippet (not a complete document)
@@ -1803,19 +1880,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const loadCustomContent = async () => {
     setIsLoading(true);
     try {
-      // First try localStorage for immediate access
-      const localStorageKey = `popover-content-${locationId}-${context}-october`;
-      const localContent = localStorage.getItem(localStorageKey);
-      
-      if (localContent) {
-        console.log('Loading October content from localStorage:', localContent.substring(0, 100));
-        setCustomContent(localContent);
-        return;
-      }
-      
-      // Fallback to Google Drive
       const savedContent = await googleDriveService.getPopoverContent(context, locationId);
-      console.log('Loading October content from Google Drive:', savedContent?.substring(0, 100));
       setCustomContent(savedContent);
     } catch (error) {
       console.error('Error loading custom content:', error);
@@ -1857,23 +1922,14 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
       const sanitized = (typeof window !== 'undefined'
         ? (DOMPurify.sanitize(editContent, DOMPURIFY_OPTS) as unknown as string)
         : editContent) as string;
-      
-      // Save to localStorage immediately for fast access
-      const localStorageKey = `popover-content-${locationId}-${context}-october`;
-      localStorage.setItem(localStorageKey, sanitized);
-      console.log('Saved October content to localStorage:', sanitized.substring(0, 100));
-      
-      // Also save to Google Drive in background
       const success = await googleDriveService.updatePopoverContent(context, locationId, sanitized);
       
-      if (success || true) { // Allow localStorage save to work even if Google Drive fails
-        setCustomContent(sanitized);
+      if (success) {
+  setCustomContent(sanitized);
         setIsEditing(false);
         toast({
           title: "Content saved",
-          description: success 
-            ? "Your changes have been saved to Google Drive and locally." 
-            : "Your changes have been saved locally.",
+          description: "Your changes have been saved to Google Drive.",
         });
       } else {
         throw new Error('Failed to save');
@@ -1947,12 +2003,9 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   };
 
   // Load template file content
-  const loadTemplateContent = async (location?: string) => {
+  const loadTemplateContent = async () => {
     try {
-      const filename = location === 'supreme' 
-        ? '/supreme-hq-november-template.html'
-        : '/kwality-house-november-template.html';
-      const response = await fetch(filename);
+      const response = await fetch('/kwality-house-november-template.html');
       if (response.ok) {
         return await response.text();
       }
@@ -1964,19 +2017,18 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   };
 
   // Save template file content
-  const saveTemplateContent = async (content: string, location?: string) => {
+  const saveTemplateContent = async (content: string) => {
     try {
-      const filename = location === 'supreme' 
-        ? 'supreme-hq-november-template.html'
-        : 'kwality-house-november-template.html';
-      
+      // Note: In a browser environment, we can't directly write files
+      // This would need to be implemented with a backend endpoint
+      // For now, we'll save to localStorage as fallback
       const response = await fetch('/api/save-template', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          filename: filename,
+          filename: 'kwality-house-november-template.html',
           content: content
         })
       });
@@ -1989,10 +2041,7 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
     } catch (error) {
       console.error('Error saving template to file:', error);
       // Fallback to localStorage
-      const storageKey = location === 'supreme' 
-        ? 'supreme-november-template'
-        : 'kwality-november-template';
-      localStorage.setItem(storageKey, content);
+      localStorage.setItem('kwality-november-template', content);
       return false;
     }
   };
@@ -2001,14 +2050,13 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const handleSaveNovemberContent = async () => {
     setIsSavingNovember(true);
     try {
-      // For Kwality House and Supreme HQ, save to template file instead of localStorage
-      if (locationId === 'kwality' || locationId === 'supreme') {
-        const saved = await saveTemplateContent(novemberContent, locationId);
+      // For Kwality House, save to template file instead of localStorage
+      if (locationId === 'kwality') {
+        const saved = await saveTemplateContent(novemberContent);
         if (saved) {
-          const locationName = locationId === 'supreme' ? 'Supreme HQ' : 'Kwality House';
           toast({
             title: "November template updated",
-            description: `The ${locationName} November template has been updated successfully.`,
+            description: "The Kwality House November template has been updated successfully.",
           });
         } else {
           toast({
@@ -2043,17 +2091,14 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   const handleCancelNovemberEdit = async () => {
     setIsEditingNovember(false);
     
-    if (locationId === 'kwality' || locationId === 'supreme') {
-      // For Kwality House and Supreme HQ, reload from template file
-      const templateContent = await loadTemplateContent(locationId);
+    if (locationId === 'kwality') {
+      // For Kwality House, reload from template file
+      const templateContent = await loadTemplateContent();
       if (templateContent) {
         setNovemberContent(templateContent);
       } else {
         // Fallback to localStorage
-        const storageKey = locationId === 'supreme' 
-          ? 'supreme-november-template'
-          : 'kwality-november-template';
-        const stored = localStorage.getItem(storageKey);
+        const stored = localStorage.getItem('kwality-november-template');
         setNovemberContent(stored || '');
       }
     } else {
@@ -2067,17 +2112,14 @@ export const InfoPopover: React.FC<InfoPopoverProps> = ({ context, locationId = 
   // Load November content from template file or localStorage on mount
   useEffect(() => {
     const loadContent = async () => {
-      if (locationId === 'kwality' || locationId === 'supreme') {
-        // For Kwality House and Supreme HQ, load from template file
-        const templateContent = await loadTemplateContent(locationId);
+      if (locationId === 'kwality') {
+        // For Kwality House, load from template file
+        const templateContent = await loadTemplateContent();
         if (templateContent) {
           setNovemberContent(templateContent);
         } else {
           // Fallback to localStorage
-          const storageKey = locationId === 'supreme' 
-            ? 'supreme-november-template'
-            : 'kwality-november-template';
-          const stored = localStorage.getItem(storageKey);
+          const stored = localStorage.getItem('kwality-november-template');
           if (stored) {
             setNovemberContent(stored);
           }
@@ -3099,7 +3141,7 @@ Your complete HTML documents will render in an iframe with full support for exte
                       {/* October content - show custom content if exists, otherwise default content */}
                       {customContent ? (
                         <div className="space-y-3">
-                          {renderHtmlContent(customContent, 'modal')}
+                          {renderHtmlContent(customContent)}
                           <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
                             <Button
                               size="sm"
@@ -3223,8 +3265,23 @@ HTML formatting supported for rich content!"
                         <div className="space-y-3">
                           {novemberContent ? (
                             <>
-                              <div className="w-full">
-                                {renderHtmlContent(novemberContent)}
+                              <div className="prose prose-sm max-w-none">
+                                {(() => {
+                                  if (typeof window !== 'undefined' && novemberContent.trim()) {
+                                    const sanitizedContent = DOMPurify.sanitize(novemberContent, DOMPURIFY_OPTS);
+                                    return (
+                                      <div 
+                                        className="text-sm leading-relaxed text-slate-700"
+                                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                                      />
+                                    );
+                                  }
+                                  return (
+                                    <div className="text-sm text-slate-600 whitespace-pre-wrap">
+                                      {novemberContent}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <div className="pt-3 border-t border-slate-200 flex gap-2">
                                 <Button
@@ -3548,7 +3605,7 @@ HTML formatting supported for rich content!"
                       {/* October content - show custom content if exists, otherwise default content */}
                       {customContent ? (
                         <div className="space-y-3">
-                          {renderHtmlContent(customContent, 'sidebar')}
+                          {renderHtmlContent(customContent)}
                           <div className="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
                             <Button
                               size="sm"
@@ -3673,8 +3730,23 @@ HTML formatting supported for rich content!"
                         <div className="space-y-3">
                           {novemberContent ? (
                             <>
-                              <div className="w-full">
-                                {renderHtmlContent(novemberContent)}
+                              <div className="prose prose-sm max-w-none">
+                                {(() => {
+                                  if (typeof window !== 'undefined' && novemberContent.trim()) {
+                                    const sanitizedContent = DOMPurify.sanitize(novemberContent, DOMPURIFY_OPTS);
+                                    return (
+                                      <div 
+                                        className="text-sm leading-relaxed text-slate-700"
+                                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                                      />
+                                    );
+                                  }
+                                  return (
+                                    <div className="text-sm text-slate-600 whitespace-pre-wrap">
+                                      {novemberContent}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <div className="pt-3 border-t border-slate-200 flex gap-2">
                                 <Button

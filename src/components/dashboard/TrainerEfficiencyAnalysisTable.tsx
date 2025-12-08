@@ -484,16 +484,18 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-blue-800 via-blue-900 to-slate-900 text-white">
+            <thead className="bg-black text-white">
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
                     className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
                       column.className || ''
-                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
+                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'} ${
+                      index === 0 ? 'bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800' : 'bg-black'
+                    }`}
                     onClick={() => column.sortable !== false && handleSort(column.key)}
-                    style={{ height: '40px' }}
+                    style={{ height: '35px', maxHeight: '35px' }}
                   >
                     <div className="flex items-center gap-1">
                       {column.header}
@@ -515,7 +517,7 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
                   key={index}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleRowClick(row)}
-                  style={{ height: '40px' }}
+                  style={{ height: '35px', maxHeight: '35px' }}
                 >
                   {columns.map((column) => (
                     <td

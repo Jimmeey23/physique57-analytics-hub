@@ -17,7 +17,7 @@ import { lazy } from 'react';
 
 // Sales modals - only load when opened
 export const LazyEnhancedSalesDrillDownModal = lazy(() => 
-  import('@/components/dashboard/EnhancedSalesDrillDownModal').then(m => ({ default: m.EnhancedSalesDrillDownModal }))
+  import('@/components/dashboard/EnhancedSalesDrillDownModal')
 );
 
 export const LazySalesDrillDownModal = lazy(() => 

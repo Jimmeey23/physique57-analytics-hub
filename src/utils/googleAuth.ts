@@ -15,8 +15,8 @@ const GOOGLE_CONFIG = {
 
 // Spreadsheet IDs
 export const SPREADSHEET_IDS = {
-  PAYROLL: import.meta.env.VITE_PAYROLL_SPREADSHEET_ID || '149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI',
-  SESSIONS: import.meta.env.VITE_SESSIONS_SPREADSHEET_ID || '16wFlke0bHFcmfn-3UyuYlGnImBq0DY7ouVYAlAFTZys',
+  PAYROLL: import.meta.env.VITE_PAYROLL_SPREADSHEET_ID || '1DSRuJJBhl1Sc9yfY6ki-ZFhdmQ_OeVeGyPDE6n9zpK4',
+  SESSIONS: import.meta.env.VITE_SESSIONS_SPREADSHEET_ID || '1mqjZXStj_PeCt_exDSk-1RP-20Jgk0yl1Lmcg3sZty8',
   EXPIRATIONS: import.meta.env.VITE_EXPIRATIONS_SPREADSHEET_ID || '1rGMDDvvTbZfNg1dueWtRN3LhOgGQOdLg3Fd7Sn1GCZo',
   SALES: import.meta.env.VITE_SALES_SPREADSHEET_ID || '1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0',
 };

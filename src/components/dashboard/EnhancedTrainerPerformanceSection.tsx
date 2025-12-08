@@ -17,7 +17,6 @@ import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
-import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal, Maximize2, Download, RotateCcw } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoPopover';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
@@ -37,10 +36,17 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [isRendering, setIsRendering] = useState(true);
-  const [filters, setFilters] = useState({ 
-    location: '', 
-    trainer: '', 
-    month: '' // Start with no month filter to show all data
+  const [filters, setFilters] = useState({
+    location: '',
+    trainer: '',
+    month: '',
+    searchTerm: '',
+    performanceLevel: '',
+    classType: '',
+    minSessions: null as number | null,
+    maxSessions: null as number | null,
+    minRevenue: null as number | null,
+    maxRevenue: null as number | null
   });
 
   // Base processed data
@@ -52,6 +58,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   // Data with all filters applied (including month) for cards, charts, efficiency, and detail tables
   const processedData = useMemo(() => {
     let data = [...baseProcessed];
+    
     // Apply location (tabs) and explicit location filter
     if (selectedLocation !== 'All Locations') {
       data = data.filter(d => {
@@ -67,20 +74,80 @@ export const EnhancedTrainerPerformanceSection = () => {
     if (filters.location) {
       data = data.filter(d => d.location === filters.location);
     }
+    
     // Apply trainer filter
     if (filters.trainer) {
       data = data.filter(d => d.trainerName === filters.trainer);
     }
+    
     // Apply month filter
     if (filters.month) {
       data = data.filter(d => d.monthYear === filters.month);
     }
+    
+    // Apply enhanced filters from rebuilt TrainerFilterSection
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      data = data.filter(d => 
+        d.trainerName.toLowerCase().includes(searchLower) ||
+        (d.location || '').toLowerCase().includes(searchLower)
+      );
+    }
+    
+    if (filters.minSessions !== null) {
+      data = data.filter(d => d.totalSessions >= filters.minSessions);
+    }
+    
+    if (filters.maxSessions !== null) {
+      data = data.filter(d => d.totalSessions <= filters.maxSessions);
+    }
+    
+    if (filters.minRevenue !== null) {
+      data = data.filter(d => d.totalPaid >= filters.minRevenue);
+    }
+    
+    if (filters.maxRevenue !== null) {
+      data = data.filter(d => d.totalPaid <= filters.maxRevenue);
+    }
+    
+    if (filters.performanceLevel) {
+      // Sort by total revenue to determine performance levels
+      const allData = [...data];
+      const sortedByRevenue = allData.sort((a, b) => b.totalPaid - a.totalPaid);
+      const total = sortedByRevenue.length;
+      const topQuartile = Math.ceil(total * 0.25);
+      const bottomQuartile = Math.ceil(total * 0.25);
+      
+      if (filters.performanceLevel === 'high') {
+        const highPerformers = sortedByRevenue.slice(0, topQuartile);
+        data = data.filter(d => highPerformers.some(hp => hp.trainerName === d.trainerName && hp.monthYear === d.monthYear));
+      } else if (filters.performanceLevel === 'low') {
+        const lowPerformers = sortedByRevenue.slice(total - bottomQuartile);
+        data = data.filter(d => lowPerformers.some(lp => lp.trainerName === d.trainerName && lp.monthYear === d.monthYear));
+      } else if (filters.performanceLevel === 'medium') {
+        const mediumPerformers = sortedByRevenue.slice(topQuartile, total - bottomQuartile);
+        data = data.filter(d => mediumPerformers.some(mp => mp.trainerName === d.trainerName && mp.monthYear === d.monthYear));
+      }
+    }
+    
+    if (filters.classType) {
+      // Filter based on class type dominance
+      if (filters.classType === 'cycle') {
+        data = data.filter(d => d.cycleSessions > d.barreSessions && d.cycleSessions > (d.strengthSessions || 0));
+      } else if (filters.classType === 'barre') {
+        data = data.filter(d => d.barreSessions > d.cycleSessions && d.barreSessions > (d.strengthSessions || 0));
+      } else if (filters.classType === 'strength') {
+        data = data.filter(d => (d.strengthSessions || 0) > d.cycleSessions && (d.strengthSessions || 0) > d.barreSessions);
+      }
+    }
+    
     return data;
   }, [baseProcessed, filters, selectedLocation]);
 
   // Data that ignores the month filter (but respects location/trainer) for MoM/YoY
   const processedDataNoMonth = useMemo(() => {
     let data = [...baseProcessed];
+    
     if (selectedLocation !== 'All Locations') {
       data = data.filter(d => {
         const location = d.location || '';
@@ -98,9 +165,66 @@ export const EnhancedTrainerPerformanceSection = () => {
     if (filters.trainer) {
       data = data.filter(d => d.trainerName === filters.trainer);
     }
+    
+    // Apply enhanced filters except month filter
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      data = data.filter(d => 
+        d.trainerName.toLowerCase().includes(searchLower) ||
+        (d.location || '').toLowerCase().includes(searchLower)
+      );
+    }
+    
+    if (filters.minSessions !== null) {
+      data = data.filter(d => d.totalSessions >= filters.minSessions);
+    }
+    
+    if (filters.maxSessions !== null) {
+      data = data.filter(d => d.totalSessions <= filters.maxSessions);
+    }
+    
+    if (filters.minRevenue !== null) {
+      data = data.filter(d => d.totalPaid >= filters.minRevenue);
+    }
+    
+    if (filters.maxRevenue !== null) {
+      data = data.filter(d => d.totalPaid <= filters.maxRevenue);
+    }
+    
+    if (filters.performanceLevel) {
+      // Sort by total revenue to determine performance levels
+      const allData = [...data];
+      const sortedByRevenue = allData.sort((a, b) => b.totalPaid - a.totalPaid);
+      const total = sortedByRevenue.length;
+      const topQuartile = Math.ceil(total * 0.25);
+      const bottomQuartile = Math.ceil(total * 0.25);
+      
+      if (filters.performanceLevel === 'high') {
+        const highPerformers = sortedByRevenue.slice(0, topQuartile);
+        data = data.filter(d => highPerformers.some(hp => hp.trainerName === d.trainerName && hp.monthYear === d.monthYear));
+      } else if (filters.performanceLevel === 'low') {
+        const lowPerformers = sortedByRevenue.slice(total - bottomQuartile);
+        data = data.filter(d => lowPerformers.some(lp => lp.trainerName === d.trainerName && lp.monthYear === d.monthYear));
+      } else if (filters.performanceLevel === 'medium') {
+        const mediumPerformers = sortedByRevenue.slice(topQuartile, total - bottomQuartile);
+        data = data.filter(d => mediumPerformers.some(mp => mp.trainerName === d.trainerName && mp.monthYear === d.monthYear));
+      }
+    }
+    
+    if (filters.classType) {
+      // Filter based on class type dominance
+      if (filters.classType === 'cycle') {
+        data = data.filter(d => d.cycleSessions > d.barreSessions && d.cycleSessions > (d.strengthSessions || 0));
+      } else if (filters.classType === 'barre') {
+        data = data.filter(d => d.barreSessions > d.cycleSessions && d.barreSessions > (d.strengthSessions || 0));
+      } else if (filters.classType === 'strength') {
+        data = data.filter(d => (d.strengthSessions || 0) > d.cycleSessions && (d.strengthSessions || 0) > d.barreSessions);
+      }
+    }
+    
     // Intentionally DO NOT apply filters.month here
     return data;
-  }, [baseProcessed, filters.location, filters.trainer, selectedLocation]);
+  }, [baseProcessed, filters.location, filters.trainer, filters.searchTerm, filters.minSessions, filters.maxSessions, filters.minRevenue, filters.maxRevenue, filters.performanceLevel, filters.classType, selectedLocation]);
 
   const handleRowClick = (trainer: string, data: any) => {
     // Simply pass the data directly - the modal will handle processing
@@ -310,7 +434,13 @@ export const EnhancedTrainerPerformanceSection = () => {
   <div className="glass-card modern-card-hover p-6 rounded-2xl mb-6" id="filters">
 
         <TrainerFilterSection
-          data={payrollData || []}
+          data={baseProcessed.map(p => ({ 
+            teacherName: p.trainerName, 
+            location: p.location, 
+            monthYear: p.monthYear,
+            totalSessions: p.totalSessions,
+            totalPaid: p.totalPaid
+          })) || []}
           onFiltersChange={setFilters}
           isCollapsed={isFiltersCollapsed}
           onToggleCollapse={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
@@ -800,7 +930,14 @@ export const EnhancedTrainerPerformanceSection = () => {
   <TabsContent value="month-on-month" className="space-y-6">
           <div className="flex justify-end mb-4">
             <AdvancedExportButton 
-              payrollData={payrollData || []}
+              payrollData={processedDataNoMonth.map(p => ({
+                teacherName: p.trainerName,
+                location: p.location,
+                monthYear: p.monthYear,
+                totalSessions: p.totalSessions,
+                totalPaid: p.totalPaid,
+                totalCustomers: p.totalCustomers
+              })) || []}
               defaultFileName="month-on-month-trainer-analysis"
               size="sm"
               variant="outline"
@@ -825,7 +962,14 @@ export const EnhancedTrainerPerformanceSection = () => {
   <TabsContent value="year-on-year" className="space-y-6">
           <div className="flex justify-end mb-4">
             <AdvancedExportButton 
-              payrollData={payrollData || []}
+              payrollData={processedDataNoMonth.map(p => ({
+                teacherName: p.trainerName,
+                location: p.location,
+                monthYear: p.monthYear,
+                totalSessions: p.totalSessions,
+                totalPaid: p.totalPaid,
+                totalCustomers: p.totalCustomers
+              })) || []}
               defaultFileName="year-on-year-trainer-analysis"
               size="sm"
               variant="outline"
@@ -850,7 +994,14 @@ export const EnhancedTrainerPerformanceSection = () => {
         <TabsContent value="efficiency-analysis" className="space-y-6">
           <div className="flex justify-end mb-4">
             <AdvancedExportButton 
-              payrollData={payrollData || []}
+              payrollData={processedDataNoMonth.map(p => ({
+                teacherName: p.trainerName,
+                location: p.location,
+                monthYear: p.monthYear,
+                totalSessions: p.totalSessions,
+                totalPaid: p.totalPaid,
+                totalCustomers: p.totalCustomers
+              })) || []}
               defaultFileName="trainer-efficiency-analysis"
               size="sm"
               variant="outline"
@@ -866,7 +1017,14 @@ export const EnhancedTrainerPerformanceSection = () => {
         <TabsContent value="performance-detail" className="space-y-6">
           <div className="flex justify-end mb-4">
             <AdvancedExportButton 
-              payrollData={payrollData || []}
+              payrollData={processedData.map(p => ({
+                teacherName: p.trainerName,
+                location: p.location,
+                monthYear: p.monthYear,
+                totalSessions: p.totalSessions,
+                totalPaid: p.totalPaid,
+                totalCustomers: p.totalCustomers
+              })) || []}
               defaultFileName="trainer-performance-detail"
               size="sm"
               variant="outline"
@@ -887,7 +1045,14 @@ export const EnhancedTrainerPerformanceSection = () => {
           onClose={closeDrillDown}
           trainerName={selectedTrainer}
           trainerData={drillDownData}
-          allPayrollData={payrollData || []}
+          allPayrollData={processedDataNoMonth.map(p => ({
+            teacherName: p.trainerName,
+            location: p.location,
+            monthYear: p.monthYear,
+            totalSessions: p.totalSessions,
+            totalPaid: p.totalPaid,
+            totalCustomers: p.totalCustomers
+          })) || []}
           allSessionsData={sessionsData || []}
           filters={drillDownData.contextFilters || { location: selectedLocation, month: filters.month || '' }}
         />

@@ -105,12 +105,12 @@ const MetricCard = ({
   size?: 'default' | 'large';
 }) => {
   const colorClasses = {
-    blue: 'from-blue-500 to-blue-600',
-    green: 'from-emerald-500 to-emerald-600',
-    purple: 'from-purple-500 to-purple-600',
-    amber: 'from-amber-500 to-amber-600',
-    rose: 'from-rose-500 to-rose-600',
-    cyan: 'from-cyan-500 to-cyan-600',
+    blue: 'from-blue-700 to-blue-800 text-white',
+    green: 'from-white to-gray-50 text-gray-900 border-2 border-gray-200',
+    purple: 'from-white to-gray-50 text-gray-900 border-2 border-gray-200',
+    amber: 'from-white to-gray-50 text-gray-900 border-2 border-gray-200',
+    rose: 'from-white to-gray-50 text-gray-900 border-2 border-gray-200',
+    cyan: 'from-white to-gray-50 text-gray-900 border-2 border-gray-200',
   };
 
   const TrendIcon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : Minus;
@@ -118,15 +118,21 @@ const MetricCard = ({
 
   return (
     <div className={cn(
-      "relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br p-4 shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl",
+      "relative overflow-hidden rounded-xl bg-gradient-to-br p-4 shadow-lg transition-all hover:shadow-xl",
       colorClasses[color],
       size === 'large' && 'p-6'
     )}>
       <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-2">
-          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-            <Icon className={cn("text-white", size === 'large' ? 'w-6 h-6' : 'w-5 h-5')} />
+          <div className={cn(
+            "p-2 rounded-lg backdrop-blur-sm",
+            color === 'blue' ? 'bg-white/20' : 'bg-blue-600'
+          )}>
+            <Icon className={cn(
+              size === 'large' ? 'w-6 h-6' : 'w-5 h-5',
+              color === 'blue' ? 'text-white' : 'text-white'
+            )} />
           </div>
           {trend && (
             <div className={cn("flex items-center gap-1 text-xs font-medium", trendColor)}>
@@ -136,13 +142,20 @@ const MetricCard = ({
           )}
         </div>
         <p className={cn(
-          "font-bold text-white",
-          size === 'large' ? 'text-3xl' : 'text-2xl'
+          "font-bold",
+          size === 'large' ? 'text-3xl' : 'text-2xl',
+          color === 'blue' ? 'text-white' : 'text-gray-900'
         )}>
           {value}
         </p>
-        <p className="text-sm text-white/80 font-medium">{title}</p>
-        {subtitle && <p className="text-xs text-white/60 mt-1">{subtitle}</p>}
+        <p className={cn(
+          "text-sm font-medium",
+          color === 'blue' ? 'text-white/90' : 'text-gray-700'
+        )}>{title}</p>
+        {subtitle && <p className={cn(
+          "text-xs mt-1",
+          color === 'blue' ? 'text-white/70' : 'text-gray-600'
+        )}>{subtitle}</p>}
       </div>
     </div>
   );
@@ -645,7 +658,7 @@ export function ComprehensiveTrainerDrillDown({
         </DialogHeader>
         <div className="flex h-[90vh]">
           {/* Left Sidebar - Trainer Profile */}
-          <div className="w-80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col">
+          <div className="w-80 bg-gray-900 text-white flex flex-col border-r-2 border-gray-700">
             {/* Close Button */}
             <Button
               onClick={onClose}
@@ -697,14 +710,14 @@ export function ComprehensiveTrainerDrillDown({
                 </div>
 
                 {/* Performance Score */}
-                <Card className="bg-white/10 border-white/10 mb-6">
+                <Card className="bg-gray-800 border-gray-700 mb-6">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-white/80">Performance Score</span>
-                      <span className="text-3xl font-bold">{performanceScore}</span>
+                      <span className="text-sm font-medium text-white">Performance Score</span>
+                      <span className="text-3xl font-bold text-white">{performanceScore}</span>
                     </div>
-                    <Progress value={performanceScore} className="h-2 bg-white/20" />
-                    <p className="text-xs text-white/60 mt-2">
+                    <Progress value={performanceScore} className="h-2 bg-gray-700" />
+                    <p className="text-xs text-gray-300 mt-2">
                       {performanceScore >= 80 ? '🌟 Outstanding' : 
                        performanceScore >= 60 ? '⭐ Great' : 
                        performanceScore >= 40 ? '→ Good' : '⚠️ Needs Work'}
@@ -714,54 +727,54 @@ export function ComprehensiveTrainerDrillDown({
 
                 {/* Quick Stats */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
                     <div className="flex items-center gap-3">
                       <Activity className="w-5 h-5 text-blue-400" />
-                      <span className="text-sm">Total Sessions</span>
+                      <span className="text-sm text-white">Total Sessions</span>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-lg">{summary.clickedCellSessions || summary.totalSessions}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="font-bold text-lg text-white">{summary.clickedCellSessions || summary.totalSessions}</div>
+                      <div className="text-xs text-gray-300">
                         Sheet: {summary.sessionsSheetCount} {summary.clickedCellSessions && summary.clickedCellSessions !== summary.sessionsSheetCount && (
-                          <span className="text-amber-600">• Clicked value differs</span>
+                          <span className="text-amber-400">• Clicked value differs</span>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
                     <div className="flex items-center gap-3">
                       <Users className="w-5 h-5 text-emerald-400" />
-                      <span className="text-sm">Total Attendees</span>
+                      <span className="text-sm text-white">Total Attendees</span>
                     </div>
-                    <span className="font-bold text-lg">{formatNumber(summary.totalCustomers)}</span>
+                    <span className="font-bold text-lg text-white">{formatNumber(summary.totalCustomers)}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
                     <div className="flex items-center gap-3">
                       <DollarSign className="w-5 h-5 text-amber-400" />
-                      <span className="text-sm">Total Revenue</span>
+                      <span className="text-sm text-white">Total Revenue</span>
                     </div>
-                    <span className="font-bold text-lg">{formatCurrency(summary.totalRevenue)}</span>
+                    <span className="font-bold text-lg text-white">{formatCurrency(summary.totalRevenue)}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
                     <div className="flex items-center gap-3">
                       <Target className="w-5 h-5 text-purple-400" />
-                      <span className="text-sm">Fill Rate</span>
+                      <span className="text-sm text-white">Fill Rate</span>
                     </div>
-                    <span className="font-bold text-lg">{summary.fillRate.toFixed(1)}%</span>
+                    <span className="font-bold text-lg text-white">{summary.fillRate.toFixed(1)}%</span>
                   </div>
                 </div>
 
                 {/* Format Distribution */}
                 {byFormat.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-white/80 mb-3">Class Format Mix</h4>
+                    <h4 className="text-sm font-semibold text-white mb-3">Class Format Mix</h4>
                     <div className="space-y-2">
                       {byFormat.map((format) => (
                         <div key={format.name} className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className={cn(
                                 "h-full rounded-full",
@@ -772,7 +785,7 @@ export function ComprehensiveTrainerDrillDown({
                               style={{ width: `${format.value}%` }}
                             />
                           </div>
-                          <span className="text-xs text-white/60 w-16">
+                          <span className="text-xs text-gray-300 w-16">
                             {format.name} {format.value.toFixed(0)}%
                           </span>
                         </div>
@@ -1229,14 +1242,14 @@ export function ComprehensiveTrainerDrillDown({
                         title="Total Revenue"
                         value={formatCurrency(summary.totalRevenue)}
                         icon={DollarSign}
-                        color="green"
+                        color="blue"
                         size="large"
                       />
                       <MetricCard
                         title="Revenue per Session"
                         value={formatCurrency(summary.revenuePerSession)}
                         icon={Activity}
-                        color="blue"
+                        color="green"
                         size="large"
                       />
                       <MetricCard
@@ -1248,10 +1261,57 @@ export function ComprehensiveTrainerDrillDown({
                       />
                     </div>
 
+                    {/* Revenue Breakdown Table */}
+                    <Card className="border-0 shadow-sm border border-slate-200">
+                      <CardHeader className="bg-slate-50 border-b border-slate-200">
+                        <CardTitle className="text-lg text-slate-800">Revenue Breakdown by Session</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        {byMonth.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-slate-200 bg-black">
+                                  <th className="text-left py-3 px-4 font-medium text-white bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800">Month</th>
+                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Sessions</th>
+                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Revenue</th>
+                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Avg/Session</th>
+                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Customers</th>
+                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Avg/Customer</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {byMonth.map((month, index) => (
+                                  <tr key={month.month} className={cn(
+                                    "border-b border-slate-100 hover:bg-slate-50",
+                                    "h-[35px] max-h-[35px]"
+                                  )}>
+                                    <td className="py-2 px-4 font-medium text-slate-900 h-[35px]">{month.month}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{month.sessions}</td>
+                                    <td className="py-2 px-4 text-right font-semibold text-slate-900 h-[35px]">{formatCurrency(month.revenue)}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{formatCurrency(month.revenue / month.sessions)}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{month.customers}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{formatCurrency(month.revenue / month.customers)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="h-[200px] flex items-center justify-center text-slate-400">
+                            <div className="text-center">
+                              <DollarSign className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                              <p>No revenue data available</p>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
                     {/* Revenue by Format */}
-                    <Card className="border-0 shadow-md">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Revenue by Class Format</CardTitle>
+                    <Card className="border-0 shadow-sm border border-slate-200">
+                      <CardHeader className="bg-slate-50 border-b border-slate-200">
+                        <CardTitle className="text-lg text-slate-800">Revenue by Class Format</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {byFormat.length > 0 ? (
@@ -1259,21 +1319,16 @@ export function ComprehensiveTrainerDrillDown({
                             {byFormat.map((format) => (
                               <div 
                                 key={format.name}
-                                className={cn(
-                                  "p-6 rounded-xl text-white",
-                                  format.name === 'Cycle' && 'bg-gradient-to-br from-blue-500 to-blue-600',
-                                  format.name === 'Strength' && 'bg-gradient-to-br from-purple-500 to-purple-600',
-                                  format.name === 'Barre' && 'bg-gradient-to-br from-pink-500 to-pink-600'
-                                )}
+                                className="p-6 rounded-xl border-2 border-gray-900 bg-white text-gray-900 shadow-lg"
                               >
                                 <div className="flex items-center gap-2 mb-3">
-                                  {format.name === 'Cycle' && <Bike className="w-6 h-6" />}
-                                  {format.name === 'Strength' && <Dumbbell className="w-6 h-6" />}
-                                  {format.name === 'Barre' && <Music className="w-6 h-6" />}
-                                  <span className="font-semibold text-lg">{format.name}</span>
+                                  {format.name === 'Cycle' && <Bike className="w-6 h-6 text-blue-700" />}
+                                  {format.name === 'Strength' && <Dumbbell className="w-6 h-6 text-blue-700" />}
+                                  {format.name === 'Barre' && <Music className="w-6 h-6 text-blue-700" />}
+                                  <span className="font-bold text-lg text-gray-900">{format.name}</span>
                                 </div>
-                                <p className="text-3xl font-bold">{formatCurrency(format.revenue)}</p>
-                                <p className="text-sm text-white/70 mt-2">
+                                <p className="text-3xl font-bold text-gray-900">{formatCurrency(format.revenue)}</p>
+                                <p className="text-sm text-gray-600 mt-2 font-medium">
                                   {format.sessions} sessions • {format.customers} attendees
                                 </p>
                               </div>

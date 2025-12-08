@@ -191,7 +191,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
     },
     {
       title: 'Total Revenue',
-      value: `₹${metrics.totalRevenue.toLocaleString()}`,
+      value: `${formatCurrency(metrics.totalRevenue)}`,
       icon: DollarSign,
       color: 'text-emerald-600',
       bgColor: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
@@ -200,9 +200,9 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
       trend: '+15%',
       trendUp: true,
       details: [
-        `Avg per session: ₹${metrics.avgRevenue.toLocaleString()}`,
-        `Top class revenue: ₹${metrics.bestClass?.totalRevenue.toLocaleString() || 0}`,
-        `Revenue per attendee: ₹${(metrics.totalRevenue / metrics.totalAttendance).toFixed(0)}`
+        `Avg per session: ${formatCurrency(metrics.avgRevenue)}`,
+        `Top class revenue: ${formatCurrency(metrics.bestClass?.totalRevenue || 0)}`,
+        `Revenue per attendee: ${formatCurrency(metrics.totalRevenue / metrics.totalAttendance)}`
       ]
     },
     {

@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Calendar, Target, TrendingUp, TrendingDown, Star, Clock, Activity, Zap } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
-import { formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage, formatCurrency } from '@/utils/formatters';
 import { ClassAttendanceDrillDownModal } from './ClassAttendanceDrillDownModal';
 import { cn } from '@/lib/utils';
 
@@ -35,9 +35,9 @@ export const ClassAttendanceMetricCards: React.FC<ClassAttendanceMetricCardsProp
     const emptySessions = data.filter(session => (session.checkedInCount || 0) === 0).length;
     const nonEmptySessions = totalSessions - emptySessions;
     
-    const avgAttendance = totalSessions > 0 ? (totalAttendance / totalSessions) : 0;
+    const avgAttendance = totalSessions > 0 ? Number((totalAttendance / totalSessions).toFixed(1)) : 0;
     const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
-    const avgRevenue = totalSessions > 0 ? (totalRevenue / totalSessions) : 0;
+    const avgRevenue = totalSessions > 0 ? Number((totalRevenue / totalSessions).toFixed(1)) : 0;
 
     // Find best performing class by average attendance
     const classPerformance = data.reduce((acc, session) => {
@@ -102,7 +102,7 @@ export const ClassAttendanceMetricCards: React.FC<ClassAttendanceMetricCardsProp
     },
     {
       title: 'Average Attendance',
-      value: formatNumber(metrics.avgAttendance),
+      value: `${metrics.avgAttendance}`,
       icon: Target,
       description: 'Per session average',
       change: 5.2,
@@ -126,7 +126,7 @@ export const ClassAttendanceMetricCards: React.FC<ClassAttendanceMetricCardsProp
     },
     {
       title: 'Revenue Per Session',
-      value: formatNumber(metrics.avgRevenue),
+      value: formatCurrency(metrics.avgRevenue),
       icon: Zap,
       description: 'Average revenue generated',
       change: 15.4,

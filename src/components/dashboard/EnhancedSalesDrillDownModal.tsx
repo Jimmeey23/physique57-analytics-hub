@@ -37,7 +37,7 @@ interface EnhancedSalesDrillDownModalProps {
   type: 'metric' | 'product' | 'category' | 'member' | 'soldBy' | 'paymentMethod' | 'client-conversion' | 'trainer' | 'location' | 'class';
 }
 
-export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = ({
+const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = ({
   isOpen,
   onClose,
   data,
@@ -295,7 +295,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
   // Render enhanced metric cards
   const renderMetricCards = () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="bg-gradient-to-br from-slate-900 to-blue-950 text-white border-slate-700 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4">
+      <Card className="bg-gradient-to-br from-slate-900 to-blue-950 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 transform-gpu rounded-2xl overflow-hidden">
         <CardContent className="p-5">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-slate-300 mb-1">
@@ -308,7 +308,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
       </Card>
 
       <Card className="bg-white border-slate-200 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-100">
-        <CardContent className="p-5">
+          <CardContent className="p-5">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-slate-500 mb-1">
               <Users className="w-4 h-4" />
@@ -320,7 +320,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
       </Card>
 
       <Card className="bg-white border-slate-200 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-200">
-        <CardContent className="p-5">
+          <CardContent className="p-5">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-slate-500 mb-1">
               <ShoppingCart className="w-4 h-4" />
@@ -332,7 +332,7 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
       </Card>
 
       <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-300">
-        <CardContent className="p-5">
+          <CardContent className="p-5">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-slate-600 mb-1">
               <BarChart3 className="w-4 h-4" />
@@ -666,137 +666,166 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden bg-white border-slate-200 shadow-2xl">
-        <DialogHeader className="pb-6 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white -m-6 mb-6 p-6 shadow-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+      <DialogContent className="w-[85vw] max-w-[1200px] max-h-[85vh] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-0 shadow-2xl rounded-2xl">
+        {/* Compact Header */}
+        <DialogHeader className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-800 dark:via-purple-800 dark:to-indigo-800 text-white p-6 -m-6 mb-6 rounded-t-2xl">
+          <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-lg">
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                {getTitle()}
-              </DialogTitle>
-              <p className="text-slate-300 mt-2 text-sm">
-                {getSubtitle()}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge className="bg-white/20 text-white border-white/30 flex items-center gap-2 backdrop-blur-sm">
-                <Filter className="w-4 h-4" />
-                All Historical Data
-              </Badge>
-              <Button
-                variant="outline"
-                className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
-                onClick={handleExport}
-                disabled={isExporting}
-                title="Export transactions and per-member behavior summary"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button 
-                variant="ghost"
-                onClick={onClose}
-                className="text-white hover:bg-white/10 backdrop-blur-sm"
-              >
-                Close
-              </Button>
+                <div>
+                  <DialogTitle className="text-xl font-bold tracking-tight text-white mb-1">
+                    {getTitle()}
+                  </DialogTitle>
+                  <p className="text-blue-100 text-xs font-medium opacity-90">
+                    {getSubtitle()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-md transition-all duration-200 hover:scale-105 shadow-lg text-xs"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  title="Export transactions and per-member behavior summary"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  {isExporting ? 'Exporting...' : 'Export'}
+                </Button>
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="text-white hover:bg-white/20 backdrop-blur-md transition-all duration-200 hover:scale-105 w-8 h-8 p-0"
+                >
+                  ×
+                </Button>
+              </div>
             </div>
           </div>
-  </DialogHeader>
+        </DialogHeader>
   
-  {/* Main Content Area */}
-  <div className="overflow-y-auto px-8 py-6 space-y-8" style={{ maxHeight: 'calc(95vh - 140px)' }}>
+  {/* Compact Content Area */}
+  <div className="overflow-y-auto px-6 py-1 space-y-6" style={{ maxHeight: 'calc(85vh - 120px)' }}>
     
-    {/* Key Metrics Section */}
-    <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
-        <BarChart3 className="w-5 h-5 text-slate-700" />
-        Key Performance Metrics
+    {/* Key Metrics Section - Compact */}
+    <div className="p-5 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
+        <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+          <BarChart3 className="w-3 h-3 text-white" />
+        </div>
+        Key Metrics
       </h3>
       {renderMetricCards()}
     </div>
 
-    {/* Main Content Tabs */}
+    {/* Compact Content Tabs */}
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-slate-100 to-slate-200 h-14 border-2 border-slate-300 rounded-lg p-1">
-              <TabsTrigger value="overview" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
-                <Star className="w-4 h-4" />
+      <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-slate-100 via-white to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 h-12 border border-slate-200 dark:border-slate-600 rounded-xl p-1 shadow-lg backdrop-blur-md">
+              <TabsTrigger 
+                value="overview" 
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+              >
+                <Star className="w-3 h-3" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
-                <BarChart3 className="w-4 h-4" />
+              <TabsTrigger 
+                value="analytics" 
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+              >
+                <BarChart3 className="w-3 h-3" />
                 Analytics
               </TabsTrigger>
-              <TabsTrigger value="customers" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
-                <Users className="w-4 h-4" />
+              <TabsTrigger 
+                value="customers" 
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+              >
+                <Users className="w-3 h-3" />
                 Customers
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
-                <Eye className="w-4 h-4" />
+              <TabsTrigger 
+                value="transactions" 
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+              >
+                <Eye className="w-3 h-3" />
                 Transactions
               </TabsTrigger>
-              <TabsTrigger value="insights" className="gap-2 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-blue-950 data-[state=active]:text-white">
-                <Zap className="w-4 h-4" />
+              <TabsTrigger 
+                value="insights" 
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+              >
+                <Zap className="w-3 h-3" />
                 Insights
               </TabsTrigger>
             </TabsList>
             
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-8">
-              <div className="space-y-8">
+            {/* Compact Overview Tab */}
+            <TabsContent value="overview" className="mt-4">
+              <div className="space-y-5">
                 
                 {/* Analytics Charts Section */}
-                <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
-                    <TrendingUp className="w-5 h-5 text-slate-700" />
+                <div className="p-5 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
+                      <TrendingUp className="w-3 h-3 text-white" />
+                    </div>
                     Analytics Overview
                   </h3>
                   {renderAnalyticsCharts()}
                 </div>
               
                 {/* Performance Cards Section */}
-                <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
-                    <Award className="w-5 h-5 text-slate-700" />
+                <div className="p-5 bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <div className="w-6 h-6 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg">
+                      <Award className="w-3 h-3 text-white" />
+                    </div>
                     Performance Breakdown
                   </h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="bg-gradient-to-br from-slate-900 to-blue-950 text-white border-2 border-slate-700 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in zoom-in">
-                  <CardHeader>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 transform-gpu rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                  <CardHeader className="relative z-10">
                     <CardTitle className="text-white flex items-center gap-3">
-                      <div className="p-2 bg-white/20 rounded-lg">
+                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30">
                         <Award className="w-6 h-6 text-white" />
                       </div>
                       Performance Summary
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
+                  <CardContent className="space-y-4 relative z-10">
+                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-white" />
                         <span className="text-slate-100 font-medium">Revenue Growth</span>
                       </div>
-                      <Badge className="bg-white/20 text-white border border-white/30 backdrop-blur-sm">
+                      <Badge className="bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 backdrop-blur-sm">
                         +{((enhancedData.totalRevenue / 1000000) * 1.5).toFixed(1)}%
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
+                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-white" />
                         <span className="text-slate-100 font-medium">Customer Retention</span>
                       </div>
-                      <Badge className="bg-white/20 text-white border border-white/30 backdrop-blur-sm">
+                      <Badge className="bg-blue-500/20 text-blue-200 border border-blue-400/30 backdrop-blur-sm">
                         {((enhancedData.uniqueCustomers / enhancedData.totalTransactions) * 100).toFixed(1)}%
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200">
+                    <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-2">
                         <Target className="w-4 h-4 text-white" />
                         <span className="text-slate-100 font-medium">Market Share</span>
                       </div>
-                      <Badge className="bg-white/20 text-white border border-white/30 backdrop-blur-sm">
+                      <Badge className="bg-purple-500/20 text-purple-200 border border-purple-400/30 backdrop-blur-sm">
                         {((enhancedData.totalRevenue / 10000000) * 100).toFixed(1)}%
                       </Badge>
                     </div>
@@ -843,26 +872,35 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-in fade-in zoom-in delay-200">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900 flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-br from-slate-900 to-blue-950 rounded-lg">
+                <Card className="bg-gradient-to-br from-white via-purple-50 to-white dark:from-purple-900/20 dark:via-slate-800 dark:to-purple-900/20 border border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-100/30 to-transparent dark:from-purple-800/30"></div>
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="text-purple-800 dark:text-purple-200 flex items-center gap-3">
+                      <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl shadow-lg">
                         <PieChart className="w-6 h-6 text-white" />
                       </div>
                       Category Breakdown
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 relative z-10">
                     {Object.entries(enhancedData.categoryBreakdown).slice(0, 3).map(([category, data]: [string, any], index) => {
+                      const colors = [
+                        { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-800 dark:text-emerald-200', icon: 'text-emerald-500' },
+                        { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-200', icon: 'text-blue-500' },
+                        { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-800 dark:text-purple-200', icon: 'text-purple-500' }
+                      ];
+                      const color = colors[index] || colors[0];
                       return (
-                        <div key={category} className="flex justify-between items-center p-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-all duration-200 group">
-                          <div className="flex items-center gap-2">
-                            <ShoppingCart className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform duration-200" />
-                            <span className="text-slate-700 font-medium truncate">{category}</span>
+                        <div key={category} className="flex justify-between items-center p-4 bg-white/80 dark:bg-slate-800/80 rounded-xl border border-purple-200 dark:border-purple-700 hover:bg-white dark:hover:bg-slate-700 transition-all duration-300 hover:scale-105 shadow-sm group">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 ${color.bg} rounded-lg flex items-center justify-center`}>
+                              <ShoppingCart className={`w-4 h-4 ${color.icon}`} />
+                            </div>
+                            <span className="text-slate-700 dark:text-slate-300 font-medium truncate">{category}</span>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-slate-900 px-2 py-1 rounded bg-slate-200 border border-slate-300">{formatCurrency(data.revenue)}</div>
-                            <div className="text-xs text-slate-500 mt-1">{data.count} sales</div>
+                            <div className={`font-bold ${color.text} ${color.bg} px-3 py-2 rounded-full text-sm shadow-sm`}>{formatCurrency(data.revenue)}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data.count} sales</div>
                           </div>
                         </div>
                       );
@@ -874,93 +912,132 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
               </div>
             </TabsContent>
 
-            <TabsContent value="analytics" className="mt-8">
-              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
-                  <BarChart3 className="w-5 h-5 text-slate-700" />
+            <TabsContent value="analytics" className="mt-4">
+              <div className="p-5 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-blue-900/20 dark:via-slate-800 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500">
+                <h3 className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-8 flex items-center gap-3 pb-4 border-b border-blue-200 dark:border-blue-700">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg">
+                    <BarChart3 className="w-4 h-4 text-white" />
+                  </div>
                   Detailed Analytics
                 </h3>
                 {renderAnalyticsCharts()}
               </div>
             </TabsContent>
 
-            <TabsContent value="customers" className="mt-8">
-              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
-                  <Users className="w-5 h-5 text-slate-700" />
+            <TabsContent value="customers" className="mt-4">
+              <div className="p-5 bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-emerald-900/20 dark:via-slate-800 dark:to-green-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500">
+                <h3 className="text-xl font-bold text-emerald-800 dark:text-emerald-200 mb-8 flex items-center gap-3 pb-4 border-b border-emerald-200 dark:border-emerald-700">
+                  <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
                   Customer Analysis
                 </h3>
                 {renderCustomerAnalysis()}
               </div>
             </TabsContent>
 
-            <TabsContent value="transactions" className="mt-8">
-              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2 pb-4 border-b border-slate-200">
-                  <Eye className="w-5 h-5 text-slate-700" />
+            <TabsContent value="transactions" className="mt-4">
+              <div className="p-5 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-8 flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <Eye className="w-4 h-4 text-white" />
+                  </div>
                   Transaction Details
                 </h3>
                 {renderTransactionDetails()}
               </div>
             </TabsContent>
 
-            <TabsContent value="insights" className="mt-8">
-              <div className="space-y-6">
-                <Card className="bg-white border-2 border-slate-200 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900 flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-slate-700" />
+            <TabsContent value="insights" className="mt-4">
+              <div className="space-y-8">
+                <Card className="bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-purple-900/20 dark:via-slate-800 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 shadow-2xl hover:shadow-3xl transition-all duration-500 rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-100/30 to-transparent dark:from-purple-800/30"></div>
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="text-purple-800 dark:text-purple-200 flex items-center gap-3 text-xl">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <Zap className="w-5 h-5 text-white" />
+                      </div>
                       AI-Powered Insights
+                      <Badge className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-0 ml-auto">
+                        Smart Analytics
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-slate-900">
-                      <div className="font-semibold text-slate-900 mb-1">Revenue Optimization</div>
-                      <div className="text-sm text-slate-600">
-                        Peak sales occur between 6-8 PM. Consider targeted promotions during this window.
+                  <CardContent className="space-y-6 relative z-10">
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border-l-4 border-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                          <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div className="font-bold text-emerald-800 dark:text-emerald-200 text-lg">Revenue Optimization</div>
+                      </div>
+                      <div className="text-slate-600 dark:text-slate-300 font-medium">
+                        Peak sales occur between 6-8 PM. Consider targeted promotions during this window to maximize revenue potential.
                       </div>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-blue-950">
-                      <div className="font-semibold text-slate-900 mb-1">Customer Behavior</div>
-                      <div className="text-sm text-slate-600">
-                        High-value customers prefer premium services. Upselling opportunities detected.
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border-l-4 border-blue-500 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                          <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="font-bold text-blue-800 dark:text-blue-200 text-lg">Customer Behavior</div>
+                      </div>
+                      <div className="text-slate-600 dark:text-slate-300 font-medium">
+                        High-value customers prefer premium services. Multiple upselling opportunities have been detected.
                       </div>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-slate-700">
-                      <div className="font-semibold text-slate-900 mb-1">Market Trend</div>
-                      <div className="text-sm text-slate-600">
-                        Increasing demand for digital payments. Mobile optimization recommended.
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border-l-4 border-purple-500 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                          <Target className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="font-bold text-purple-800 dark:text-purple-200 text-lg">Strategic Recommendations</div>
+                      </div>
+                      <div className="text-slate-600 dark:text-slate-300 font-medium">
+                        Increasing demand for digital payments detected. Mobile optimization and contactless solutions are strongly recommended.
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border-2 border-slate-300 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900 flex items-center gap-2">
-                      <Filter className="w-5 h-5 text-slate-700" />
-                      Recommendations
+                <Card className="bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-orange-900/20 dark:via-slate-800 dark:to-red-900/20 border border-orange-200 dark:border-orange-800 shadow-2xl hover:shadow-3xl transition-all duration-500 rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-100/30 to-transparent dark:from-orange-800/30"></div>
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="text-orange-800 dark:text-orange-200 flex items-center gap-3 text-xl">
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <Filter className="w-5 h-5 text-white" />
+                      </div>
+                      Strategic Recommendations
+                      <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 ml-auto">
+                        Action Plan
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-4 bg-white rounded-lg">
-                      <div className="font-semibold text-slate-800 mb-2">
-                        🎯 Immediate Actions
+                  <CardContent className="space-y-6 relative z-10">
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                          <span className="text-xl">🎯</span>
+                        </div>
+                        <div className="font-bold text-emerald-800 dark:text-emerald-200 text-lg">Immediate Actions</div>
                       </div>
-                      <ul className="text-sm text-slate-600 space-y-1 ml-4 list-disc">
-                        <li>Optimize pricing for peak hours</li>
-                        <li>Launch loyalty program for top customers</li>
-                        <li>Improve mobile payment experience</li>
+                      <ul className="text-slate-600 dark:text-slate-300 space-y-2 ml-4">
+                        <li className="flex items-center gap-2"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span>Optimize pricing strategy for peak hours (6-8 PM)</li>
+                        <li className="flex items-center gap-2"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span>Launch premium loyalty program for high-value customers</li>
+                        <li className="flex items-center gap-2"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span>Enhance mobile payment experience and user interface</li>
                       </ul>
                     </div>
-                    <div className="p-4 bg-white rounded-lg">
-                      <div className="font-semibold text-slate-800 mb-2">
-                        📈 Long-term Strategy
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                          <span className="text-xl">📈</span>
+                        </div>
+                        <div className="font-bold text-blue-800 dark:text-blue-200 text-lg">Long-term Strategy</div>
                       </div>
-                      <ul className="text-sm text-slate-600 space-y-1 ml-4 list-disc">
-                        <li>Expand high-performing categories</li>
-                        <li>Develop customer retention programs</li>
-                        <li>Implement predictive analytics</li>
+                      <ul className="text-slate-600 dark:text-slate-300 space-y-2 ml-4">
+                        <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-500 rounded-full"></span>Expand investment in high-performing categories and services</li>
+                        <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-500 rounded-full"></span>Develop comprehensive customer retention and engagement programs</li>
+                        <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-500 rounded-full"></span>Implement advanced predictive analytics and AI-driven insights</li>
                       </ul>
                     </div>
                   </CardContent>
@@ -973,3 +1050,5 @@ export const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalPr
     </Dialog>
   );
 };
+
+export default EnhancedSalesDrillDownModal;

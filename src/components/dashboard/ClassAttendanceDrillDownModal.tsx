@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatNumber, formatPercentage } from '@/utils/formatters';
+import { formatNumber, formatPercentage, formatCurrency } from '@/utils/formatters';
 import { SessionData } from '@/hooks/useSessionsData';
 import { 
   TrendingUp, 
@@ -218,7 +218,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                     </div>
                     <div>
                       <p className="text-sm text-orange-700 font-medium">Total Revenue</p>
-                      <p className="text-2xl font-bold text-orange-900">{formatNumber(overallStats.totalRevenue)}</p>
+                      <p className="text-2xl font-bold text-orange-900">{formatCurrency(overallStats.totalRevenue)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -357,7 +357,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                                   <p className="text-xs text-slate-500 mt-1">Fill Rate</p>
                                 </div>
                                 <div className="text-center">
-                                  <p className="font-medium text-green-600">{formatNumber(location.totalRevenue)}</p>
+                                  <p className="font-medium text-green-600">{formatCurrency(location.totalRevenue)}</p>
                                   <p className="text-xs text-slate-500">Revenue</p>
                                 </div>
                               </div>
@@ -410,7 +410,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                                   <p className="text-xs text-slate-500 mt-1">Fill Rate</p>
                                 </div>
                                 <div className="text-center">
-                                  <p className="font-medium text-purple-600">{formatNumber(trainer.totalRevenue)}</p>
+                                  <p className="font-medium text-purple-600">{formatCurrency(trainer.totalRevenue)}</p>
                                   <p className="text-xs text-slate-500">Revenue</p>
                                 </div>
                               </div>
@@ -463,7 +463,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                                   <p className="text-xs text-slate-500 mt-1">Fill Rate</p>
                                 </div>
                                 <div className="text-center">
-                                  <p className="font-medium text-orange-600">{formatNumber(timeSlot.totalRevenue)}</p>
+                                  <p className="font-medium text-orange-600">{formatCurrency(timeSlot.totalRevenue)}</p>
                                   <p className="text-xs text-slate-500">Revenue</p>
                                 </div>
                               </div>

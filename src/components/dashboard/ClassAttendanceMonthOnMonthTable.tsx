@@ -58,8 +58,8 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
       fillRate: stat.capacity > 0 ? (stat.attendance / stat.capacity) * 100 : 0,
       showUpRate: stat.booked > 0 ? (stat.attendance / stat.booked) * 100 : 0,
       utilizationRate: stat.sessions > 0 ? ((stat.sessions - stat.emptySessions) / stat.sessions) * 100 : 0,
-      avgRevenue: stat.sessions > 0 ? stat.revenue / stat.sessions : 0,
-      revenuePerAttendee: stat.attendance > 0 ? stat.revenue / stat.attendance : 0,
+      avgRevenue: stat.sessions > 0 ? Number((stat.revenue / stat.sessions).toFixed(1)) : 0,
+      revenuePerAttendee: stat.attendance > 0 ? Number((stat.revenue / stat.attendance).toFixed(1)) : 0,
       formatCount: stat.formats.size
     })).sort((a, b) => b.month.localeCompare(a.month));
 

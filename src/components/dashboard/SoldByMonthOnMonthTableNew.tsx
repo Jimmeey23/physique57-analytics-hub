@@ -383,11 +383,7 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
                     return (
                       <td 
                         key={key} 
-                        className={`px-2 py-2 text-center text-sm font-mono border-l border-gray-200 cursor-pointer transition-all duration-200 ${
-                          isPreviousMonth 
-                            ? 'bg-blue-50 border-l-2 border-l-blue-500 text-slate-900' 
-                            : 'text-slate-700 hover:bg-slate-100'
-                        }`}
+                        className="px-2 py-2 text-center text-sm font-mono text-slate-700 border-l border-gray-200 hover:bg-slate-100 cursor-pointer transition-all duration-200"
                         title={growthPercentage ? `${growthPercentage}% vs previous month${isPreviousMonth ? ' - Main Month' : ''}` : (isPreviousMonth ? 'Main Month' : '')}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -462,11 +458,7 @@ export const SoldByMonthOnMonthTableNewComponent: React.FC<SoldByMonthOnMonthTab
                   return (
                     <td 
                       key={key} 
-                      className={`px-2 py-2 text-center text-sm font-bold border-l cursor-pointer transition-all duration-200 ${
-                        isPreviousMonth 
-                          ? 'bg-blue-600 text-white border-blue-400' 
-                          : 'text-white border-slate-400 group-hover:bg-slate-700'
-                      }`}
+                      className="px-2 py-2 text-center text-sm font-bold text-white border-l border-slate-400 group-hover:bg-slate-700 cursor-pointer transition-all duration-200"
                       title={isPreviousMonth ? 'Main Month - Grand Total' : ''}
                       onClick={(e) => {
                         e.stopPropagation();

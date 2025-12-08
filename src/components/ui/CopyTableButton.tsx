@@ -16,6 +16,7 @@ interface CopyTableButtonProps {
     selectedMetric?: string;
     dateRange?: { start: string; end: string };
     filters?: Record<string, any>;
+    location?: string; // Current selected location
     additionalInfo?: Record<string, any>;
   };
 }
@@ -356,7 +357,24 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
         
         // Add selected metric
         if (contextInfo.selectedMetric) {
-          textContent += `Selected Metric: ${contextInfo.selectedMetric}\n`;
+          textContent += `Metric: ${contextInfo.selectedMetric}\n`;
+        }
+        
+        // Add location information
+        if (contextInfo.location) {
+          textContent += `Location: ${contextInfo.location}\n`;
+        } else if (contextInfo.filters?.location) {
+          // Handle location from filters
+          const locationValue = Array.isArray(contextInfo.filters.location) 
+            ? contextInfo.filters.location.join(', ') 
+            : contextInfo.filters.location;
+          if (locationValue && locationValue !== 'all') {
+            textContent += `Location: ${locationValue}\n`;
+          } else {
+            textContent += `Location: All Locations\n`;
+          }
+        } else {
+          textContent += `Location: All Locations\n`;
         }
         
         // Add date range
@@ -403,7 +421,8 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
           });
         }
         
-        textContent += `\n--- Table Data ---\n`;
+        textContent += `\n--- Table Data (Headers + Data Rows + Totals) ---\n`;
+        textContent += `Note: Grouped/Category rows have been excluded\n`;
       } else {
         textContent += `\n`;
       }
@@ -430,19 +449,24 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
           row.classList.contains('bg-slate-100') || 
           row.classList.contains('bg-gray-100') ||
           row.classList.contains('bg-slate-50') ||
+          row.classList.contains('bg-gray-50') ||
           row.classList.contains('group-row') ||
           row.classList.contains('category-row') ||
           row.classList.contains('section-header') ||
+          row.classList.contains('group-header') ||
+          row.classList.contains('category-header') ||
           
           // Detect expand/collapse buttons (chevron icons)
           row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
           row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null ||
           row.querySelector('[data-lucide="chevron-right"], [data-lucide="chevron-down"]') !== null ||
+          row.querySelector('.fa-chevron-right, .fa-chevron-down') !== null ||
           
           // Detect if row has data attributes indicating it's a group
           row.hasAttribute('data-group') ||
           row.hasAttribute('data-category') ||
           row.hasAttribute('data-section') ||
+          row.hasAttribute('data-grouped') ||
           
           // Detect if first cell spans multiple columns (common in group headers)
           (() => {
@@ -460,7 +484,17 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
               rowText.includes('collapse') ||
               rowText.includes('show more') ||
               rowText.includes('show less') ||
-              (rowText.includes('items') && !rowText.match(/\d+\s+items/)) // Avoid matching actual data like "5 items sold"
+              (rowText.includes('items') && !rowText.match(/\d+\s+items/)) || // Avoid matching actual data like "5 items sold"
+              rowText.includes('category:') ||
+              rowText.includes('group:') ||
+              rowText.includes('section:') ||
+              // Detect rows that are just category names without data
+              (rowText.length > 0 && rowText.length < 50 && 
+               !rowText.match(/\d/) && // No numbers (likely data)
+               !rowText.includes('₹') && // No currency
+               !rowText.includes('%') && // No percentages
+               !rowText.includes(':') && // No time or ratios
+               row.querySelectorAll('td, th').length <= 2) // Few cells (likely category header)
             );
           })()
         );

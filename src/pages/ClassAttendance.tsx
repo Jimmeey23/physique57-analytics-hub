@@ -5,7 +5,7 @@ import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
-import { formatNumber } from '@/utils/formatters';
+import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 const ClassAttendanceContent = () => {
@@ -27,8 +27,8 @@ const ClassAttendanceContent = () => {
     const totalCapacity = filteredData.reduce((sum, session) => sum + (session.capacity || 0), 0);
     const totalRevenue = filteredData.reduce((sum, session) => sum + (session.totalPaid || 0), 0);
     
-    const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
-    const classAverage = totalSessions > 0 ? totalAttendance / totalSessions : 0;
+    const fillRate = totalCapacity > 0 ? Number(((totalAttendance / totalCapacity) * 100).toFixed(1)) : 0;
+    const classAverage = totalSessions > 0 ? Number((totalAttendance / totalSessions).toFixed(1)) : 0;
     
     // Get unique locations for location-specific metrics
     const uniqueLocations = [...new Set(filteredData.map(item => item.location))].filter(Boolean);
@@ -46,13 +46,13 @@ const ClassAttendanceContent = () => {
         location: 'Attendance', 
         label: 'Total Attendance',
         value: formatNumber(totalAttendance),
-        subValue: `${formatNumber(classAverage)} avg/class`
+        subValue: `${classAverage} avg/class`
       },
       {
         location: 'Revenue',
         label: 'Earned Revenue', 
-        value: formatNumber(totalRevenue),
-        subValue: `${formatNumber(totalRevenue / totalSessions)} avg/session`
+        value: formatCurrency(totalRevenue),
+        subValue: `${formatCurrency(totalSessions > 0 ? totalRevenue / totalSessions : 0)} avg/session`
       },
       {
         location: 'Coverage',

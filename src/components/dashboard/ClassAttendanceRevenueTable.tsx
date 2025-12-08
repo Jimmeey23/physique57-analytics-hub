@@ -62,9 +62,9 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
 
     return Object.values(formatStats).map((stat: any) => ({
       ...stat,
-      avgRevenue: stat.totalSessions > 0 ? stat.totalRevenue / stat.totalSessions : 0,
-      revenuePerAttendee: stat.totalAttendance > 0 ? stat.totalRevenue / stat.totalAttendance : 0,
-      revenuePerCapacity: stat.totalCapacity > 0 ? stat.totalRevenue / stat.totalCapacity : 0,
+      avgRevenue: stat.totalSessions > 0 ? Number((stat.totalRevenue / stat.totalSessions).toFixed(1)) : 0,
+      revenuePerAttendee: stat.totalAttendance > 0 ? Number((stat.totalRevenue / stat.totalAttendance).toFixed(1)) : 0,
+      revenuePerCapacity: stat.totalCapacity > 0 ? Number((stat.totalRevenue / stat.totalCapacity).toFixed(1)) : 0,
       revenueEfficiency: stat.totalSessions > 0 ? (stat.revenueGeneratingSessions / stat.totalSessions) * 100 : 0,
       paidAttendeeRate: stat.totalAttendance > 0 ? (stat.paidAttendees / stat.totalAttendance) * 100 : 0,
       fillRate: stat.totalCapacity > 0 ? (stat.totalAttendance / stat.totalCapacity) * 100 : 0,
@@ -178,7 +178,7 @@ export const ClassAttendanceRevenueTable: React.FC<ClassAttendanceRevenueTablePr
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col">
-                        <span className="font-medium text-green-600">{formatNumber(row.totalRevenue)}</span>
+                        <span className="font-medium text-green-600">{formatCurrency(row.totalRevenue)}</span>
                         <span className="text-xs text-gray-500">
                           {formatNumber(row.revenueGeneratingSessions)} revenue sessions
                         </span>

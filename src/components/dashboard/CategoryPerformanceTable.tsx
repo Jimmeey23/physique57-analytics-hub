@@ -253,7 +253,7 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
             <table className="min-w-full bg-white border-t border-gray-200 rounded-lg">
               <thead className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white font-semibold text-sm uppercase tracking-wider sticky top-0 z-20">
                 <tr>
-                  <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 z-30 bg-slate-800 border-r border-white/20">Category</th>
+                  <th className="text-white font-semibold uppercase tracking-wider px-6 py-3 text-left rounded-tl-lg sticky left-0 z-30 bg-gradient-to-r from-slate-800 to-slate-900 border-r border-white/20">Category</th>
                   <th className="text-white font-semibold text-xs uppercase tracking-wider px-3 py-2 border-r border-white/20 min-w-24">Contribution %</th>
                   {monthlyData.map(({
                   key,

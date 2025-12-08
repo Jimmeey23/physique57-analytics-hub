@@ -11,7 +11,8 @@ import {
   ChevronDown, ChevronRight, Search, Filter, Download, Eye, Settings,
   SortAsc, SortDesc, Users, BarChart3, Calendar, MapPin, Clock, 
   TrendingUp, Target, User, Building2, Activity, DollarSign,
-  MoreHorizontal, RefreshCw, Grid3x3, List, ChevronLeft
+  MoreHorizontal, RefreshCw, Grid3x3, List, ChevronLeft, 
+  Star, AlertTriangle
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
@@ -28,7 +29,7 @@ interface AdvancedClassAttendanceTableProps {
 }
 
 type ViewMode = 'grouped' | 'flat';
-type GroupByOption = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'class_day_time_trainer' | 'class_day_time' | 'class_time' | 'class_day' | 'trainer_time' | 'uniqueid1' | 'uniqueid2' | 'none';
+type GroupByOption = 'trainer' | 'class' | 'location' | 'day_time' | 'trainer_class' | 'class_day_time_trainer' | 'class_day_time' | 'class_time' | 'class_day' | 'trainer_time' | 'uniqueid1' | 'uniqueid2' | 'period' | 'day_of_week' | 'time_slot' | 'revenue_tier' | 'attendance_tier' | 'trainer_location' | 'class_location' | 'monthly_period' | 'weekly_period' | 'performance_tier' | 'none';
 
 interface ProcessedSession extends SessionData {
   period: string;
@@ -37,7 +38,6 @@ interface ProcessedSession extends SessionData {
   avgAll: number;
   avgNonEmpty: number;
   lateCancels: number;
-  payout: number;
   tips: number;
 }
 
@@ -56,7 +56,6 @@ interface GroupedData {
     avgNonEmpty: number;
     totalRevenue: number;
     totalLateCancels: number;
-    totalPayout: number;
     totalTips: number;
     totalCapacity: number;
     fillRate: number;
@@ -66,6 +65,13 @@ interface GroupedData {
     consistency: number;
     noShowRate: number;
     showUpRate: number;
+    attendanceRatio: number;
+    cancellationRate: number;
+    avgRevenuePerNonEmptyClass: number;
+    classEfficiency: number;
+    trainerProductivity: number;
+    peakAttendance: number;
+    avgClassSize: number;
   };
   isExpanded: boolean;
 }
@@ -106,7 +112,6 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
         avgAll: session.checkedInCount || 0,
         avgNonEmpty: (session.checkedInCount || 0) > 0 ? (session.checkedInCount || 0) : 0,
         lateCancels: session.lateCancelledCount || 0,
-        payout: 0, // Would need payroll data integration
         tips: 0    // Would need tips data integration
       };
     });
@@ -173,6 +178,100 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           groupKey = session.uniqueId2 || 'Unknown';
           groupLabel = session.uniqueId2 || 'Unknown UniqueID2';
           break;
+        case 'period':
+          groupKey = session.period || 'Unknown';
+          groupLabel = session.period || 'Unknown Period';
+          break;
+        case 'day_of_week':
+          groupKey = session.dayOfWeek || 'Unknown';
+          groupLabel = session.dayOfWeek || 'Unknown Day';
+          break;
+        case 'time_slot':
+          const hour = parseInt(session.time?.split(':')[0] || '0');
+          if (hour < 8) {
+            groupKey = 'early_morning';
+            groupLabel = 'Early Morning (5-8 AM)';
+          } else if (hour < 12) {
+            groupKey = 'morning';
+            groupLabel = 'Morning (8 AM-12 PM)';
+          } else if (hour < 17) {
+            groupKey = 'afternoon';
+            groupLabel = 'Afternoon (12-5 PM)';
+          } else {
+            groupKey = 'evening';
+            groupLabel = 'Evening (5+ PM)';
+          }
+          break;
+        case 'revenue_tier':
+          const revenue = session.totalPaid || 0;
+          if (revenue === 0) {
+            groupKey = 'no_revenue';
+            groupLabel = 'No Revenue';
+          } else if (revenue < 100) {
+            groupKey = 'low_revenue';
+            groupLabel = 'Low Revenue ($0-$100)';
+          } else if (revenue < 300) {
+            groupKey = 'medium_revenue';
+            groupLabel = 'Medium Revenue ($100-$300)';
+          } else {
+            groupKey = 'high_revenue';
+            groupLabel = 'High Revenue ($300+)';
+          }
+          break;
+        case 'attendance_tier':
+          const attendance = session.checkedInCount || 0;
+          if (attendance === 0) {
+            groupKey = 'empty';
+            groupLabel = 'Empty Class';
+          } else if (attendance < 5) {
+            groupKey = 'low_attendance';
+            groupLabel = 'Low Attendance (1-4)';
+          } else if (attendance < 10) {
+            groupKey = 'medium_attendance';
+            groupLabel = 'Medium Attendance (5-9)';
+          } else {
+            groupKey = 'high_attendance';
+            groupLabel = 'High Attendance (10+)';
+          }
+          break;
+        case 'trainer_location':
+          groupKey = `${session.trainerName}-${session.location}`;
+          groupLabel = `${session.trainerName} @ ${session.location}`;
+          break;
+        case 'class_location':
+          groupKey = `${session.cleanedClass}-${session.location}`;
+          groupLabel = `${session.cleanedClass} @ ${session.location}`;
+          break;
+        case 'monthly_period':
+          const date = new Date(session.date);
+          const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+          groupKey = monthKey;
+          groupLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          break;
+        case 'weekly_period':
+          const sessionDate = new Date(session.date);
+          const weekStart = new Date(sessionDate);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          groupKey = weekStart.toISOString().split('T')[0];
+          groupLabel = `Week of ${weekStart.toLocaleDateString()}`;
+          break;
+        case 'performance_tier':
+          const capacity = session.capacity || 1;
+          const fillRate = ((session.checkedInCount || 0) / capacity) * 100;
+          if (fillRate === 0) {
+            groupKey = 'no_show';
+            groupLabel = 'No Show';
+          } else if (fillRate < 50) {
+            groupKey = 'low_performance';
+            groupLabel = 'Low Performance (<50%)';
+          } else if (fillRate < 80) {
+            groupKey = 'good_performance';
+            groupLabel = 'Good Performance (50-80%)';
+          } else {
+            groupKey = 'excellent_performance';
+            groupLabel = 'Excellent Performance (80%+)';
+          }
+          break;
         default:
           groupKey = 'all';
           groupLabel = 'All Sessions';
@@ -193,24 +292,33 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
       const totalRevenue = sessions.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
       const totalLateCancels = sessions.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0);
       
-      // Calculate advanced metrics
-      const avgAll = totalClasses > 0 ? totalCheckedIn / totalClasses : 0;
-      const avgNonEmpty = nonEmptyClasses > 0 ? totalCheckedIn / nonEmptyClasses : 0;
-      const fillRate = totalCapacity > 0 ? (totalCheckedIn / totalCapacity) * 100 : 0;
-      const revenuePerClass = totalClasses > 0 ? totalRevenue / totalClasses : 0;
-      const revenuePerAttendee = totalCheckedIn > 0 ? totalRevenue / totalCheckedIn : 0;
-      const utilization = totalCapacity > 0 ? (totalCheckedIn / totalCapacity) * 100 : 0;
+      // Calculate advanced metrics with 1 decimal precision
+      const avgAll = totalClasses > 0 ? Number((totalCheckedIn / totalClasses).toFixed(1)) : 0;
+      const avgNonEmpty = nonEmptyClasses > 0 ? Number((totalCheckedIn / nonEmptyClasses).toFixed(1)) : 0;
+      const fillRate = totalCapacity > 0 ? Number(((totalCheckedIn / totalCapacity) * 100).toFixed(1)) : 0;
+      const revenuePerClass = totalClasses > 0 ? Number((totalRevenue / totalClasses).toFixed(1)) : 0;
+      const revenuePerAttendee = totalCheckedIn > 0 ? Number((totalRevenue / totalCheckedIn).toFixed(1)) : 0;
+      
+      // Calculate additional metrics
+      const utilization = totalCapacity > 0 ? Number(((totalCheckedIn / totalCapacity) * 100).toFixed(1)) : 0;
+      const attendanceRatio = totalClasses > 0 ? Number((nonEmptyClasses / totalClasses * 100).toFixed(1)) : 0;
+      const cancellationRate = (totalCheckedIn + totalLateCancels) > 0 ? Number((totalLateCancels / (totalCheckedIn + totalLateCancels) * 100).toFixed(1)) : 0;
+      const avgRevenuePerNonEmptyClass = nonEmptyClasses > 0 ? Number((totalRevenue / nonEmptyClasses).toFixed(1)) : 0;
+      const classEfficiency = totalCapacity > 0 ? Number(((totalRevenue / totalCapacity)).toFixed(1)) : 0;
+      const trainerProductivity = sessions.length > 0 ? Number((totalRevenue / sessions.length).toFixed(1)) : 0;
+      const peakAttendance = Math.max(...sessions.map(s => s.checkedInCount || 0), 0);
+      const avgClassSize = totalClasses > 0 ? Number(((totalCheckedIn + totalLateCancels) / totalClasses).toFixed(1)) : 0;
       
       // Calculate consistency (lower variance = higher consistency)
       const attendanceValues = sessions.map(s => s.checkedInCount || 0);
       const attendanceMean = attendanceValues.reduce((sum, val) => sum + val, 0) / attendanceValues.length;
       const attendanceVariance = attendanceValues.reduce((sum, val) => sum + Math.pow(val - attendanceMean, 2), 0) / attendanceValues.length;
-      const consistency = attendanceMean > 0 ? Math.max(0, 100 - (Math.sqrt(attendanceVariance) / attendanceMean * 100)) : 0;
+      const consistency = attendanceMean > 0 ? Number(Math.max(0, 100 - (Math.sqrt(attendanceVariance) / attendanceMean * 100)).toFixed(1)) : 0;
       
-      // Calculate show-up and no-show rates (based on late cancellations as proxy)
+      // Calculate show-up and no-show rates with 1 decimal precision
       const totalBooked = sessions.reduce((sum, s) => sum + (s.bookedCount || s.checkedInCount || 0), 0);
-      const noShowRate = totalBooked > 0 ? (totalLateCancels / totalBooked) * 100 : 0;
-      const showUpRate = 100 - noShowRate;
+      const noShowRate = totalBooked > 0 ? Number(((totalLateCancels / totalBooked) * 100).toFixed(1)) : 0;
+      const showUpRate = Number((100 - noShowRate).toFixed(1));
 
       // Get primary trainer and period for display
       const primaryTrainer = sessions[0]?.trainerName || 'Unknown';
@@ -274,7 +382,6 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           avgNonEmpty,
           totalRevenue,
           totalLateCancels,
-          totalPayout: 0,
           totalTips: 0,
           totalCapacity,
           fillRate,
@@ -283,7 +390,14 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           utilization,
           consistency,
           noShowRate,
-          showUpRate
+          showUpRate,
+          attendanceRatio,
+          cancellationRate,
+          avgRevenuePerNonEmptyClass,
+          classEfficiency,
+          trainerProductivity,
+          peakAttendance,
+          avgClassSize
         },
         isExpanded: expandedGroups.has(groupKey) || expandAll
       };
@@ -385,9 +499,9 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
           group.aggregatedMetrics.avgNonEmpty.toFixed(1),
           group.aggregatedMetrics.lateCancels,
           group.aggregatedMetrics.fillRate.toFixed(1),
-          group.aggregatedMetrics.totalRevenue.toFixed(0),
-          group.aggregatedMetrics.revenuePerClass.toFixed(0),
-          group.aggregatedMetrics.revenuePerAttendee.toFixed(0)
+          formatCurrency(group.aggregatedMetrics.totalRevenue).replace(',', ''),
+          formatCurrency(group.aggregatedMetrics.revenuePerClass).replace(',', ''),
+          formatCurrency(group.aggregatedMetrics.revenuePerAttendee).replace(',', '')
         ];
         csvRows.push(row.join(','));
       });
@@ -525,6 +639,16 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 <SelectItem value="class_time">Class + Time</SelectItem>
                 <SelectItem value="class_day">Class + Day</SelectItem>
                 <SelectItem value="trainer_time">Trainer + Time</SelectItem>
+                <SelectItem value="period">Period</SelectItem>
+                <SelectItem value="day_of_week">Day of Week</SelectItem>
+                <SelectItem value="time_slot">Time Slot</SelectItem>
+                <SelectItem value="revenue_tier">Revenue Tier</SelectItem>
+                <SelectItem value="attendance_tier">Attendance Tier</SelectItem>
+                <SelectItem value="trainer_location">Trainer + Location</SelectItem>
+                <SelectItem value="class_location">Class + Location</SelectItem>
+                <SelectItem value="monthly_period">Monthly Period</SelectItem>
+                <SelectItem value="weekly_period">Weekly Period</SelectItem>
+                <SelectItem value="performance_tier">Performance Tier</SelectItem>
                 <SelectItem value="none">No Grouping</SelectItem>
               </SelectContent>
             </Select>
@@ -588,9 +712,9 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
         >
           <Table className="min-w-[2000px] w-max">
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="bg-gradient-to-r from-red-700 via-red-800 to-red-900 border-b-2 border-red-900 shadow-lg">
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b-2 border-slate-900 shadow-lg">
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[200px] sticky left-0 z-30 h-9 max-h-9 bg-gradient-to-r from-red-700 to-red-900"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[200px] sticky left-0 z-30 h-9 max-h-9 bg-gradient-to-r from-slate-800 to-slate-900"
                   onClick={() => handleSort('trainer')}
                 >
                   <div className="flex items-center gap-2">
@@ -613,105 +737,105 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-9 max-h-9"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[80px] h-9 max-h-9"
                   onClick={() => handleSort('period')}
                 >
                   <div className="flex items-center gap-1 justify-center">
                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                    PERIOD
+                    <span className="text-xs whitespace-nowrap">PERIOD</span>
                     {getSortIcon('period')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[100px] h-9 max-h-9"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[100px] h-9 max-h-9"
                   onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center gap-1 justify-center">
                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                    DATE
+                    <span className="text-xs whitespace-nowrap">DATE</span>
                     {getSortIcon('date')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-9 max-h-9"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[130px] h-9 max-h-9"
                   onClick={() => handleSort('classType')}
                 >
                   <div className="flex items-center gap-1 justify-center">
                     <Activity className="w-4 h-4 flex-shrink-0" />
-                    CLASS TYPE
+                    <span className="text-xs whitespace-nowrap">CLASS TYPE</span>
                     {getSortIcon('classType')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[80px] h-9 max-h-9"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[80px] h-9 max-h-9"
                   onClick={() => handleSort('day')}
                 >
                   <div className="flex items-center gap-1 justify-center">
                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                    DAY
+                    <span className="text-xs whitespace-nowrap">DAY</span>
                     {getSortIcon('day')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[70px] h-9 max-h-9"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[70px] h-9 max-h-9"
                   onClick={() => handleSort('time')}
                 >
                   <div className="flex items-center gap-1 justify-center">
                     <Clock className="w-4 h-4 flex-shrink-0" />
-                    TIME
+                    <span className="text-xs whitespace-nowrap">TIME</span>
                     {getSortIcon('time')}
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="font-bold text-white cursor-pointer hover:text-red-100 transition-colors w-[130px] h-9 max-h-9"
+                  className="font-bold text-white cursor-pointer hover:text-slate-100 transition-colors w-[130px] h-9 max-h-9"
                   onClick={() => handleSort('location')}
                 >
                   <div className="flex items-center gap-1 justify-center">
                     <MapPin className="w-4 h-4 flex-shrink-0" />
-                    LOCATION
+                    <span className="text-xs whitespace-nowrap">LOCATION</span>
                     {getSortIcon('location')}
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[70px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <BarChart3 className="w-4 h-4 flex-shrink-0" />
-                    CLASSES
+                    <span className="text-xs whitespace-nowrap">CLASSES</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[70px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Target className="w-4 h-4 flex-shrink-0 text-red-400" />
-                    EMPTY
+                    <span className="text-xs whitespace-nowrap">EMPTY</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Target className="w-4 h-4 flex-shrink-0 text-green-400" />
-                    NON-EMPTY
+                    <span className="text-xs whitespace-nowrap">NON-EMPTY</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Users className="w-4 h-4 flex-shrink-0" />
-                    CHECKED IN
+                    <span className="text-xs whitespace-nowrap">CHECKED IN</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Activity className="w-4 h-4 flex-shrink-0" />
-                    AVG (ALL)
+                    <span className="text-xs whitespace-nowrap">AVG (ALL)</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <TrendingUp className="w-4 h-4 flex-shrink-0" />
-                    AVG (NON-E)
+                    <span className="text-xs whitespace-nowrap">AVG (NON-E)</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[100px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0" />
-                    REVENUE
+                    <span className="text-xs whitespace-nowrap">REVENUE</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
@@ -722,50 +846,80 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4 flex-shrink-0 text-green-400" />
-                    PAYOUT
-                  </div>
-                </TableHead>
-                <TableHead className="font-bold text-white text-center w-[70px] h-9 max-h-9">
-                  <div className="flex items-center justify-center gap-1">
-                    <DollarSign className="w-4 h-4 flex-shrink-0 text-yellow-400" />
-                    TIPS
-                  </div>
-                </TableHead>
-                <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
-                  <div className="flex items-center justify-center gap-1">
                     <Building2 className="w-4 h-4 flex-shrink-0 text-blue-400" />
-                    CAPACITY
+                    <span className="text-xs whitespace-nowrap">CAPACITY</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
-                    FILL RATE
+                    <span className="text-xs whitespace-nowrap">FILL RATE</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-                    REV/CLASS
+                    <span className="text-xs whitespace-nowrap">REV/CLASS</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <DollarSign className="w-4 h-4 flex-shrink-0 text-teal-400" />
-                    REV/ATTEND
+                    <span className="text-xs whitespace-nowrap">REV/ATTEND</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <Activity className="w-4 h-4 flex-shrink-0 text-cyan-400" />
-                    CONSISTENCY
+                    <span className="text-xs whitespace-nowrap">CONSISTENCY</span>
                   </div>
                 </TableHead>
                 <TableHead className="font-bold text-white text-center w-[80px] h-9 max-h-9">
                   <div className="flex items-center justify-center gap-1">
                     <TrendingUp className="w-4 h-4 flex-shrink-0 text-indigo-400" />
-                    SHOW-UP %
+                    <span className="text-xs whitespace-nowrap">SHOW-UP %</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <BarChart3 className="w-4 h-4 flex-shrink-0 text-purple-400" />
+                    <span className="text-xs whitespace-nowrap">UTILIZATION</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[85px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <Target className="w-4 h-4 flex-shrink-0 text-orange-400" />
+                    <span className="text-xs whitespace-nowrap">ATT. RATIO</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-yellow-400" />
+                    <span className="text-xs whitespace-nowrap">CANCEL %</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[100px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <DollarSign className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+                    <span className="text-xs whitespace-nowrap">REV/NONEMPTY</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[95px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <Activity className="w-4 h-4 flex-shrink-0 text-pink-400" />
+                    <span className="text-xs whitespace-nowrap">EFFICIENCY</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[90px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <Star className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                    <span className="text-xs whitespace-nowrap">PEAK ATT.</span>
+                  </div>
+                </TableHead>
+                <TableHead className="font-bold text-white text-center w-[85px] h-9 max-h-9">
+                  <div className="flex items-center justify-center gap-1">
+                    <Users className="w-4 h-4 flex-shrink-0 text-cyan-400" />
+                    <span className="text-xs whitespace-nowrap">AVG SIZE</span>
                   </div>
                 </TableHead>
               </TableRow>
@@ -798,9 +952,9 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         </div>
                       </TableCell>
                       <TableCell className="py-2 h-9 max-h-9">
-                        <Badge variant="secondary" className="font-medium text-xs h-6">
+                        <div className="font-medium text-xs text-black bg-white">
                           {group.period}
-                        </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-2 text-slate-500 text-sm h-9 max-h-9">
                         <span className="whitespace-nowrap overflow-hidden text-ellipsis">Multiple</span>
@@ -818,19 +972,19 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         <span className="whitespace-nowrap overflow-hidden text-ellipsis">Multiple</span>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
-                        <Badge className="metric-badge badge-soft-blue text-xs h-6 px-2 font-bold">
+                        <div className="bg-white text-blue-900 text-xs font-bold">
                           {group.aggregatedMetrics.totalClasses}
-                        </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
-                        <Badge className="metric-badge badge-soft-red text-xs h-6 px-2 font-bold">
+                        <div className="bg-white text-red-900 text-xs font-bold">
                           {group.aggregatedMetrics.emptyClasses}
-                        </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
-                        <Badge className="metric-badge badge-soft-green text-xs h-6 px-2 font-bold">
+                        <div className="bg-white text-green-900 text-xs font-bold">
                           {group.aggregatedMetrics.nonEmptyClasses}
-                        </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-bold text-slate-900 text-sm">
@@ -857,26 +1011,20 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           {group.aggregatedMetrics.totalLateCancels}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-center text-slate-400 text-sm h-9 max-h-9">
-                        -
-                      </TableCell>
-                      <TableCell className="py-2 text-center text-slate-400 text-sm h-9 max-h-9">
-                        -
-                      </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-blue-700 text-sm">
                           {formatNumber(group.aggregatedMetrics.totalCapacity)}
                         </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
-                        <Badge className={cn(
-                          "metric-badge text-xs h-6 px-2 font-bold",
-                          group.aggregatedMetrics.fillRate >= 80 ? "badge-soft-green" :
-                          group.aggregatedMetrics.fillRate >= 60 ? "badge-soft-yellow" :
-                          "badge-soft-red"
+                        <div className={cn(
+                          "bg-white text-xs font-bold",
+                          group.aggregatedMetrics.fillRate >= 80 ? "text-green-900" :
+                          group.aggregatedMetrics.fillRate >= 60 ? "text-yellow-900" :
+                          "text-red-900"
                         )}>
                           {group.aggregatedMetrics.fillRate.toFixed(1)}%
-                        </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
                         <div className="font-medium text-emerald-700 text-sm">
@@ -889,24 +1037,59 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                         </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
-                        <Badge className={cn(
-                          "metric-badge text-xs h-6 px-2 font-bold",
-                          group.aggregatedMetrics.consistency >= 80 ? "badge-soft-green" :
-                          group.aggregatedMetrics.consistency >= 60 ? "badge-soft-yellow" :
-                          "badge-soft-red"
+                        <div className={cn(
+                          "bg-white text-xs font-bold",
+                          group.aggregatedMetrics.consistency >= 80 ? "text-green-900" :
+                          group.aggregatedMetrics.consistency >= 60 ? "text-yellow-900" :
+                          "text-red-900"
                         )}>
                           {group.aggregatedMetrics.consistency.toFixed(1)}%
-                        </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-2 text-center h-9 max-h-9">
-                        <Badge className={cn(
-                          "metric-badge text-xs h-6 px-2 font-bold",
-                          group.aggregatedMetrics.showUpRate >= 90 ? "badge-soft-green" :
-                          group.aggregatedMetrics.showUpRate >= 75 ? "badge-soft-yellow" :
-                          "badge-soft-red"
+                        <div className={cn(
+                          "bg-white text-xs font-bold",
+                          group.aggregatedMetrics.showUpRate >= 90 ? "text-green-900" :
+                          group.aggregatedMetrics.showUpRate >= 75 ? "text-yellow-900" :
+                          "text-red-900"
                         )}>
                           {group.aggregatedMetrics.showUpRate.toFixed(1)}%
-                        </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-purple-900">
+                          {group.aggregatedMetrics.utilization.toFixed(1)}%
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-orange-900">
+                          {group.aggregatedMetrics.attendanceRatio.toFixed(1)}%
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-yellow-900">
+                          {group.aggregatedMetrics.cancellationRate.toFixed(1)}%
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-emerald-900">
+                          {formatCurrency(group.aggregatedMetrics.avgRevenuePerNonEmptyClass)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-pink-900">
+                          {formatCurrency(group.aggregatedMetrics.classEfficiency)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-amber-900">
+                          {group.aggregatedMetrics.peakAttendance}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 text-center h-9 max-h-9">
+                        <div className="bg-white text-xs font-bold text-cyan-900">
+                          {group.aggregatedMetrics.avgClassSize.toFixed(1)}
+                        </div>
                       </TableCell>
                     </TableRow>
 
@@ -927,9 +1110,9 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           </div>
                         </TableCell>
                         <TableCell className="py-2 h-9 max-h-9">
-                          <Badge variant="outline" className="text-xs h-6 px-2 font-bold">
+                          <div className="text-xs font-bold text-black bg-white">
                             {session.period}
-                          </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="py-2 h-9 max-h-9">
                           <div className="text-sm font-medium text-black whitespace-nowrap overflow-hidden text-ellipsis">
@@ -937,8 +1120,8 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           </div>
                         </TableCell>
                         <TableCell className="py-2 h-9 max-h-9">
-                          <div className="text-xs">
-                            <ClassTypeBadge type={session.cleanedClass || 'Unknown'} />
+                          <div className="text-xs font-medium text-black bg-white whitespace-nowrap overflow-hidden text-ellipsis">
+                            {session.cleanedClass || 'Unknown'}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 h-9 max-h-9">
@@ -957,56 +1140,120 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                           </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <Badge variant="secondary" className="text-xs h-6 px-2 font-bold">
+                          <div className="bg-white text-black font-bold text-xs">
                             1
-                          </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <Badge className={cn(
-                            "text-xs h-6 px-2 font-bold",
-                            session.emptyClasses > 0 ? "badge-soft-red" : "badge-soft-slate"
+                          <div className={cn(
+                            "bg-white font-bold text-xs",
+                            session.emptyClasses > 0 ? "text-red-800" : "text-gray-600"
                           )}>
                             {session.emptyClasses}
-                          </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <Badge className={cn(
-                            "text-xs h-6 px-2 font-bold",
-                            session.nonEmptyClasses > 0 ? "badge-soft-green" : "badge-soft-slate"
+                          <div className={cn(
+                            "bg-white font-bold text-xs",
+                            session.nonEmptyClasses > 0 ? "text-green-800" : "text-gray-600"
                           )}>
                             {session.nonEmptyClasses}
-                          </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <div className="text-sm font-medium text-slate-800">
+                          <div className="text-xs font-medium text-black">
                             {session.checkedInCount || 0}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <div className="text-sm text-slate-600">
+                          <div className="text-xs text-black">
                             {session.checkedInCount || 0}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <div className="text-sm text-slate-600">
+                          <div className="text-xs text-black">
                             {(session.checkedInCount || 0) > 0 ? (session.checkedInCount || 0) : '-'}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <div className="text-sm font-medium text-green-700 whitespace-nowrap overflow-hidden text-ellipsis">
+                          <div className="text-xs font-medium text-black whitespace-nowrap overflow-hidden text-ellipsis">
                             {formatCurrency(session.totalPaid || 0)}
                           </div>
                         </TableCell>
                         <TableCell className="py-2 text-center h-9 max-h-9">
-                          <div className="text-sm text-orange-600">
+                          <div className="text-xs text-black">
                             {session.lateCancelledCount || 0}
                           </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center text-slate-400 h-9 max-h-9">
-                          -
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.capacity || '-'}
+                          </div>
                         </TableCell>
-                        <TableCell className="py-2 text-center text-slate-400 h-9 max-h-9">
-                          -
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs font-medium text-black">
+                            {session.capacity && session.checkedInCount ? 
+                              `${((session.checkedInCount / session.capacity) * 100).toFixed(1)}%` : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs font-medium text-black">
+                            {session.totalPaid && session.checkedInCount ? 
+                              formatCurrency(session.totalPaid / 1) : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs font-medium text-black">
+                            {session.totalPaid && session.checkedInCount ? 
+                              formatCurrency(session.totalPaid / session.checkedInCount) : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            -
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            -
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.capacity && session.checkedInCount ? 
+                              `${((session.checkedInCount / session.capacity) * 100).toFixed(1)}%` : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.checkedInCount > 0 ? '100%' : '0%'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.lateCancelledCount && (session.checkedInCount + session.lateCancelledCount) ? 
+                              `${(session.lateCancelledCount / (session.checkedInCount + session.lateCancelledCount) * 100).toFixed(1)}%` : '0%'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.checkedInCount > 0 ? formatCurrency(session.totalPaid || 0) : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.capacity ? formatCurrency((session.totalPaid || 0) / session.capacity) : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {session.checkedInCount || 0}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 text-center h-9 max-h-9">
+                          <div className="text-xs text-black">
+                            {(session.checkedInCount || 0) + (session.lateCancelledCount || 0)}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1017,84 +1264,86 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 paginatedData.map((session: ProcessedSession, index) => (
                   <TableRow 
                     key={index}
-                    className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-transparent hover:border-l-gray-300"
+                    className="bg-white hover:bg-gray-50 transition-colors border-l-4 border-l-transparent hover:border-l-gray-300 h-9 max-h-9"
                   >
-                    <TableCell className="py-4">
+                    <TableCell className="py-2 h-9 max-h-9">
                       <div className="flex items-center gap-3">
                         <TrainerNameCell name={session.trainerName || 'Unknown'} />
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <Badge variant="secondary" className="font-medium">
+                    <TableCell className="py-2 h-9 max-h-9">
+                      <div className="font-medium text-black text-xs">
                         {session.period}
-                      </Badge>
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="font-medium text-black">
+                    <TableCell className="py-2 h-9 max-h-9">
+                      <div className="font-medium text-black text-xs">
                         {formatDate(session.date)}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <ClassTypeBadge type={session.cleanedClass || 'Unknown'} />
+                    <TableCell className="py-2 h-9 max-h-9">
+                      <div className="text-xs font-medium text-black bg-white whitespace-nowrap overflow-hidden text-ellipsis">
+                        {session.cleanedClass || 'Unknown'}
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="text-black">
+                    <TableCell className="py-2 h-9 max-h-9">
+                      <div className="text-black text-xs whitespace-nowrap overflow-hidden text-ellipsis">
                         {session.dayOfWeek}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="font-medium text-black">
+                    <TableCell className="py-2 h-9 max-h-9">
+                      <div className="font-medium text-black text-xs whitespace-nowrap overflow-hidden text-ellipsis">
                         {session.time}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="text-black whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                    <TableCell className="py-2 h-9 max-h-9">
+                      <div className="text-black text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
                         {session.location}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <Badge variant="secondary">
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className="bg-white text-black font-medium text-xs">
                         1
-                      </Badge>
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <Badge className={cn(
-                        "font-medium",
-                        session.emptyClasses > 0 ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-600"
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className={cn(
+                        "bg-white font-medium text-xs",
+                        session.emptyClasses > 0 ? "text-red-800" : "text-gray-600"
                       )}>
                         {session.emptyClasses}
-                      </Badge>
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <Badge className={cn(
-                        "font-medium",
-                        session.nonEmptyClasses > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className={cn(
+                        "bg-white font-medium text-xs",
+                        session.nonEmptyClasses > 0 ? "text-green-800" : "text-gray-600"
                       )}>
                         {session.nonEmptyClasses}
-                      </Badge>
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <div className="font-bold text-slate-900">
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className="font-bold text-slate-900 text-xs">
                         {session.checkedInCount || 0}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <div className="font-medium text-slate-700">
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className="font-medium text-slate-700 text-xs">
                         {session.checkedInCount || 0}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <div className="font-medium text-slate-700">
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className="font-medium text-slate-700 text-xs">
                         {(session.checkedInCount || 0) > 0 ? (session.checkedInCount || 0) : '-'}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <div className="font-bold text-green-700">
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className="font-bold text-green-700 text-xs">
                         {formatCurrency(session.totalPaid || 0)}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <div className="font-medium text-orange-700">
+                    <TableCell className="py-2 text-center h-9 max-h-9">
+                      <div className="font-medium text-orange-700 text-xs">
                         {session.lateCancelledCount || 0}
                       </div>
                     </TableCell>
@@ -1161,15 +1410,11 @@ export const AdvancedClassAttendanceTable: React.FC<AdvancedClassAttendanceTable
                 </TableCell>
                 {/* Late Cancels */}
                 <TableCell className="text-center py-2 h-9 max-h-9">
-                  <span className="text-sm font-bold text-orange-700">{formatNumber(processedData.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0))}</span>
+                  <span className="text-xs font-bold text-black">{formatNumber(processedData.reduce((sum, s) => sum + (s.lateCancelledCount || 0), 0))}</span>
                 </TableCell>
-                {/* Payout */}
-                <TableCell className="py-2 h-9 max-h-9"></TableCell>
-                {/* Tips */}
-                <TableCell className="py-2 h-9 max-h-9"></TableCell>
                 {/* Capacity */}
                 <TableCell className="text-center py-2 h-9 max-h-9">
-                  <span className="text-sm font-bold text-indigo-900">{formatNumber(processedData.reduce((sum, s) => sum + (s.capacity || 0), 0))}</span>
+                  <span className="text-xs font-bold text-black">{formatNumber(processedData.reduce((sum, s) => sum + (s.capacity || 0), 0))}</span>
                 </TableCell>
                 {/* Fill Rate */}
                 <TableCell className="text-center py-2 h-9 max-h-9">

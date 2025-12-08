@@ -107,7 +107,7 @@ export const ModernMetricCards: React.FC<ModernMetricCardsProps> = ({
       {
         id: 'earned-revenue',
         title: 'Earned Revenue',
-        value: formatNumber(totalRevenue),
+        value: formatCurrency(totalRevenue),
         subtitle: `From ${formatNumber(totalSessions)} sessions`,
         change: ((totalRevenue - previousRevenue) / previousRevenue) * 100,
         trend: totalRevenue > previousRevenue ? 'up' : 'down',
@@ -286,7 +286,7 @@ export const ModernMetricCards: React.FC<ModernMetricCardsProps> = ({
       {
         id: 'unpaid-amount',
         title: 'Unpaid Amount',
-        value: formatNumber(totalUnpaid),
+        value: formatCurrency(totalUnpaid),
         subtitle: `${formatPercentage(unpaidRate)} of total owed`,
         change: -8.2, // Mock improvement
         trend: 'down', // Good trend for unpaid
