@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -14,8 +14,7 @@ import {
   Activity,
   ChevronDown,
   ArrowUpDown,
-  Search,
-  X
+  Search
 } from 'lucide-react';
 import type { SessionData } from './types';
 import { formatCurrency } from './utils/calculations';
@@ -80,24 +79,6 @@ type RankingCriteria =
   | 'utilization'
   | 'performance';
 
-const rankingSortKey: Record<RankingCriteria, keyof TableRow> = {
-  totalClasses: 'classes',
-  totalCheckIns: 'checkIns',
-  classAvg: 'classAvg',
-  fillRate: 'fillRate',
-  cancelRate: 'cancelRate',
-  revenue: 'revenue',
-  revPerCheckIn: 'revPerCheckIn',
-  revPerBooking: 'revPerBooking',
-  revLost: 'revLost',
-  avgNoEmpty: 'avgNoEmpty',
-  waitlistPercent: 'waitlistPercent',
-  weightedUtil: 'weightedUtil',
-  consistency: 'consistency',
-  utilization: 'weightedUtil',
-  performance: 'fillRate',
-};
-
 interface TableRow {
   rank: number;
   group: string;
@@ -150,12 +131,6 @@ export default function MainDashboard({ sessions }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<keyof TableRow>('fillRate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  useEffect(() => {
-    const nextKey = rankingSortKey[rankingCriteria];
-    setSortColumn(nextKey);
-    setSortDirection('desc');
-  }, [rankingCriteria]);
 
   const groupingOptions: { value: GroupingOption; label: string }[] = [
     { value: 'trainer', label: 'Trainer' },
@@ -421,7 +396,6 @@ export default function MainDashboard({ sessions }: Props) {
     setIsDrilldownOpen(false);
     setDrilldownData(null);
   };
-
   return (
     <div className="space-y-6">
       {/* Control Panel */}
@@ -513,7 +487,7 @@ export default function MainDashboard({ sessions }: Props) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="bg-gradient-to-r from-blue-700 to-blue-800 text-white p-4 rounded-lg">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100">Total Groups</p>
@@ -523,41 +497,41 @@ export default function MainDashboard({ sessions }: Props) {
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg">
+        <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100">Total Check-ins</p>
+              <p className="text-green-100">Total Check-ins</p>
               <p className="text-2xl font-bold">
                 {formatNumber(processedData.reduce((sum, row) => sum + row.checkIns, 0))}
               </p>
             </div>
-            <Users className="w-8 h-8 text-blue-200" />
+            <Users className="w-8 h-8 text-green-200" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100">Avg Fill Rate</p>
+              <p className="text-purple-100">Avg Fill Rate</p>
               <p className="text-2xl font-bold">
                 {formatPercentage(processedData.length > 0 ? 
                   processedData.reduce((sum, row) => sum + row.fillRate, 0) / processedData.length : 0
                 )}
               </p>
             </div>
-            <TrendingUp className="w-8 h-8 text-blue-200" />
+            <TrendingUp className="w-8 h-8 text-purple-200" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 rounded-lg">
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-200">Total Revenue</p>
+              <p className="text-emerald-100">Total Revenue</p>
               <p className="text-2xl font-bold">
                 {formatCurrency(processedData.reduce((sum, row) => sum + row.revenue, 0))}
               </p>
             </div>
-            <DollarSign className="w-8 h-8 text-slate-100" />
+            <DollarSign className="w-8 h-8 text-emerald-200" />
           </div>
         </div>
       </motion.div>
@@ -657,18 +631,18 @@ export default function MainDashboard({ sessions }: Props) {
                   <td className="px-3 py-4 text-sm text-gray-700">{row.classAvg}</td>
                   <td className="px-3 py-4 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      row.fillRate >= 80 ? 'bg-blue-100 text-blue-800' :
-                      row.fillRate >= 60 ? 'bg-indigo-100 text-indigo-800' :
-                      'bg-slate-100 text-slate-800'
+                      row.fillRate >= 80 ? 'bg-green-100 text-green-800' :
+                      row.fillRate >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
                     }`}>
                       {formatPercentage(row.fillRate)}
                     </span>
                   </td>
                   <td className="px-3 py-4 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      row.cancelRate <= 10 ? 'bg-blue-100 text-blue-800' :
-                      row.cancelRate <= 20 ? 'bg-indigo-100 text-indigo-800' :
-                      'bg-slate-100 text-slate-800'
+                      row.cancelRate <= 10 ? 'bg-green-100 text-green-800' :
+                      row.cancelRate <= 20 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
                     }`}>
                       {formatPercentage(row.cancelRate)}
                     </span>
@@ -682,9 +656,9 @@ export default function MainDashboard({ sessions }: Props) {
                   <td className="px-3 py-4 text-sm text-gray-700">{formatPercentage(row.weightedUtil)}</td>
                   <td className="px-3 py-4 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      row.consistency >= 80 ? 'bg-blue-100 text-blue-800' :
-                      row.consistency >= 60 ? 'bg-indigo-100 text-indigo-800' :
-                      'bg-slate-100 text-slate-800'
+                      row.consistency >= 80 ? 'bg-green-100 text-green-800' :
+                      row.consistency >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
                     }`}>
                       {row.consistency}%
                     </span>
@@ -742,15 +716,15 @@ export default function MainDashboard({ sessions }: Props) {
                       <p className="text-blue-600 font-medium">Total Sessions</p>
                       <p className="text-xl font-bold text-blue-900">{drilldownData.sessions.length}</p>
                     </div>
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-blue-600 font-medium">Total Check-ins</p>
-                      <p className="text-xl font-bold text-blue-900">
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-green-600 font-medium">Total Check-ins</p>
+                      <p className="text-xl font-bold text-green-900">
                         {formatNumber(drilldownData.sessions.reduce((sum, s) => sum + (s.CheckedIn || 0), 0))}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-lg">
-                      <p className="text-slate-700 font-medium">Total Revenue</p>
-                      <p className="text-xl font-bold text-slate-900">
+                    <div className="bg-purple-50 p-3 rounded-lg">
+                      <p className="text-purple-600 font-medium">Total Revenue</p>
+                      <p className="text-xl font-bold text-purple-900">
                         {formatCurrency(drilldownData.sessions.reduce((sum, s) => sum + (s.Revenue || 0), 0))}
                       </p>
                     </div>
@@ -802,5 +776,181 @@ export default function MainDashboard({ sessions }: Props) {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+          <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+                  <LayoutDashboard className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">Class Intelligence Dashboard</h1>
+                  <p className="text-blue-100 text-xs mt-1">Comprehensive analytics for {sessions.length} sessions</p>
+                </div>
+              </div>
+              <button className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-semibold border border-white/20 hover:bg-white/20 transition-colors">
+                Upload New Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {metricCards.map((card, index) => {
+            const IconComponent = card.icon;
+            return (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                className={`glass-card rounded-2xl p-6 cursor-pointer bg-gradient-to-br ${card.gradient} text-white shadow-xl hover:shadow-2xl transition-all duration-300 border border-white/20`}
+                onClick={() => handleMetricClick(card.title, card.data)}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                    <IconComponent className="w-6 h-6" />
+                  </div>
+                  <Eye className="w-4 h-4 opacity-60" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium opacity-90">{card.title}</p>
+                  <p className="text-2xl font-bold">{card.value}</p>
+                  <p className="text-xs opacity-70">{card.subValue}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Navigation Tabs */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="glass-card rounded-2xl p-2 inline-flex gap-2"
+        >
+          {[
+            { key: 'overview', label: 'Overview', icon: LayoutDashboard },
+            { key: 'rankings', label: 'Rankings', icon: Award },
+            { key: 'table', label: 'Data Table', icon: Activity }
+          ].map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveView(key as any)}
+              className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 ${
+                activeView === key
+                  ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white shadow-xl'
+                  : 'text-slate-700 hover:bg-white/60'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Content Area */}
+        <AnimatePresence mode="wait">
+          {activeView === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/90 glass-card rounded-3xl p-6 border border-white/20 shadow-xl">
+                  <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    Top Performers
+                  </h3>
+                  <Rankings sessions={sessions} />
+                </div>
+
+                <div className="bg-white/90 glass-card rounded-3xl p-6 border border-white/20 shadow-xl">
+                  <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Quick Stats
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <span className="text-sm font-semibold text-gray-700">Avg Class Size</span>
+                      <span className="font-bold text-blue-700">{formatNumber(enhancedMetrics.avgCheckIns, 1)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50">
+                      <span className="text-sm font-semibold text-gray-700">Revenue per Class</span>
+                      <span className="font-bold text-green-700">{formatCurrency(enhancedMetrics.avgRevenue)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50">
+                      <span className="text-sm font-semibold text-gray-700">Capacity Utilization</span>
+                      <span className="font-bold text-purple-700">{formatPercentage(enhancedMetrics.fillRate)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-r from-orange-50 to-red-50">
+                      <span className="text-sm font-semibold text-gray-700">Empty Classes</span>
+                      <span className="font-bold text-orange-700">{enhancedMetrics.emptyClasses}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeView === 'rankings' && (
+            <motion.div
+              key="rankings"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white/90 glass-card rounded-3xl p-6 border border-white/20 shadow-xl"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-orange-600 to-red-600">
+                  <Award className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  Performance Rankings
+                </h3>
+              </div>
+              <Rankings sessions={sessions} />
+            </motion.div>
+          )}
+
+          {activeView === 'table' && (
+            <motion.div
+              key="table"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white/90 glass-card rounded-3xl p-6 border border-white/20 shadow-xl"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-slate-600 to-slate-700 bg-clip-text text-transparent">
+                  Session Data
+                </h3>
+              </div>
+              <DataTable sessions={sessions} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Drilldown Modal */}
+      <AnimatePresence>
+        {isDrilldownOpen && drilldownData && (
+          <EnhancedDrilldownModal
+            isOpen={isDrilldownOpen}
+            onClose={closeDrilldown}
+            sessions={drilldownData.sessions}
+            title={drilldownData.title}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

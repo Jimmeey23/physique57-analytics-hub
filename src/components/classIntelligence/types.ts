@@ -1,15 +1,20 @@
-export type SessionData = {
-  id?: string;
-  className?: string;
-  trainerName?: string;
-  day?: string;
-  time?: string;
-  location?: string;
-  checkedInCount?: number;
-  capacity?: number;
-  totalPaid?: number;
-  startTime?: string;
-};
+// GitHub repo compatible types
+export interface SessionData {
+  SessionID: string;
+  Class: string;
+  Trainer: string;
+  Day: string;
+  Time: string;
+  Date: string;
+  Location: string;
+  CheckedIn: number;
+  Capacity: number;
+  Revenue: number;
+  Booked: number;
+  LateCancelled: number;
+  NoShow: number;
+  Waitlisted: number;
+}
 
 export type CalculatedMetrics = {
   totalCheckIns: number;

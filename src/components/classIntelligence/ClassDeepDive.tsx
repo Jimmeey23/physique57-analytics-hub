@@ -1,46 +1,265 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, TrendingUp, DollarSign, Users, BarChart3, Eye } from 'lucide-react';
+import { useDashboardStore } from './store/dashboardStore';
 import type { SessionData } from './types';
+import { formatCurrency } from './utils/calculations';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Users, 
+  Calendar, 
+  MapPin,
+  Clock,
+  Award,
+  BarChart3,
+  ChevronDown,
+  Star,
+  X,
+  DollarSign,
+  Eye
+} from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 import RankingsAdvanced from './RankingsAdvanced';
 import DataTable from './DataTable';
-import { calculateMetrics, formatNumber, formatPercentage, formatCurrency } from './utils';
-import EnhancedDrilldownModal from './EnhancedDrilldownModal';
+import EnhancedDrilldownModal2 from './EnhancedDrilldownModal2';
 
-type Props = { sessions: SessionData[] };
+const formatNumber = (value: number, decimals: number = 0) => {
+  return value.toLocaleString(undefined, { 
+    minimumFractionDigits: decimals, 
+    maximumFractionDigits: decimals 
+  });
+};
 
-interface DrilldownData {
-  title: string;
+const formatPercentage = (value: number, decimals: number = 1) => {
+  return `${value.toFixed(decimals)}%`;
+};
+
+type RankingMetric = 
+  | 'avgCheckIns' 
+  | 'fillRate' 
+  | 'totalRevenue' 
+  | 'sessionCount' 
+  | 'consistency' 
+  | 'cancellationRate'
+  | 'avgRevenue';
+
+interface ClassMetrics {
+  className: string;
+  normalizedName: string;
   sessions: SessionData[];
+  avgCheckIns: number;
+  fillRate: number;
+  totalRevenue: number;
+  avgRevenue: number;
+  sessionCount: number;
+  cancellationRate: number;
+  consistency: number;
+  totalBooked: number;
+  totalCapacity: number;
+  totalCheckIns: number;
+  avgCapacity: number;
+  uniqueMembers: number;
+  locations: string[];
+  days: string[];
+  times: string[];
+  trainers: string[];
+  firstDate: Date;
+  lastDate: Date;
 }
 
-export default function ClassDeepDive({ sessions }: Props) {
-  const [drilldownData, setDrilldownData] = useState<DrilldownData | null>(null);
-  const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
+interface TrainerMetrics {
+  trainer: string;
+  sessions: SessionData[];
+  avgCheckIns: number;
+  fillRate: number;
+  totalRevenue: number;
+  avgRevenue: number;
+  sessionCount: number;
+  cancellationRate: number;
+  consistency: number;
+  totalBooked: number;
+  totalCapacity: number;
+  totalCheckIns: number;
+  avgCapacity: number;
+}
+
+interface TimeSlotMetrics {
+  day: string;
+  time: string;
+  location: string;
+  sessions: SessionData[];
+  avgCheckIns: number;
+  fillRate: number;
+  totalRevenue: number;
+  sessionCount: number;
+  consistency: number;
+}
+
+const normalizeClassName = (className: string): string => {
+  return className
+    .toLowerCase()
+    .replace(/\s*express\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const calculateMetrics = (sessions: SessionData[]) => {
+  if (sessions.length === 0) {
+    return {
+      avgCheckIns: 0,
+      fillRate: 0,
+      totalRevenue: 0,
+      avgRevenue: 0,
+      sessionCount: 0,
+      consistency: 0,
+      totalCheckIns: 0,
+      totalCapacity: 0
+    };
+  }
+
+  const totalCheckIns = sessions.reduce((sum, s) => sum + (s.CheckedIn || 0), 0);
+  const totalCapacity = sessions.reduce((sum, s) => sum + (s.Capacity || 0), 0);
+  const totalRevenue = sessions.reduce((sum, s) => sum + (s.Revenue || 0), 0);
+  const avgCheckIns = totalCheckIns / sessions.length;
+  const fillRate = totalCapacity > 0 ? (totalCheckIns / totalCapacity) * 100 : 0;
+
+  // Calculate consistency
+  const checkInVariance = sessions.reduce((sum, s) => {
+    const diff = (s.CheckedIn || 0) - avgCheckIns;
+    return sum + diff * diff;
+  }, 0) / sessions.length;
+  const consistency = avgCheckIns > 0 ? Math.max(0, 100 - Math.min(Math.sqrt(checkInVariance) / avgCheckIns * 100, 100)) : 0;
+
+  return {
+    avgCheckIns,
+    fillRate,
+    totalRevenue,
+    avgRevenue: totalRevenue / sessions.length,
+    sessionCount: sessions.length,
+    consistency: Math.round(consistency),
+    totalCheckIns,
+    totalCapacity
+  };
+};
+
+export default function ClassDeepDive() {
+  const { filteredData } = useDashboardStore();
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  const [trainerRankingMetric, setTrainerRankingMetric] = useState<RankingMetric>('fillRate');
+  const [timeSlotRankingMetric, setTimeSlotRankingMetric] = useState<'avgCheckIns' | 'fillRate' | 'totalRevenue' | 'consistency'>('avgCheckIns');
+  const [rankingView, setRankingView] = useState<'timeSlot' | 'day' | 'time' | 'location' | 'trainer'>('timeSlot');
+  const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null);
+  const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
+  const [drilldownData, setDrilldownData] = useState<{ title: string; sessions: SessionData[] } | null>(null);
   
-  // Helper to normalize class names similar to repo styling
-  const normalizeClassName = (name?: string) => (name || '').toLowerCase().replace(/\s*express\s*/gi, '').replace(/\s+/g, ' ').trim();
-
+  // Get all unique class formats (normalized)
   const classFormats = useMemo(() => {
-    const map = new Map<string, string>();
-    sessions.forEach(s => {
-      const n = normalizeClassName(s.className);
-      if (!map.has(n)) map.set(n, s.className || 'Unknown');
+    const classMap = new Map<string, string>();
+    
+    filteredData.forEach(session => {
+      if (!session.Class || session.Class.toLowerCase().includes('hosted')) return;
+      const normalized = normalizeClassName(session.Class);
+      if (!classMap.has(normalized)) {
+        classMap.set(normalized, session.Class); // Store original name
+      }
     });
-    return Array.from(map.entries()).map(([normalized, original]) => ({ normalized, original })).sort((a,b) => a.original.localeCompare(b.original));
-  }, [sessions]);
 
-  const filteredSessions = useMemo(() => {
-    if (selectedClasses.length === 0) return sessions;
-    return sessions.filter(s => selectedClasses.includes(normalizeClassName(s.className)));
-  }, [sessions, selectedClasses]);
+    return Array.from(classMap.entries())
+      .map(([normalized, original]) => ({ normalized, original }))
+      .sort((a, b) => a.original.localeCompare(b.original));
+  }, [filteredData]);
 
-  const metrics = calculateMetrics(filteredSessions);
+  // Calculate metrics for selected classes
+  const classMetrics = useMemo((): ClassMetrics | null => {
+    if (selectedClasses.length === 0) return null;
+
+    const classSessions = filteredData.filter(session => {
+      if (!session.Class || session.Class.toLowerCase().includes('hosted')) return false;
+      return selectedClasses.includes(normalizeClassName(session.Class));
+    }).map(session => ({
+      ...session,
+      SessionID: session.SessionID || '',
+      Class: session.Class || '',
+      Trainer: session.Trainer || '',
+      Day: session.Day || '',
+      Time: session.Time || '',
+      Date: session.Date || '',
+      Location: session.Location || '',
+      CheckedIn: session.CheckedIn || 0,
+      Capacity: session.Capacity || 0,
+      Revenue: session.Revenue || 0,
+      Booked: session.Booked || 0,
+      LateCancelled: session.LateCancelled || 0,
+      NoShow: session.NoShow || 0,
+      Waitlisted: session.Waitlisted || 0
+    }));
+
+    if (classSessions.length === 0) return null;
+
+    const totalCheckIns = classSessions.reduce((sum, s) => sum + (s.CheckedIn || 0), 0);
+    const totalCapacity = classSessions.reduce((sum, s) => sum + (s.Capacity || 0), 0);
+    const totalRevenue = classSessions.reduce((sum, s) => sum + (s.Revenue || 0), 0);
+    const totalBooked = classSessions.reduce((sum, s) => sum + (s.Booked || 0), 0);
+    const totalLateCancelled = classSessions.reduce((sum, s) => sum + (s.LateCancelled || 0), 0);
+
+    const avgCheckIns = classSessions.length > 0 ? totalCheckIns / classSessions.length : 0;
+    const fillRate = totalCapacity > 0 ? (totalCheckIns / totalCapacity) * 100 : 0;
+    const cancellationRate = totalBooked > 0 ? (totalLateCancelled / totalBooked) * 100 : 0;
+
+    // Calculate consistency
+    const checkInVariance = classSessions.length > 0 ? classSessions.reduce((sum, s) => {
+      const diff = (s.CheckedIn || 0) - avgCheckIns;
+      return sum + diff * diff;
+    }, 0) / classSessions.length : 0;
+    const consistency = avgCheckIns > 0 ? Math.max(0, 100 - Math.min(Math.sqrt(checkInVariance) / avgCheckIns * 100, 100)) : 0;
+
+    // Get unique values
+    const locations = [...new Set(classSessions.map(s => s.Location))];
+    const days = [...new Set(classSessions.map(s => s.Day))];
+    const times = [...new Set(classSessions.map(s => s.Time?.substring(0, 5) || ''))].filter(Boolean);
+    const trainers = [...new Set(classSessions.map(s => s.Trainer))];
+    
+    // Calculate unique members from CheckedIn count
+    const uniqueMembers = new Set<string>();
+    // Note: SessionData doesn't track individual members, only aggregates
+
+    const dates = classSessions.map(s => parseISO(s.Date)).sort((a, b) => a.getTime() - b.getTime());
+
+    const displayName = selectedClasses.length === 1 
+      ? classSessions[0]?.Class || 'Combined Classes'
+      : `${selectedClasses.length} Classes Combined`;
+
+    return {
+      className: displayName,
+      normalizedName: selectedClasses.join(', '),
+      sessions: classSessions,
+      avgCheckIns,
+      fillRate,
+      totalRevenue,
+      avgRevenue: classSessions.length > 0 ? totalRevenue / classSessions.length : 0,
+      sessionCount: classSessions.length,
+      cancellationRate,
+      consistency: Math.round(consistency),
+      totalBooked,
+      totalCapacity,
+      totalCheckIns,
+      avgCapacity: classSessions.length > 0 ? totalCapacity / classSessions.length : 0,
+      uniqueMembers: uniqueMembers.size,
+      locations,
+      days,
+      times,
+      trainers,
+      firstDate: dates[0] || new Date(),
+      lastDate: dates[dates.length - 1] || new Date()
+    };
+  }, [filteredData, selectedClasses]);
+  
+  const filteredSessions = classMetrics?.sessions || [];
+  
   const byTrainer = useMemo(() => {
     const map = new Map<string, SessionData[]>();
     filteredSessions.forEach(s => {
-      const key = s.trainerName || 'Unknown';
+      const key = s.Trainer || 'Unknown';
       const arr = map.get(key) || [];
       arr.push(s);
       map.set(key, arr);
@@ -62,6 +281,61 @@ export default function ClassDeepDive({ sessions }: Props) {
     setDrilldownData(null);
   };
 
+  if (!classMetrics) {
+    return (
+      <div className="space-y-6">
+        <motion.div 
+          className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="text-center py-8">
+            <BarChart3 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Class Formats for Deep Dive Analysis</h3>
+            <p className="text-gray-600 mb-6">Choose one or more class formats to analyze detailed performance metrics</p>
+          </div>
+          
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">Available Class Formats ({classFormats.length})</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {classFormats.map(({ normalized, original }) => (
+              <label 
+                key={normalized} 
+                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedClasses.includes(normalized)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedClasses(prev => [...prev, normalized]);
+                    } else {
+                      setSelectedClasses(prev => prev.filter(c => c !== normalized));
+                    }
+                  }}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                <span className="text-sm text-gray-700 font-medium">{original}</span>
+              </label>
+            ))}
+          </div>
+          
+          {classFormats.length === 0 && (
+            <div className="text-center py-8">
+              <div className="bg-gray-100 rounded-lg p-6">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">No class data available for the current filters</p>
+                <p className="text-sm text-gray-400 mt-1">Please check your date range and location filters</p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
+
+  const metrics = classMetrics;
+  const sessions = classMetrics.sessions;
+
   const metricCards = [
     {
       title: 'Total Classes',
@@ -77,7 +351,7 @@ export default function ClassDeepDive({ sessions }: Props) {
       icon: Users,
       gradient: 'from-green-600 via-green-700 to-green-800',
       subValue: `Avg: ${formatNumber(metrics.avgCheckIns, 1)}`,
-      data: sessions.filter(s => (s.checkedInCount || 0) > 0)
+      data: sessions.filter(s => (s.CheckedIn || 0) > 0)
     },
     {
       title: 'Fill Rate',
@@ -93,7 +367,7 @@ export default function ClassDeepDive({ sessions }: Props) {
       icon: DollarSign,
       gradient: 'from-emerald-600 via-emerald-700 to-emerald-800',
       subValue: `Avg: ${formatCurrency(metrics.sessionCount > 0 ? metrics.totalRevenue / metrics.sessionCount : 0)}`,
-      data: sessions.filter(s => (s.totalPaid || 0) > 0)
+      data: sessions.filter(s => (s.Revenue || 0) > 0)
     },
     {
       title: 'Consistency Score',
@@ -280,7 +554,7 @@ export default function ClassDeepDive({ sessions }: Props) {
       {/* Drilldown Modal */}
       <AnimatePresence>
         {isDrilldownOpen && drilldownData && (
-          <EnhancedDrilldownModal
+          <EnhancedDrilldownModal2
             isOpen={isDrilldownOpen}
             onClose={closeDrilldown}
             sessions={drilldownData.sessions}

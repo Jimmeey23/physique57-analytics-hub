@@ -31,6 +31,34 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState('kwality');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
+  // Set up the dashboard store with filtered data
+  React.useEffect(() => {
+    if (filteredData) {
+      // Transform data to match the GitHub repo's expected format
+      const transformedData = filteredData.map((s: any) => ({
+        SessionID: s.sessionId || s.uniqueId || s.uniqueId1 || s.uniqueId2,
+        Class: s.cleanedClass || s.sessionName,
+        Trainer: s.trainerName,
+        Day: s.dayOfWeek,
+        Time: s.time,
+        Date: s.date,
+        Location: s.location,
+        CheckedIn: s.checkedInCount,
+        Capacity: s.capacity,
+        Revenue: s.totalPaid ?? s.revenue,
+        Booked: s.bookedCount || s.checkedInCount || 0,
+        LateCancelled: s.lateCancelledCount || 0,
+        NoShow: s.noShowCount || 0,
+        Waitlisted: s.waitlistedCount || 0
+      }));
+      
+      // Set the store data for ClassDeepDive to use
+      import('@/components/classIntelligence/store/dashboardStore').then(({ useDashboardStore }) => {
+        useDashboardStore.getState().setFilteredData(transformedData);
+      });
+    }
+  }, [filteredData]);
+
   const handleDrillDown = (data: any) => {
     setDrillDownData(data);
     setIsDrillDownOpen(true);
@@ -47,16 +75,20 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
 
   // Normalize session data for Class Intelligence components
   const ciSessions: CISession[] = (filteredData || []).map((s: any) => ({
-    id: s.sessionId || s.uniqueId || s.uniqueId1 || s.uniqueId2,
-    className: s.cleanedClass || s.sessionName,
-    trainerName: s.trainerName,
-    day: s.dayOfWeek,
-    time: s.time,
-    location: s.location,
-    checkedInCount: s.checkedInCount,
-    capacity: s.capacity,
-    totalPaid: s.totalPaid ?? s.revenue,
-    startTime: s.date ? `${s.date} ${s.time || ''}`.trim() : undefined,
+    SessionID: s.sessionId || s.uniqueId || s.uniqueId1 || s.uniqueId2 || '',
+    Class: s.cleanedClass || s.sessionName || '',
+    Trainer: s.trainerName || '',
+    Day: s.dayOfWeek || '',
+    Time: s.time || '',
+    Date: s.date || '',
+    Location: s.location || '',
+    CheckedIn: s.checkedInCount || 0,
+    Capacity: s.capacity || 0,
+    Revenue: s.totalPaid || s.revenue || 0,
+    Booked: s.bookedCount || s.checkedInCount || 0,
+    LateCancelled: s.lateCancelledCount || 0,
+    NoShow: s.noShowCount || 0,
+    Waitlisted: s.waitlistedCount || 0
   }));
 
   return (
@@ -244,7 +276,7 @@ export const UpdatedEnhancedClassAttendanceSection: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Class Deep Dive</h2>
               </div>
-              <ClassDeepDive sessions={ciSessions} />
+              <ClassDeepDive />
             </div>
           </TabsContent>
         </Tabs>
