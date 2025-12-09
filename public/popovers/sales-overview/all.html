@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Overview - All Locations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: calc(100vh - 40px);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 1.1rem;
+        }
+        .value {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .note {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid #ffd700;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 10px 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Sales Overview</h1>
+        <p style="text-align: center; font-size: 1.2rem; margin-bottom: 30px;">
+            Comprehensive sales analytics across all Physique 57 locations
+        </p>
+        
+        <div class="info-card">
+            <h2>🎯 Key Performance Indicators</h2>
+            <div class="metric">
+                <span>Total Monthly Revenue:</span>
+                <span class="value">$47,250</span>
+            </div>
+            <div class="metric">
+                <span>New Client Acquisitions:</span>
+                <span class="value">89 clients</span>
+            </div>
+            <div class="metric">
+                <span>Conversion Rate:</span>
+                <span class="value">24.3%</span>
+            </div>
+            <div class="metric">
+                <span>Average Session Value:</span>
+                <span class="value">$42.50</span>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h2>📈 Growth Metrics</h2>
+            <div class="metric">
+                <span>Month-over-Month Growth:</span>
+                <span class="value">+12.8%</span>
+            </div>
+            <div class="metric">
+                <span>Year-over-Year Growth:</span>
+                <span class="value">+28.5%</span>
+            </div>
+            <div class="metric">
+                <span>Client Retention Rate:</span>
+                <span class="value">87.2%</span>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h2>🏢 Location Performance</h2>
+            <div class="metric">
+                <span>Kwality House:</span>
+                <span class="value">$28,400 (60.1%)</span>
+            </div>
+            <div class="metric">
+                <span>Supreme HQ:</span>
+                <span class="value">$18,850 (39.9%)</span>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>💡 Insights:</strong> Both locations showing strong performance with Kwality House leading in revenue generation. Focus on expanding Supreme HQ's client base for balanced growth.
+        </div>
+    </div>
+</body>
+</html>

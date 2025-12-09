@@ -18,7 +18,7 @@ import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { SessionsFilterSection } from './SessionsFilterSection';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { AiNotes } from '@/components/ui/AiNotes';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 
 const locations = [

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MapPin, Play, Pause, Building2, Home, LocateFixed, Navigation } from 'lucide-react';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 
 interface StudioLocation {
   id: string;

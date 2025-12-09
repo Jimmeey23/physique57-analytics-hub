@@ -11,7 +11,7 @@ import { Footer } from '@/components/ui/footer';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Card, CardContent } from '@/components/ui/card';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';

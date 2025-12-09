@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { BarChart3, Calendar, Trophy, TrendingUp, Activity, Star, DollarSign, Users, Target } from 'lucide-react';
 
 // Import all the new enhanced components

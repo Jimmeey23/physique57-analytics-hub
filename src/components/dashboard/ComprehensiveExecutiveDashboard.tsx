@@ -57,7 +57,7 @@ import { ClientConversionMetricCards } from './ClientConversionMetricCards';
 import { ClientConversionMonthOnMonthByTypeTable } from './ClientConversionMonthOnMonthByTypeTable';
 import { ClientRetentionMonthByTypePivot } from './ClientRetentionMonthByTypePivot';
 import { ClientConversionEnhancedCharts } from './ClientConversionEnhancedCharts';
-import InfoPopover from '@/components/ui/InfoPopover';
+import InfoPopover from '@/components/ui/InfoSidebar';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useSessionsData } from '@/hooks/useSessionsData';
@@ -1016,7 +1016,10 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
 
                 {/* Tab 11: Patterns & Trends */}
                 <TabsContent value="patterns" className="space-y-6 mt-0">
-                    <SummaryCard context="patterns-trends-overview" locationId={getLocationId(selectedLocation)} />
+                    <SummaryCard 
+                      context={`patterns-trends-${getLocationId(selectedLocation)}`} 
+                      locationId={getLocationId(selectedLocation)} 
+                    />
                   <Card className="bg-gradient-to-br from-violet-50 to-purple-100 border-violet-200">
                     <CardHeader>
                       <CardTitle className="text-violet-800 flex items-center gap-2">

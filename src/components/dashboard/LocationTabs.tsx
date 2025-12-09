@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Building2, Globe, Users } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { cn } from '@/lib/utils';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 
 type SalesContextKey =
   | 'sales-metrics'
@@ -20,6 +20,10 @@ type SalesContextKey =
   | 'sales-deep-insights'
   | 'sales-overview'
   | 'patterns-trends-overview'
+  | 'patterns-trends-kwality'
+  | 'patterns-trends-supreme'
+  | 'patterns-trends-kenkere'
+  | 'patterns-trends-all'
   | 'client-retention-overview'
   | 'class-formats-overview'
   | 'funnel-leads-overview'

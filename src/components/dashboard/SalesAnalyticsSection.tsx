@@ -33,7 +33,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { CustomerBehaviorMonthOnMonthTable } from './CustomerBehaviorMonthOnMonthTable';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 
 interface SalesAnalyticsSectionProps {

@@ -24,7 +24,7 @@ import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModa
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { PowerCycleBarreStrengthDetailedAnalytics } from '@/components/dashboard/PowerCycleBarreStrengthDetailedAnalytics';
 import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { FormatPerformanceHeatMap } from '@/components/dashboard/FormatPerformanceHeatMap';
 import { AdvancedFormatMetrics } from '@/components/dashboard/AdvancedFormatMetrics';

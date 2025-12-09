@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Formats - All Locations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: calc(100vh - 40px);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 1.1rem;
+        }
+        .value {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .format-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .format-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💪 Class Formats Overview</h1>
+        <div class="info-card">
+            <h2>📊 Format Performance</h2>
+            <div class="metric">
+                <span>Most Popular:</span>
+                <span class="value">Power Cycle (34%)</span>
+            </div>
+            <div class="metric">
+                <span>Highest Rated:</span>
+                <span class="value">Signature Barre (4.9/5)</span>
+            </div>
+            <div class="metric">
+                <span>Best Attendance:</span>
+                <span class="value">Morning Flow (89%)</span>
+            </div>
+        </div>
+        <div class="info-card">
+            <h2>🎯 Available Formats</h2>
+            <div class="format-list">
+                <div class="format-item">🚴 Power Cycle</div>
+                <div class="format-item">🩰 Signature Barre</div>
+                <div class="format-item">🧘 Morning Flow</div>
+                <div class="format-item">💃 Cardio Barre</div>
+                <div class="format-item">🔥 HIIT Fusion</div>
+                <div class="format-item">⚡ Express Classes</div>
+            </div>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ffd700; padding: 15px; margin-top: 20px; border-radius: 0 10px 10px 0;">
+            <strong>💡 Insights:</strong> Power Cycle dominates class preferences while Signature Barre maintains the highest satisfaction ratings. Consider expanding successful formats during peak hours.
+        </div>
+    </div>
+</body>
+</html>

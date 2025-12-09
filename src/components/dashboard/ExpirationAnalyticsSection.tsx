@@ -15,7 +15,7 @@ import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Calendar, Users, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 
 interface ExpirationAnalyticsSectionProps {

@@ -14,7 +14,7 @@ import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { useDynamicHeroMetrics } from '@/hooks/useDynamicHeroMetrics';
-import InfoPopover from '@/components/ui/InfoPopover';
+import InfoPopover from '@/components/ui/InfoSidebar';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 // Inner component that has access to GlobalFilters context

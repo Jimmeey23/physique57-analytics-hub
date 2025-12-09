@@ -8,7 +8,7 @@ import { useCheckinsData } from '@/hooks/useCheckinsData';
 import { useSalesData } from '@/hooks/useSalesData';
 import { formatNumber, formatCurrency, formatPercentage, formatRevenue } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SalesMotionHero from '@/components/ui/SalesMotionHero';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
@@ -1056,7 +1056,10 @@ export const PatternsAndTrends = () => {
                   setSelectedLocation(locationMap[locationId] || 'All Locations');
                 }}
                 showInfoPopover={true}
-                infoPopoverContext="patterns-trends-overview"
+                infoPopoverContext={`patterns-trends-${selectedLocation === 'All Locations' ? 'all' : 
+                  selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
+                  selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
+                  selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}`}
               />
 
               {/* Filter Section */}

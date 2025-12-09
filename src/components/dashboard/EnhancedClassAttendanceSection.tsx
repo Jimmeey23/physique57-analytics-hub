@@ -16,7 +16,7 @@ import { EnhancedPayrollTable } from './EnhancedPayrollTable';
 import { HostedClassesAnalytics } from './HostedClassesAnalytics';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useNavigate } from 'react-router-dom';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 
 const locations = [{
   id: 'all',

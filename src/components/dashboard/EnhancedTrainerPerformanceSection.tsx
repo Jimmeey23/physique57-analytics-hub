@@ -18,7 +18,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal, Maximize2, Download, RotateCcw } from 'lucide-react';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [clickedMetric, setClickedMetric] = useState<string | null>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
+  const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isRendering, setIsRendering] = useState(true);
   const [filters, setFilters] = useState({
     location: '',
@@ -61,19 +61,22 @@ export const EnhancedTrainerPerformanceSection = () => {
     
     // Apply location (tabs) and explicit location filter
     if (selectedLocation !== 'All Locations') {
+      const beforeCount = data.length;
       data = data.filter(d => {
         const location = d.location || '';
-        // For Kenkere House, use flexible matching like Client Retention
-        if (selectedLocation === 'Kenkere House') {
-          return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
-        }
-        // For other locations, use exact match
+        // Use exact match since we know the exact location names from diagnostic logging
         return location === selectedLocation;
       });
+      console.log(`🎯 Location filter: ${selectedLocation} | Before: ${beforeCount} | After: ${data.length}`);
+      if (data.length === 0 && beforeCount > 0) {
+        console.log('🚨 No data found for location:', selectedLocation);
+        console.log('🔍 Available locations in current data:', [...new Set(baseProcessed.map(d => d.location))]);
+      }
     }
-    if (filters.location) {
-      data = data.filter(d => d.location === filters.location);
-    }
+    // Remove the filters.location check - only use tab location selection
+    // if (filters.location) {
+    //   data = data.filter(d => d.location === filters.location);
+    // }
     
     // Apply trainer filter
     if (filters.trainer) {
@@ -151,17 +154,14 @@ export const EnhancedTrainerPerformanceSection = () => {
     if (selectedLocation !== 'All Locations') {
       data = data.filter(d => {
         const location = d.location || '';
-        // For Kenkere House, use flexible matching
-        if (selectedLocation === 'Kenkere House') {
-          return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
-        }
-        // For other locations, use exact match
+        // Use exact match since we know the exact location names
         return location === selectedLocation;
       });
     }
-    if (filters.location) {
-      data = data.filter(d => d.location === filters.location);
-    }
+    // Remove the filters.location check - only use tab location selection
+    // if (filters.location) {
+    //   data = data.filter(d => d.location === filters.location);
+    // }
     if (filters.trainer) {
       data = data.filter(d => d.trainerName === filters.trainer);
     }
@@ -403,7 +403,9 @@ export const EnhancedTrainerPerformanceSection = () => {
     return (
       <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
         <CardContent className="p-6">
-          <p className="text-center text-slate-600">No trainer performance data available</p>
+          <p className="text-center text-slate-600">
+            No trainer performance data available for: {selectedLocation}
+          </p>
         </CardContent>
       </Card>
     );
@@ -422,12 +424,23 @@ export const EnhancedTrainerPerformanceSection = () => {
             'all': 'All Locations',
             'kwality': 'Kwality House, Kemps Corner',
             'supreme': 'Supreme HQ, Bandra',
-            'kenkere': 'Kenkere House'
+            'kenkere': 'Kenkere House'  // Match actual data: just 'Kenkere House'
           };
-          setSelectedLocation(locationMap[locationId] || 'All Locations');
+          const newLocation = locationMap[locationId] || 'All Locations';
+          console.log(`📍 Location tab clicked: ${locationId} → ${newLocation}`);
+          setSelectedLocation(newLocation);
+          
+          // Clear the location filter in the filter section to avoid conflicts
+          setFilters(prevFilters => ({
+            ...prevFilters,
+            location: ''  // Reset location filter when tab changes
+          }));
         }}
         showInfoPopover={true}
-        infoPopoverContext="trainer-performance-overview"
+        infoPopoverContext={`trainer-performance-${selectedLocation === 'All Locations' ? 'all' : 
+          selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
+          selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
+          selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}`}
       />
 
       {/* Filter Section */}

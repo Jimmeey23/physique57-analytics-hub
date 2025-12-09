@@ -11,7 +11,7 @@ import { MonthOnMonthDiscountTable } from './MonthOnMonthDiscountTable';
 import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { parseDate } from '@/utils/dateUtils';
 

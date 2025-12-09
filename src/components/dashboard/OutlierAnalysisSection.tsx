@@ -9,7 +9,7 @@ import { CheckinData } from '@/hooks/useCheckinsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { useOutlierMonthAnalytics } from '@/hooks/useOutlierMonthAnalytics';
 import { OutlierMonthDetail } from '@/components/dashboard/OutlierMonthDetail';
-import { InfoPopover } from '@/components/ui/InfoPopover';
+import { InfoPopover } from '@/components/ui/InfoSidebar';
 
 interface OutlierAnalysisSectionProps {
   salesData: SalesData[];
