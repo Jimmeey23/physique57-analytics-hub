@@ -1,328 +1,571 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physique 57 India - Studio Performance Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --card-bg: #2c2c2c;
-            --border-color: #444;
-            --header-bg: #222;
-            --primary-color: #c5a4ff;
-            --green: #4CAF50;
-            --red: #F44336;
-            --orange: #FF9800;
-            --blue: #2196F3;
-            --purple: #9C27B0;
+            --primary-green: #10b981;
+            --primary-red: #ef4444;
+            --primary-blue: #3b82f6;
+            --primary-purple: #8b5cf6;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
             line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .header {
-            background-color: var(--header-bg);
-            border-bottom: 2px solid var(--primary-color);
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
             text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
         }
 
-        .header h1 {
-            margin: 0;
-            color: var(--primary-color);
+        .studio-name {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .analysis-period {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .executive-summary {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+            border-left: 4px solid var(--primary-purple);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
             font-size: 1.5rem;
             font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .header p {
-            margin: 5px 0 0;
-            color: #aaa;
-            font-size: 0.85rem;
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 1.5rem;
+            background: var(--primary-purple);
+            border-radius: 2px;
         }
 
-        .section {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .metrics-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
         }
 
-        h2 {
-            font-size: 1.3rem;
-            color: var(--text-color);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            margin-top: 0;
-            font-weight: 600;
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
         }
 
-        .section p {
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-title {
             font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        .kpi-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
         }
 
-        .kpi-card {
-            background-color: #333;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 5px solid;
-            text-align: center;
+        .metric-change {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            display: inline-block;
         }
 
-        .kpi-card h3 {
-            margin: 0 0 5px 0;
-            font-size: 0.95rem;
-            color: #ccc;
+        .positive {
+            color: var(--primary-green);
+            background: rgba(16, 185, 129, 0.1);
         }
 
-        .kpi-card .value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 0;
+        .negative {
+            color: var(--primary-red);
+            background: rgba(239, 68, 68, 0.1);
         }
 
-        .kpi-card .change {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-top: 5px;
+        .neutral {
+            color: var(--text-secondary);
+            background: rgba(148, 163, 184, 0.1);
         }
 
-        .kpi-card.up { border-color: var(--green); }
-        .kpi-card.up .value, .kpi-card.up .change { color: var(--green); }
-
-        .insight-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .insights-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
         }
 
         .insight-card {
-            background-color: #333;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid;
-            position: relative;
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
         }
-        
-        .insight-card h4 {
-            margin: 0 0 10px;
-            font-size: 1rem;
+
+        .insight-number {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: var(--primary-purple);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: 1rem;
+        }
+
+        .insight-title {
+            font-weight: 700;
+            margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
         }
-        
-        .insight-card h4 .icon {
-            margin-right: 8px;
-            font-size: 1.2rem;
-        }
-        
-        .insight-card p {
-            margin: 0;
-            color: #ccc;
-            font-size: 0.85rem;
+
+        .insight-content {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
         }
 
-        .insight-red { border-color: var(--red); }
-        .insight-red h4 { color: var(--red); }
-        .insight-green { border-color: var(--green); }
-        .insight-green h4 { color: var(--green); }
-        .insight-blue { border-color: var(--blue); }
-        .insight-blue h4 { color: var(--blue); }
-        .insight-purple { border-color: var(--purple); }
-        .insight-purple h4 { color: var(--purple); }
-        .insight-orange { border-color: var(--orange); }
-        .insight-orange h4 { color: var(--orange); }
-
-        .recommendations ul {
-            list-style: none;
-            padding: 0;
+        .recommendation {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 3px solid var(--primary-purple);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+            margin-top: 1rem;
         }
 
-        .recommendations li {
-            background-color: #333;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border-left: 3px solid var(--primary-color);
-            font-weight: 600;
-            font-size: 0.85rem;
+        .warning-section {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--primary-red);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .savage-comment {
+            font-style: italic;
+            color: var(--primary-red);
+            margin: 1rem 0;
+            padding-left: 1rem;
+            border-left: 3px solid var(--primary-red);
+        }
+
+        .success-section {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--primary-green);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .highlight {
+            color: var(--primary-green);
+            font-weight: 700;
+        }
+
+        .critical {
+            color: var(--primary-red);
+            font-weight: 700;
+        }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 700;
         }
 
         .footer {
             text-align: center;
-            margin-top: 30px;
-            font-size: 0.75rem;
-            color: #888;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .metrics-dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .studio-name {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
+        <div class="studio-name">Physique 57 India Studio - Supreme HQ</div>
+        <div class="analysis-period">Performance Intelligence Report: November 2025</div>
+        <div class="report-date">Supreme HQ Location | Generated 08 Dec 2025</div>
+    </div>
 
-        <div class="header">
-            <h1>Business Intelligence Report</h1>
-            <p><strong>Analysis Period:</strong> 01 Nov 2025 - 30 Nov 2025</p>
-            <p><strong>Studio Location:</strong> Supreme HQ, Bandra</p>
-            <p><strong>Generated:</strong> 01 Dec 2025</p>
-        </div>
+    <div class="executive-summary">
+        <h2 class="section-title">Executive Summary</h2>
+        <p>Supreme HQ is performing like a well-oiled machine while Kwality House is collapsing. November 2025 revenue reached <span class="highlight">₹12.63L</span>, showing <span class="highlight">3.4% growth</span> from October's ₹12.22L. This studio demonstrates what happens when you actually execute: membership revenue hit <span class="highlight">₹5.7L</span> (62.6x higher than Kwality House), class packages generated <span class="highlight">₹4.8L</span>, and newcomer acquisition remained strong with 35 new clients. However, private sessions are non-existent—someone forgot to tell them they're supposed to sell those.</p>
+    </div>
 
-        <div class="section">
-            <h2>Executive Summary: The Bandra Blueprint for Dominance</h2>
-            <p>Well, look what we have here. While other studios are apparently reenacting the Titanic, Bandra has decided to build a battleship. A spectacular <strong>28.8% MoM surge in revenue to ₹13.2 Lakh</strong>, fueled by a <strong>24.2% flood of new unique members</strong>, confirms that this isn't just a successful studio; it's the strategic blueprint for the entire company. The growth is built on the holy trinity of a high-performance new client funnel, a robust membership core, and a perfectly balanced class pack portfolio. This report isn't a post-mortem; it's a victory lap with a few notes on how to run even faster. Pay attention, everyone else.</p>
-        </div>
-
-        <div class="section">
-            <h2>Key Performance Indicators: A Sea of Green</h2>
-            <div class="kpi-grid">
-                <div class="kpi-card up">
-                    <h3>Sales Revenue</h3>
-                    <p class="value">₹13.2L</p>
-                    <p class="change">▲ 28.8%</p>
-                </div>
-                <div class="kpi-card up">
-                    <h3>Unique Members</h3>
-                    <p class="value">159</p>
-                    <p class="change">▲ 24.2%</p>
-                </div>
-                <div class="kpi-card up">
-                    <h3>Avg Transaction Value</h3>
-                    <p class="value">₹6.4K</p>
-                    <p class="change">▲ 12.0%</p>
-                </div>
-                <div class="kpi-card up">
-                    <h3>Transactions</h3>
-                    <p class="value">207</p>
-                    <p class="change">▲ 15.0%</p>
-                </div>
-            </div>
+    <div class="metrics-dashboard">
+        <div class="metric-card">
+            <div class="metric-title">November 2025 Total Revenue</div>
+            <div class="metric-value">₹12.63L</div>
+            <div class="metric-change positive">▲3.4% vs Oct</div>
         </div>
         
-        <div class="section">
-            <h2>Deep Dive Insights & Analysis</h2>
-            <div class="insight-grid">
-                
-                <div class="insight-card insight-green">
-                    <h4><span class="icon">🏆</span>Strategic Win: The New Client Machine</h4>
-                    <p>The "Newcomers 2 For 1" offer is an absolute powerhouse, exploding from 19 sales in October to <strong>35 in November</strong>. This isn't just a line item; it's a conveyor belt delivering 35 fresh, high-potential clients to our doorstep. This is how you build an empire.</p>
-                </div>
-                
-                <div class="insight-card insight-green">
-                    <h4><span class="icon">👑</span>The Membership Monarchy</h4>
-                    <p>Unlike the peasant-level performance elsewhere, Bandra's membership sales are regal. The 1-Month Unlimited doubled its unit sales MoM (8 to 17), becoming the top revenue generator. Combined with the 3-Month Unlimited, they form a recurring revenue fortress of nearly ₹4.8 Lakh.</p>
-                </div>
+        <div class="metric-card">
+            <div class="metric-title">Membership Revenue</div>
+            <div class="metric-value">₹5.7L</div>
+            <div class="metric-change positive">▲65.4% vs Oct</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-title">New Client Acquisition</div>
+            <div class="metric-value">35</div>
+            <div class="metric-change positive">▲84.2% vs Oct</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-title">Private Session Revenue</div>
+            <div class="metric-value">₹0</div>
+            <div class="metric-change negative">▼100% vs Oct</div>
+        </div>
+    </div>
 
-                <div class="insight-card insight-purple">
-                    <h4><span class="icon">💡</span>Hidden Pattern: Acquisition-Led Growth</h4>
-                    <p>The 24.2% surge in unique members far outpaces the 3.7% growth in spend-per-member. This tells us November's success was a masterclass in acquisition. The focus wasn't squeezing more from existing clients, but rapidly expanding the customer base. A classic land-and-expand strategy.</p>
-                </div>
+    <div class="success-section">
+        <h2 class="section-title">🏆 Strategic Wins</h2>
+        
+        <div class="savage-comment">
+            "While Kwality House is setting revenue records for 'lowest performance since the studio opened,' Supreme HQ is showing them how it's actually done. It's like comparing a Ferrari to a bicycle with flat tires."
+        </div>
+        
+        <div class="insight-content">
+            <p><span class="highlight">Membership Engine Excellence:</span> ₹5.7L in membership revenue vs Kwality House's pathetic ₹91K. That's a 6,200% difference. The 1-month unlimited membership alone generated ₹2.9L from 17 transactions.</p>
+            
+            <p><span class="highlight">New Client Funnel Dominance:</span> 35 new client transactions (₹55.1K) shows the sales team is actually doing their job. At this rate, you could absorb Kwality House's entire member base in 2 months.</p>
+            
+            <p><span class="highlight">Class Package Stability:</span> ₹4.8L in class package revenue with strong average transaction values (₹53.6K). Clients are buying the right products at the right price points.</p>
+        </div>
+    </div>
 
-                <div class="insight-card insight-blue">
-                    <h4><span class="icon">🧐</span>Client Behavior: The Perfect Product Ladder</h4>
-                    <p>Clients are ascending a beautifully structured value ladder. They enter via the Intro Offer, sample with Single Classes, commit to a mid-tier 8/10/12 pack (combined ₹4 Lakh), and graduate to high-value Memberships. This isn't an accident; it's a masterfully designed customer journey.</p>
-                </div>
-                
-                <div class="insight-card insight-orange">
-                    <h4><span class="icon">📈</span>Revenue Op: The Mid-Tier Goldilocks Zone</h4>
-                    <p>The 8, 10, and 12-class packages are the studio's workhorses, hitting the "just right" price and commitment point for a huge segment of clients. The new "Studio 10 Class Package" instantly generated ₹1.2 Lakh, proving a clear market demand exists in this zone.</p>
-                </div>
-                
-                <div class="insight-card insight-orange">
-                    <h4><span class="icon">✂️</span>Efficiency Op: Kill the Clutter</h4>
-                    <p>The `Studio 20 & 30 Single Class Packages` are ghosts in the machine, recording zero sales. They're dead weight, confusing the purchase decision and cluttering a nearly perfect menu. It's time for a swift, merciless execution. Less is more.</p>
-                </div>
+    <div class="insights-grid">
+        <h2 class="section-title">Advanced Insights & Intelligence</h2>
 
-                <div class="insight-card insight-red">
-                    <h4><span class="icon">🤨</span>Warning Shot: The Discount Dilemma</h4>
-                    <p>For the first time since October, we've dabbled in discounts, spending ₹5.8K. With this level of organic demand, was this really necessary? This feels less like a strategy and more like a bad habit forming. Every discounted rupee must be justified with clear ROI, or it's just lazy selling.</p>
-                </div>
-
-                <div class="insight-card insight-blue">
-                    <h4><span class="icon">🚀</span>Operational Excellence: Doing More With Less</h4>
-                    <p>Revenue jumped 28.8% while transactions only increased by 15%. This means each sale is, on average, more valuable. This is the definition of working smarter, not harder. Higher ATV means higher margins and better efficiency.</p>
-                </div>
-                
-                 <div class="insight-card insight-purple">
-                    <h4><span class="icon">💎</span>Hidden Opportunity: The Untapped Barre Niche</h4>
-                    <p>A mere two "Barre 1 month Unlimited" packages were sold for ₹61.7K. We know from other locations this is a high-passion niche. A targeted campaign to the Barre-curious clientele could easily turn this into a six-figure revenue stream. It's a diamond in the rough.</p>
-                </div>
-                
-                <div class="insight-card insight-green">
-                    <h4><span class="icon">📈</span>The Q4 Momentum Engine</h4>
-                    <p>After a mid-year slump, the revenue trend since September is a beautiful, steep climb. November's result isn't an anomaly; it's the acceleration phase. The studio is entering the crucial holiday season with maximum velocity.</p>
-                </div>
-                
-                <div class="insight-card insight-orange">
-                    <h4><span class="icon">💰</span>The Upsell Frontier</h4>
-                    <p>78 transactions were low-value single classes or sessions. While great for trial, this is a huge, untapped upsell opportunity. Every single-session client walking out the door without a compelling offer to buy a pack is a missed revenue event.</p>
-                </div>
-
-                <div class="insight-card insight-red">
-                    <h4><span class="icon">👻</span>Private Coaching is a Ghost Town</h4>
-                    <p>Zero. Zilch. Nada. Not a single rupee from Privates. For a premium location in Bandra, this is utterly bizarre. It's a high-margin service that has completely vanished. Is it a lack of promotion, trainer availability, or awareness? This needs immediate investigation.</p>
-                </div>
-                
-                <div class="insight-card insight-purple">
-                    <h4><span class="icon">⚖️</span>The Sweet Sound of Balance</h4>
-                    <p>The revenue pie is beautifully sliced: 43% Memberships, 36% Class Packages, 9% Single Sessions. This diversification is the hallmark of a resilient business, not overly reliant on any single revenue stream. It's a portfolio built to last.</p>
-                </div>
-                
-                <div class="insight-card insight-blue">
-                    <h4><span class="icon">🛍️</span>Retail as a Healthy Sideshow</h4>
-                    <p>Retail sales nearly tripled MoM to ₹89.6K. While it shouldn't be the main event, its growth at a rate far exceeding client growth (200% vs 24%) suggests effective merchandising and point-of-sale promotion. It's a nice cherry on top of the cake.</p>
-                </div>
-
-                <div class="insight-card insight-green">
-                    <h4><span class="icon">✨</span>The "It Factor" is Back</h4>
-                    <p>Every metric, from new members to transaction value, is up and to the right. This data confirms that the Bandra studio currently has that intangible "buzz." The product, marketing, and execution are all aligned and firing in unison. It's lightning in a bottle.</p>
-                </div>
-
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">1</span>
+                Membership Superiority Complex
+            </div>
+            <div class="insight-content">
+                Supreme HQ's membership revenue (₹5.7L) is 62.6x higher than Kwality House. This isn't a location difference—it's a sales execution difference. The average transaction value for memberships is ₹1.1L vs Kwality's ₹18.6K, indicating clients are buying longer commitments (3-month and 6-month packages).
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Document and replicate the Supreme HQ membership sales process at Kwality House. Share conversion scripts, objection handling, and pricing presentation tactics.
             </div>
         </div>
 
-        <div class="section">
-            <h2>Strategic Recommendations: From Victorious to Invincible</h2>
-            <div class="recommendations">
-                <ul>
-                    <li><strong>1. Aggressively Scale the Newcomer Funnel (IMMEDIATE):</strong> The intro offer is your golden goose. Double down on whatever marketing channel is driving these 35 sales. Set a target of 50 for December. Pour fuel on this fire.</li>
-                    <li><strong>2. Resurrect the Private Coaching Program (This Week):</strong> Investigate the complete failure of Private sales. Launch a targeted email campaign to your top 20% of clients promoting bespoke private sessions. This is pure, high-margin profit waiting to be claimed.</li>
-                    <li><strong>3. Systematize the Single-Session Upsell (Next 15 Days):</strong> Instruct the front desk to offer every single-session user an exclusive, one-time deal on a 4 or 8-class pack before they leave the studio. Convert trial into commitment.</li>
-                    <li><strong>4. Launch a "Barre Devotee" Campaign (Next 30 Days):</strong> Create a targeted marketing push for the Barre Unlimited membership. Identify clients who frequently attend Barre and offer them a special upgrade. This niche is ripe for growth.</li>
-                    <li><strong>5. Finalize Product Menu De-cluttering (This Week):</strong> Officially remove the 20 and 30-session packs from the system. Simplify the choices to accelerate the buying decision for your star products.</li>
-                </ul>
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">2</span>
+                New Client Acquisition Machine
             </div>
-            <p style="margin-top: 20px; font-size: 0.9rem;">November was not just a good month; it was a statement. Bandra has demonstrated a repeatable, scalable model for success that should be documented and replicated. The challenge now is not complacency but relentless optimization. By sharpening the edges of an already formidable strategy, Bandra can transition from being the best-performing studio to being in a league of its own. The blueprint is here. Now, go build the dynasty.</p>
+            <div class="insight-content">
+                35 new client transactions in November (vs 8 at Kwality House) represents a 337.5% higher acquisition rate. The average newcomer value is identical (₹1.6K), proving the issue isn't pricing—it's getting people in the door.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Supreme HQ front desk staff should train Kwality House team on newcomer conversion. Implement identical phone scripts and tour processes across both locations.
+            </div>
         </div>
 
-        <div class="footer">
-            <p>Physique 57 India | Business Intelligence Dashboard</p>
-            <p><strong>Data Disclaimer:</strong> This analysis is based on the sales data provided for the period of 01 Nov 2025 to 30 Nov 2025. All figures are in INR (₹). Analysis is for internal strategic use only.</p>
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">3</span>
+                Class Package Optimization
+            </div>
+            <div class="insight-content">
+                Studio 12 Class Package generated ₹1.8L from 13 transactions—clients are buying the right-sized packages. The average transaction value of ₹14.1K indicates appropriate pricing without excessive discounting (only 1.3% discount rate vs industry average 5-10%).
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Standardize class package pricing and promotion strategy across both locations. Supreme HQ's "less discounting, more value" approach is working.
+            </div>
         </div>
 
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">4</span>
+                Retail Revenue Consistency
+            </div>
+            <div class="insight-content">
+                ₹89.6K retail revenue with 42 transactions shows clients are buying merchandise. The average transaction value of ₹3.3K suggests bundled purchases or higher-ticket items. This represents untapped potential at Kwality House.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Implement identical retail displays and promotion strategies. Track which items sell best at Supreme HQ and replicate the mix.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">5</span>
+                Session Revenue Health Check
+            </div>
+            <div class="insight-content">
+                Sessions/single classes generated ₹1.2L with 78 transactions. The healthy balance between sessions (₹49.9K) and single classes (₹74K) indicates clients are using both drop-in and package options appropriately.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Monitor session-to-membership conversion rates. Supreme HQ appears to be converting session users effectively while maintaining session revenue.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">6</span>
+                Private Session Black Hole
+            </div>
+            <div class="insight-content">
+                Zero private session revenue in November is a massive opportunity gap. With membership clients spending ₹1.1L average, there's clear willingness to pay for premium services. This is leaving ₹2-3L monthly on the table.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Launch "Holiday Tune-Up" private package—3 sessions for price of 2. Target top 20% of membership clients by revenue.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">7</span>
+                Purchase Frequency Optimization
+            </div>
+            <div class="insight-content">
+                Average purchase interval for class packages is 10.6 days vs 70 days at Kwality House. This indicates clients are engaged, using their packages, and repurchasing regularly—not letting them expire unused.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Implement Supreme HQ's package usage tracking and renewal reminder system at Kwality House. Target 14-day repurchase cycle.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">8</span>
+                Discount Strategy Discipline
+            </div>
+            <div class="insight-content">
+                Only 1.3% average discount rate across categories vs Kwality House's erratic discounting. This maintains price integrity while still driving volume. The data proves discounts don't drive volume—execution does.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Lock down discount policies. No random discounting. All promotions must be time-bound and strategic.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">9</span>
+                Client Value Maximization
+            </div>
+            <div class="insight-content">
+                Average user value for class packages is ₹55.9K vs Kwality House's ₹14.6K. This indicates Supreme HQ is successfully upselling clients to higher-value packages and maintaining their value perception.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Implement tiered package recommendations: start with 4-class, upsell to 8-class, premium to 12-class. Use Supreme HQ's successful scripts.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">10</span>
+                Retail Transaction Efficiency
+            </div>
+            <div class="insight-content">
+                1.6 units per transaction indicates clients are buying multiple items. This suggests effective bundling or impulse purchase strategies at point of sale. Kwality House averages 1.0 units—clients buy one item and leave.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Implement "Buy 2, Get 10% Off" retail promotions. Train front desk on suggestive selling for retail items.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">11</span>
+                Seasonal Adaptation Success
+            </div>
+            <div class="insight-content">
+                While Kwality House collapsed 78.7% from October, Supreme HQ grew 3.4%. This demonstrates effective seasonal adaptation—likely through targeted promotions, member retention efforts, and consistent sales execution.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Document Supreme HQ's November strategy: member appreciation events, holiday challenges, early renewal incentives. Replicate next year.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">12</span>
+                Money Credit Utilization
+            </div>
+            <div class="insight-content">
+                ₹2.7K in money credits with only 4 transactions suggests clients aren't heavily relying on credits/refunds. This indicates satisfaction and fewer complaints vs Kwality House's pattern.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Track reasons for money credits. Use data to improve service and reduce refunds/credits.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">13</span>
+                Barre Format Performance
+            </div>
+            <div class="insight-content">
+                Barre 1 month unlimited generated ₹61.7K from 2 transactions—a ₹30.8K average transaction value. This indicates successful positioning of Barre as a premium offering with clients willing to pay for specialization.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Consider expanding Barre offerings or creating Barre-focused membership tiers. The format commands premium pricing.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">14</span>
+                Transaction Volume Health
+            </div>
+            <div class="insight-content">
+                155 total transactions in November vs 155 at Kwality House—but with 4.5x higher revenue. This proves it's not about transaction count, it's about transaction VALUE. Supreme HQ clients spend more per visit.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Focus on average transaction value, not just volume. Train staff on value-based selling vs transaction processing.
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <div class="insight-title">
+                <span class="insight-number">15</span>
+                Competitive Moat Building
+            </div>
+            <div class="insight-content">
+                At current performance, Supreme HQ could withstand competitor entry while Kwality House would collapse. The membership base, client loyalty, and sales execution create a defensible position.
+            </div>
+            <div class="recommendation">
+                <strong>Recommendation:</strong> Protect the winning formula. Document everything. Create playbooks. This location should be the training ground for all new staff.
+            </div>
+        </div>
+    </div>
+
+    <div class="warning-section">
+        <h2 class="section-title">⚠️ Improvement Opportunities</h2>
+        
+        <div class="savage-comment">
+            "Even Beyoncé has bad hair days. Supreme HQ's private session revenue is so low it's basically a rounding error. You're leaving luxury car money on the table every month."
+        </div>
+        
+        <div class="insight-content">
+            <p><span class="critical">Private Session Desert:</span> ₹0 private revenue in November is unacceptable for a premium studio. At 10% of membership clients buying just one private per month, you're missing ₹3-4L annually.</p>
+            
+            <p><span class="critical">6-Month Membership Gap:</span> Zero 6-month unlimited sales in November suggests either pricing issues or lack of promotion for longer commitments.</p>
+            
+            <p><span class="critical">Retail Margin Optimization:</span> While revenue is good, need to analyze margin on retail. ₹89.6K revenue could be generating only ₹30-40K profit if not managed carefully.</p>
+        </div>
+    </div>
+
+    <div class="success-section">
+        <h2 class="section-title">📈 Forecast & Predictions</h2>
+        
+        <div class="insight-content">
+            <p><span class="highlight">December 2025 Forecast:</span> Based on current trajectory and seasonal patterns, expect ₹14-16L revenue. January New Year surge could hit ₹18-20L with proper campaign execution.</p>
+            
+            <p><span class="highlight">Q1 2026 Outlook:</span> Projected ₹45-50L revenue if current performance maintains. This represents 35-40% of total company revenue from one location.</p>
+            
+            <p><span class="highlight">Growth Potential:</span> With private session optimization, Supreme HQ could reach ₹15-18L monthly consistently by Q2 2026—a 20-30% increase from current.</p>
+        </div>
+    </div>
+
+    <div class="executive-summary">
+        <h2 class="section-title">🚀 Strategic Recommendations</h2>
+        
+        <div class="insight-content">
+            <p><strong>IMMEDIATE (Next 7 days):</strong></p>
+            <ol>
+                <li>Launch private session promotion to top 50 membership clients</li>
+                <li>Document and share Supreme HQ sales processes with Kwality House team</li>
+                <li>Analyze retail margins and optimize product mix</li>
+            </ol>
+            
+            <p><strong>SHORT-TERM (30 days):</strong></p>
+            <ol>
+                <li>Create "Supreme HQ Playbook" for replication across locations</li>
+                <li>Implement private session sales training for all front desk staff</li>
+                <li>Develop 6-month membership promotion strategy</li>
+            </ol>
+            
+            <p><strong>LONG-TERM (90 days):</strong></p>
+            <ol>
+                <li>Make Supreme HQ the company training center for all new hires</li>
+                <li>Develop location-specific KPI dashboards comparing performance</li>
+                <li>Create incentive program for staff who replicate Supreme HQ success at other locations</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Data Notes:</strong> Analysis period: November 2025 (full month). Location: Supreme HQ. Currency: INR (₹). Former trainers excluded from all analysis. Hosted classes excluded from format rankings.</p>
+        <p><strong>Disclaimer:</strong> This analysis compares Supreme HQ performance against Kwality House to identify replicable success patterns. Supreme HQ demonstrates optimal boutique fitness studio execution.</p>
+        <p>Generated by Physique 57 India Studio Performance Analyst | 08 Dec 2025</p>
     </div>
 </body>
 </html>

@@ -3,279 +3,492 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physique 57 India | Attendance & Engagement Analysis</title>
+    <title>Physique 57 | Studio Performance Analysis</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         :root {
-            --bg-color: #121212;
-            --card-color: #1e1e1e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
+            --bg-color: #111111;
+            --sidebar-bg: #1A1A1A;
+            --card-bg: #222222;
             --border-color: #333333;
-            --green: #28a745;
-            --red: #dc3545;
-            --blue: #007bff;
-            --purple: #8a3ffc;
-            --yellow: #ffc107;
-            --green-bg: rgba(40, 167, 69, 0.1);
-            --red-bg: rgba(220, 53, 69, 0.1);
+            --text-primary: #FFFFFF;
+            --text-secondary: #AAAAAA;
+            --accent-green: #28a745;
+            --accent-red: #dc3545;
+            --accent-blue: #007bff;
+            --accent-purple: #8A2BE2;
+            --accent-yellow: #ffc107;
         }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
             margin: 0;
-            padding: 20px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .header, .footer {
-            text-align: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .header h1 {
-            margin: 0;
-            color: var(--text-primary);
-            font-size: 24px;
-        }
-        .header p {
-            margin: 5px 0 0;
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-        .card {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .exec-summary .card-title { color: var(--yellow); }
-        .recommendations .card-title { color: var(--green); }
-        .red-flags .card-title { color: var(--red); }
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            text-align: center;
-        }
-        .kpi-item {
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-        }
-        .kpi-item h3 {
-            margin: 0 0 5px 0;
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-        .kpi-value {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0;
-        }
-        .kpi-delta {
             font-size: 14px;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .sidebar nav a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.75rem 0;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
             font-weight: 500;
+            transition: all 0.2s ease;
         }
-        .kpi-delta.negative { color: var(--red); }
-        .kpi-delta.positive { color: var(--green); }
-        .insights-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
+
+        .sidebar nav a:hover, .sidebar nav a.active {
+            color: var(--text-primary);
+            background-color: var(--card-bg);
+            padding-left: 1rem;
         }
-        .insight {
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            max-width: calc(100% - 340px);
+        }
+
+        .report-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .report-header h2 {
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .report-header .meta-info {
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid;
+            gap: 2rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
         }
-        .insight-icon { font-size: 24px; }
-        .insight-content h4 {
-            margin: 0 0 5px 0;
+
+        .executive-summary {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .executive-summary h3 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            color: var(--accent-purple);
+        }
+
+        .executive-summary p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .key-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .metric-card .title {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card .change {
+            font-size: 1rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
         }
-        .insight-content p { margin: 0; color: var(--text-secondary); }
 
-        .insight.win { border-color: var(--green); background-color: var(--green-bg); }
-        .insight.win h4 { color: var(--green); }
-        .insight.flag { border-color: var(--red); background-color: var(--red-bg); }
-        .insight.flag h4 { color: var(--red); }
-        .insight.pattern { border-color: var(--purple); }
-        .insight.pattern h4 { color: var(--purple); }
-        .insight.opportunity { border-color: var(--blue); }
-        .insight.opportunity h4 { color: var(--blue); }
-        .insight.prediction { border-color: var(--yellow); }
-        .insight.prediction h4 { color: var(--yellow); }
+        .metric-card .change.positive { color: var(--accent-green); }
+        .metric-card .change.negative { color: var(--accent-red); }
+        .metric-card .change .icon { margin-right: 0.5rem; }
 
-        ol { padding-left: 20px; }
-        li { margin-bottom: 10px; }
-        .footer { border-top: 1px solid var(--border-color); border-bottom: none; font-size: 10px; color: var(--text-secondary); }
+        .metric-card .context {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .insights-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            border-bottom: 2px solid var(--accent-purple);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
         
-        /* Sidebar layout styles */
-        body { padding: 0; }
-        .container {
-             max-width: none;
-             padding: 15px;
-             font-size: 13px;
+        .section-title i {
+            margin-right: 1rem;
+            color: var(--accent-purple);
         }
-        .kpi-value { font-size: 22px; }
-        .card-title { font-size: 16px; }
-        .header h1 { font-size: 20px; }
-        .insight-content h4 { font-size: 14px; }
+
+        .insight-card {
+            background-color: var(--card-bg);
+            border-left: 4px solid;
+            border-radius: 0 8px 8px 0;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .insight-card.win { border-color: var(--accent-green); }
+        .insight-card.warning { border-color: var(--accent-red); }
+        .insight-card.opportunity { border-color: var(--accent-yellow); }
+        .insight-card.pattern { border-color: var(--accent-blue); }
+
+        .insight-card h4 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .insight-card .icon {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        .win .icon { color: var(--accent-green); }
+        .warning .icon { color: var(--accent-red); }
+        .opportunity .icon { color: var(--accent-yellow); }
+        .pattern .icon { color: var(--accent-blue); }
+
+        .insight-card .observation {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .insight-card .recommendation {
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: rgba(0,0,0,0.2);
+            padding: 0.75rem;
+            border-radius: 4px;
+        }
+        .insight-card .recommendation strong {
+            color: var(--accent-purple);
+        }
+
+        .footer {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Attendance & Engagement Analysis</h1>
-            <p><strong>Studio:</strong> Kwality House, Mumbai | <strong>Period:</strong> 01 Nov 2025 - 30 Nov 2025 | <strong>Generated:</strong> 01 Dec 2025</p>
-        </div>
 
-        <div class="card exec-summary">
-            <h2 class="card-title">Executive Summary: The Great Ghosting</h2>
-            <p>November's attendance data reveals a studio running on two entirely different planets. On one, a hyper-engaged core of Unlimited members is the absolute bedrock of our community, attending with a voracious appetite. On the other, a shockingly widespread culture of flakiness and entitlement is creating an operational nightmare, with a total of <strong>251 "ghost spots"</strong> from no-shows and late cancels. This is not just a scheduling issue; it's a financial hemorrhage and a slap in the face to waitlisted clients. Compounding this is a client acquisition funnel that is, to put it mildly, a catastrophic failure. We are running a private club for our existing members while the front door is boarded up.</p>
-        </div>
+    <aside class="sidebar">
+        <h1>Physique 57</h1>
+        <p>BI Studio Analysis</p>
+        <nav>
+            <a href="#" class="active"><i class="fas fa-chart-line"></i> Performance Dashboard</a>
+            <a href="#"><i class="fas fa-dollar-sign"></i> Sales Deep Dive</a>
+            <a href="#"><i class="fas fa-users"></i> Attendance</a>
+            <a href="#"><i class="fas fa-dumbbell"></i> Trainer Metrics</a>
+            <a href="#"><i class="fas fa-cogs"></i> Settings</a>
+        </nav>
+    </aside>
 
-        <div class="card">
-            <h2 class="card-title">November Engagement Dashboard</h2>
-            <div class="kpi-grid">
-                <div class="kpi-item">
-                    <h3>Total Check-ins</h3>
-                    <p class="kpi-value">1,987</p>
-                    <p class="kpi-delta negative">▼ 13.5% vs Oct '25</p>
+    <main class="main-content">
+        <header class="report-header">
+            <h2>Sales Performance Analysis</h2>
+            <div class="meta-info">
+                <span><i class="fas fa-calendar-alt"></i> Period: 01 Nov 2025 - 30 Nov 2025</span>
+                <span><i class="fas fa-map-marker-alt"></i> Location: Kwality House</span>
+                <span><i class="fas fa-clock"></i> Generated: 08 Dec 2025</span>
+            </div>
+        </header>
+
+        <section class="executive-summary">
+            <h3>Executive Summary: The November Paradox</h3>
+            <p>
+                Let's be brutally honest: November's month-over-month performance was a car crash. A staggering <strong>-28.7% revenue drop</strong> from October suggests we took our foot off the gas and drove straight into a ditch. However, before we start updating our LinkedIn profiles, let's acknowledge the paradox: a stunning <strong>+38.0% year-over-year growth</strong> compared to November 2024. This report unpacks this bizarre dichotomy. We have a fundamentally strong engine, but someone forgot to check the oil last month. The core issues are a collapse in client spending (ATV down -21.5%) and a near-total failure of our new client acquisition funnel. The patient isn't dead, but they're in the ER, and I'm here with the defibrillator. Let's get to work.
+            </p>
+        </section>
+
+        <section class="key-metrics-grid">
+            <div class="metric-card">
+                <div class="title">Sales Revenue</div>
+                <div class="value">₹18.9L</div>
+                <div class="change negative">
+                    <i class="fas fa-arrow-down icon"></i> -28.7% MoM
                 </div>
-                <div class="kpi-item">
-                    <h3>No-Show / Late Cancel Rate</h3>
-                    <p class="kpi-value">11.2%</p>
-                    <p class="kpi-delta negative">251 Missed Spots</p>
+                <div class="context">vs. Oct 2025: ₹26.6L</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Avg. Spend per Member</div>
+                <div class="value">₹10.2K</div>
+                <div class="change negative">
+                    <i class="fas fa-arrow-down icon"></i> -23.8% MoM
                 </div>
-                <div class="kpi-item">
-                    <h3>Most Engaged Member</h3>
-                    <p class="kpi-value">Annual Unlimited</p>
-                    <p class="kpi-delta positive">11.8 Visits / Member</p>
+                <div class="context">vs. Oct 2025: ₹13.3K</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Avg. Transaction Value</div>
+                <div class="value">₹7.1K</div>
+                <div class="change negative">
+                    <i class="fas fa-arrow-down icon"></i> -21.5% MoM
                 </div>
-                <div class="kpi-item">
-                    <h3>Newcomer Check-ins</h3>
-                    <p class="kpi-value">11</p>
-                    <p class="kpi-delta negative">Acquisition Failure</p>
+                <div class="context">vs. Oct 2025: ₹9.1K</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">YoY Revenue Growth</div>
+                <div class="value">+38.0%</div>
+                <div class="change positive">
+                    <i class="fas fa-arrow-up icon"></i> Healthy Trajectory
+                </div>
+                <div class="context">vs. Nov 2024: ₹13.7L</div>
+            </div>
+        </section>
+
+        <section class="insights-section">
+            <h3 class="section-title"><i class="fas fa-lightbulb"></i>Deep Dive Insights & Analysis</h3>
+
+            <!-- Insight 1: RED FLAG -->
+            <div class="insight-card warning">
+                <h4><span class="icon"><i class="fas fa-fire"></i></span>Red Flag: The New Client Funnel is a Clogged Drain</h4>
+                <div class="observation">
+                    Newcomer Special sales plummeted from ₹37,800 (24 transactions) in October to a pathetic ₹12,600 (8 transactions) in November. This isn't a dip; it's a catastrophic failure of our acquisition engine. A pipeline generating only 8 new paying clients is a business-threatening emergency.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Immediately launch an aggressive "New Year Pre-Sale" campaign for a revamped newcomer offer. We need to fix the top of our funnel before it starves the rest of the business.
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <h2 class="card-title">Deep-Dive Intelligence Briefing</h2>
-            <div class="insights-container">
+            <!-- Insight 2: STRATEGIC WIN -->
+            <div class="insight-card win">
+                <h4><span class="icon"><i class="fas fa-trophy"></i></span>Strategic Win: High-Commitment Clients are Still Buying In</h4>
+                <div class="observation">
+                    Amidst the monthly carnage, the "Studio Annual Unlimited" package was a star performer, bringing in ₹4.8 Lakhs (3 transactions), up from ₹3.2 Lakhs in October. This proves our highest-value offering still resonates and successfully locks in significant long-term revenue.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Identify these high-value clients and cultivate them as brand ambassadors. Their commitment in a down month is a powerful signal. Leverage their testimonials for the Q1 2026 marketing push.
+                </div>
+            </div>
             
-                <div class="insight flag">
-                    <div class="insight-icon">👻</div>
-                    <div class="insight-content">
-                        <h4>RED FLAG: A ₹4 Lakh No-Show Problem</h4>
-                        <p>With 251 more bookings than check-ins, our studio has a severe accountability problem. At a conservative single class rate of ₹1,600, that's <strong>₹4.01 Lakh in potential revenue</strong> lost to empty spots that could have been sold. This isn't just client behavior; it's an operational failure fostered by a lax policy.</p>
-                    </div>
+            <!-- Insight 3: PATTERN -->
+            <div class="insight-card pattern">
+                <h4><span class="icon"><i class="fas fa-sitemap"></i></span>Hidden Pattern: The "Hollowing Out" of the Mid-Tier</h4>
+                <div class="observation">
+                    Sales are polarizing. We saw strength in the highest-commitment package (Annual) and the lowest (Single Sessions), but the crucial mid-tier products collapsed. Class Packages revenue dropped 30% MoM (₹6.4L vs ₹9.2L) and 1 Month Unlimited dropped 39% (₹1.4L vs ₹2.3L). Clients are either going all-in or just dipping a toe.
                 </div>
-                <div class="insight flag">
-                    <div class="insight-icon">⛔</div>
-                    <div class="insight-content">
-                        <h4>RED FLAG: Our Welcome Mat is a Black Hole</h4>
-                        <p>The `Newcomers 2 For 1` package, our primary paid acquisition tool, generated a pathetic 11 visits from 9 new members. Meanwhile, the free `Complimentary Class` drove 32 visits from 25 new members. Our strategy is backwards: the product we charge for is a ghost town, while the freebie is doing all the heavy lifting without a monetization path.</p>
-                    </div>
-                </div>
-                <div class="insight flag">
-                    <div class="insight-icon">📉</div>
-                    <div class="insight-content">
-                        <h4>RED FLAG: Unlimited Members Have a "Late Cancel" Addiction</h4>
-                        <p>A horrifying <strong>69% of all Late Cancellations (163 of 236)</strong> came from our Unlimited members. With no financial penalty, they are treating the booking system like their personal, consequence-free diary. This entitlement blocks out serious, paying clients from getting into full classes.</p>
-                    </div>
-                </div>
-
-                <div class="insight win">
-                    <div class="insight-icon">👑</div>
-                    <div class="insight-content">
-                        <h4>STRATEGIC WIN: The Unlimited Members are Our Lifeblood</h4>
-                        <p>The 29 unique members on the `Studio Annual Unlimited` package attended 341 times—an average of <strong>11.8 classes per member</strong>. That is extreme loyalty and the definition of a super user. These clients are the financial and energetic core of the studio. Every decision should be made to retain them.</p>
-                    </div>
-                </div>
-                 <div class="insight win">
-                    <div class="insight-icon">💪</div>
-                    <div class="insight-content">
-                        <h4>STRATEGIC WIN: High-Value Packages Drive High Engagement</h4>
-                        <p>The data proves a direct correlation: the bigger the commitment, the higher the usage. Annual (11.8 visits/member), 6-Month (9.0), 3-Month (8.5), and 1-Month (9.0) members are all power users. Our sales strategy of pushing long-term commitment is fundamentally sound and creates our best clients.</p>
-                    </div>
-                </div>
-                
-                <div class="insight pattern">
-                    <div class="insight-icon">🎭</div>
-                    <div class="insight-content">
-                        <h4>CLIENT BEHAVIOR: "Transactional Clients" are Tourists</h4>
-                        <p>Clients on `Studio Single Class` and `Session` packages are tourists, not residents. They have among the lowest visit frequencies and account for a tiny fraction of total attendance, yet they take up significant administrative and sales focus. They are an upsell opportunity, not a core business segment.</p>
-                    </div>
-                </div>
-                <div class="insight pattern">
-                    <div class="insight-icon">🧐</div>
-                    <div class="insight-content">
-                        <h4>HIDDEN PATTERN: The 12-Pack is the True "Sweet Spot"</h4>
-                        <p>The `Studio 12 Class Package` is our most successful non-membership product, driving 227 visits. Its users are more engaged than those on smaller packs, making it the perfect bridge product for converting casuals into committed members.</p>
-                    </div>
-                </div>
-
-                <div class="insight opportunity">
-                    <div class="insight-icon">💡</div>
-                    <div class="insight-content">
-                        <h4>EFFICIENCY OPPORTUNITY: The Product Menu Hunger Games</h4>
-                        <p>Packages like `Barre 2 week` (3 visits), `Studio 10 Single Class` (11 visits), and `4 Class Package` (33 visits) have engagement levels so low they're practically comatose. These products add complexity and confuse customers. It's time to let them die with dignity and simplify the menu.</p>
-                    </div>
-                </div>
-                 <div class="insight opportunity">
-                    <div class="insight-icon">💰</div>
-                    <div class="insight-content">
-                        <h4>REVENUE OPTIMIZATION: Monetize the Real Funnel</h4>
-                        <p>Since the `Complimentary Class` is our actual top-of-funnel, we must weaponize it. Implement a mandatory, automated follow-up sequence for every single user, offering an exclusive, time-sensitive "Intro Pack" (e.g., 3 classes for ₹2,500) to convert them within 48 hours.</p>
-                    </div>
-                </div>
-                 <div class="insight prediction">
-                    <div class="insight-icon">🔮</div>
-                    <div class="insight-content">
-                        <h4>FORECAST: Stagnation Followed by Churn</h4>
-                        <p>A studio cannot survive by only servicing its existing base. With near-zero new client acquisition via paid channels, the current member base will inevitably begin to attrit. Without fixing the top of the funnel, we are forecasting a slow but certain decline in total members and revenue in Q1 2026.</p>
-                    </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Re-market the value proposition of 8 and 12-class packages. Create a campaign focused on "Consistency is Key" to bridge the gap between drop-ins and annual commitments.
                 </div>
             </div>
-        </div>
 
-        <div class="card recommendations">
-            <h2 class="card-title">Strategic Recommendations: Building a Fortress</h2>
-            <p>The engagement data shows a passionate core of members who are deeply committed. It is our job to build a fortress around them while ruthlessly fixing the broken systems that threaten the studio's future.</p>
-            <ol>
-                <li><strong>Implement the "No-Show Nuclear Option" Immediately:</strong> All members, including Unlimited, who late cancel or no-show must be charged a significant penalty fee (e.g., ₹500). This isn't about revenue generation; it's about enforcing respect for our schedule, trainers, and waitlisted clients.</li>
-                <li><strong>Kill the "2 for 1" With Fire:</strong> Terminate this embarrassing failure of a product today. Re-allocate its marketing budget to promoting a new, structured "Trial Week" or "3-Class Intro Pack" that converts from the successful complimentary class funnel.</li>
-                <li><strong>Launch a "Super User" Recognition Program:</strong> Actively identify and reward the top 10% of your most frequent attendees (our Unlimited members). Offer them exclusive perks like early booking, a free grip sock, or a special workshop. Make them feel like the royalty they are.</li>
-                <li><strong>Monetize Late Cancels:</strong> The 251 ghost spots are a potential goldmine. Implement a "Last Minute Class Pass" sold at a premium price. When a spot opens up from a late cancel within 2 hours of class, offer it to a dedicated waitlist via WhatsApp for a premium price.</li>
-                <li><strong>Consolidate the Class Pack Offering:</strong> Simplify the menu to three tiers: **Starter (5 Classes), Standard (12 Classes), and Power User (20 Classes).** This eliminates decision fatigue and creates a clear, logical upgrade path for clients.</li>
-            </ol>
-        </div>
+            <!-- Insight 4: WARNING -->
+            <div class="insight-card warning">
+                <h4><span class="icon"><i class="fas fa-exclamation-triangle"></i></span>Warning: Average Spend Collapse Signals Value Erosion</h4>
+                <div class="observation">
+                    The most alarming metric is the -23.8% MoM drop in Avg. Spend per Member. Fewer clients showed up, and those who did spent significantly less. This indicates a shift to lower-priced items, like single 'Sessions', which cannibalize higher-margin packages. We are becoming a low-cost commodity, not a premium service.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Implement a system to convert single-session buyers. Offer to apply the cost of their drop-in towards a package if purchased within 24 hours. Stop letting easy revenue walk out the door.
+                </div>
+            </div>
 
-        <div class="footer">
-            <p>This is a confidential performance analysis for Physique 57 India internal use only.<br>Data processed for the period of November 2025. Analysis based on the provided attendance data dump.</p>
-        </div>
-    </div>
+            <!-- Insight 5: WIN -->
+            <div class="insight-card win">
+                <h4><span class="icon"><i class="fas fa-shield-alt"></i></span>Strategic Win: Long-Term Growth Trajectory is Impressive</h4>
+                <div class="observation">
+                    Let's zoom out. The +38.0% YoY revenue growth is phenomenal. It demonstrates that our brand equity and market position are fundamentally strong. Key drivers were Memberships (+82% YoY) and Class Packages (+83% YoY). The November MoM dip appears to be a self-inflicted wound, not a market rejection.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Use this YoY data to maintain team morale and strategic focus. Frame the November issue as a correctable operational fumble, not a systemic crisis.
+                </div>
+            </div>
+
+            <!-- Insight 6: OPPORTUNITY -->
+            <div class="insight-card opportunity">
+                <h4><span class="icon"><i class="fas fa-search-dollar"></i></span>Efficiency Opportunity: Discount Discipline might be a Double-Edged Sword</h4>
+                <div class="observation">
+                    Discount Value dropped by a massive 42.7% MoM. While this improves margins on paper, it's highly correlated with the overall sales collapse. It's likely that October's stronger performance was fueled by promotions that were halted in November.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> We're not saying "discount everything." We're saying be strategic. Analyze which October promotions drove sales of high-margin packages and re-introduce them surgically for December.
+                </div>
+            </div>
+
+            <!-- Insight 7: PATTERN -->
+            <div class="insight-card pattern">
+                <h4><span class="icon"><i class="fas fa-chart-pie"></i></span>Client Behavior: The Rise of the 'Session' User</h4>
+                <div class="observation">
+                    The 'Session' product was our 5th best seller by revenue (₹1.3L) but the #1 by volume (82 units, 60 unique clients). This represents one-third of our entire purchasing client base for the month. This low-commitment segment is now a significant, and potentially risky, part of our ecosystem.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Treat this cohort as a lead-generation pool. Track their frequency and target them with personalized upgrade offers after their 2nd or 3rd visit.
+                </div>
+            </div>
+            
+            <!-- Insight 8: WARNING -->
+            <div class="insight-card warning">
+                <h4><span class="icon"><i class="fas fa-mouse-pointer"></i></span>Red Flag: Top of Funnel Memberships are Bleeding</h4>
+                <div class="observation">
+                    Beyond the Newcomer pack, key introductory memberships took a beating. 'Studio 1 Month Unlimited' was down 39% MoM. Even 'Barre 1 month Unlimited', after a strong October, fell flat. These are critical entry points for converting clients to longer-term packages, and they are failing.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Create a dedicated "First Month Experience" program that adds value beyond just classes (e.g., a 15-min form check, a welcome gift) to make these packages irresistible.
+                </div>
+            </div>
+            
+            <!-- Insight 9: OPPORTUNITY -->
+            <div class="insight-card opportunity">
+                <h4><span class="icon"><i class="fas fa-bullseye"></i></span>Revenue Opportunity: Re-engage the October Spenders</h4>
+                <div class="observation">
+                    We had 199 unique members in October vs. 186 in November. While the drop isn't huge, the spend collapse is. This means many October clients returned but bought cheaper products, or a small cohort of high-spenders didn't purchase at all.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Run a report on all clients who bought a package in October but not in November. Target them with a "We Miss You" offer for a 12 or 20 Class Package.
+                </div>
+            </div>
+            
+            <!-- Insight 10: PATTERN -->
+            <div class="insight-card pattern">
+                <h4><span class="icon"><i class="fas fa-calendar-check"></i></span>Seasonal Pattern: August is an Anomaly, Q4 is a Risk</h4>
+                <div class="observation">
+                    Looking at the 2025 trend, August was a massive outlier with ₹45.1L in revenue, driven by a surge in high-value Memberships (₹33.2L). Post-August, revenue has consistently declined month-over-month (except for Oct). This suggests a Q3 peak and a potential Q4 slump is becoming a pattern.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Plan for this next year. Budget for a significant marketing push in September/October to counter the post-summer drop-off and maintain momentum into year-end.
+                </div>
+            </div>
+            
+            <!-- Insight 11: WIN -->
+            <div class="insight-card win">
+                <h4><span class="icon"><i class="fas fa-shopping-bag"></i></span>Hidden Win: Retail is a Resilient, Albeit Small, Contributor</h4>
+                <div class="observation">
+                    While overall sales tanked, Retail revenue only dropped from ₹65.8k to ₹43.4k. More importantly, its YoY growth is significant (Nov '25: ₹43.4k vs Nov '24: ₹37.3k). It's a small but stable and growing revenue stream.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Integrate retail into package sales. "Buy a 20-pack, get 15% off all retail this month." This can help boost ATV and move inventory.
+                </div>
+            </div>
+            
+            <!-- Insight 12: WARNING -->
+            <div class="insight-card warning">
+                <h4><span class="icon"><i class="fas fa-balance-scale-left"></i></span>Operational Warning: Metrics Are All Moving in the Wrong Direction</h4>
+                <div class="observation">
+                    It's rare to see such a perfectly negative storm. Revenue (-28.7%), Units Sold (-13.8%), Transactions (-9.2%), Unique Members (-6.5%), ATV (-21.5%), Avg. Spend (-23.8%). Every single top-line metric flashed red MoM. This wasn't one problem; it was a systemic failure across the board for the month.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Hold an "all hands" meeting with the sales and marketing team. This data isn't for blaming; it's for learning. What did we STOP doing in November that we were doing in October?
+                </div>
+            </div>
+            
+            <!-- Insight 13: OPPORTUNITY -->
+            <div class="insight-card opportunity">
+                <h4><span class="icon"><i class="fas fa-recycle"></i></span>Untapped Potential: What Happened to Privates?</h4>
+                <div class="observation">
+                    Privates revenue collapsed from ₹1.5L in October to just ₹50.8k in November. This is a high-margin service category that requires specific promotion. Its decline contributed significantly to the drop in overall ATV.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Launch a December promo for Private sessions, targeting existing package holders. Frame it as "Perfect Your Form for the New Year."
+                </div>
+            </div>
+            
+            <!-- Insight 14: PATTERN -->
+            <div class="insight-card pattern">
+                <h4><span class="icon"><i class="fas fa-layer-group"></i></span>Product Mix Insight: 'Studio 12 Class Package' is the True Workhorse</h4>
+                <div class="observation">
+                    Despite the downturn, the 12 Class Package was the second-highest revenue generator (₹2.8L from 19 clients). It consistently outperforms the 8 Class Package. This is your core, repeatable, high-value product for the committed-but-not-annual client.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Double down on promoting this package. Make it the default option presented to clients finishing their first month or newcomer pack.
+                </div>
+            </div>
+
+            <!-- Insight 15: FORECAST -->
+            <div class="insight-card opportunity">
+                <h4><span class="icon"><i class="fas fa-crystal-ball"></i></span>Forecast & Prediction: A December Crossroads</h4>
+                <div class="observation">
+                    Based on the November trajectory, without immediate intervention, December revenue could fall below the YoY growth line, landing in the ₹15L-₹17L range. The collapsed newcomer funnel means fewer clients will be eligible to buy packages in Jan/Feb 2026, creating a dangerous Q1 echo effect from this Q4 failure.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> The strategies outlined in this report are not suggestions; they are requirements. The goal for December is two-fold: 1) Stop the MoM bleeding and hit ₹20L+. 2) Aggressively rebuild the newcomer pipeline to protect Q1 2026.
+                </div>
+            </div>
+            
+            <!-- Insight 16: Final Note of Hope -->
+            <div class="insight-card pattern">
+                <h4><span class="icon"><i class="fas fa-sun"></i></span>Path Forward: The Silver Lining Playbook</h4>
+                <div class="observation">
+                    This brutal analysis is a gift. The data has screamed the exact problems at us: our front door is broken (newcomers) and our existing clients are opting for cheaper snacks instead of full meals (ATV drop). The strong YoY growth proves the brand is desirable and the long-term strategy is sound. November was a blip, an operational lapse, not a fundamental flaw in the business model.
+                </div>
+                <div class="recommendation">
+                    <strong>Action:</strong> Focus all energy on fixing the newcomer funnel and re-engaging clients with mid-tier package value. The roadmap is clear. Execute with precision, and Q1 2026 can be a record-breaker built on the harsh lessons of this report.
+                </div>
+            </div>
+            
+        </section>
+
+        <footer class="footer">
+            <p><strong>Physique 57 India | Business Intelligence Dashboard</strong></p>
+            <p>&copy; 2025 All Rights Reserved. Data processed is considered final for the analysis period.</p>
+        </footer>
+    </main>
 </body>
 </html>
