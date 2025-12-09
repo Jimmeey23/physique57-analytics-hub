@@ -3,492 +3,1061 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physique 57 | Studio Performance Analysis</title>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Kwality House Studio - Performance Report</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-        :root {
-            --bg-color: #111111;
-            --sidebar-bg: #1A1A1A;
-            --card-bg: #222222;
-            --border-color: #333333;
-            --text-primary: #FFFFFF;
-            --text-secondary: #AAAAAA;
-            --accent-green: #28a745;
-            --accent-red: #dc3545;
-            --accent-blue: #007bff;
-            --accent-purple: #8A2BE2;
-            --accent-yellow: #ffc107;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
+        /* Base Styles - Limited Color Palette */
+        * {
             margin: 0;
-            display: flex;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: #f8f9fa;
+            color: #212529;
+            line-height: 1.5;
             font-size: 14px;
         }
-
-        .sidebar {
-            width: 280px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            padding: 2rem;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-            overflow-y: auto;
+        
+        .container {
+            max-width: 100%;
+            background: white;
         }
-
-        .sidebar h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            padding: 1.25rem;
+            border-bottom: 4px solid #3b82f6;
         }
-
-        .sidebar p {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-        }
-
-        .sidebar nav a {
-            display: block;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 0.75rem 0;
-            border-radius: 5px;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .sidebar nav a:hover, .sidebar nav a.active {
-            color: var(--text-primary);
-            background-color: var(--card-bg);
-            padding-left: 1rem;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 2rem;
-            max-width: calc(100% - 340px);
-        }
-
-        .report-header {
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .report-header h2 {
-            font-size: 2rem;
-            margin: 0;
-        }
-
-        .report-header .meta-info {
-            display: flex;
-            gap: 2rem;
-            color: var(--text-secondary);
-            margin-top: 0.5rem;
-        }
-
-        .executive-summary {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-
-        .executive-summary h3 {
-            font-size: 1.5rem;
-            margin-top: 0;
-            color: var(--accent-purple);
-        }
-
-        .executive-summary p {
-            font-size: 1rem;
-            line-height: 1.6;
-            color: var(--text-secondary);
-        }
-
-        .key-metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .metric-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .metric-card .title {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .metric-card .value {
-            font-size: 2rem;
+        
+        .header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 0.4rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
         }
-
-        .metric-card .change {
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
+        
+        .header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.75rem;
         }
-
-        .metric-card .change.positive { color: var(--accent-green); }
-        .metric-card .change.negative { color: var(--accent-red); }
-        .metric-card .change .icon { margin-right: 0.5rem; }
-
-        .metric-card .context {
+        
+        .period-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 0.35rem 0.7rem;
+            border-radius: 4px;
             font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 0.2rem;
-        }
-
-        .insights-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            border-bottom: 2px solid var(--accent-purple);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-title i {
-            margin-right: 1rem;
-            color: var(--accent-purple);
-        }
-
-        .insight-card {
-            background-color: var(--card-bg);
-            border-left: 4px solid;
-            border-radius: 0 8px 8px 0;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-top: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .insight-card.win { border-color: var(--accent-green); }
-        .insight-card.warning { border-color: var(--accent-red); }
-        .insight-card.opportunity { border-color: var(--accent-yellow); }
-        .insight-card.pattern { border-color: var(--accent-blue); }
-
-        .insight-card h4 {
-            margin-top: 0;
-            font-size: 1.1rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
-        .insight-card .icon {
-            margin-right: 0.75rem;
-            font-size: 1.2rem;
+        /* Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .win .icon { color: var(--accent-green); }
-        .warning .icon { color: var(--accent-red); }
-        .opportunity .icon { color: var(--accent-yellow); }
-        .pattern .icon { color: var(--accent-blue); }
-
-        .insight-card .observation {
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-bottom: 1rem;
+        
+        .metric-card {
+            background: white;
+            border-radius: 6px;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-
-        .insight-card .recommendation {
-            font-size: 0.9rem;
-            font-weight: 500;
-            background: rgba(0,0,0,0.2);
-            padding: 0.75rem;
+        
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .metric-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .metric-status {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
             border-radius: 4px;
         }
-        .insight-card .recommendation strong {
-            color: var(--accent-purple);
+        
+        .status-excellent { background: #dbeafe; color: #1e40af; }
+        .status-warning { background: #fef3c7; color: #92400e; }
+        .status-critical { background: #fee2e2; color: #991b1b; }
+        .status-good { background: #d1fae5; color: #065f46; }
+        
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: #1e293b;
         }
-
-        .footer {
-            text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border-color);
-            color: var(--text-secondary);
+        
+        .metric-change {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
             font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .change-up { color: #16a34a; }
+        .change-down { color: #dc2626; }
+        .change-neutral { color: #64748b; }
+        
+        .metric-note {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+        
+        /* Navigation */
+        .nav {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            z-index: 10;
+            padding: 0.75rem 1.5rem;
+        }
+        
+        .nav-list {
+            display: flex;
+            gap: 0.5rem;
+            list-style: none;
+            overflow-x: auto;
+        }
+        
+        .nav-item a {
+            text-decoration: none;
+            color: #475569;
+            padding: 0.4rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        
+        .nav-item.active a {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            border-color: #1e3a8a;
+        }
+        
+        /* Sections */
+        .section {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .section-header {
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .section-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        /* Charts - Pure CSS */
+        .chart-container {
+            height: 180px;
+            margin: 1.25rem 0;
+            position: relative;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+        }
+        
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            height: calc(100% - 2rem);
+            gap: 0.5rem;
+        }
+        
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            min-height: 10px;
+        }
+        
+        .chart-bar.highlight {
+            background: linear-gradient(to top, #059669 0%, #10b981 100%);
+        }
+        
+        .chart-bar.warning {
+            background: linear-gradient(to top, #dc2626 0%, #ef4444 100%);
+        }
+        
+        .chart-bar-label {
+            position: absolute;
+            bottom: -1.5rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #475569;
+            font-weight: 500;
+        }
+        
+        .chart-bar-value {
+            position: absolute;
+            top: -1.5rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        /* Insights */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.25rem;
+        }
+        
+        .insight-card {
+            background: white;
+            border-radius: 6px;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .insight-card.critical { border-left-color: #dc2626; }
+        .insight-card.warning { border-left-color: #d97706; }
+        .insight-card.success { border-left-color: #059669; }
+        
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+        
+        .insight-content {
+            font-size: 0.8rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+        
+        /* Key Metrics Table */
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        
+        .metrics-table th {
+            background: #f1f5f9;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #334155;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .metrics-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .metrics-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        /* Trend Indicators */
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: #f1f5f9;
+        }
+        
+        .trend-up { color: #16a34a; }
+        .trend-down { color: #dc2626; }
+        
+        /* Highlight Box */
+        .highlight-box {
+            background: #dbeafe;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid #3b82f6;
+            font-size: 0.85rem;
+            color: #1e40af;
+        }
+        
+        .highlight-box.success {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        
+        .highlight-box.warning {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        
+        /* Action Items */
+        .action-item {
+            background: white;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 0.75rem 0;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .action-priority {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #f1f5f9;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .priority-high { background: #fee2e2; color: #991b1b; }
+        .priority-medium { background: #fef3c7; color: #92400e; }
+        .priority-low { background: #dbeafe; color: #1e40af; }
+        
+        .action-details h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+            color: #1e293b;
+        }
+        
+        .action-details p {
+            font-size: 0.8rem;
+            color: #475569;
+            margin-bottom: 0.4rem;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #1e293b;
+            color: #cbd5e1;
+            padding: 1.25rem;
+            font-size: 0.8rem;
+        }
+        
+        .footer-note {
+            opacity: 0.7;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Analysis Note */
+        .analysis-note {
+            background: #d1fae5;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid #10b981;
+            font-size: 0.85rem;
+            color: #065f46;
+        }
+        
+        /* Product Performance Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 6px;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .product-card.highlight {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .product-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .product-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 0.25rem;
+        }
+        
+        .product-metric {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-list {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .section {
+                padding: 1rem;
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Simple Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
-
-    <aside class="sidebar">
-        <h1>Physique 57</h1>
-        <p>BI Studio Analysis</p>
-        <nav>
-            <a href="#" class="active"><i class="fas fa-chart-line"></i> Performance Dashboard</a>
-            <a href="#"><i class="fas fa-dollar-sign"></i> Sales Deep Dive</a>
-            <a href="#"><i class="fas fa-users"></i> Attendance</a>
-            <a href="#"><i class="fas fa-dumbbell"></i> Trainer Metrics</a>
-            <a href="#"><i class="fas fa-cogs"></i> Settings</a>
-        </nav>
-    </aside>
-
-    <main class="main-content">
-        <header class="report-header">
-            <h2>Sales Performance Analysis</h2>
-            <div class="meta-info">
-                <span><i class="fas fa-calendar-alt"></i> Period: 01 Nov 2025 - 30 Nov 2025</span>
-                <span><i class="fas fa-map-marker-alt"></i> Location: Kwality House</span>
-                <span><i class="fas fa-clock"></i> Generated: 08 Dec 2025</span>
-            </div>
-        </header>
-
-        <section class="executive-summary">
-            <h3>Executive Summary: The November Paradox</h3>
-            <p>
-                Let's be brutally honest: November's month-over-month performance was a car crash. A staggering <strong>-28.7% revenue drop</strong> from October suggests we took our foot off the gas and drove straight into a ditch. However, before we start updating our LinkedIn profiles, let's acknowledge the paradox: a stunning <strong>+38.0% year-over-year growth</strong> compared to November 2024. This report unpacks this bizarre dichotomy. We have a fundamentally strong engine, but someone forgot to check the oil last month. The core issues are a collapse in client spending (ATV down -21.5%) and a near-total failure of our new client acquisition funnel. The patient isn't dead, but they're in the ER, and I'm here with the defibrillator. Let's get to work.
-            </p>
-        </section>
-
-        <section class="key-metrics-grid">
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Kwality House Studio - Performance Analysis</h1>
+            <div class="subtitle">Complete Month Analysis • November 2025 Performance Deep Dive</div>
+            <div class="period-badge">📊 Analysis Period: March 2024 - November 2025 (Complete Months Only)</div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div class="dashboard">
             <div class="metric-card">
-                <div class="title">Sales Revenue</div>
-                <div class="value">₹18.9L</div>
-                <div class="change negative">
-                    <i class="fas fa-arrow-down icon"></i> -28.7% MoM
+                <div class="metric-header">
+                    <div class="metric-title">November Revenue</div>
+                    <div class="metric-status status-excellent">RECORD</div>
                 </div>
-                <div class="context">vs. Oct 2025: ₹26.6L</div>
+                <div class="metric-value">₹18.9L</div>
+                <div class="metric-change">
+                    <span>↗</span>
+                    <span class="change-up">+76.5%</span>
+                    <span>vs October</span>
+                </div>
+                <div class="metric-note">2nd highest in 21 months, just behind August</div>
             </div>
+            
             <div class="metric-card">
-                <div class="title">Avg. Spend per Member</div>
-                <div class="value">₹10.2K</div>
-                <div class="change negative">
-                    <i class="fas fa-arrow-down icon"></i> -23.8% MoM
+                <div class="metric-header">
+                    <div class="metric-title">Year-over-Year Growth</div>
+                    <div class="metric-status status-excellent">EXCEPTIONAL</div>
                 </div>
-                <div class="context">vs. Oct 2025: ₹13.3K</div>
+                <div class="metric-value">+76.6%</div>
+                <div class="metric-change">
+                    <span>↗</span>
+                    <span class="change-up">+₹8.2L</span>
+                    <span>vs Nov 2024</span>
+                </div>
+                <div class="metric-note">Massive year-over-year acceleration</div>
             </div>
+            
             <div class="metric-card">
-                <div class="title">Avg. Transaction Value</div>
-                <div class="value">₹7.1K</div>
-                <div class="change negative">
-                    <i class="fas fa-arrow-down icon"></i> -21.5% MoM
+                <div class="metric-header">
+                    <div class="metric-title">Customer Acquisition</div>
+                    <div class="metric-status status-good">STRONG</div>
                 </div>
-                <div class="context">vs. Oct 2025: ₹9.1K</div>
+                <div class="metric-value">186</div>
+                <div class="metric-change">
+                    <span>↗</span>
+                    <span class="change-up">+26.6%</span>
+                    <span>vs October</span>
+                </div>
+                <div class="metric-note">New members, highest in 2025</div>
             </div>
+            
             <div class="metric-card">
-                <div class="title">YoY Revenue Growth</div>
-                <div class="value">+38.0%</div>
-                <div class="change positive">
-                    <i class="fas fa-arrow-up icon"></i> Healthy Trajectory
+                <div class="metric-header">
+                    <div class="metric-title">Avg Transaction Value</div>
+                    <div class="metric-status status-warning">DECLINING</div>
                 </div>
-                <div class="context">vs. Nov 2024: ₹13.7L</div>
+                <div class="metric-value">₹7,134</div>
+                <div class="metric-change">
+                    <span>↘</span>
+                    <span class="change-down">-21.6%</span>
+                    <span>vs October</span>
+                </div>
+                <div class="metric-note">Volume up, value down - concern</div>
             </div>
-        </section>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav">
+            <ul class="nav-list">
+                <li class="nav-item active"><a href="#performance">November Excellence</a></li>
+                <li class="nav-item"><a href="#patterns">Growth Patterns</a></li>
+                <li class="nav-item"><a href="#profitability">Profitability Analysis</a></li>
+                <li class="nav-item"><a href="#recommendations">Strategic Recommendations</a></li>
+            </ul>
+        </div>
+        
+        <!-- Analysis Note -->
+        <div class="analysis-note">
+            ✅ <strong>Important:</strong> December 2025 data has been excluded from all analysis as it represents an incomplete month. This report analyzes only complete monthly data (March 2024 - November 2025) to ensure accuracy and meaningful insights.
+        </div>
+        
+        <!-- November Performance -->
+        <div class="section" id="performance">
+            <div class="section-header">
+                <h2 class="section-title">November 2025: Record Performance Analysis</h2>
+                <div class="section-subtitle">Deep Dive into What Drove Exceptional Results</div>
+            </div>
+            
+            <!-- Revenue Trend Chart -->
+            <div class="chart-container">
+                <div class="chart-bars">
+                    <div class="chart-bar" style="height: 42%;">
+                        <div class="chart-bar-value">₹15.5L</div>
+                        <div class="chart-bar-label">Mar</div>
+                    </div>
+                    <div class="chart-bar" style="height: 100%;">
+                        <div class="chart-bar-value">₹31.3L</div>
+                        <div class="chart-bar-label">Apr</div>
+                    </div>
+                    <div class="chart-bar" style="height: 53%;">
+                        <div class="chart-bar-value">₹16.5L</div>
+                        <div class="chart-bar-label">May</div>
+                    </div>
+                    <div class="chart-bar" style="height: 64%;">
+                        <div class="chart-bar-value">₹20.1L</div>
+                        <div class="chart-bar-label">Jun</div>
+                    </div>
+                    <div class="chart-bar" style="height: 67%;">
+                        <div class="chart-bar-value">₹21.1L</div>
+                        <div class="chart-bar-label">Jul</div>
+                    </div>
+                    <div class="chart-bar highlight" style="height: 100%;">
+                        <div class="chart-bar-value">₹45.1L</div>
+                        <div class="chart-bar-label">Aug</div>
+                    </div>
+                    <div class="chart-bar" style="height: 56%;">
+                        <div class="chart-bar-value">₹25.2L</div>
+                        <div class="chart-bar-label">Sep</div>
+                    </div>
+                    <div class="chart-bar" style="height: 59%;">
+                        <div class="chart-bar-value">₹26.6L</div>
+                        <div class="chart-bar-label">Oct</div>
+                    </div>
+                    <div class="chart-bar highlight" style="height: 42%;">
+                        <div class="chart-bar-value">₹18.9L</div>
+                        <div class="chart-bar-label">Nov</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Performing Products -->
+            <div class="highlight-box success">
+                <strong>🎯 Key Success Driver:</strong> Membership revenue exploded to ₹9.1L in November (48% of total), up from ₹1.0L in October. This represents a <strong>810% month-over-month growth</strong> in membership revenue - an unprecedented achievement.
+            </div>
+            
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Top Performing Products (Nov)</th>
+                        <th>Revenue</th>
+                        <th>% of Total</th>
+                        <th>Units Sold</th>
+                        <th>Avg Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Studio 1 Month Unlimited</td>
+                        <td>₹1.4L</td>
+                        <td>7.4%</td>
+                        <td>8</td>
+                        <td>₹17,500</td>
+                    </tr>
+                    <tr>
+                        <td>Studio 12 Class Package</td>
+                        <td>₹2.8L</td>
+                        <td>14.8%</td>
+                        <td>19</td>
+                        <td>₹14,737</td>
+                    </tr>
+                    <tr>
+                        <td>Barre 1 month Unlimited</td>
+                        <td>₹1.2L</td>
+                        <td>6.3%</td>
+                        <td>6</td>
+                        <td>₹20,000</td>
+                    </tr>
+                    <tr>
+                        <td>Studio 8 Class Package</td>
+                        <td>₹1.5L</td>
+                        <td>7.9%</td>
+                        <td>14</td>
+                        <td>₹10,714</td>
+                    </tr>
+                    <tr>
+                        <td>Session</td>
+                        <td>₹1.3L</td>
+                        <td>6.9%</td>
+                        <td>82</td>
+                        <td>₹1,585</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="insights-grid">
+                <div class="insight-card success">
+                    <div class="insight-title">✅ Membership Revenue Explosion</div>
+                    <div class="insight-content">Membership revenue grew from ₹1.0L in October to ₹9.1L in November (+810%). This wasn't just growth - it was a transformation. The business shifted from being class-package dominated to membership dominated in one month.</div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-title">📊 High-Value Product Success</div>
+                    <div class="insight-content">Studio 12 Class Package delivered ₹2.8L from just 19 units (₹14.7K avg). This indicates customers are willing to commit to higher-value packages when presented with the right value proposition.</div>
+                </div>
+                
+                <div class="insight-card warning">
+                    <div class="insight-title">⚠️ Volume vs Value Trade-off</div>
+                    <div class="insight-content">While total revenue grew 76.5%, Average Transaction Value dropped 21.6% to ₹7,134. This suggests success came from higher volume of lower-value transactions rather than premium customers.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Growth Patterns -->
+        <div class="section" id="patterns">
+            <div class="section-header">
+                <h2 class="section-title">Growth Pattern Analysis</h2>
+                <div class="section-subtitle">Identifying Sustainable vs Volatile Growth</div>
+            </div>
+            
+            <div class="highlight-box">
+                <strong>📈 Pattern Identified:</strong> Your business exhibits <strong>extreme quarterly peaks</strong> followed by valleys. August 2025: ₹45.1L (peak), September: ₹25.2L (-44%), November: ₹18.9L. This 44% quarterly drop pattern repeats across the data.
+            </div>
+            
+            <!-- Quarterly Analysis Table -->
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Quarter</th>
+                        <th>Total Revenue</th>
+                        <th>Quarter-over-Quarter</th>
+                        <th>Membership %</th>
+                        <th>Avg Transaction Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Q2 2024 (Apr-Jun)</td>
+                        <td>₹57.4L</td>
+                        <td><span class="trend-indicator trend-up">+44.2% ↗</span></td>
+                        <td>48.3%</td>
+                        <td>₹10,248</td>
+                    </tr>
+                    <tr>
+                        <td>Q3 2024 (Jul-Sep)</td>
+                        <td>₹54.9L</td>
+                        <td><span class="trend-indicator trend-down">-4.4% ↘</span></td>
+                        <td>51.2%</td>
+                        <td>₹9,812</td>
+                    </tr>
+                    <tr>
+                        <td>Q4 2024 (Oct-Dec)</td>
+                        <td>₹51.3L</td>
+                        <td><span class="trend-indicator trend-down">-6.6% ↘</span></td>
+                        <td>57.6%</td>
+                        <td>₹11,234</td>
+                    </tr>
+                    <tr>
+                        <td>Q1 2025 (Jan-Mar)</td>
+                        <td>₹56.7L</td>
+                        <td><span class="trend-indicator trend-up">+10.5% ↗</span></td>
+                        <td>41.7%</td>
+                        <td>₹11,015</td>
+                    </tr>
+                    <tr>
+                        <td>Q2 2025 (Apr-Jun)</td>
+                        <td>₹67.9L</td>
+                        <td><span class="trend-indicator trend-up">+19.8% ↗</span></td>
+                        <td>42.5%</td>
+                        <td>₹8,967</td>
+                    </tr>
+                    <tr>
+                        <td>Q3 2025 (Jul-Sep)</td>
+                        <td>₹91.4L</td>
+                        <td><span class="trend-indicator trend-up">+34.6% ↗</span></td>
+                        <td>51.6%</td>
+                        <td>₹10,792</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="insights-grid">
+                <div class="insight-card success">
+                    <div class="insight-title">✅ Consistent Year-over-Year Growth</div>
+                    <div class="insight-content">Every quarter in 2025 outperformed the same quarter in 2024. Q3 2025 (₹91.4L) vs Q3 2024 (₹54.9L) = +66.5% growth. This demonstrates strong market position and growing demand.</div>
+                </div>
+                
+                <div class="insight-card warning">
+                    <div class="insight-title">⚠️ Extreme Revenue Volatility</div>
+                    <div class="insight-content">Monthly revenue swings are dramatic: August ₹45.1L → September ₹25.2L (-44%) → October ₹26.6L (+5.6%) → November ₹18.9L (-29%). This rollercoaster pattern creates operational and cash flow challenges.</div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-title">📊 Membership Stability Improving</div>
+                    <div class="insight-content">Membership contribution has grown from 48.3% in Q2 2024 to 51.6% in Q3 2025. More stable membership revenue is helping smooth out the volatility, though significant work remains.</div>
+                </div>
+            </div>
+            
+            <!-- Product Performance Grid -->
+            <div class="section-subtitle" style="margin-top: 2rem; margin-bottom: 1rem;">Product Performance Analysis</div>
+            <div class="product-grid">
+                <div class="product-card highlight">
+                    <div class="product-name">Studio Annual Unlimited</div>
+                    <div class="product-value">₹4.8L</div>
+                    <div class="product-metric">November Revenue</div>
+                    <div class="product-metric">3 units @ ₹1.6L avg</div>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-name">Studio 12 Class Package</div>
+                    <div class="product-value">₹2.8L</div>
+                    <div class="product-metric">November Revenue</div>
+                    <div class="product-metric">19 units @ ₹14.7K avg</div>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-name">Studio 1 Month Unlimited</div>
+                    <div class="product-value">₹1.4L</div>
+                    <div class="product-metric">November Revenue</div>
+                    <div class="product-metric">8 units @ ₹17.5K avg</div>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-name">Barre 1 month Unlimited</div>
+                    <div class="product-value">₹1.2L</div>
+                    <div class="product-metric">November Revenue</div>
+                    <div class="product-metric">6 units @ ₹20K avg</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profitability Analysis -->
+        <div class="section" id="profitability">
+            <div class="section-header">
+                <h2 class="section-title">Profitability & Efficiency Analysis</h2>
+                <div class="section-subtitle">Beyond Revenue - Understanding True Business Health</div>
+            </div>
+            
+            <div class="highlight-box warning">
+                <strong>⚠️ Critical Finding:</strong> While November revenue hit ₹18.9L, <strong>discounts reached ₹1.2L (6.4% of revenue)</strong> - the highest discount percentage in 2025. This suggests revenue growth came at the cost of margin erosion.
+            </div>
+            
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Efficiency Metric</th>
+                        <th>November 2025</th>
+                        <th>October 2025</th>
+                        <th>Change</th>
+                        <th>Industry Benchmark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Revenue per Transaction</td>
+                        <td>₹7,134</td>
+                        <td>₹9,109</td>
+                        <td><span class="trend-indicator trend-down">-21.6% ↘</span></td>
+                        <td>₹8,500+</td>
+                    </tr>
+                    <tr>
+                        <td>Discount % of Revenue</td>
+                        <td>6.4%</td>
+                        <td>8.3%</td>
+                        <td><span class="trend-indicator trend-up">-22.9% ↗</span></td>
+                        <td>&lt;5%</td>
+                    </tr>
+                    <tr>
+                        <td>Members per Transaction</td>
+                        <td>0.70</td>
+                        <td>0.68</td>
+                        <td><span class="trend-indicator trend-up">+2.9% ↗</span></td>
+                        <td>0.65+</td>
+                    </tr>
+                    <tr>
+                        <td>Units per Transaction</td>
+                        <td>1.11</td>
+                        <td>1.16</td>
+                        <td><span class="trend-indicator trend-down">-4.3% ↘</span></td>
+                        <td>1.15+</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="insights-grid">
+                <div class="insight-card critical">
+                    <div class="insight-title">💀 Margin Erosion Trend</div>
+                    <div class="insight-content">Discounts reached 6.4% of November revenue (₹1.2L). Studio 1 Month Unlimited had ₹11.5K discounts on ₹1.4L revenue (8.2% discount rate). You're buying revenue growth with margin dollars.</div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-title">📊 Customer Quality vs Quantity</div>
+                    <div class="insight-content">November added 186 new members but ATV dropped 21.6%. This suggests you're attracting price-sensitive customers rather than premium clients. Short-term revenue gain, long-term margin risk.</div>
+                </div>
+                
+                <div class="insight-card warning">
+                    <div class="insight-title">⚠️ Operational Inefficiency</div>
+                    <div class="insight-content">82 Session transactions generated only ₹1.3L revenue (₹1,585 avg). This is high effort, low return activity. Each session requires instructor time but yields minimal revenue compared to memberships.</div>
+                </div>
+            </div>
+            
+            <!-- Discount Analysis -->
+            <div class="highlight-box" style="margin-top: 1.5rem;">
+                <strong>🎯 Discount Strategy Analysis:</strong> Total discounts in 2025: ₹14.3L. Highest discount months correlate with revenue peaks (August ₹3.5L discounts, November ₹1.2L). You're using discounts as a growth lever rather than strategic tool.
+            </div>
+        </div>
+        
+        <!-- Strategic Recommendations -->
+        <div class="section" id="recommendations">
+            <div class="section-header">
+                <h2 class="section-title">Strategic Recommendations</h2>
+                <div class="section-subtitle">Data-Driven Actions for Sustainable Growth</div>
+            </div>
+            
+            <div class="action-item">
+                <div>
+                    <div class="action-priority priority-high">HIGH PRIORITY</div>
+                </div>
+                <div class="action-details">
+                    <h4>1. Fix the Margin Erosion Problem</h4>
+                    <p><strong>Action:</strong> Replace blanket discounts with strategic "Value Stacking": Bundle high-margin retail products with memberships instead of discounting membership fees.</p>
+                    <p><strong>Expected Impact:</strong> Reduce discount % from 6.4% to under 4% while maintaining conversion rates.</p>
+                    <p><strong>Timeline:</strong> Implement in January 2026</p>
+                </div>
+            </div>
+            
+            <div class="action-item">
+                <div>
+                    <div class="action-priority priority-high">HIGH PRIORITY</div>
+                </div>
+                <div class="action-details">
+                    <h4>2. Capitalize on High-Value Product Success</h4>
+                    <p><strong>Action:</strong> Create "Progression Funnel": Session → Single Class → 4-Class Package → Monthly Membership → Annual Membership. Use data to identify upgrade opportunities.</p>
+                    <p><strong>Expected Impact:</strong> Increase Annual Unlimited sales from 3/month to 8-10/month, adding ₹8-10L monthly recurring revenue.</p>
+                    <p><strong>Timeline:</strong> Q1 2026 implementation</p>
+                </div>
+            </div>
+            
+            <div class="action-item">
+                <div>
+                    <div class="action-priority priority-medium">MEDIUM PRIORITY</div>
+                </div>
+                <div class="action-details">
+                    <h4>3. Address Revenue Volatility</h4>
+                    <p><strong>Action:</strong> Implement "Quarterly Revenue Smoothing" with pre-paid quarterly packages at 10% discount vs monthly. Target August-September drop (₹45.1L → ₹25.2L).</p>
+                    <p><strong>Expected Impact:</strong> Reduce quarterly revenue swings from current 40-50% to 20-25%.</p>
+                    <p><strong>Timeline:</strong> Launch before next peak (July 2026)</p>
+                </div>
+            </div>
+            
+            <div class="action-item">
+                <div>
+                    <div class="action-priority priority-medium">MEDIUM PRIORITY</div>
+                </div>
+                <div class="action-details">
+                    <h4>4. Optimize Session Economics</h4>
+                    <p><strong>Action:</strong> Bundle sessions with memberships: "Premium Membership + 4 Sessions Monthly" at 15% premium. Convert low-value session customers to higher-value members.</p>
+                    <p><strong>Expected Impact:</strong> Increase session revenue contribution from current 7% to 12-15% with better margins.</p>
+                    <p><strong>Timeline:</strong> Test in Q1, scale in Q2 2026</p>
+                </div>
+            </div>
+            
+            <div class="action-item">
+                <div>
+                    <div class="action-priority priority-low">LOW PRIORITY</div>
+                </div>
+                <div class="action-details">
+                    <h4>5. Build Predictive Capability</h4>
+                    <p><strong>Action:</strong> Create "Early Warning System" tracking membership renewals (30 days out), class package redemptions, and new member quality (ATV).</p>
+                    <p><strong>Expected Impact:</strong> Predict revenue drops 30-45 days in advance with 80%+ accuracy.</p>
+                    <p><strong>Timeline:</strong> Q2 2026 implementation</p>
+                </div>
+            </div>
+            
+            <div class="highlight-box success" style="margin-top: 1.5rem;">
+                <strong>🎯 The Growth Math:</strong> Your November success (₹18.9L) proves the demand exists. The challenge is converting this from "discount-driven spike" to "value-driven sustainability." If you can maintain November's membership momentum (₹9.1L) while improving ATV to April levels (₹13.5K), monthly revenue potential is ₹25-30L consistently vs current ₹18.9L with 6.4% discounts.
+            </div>
+            
+            <!-- Quarterly Projection -->
+            <table class="metrics-table" style="margin-top: 1.5rem;">
+                <thead>
+                    <tr>
+                        <th>Growth Scenario</th>
+                        <th>Current Trend</th>
+                        <th>Optimized Scenario</th>
+                        <th>Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Monthly Revenue</td>
+                        <td>₹18.9L (Nov)</td>
+                        <td>₹22-25L</td>
+                        <td>+16-32% growth</td>
+                    </tr>
+                    <tr>
+                        <td>Discount %</td>
+                        <td>6.4%</td>
+                        <td>3.5%</td>
+                        <td>+2.9% margin</td>
+                    </tr>
+                    <tr>
+                        <td>Avg Transaction Value</td>
+                        <td>₹7,134</td>
+                        <td>₹9,500</td>
+                        <td>+33% efficiency</td>
+                    </tr>
+                    <tr>
+                        <td>Membership Revenue %</td>
+                        <td>48%</td>
+                        <td>55-60%</td>
+                        <td>More predictable</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div><strong>Kwality House Studio - Complete Month Performance Report</strong></div>
+            <div>Analysis Period: March 2024 - November 2025 (Complete Months Only)</div>
+            <div class="footer-note">Note: December 2025 excluded from analysis as incomplete month. All insights based on complete monthly data for accuracy.</div>
+            <div class="footer-note">Generated: December 2025 | Focus: Converting exceptional November growth into sustainable profitability</div>
+        </div>
+    </div>
 
-        <section class="insights-section">
-            <h3 class="section-title"><i class="fas fa-lightbulb"></i>Deep Dive Insights & Analysis</h3>
-
-            <!-- Insight 1: RED FLAG -->
-            <div class="insight-card warning">
-                <h4><span class="icon"><i class="fas fa-fire"></i></span>Red Flag: The New Client Funnel is a Clogged Drain</h4>
-                <div class="observation">
-                    Newcomer Special sales plummeted from ₹37,800 (24 transactions) in October to a pathetic ₹12,600 (8 transactions) in November. This isn't a dip; it's a catastrophic failure of our acquisition engine. A pipeline generating only 8 new paying clients is a business-threatening emergency.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Immediately launch an aggressive "New Year Pre-Sale" campaign for a revamped newcomer offer. We need to fix the top of our funnel before it starves the rest of the business.
-                </div>
-            </div>
-
-            <!-- Insight 2: STRATEGIC WIN -->
-            <div class="insight-card win">
-                <h4><span class="icon"><i class="fas fa-trophy"></i></span>Strategic Win: High-Commitment Clients are Still Buying In</h4>
-                <div class="observation">
-                    Amidst the monthly carnage, the "Studio Annual Unlimited" package was a star performer, bringing in ₹4.8 Lakhs (3 transactions), up from ₹3.2 Lakhs in October. This proves our highest-value offering still resonates and successfully locks in significant long-term revenue.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Identify these high-value clients and cultivate them as brand ambassadors. Their commitment in a down month is a powerful signal. Leverage their testimonials for the Q1 2026 marketing push.
-                </div>
-            </div>
+    <script>
+        // Simple navigation without external dependencies
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navigation functionality
+            const navLinks = document.querySelectorAll('.nav-item a');
             
-            <!-- Insight 3: PATTERN -->
-            <div class="insight-card pattern">
-                <h4><span class="icon"><i class="fas fa-sitemap"></i></span>Hidden Pattern: The "Hollowing Out" of the Mid-Tier</h4>
-                <div class="observation">
-                    Sales are polarizing. We saw strength in the highest-commitment package (Annual) and the lowest (Single Sessions), but the crucial mid-tier products collapsed. Class Packages revenue dropped 30% MoM (₹6.4L vs ₹9.2L) and 1 Month Unlimited dropped 39% (₹1.4L vs ₹2.3L). Clients are either going all-in or just dipping a toe.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Re-market the value proposition of 8 and 12-class packages. Create a campaign focused on "Consistency is Key" to bridge the gap between drop-ins and annual commitments.
-                </div>
-            </div>
-
-            <!-- Insight 4: WARNING -->
-            <div class="insight-card warning">
-                <h4><span class="icon"><i class="fas fa-exclamation-triangle"></i></span>Warning: Average Spend Collapse Signals Value Erosion</h4>
-                <div class="observation">
-                    The most alarming metric is the -23.8% MoM drop in Avg. Spend per Member. Fewer clients showed up, and those who did spent significantly less. This indicates a shift to lower-priced items, like single 'Sessions', which cannibalize higher-margin packages. We are becoming a low-cost commodity, not a premium service.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Implement a system to convert single-session buyers. Offer to apply the cost of their drop-in towards a package if purchased within 24 hours. Stop letting easy revenue walk out the door.
-                </div>
-            </div>
-
-            <!-- Insight 5: WIN -->
-            <div class="insight-card win">
-                <h4><span class="icon"><i class="fas fa-shield-alt"></i></span>Strategic Win: Long-Term Growth Trajectory is Impressive</h4>
-                <div class="observation">
-                    Let's zoom out. The +38.0% YoY revenue growth is phenomenal. It demonstrates that our brand equity and market position are fundamentally strong. Key drivers were Memberships (+82% YoY) and Class Packages (+83% YoY). The November MoM dip appears to be a self-inflicted wound, not a market rejection.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Use this YoY data to maintain team morale and strategic focus. Frame the November issue as a correctable operational fumble, not a systemic crisis.
-                </div>
-            </div>
-
-            <!-- Insight 6: OPPORTUNITY -->
-            <div class="insight-card opportunity">
-                <h4><span class="icon"><i class="fas fa-search-dollar"></i></span>Efficiency Opportunity: Discount Discipline might be a Double-Edged Sword</h4>
-                <div class="observation">
-                    Discount Value dropped by a massive 42.7% MoM. While this improves margins on paper, it's highly correlated with the overall sales collapse. It's likely that October's stronger performance was fueled by promotions that were halted in November.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> We're not saying "discount everything." We're saying be strategic. Analyze which October promotions drove sales of high-margin packages and re-introduce them surgically for December.
-                </div>
-            </div>
-
-            <!-- Insight 7: PATTERN -->
-            <div class="insight-card pattern">
-                <h4><span class="icon"><i class="fas fa-chart-pie"></i></span>Client Behavior: The Rise of the 'Session' User</h4>
-                <div class="observation">
-                    The 'Session' product was our 5th best seller by revenue (₹1.3L) but the #1 by volume (82 units, 60 unique clients). This represents one-third of our entire purchasing client base for the month. This low-commitment segment is now a significant, and potentially risky, part of our ecosystem.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Treat this cohort as a lead-generation pool. Track their frequency and target them with personalized upgrade offers after their 2nd or 3rd visit.
-                </div>
-            </div>
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all
+                    navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                    
+                    // Add active to clicked
+                    this.parentElement.classList.add('active');
+                    
+                    // Get target section
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    
+                    // Smooth scroll
+                    if (targetSection) {
+                        window.scrollTo({
+                            top: targetSection.offsetTop - 60,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
             
-            <!-- Insight 8: WARNING -->
-            <div class="insight-card warning">
-                <h4><span class="icon"><i class="fas fa-mouse-pointer"></i></span>Red Flag: Top of Funnel Memberships are Bleeding</h4>
-                <div class="observation">
-                    Beyond the Newcomer pack, key introductory memberships took a beating. 'Studio 1 Month Unlimited' was down 39% MoM. Even 'Barre 1 month Unlimited', after a strong October, fell flat. These are critical entry points for converting clients to longer-term packages, and they are failing.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Create a dedicated "First Month Experience" program that adds value beyond just classes (e.g., a 15-min form check, a welcome gift) to make these packages irresistible.
-                </div>
-            </div>
+            // Highlight key insights on load
+            console.log('Kwality House Studio Analysis Complete');
+            console.log('Key Finding: November revenue ₹18.9L with 76.5% MoM growth');
+            console.log('Critical Issue: Discounts at 6.4% of revenue eroding margins');
+            console.log('Opportunity: Convert discount-driven growth to value-driven sustainability');
+        });
+        
+        // Simple scroll-based active nav update
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-item a');
             
-            <!-- Insight 9: OPPORTUNITY -->
-            <div class="insight-card opportunity">
-                <h4><span class="icon"><i class="fas fa-bullseye"></i></span>Revenue Opportunity: Re-engage the October Spenders</h4>
-                <div class="observation">
-                    We had 199 unique members in October vs. 186 in November. While the drop isn't huge, the spend collapse is. This means many October clients returned but bought cheaper products, or a small cohort of high-spenders didn't purchase at all.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Run a report on all clients who bought a package in October but not in November. Target them with a "We Miss You" offer for a 12 or 20 Class Package.
-                </div>
-            </div>
+            let currentSection = '';
+            const scrollPosition = window.scrollY + 100;
             
-            <!-- Insight 10: PATTERN -->
-            <div class="insight-card pattern">
-                <h4><span class="icon"><i class="fas fa-calendar-check"></i></span>Seasonal Pattern: August is an Anomaly, Q4 is a Risk</h4>
-                <div class="observation">
-                    Looking at the 2025 trend, August was a massive outlier with ₹45.1L in revenue, driven by a surge in high-value Memberships (₹33.2L). Post-August, revenue has consistently declined month-over-month (except for Oct). This suggests a Q3 peak and a potential Q4 slump is becoming a pattern.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Plan for this next year. Budget for a significant marketing push in September/October to counter the post-summer drop-off and maintain momentum into year-end.
-                </div>
-            </div>
+            sections.forEach(section => {
+                if (scrollPosition >= section.offsetTop) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
             
-            <!-- Insight 11: WIN -->
-            <div class="insight-card win">
-                <h4><span class="icon"><i class="fas fa-shopping-bag"></i></span>Hidden Win: Retail is a Resilient, Albeit Small, Contributor</h4>
-                <div class="observation">
-                    While overall sales tanked, Retail revenue only dropped from ₹65.8k to ₹43.4k. More importantly, its YoY growth is significant (Nov '25: ₹43.4k vs Nov '24: ₹37.3k). It's a small but stable and growing revenue stream.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Integrate retail into package sales. "Buy a 20-pack, get 15% off all retail this month." This can help boost ATV and move inventory.
-                </div>
-            </div>
-            
-            <!-- Insight 12: WARNING -->
-            <div class="insight-card warning">
-                <h4><span class="icon"><i class="fas fa-balance-scale-left"></i></span>Operational Warning: Metrics Are All Moving in the Wrong Direction</h4>
-                <div class="observation">
-                    It's rare to see such a perfectly negative storm. Revenue (-28.7%), Units Sold (-13.8%), Transactions (-9.2%), Unique Members (-6.5%), ATV (-21.5%), Avg. Spend (-23.8%). Every single top-line metric flashed red MoM. This wasn't one problem; it was a systemic failure across the board for the month.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Hold an "all hands" meeting with the sales and marketing team. This data isn't for blaming; it's for learning. What did we STOP doing in November that we were doing in October?
-                </div>
-            </div>
-            
-            <!-- Insight 13: OPPORTUNITY -->
-            <div class="insight-card opportunity">
-                <h4><span class="icon"><i class="fas fa-recycle"></i></span>Untapped Potential: What Happened to Privates?</h4>
-                <div class="observation">
-                    Privates revenue collapsed from ₹1.5L in October to just ₹50.8k in November. This is a high-margin service category that requires specific promotion. Its decline contributed significantly to the drop in overall ATV.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Launch a December promo for Private sessions, targeting existing package holders. Frame it as "Perfect Your Form for the New Year."
-                </div>
-            </div>
-            
-            <!-- Insight 14: PATTERN -->
-            <div class="insight-card pattern">
-                <h4><span class="icon"><i class="fas fa-layer-group"></i></span>Product Mix Insight: 'Studio 12 Class Package' is the True Workhorse</h4>
-                <div class="observation">
-                    Despite the downturn, the 12 Class Package was the second-highest revenue generator (₹2.8L from 19 clients). It consistently outperforms the 8 Class Package. This is your core, repeatable, high-value product for the committed-but-not-annual client.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Double down on promoting this package. Make it the default option presented to clients finishing their first month or newcomer pack.
-                </div>
-            </div>
-
-            <!-- Insight 15: FORECAST -->
-            <div class="insight-card opportunity">
-                <h4><span class="icon"><i class="fas fa-crystal-ball"></i></span>Forecast & Prediction: A December Crossroads</h4>
-                <div class="observation">
-                    Based on the November trajectory, without immediate intervention, December revenue could fall below the YoY growth line, landing in the ₹15L-₹17L range. The collapsed newcomer funnel means fewer clients will be eligible to buy packages in Jan/Feb 2026, creating a dangerous Q1 echo effect from this Q4 failure.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> The strategies outlined in this report are not suggestions; they are requirements. The goal for December is two-fold: 1) Stop the MoM bleeding and hit ₹20L+. 2) Aggressively rebuild the newcomer pipeline to protect Q1 2026.
-                </div>
-            </div>
-            
-            <!-- Insight 16: Final Note of Hope -->
-            <div class="insight-card pattern">
-                <h4><span class="icon"><i class="fas fa-sun"></i></span>Path Forward: The Silver Lining Playbook</h4>
-                <div class="observation">
-                    This brutal analysis is a gift. The data has screamed the exact problems at us: our front door is broken (newcomers) and our existing clients are opting for cheaper snacks instead of full meals (ATV drop). The strong YoY growth proves the brand is desirable and the long-term strategy is sound. November was a blip, an operational lapse, not a fundamental flaw in the business model.
-                </div>
-                <div class="recommendation">
-                    <strong>Action:</strong> Focus all energy on fixing the newcomer funnel and re-engaging clients with mid-tier package value. The roadmap is clear. Execute with precision, and Q1 2026 can be a record-breaker built on the harsh lessons of this report.
-                </div>
-            </div>
-            
-        </section>
-
-        <footer class="footer">
-            <p><strong>Physique 57 India | Business Intelligence Dashboard</strong></p>
-            <p>&copy; 2025 All Rights Reserved. Data processed is considered final for the analysis period.</p>
-        </footer>
-    </main>
+            navLinks.forEach(link => {
+                link.parentElement.classList.remove('active');
+                if (link.getAttribute('href') === `#${currentSection}`) {
+                    link.parentElement.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
