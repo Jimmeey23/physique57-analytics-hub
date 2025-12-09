@@ -33,16 +33,7 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
 }) => {
   const { metrics } = useDiscountMetrics(data, historicalData, { dateRange });
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('DiscountsAnimatedMetricCards:', {
-      dataLength: data?.length || 0,
-      historicalDataLength: historicalData?.length || 0,
-      metricsCount: metrics?.length || 0,
-      dateRange,
-      sampleMetric: metrics?.[0]
-    });
-  }, [data, historicalData, metrics, dateRange]);
+  // Debug logging removed for production
 
   // For drill down context, compute some derived totals from current period subset of data
   // Note: Show ALL transactions, not just discounted ones - useful for seeing full sales picture even if no discounts
@@ -59,10 +50,7 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
     const discountPenetration = totalTransactions > 0 ? (discountedTransactions / totalTransactions) * 100 : 0;
     const discountRate = totalRevenue + totalDiscounts > 0 ? (totalDiscounts / (totalRevenue + totalDiscounts)) * 100 : 0;
     
-    // Debug: log if no discounts found
-    if (discountedTransactions === 0 && totalTransactions > 0) {
-      console.log('DiscountsAnimatedMetricCards: No discounted transactions found in', totalTransactions, 'total transactions');
-    }
+    // Debug: log removed for production
     
     return { totalDiscounts, totalRevenue, totalTransactions, discountedTransactions, uniqueCustomers, customersWithDiscounts, discountPenetration, discountRate };
   }, [data]);

@@ -11,7 +11,8 @@ import {
   Eye, 
   Copy, 
   Download, 
-  Maximize2 
+  Maximize2,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from './button';
 import { Textarea } from './textarea';
@@ -60,6 +61,8 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   });
 
   const [previewMode, setPreviewMode] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0); // Force iframe refresh
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -158,32 +161,26 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   const getIframeSrc = () => {
     if (iframeSrc) return iframeSrc;
     
-    // Map context and locationId to existing HTML files
-    if (context === 'sales-overview') {
-      if (locationId === 'kwality' || locationId === 'kh') {
-        return '/popovers/sales-kh.html';
-      }
-      if (locationId === 'supreme' || locationId === 'shq') {
-        return '/popovers/sales-shq.html';
-      }
-      // For 'all' or other locations, use the new structure
-      return `/popovers/sales-overview/${locationId}.html`;
-    }
-    
-    // Try the directory structure for other contexts
+    // Use the new directory structure for all contexts including sales-overview
     const contextMappings: Record<string, string> = {
+      'sales-overview': 'sales-overview',
+      'executive-overview': 'executive-overview',
       'class-attendance-overview': 'class-attendance-overview',
       'class-formats-overview': 'class-formats-overview', 
       'funnel-leads-overview': 'funnel-leads-overview',
       'client-retention-overview': 'client-retention-overview',
-      'patterns-trends': 'patterns-trends',
-      'outlier-analysis-overview': 'outlier-analysis-overview'
+      'trainer-performance-overview': 'trainer-performance-overview',
+      'discounts-promotions-overview': 'discounts-promotions-overview',
+      'sessions-overview': 'sessions-overview',
+      'patterns-trends-overview': 'patterns-trends-overview',
+      'outlier-analysis-overview': 'outlier-analysis-overview',
+      'expiration-analytics-overview': 'expiration-analytics-overview',
+      'late-cancellations-overview': 'late-cancellations-overview'
     };
     
     const mappedContext = contextMappings[context] || context;
     const directoryPath = `/popovers/${mappedContext}/${encodeURIComponent(locationId)}.html`;
     
-    // Always return the directory path - if file doesn't exist, user can edit content instead
     return directoryPath;
   };
 
@@ -192,17 +189,17 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   const renderSidebar = () => (
     <div
       ref={panelRef}
-      className="absolute top-0 right-0 bottom-0 bg-white shadow-2xl border-l border-gray-200 pointer-events-auto flex flex-col"
+      className="absolute top-0 right-0 bottom-0 bg-white/95 backdrop-blur-md shadow-2xl border-l border-white/20 pointer-events-auto flex flex-col"
       style={{ width }}
     >
       {/* Enhanced Header with Controls */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/80 backdrop-blur-md transition-all duration-300 hover:bg-white/90 group">
         <div className="flex items-center space-x-2">
           <h3 className="text-sm font-semibold text-gray-800">
             {context} - {locationId}
           </h3>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
           <Button
             size="sm"
             variant="ghost"
@@ -260,6 +257,15 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
           <Button
             size="sm"
             variant="ghost"
+            onClick={() => setIframeKey(prev => prev + 1)}
+            className="h-7 w-7 p-0"
+            title="Refresh content"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => setOpen(false)}
             className="h-7 w-7 p-0"
             title="Close"
@@ -296,12 +302,32 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                 }} />
               </div>
             ) : (
-              <iframe
-                src={src}
-                className="w-full h-full border-0"
-                sandbox="allow-same-origin allow-scripts allow-forms"
-                title={`Info for ${context} - ${locationId}`}
-              />
+              <div className="h-full">
+                <iframe
+                  key={`iframe-sidebar-${iframeKey}`}
+                  src={src}
+                  className="w-full h-full border-0"
+                  title={`Info for ${context} - ${locationId}`}
+                  loading="eager"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
+                  allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  style={{
+                    border: 'none',
+                    overflow: 'hidden',
+                    width: '100%',
+                    height: '100%',
+                    display: 'block'
+                  }}
+                  onLoad={() => {
+                    setIframeError(false);
+                  }}
+                  onError={() => {
+                    console.error(`Iframe failed to load: ${src}`);
+                    setIframeError(true);
+                  }}
+                />
+              </div>
             )}
           </div>
         )}
@@ -330,14 +356,14 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
     <div className="fixed inset-0 z-[9999] pointer-events-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-8">
       <div 
         ref={panelRef}
-        className="bg-white rounded-lg shadow-2xl flex flex-col max-w-4xl w-full h-full max-h-[90vh]"
+        className="bg-white/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col max-w-4xl w-full h-full max-h-[90vh] border border-white/20"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/80 backdrop-blur-md transition-all duration-300 hover:bg-white/90 group">
           <h3 className="text-lg font-semibold text-gray-800">
             {context} - {locationId}
           </h3>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
             <Button
               size="sm"
               variant="ghost"
@@ -386,6 +412,15 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
             <Button
               size="sm"
               variant="ghost"
+              onClick={() => setIframeKey(prev => prev + 1)}
+              className="h-7 w-7 p-0"
+              title="Refresh content"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => setOpen(false)}
               className="h-7 w-7 p-0"
               title="Close"
@@ -422,12 +457,44 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                   }} />
                 </div>
               ) : (
-                <iframe
-                  src={src}
-                  className="w-full h-full border-0"
-                  sandbox="allow-same-origin allow-scripts allow-forms"
-                  title={`Info for ${context} - ${locationId}`}
-                />
+                <div className="h-full">
+                  <iframe
+                    key={`iframe-modal-${iframeKey}`}
+                    src={src}
+                    className="w-full h-full border-0"
+                    title={`Info for ${context} - ${locationId}`}
+                    loading="eager"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
+                    allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    onLoad={() => {
+                      setIframeError(false);
+                    }}
+                    onError={() => {
+                      console.error(`Iframe failed to load: ${src}`);
+                      setIframeError(true);
+                    }}
+                  />
+                  {iframeError && (
+                    <div className="absolute inset-0 bg-white flex items-center justify-center p-4">
+                      <div className="text-center">
+                        <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
+                        <div className="text-gray-600 text-sm mb-4">
+                          Unable to load: {src.split('?')[0]}
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setIframeError(false);
+                            setIsEditing(true);
+                          }}
+                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          Create Content
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -444,11 +511,24 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
           aria-label="Open info panel"
           title="Open info panel"
           onClick={() => setOpen((s) => !s)}
-          className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-transparent border-0 hover:bg-white/10 transition-colors duration-200 neon-info-icon"
+          style={{
+            color: '#ffffff',
+            animation: 'neonColorCycle 3s ease-in-out infinite'
+          }}
         >
-          <Info className="w-4 h-4" />
+          <Info className="w-4 h-4 drop-shadow-lg" />
         </button>
       </div>
+
+      <style jsx>{`
+        @keyframes neonColorCycle {
+          0%, 100% { color: #ffffff; }
+          25% { color: #fef3c7; }
+          50% { color: #fed7aa; }
+          75% { color: #fbbf24; }
+        }
+      `}</style>
 
       {typeof document !== 'undefined' && createPortal(
         open ? (

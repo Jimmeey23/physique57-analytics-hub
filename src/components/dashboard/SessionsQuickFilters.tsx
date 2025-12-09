@@ -29,7 +29,7 @@ export const SessionsQuickFilters: React.FC<QuickFiltersProps> = ({
   onClearAll
 }) => {
   const handleQuickSelect = (type: string, value: string) => {
-    console.log('Quick filter clicked:', { type, value, currentFilters: filters });
+    // Debug log removed for production
     const currentValues = [...(filters[type as keyof typeof filters] || [])];
     const index = currentValues.indexOf(value);
     
@@ -39,7 +39,7 @@ export const SessionsQuickFilters: React.FC<QuickFiltersProps> = ({
       currentValues.push(value);
     }
     
-    console.log('Updated filter values:', currentValues);
+    // Debug log removed for production
     onFilterChange(type, currentValues);
   };
 

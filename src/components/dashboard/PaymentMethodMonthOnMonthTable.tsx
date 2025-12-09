@@ -142,7 +142,7 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
     return months;
   }, []);
   const processedData = useMemo(() => {
-    console.log('Processing payment method data:', data.length, 'records');
+    // Debug log removed for production
     const paymentMethodGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
       const paymentMethod = item.paymentMethod || 'Unknown';
       if (!acc[paymentMethod]) {
@@ -151,7 +151,7 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
       acc[paymentMethod].push(item);
       return acc;
     }, {});
-    console.log('Payment method groups:', Object.keys(paymentMethodGroups));
+    // Debug log removed for production
     const paymentMethodData = Object.entries(paymentMethodGroups).map(([paymentMethod, items]) => {
       const monthlyValues: Record<string, number> = {};
       monthlyData.forEach(({
@@ -198,8 +198,8 @@ export const PaymentMethodMonthOnMonthTable: React.FC<PaymentMethodMonthOnMonthT
         }, {} as Record<string, any>)
       };
     });
-    console.log('Processed payment method data:', paymentMethodData.length, 'methods');
-    console.log('Sample method data:', paymentMethodData[0]);
+    // Debug log removed for production
+    // Debug log removed for production
     return paymentMethodData.sort((a, b) => b.metricValue - a.metricValue);
   }, [data, selectedMetric, monthlyData]);
   const getGrowthIndicator = (current: number, previous: number, period: 'month' = 'month') => {

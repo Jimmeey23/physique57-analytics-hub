@@ -27,7 +27,7 @@ interface EnhancedDiscountsDashboardProps {
 const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#ec4899', '#84cc16'];
 
 export const EnhancedDiscountsDashboard: React.FC<EnhancedDiscountsDashboardProps> = ({ data }) => {
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('kwality');
   const [selectedProduct, setSelectedProduct] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSoldBy, setSelectedSoldBy] = useState('all');

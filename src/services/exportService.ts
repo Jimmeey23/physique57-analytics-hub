@@ -153,10 +153,7 @@ export function exportToCSV(data: ExtractedData, filename: string = 'analytics-e
  */
 export function exportToPDF(data: ExtractedData, filename: string = 'analytics-export') {
   try {
-    console.log('Starting PDF export...', { 
-      tables: data.tables.length, 
-      metrics: data.metrics.length 
-    });
+    // Debug log removed for production
 
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -563,10 +560,7 @@ export function exportToPDF(data: ExtractedData, filename: string = 'analytics-e
   const timestamp = new Date().toISOString().slice(0, 10);
   const finalFilename = `${filename}_${timestamp}.pdf`;
   
-  console.log('PDF generated successfully!', { 
-    totalPages, 
-    filename: finalFilename 
-  });
+  // Debug log removed for production
   
   doc.save(finalFilename);
   

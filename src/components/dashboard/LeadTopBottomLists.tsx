@@ -79,7 +79,7 @@ export const LeadTopBottomLists: React.FC<LeadTopBottomListsProps> = ({
   };
 
   const handleItemClick = (item: ListItem) => {
-    console.log(`Drill-down for ${type}:`, item.name, item);
+    // Debug log removed for production
   };
 
   return (

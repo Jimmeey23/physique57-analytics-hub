@@ -22,7 +22,7 @@ export const DiscountFilterSection: React.FC<DiscountFilterSectionProps> = ({
   isCollapsed,
   onToggleCollapse
 }) => {
-  const [selectedLocation, setSelectedLocation] = useState<string>('all');
+  const [selectedLocation, setSelectedLocation] = useState<string>('kwality');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [selectedSoldBy, setSelectedSoldBy] = useState<string>('all');

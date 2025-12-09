@@ -34,7 +34,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [clickedMetric, setClickedMetric] = useState<string | null>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [isRendering, setIsRendering] = useState(true);
   const [filters, setFilters] = useState({
     location: '',
@@ -67,11 +67,7 @@ export const EnhancedTrainerPerformanceSection = () => {
         // Use exact match since we know the exact location names from diagnostic logging
         return location === selectedLocation;
       });
-      console.log(`🎯 Location filter: ${selectedLocation} | Before: ${beforeCount} | After: ${data.length}`);
-      if (data.length === 0 && beforeCount > 0) {
-        console.log('🚨 No data found for location:', selectedLocation);
-        console.log('🔍 Available locations in current data:', [...new Set(baseProcessed.map(d => d.location))]);
-      }
+      // Removed diagnostic logs about location filter to reduce console noise
     }
     // Remove the filters.location check - only use tab location selection
     // if (filters.location) {
@@ -287,7 +283,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   }, [processedData]);
 
   // Interactive rankings controls (metric + show count)
-  const [rankingMetric, setRankingMetric] = useState<'revenue' | 'sessions' | 'customers' | 'efficiency' | 'classAvg' | 'conversion' | 'retention' | 'emptySessions'>('revenue');
+  const [rankingMetric, setRankingMetric] = useState<'revenue' | 'sessions' | 'customers' | 'efficiency' | 'classAvg' | 'conversion' | 'retention' | 'emptySessions' | 'fillRate'>('revenue');
   const [rankingCount, setRankingCount] = useState<number>(5);
 
   // Build ranked trainers based on selected metric
@@ -304,6 +300,9 @@ export const EnhancedTrainerPerformanceSection = () => {
           totalSessions: 0,
           totalCustomers: 0,
           nonEmptySessions: 0,
+          totalConverted: 0,
+          totalNew: 0,
+          totalRetained: 0,
           conversionSum: 0,
           retentionSum: 0,
           records: 0,
@@ -315,9 +314,13 @@ export const EnhancedTrainerPerformanceSection = () => {
       t.totalSessions += r.totalSessions || 0;
       t.totalCustomers += r.totalCustomers || 0;
       t.nonEmptySessions += r.nonEmptySessions || 0;
-      t.conversionSum += r.conversionRate || 0;
-      t.retentionSum += r.retentionRate || 0;
-      t.emptySessions += r.emptySessions || 0;
+      // processed data fields use `convertedMembers`, `newMembers`, `retainedMembers`, `conversionRate`
+      t.totalConverted += (r.convertedMembers ?? r.converted ?? 0);
+      t.totalNew += (r.newMembers ?? r.new ?? 0);
+      t.totalRetained += (r.retainedMembers ?? r.retained ?? 0);
+      t.conversionSum += (r.conversionRate ?? 0);
+      t.retentionSum += (r.retentionRate ?? 0);
+      t.emptySessions += (r.emptySessions ?? r.totalEmptySessions ?? 0);
       t.records += 1;
       return acc;
     }, {} as Record<string, any>);
@@ -327,7 +330,8 @@ export const EnhancedTrainerPerformanceSection = () => {
       const classAvg = t.totalSessions > 0 ? (t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalCustomers / t.totalSessions)) : 0;
       const conversionRate = t.records > 0 ? t.conversionSum / t.records : 0;
       const retentionRate = t.records > 0 ? t.retentionSum / t.records : 0;
-      return { ...t, efficiency, classAvg, conversionRate, retentionRate };
+      // expose aggregated totals too
+      return { ...t, efficiency, classAvg, conversionRate, retentionRate, newMembers: t.totalNew, convertedMembers: t.totalConverted, retainedMembers: t.totalRetained, fillRate: t.totalSessions > 0 ? (t.totalCustomers / (t.totalSessions * 20)) * 100 : 0 };
     });
 
     const sortFn = (a: any, b: any) => {
@@ -337,6 +341,7 @@ export const EnhancedTrainerPerformanceSection = () => {
         case 'customers': return b.totalCustomers - a.totalCustomers;
         case 'efficiency': return b.efficiency - a.efficiency;
         case 'classAvg': return b.classAvg - a.classAvg;
+        case 'fillRate': return b.fillRate - a.fillRate;
         case 'conversion': return b.conversionRate - a.conversionRate;
         case 'retention': return b.retentionRate - a.retentionRate;
         case 'emptySessions': return b.emptySessions - a.emptySessions;
@@ -437,10 +442,7 @@ export const EnhancedTrainerPerformanceSection = () => {
           }));
         }}
         showInfoPopover={true}
-        infoPopoverContext={`trainer-performance-${selectedLocation === 'All Locations' ? 'all' : 
-          selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
-          selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
-          selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}`}
+        infoPopoverContext="trainer-performance-overview"
       />
 
       {/* Filter Section */}
@@ -702,12 +704,13 @@ export const EnhancedTrainerPerformanceSection = () => {
           <div className="flex flex-wrap items-center gap-2 mb-6">
             {/* Metric selection */}
             <div className="flex flex-wrap bg-slate-50 border border-slate-200 rounded-lg p-1 gap-1">
-              {[
+                {[
                 { key: 'revenue', label: 'Revenue', icon: DollarSign },
                 { key: 'sessions', label: 'Sessions', icon: Activity },
                 { key: 'customers', label: 'Members', icon: Users },
                 { key: 'efficiency', label: 'Rev/Session', icon: DollarSign },
                 { key: 'classAvg', label: 'Class Avg', icon: Users },
+                { key: 'fillRate', label: 'Fill Rate', icon: Target },
                 { key: 'conversion', label: 'Conversion', icon: TrendingUp },
                 { key: 'retention', label: 'Retention', icon: Target },
                 { key: 'emptySessions', label: 'Empty', icon: Activity },
@@ -749,7 +752,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                   </div>
                   <div>
                     <span className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Top Trainers</span>
-                    <p className="text-sm text-slate-600 font-normal capitalize">By {rankingMetric === 'efficiency' ? 'Revenue/Session' : rankingMetric === 'classAvg' ? 'Class Average' : rankingMetric}</p>
+                    <p className="text-sm text-slate-600 font-normal capitalize">By {rankingMetric === 'efficiency' ? 'Revenue/Session' : rankingMetric === 'classAvg' ? 'Class Average' : rankingMetric === 'conversion' ? 'Conversion Rate' : rankingMetric}</p>
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -802,13 +805,13 @@ export const EnhancedTrainerPerformanceSection = () => {
                         <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={t.name}>{t.name}</p>
                         <div className="flex gap-2 mt-2 overflow-x-auto no-scrollbar">
                           <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
-                            {formatNumber(t.totalSessions)} sessions
-                          </Badge>
-                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700 whitespace-nowrap">
-                            Avg: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
+                            {rankingMetric === 'conversion' ? `${formatNumber(t.totalNew || 0)} new` : `${formatNumber(t.totalSessions)} sessions`}
                           </Badge>
                           <Badge variant="outline" className="text-xs border-green-200 text-green-700 whitespace-nowrap">
-                            {formatNumber(t.totalCustomers)} members
+                            {rankingMetric === 'conversion' ? `${formatNumber(t.totalConverted || 0)} converted` : rankingMetric === 'fillRate' ? `${(t.fillRate ?? 0).toFixed(1)}% fill` : `Avg: ${(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}`}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-purple-200 text-purple-700 whitespace-nowrap">
+                            {rankingMetric === 'conversion' ? `${formatNumber(t.totalRetained || 0)} retained` : rankingMetric === 'fillRate' ? `${((t.nonEmptySessions / Math.max(t.totalSessions,1))*100).toFixed(1)}% utilization` : `${formatNumber(t.totalCustomers)} members`}
                           </Badge>
                         </div>
                       </div>
@@ -820,11 +823,14 @@ export const EnhancedTrainerPerformanceSection = () => {
                           : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
                           : rankingMetric === 'efficiency' ? formatRevenue(t.efficiency)
                           : rankingMetric === 'classAvg' ? (t.classAvg).toFixed(1)
+                          : rankingMetric === 'fillRate' ? `${(t.fillRate ?? 0).toFixed(1)}%`
                           : rankingMetric === 'conversion' ? `${t.conversionRate.toFixed(1)}%`
                           : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
                           : formatNumber(t.emptySessions)}
                       </p>
-                      <p className="text-sm text-slate-500 truncate" title={t.location}>{t.location}</p>
+                      <p className="text-sm text-slate-500 truncate" title={t.location}>
+                        {rankingMetric === 'conversion' ? `${t.totalConverted || 0}/${t.totalNew || 0} converted` : t.location}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -840,7 +846,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                   </div>
                   <div>
                     <span className="bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">Bottom Trainers</span>
-                    <p className="text-sm text-slate-600 font-normal capitalize">By {rankingMetric === 'efficiency' ? 'Revenue/Session' : rankingMetric === 'classAvg' ? 'Class Average' : rankingMetric}</p>
+                    <p className="text-sm text-slate-600 font-normal capitalize">By {rankingMetric === 'efficiency' ? 'Revenue/Session' : rankingMetric === 'classAvg' ? 'Class Average' : rankingMetric === 'conversion' ? 'Conversion Rate' : rankingMetric}</p>
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -874,13 +880,13 @@ export const EnhancedTrainerPerformanceSection = () => {
                         <p className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={t.name}>{t.name}</p>
                         <div className="flex gap-2 mt-2 overflow-x-auto no-scrollbar">
                           <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
-                            {formatNumber(t.totalSessions)} sessions
+                            {rankingMetric === 'conversion' ? `${formatNumber(t.totalNew || 0)} new` : `${formatNumber(t.totalSessions)} sessions`}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs border-green-200 text-green-700 whitespace-nowrap">
+                            {rankingMetric === 'conversion' ? `${formatNumber(t.totalConverted || 0)} converted` : rankingMetric === 'fillRate' ? `${(t.fillRate ?? 0).toFixed(1)}% fill` : `Avg: ${(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}`}
                           </Badge>
                           <Badge variant="outline" className="text-xs border-purple-200 text-purple-700 whitespace-nowrap">
-                            Avg: {(t.nonEmptySessions > 0 ? (t.totalCustomers / t.nonEmptySessions) : (t.totalSessions > 0 ? t.totalCustomers / t.totalSessions : 0)).toFixed(1)}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs border-slate-200 text-slate-700 whitespace-nowrap">
-                            {formatNumber(t.totalCustomers)} members
+                            {rankingMetric === 'conversion' ? `${formatNumber(t.totalRetained || 0)} retained` : rankingMetric === 'fillRate' ? `${((t.nonEmptySessions / Math.max(t.totalSessions,1))*100).toFixed(1)}% utilization` : `${formatNumber(t.totalCustomers)} members`}
                           </Badge>
                         </div>
                       </div>
@@ -892,11 +898,14 @@ export const EnhancedTrainerPerformanceSection = () => {
                           : rankingMetric === 'customers' ? formatNumber(t.totalCustomers)
                           : rankingMetric === 'efficiency' ? formatRevenue(t.efficiency)
                           : rankingMetric === 'classAvg' ? (t.classAvg).toFixed(1)
+                          : rankingMetric === 'fillRate' ? `${(t.fillRate ?? 0).toFixed(1)}%`
                           : rankingMetric === 'conversion' ? `${t.conversionRate.toFixed(1)}%`
                           : rankingMetric === 'retention' ? `${t.retentionRate.toFixed(1)}%`
                           : formatNumber(t.emptySessions)}
                       </p>
-                      <p className="text-sm text-slate-500 truncate" title={t.location}>{t.location}</p>
+                      <p className="text-sm text-slate-500 truncate" title={t.location}>
+                        {rankingMetric === 'conversion' ? `${t.totalConverted || 0}/${t.totalNew || 0} converted` : t.location}
+                      </p>
                     </div>
                   </div>
                 ))}

@@ -165,23 +165,7 @@ export const useSalesMetrics = (
     const prevDiscountPercentage = previousPeriodData.length > 0 ? 
       previousPeriodData.reduce((sum, item) => sum + num((item as any).discountPercentage), 0) / previousPeriodData.length : 0;
 
-    console.log('Current calculations:', {
-      revenue: currentRevenue,
-      transactions: currentTransactions,
-      members: currentMembers,
-      units: currentUnits,
-      discount: currentDiscount,
-      vat: currentVAT
-    });
-
-    console.log('Previous calculations:', {
-      revenue: prevRevenue,
-      transactions: prevTransactions,
-      members: prevMembers,
-      units: prevUnits,
-      discount: prevDiscount,
-      vat: prevVAT
-    });
+    // Debug logs removed for production performance
 
     // Calculate growth rates
     const calculateGrowth = (current: number, previous: number): { rate: number; isSignificant: boolean; trend: 'strong' | 'moderate' | 'weak' } => {

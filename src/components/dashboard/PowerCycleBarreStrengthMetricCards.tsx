@@ -22,7 +22,7 @@ interface PowerCycleBarreStrengthMetricCardsProps {
 }
 
 export const PowerCycleBarreStrengthMetricCards: React.FC<PowerCycleBarreStrengthMetricCardsProps> = ({ data }) => {
-  console.log('PowerCycleBarreStrengthMetricCards received data:', data?.length, 'items');
+  // Debug log removed for production
   const metrics = useMemo(() => {
     if (!data || data.length === 0) {
       return {

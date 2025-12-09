@@ -32,7 +32,7 @@ interface PowerCycleBarreStrengthComprehensiveSectionProps {
 
 export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBarreStrengthComprehensiveSectionProps> = ({ data }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('kwality');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
   const [didSetDefaultPeriod, setDidSetDefaultPeriod] = useState(false);

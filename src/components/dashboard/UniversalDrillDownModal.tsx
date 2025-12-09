@@ -27,12 +27,12 @@ export const UniversalDrillDownModal: React.FC<UniversalDrillDownModalProps> = (
   const filteredData = useMemo(() => {
     // First, check if we already have pre-filtered specific data
     if (data?.filteredTransactionData && data.filteredTransactionData.length > 0) {
-      console.log(`UniversalDrillDownModal: Using pre-filtered data with ${data.filteredTransactionData.length} transactions`);
+      // Using pre-filtered data
       return data.filteredTransactionData;
     }
     
     if (data?.rawData && data.rawData.length > 0) {
-      console.log(`UniversalDrillDownModal: Using raw data with ${data.rawData.length} transactions`);
+      // Using raw data
       return data.rawData;
     }
     
@@ -96,7 +96,7 @@ export const UniversalDrillDownModal: React.FC<UniversalDrillDownModalProps> = (
         break;
     }
     
-    console.log(`UniversalDrillDownModal: Filtered ${filtered.length} transactions from ${relatedData.length} total`);
+    // Debug log removed for production
     return filtered;
   }, [data, relatedData, type]);
 

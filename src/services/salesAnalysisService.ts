@@ -162,12 +162,7 @@ export class SalesAnalysisService {
   public static generateComparisonAnalysis(data: SalesData[]): ComparisonAnalysis {
     const { month: prevMonth, year: prevYear } = this.getPreviousMonth();
     
-    console.log('SalesAnalysisService - Starting comparison:', {
-      totalDataRecords: data.length,
-      previousMonth: prevMonth,
-      previousYear: prevYear
-    });
-    
+    // Debug logs removed for production performance
     // Get previous month (e.g., October)
     let currentMonth = prevMonth;
     let currentYear = prevYear;
@@ -180,20 +175,11 @@ export class SalesAnalysisService {
       previousYear -= 1;
     }
 
-    console.log('Analyzing months:', {
-      current: `${currentMonth}/${currentYear}`,
-      previous: `${previousMonth}/${previousYear}`
-    });
-
+    // Debug logs removed for production performance
     const current = this.analyzeMonth(data, currentMonth, currentYear);
     const previous = this.analyzeMonth(data, previousMonth, previousYear);
 
-    console.log('Analysis results:', {
-      currentRevenue: current.totalRevenue,
-      currentTransactions: current.transactions,
-      previousRevenue: previous.totalRevenue,
-      previousTransactions: previous.transactions
-    });
+    // Debug logs removed for production performance
 
     return {
       current,

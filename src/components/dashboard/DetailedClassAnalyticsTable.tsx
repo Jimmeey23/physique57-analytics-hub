@@ -37,7 +37,7 @@ export const DetailedClassAnalyticsTable: React.FC<DetailedClassAnalyticsTablePr
   const [sortBy, setSortBy] = useState('totalRevenue');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('kwality');
 
   // Group data by class type
   const groupedData = useMemo(() => {

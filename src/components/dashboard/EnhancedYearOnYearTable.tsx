@@ -286,25 +286,25 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
     a.click();
   }, [processedData, monthlyData, selectedMetric]);
   const handleQuickFilter = useCallback((filterType: string) => {
-    console.log(`Applied quick filter: ${filterType}`);
+    // Debug log removed for production
 
     // Implement actual filter logic
     switch (filterType) {
       case 'last6months':
         // Filter to last 6 months - this would need to communicate with parent component
-        console.log('Filtering to last 6 months');
+        // Debug log removed for production
         break;
       case 'highvalue':
         // Filter to high value items
-        console.log('Filtering to high value items');
+        // Debug log removed for production
         break;
       case 'topcategories':
         // Filter to top categories
-        console.log('Filtering to top categories');
+        // Debug log removed for production
         break;
       case 'clearall':
         // Clear all filters
-        console.log('Clearing all filters');
+        // Debug log removed for production
         break;
     }
   }, []);

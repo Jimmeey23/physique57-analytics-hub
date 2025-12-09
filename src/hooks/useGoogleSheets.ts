@@ -209,7 +209,7 @@ export const useGoogleSheets = () => {
         });
       }
 
-      console.log('useGoogleSheets - Data summary:', {
+      logger.info('useGoogleSheets - Data summary:', {
         totalRecords: salesData.length,
         recordsWithDiscounts: discountedItems.length,
         samplePaymentDates: salesData.slice(0, 5).map(d => d.paymentDate),

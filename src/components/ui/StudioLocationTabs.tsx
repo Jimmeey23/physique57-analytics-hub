@@ -527,7 +527,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
                             }
                           }}
                           onLoad={(e) => {
-                            console.log(`Successfully loaded image: ${location.media.sources[currentIndex]}`);
+                            // Debug log removed for production
                             const imageKey = `${location.id}-${currentIndex}`;
                             setImageLoadingStatus(prev => ({ ...prev, [imageKey]: 'loaded' }));
                             

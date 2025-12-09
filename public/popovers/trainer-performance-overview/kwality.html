@@ -3,74 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trainer Performance - Kwality House</title>
+    <title>The November 2025 Performance Autopsy: Kemps Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- A placeholder, actual icons are in CSS -->
     <style>
+        :root {
+            --color-dark: #121212;
+            --color-medium: #1e1e1e;
+            --color-light: #2d2d2d;
+            --color-text: #e0e0e0;
+            --color-gold: #FFD700;
+            --color-green: #39FF14;
+            --color-red: #FF3131;
+            --color-orange: #FF7F50;
+            --color-grey: #888;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--color-dark);
+            color: var(--color-text);
             margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
-            color: white;
-            min-height: calc(100vh - 40px);
+            padding: 2rem;
+            line-height: 1.6;
         }
+
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .info-card {
-            background: rgba(255, 255, 255, 0.1);
+            max-width: 1200px;
+            margin: auto;
+            background-color: var(--color-medium);
             border-radius: 15px;
-            padding: 25px;
-            margin: 20px 0;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid var(--color-light);
         }
-        .metric {
+
+        header {
+            background: linear-gradient(135deg, var(--color-red), #8A2387, #000);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 5px solid var(--color-gold);
+        }
+
+        header h1 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 4rem;
+            margin: 0;
+            color: white;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.7);
+        }
+
+        header p {
+            font-size: 1.2rem;
+            color: var(--color-gold);
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .section {
+            padding: 2rem;
+            border-bottom: 1px solid var(--color-light);
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .title-gold { color: var(--color-gold); }
+        .title-orange { color: var(--color-orange); }
+        .title-red { color: var(--color-red); }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-card {
+            background: var(--color-light);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 5px solid var(--color-gold);
+        }
+        
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--color-text);
+        }
+        
+        .stat-card .label {
+            font-size: 1rem;
+            color: var(--color-grey);
+        }
+        
+        .stat-card .change {
+            font-weight: 700;
+        }
+        .change.positive { color: var(--color-green); }
+        .change.negative { color: var(--color-red); }
+
+        .trainer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .trainer-card {
+            background: var(--color-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trainer-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .trainer-card .rank {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 3rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        .trainer-card h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.8rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .trainer-card .stats {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1rem 0;
+        }
+
+        .trainer-card .stats li {
+            margin-bottom: 0.5rem;
             display: flex;
             justify-content: space-between;
-            margin: 15px 0;
-            font-size: 1.1rem;
         }
-        .value {
-            font-weight: bold;
-            color: #fff3cd;
+
+        .trainer-card .stats .label {
+            color: var(--color-grey);
         }
-        .insight {
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 4px solid #fff3cd;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 0 10px 10px 0;
+
+        .trainer-card .stats .value {
+            font-weight: 700;
         }
+
+        .conversion-rate {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+
+        .savage-commentary {
+            font-style: italic;
+            background: var(--color-dark);
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 3px solid;
+            margin-top: 1rem;
+        }
+
+        /* --- Performer Specific Styling --- */
+
+        .hall-of-fame .trainer-card {
+            border: 2px solid var(--color-gold);
+            box-shadow: 0 0 20px var(--color-gold);
+        }
+        .hall-of-fame .trainer-card h3 { color: var(--color-gold); }
+        .hall-of-fame .conversion-rate { color: var(--color-gold); }
+        .hall-of-fame .savage-commentary { border-color: var(--color-gold); }
+
+        .purgatory .trainer-card {
+            border: 2px solid var(--color-orange);
+        }
+        .purgatory .trainer-card h3 { color: var(--color-orange); }
+        .purgatory .conversion-rate { color: var(--color-orange); }
+        .purgatory .savage-commentary { border-color: var(--color-orange); }
+
+        .abyss .trainer-card {
+            border: 2px solid var(--color-red);
+            opacity: 0.9;
+        }
+        .abyss .trainer-card h3 { color: var(--color-red); }
+        .abyss .conversion-rate { color: var(--color-red); }
+        .abyss .savage-commentary { border-color: var(--color-red); }
+        .abyss .trainer-card h3::after {
+            content: ' 💀';
+        }
+        
+        .special-mention {
+            background: linear-gradient(45deg, #1d1d1d, #333);
+            border: 2px dashed var(--color-grey);
+            padding: 2rem;
+            margin-top: 2rem;
+            border-radius: 10px;
+        }
+        
+        .special-mention h3 {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.9rem;
+            color: var(--color-grey);
+        }
+
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1>🏃 Trainer Performance - Kwality House</h1>
-        <div class="info-card">
-            <h2>📊 Key Metrics</h2>
-            <div class="metric">
-                <span>Top Performer:</span>
-                <span class="value">Sarah Martinez</span>
+        <header>
+            <h1>The November 2025 Performance Autopsy</h1>
+            <p>Kwality House, Kemps Corner: Where Dreams (and Conversion Rates) Come to Die</p>
+        </header>
+
+        <section class="section">
+            <h2 class="section-title title-gold">The "Big Picture" (If You Squint)</h2>
+            <p style="text-align:center; max-width: 800px; margin: 0 auto 2rem auto;">Look, numbers went up. Let's not get too excited, it's like being the tallest person in a room of garden gnomes. We made more money (₹17.2L!), which is great because my solid gold treadmill needs a new diamond-encrusted cup holder. But the real story, the juicy, soul-crushing drama, lies with the so-called "trainers." Let's dive in.</p>
+            <div class="summary">
+                <div class="stat-card">
+                    <div class="value">₹17.2L</div>
+                    <div class="label">Total Revenue</div>
+                    <div class="change positive">+8.7%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">370</div>
+                    <div class="label">Total Sessions</div>
+                    <div class="change positive">+12.8%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">12.0%</div>
+                    <div class="label">Studio Conversion Rate</div>
+                    <div class="change positive">+2.1% (Mostly due to one person)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">94.1%</div>
+                    <div class="label">Efficiency Score</div>
+                    <div class="change positive">Impressive, I guess?</div>
+                </div>
             </div>
-            <div class="metric">
-                <span>Avg Rating:</span>
-                <span class="value">4.9/5</span>
+        </section>
+
+        <section class="section hall-of-fame">
+            <h2 class="section-title title-gold">The Hall of Fame: Actual Money-Makers</h2>
+            <p style="text-align:center; max-width: 800px; margin: 0 auto 2rem auto;">A tiny, gleaming island of competence in a vast ocean of mediocrity. These trainers remembered the point of their job is to, you know, get people to pay us. We're considering building statues in their honor. Or at least giving them a non-broken locker.</p>
+            <div class="trainer-grid">
+                <div class="trainer-card">
+                    <div class="rank">1</div>
+                    <h3>Mrigakshi Jaiswal</h3>
+                    <ul class="stats">
+                        <li><span class="label">Sessions:</span> <span class="value">20</span></li>
+                        <li><span class="label">Members Taught:</span> <span class="value">120</span></li>
+                        <li><span class="label">Class Avg:</span> <span class="value">6.0</span></li>
+                    </ul>
+                    <div class="conversion-rate">100.0%</div>
+                    <p class="savage-commentary">One Hundred. Percent. Did you read that? She didn't convert clients, she initiated them into a cult of fitness. Is she using hypnosis? Blackmail? We don't care. Mrigakshi could sell a lifetime membership to a mannequin. The rest of you, take notes. No, seriously, grab a pen. Your jobs might depend on it.</p>
+                </div>
+                <div class="trainer-card">
+                    <div class="rank">2</div>
+                    <h3>Cauveri Vikrant</h3>
+                    <ul class="stats">
+                        <li><span class="label">Sessions:</span> <span class="value">16</span></li>
+                        <li><span class="label">Members Taught:</span> <span class="value">103</span></li>
+                        <li><span class="label">Class Avg:</span> <span class="value">6.4</span></li>
+                    </ul>
+                    <div class="conversion-rate">25.0%</div>
+                    <p class="savage-commentary">A respectable 25%. In any other month, this would be amazing. Next to Mrigakshi's sorcery, it looks modest, but let's be real: Cauveri is doing the work of five of our other trainers combined. She is a shining beacon of "not completely useless." We are grateful.</p>
+                </div>
+                <div class="trainer-card">
+                    <div class="rank">3</div>
+                    <h3>Pranjali Jain</h3>
+                    <ul class="stats">
+                        <li><span class="label">Sessions:</span> <span class="value">28</span></li>
+                        <li><span class="label">Members Taught:</span> <span class="value">188</span></li>
+                        <li><span class="label">Class Avg:</span> <span class="value">7.0</span></li>
+                    </ul>
+                    <div class="conversion-rate">18.2%</div>
+                    <p class="savage-commentary">Solid work, Pranjali. You saw the bar, you cleared it. You're like the student who gets a B+ and doesn't make a fuss. We see you. We appreciate you. You are preventing this entire report from being a single, continuous scream into the void.</p>
+                </div>
             </div>
-            <div class="metric">
-                <span>Classes Taught:</span>
-                <span class="value">425</span>
+        </section>
+
+        <section class="section purgatory">
+            <h2 class="section-title title-orange">Trainer Purgatory: The "Meh" Zone</h2>
+             <p style="text-align:center; max-width: 800px; margin: 0 auto 2rem auto;">These trainers exist. They show up, they play music, people sweat, they go home. They convert just enough members to not be on the chopping block, but not enough to be impressive. They are the beige of trainers. The lukewarm water of performance.</p>
+            <div class="trainer-grid">
+                <div class="trainer-card">
+                    <h3>Rohan Dahima</h3>
+                    <ul class="stats">
+                        <li><span class="label">Sessions:</span> <span class="value">43 (!!!)</span></li>
+                        <li><span class="label">Members Taught:</span> <span class="value">321</span></li>
+                        <li><span class="label">Class Avg:</span> <span class="value">7.6</span></li>
+                    </ul>
+                    <div class="conversion-rate">13.3%</div>
+                    <p class="savage-commentary">Ah, Rohan. The king of volume. He taught 43 classes. Forty. Three. His strategy is "throw enough spaghetti at the wall and some of it will stick." It's a messy, inefficient strategy, but I guess we have some spaghetti now. Congrats?</p>
+                </div>
+                <div class="trainer-card">
+                    <h3>Reshma Sharma</h3>
+                    <ul class="stats">
+                        <li><span class="label">Sessions:</span> <span class="value">40</span></li>
+                        <li><span class="label">Members Taught:</span> <span class="value">226</span></li>
+                        <li><span class="label">Class Avg:</span> <span class="value">5.9</span></li>
+                    </ul>
+                    <div class="conversion-rate">4.5%</div>
+                    <p class="savage-commentary">40 sessions to achieve a 4.5% conversion rate. That is an almost artistic level of ineffectiveness. It's like trying to fill a swimming pool with a teaspoon. You're working hard, Reshma, just in the completely wrong direction. Are you actively telling people our prices are a "suggestion"?</p>
+                </div>
             </div>
-        </div>
-        <div class="insight">
-            <strong>💡 Insights:</strong> Exceptional trainer quality at Kwality House. Use as training center for new instructor development.
-        </div>
+        </section>
+
+        <section class="section abyss">
+            <h2 class="section-title title-red">The Abyss of Zeroes: The Anti-Sales Department</h2>
+            <p style="text-align:center; max-width: 800px; margin: 0 auto 2rem auto;">Welcome, friends, to the financial black hole of our studio. This is the official fan club for the 0% Conversion Rate. Their collective talent for speaking to hundreds of potential customers and convincing precisely NONE of them to buy anything is, frankly, a statistical anomaly. Are they paid by a competitor? Is "conversion" a word they don't understand? We are baffled, horrified, and a little impressed.</p>
+            
+            <div class="special-mention">
+                <h3>A Very Special Dishonorable Mention: Anisha Shah</h3>
+                <p style="text-align: center;">Our system lists Anisha as a "Top 3 Trainer". We are now investigating whether our system has developed a sense of humor or is just broken. With <strong>33 sessions, 200 members taught, and ZERO conversions</strong>, Anisha has perfected the art of being incredibly busy while achieving nothing. It's spectacular. She is the living embodiment of a meeting that could have been an email. A true inspiration for aspiring slackers everywhere.</p>
+            </div>
+            
+            <div class="trainer-grid" style="margin-top: 2rem;">
+                 <div class="trainer-card">
+                    <h3>Atulan Purohit</h3>
+                    <p class="savage-commentary">39 sessions. 197 people. Zero sales. Atulan, you had more chances to close a deal than a telemarketer on commission. What went wrong? Do you end each class by setting off the fire alarm?</p>
+                </div>
+                <div class="trainer-card">
+                    <h3>Richard D'Costa</h3>
+                    <p class="savage-commentary">33 sessions and 0 conversions. You and Anisha should start a support group. You could call it "All Talk, No Transactions." First meeting is on Tuesday. Don't be late.</p>
+                </div>
+                 <div class="trainer-card">
+                    <h3>Anmol Sharma</h3>
+                    <p class="savage-commentary">Average class size of 3.0. Anmol, these aren't classes, they're intimate get-togethers. Are you just inviting two friends over to hang out and listen to your Spotify playlist? Because that's not a job, that's a hobby.</p>
+                </div>
+                <div class="trainer-card">
+                    <h3>Karan Bhatia</h3>
+                    <p class="savage-commentary">Not to be confused with the other Karanvir who at least *tried*. With 11 sessions and an average of 3.1 people, your classes have the attendance of a poetry reading in a library. We're worried about you.</p>
+                </div>
+                <div class="trainer-card">
+                    <h3>Sovena Shetty</h3>
+                    <p class="savage-commentary">3 sessions. Three. Was this a "bring your child to work" day? Did you get lost on your way to the coffee shop and accidentally teach a class? We have so many questions. Your performance is a mystery wrapped in an enigma, covered in failure.</p>
+                </div>
+                <div class="trainer-card">
+                    <h3>The Rest of the 0% Club</h3>
+                    <p class="savage-commentary">To <strong>Bret, Raunak, Simonelle, and Vivaran</strong>: Congratulations. You have achieved perfect neutrality. You have left no financial footprint on this company whatsoever. You are ghosts in our revenue machine. Please consider haunting a different studio. Kthxbye.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <footer>
+            <p>Report Generated on 12/9/2025. Obviously.</p>
+            <p>Yours in soul-crushing disappointment and fiscal responsibility,</p>
+            <p><strong>- Management</strong></p>
+        </footer>
+
     </div>
+
 </body>
 </html>

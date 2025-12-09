@@ -59,7 +59,7 @@ export const PatternsAndTrends = () => {
   const { data: salesData, loading: salesLoading, error: salesError } = useSalesData();
   const { setLoading } = useGlobalLoading();
   const navigate = useNavigate();
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
   const [heroColor, setHeroColor] = useState<string>('#3b82f6');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -1056,10 +1056,7 @@ export const PatternsAndTrends = () => {
                   setSelectedLocation(locationMap[locationId] || 'All Locations');
                 }}
                 showInfoPopover={true}
-                infoPopoverContext={`patterns-trends-${selectedLocation === 'All Locations' ? 'all' : 
-                  selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
-                  selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
-                  selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}`}
+                infoPopoverContext="patterns-trends-overview"
               />
 
               {/* Filter Section */}

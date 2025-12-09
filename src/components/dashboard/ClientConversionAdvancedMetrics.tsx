@@ -15,7 +15,7 @@ interface ClientConversionAdvancedMetricsProps {
 
 
 export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedMetricsProps> = ({ data, payrollData, onDrillDown }) => {
-  console.log('ClientConversionAdvancedMetrics data:', data.length, 'records');
+  // Debug log removed for production
 
   // --- Hosted class detection helper ---
   const isHostedClass = (entity: string = '') => {
