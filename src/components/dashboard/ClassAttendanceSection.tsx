@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronUp, BarChart3, Users, Target, Filter, MapPin, Building2, Home } from 'lucide-react';
 import { useSessionsData, SessionData } from '@/hooks/useSessionsDataDemo';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
+import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import { ClassAttendanceFilterSection } from './ClassAttendanceFilterSection';
 import { EnhancedClassAttendanceMetricCards } from './EnhancedClassAttendanceMetricCards';
 import { ClassAttendanceInteractiveCharts } from './ClassAttendanceInteractiveCharts';
@@ -46,29 +47,44 @@ export const ClassAttendanceSection: React.FC = () => {
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [compareWithTrainer, setCompareWithTrainer] = useState(false);
 
-  // Apply filters to the data
+  // Sessions filters context (date range, locations, trainers, etc.)
+  const { filters: sessionFilters, updateFilters: updateSessionFilters } = useSessionsFilters();
+
+  // Apply filters to the data (from SessionsFiltersContext)
   const filteredData = useFilteredSessionsData(sessionsData || []);
 
-  // Filter data by location
+  // Keep the session filters' locations in sync when user switches tabs
+  React.useEffect(() => {
+    if (!updateSessionFilters) return;
+    if (!activeLocation || activeLocation === 'all') {
+      updateSessionFilters({ locations: [] });
+      return;
+    }
+    updateSessionFilters({ locations: [activeLocation] });
+  }, [activeLocation, updateSessionFilters]);
+
+  // Filter data by location — prefer explicit sessionFilters.locations when provided
   const locationFilteredData = useMemo(() => {
-    if (!filteredData || activeLocation === 'all') return filteredData || [];
-    
-    const selectedLocation = locations.find(loc => loc.id === activeLocation);
-    if (!selectedLocation) return filteredData || [];
+    if (!filteredData) return [];
+
+    const filterLocations = (sessionFilters && (sessionFilters as any).locations && (sessionFilters as any).locations.length > 0)
+      ? (sessionFilters as any).locations
+      : [activeLocation];
+
+    if (!filterLocations || filterLocations.length === 0 || filterLocations.includes('all')) return filteredData;
 
     return filteredData.filter(session => {
-      if (session.location === selectedLocation.fullName) return true;
-      
-      const sessionLoc = session.location?.toLowerCase() || '';
-      const targetLoc = selectedLocation.fullName.toLowerCase();
-      
-      if (selectedLocation.id === 'Kwality House, Kemps Corner' && sessionLoc.includes('kwality')) return true;
-      if (selectedLocation.id === 'Supreme HQ, Bandra' && sessionLoc.includes('supreme')) return true;
-      if (selectedLocation.id === 'Kenkere House' && sessionLoc.includes('kenkere')) return true;
-      
-      return false;
+      const sessionLoc = (session.location || '').toLowerCase();
+      return filterLocations.some((loc: string) => {
+        const l = (loc || '').toLowerCase();
+        if (!l || l === 'all' || l === 'all locations') return true;
+        if (sessionLoc === l) return true;
+        if (sessionLoc.includes(l)) return true;
+        if (l.includes(sessionLoc)) return true;
+        return false;
+      });
     });
-  }, [filteredData, activeLocation]);
+  }, [filteredData, activeLocation, sessionFilters]);
 
   // Get unique class formats
   const uniqueClassFormats = useMemo(() => {
