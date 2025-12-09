@@ -126,6 +126,18 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
     setLoading(isLoading, 'Loading executive dashboard overview...');
   }, [isLoading, setLoading]);
 
+  // Ensure Executive Summary defaults to November 2025 when this component mounts
+  useEffect(() => {
+    try {
+      // Force the Executive Summary to November 2025 on mount
+      updateFilters({ dateRange: { start: '2025-11-01', end: '2025-11-30' } });
+    } catch (e) {
+      console.warn('Failed to set default Executive Summary date range:', e);
+    }
+    // Intentionally only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Get unique locations for the selector
   const availableLocations = useMemo(() => {
     const locations = new Set<string>();
@@ -151,14 +163,23 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
 
   // Filter data to previous month and by location
   const previousMonthData = useMemo(() => {
-    const now = new Date();
-    // Use last 3 months instead of just previous month to ensure we have data
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    // If a specific dateRange is set in filters, use that; otherwise use last 3 months
+    let rangeStart: Date | null = null;
+    let rangeEnd: Date | null = null;
+    if (filters?.dateRange && filters.dateRange.start && filters.dateRange.end) {
+      rangeStart = new Date(filters.dateRange.start + 'T00:00:00');
+      rangeEnd = new Date(filters.dateRange.end + 'T23:59:59');
+    } else {
+      const now = new Date();
+      rangeStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      rangeEnd = new Date();
+    }
 
     const filterByRecentMonths = (dateStr: string) => {
       if (!dateStr) return false;
       const date = new Date(dateStr);
-      return date >= threeMonthsAgo;
+      if (!rangeStart || !rangeEnd) return false;
+      return date >= rangeStart && date <= rangeEnd;
     };
 
     const filterByLocation = (items: any[], locationKey: string) => {
@@ -279,17 +300,27 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       lateCancellations: filteredLateCancellations,
       expirations: filteredExpirations
     };
-  }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, lateCancellationsData, expirationsData, filters.location]);
+  }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, lateCancellationsData, expirationsData, filters.location, filters.dateRange]);
 
   // All data for last 3 months (for MoM comparison calculations)
   const allDataLast3Months = useMemo(() => {
-    const now = new Date();
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    // Respect filters.dateRange when provided; otherwise default to last 3 months
+    let rangeStart: Date | null = null;
+    let rangeEnd: Date | null = null;
+    if (filters?.dateRange && filters.dateRange.start && filters.dateRange.end) {
+      rangeStart = new Date(filters.dateRange.start + 'T00:00:00');
+      rangeEnd = new Date(filters.dateRange.end + 'T23:59:59');
+    } else {
+      const now = new Date();
+      rangeStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      rangeEnd = new Date();
+    }
 
     const filterByLast3Months = (dateStr: string) => {
       if (!dateStr) return false;
       const date = new Date(dateStr);
-      return date >= threeMonthsAgo;
+      if (!rangeStart || !rangeEnd) return false;
+      return date >= rangeStart && date <= rangeEnd;
     };
 
     const filterByLocation = (items: any[], locationKey: string) => {
@@ -339,7 +370,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       leads: allLeads,
       discounts: allDiscounts
     };
-  }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, filters.location]);
+  }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, filters.location, filters.dateRange]);
 
   if (isLoading) {
     return null; // Global loader will handle this
