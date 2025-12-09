@@ -103,6 +103,18 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [open, pinned]);
 
+  // Close on Escape key if not pinned
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!open || pinned) return;
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, pinned]);
+
   // Resize handlers
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -353,7 +365,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   );
 
   const renderModal = () => (
-    <div className="fixed inset-0 z-[9999] pointer-events-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-8">
+    <div className="fixed inset-0 z-[9999] pointer-events-auto bg-black/20 flex items-center justify-center p-8" onClick={(e) => { if (e.target === e.currentTarget && !pinned) setOpen(false); }}>
       <div 
         ref={panelRef}
         className="bg-white/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col max-w-4xl w-full h-full max-h-[90vh] border border-white/20"
@@ -535,8 +547,8 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
           <div className="fixed inset-0 z-[9999] pointer-events-none">
             {isSidebarMode ? (
               <>
-                {/* Backdrop */}
-                <div className="absolute inset-0 bg-black/20 backdrop-blur-sm pointer-events-auto" />
+                {/* Backdrop - transparent to allow interaction with background data */}
+                <div className="absolute inset-0 pointer-events-none" />
                 {renderSidebar()}
               </>
             ) : (

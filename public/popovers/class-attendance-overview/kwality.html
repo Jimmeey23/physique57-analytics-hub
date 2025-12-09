@@ -3,104 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📅 Class Attendance - Kwality House, Kemps Corner</title>
+    <title>The Kwality House Blueprint: From Divided to Dominant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: calc(100vh - 40px);
+            font-family: 'Inter', sans-serif;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+        .gradient-text {
+            background: linear-gradient(to right, #4f46e5, #1d4ed8, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        h1 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        .stat-card {
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .info-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            margin: 20px 0;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .metric {
-            display: flex;
-            justify-content: space-between;
-            margin: 15px 0;
-            font-size: 1.1rem;
-        }
-        .value {
-            font-weight: bold;
-            color: #fff3cd;
-        }
-        .note {
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 4px solid #ffd700;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 0 10px 10px 0;
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>📅 Class Attendance</h1>
-        <p style="text-align: center; font-size: 1.2rem; margin-bottom: 30px;">
-            Kwality House, Kemps Corner - Comprehensive Analytics Dashboard
-        </p>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-8 my-12">
+
+        <!-- Report Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight gradient-text">The Kwality House Blueprint</h1>
+            <p class="text-xl text-gray-500 mt-3">A Comprehensive Strategy to Unify Performance and Maximize Profitability</p>
+            <p class="text-sm text-gray-400">Based on November 2025 Data</p>
+        </header>
         
-        <div class="info-card">
-            <h2>🎯 Key Performance Indicators</h2>
-            <div class="metric"><span>Daily Attendance:</span><span class="value">45 clients</span></div>
-              <div class="metric"><span>Popular Time Slot:</span><span class="value">Evening Sessions</span></div>
-              <div class="metric"><span>Utilization Rate:</span><span class="value">78.3%</span></div>
-              <div class="metric"><span>Member Retention:</span><span class="value">91.2%</span></div>
-        </div>
+        <!-- KPI Dashboard -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-8">November Performance Dashboard: A Story of Two Extremes</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Column 1: Core Metrics -->
+                <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border border-gray-200 space-y-4">
+                    <h3 class="text-lg font-semibold text-indigo-700">Core Operations</h3>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-gray-500">Total Revenue</span>
+                        <span class="text-2xl font-bold text-gray-900">₹16.9L</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-gray-500">Total Check-ins</span>
+                        <span class="text-2xl font-bold text-gray-900">1,695</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-gray-500">Total Classes</span>
+                        <span class="text-2xl font-bold text-gray-900">322</span>
+                    </div>
+                </div>
+                <!-- Column 2: Efficiency & Engagement -->
+                <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border border-gray-200 space-y-4">
+                    <h3 class="text-lg font-semibold text-blue-700">Efficiency & Engagement</h3>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-gray-500">Overall Fill Rate</span>
+                            <span class="text-2xl font-bold text-red-600">39.8%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-red-500 h-2.5 rounded-full" style="width: 39.8%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">A massive opportunity gap due to underperforming slots.</p>
+                    </div>
+                     <div>
+                        <div class="flex justify-between items-baseline">
+                           <span class="text-gray-500">Empty Classes</span>
+                           <span class="text-2xl font-bold text-red-600">5+</span>
+                        </div>
+                         <p class="text-xs text-gray-500 mt-1">Directly paying for zero attendance.</p>
+                    </div>
+                </div>
+                <!-- Column 3: The Financial Opportunity -->
+                <div class="stat-card bg-indigo-700 text-white p-6 rounded-2xl shadow-lg border-2 border-indigo-800">
+                    <h3 class="text-lg font-semibold text-white">The Financial Opportunity</h3>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-indigo-200">Revenue Left on Table</span>
+                        <span class="text-2xl font-bold text-green-300">~₹8.6L</span>
+                    </div>
+                    <div class="text-sm text-indigo-200">
+                        <p>This is the estimated additional monthly revenue from increasing the average fill rate from 40% to a healthy 60% by optimizing the schedule.</p>
+                        <p class="font-bold mt-2">This is the prize for operational excellence.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <div class="info-card">
-            <h2>📈 Growth & Trends</h2>
-            <div class="metric">
-                <span>Month-over-Month Growth:</span>
-                <span class="value">+12.8%</span>
-            </div>
-            <div class="metric">
-                <span>Year-over-Year Growth:</span>
-                <span class="value">+28.5%</span>
-            </div>
-            <div class="metric">
-                <span>Performance Score:</span>
-                <span class="value">92/100</span>
-            </div>
-        </div>
+        <!-- Main Analysis -->
+        <main class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-200">
+            <section id="executive-summary" class="mb-12">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Executive Summary: The Polarization Problem</h2>
+                <p class="text-lg text-gray-600 leading-relaxed">
+                    Kwality House is not a struggling studio; it is a highly successful studio trapped inside an inefficient one. The November data paints a picture of extreme polarization: a core of "A-List" classes that are consistently sold-out, profitable, and beloved by members, existing alongside a "B-List" of "ghost classes" that drain resources, damage the brand, and artificially depress the studio's overall performance metrics.
+                </p>
+                <p class="mt-4 p-5 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg text-indigo-800 text-lg font-semibold">
+                    The diagnosis is clear: this is not a product problem—your members love your core offerings. This is a critical resource allocation and scheduling failure. The strategic imperative is to stop subsidizing failure with success and transform the schedule from a gamble into a finely tuned, data-driven revenue machine.
+                </p>
+            </section>
 
-        <div class="info-card">
-            <h2>📊 Insights & Analytics</h2>
-            <div class="metric">
-                <span>Data Quality Score:</span>
-                <span class="value">98.5%</span>
-            </div>
-            <div class="metric">
-                <span>Last Updated:</span>
-                <span class="value">December 09, 2025</span>
-            </div>
-            <div class="metric">
-                <span>Active Tracking:</span>
-                <span class="value">Real-time</span>
-            </div>
-        </div>
+            <section class="mb-12">
+                <h2 class="text-4xl font-bold text-gray-900 mb-6">The Deep Dive: An Unfiltered Analysis</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- The Champions -->
+                    <div class="p-6 bg-gray-50 rounded-lg border border-green-300">
+                        <h3 class="text-2xl font-bold text-green-700 mb-3">The Champions: What's Working Brilliantly</h3>
+                        <p class="mb-4">The blueprint for success is already written in your own data.</p>
+                        <ul class="space-y-3">
+                            <li><strong class="text-gray-900">Your Bedrock Formats:</strong> `Strength Lab` and `Studio Barre 57` are undeniable hits. They are your studio's identity and command premium attendance, especially in prime slots. These are not just classes; they are valuable assets.</li>
+                            <li><strong class="text-gray-900">The Power of Prime Time:</strong> The data confirms that early mornings (7-9 AM), evenings (6-8 PM), and weekend mornings are your economic engines. Demand in these windows is proven and powerful.</li>
+                             <li><strong class="text-gray-900">Your Star Power Instructors:</strong> Atulan Purohit and Rohan Dahima are not just staff; they are significant revenue drivers. Their names are associated with the highest fill rates and represent a powerful marketing tool.</li>
+                        </ul>
+                    </div>
+                    <!-- The Liabilities -->
+                    <div class="p-6 bg-gray-50 rounded-lg border border-red-300">
+                        <h3 class="text-2xl font-bold text-red-700 mb-3">The Liabilities: What's Draining Resources</h3>
+                         <p class="mb-4">These are the operational leaks that need to be plugged immediately.</p>
+                        <ul class="space-y-3">
+                            <li><strong class="text-gray-900">The `powerCycle` Paradox:</strong> This class is both a star and a liability. A 96.7% fill rate on Wednesday AM proves the format is desirable. The 0% fill rate on Tuesday AM proves its success is acutely sensitive to time and instructor. Placing this class in the wrong slot is the equivalent of lighting money on fire.</li>
+                            <li><strong class="text-gray-900">The Mid-Day & Late-Night Dead Zones:</strong> The schedule from 10 AM to 5 PM and after 8:30 PM is a graveyard of low-performing classes. Each class run here with sub-20% attendance represents a net financial loss and a waste of your best instructors' time.</li>
+                            <li><strong class="text-gray-900">The "Instructor Roulette" Risk:</strong> The "Multiple Values" listed for trainers in many time slots is a massive red flag. It indicates a lack of consistency that breeds member uncertainty. A member loyal to one instructor's style may cancel if they see a substitute, leading to last-minute drop-offs and a diluted brand experience.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
 
-        <div class="note">
-            <strong>💡 Key Insights:</strong> This dashboard provides comprehensive analytics for Kwality House, Kemps Corner. 
-            Data is updated in real-time and includes all relevant KPIs for informed decision making.
-        </div>
+            <section id="strategic-recommendations">
+                <h2 class="text-4xl font-bold text-gray-900 mb-8">The 15-Point Blueprint for Operational Excellence</h2>
+                
+                <!-- Section I -->
+                <div class="mb-10">
+                    <h3 class="text-3xl font-semibold mb-4 text-indigo-700">I. Schedule & Resource Optimization (The Triage)</h3>
+                    <ol class="list-decimal list-inside space-y-4 text-gray-700">
+                        <li>
+                            <strong>Execute the "Bottom 20%" Cut:</strong> Immediately remove the 20% lowest-performing class slots from the next month's schedule.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> This is the fastest way to stop active financial bleeding and instantly increase your average fill rate metric.</p>
+                        </li>
+                        <li>
+                            <strong>Clone the "Top 5" Performers:</strong> Identify your top 5 class/instructor/time combinations (e.g., Atulan's Monday AM `Strength Lab`) and add them to the newly freed-up prime time slots.
+                             <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Replace guesswork with proven success. Give your members more of what they're already lining up for.</p>
+                        </li>
+                        <li>
+                            <strong>Solve the `powerCycle` Paradox:</strong> Consolidate `powerCycle` offerings to only the proven successful time slots and instructors (like Rohan Dahima). Cut all other instances.
+                             <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Treat this format like a specialty tool, not a universal filler. Use it where it works, and nowhere else.</p>
+                        </li>
+                        <li>
+                            <strong>Assign "Slot Owners":</strong> Eliminate the "Multiple Values" issue by assigning a dedicated Primary Instructor to every single Top 20 class slot.
+                             <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> This builds member loyalty, ensures a consistent, high-quality experience, and makes marketing easier.</p>
+                        </li>
+                        <li>
+                             <strong>Curate Daily Class Flow:</strong> Redesign the schedule to have a logical theme.
+                             <ul class="list-disc list-inside ml-10 mt-2 text-sm text-gray-500">
+                                <li><strong>Mondays:</strong> "Strength Start" - Dominated by `Strength Lab`.</li>
+                                <li><strong>Wednesdays:</strong> "Mid-week Power" - Prime slots for `Barre 57` & `powerCycle`.</li>
+                                <li><strong>Saturdays:</strong> "The A-List" - Back-to-back blocks of your absolute best performers.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- Section II -->
+                <div class="mb-10">
+                     <h3 class="text-3xl font-semibold mb-4 text-blue-700">II. Talent & Experience Enhancement (The Amplifier)</h3>
+                    <ol class="list-decimal list-inside space-y-4 text-gray-700" start="6">
+                        <li>
+                            <strong>Launch "The Headliner Series":</strong> Build marketing campaigns around your star instructors. "Train with Atulan" or "Cycle with Rohan" should be prominent themes.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> You are not just selling classes; you are selling access to sought-after experts. Leverage their personal brands to build yours.</p>
+                        </li>
+                        <li>
+                            <strong>Establish a Peer Mentorship Program:</strong> Pair your star instructors with promising up-and-comers to share best practices on programming, music, and member engagement.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> This is the most effective way to elevate the quality of your entire teaching team and create a deeper bench of talent.</p>
+                        </li>
+                        <li>
+                            <strong>Standardize the Core Experience:</strong> For your bedrock formats (`Strength Lab`, `Barre 57`), create a "Kwality House Standard" for class structure and goals.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> This ensures that even with a substitute instructor, members receive a consistent, high-quality product, reducing cancellations and complaints.</p>
+                        </li>
+                        <li>
+                            <strong>Pilot One Strategic Off-Peak Class:</strong> Test a single "Lunchtime Express" 45-minute `Barre` class. Cap it and market it specifically to the local corporate crowd.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Instead of guessing, run a small, data-driven experiment to see if you can create a new market in an underutilized time slot.</p>
+                        </li>
+                        <li>
+                            <strong>Create "Signature" Instructor Slots:</strong> Brand a specific class as an instructor's own, such as "Rohan's Wednesday Power Hour."
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Turns a commodity (a class) into a unique, can't-miss event, driving urgency and repeat attendance.</p>
+                        </li>
+                    </ol>
+                </div>
+                
+                 <!-- Section III -->
+                <div>
+                     <h3 class="text-3xl font-semibold mb-4 text-green-700">III. Sustainable Growth & Retention (The Flywheel)</h3>
+                    <ol class="list-decimal list-inside space-y-4 text-gray-700" start="11">
+                        <li>
+                           <strong>Implement Dynamic Pricing for Off-Peak Slots:</strong> For the few mid-day classes you keep, test a 20% price reduction to see if it moves the needle on attendance.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> A low-risk way to generate incremental revenue from otherwise empty spots.</p>
+                        </li>
+                        <li>
+                            <strong>Develop a "Strength Lab: Foundations" Workshop:</strong> `Strength Lab` is popular but potentially intimidating. A 4-week beginner workshop is a perfect, high-margin product to create a pipeline of new, confident members for your main classes.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Reduces the barrier to entry for your most successful format, expanding your total addressable market.</p>
+                        </li>
+                        <li>
+                           <strong>Optimize the New Member Journey:</strong> Ensure that a new member's trial or first month actively funnels them towards your Top 10 classes.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> First impressions are everything. Hook them with your best products to maximize the conversion rate from trial to full membership.</p>
+                        </li>
+                        <li>
+                           <strong>Introduce a "Booked Class Guarantee":</strong> Announce a policy that if a class has 3 or more bookings 24 hours out, it will never be cancelled.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Builds member trust and encourages them to book those borderline classes, knowing their commitment will be honored.</p>
+                        </li>
+                         <li>
+                           <strong>Launch Themed Monthly Challenges:</strong> Create a "Barre Boss Challenge" or "Strength Lab Consistency Club" to drive repeat visits to your core offerings.
+                            <p class="text-sm text-gray-500 ml-6 pl-2 border-l border-gray-400 mt-1"><strong>Rationale:</strong> Gamification is a powerful tool to increase member engagement, build community, and drive revenue through higher attendance.</p>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+        </main>
     </div>
 </body>
 </html>
