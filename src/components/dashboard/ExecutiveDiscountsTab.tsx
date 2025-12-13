@@ -307,11 +307,11 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
   // Metric Cards
   const metricCards = [
     {
-      title: 'Total Revenue',
+      title: 'Net Revenue',
       value: formatCurrency(discountAnalysis.totalRevenue),
       icon: DollarSign,
       gradient: 'from-green-500 to-emerald-600',
-      description: 'Total sales revenue',
+      description: 'Revenue after discounts (before VAT)',
       change: 12.5
     },
     {
@@ -324,10 +324,14 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
     },
     {
       title: 'Discount Rate',
-      value: formatPercentage(discountAnalysis.totalRevenue > 0 ? (discountAnalysis.totalDiscounts / discountAnalysis.totalRevenue) * 100 : 0),
+      value: formatPercentage(() => {
+        // Calculate correctly: discounts as % of gross revenue (before discount)
+        const grossRevenue = discountAnalysis.totalRevenue + discountAnalysis.totalDiscounts;
+        return grossRevenue > 0 ? (discountAnalysis.totalDiscounts / grossRevenue) * 100 : 0;
+      }()),
       icon: Percent,
       gradient: 'from-blue-500 to-indigo-600',
-      description: 'Discount as % of revenue',
+      description: 'Discount as % of gross revenue',
       change: -2.1
     },
     {

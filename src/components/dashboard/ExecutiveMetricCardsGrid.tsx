@@ -115,11 +115,15 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
     // Fill rate
     const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
     
-    // Discount amount and percentage  
+    // Discount amount and percentage
+    // Note: totalRevenue = paymentValue (net revenue after discount, before VAT)
     const salesDiscountAmount = currentSales?.reduce((sum, sale) => sum + (sale.discountAmount || 0), 0) || 0;
     const discountAmount = data.discounts?.reduce((sum, d) => sum + (d.discountAmount || 0), 0) || 0;
     const finalDiscountAmount = discountAmount > 0 ? discountAmount : salesDiscountAmount;
-    const discountPercentage = totalRevenue > 0 ? (finalDiscountAmount / totalRevenue) * 100 : 0;
+    // Calculate discount % correctly: discounts as % of gross revenue (before discount)
+    // Gross revenue = Net revenue (paymentValue) + Discounts given
+    const grossRevenue = totalRevenue + finalDiscountAmount;
+    const discountPercentage = grossRevenue > 0 ? (finalDiscountAmount / grossRevenue) * 100 : 0;
     
     // Late cancellations (from lateCancellations data)
     const lateCancellations = data.lateCancellations?.length || 0;
@@ -176,7 +180,9 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
     // Previous discount calculations
     const discountsPrev = (historical?.discounts && historical.discounts.length ? historical.discounts : historicalSales);
     const discountPrevAmount = discountsPrev.reduce((sum: number, d: any) => sum + (d.discountAmount || 0), 0);
-    const discountPrevPercentage = salesPrevRevenue > 0 ? (discountPrevAmount / salesPrevRevenue) * 100 : 0;
+    // Calculate discount % correctly using gross revenue
+    const grossPrevRevenue = salesPrevRevenue + discountPrevAmount;
+    const discountPrevPercentage = grossPrevRevenue > 0 ? (discountPrevAmount / grossPrevRevenue) * 100 : 0;
     
     // Previous late cancellations
     const lateCancelPrev = historical?.lateCancellations?.length || 0;
@@ -209,7 +215,9 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
 
     const yoyDiscountAmount = (yearOverYear?.discounts && yearOverYear.discounts.length ? 
       yearOverYear.discounts : yoySales).reduce((sum: number, d: any) => sum + (d.discountAmount || 0), 0);
-    const yoyDiscountPercentage = yoyRevenue > 0 ? (yoyDiscountAmount / yoyRevenue) * 100 : 0;
+    // Calculate YoY discount % correctly using gross revenue
+    const yoyGrossRevenue = yoyRevenue + yoyDiscountAmount;
+    const yoyDiscountPercentage = yoyGrossRevenue > 0 ? (yoyDiscountAmount / yoyGrossRevenue) * 100 : 0;
     const yoyLateCancellations = yearOverYear?.lateCancellations?.length || 0;
 
     const growth = (cur: number, prev: number) => {

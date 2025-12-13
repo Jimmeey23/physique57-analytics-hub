@@ -24,8 +24,45 @@ export const FormatPerformanceHeatMap: React.FC<Props> = ({ data, selectedFormat
   const [metric, setMetric] = useState<MetricType>('fillRate');
 
   const heatMapData = useMemo(() => {
+    const normalizeDay = (d: string | undefined) => {
+      if (!d) return '';
+      const s = String(d).trim().toLowerCase();
+      if (s.length === 0) return '';
+      // map common short/long forms to full Day name
+      if (s.startsWith('mon')) return 'Monday';
+      if (s.startsWith('tue')) return 'Tuesday';
+      if (s.startsWith('wed')) return 'Wednesday';
+      if (s.startsWith('thu')) return 'Thursday';
+      if (s.startsWith('fri')) return 'Friday';
+      if (s.startsWith('sat')) return 'Saturday';
+      if (s.startsWith('sun')) return 'Sunday';
+      // fallback capitalize
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    };
+
+    const normalizeTime = (t: string | undefined) => {
+      if (!t) return '';
+      const s = String(t).trim();
+      // Prefer HH:MM 24-hour; try to parse a Date then format
+      // If already in HH:MM or H:MM, try to extract
+      const hhmmMatch = s.match(/(\d{1,2}):(\d{2})/);
+      if (hhmmMatch) {
+        const hh = parseInt(hhmmMatch[1], 10);
+        const mm = parseInt(hhmmMatch[2], 10);
+        if (!isNaN(hh) && !isNaN(mm)) return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+      }
+      // Try parsing with Date
+      const dt = new Date(s);
+      if (!isNaN(dt.getTime())) {
+        const hh = String(dt.getHours()).padStart(2, '0');
+        const mm = String(dt.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+      }
+      return s.slice(0,5);
+    };
+
     const filteredData = selectedFormat 
-      ? data.filter(s => s.classType === selectedFormat || s.cleanedClass === selectedFormat)
+      ? data.filter(s => (s.classType === selectedFormat || s.cleanedClass === selectedFormat))
       : data;
 
     const grid: Record<string, Record<string, {
@@ -52,16 +89,16 @@ export const FormatPerformanceHeatMap: React.FC<Props> = ({ data, selectedFormat
       });
     });
 
-    // Populate grid
+    // Populate grid (normalize incoming day/time values)
     filteredData.forEach(session => {
-      const day = session.dayOfWeek;
-      const time = session.time?.substring(0, 5); // Get HH:MM
+      const day = normalizeDay(session.dayOfWeek);
+      const time = normalizeTime(session.time);
 
       if (day && time && grid[day]?.[time]) {
         grid[day][time].sessions += 1;
         grid[day][time].totalCapacity += session.capacity || 0;
         grid[day][time].totalCheckins += session.checkedInCount || 0;
-        grid[day][time].totalRevenue += session.totalPaid || 0;
+        grid[day][time].totalRevenue += session.totalPaid || session.revenue || 0;
       }
     });
 

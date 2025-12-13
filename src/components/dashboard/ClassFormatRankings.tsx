@@ -1,191 +1,407 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, TrendingUp, Users, Star, ArrowUp, ArrowDown, Medal } from 'lucide-react';
-import { SessionData } from '@/hooks/useSessionsData';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
+import type { SessionData } from '@/hooks/useSessionsData';
+import { Crown, AlertTriangle, Calendar, Clock, Zap, Users, BarChart3, Download, RefreshCw, Filter } from 'lucide-react';
 
 interface ClassFormatRankingsProps {
   data: SessionData[];
 }
 
-export const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
-  const [sortBy, setSortBy] = useState<'attendance' | 'revenue' | 'fillRate'>('attendance');
+type SortCriteria = 'revenue' | 'sessions' | 'fill' | 'class-avg' | 'rev-per-seat' | 'rev-per-session' | 'empty-classes';
 
-  const rankings = useMemo(() => {
-    if (!data || data.length === 0) return [];
+const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
+  const sessions = Array.isArray(data) ? data : [];
+  const [sortBy, setSortBy] = useState<SortCriteria>('revenue');
+  const [includeTrainers, setIncludeTrainers] = useState(true);
+  const [excludeHosted, setExcludeHosted] = useState(false);
+  const [minClasses, setMinClasses] = useState(1);
+  const [minVisitors, setMinVisitors] = useState(0);
 
-    const classStats = data.reduce((acc, session) => {
-      const className = session.cleanedClass || session.classType || 'Unknown';
-      
-      if (!acc[className]) {
-        acc[className] = {
-          name: className,
-          totalSessions: 0,
-          totalAttendance: 0,
-          totalCapacity: 0,
-          totalRevenue: 0,
-          trainers: new Set(),
-          locations: new Set()
-        };
-      }
+  const allRankings = useMemo(() => {
+    // Group by uniqueId1 (unique class occurrence)
+    const classMap = new Map<string, SessionData[]>();
+    sessions.forEach(s => {
+      const classId = s.uniqueId1 || s.sessionId || 'unknown';
+      if (!classMap.has(classId)) classMap.set(classId, []);
+      classMap.get(classId)!.push(s);
+    });
 
-      acc[className].totalSessions += 1;
-      acc[className].totalAttendance += session.checkedInCount || 0;
-      acc[className].totalCapacity += session.capacity || 0;
-      acc[className].totalRevenue += session.totalPaid || 0;
-      if (session.trainerName) acc[className].trainers.add(session.trainerName);
-      if (session.location) acc[className].locations.add(session.location);
+    // Build ranking data for each class
+    let rankings = Array.from(classMap.entries()).map(([classId, classSessions]) => {
+      const totalSessions = classSessions.length;
+      const totalRevenue = classSessions.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+      const totalCapacity = classSessions.reduce((sum, s) => sum + (s.capacity || 0), 0);
+      const totalCheckins = classSessions.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+      const fillRate = totalCapacity > 0 ? (totalCheckins / totalCapacity) * 100 : 0;
+      const avgRevPerSession = totalSessions > 0 ? totalRevenue / totalSessions : 0;
+      const avgRevPerSeat = totalCapacity > 0 ? totalRevenue / totalCapacity : 0;
 
-      return acc;
-    }, {} as Record<string, {
-      name: string;
-      totalSessions: number;
-      totalAttendance: number;
-      totalCapacity: number;
-      totalRevenue: number;
-      trainers: Set<string>;
-      locations: Set<string>;
-    }>);
+      // Get first session details (class name, day, time)
+      const firstSession = classSessions[0];
+      const className = firstSession?.cleanedClass || firstSession?.classType || 'Unknown';
+      const dayOfWeek = firstSession?.dayOfWeek || 'Unknown';
+      const time = firstSession?.time || 'Unknown';
 
-    return Object.values(classStats).map(stats => ({
-      ...stats,
-      avgAttendance: Math.round(stats.totalAttendance / stats.totalSessions),
-      fillRate: Math.round((stats.totalAttendance / stats.totalCapacity) * 100),
-      avgRevenue: Math.round(stats.totalRevenue / stats.totalSessions),
-      trainerCount: stats.trainers.size,
-      locationCount: stats.locations.size
-    })).sort((a, b) => {
+      // Check if class has any empty sessions (0 checkins)
+      const emptyClassCount = classSessions.filter(s => s.checkedInCount === 0).length;
+      const nonEmptyClassCount = totalSessions - emptyClassCount;
+
+      // Check if class is hosted (contains "hosted" in class name)
+      const isHosted = className.toLowerCase().includes('hosted');
+
+      // Top trainer in this class by revenue
+      const trainerMap = new Map<string, number>();
+      classSessions.forEach(s => {
+        const trainer = s.trainerName || 'Unknown';
+        trainerMap.set(trainer, (trainerMap.get(trainer) || 0) + (s.totalPaid || 0));
+      });
+      let topTrainer = 'N/A';
+      let maxTrainerRev = 0;
+      trainerMap.forEach((rev, trainer) => {
+        if (rev > maxTrainerRev) {
+          maxTrainerRev = rev;
+          topTrainer = trainer;
+        }
+      });
+
+      return {
+        classId,
+        className,
+        dayOfWeek,
+        time,
+        totalSessions,
+        totalRevenue,
+        totalCapacity,
+        totalCheckins,
+        fillRate,
+        avgRevPerSession,
+        avgRevPerSeat,
+        emptyClassCount,
+        nonEmptyClassCount,
+        topTrainer,
+        classSessions,
+        isHosted,
+      };
+    });
+
+    // Apply filters
+    rankings = rankings.filter(r => {
+      // Filter by minimum classes
+      if (r.totalSessions < minClasses) return false;
+      // Filter by minimum visitors
+      if (r.totalCheckins < minVisitors) return false;
+      // Filter out hosted classes if enabled
+      if (excludeHosted && r.isHosted) return false;
+      return true;
+    });
+
+    // Sort based on criteria
+    rankings.sort((a, b) => {
       switch (sortBy) {
-        case 'attendance':
-          return b.avgAttendance - a.avgAttendance;
         case 'revenue':
-          return b.avgRevenue - a.avgRevenue;
-        case 'fillRate':
+          return b.totalRevenue - a.totalRevenue;
+        case 'sessions':
+          return b.totalSessions - a.totalSessions;
+        case 'fill':
           return b.fillRate - a.fillRate;
+        case 'class-avg':
+          return (b.totalSessions / b.nonEmptyClassCount || 0) - (a.totalSessions / a.nonEmptyClassCount || 0);
+        case 'rev-per-seat':
+          return b.avgRevPerSeat - a.avgRevPerSeat;
+        case 'rev-per-session':
+          return b.avgRevPerSession - a.avgRevPerSession;
+        case 'empty-classes':
+          return b.emptyClassCount - a.emptyClassCount;
         default:
-          return b.avgAttendance - a.avgAttendance;
+          return 0;
       }
     });
-  }, [data, sortBy]);
 
-  const getRankingIcon = (index: number) => {
-    if (index === 0) return <Trophy className="w-5 h-5 text-yellow-500" />;
-    if (index === 1) return <Medal className="w-5 h-5 text-gray-400" />;
-    if (index === 2) return <Medal className="w-5 h-5 text-orange-600" />;
-    return <span className="w-5 h-5 flex items-center justify-center text-sm font-bold text-slate-600">#{index + 1}</span>;
+    return rankings;
+  }, [sessions, sortBy, excludeHosted, minClasses, minVisitors]);
+
+  // Split into top and bottom
+  const topCount = Math.ceil(allRankings.length / 2);
+  const topRankings = allRankings.slice(0, topCount);
+  const bottomRankings = allRankings.slice(-topCount).reverse();
+
+  const getMetricLabel = () => {
+    switch (sortBy) {
+      case 'revenue': return 'Revenue';
+      case 'sessions': return 'Sessions';
+      case 'fill': return 'Fill Rate';
+      case 'class-avg': return 'Class Avg';
+      case 'rev-per-seat': return 'Rev/Seat';
+      case 'rev-per-session': return 'Rev/Session';
+      case 'empty-classes': return 'Empty Classes';
+      default: return 'Metric';
+    }
   };
 
-  const getRankingBadge = (index: number) => {
-    if (index === 0) return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">🏆 Champion</Badge>;
-    if (index === 1) return <Badge className="bg-gray-100 text-gray-800 border-gray-200">🥈 Runner-up</Badge>;
-    if (index === 2) return <Badge className="bg-orange-100 text-orange-800 border-orange-200">🥉 Third Place</Badge>;
-    if (index < 5) return <Badge variant="secondary">Top 5</Badge>;
-    return null;
+  const getMetricValue = (item: any) => {
+    switch (sortBy) {
+      case 'revenue': return formatCurrency(item.totalRevenue);
+      case 'sessions': return formatNumber(item.totalSessions);
+      case 'fill': return `${item.fillRate.toFixed(1)}%`;
+      case 'class-avg': return (item.totalSessions / item.nonEmptyClassCount || 0).toFixed(1);
+      case 'rev-per-seat': return formatCurrency(item.avgRevPerSeat);
+      case 'rev-per-session': return formatCurrency(item.avgRevPerSession);
+      case 'empty-classes': return formatNumber(item.emptyClassCount);
+      default: return '—';
+    }
   };
+
+  const RankingCard = ({ item, index, isTop }: { item: any; index: number; isTop: boolean }) => (
+    <div className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-300 cursor-pointer">
+      <div className="flex items-center gap-4 flex-1">
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm text-white ${
+            isTop
+              ? 'bg-gradient-to-r from-green-400 to-emerald-600'
+              : 'bg-gradient-to-r from-red-400 to-rose-600'
+          }`}
+        >
+          {index + 1}
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{item.className}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+              <Calendar className="w-3 h-3 inline mr-1" />
+              {item.dayOfWeek}
+            </span>
+            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+              <Clock className="w-3 h-3 inline mr-1" />
+              {item.time}
+            </span>
+            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+              {formatNumber(item.totalSessions)} sessions
+            </span>
+            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+              {item.totalCapacity} capacity
+            </span>
+            <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium border ${
+              item.fillRate >= 75 ? 'bg-green-50 text-green-700 border-green-200' :
+              item.fillRate >= 50 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+              'bg-red-50 text-red-700 border-red-200'
+            }`}>
+              {item.fillRate.toFixed(1)}% fill
+            </span>
+            {includeTrainers && (
+              <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-medium">
+                <Users className="w-3 h-3 inline mr-1" />
+                {item.topTrainer}
+              </span>
+            )}
+            {item.isHosted && (
+              <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 font-medium">
+                🎥 Hosted
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+          {getMetricValue(item)}
+        </p>
+        <p className="text-sm text-slate-500">{getMetricLabel()}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-blue-600" />
-            Class Format Rankings
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant={sortBy === 'attendance' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortBy('attendance')}
-            >
-              <Users className="w-4 h-4 mr-1" />
-              Attendance
-            </Button>
-            <Button
-              variant={sortBy === 'revenue' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortBy('revenue')}
-            >
-              💰 Revenue
-            </Button>
-            <Button
-              variant={sortBy === 'fillRate' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortBy('fillRate')}
-            >
-              <Star className="w-4 h-4 mr-1" />
-              Fill Rate
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {rankings.slice(0, 10).map((classFormat, index) => (
-            <div
-              key={classFormat.name}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${
-                index === 0
-                  ? 'border-yellow-200 bg-gradient-to-r from-yellow-50 to-amber-50'
-                  : index === 1
-                  ? 'border-gray-200 bg-gradient-to-r from-gray-50 to-slate-50'
-                  : index === 2
-                  ? 'border-orange-200 bg-gradient-to-r from-orange-50 to-red-50'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {getRankingIcon(index)}
-                  <div>
-                    <h3 className="font-semibold text-slate-800 text-lg">{classFormat.name}</h3>
-                    <div className="flex items-center gap-4 mt-1">
-                      <span className="text-sm text-slate-600">
-                        {classFormat.totalSessions} sessions
-                      </span>
-                      <span className="text-sm text-slate-600">
-                        {classFormat.trainerCount} trainers
-                      </span>
-                      <span className="text-sm text-slate-600">
-                        {classFormat.locationCount} locations
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-slate-800">
-                      {sortBy === 'attendance' && `${classFormat.avgAttendance}`}
-                      {sortBy === 'revenue' && `₹${classFormat.avgRevenue.toLocaleString()}`}
-                      {sortBy === 'fillRate' && `${classFormat.fillRate}%`}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {sortBy === 'attendance' && 'Avg Attendance'}
-                      {sortBy === 'revenue' && 'Avg Revenue'}
-                      {sortBy === 'fillRate' && 'Fill Rate'}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {getRankingBadge(index)}
-                    <div className="flex gap-1 text-xs text-slate-500">
-                      <span>{classFormat.totalAttendance.toLocaleString()} total</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">Individual Class Rankings</h3>
+          <p className="text-sm text-slate-500 mt-1">Performance metrics by class occurrence with advanced filters</p>
         </div>
 
-        {rankings.length > 10 && (
-          <div className="mt-6 text-center">
-            <Badge variant="outline" className="text-slate-600">
-              Showing top 10 of {rankings.length} class formats
-            </Badge>
+        {/* Main Filter and Sort Controls */}
+        <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          {/* Row 1: Sort and Toggles */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 cursor-pointer hover:border-slate-400 transition-all"
+            >
+              <option value="revenue">Sort by Revenue</option>
+              <option value="sessions">Sort by Sessions</option>
+              <option value="fill">Sort by Fill Rate</option>
+              <option value="class-avg">Sort by Class Avg</option>
+              <option value="rev-per-seat">Sort by Rev/Seat</option>
+              <option value="rev-per-session">Sort by Rev/Session</option>
+              <option value="empty-classes">Sort by Empty Classes</option>
+            </select>
+
+            <div className="h-6 w-px bg-slate-300" />
+
+            {/* Toggle Trainer Inclusion */}
+            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={includeTrainers}
+                onChange={(e) => setIncludeTrainers(e.target.checked)}
+                className="w-4 h-4 rounded accent-blue-600"
+              />
+              <Users className="w-4 h-4 text-slate-600" />
+              <span className="text-sm font-medium text-slate-700">Show Trainers</span>
+            </label>
+
+            {/* Toggle Exclude Hosted */}
+            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={excludeHosted}
+                onChange={(e) => setExcludeHosted(e.target.checked)}
+                className="w-4 h-4 rounded accent-blue-600"
+              />
+              <span className="text-sm font-medium text-slate-700">Exclude Hosted</span>
+            </label>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Row 2: Min Classes and Min Visitors */}
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                Min Classes
+              </label>
+              <input
+                type="number"
+                value={minClasses}
+                onChange={(e) => setMinClasses(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+                max="100"
+                className="w-20 px-2.5 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                Min Visitors
+              </label>
+              <input
+                type="number"
+                value={minVisitors}
+                onChange={(e) => setMinVisitors(Math.max(0, parseInt(e.target.value) || 0))}
+                min="0"
+                max="1000"
+                className="w-20 px-2.5 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => {
+                  setSortBy('revenue');
+                  setIncludeTrainers(true);
+                  setExcludeHosted(false);
+                  setMinClasses(1);
+                  setMinVisitors(0);
+                }}
+                className="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all flex items-center gap-1"
+                title="Reset all filters to default values"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reset
+              </button>
+
+              <button
+                onClick={() => {
+                  const csvData = allRankings.map((item, idx) => ({
+                    rank: (idx + 1),
+                    className: item.className,
+                    trainer: item.topTrainer,
+                    sessions: item.totalSessions,
+                    revenue: item.totalRevenue,
+                    fillRate: item.fillRate.toFixed(1),
+                  }));
+                  const csv = [
+                    ['Rank', 'Class Name', 'Trainer', 'Sessions', 'Revenue', 'Fill Rate %'].join(','),
+                    ...csvData.map(row => [row.rank, row.className, row.trainer, row.sessions, row.revenue, row.fillRate].join(','))
+                  ].join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `class-rankings-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all flex items-center gap-1"
+                title="Export rankings as CSV"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium transition-all flex items-center gap-1"
+                title="View analytics and insights"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Summary */}
+          <div className="text-xs text-slate-600 px-3 py-2 bg-white/50 rounded-lg border border-slate-200">
+            <span className="font-semibold">Active Filters:</span> Min {minClasses}+ classes • Min {minVisitors}+ visitors {excludeHosted && '• Excluding hosted'} {includeTrainers && '• Trainers visible'}
+          </div>
+        </div>
+      </div>
+
+      {/* Top and Bottom Rankings */}
+      {allRankings.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-slate-300 p-8 text-center">
+          <Zap className="w-12 h-12 mx-auto text-slate-400 mb-3" />
+          <p className="text-slate-600 font-medium">No classes found</p>
+          <p className="text-sm text-slate-500 mt-1">Try adjusting your filters</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Performers */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-emerald-600 flex items-center justify-center text-white">
+                <Crown className="w-4 h-4" />
+              </div>
+              <h4 className="font-semibold text-slate-900">Top Performers</h4>
+              <span className="ml-auto text-xs text-slate-500 font-medium">{topRankings.length} classes</span>
+            </div>
+            <div className="space-y-3">
+              {topRankings.map((item, index) => (
+                <RankingCard key={item.classId} item={item} index={index} isTop={true} />
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Performers */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-red-400 to-rose-600 flex items-center justify-center text-white">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <h4 className="font-semibold text-slate-900">Needs Improvement</h4>
+              <span className="ml-auto text-xs text-slate-500 font-medium">{bottomRankings.length} classes</span>
+            </div>
+            <div className="space-y-3">
+              {bottomRankings.map((item, index) => (
+                <RankingCard key={item.classId} item={item} index={index} isTop={false} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
+
+export default ClassFormatRankings;

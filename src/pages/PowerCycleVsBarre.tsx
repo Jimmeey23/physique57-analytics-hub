@@ -1,103 +1,42 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePayrollData } from '@/hooks/usePayrollData';
-import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
-import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
-import { Footer } from '@/components/ui/footer';
-import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { SimplePresenterMode } from '@/components/presentation/SimplePresenterMode';
-import { Button } from '@/components/ui/button';
-import { Presentation } from 'lucide-react';
-import { AiNotes } from '@/components/ui/AiNotes';
+
+/**
+ * DEPRECATED: This page has been merged into Class Formats Comparison
+ * All PowerCycle vs Barre vs Strength analytics are now in the Overview tab
+ * of the Class Formats page for better organization and to avoid duplication.
+ * 
+ * Redirecting to: /class-formats
+ */
 
 const PowerCycleVsBarre = () => {
-  const { data: payrollData, isLoading: loading } = usePayrollData();
-  const { isLoading, setLoading } = useGlobalLoading();
-  const exportRef = React.useRef<{ open: () => void }>(null);
-  const [isPresenterMode, setIsPresenterMode] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading !== undefined) {
-      setLoading(loading, 'Loading PowerCycle vs Barre vs Strength performance data...');
-    }
-  }, [loading, setLoading]);
-
-  // Remove individual loader - rely on global loader only
-
-  // Compute compact hero metrics (sessions, revenue, avg fill)
-  const totals = React.useMemo(() => {
-    const d = payrollData || [];
-    const sum = (key: keyof typeof d[number]) => d.reduce((acc, it) => acc + (Number(it[key] as any) || 0), 0);
-    const sessions = sum('cycleSessions') + sum('barreSessions') + sum('strengthSessions');
-    const empty = sum('emptyCycleSessions') + sum('emptyBarreSessions') + sum('emptyStrengthSessions');
-    const revenue = sum('cyclePaid') + sum('barrePaid') + sum('strengthPaid');
-    const fill = sessions > 0 ? ((sessions - empty) / sessions) * 100 : 0;
-    return { sessions, revenue, fill };
-  }, [payrollData]);
+    // Redirect to Class Formats page
+    navigate('/class-formats', { replace: true });
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-purple-50/40 to-pink-50/30 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-white/30 backdrop-blur-[0.5px]"></div>
-      <div className="relative z-10">
-      <DashboardMotionHero 
-        title="PowerCycle vs Barre vs Strength"
-        subtitle="Comprehensive analysis of PowerCycle, Barre, and Strength Lab class performance"
-        metrics={[
-          { label: 'Total Sessions', value: `${totals.sessions.toLocaleString()}` },
-          { label: 'Total Revenue', value: `₹${totals.revenue.toLocaleString()}` },
-          { label: 'Avg Fill', value: `${totals.fill.toFixed(1)}%` },
-        ]}
-        onDashboardClick={() => {
-          const main = document.querySelector('main, .container');
-          if (main) (main as HTMLElement).scrollIntoView({ behavior: 'smooth' });
-        }}
-        onExportClick={() => exportRef.current?.open()}
-        extra={
-          <Button
-            onClick={() => setIsPresenterMode(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
-          >
-            <Presentation className="w-5 h-5" />
-            Presenter Mode
-          </Button>
-        }
-      />
-
-      {/* Hidden export dialog controlled from the hero */}
-      <AdvancedExportButton 
-        renderTrigger={false}
-        openRef={exportRef as any}
-        payrollData={payrollData || []}
-        defaultFileName={`powercycle-barre-strength-export`}
-      />
-
-      <div className="container mx-auto px-6 py-8">
-        <main className="space-y-8">
-          <SessionsFiltersProvider>
-            <PowerCycleVsBarreSection data={payrollData || []} />
-          </SessionsFiltersProvider>
-          
-          <div className="mt-8">
-            <AiNotes 
-              location="powercycle-vs-barre"
-              sectionId="comparison-analytics" 
-              tableKey="powercycle-barre-strength-main"
-              author="Format Comparison Analyst"
-            />
-          </div>
-        </main>
+    <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-purple-50/40 to-pink-50/30 flex items-center justify-center">
+      <div className="text-center p-12 bg-white rounded-3xl shadow-2xl border border-violet-200 max-w-2xl mx-auto">
+        <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center">
+          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </div>
+        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-600 mb-4">
+          Page Moved
+        </h2>
+        <p className="text-gray-600 text-lg mb-6">
+          PowerCycle vs Barre vs Strength analytics have been consolidated into the <strong>Class Formats</strong> page for better organization.
+        </p>
+        <p className="text-gray-500 text-sm">
+          Redirecting you now...
+        </p>
       </div>
-      
-      <Footer />
-      
-      {/* Presenter Mode */}
-      <SimplePresenterMode 
-        isOpen={isPresenterMode}
-        onClose={() => setIsPresenterMode(false)}
-      />
+    </div>
       </div>
     </div>
   );

@@ -107,6 +107,7 @@ export function useDiscountMetrics(
     });
 
     // Compute metrics for a list
+    // Note: totalRevenue here = paymentValue (net revenue after discount, before VAT)
     const totals = (list: SalesData[]) => {
       const totalDiscounts = list.reduce((s, it) => s + num(it.discountAmount), 0);
       const totalRevenue = list.reduce((s, it) => s + num(it.paymentValue), 0);

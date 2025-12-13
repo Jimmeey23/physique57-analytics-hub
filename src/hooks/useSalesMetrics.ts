@@ -152,6 +152,10 @@ export const useSalesMetrics = (
       return 0;
     };
     // Calculate current period metrics - using NET revenue (paymentValue - VAT)
+    // Revenue Definitions:
+    // - paymentValue = Net revenue after discount, before VAT
+    // - paymentValue - VAT = Net revenue after discount and VAT
+    // - paymentValue + discountAmount = Gross revenue before discount
     const currentRevenue = currentPeriodData.reduce((sum, item) => {
       const payment = num((item as any).paymentValue);
       const vat = num((item as any).paymentVAT) || num((item as any).vat);

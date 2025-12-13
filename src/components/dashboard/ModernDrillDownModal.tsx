@@ -111,14 +111,30 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
   const getSpecificData = () => {
     // Use the most specific transaction data available (prioritize the new specific data)
     const rawTransactionData = data.filteredTransactionData || data.rawData || data.transactionData || [];
-    
+
+    // If this is a class-focused drill payload, prefer sessionsFiltered/checkinsFiltered provided by the page
+    if ((type === 'class' || type === 'class-drill') && (Array.isArray(data.sessionsFiltered) || Array.isArray(data.checkinsFiltered))) {
+      const sessions = data.sessionsFiltered || [];
+      const checkins = data.checkinsFiltered || [];
+      const totalSessions = sessions.length;
+      const totalRevenue = sessions.reduce((sum: number, s: any) => sum + (s.totalPaid || s.revenue || 0), 0);
+      const totalCheckins = sessions.reduce((sum: number, s: any) => sum + (s.checkedInCount || 0), 0);
+
+      return {
+        ...data,
+        filteredData: sessions,
+        sessions,
+        checkins,
+        specificRevenue: data.specificRevenue || totalRevenue,
+        specificTransactions: data.specificTransactions || totalSessions,
+        specificCustomers: data.specificCustomers || totalCheckins
+      };
+    }
+
     // Extract targeted data based on the clicked element
     if (type === 'product' && data.name) {
-      // For product drill-down, use already filtered data or filter by product name
       const productName = data.name;
       let filteredData = rawTransactionData;
-      
-      // If we don't already have filtered data, filter it ourselves
       if (!data.filteredTransactionData && rawTransactionData.length > 0) {
         filteredData = rawTransactionData.filter((item: any) => 
           item.productName === productName || 
@@ -128,9 +144,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
           item.paymentItem === productName
         );
       }
-      
       console.log(`ModernDrillDownModal: Using ${filteredData.length} filtered transactions for product ${productName}`);
-      
       return {
         ...data,
         filteredData,
@@ -139,22 +153,17 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
         specificCustomers: data.specificCustomers || new Set(filteredData.map((item: any) => item.memberId || item.customerEmail)).size
       };
     }
-    
+
     if (type === 'category' && data.name) {
-      // For category drill-down, use already filtered data or filter by category name
       const categoryName = data.name;
       let filteredData = rawTransactionData;
-      
-      // If we don't already have filtered data, filter it ourselves
       if (!data.filteredTransactionData && rawTransactionData.length > 0) {
         filteredData = rawTransactionData.filter((item: any) => 
           item.cleanedCategory === categoryName ||
           item.category === categoryName
         );
       }
-      
       console.log(`ModernDrillDownModal: Using ${filteredData.length} filtered transactions for category ${categoryName}`);
-      
       return {
         ...data,
         filteredData,
@@ -165,7 +174,6 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
     }
 
     if (type === 'trainer' && data.teacherName) {
-      // For trainer drill-down, focus on that specific trainer
       const trainerData = {
         name: data.teacherName,
         location: data.location,

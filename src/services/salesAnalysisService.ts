@@ -104,7 +104,10 @@ export class SalesAnalysisService {
     const avgSpendPerMember = uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
     const avgTransactionValue = transactions > 0 ? totalRevenue / transactions : 0;
     const discountAmount = monthData.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
-    const discountPercentage = totalRevenue > 0 ? (discountAmount / totalRevenue) * 100 : 0;
+    // Calculate discount percentage correctly: discounts as % of gross revenue (before discount)
+    // Gross revenue = Net revenue (paymentValue) + Discounts given
+    const grossRevenue = totalRevenue + discountAmount;
+    const discountPercentage = grossRevenue > 0 ? (discountAmount / grossRevenue) * 100 : 0;
 
     // Category breakdown
     const categoryMap = new Map<string, { revenue: number; transactions: number }>();

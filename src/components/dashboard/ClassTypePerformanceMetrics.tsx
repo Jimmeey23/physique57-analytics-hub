@@ -105,7 +105,8 @@ export const ClassTypePerformanceMetrics: React.FC<ClassTypePerformanceMetricsPr
       // Derived
       const avgAttendance = safeDiv(checked, sessionsCount);
       const avgCapacity = safeDiv(cap, sessionsCount);
-      const capacityUtil = avgCapacity > 0 ? safeDiv(avgAttendance, avgCapacity) * 100 : 0;
+      // Harmonized fill-rate / capacity utilization: use total checked-in over total capacity
+      const capacityUtil = cap > 0 ? safeDiv(checked, cap) * 100 : 0;
       const peakCapacityUtil = sessions.reduce((max, s) => {
         const pct = (s.capacity || 0) > 0 ? (safeDiv(s.checkedInCount || 0, s.capacity || 0) * 100) : 0;
         return Math.max(max, pct);
@@ -229,6 +230,9 @@ export const ClassTypePerformanceMetrics: React.FC<ClassTypePerformanceMetricsPr
           </TabsList>
 
           <TabsContent value="core">
+            <div className="mb-3 text-sm text-slate-500">
+              <strong>Note:</strong> Capacity Utilization = total checked‑in / total capacity (aggregated across sessions).
+            </div>
             <div className="overflow-x-auto">
               <Table className="[&_*]:whitespace-nowrap">
                 <TableHeader>

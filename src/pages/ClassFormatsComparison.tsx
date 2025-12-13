@@ -8,28 +8,20 @@ import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { SessionsFilterSection } from '@/components/dashboard/SessionsFilterSection';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
-import { FormatComparisonSummaryCards } from '@/components/dashboard/FormatComparisonSummaryCards';
-import { ComprehensiveClassFormatComparison } from '@/components/dashboard/ComprehensiveClassFormatComparison';
-import { ImprovedSessionsTopBottomLists } from '@/components/dashboard/ImprovedSessionsTopBottomLists';
-import { formatNumber } from '@/utils/formatters';
+import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
+import OverviewMetricsCard from '@/components/dashboard/OverviewMetricsCard';
+import ClassFormatRankings from '@/components/dashboard/ClassFormatRankings';
+import DetailedComparisonView from '@/components/dashboard/DetailedComparisonView';
+import EnhancedComparisonTool from '@/components/dashboard/EnhancedComparisonTool';
 import ClassFormatsMoMTable from '@/components/dashboard/ClassFormatsMoMTable';
 import ClassFormatsYoYTable from '@/components/dashboard/ClassFormatsYoYTable';
-import ClassFormatsMoMDetails from '@/components/dashboard/ClassFormatsMoMDetails';
-import ClassFormatsYoYDetails from '@/components/dashboard/ClassFormatsYoYDetails';
-import ClassTypePerformanceMetrics from '@/components/dashboard/ClassTypePerformanceMetrics';
 import type { SessionData } from '@/hooks/useSessionsData';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModal';
-import { usePayrollData } from '@/hooks/usePayrollData';
-import { PowerCycleBarreStrengthDetailedAnalytics } from '@/components/dashboard/PowerCycleBarreStrengthDetailedAnalytics';
-import { PowerCycleVsBarreSection } from '@/components/dashboard/PowerCycleVsBarreSection';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
-import { FormatPerformanceHeatMap } from '@/components/dashboard/FormatPerformanceHeatMap';
-import { AdvancedFormatMetrics } from '@/components/dashboard/AdvancedFormatMetrics';
-import { SmartInsightsPanel } from '@/components/dashboard/SmartInsightsPanel';
-import { FormatProfitabilityMatrix } from '@/components/dashboard/FormatProfitabilityMatrix';
+
 
 const locations = [
   { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
@@ -41,17 +33,14 @@ const locations = [
 const ClassFormatsComparison: React.FC = () => {
   const { data, loading } = useSessionsData();
   const { allCheckins, loading: checkinsLoading } = useLateCancellationsData();
-  const { data: payrollData = [], isLoading: payrollLoading } = usePayrollData();
   const { setLoading } = useGlobalLoading();
   const [activeLocation, setActiveLocation] = useState('kwality');
-  const [selectedFormats, setSelectedFormats] = useState<string[]>(['Barre', 'PowerCycle', 'Strength']);
-  const [compareWithTrainer, setCompareWithTrainer] = useState(false);
   const exportRef = React.useRef<{ open: () => void }>(null);
   const [drill, setDrill] = useState<any | null>(null);
 
   useEffect(() => {
-    setLoading(loading || checkinsLoading || payrollLoading, 'Loading class format comparison data...');
-  }, [loading, checkinsLoading, payrollLoading, setLoading, data, allCheckins, payrollData]);
+    setLoading(loading || checkinsLoading, 'Loading class format comparison data...');
+  }, [loading, checkinsLoading, setLoading, data, allCheckins]);
 
   // NOTE: We must read filters within the provider. We'll render an inner component below.
   // Global drilldown event bridge
@@ -158,6 +147,22 @@ const ClassFormatsComparison: React.FC = () => {
     const { filters } = useSessionsFilters();
     const filteredAll = useFilteredSessionsData(sessions || []);
     
+    React.useEffect(() => {
+      console.warn('%c🎯 ClassFormatsBody - Data flow', 'color: purple; font-weight: bold; font-size: 14px');
+      console.log({
+        sessionsReceived: sessions?.length || 0,
+        filteredAllCount: filteredAll?.length || 0,
+        allCheckinsCount: allCheckins?.length || 0,
+        activeLocation,
+        sampleSession: sessions?.[0],
+        filterKeys: filters ? Object.keys(filters) : 'no filters'
+      });
+      if (sessions && sessions.length > 0) {
+        const uniqueClasses = new Set(sessions.map(s => s?.cleanedClass || s?.classType));
+        console.log('  Unique classes found:', Array.from(uniqueClasses));
+      }
+    }, [sessions, filteredAll, allCheckins, activeLocation, filters]);
+    
     // Filter checkins globally with SessionsFilters
     const filteredAllCheckins = useMemo(() => {
       return (allCheckins || []).filter((c: any) => {
@@ -182,19 +187,6 @@ const ClassFormatsComparison: React.FC = () => {
         return s.location === loc.fullName;
       });
     }, [filteredAll, activeLocation]);
-
-    // Filter payroll by location for Detailed tab
-    const filteredPayrollByLocation = useMemo(() => {
-      if (activeLocation === 'all') return payrollData;
-      const loc = (activeLocation || '').toLowerCase();
-      return (payrollData || []).filter((p: any) => {
-        const pl = String(p.location || '').toLowerCase();
-        if (loc === 'kwality') return pl.includes('kwality');
-        if (loc === 'supreme') return pl.includes('supreme');
-        if (loc === 'kenkere') return pl.includes('kenkere');
-        return true;
-      });
-    }, [payrollData, activeLocation]);
 
     const heroTotals = useMemo(() => {
       // Use FILTERED data (includes global filters AND location filters)
@@ -275,7 +267,7 @@ const ClassFormatsComparison: React.FC = () => {
           metric, 
           sessionsFiltered,
           totalSessions: sessionsFiltered.length,
-          totalRevenue: sessionsFiltered.reduce((sum, s) => sum + (s.revenue || 0), 0),
+          totalRevenue: sessionsFiltered.reduce((sum, s) => sum + (s.totalPaid || s.revenue || 0), 0),
           totalCheckins: sessionsFiltered.reduce((sum, s) => sum + (s.checkedInCount || 0), 0)
         };
       }
@@ -313,8 +305,8 @@ const ClassFormatsComparison: React.FC = () => {
         const targetClassType = map[formatKey];
 
         const sessionsFiltered = currentLocationFilteredData.filter(s => {
-          const trainerOk = trainerName ? (s.trainerName === trainerName || (s as any).instructor === trainerName) : true;
-          const classOk = targetClassType ? (s.classType === targetClassType || s.cleanedClass === targetClassType) : true;
+          const trainerOk = trainerName ? (s.trainerName === trainerName) : true;
+          const classOk = targetClassType ? (s.cleanedClass === targetClassType || s.classType === targetClassType) : true;
           return trainerOk && classOk;
         });
 
@@ -337,7 +329,8 @@ const ClassFormatsComparison: React.FC = () => {
       const sessionsFiltered = currentLocationFilteredData.filter(s => {
         const matchesGroup = groupBy === 'uniqueId1' ? (s.uniqueId1 === row.group)
           : groupBy === 'uniqueId2' ? (s.uniqueId2 === row.group)
-          : (s.classType === row.group || row.group === undefined);
+          : groupBy === 'classType' ? (s.classType === row.group || s.cleanedClass === row.group)
+          : (row.group === undefined || s.classType === row.group || s.cleanedClass === row.group);
         const matchesRow = (
           (!row.day || s.dayOfWeek === row.day) &&
           (!row.time || s.time === row.time) &&
@@ -417,292 +410,76 @@ const ClassFormatsComparison: React.FC = () => {
               return false;
             });
 
-            // Filter payroll data for this specific location
-            const locationPayrollData = location.id === 'all' ? payrollData : (payrollData || []).filter((p: any) => {
-              const pl = String(p.location || '').toLowerCase();
-              if (location.id === 'kwality') return pl.includes('kwality');
-              if (location.id === 'supreme') return pl.includes('supreme');
-              if (location.id === 'kenkere') return pl.includes('kenkere');
-              return false;
-            });
+            if (activeLocation === location.id) {
+              console.warn('%c📍 ClassFormatsComparison - Location: ' + location.id + ' | Data count: ' + (locationFilteredData?.length || 0), 'color: green; font-weight: bold; font-size: 14px');
+              console.table({
+                location: location.id,
+                dataCount: locationFilteredData?.length || 0,
+                checkinsCount: locationFilteredCheckins?.length || 0,
+                sampleData: locationFilteredData?.[0]
+              });
+            }
 
             return (
             <div key={location.id} style={{ display: activeLocation === location.id ? 'block' : 'none' }}>
-              {/* Enhanced Sub-tabs: Overview | Trends | Performance | Advanced | Detailed */}
+              {/* Rebuilt Sub-tabs: Overview | Rankings | Detailed | Compare | Trends */}
               <Tabs defaultValue="overview" className="w-full">
-                <div className="flex justify-center mb-8">
-                  <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 grid grid-cols-5 gap-0 w-full max-w-5xl">
-                    <TabsTrigger value="overview" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Overview
-                    </TabsTrigger>
-                    <TabsTrigger value="trends" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Trends
-                    </TabsTrigger>
-                    <TabsTrigger value="performance" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Performance
-                    </TabsTrigger>
-                    <TabsTrigger value="advanced" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Advanced
-                    </TabsTrigger>
-                    <TabsTrigger value="detailed" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                      Detailed
-                    </TabsTrigger>
+                <div className="flex justify-center mb-6">
+                  <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 grid grid-cols-5 gap-0 w-full max-w-5xl relative z-20">
+                    <TabsTrigger value="overview" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:z-30 relative">Overview</TabsTrigger>
+                    <TabsTrigger value="rankings" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:z-30 relative">Rankings</TabsTrigger>
+                    <TabsTrigger value="detailed" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:z-30 relative">Detailed</TabsTrigger>
+                    <TabsTrigger value="compare" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:z-30 relative">Compare</TabsTrigger>
+                    <TabsTrigger value="trends" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:z-30 relative">Trends</TabsTrigger>
                   </TabsList>
                 </div>
 
-                  <TabsContent value="overview" className="space-y-10 mt-8">
-                    {/* Enhanced Debug info */}
-                    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-indigo-200/50 rounded-3xl p-8 mb-10 shadow-xl">
-                      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-                      <h3 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 text-lg mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        Data Debug Info
-                      </h3>
-                      <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100">
-                          <p className="text-indigo-600 font-semibold">Sessions</p>
-                          <p className="text-2xl font-bold text-indigo-900">{locationFilteredData?.length || 0}</p>
-                        </div>
-                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-purple-100">
-                          <p className="text-purple-600 font-semibold">All Sessions</p>
-                          <p className="text-2xl font-bold text-purple-900">{data?.length || 0}</p>
-                        </div>
-                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-pink-100">
-                          <p className="text-pink-600 font-semibold">Location</p>
-                          <p className="text-lg font-bold text-pink-900 capitalize">{location.id}</p>
-                        </div>
-                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-blue-100">
-                          <p className="text-blue-600 font-semibold">Status</p>
-                          <p className="text-xs font-medium text-blue-900 space-y-1">
-                            <span className={`inline-block px-2 py-1 rounded-full ${loading ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-                              Sessions: {loading ? 'Loading' : 'Ready'}
-                            </span>
-                          </p>
-                        </div>
+                <TabsContent value="overview" className="space-y-6 mt-4">
+                  {locationFilteredData && locationFilteredData.length > 0 ? (
+                    <OverviewMetricsCard data={locationFilteredData as any} />
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">No data available for this location</div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="rankings" className="space-y-6 mt-4">
+                  {locationFilteredData && locationFilteredData.length > 0 ? (
+                    <ClassFormatRankings data={locationFilteredData as any} />
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">No data available for this location</div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="detailed" className="space-y-6 mt-4">
+                  {locationFilteredData && locationFilteredData.length > 0 ? (
+                    <DetailedComparisonView data={locationFilteredData as any} />
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">No data available for this location</div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="compare" className="space-y-6 mt-4">
+                  {locationFilteredData && locationFilteredData.length > 0 ? (
+                    <EnhancedComparisonTool data={locationFilteredData as any} />
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">No data available for this location</div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="trends" className="space-y-6 mt-4">
+                  {data && data.length > 0 ? (
+                    <>
+                      <div className="bg-gradient-to-r from-blue-50 to-slate-100 rounded-2xl border border-slate-200 p-6">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">Month-over-Month Performance Trends</h3>
+                        <p className="text-sm text-slate-600">Historical class format performance comparison across all months</p>
                       </div>
-                    </div>
-
-                    {locationFilteredData && locationFilteredData.length > 0 ? (
-                      <div className="space-y-10">
-                        {/* Summary cards per format */}
-                        <div className="animate-fade-in">
-                          <FormatComparisonSummaryCards 
-                            data={locationFilteredData}
-                            onDrillDown={(data) => {
-                              window.dispatchEvent(new CustomEvent('open-drilldown', {
-                                detail: { type: 'format-summary', ...data }
-                              }));
-                            }}
-                          />
-                        </div>
-
-                        {/* Interactive charts and tables with metric selector */}
-                        <div className="animate-fade-in delay-100">
-                          <ComprehensiveClassFormatComparison 
-                            data={locationFilteredData}
-                            selectedFormats={selectedFormats}
-                            onFormatsChange={setSelectedFormats}
-                            compareWithTrainer={compareWithTrainer}
-                            onCompareWithTrainerChange={setCompareWithTrainer}
-                          />
-                        </div>
-
-                        {/* Class Type Performance Metrics */}
-                        <div className="animate-fade-in delay-200">
-                          <ClassTypePerformanceMetrics 
-                            data={locationFilteredData as any}
-                            defaultGroupBy="classType"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-20">
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-12 shadow-2xl border border-gray-200 max-w-2xl mx-auto">
-                          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                            </svg>
-                          </div>
-                          <h3 className="text-2xl font-bold text-gray-800 mb-3">No Data Available</h3>
-                          <p className="text-gray-600 mb-6 text-lg">
-                            {loading || checkinsLoading || payrollLoading 
-                              ? 'Loading data...' 
-                              : 'No session data found for the selected location and filters.'
-                            }
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Raw data: {data?.length || 0} sessions, {allCheckins?.length || 0} checkins
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="trends" className="space-y-10 mt-8">
-                    <Tabs defaultValue="analytics" className="w-full">
-                      <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 grid w-full grid-cols-3 h-auto max-w-2xl mx-auto mb-8">
-                        <TabsTrigger value="analytics" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
-                          Trend Analytics
-                        </TabsTrigger>
-                        <TabsTrigger value="classes" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
-                          Class Rankings
-                        </TabsTrigger>
-                        <TabsTrigger value="trainers" className="flex-1 text-center py-3 data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r">
-                          Trainer Rankings
-                        </TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="analytics" className="space-y-6">
-                        <div className="animate-fade-in">
-                          <FormatTrendsSection sessions={locationFilteredData || []} checkins={locationFilteredCheckins} activeLocation={location.id} />
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="classes" className="space-y-6">
-                        <div className="animate-fade-in">
-                          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-6">Class Performance Rankings</h2>
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <ImprovedSessionsTopBottomLists 
-                              data={locationFilteredData}
-                              title="Top Classes by Performance"
-                              type="classes"
-                              variant="top"
-                              initialCount={10}
-                            />
-                            <ImprovedSessionsTopBottomLists 
-                              data={locationFilteredData}
-                              title="Bottom Classes by Performance"
-                              type="classes"
-                              variant="bottom"
-                              initialCount={10}
-                            />
-                          </div>
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="trainers" className="space-y-6">
-                        <div className="animate-fade-in">
-                          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-6">Trainer Performance Rankings</h2>
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <ImprovedSessionsTopBottomLists 
-                              data={locationFilteredData}
-                              title="Top Trainers by Performance"
-                              type="trainers"
-                              variant="top"
-                              initialCount={10}
-                            />
-                            <ImprovedSessionsTopBottomLists 
-                              data={locationFilteredData}
-                              title="Bottom Trainers by Performance"
-                              type="trainers"
-                              variant="bottom"
-                              initialCount={10}
-                            />
-                          </div>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </TabsContent>
-
-                  <TabsContent value="performance" className="space-y-10 mt-8">
-                    <div className="animate-fade-in">
-                      <PowerCycleVsBarreSection data={locationPayrollData as any} />
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="advanced" className="space-y-10 mt-8">
-                    {/* Smart Insights Panel */}
-                    <div className="animate-fade-in">
-                      <SmartInsightsPanel data={locationFilteredData} />
-                    </div>
-
-                    {/* Enhanced Format-Specific Tabs */}
-                    <div className="animate-fade-in delay-100">
-                      <Tabs defaultValue="all" className="w-full">
-                        <div className="flex justify-center mb-8">
-                          <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 grid grid-cols-4 gap-0 w-full max-w-3xl">
-                            <TabsTrigger value="all" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                              All Formats
-                            </TabsTrigger>
-                            <TabsTrigger value="barre" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                              Barre
-                            </TabsTrigger>
-                            <TabsTrigger value="powercycle" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                              PowerCycle
-                            </TabsTrigger>
-                            <TabsTrigger value="strength" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-                              Strength Lab
-                            </TabsTrigger>
-                          </TabsList>
-                        </div>
-
-                        <TabsContent value="all" className="space-y-10">
-                          {/* Heat Map Visualization */}
-                          <FormatPerformanceHeatMap data={locationFilteredData} />
-
-                          {/* Advanced Metrics Dashboard */}
-                          <AdvancedFormatMetrics data={locationFilteredData} />
-
-                          {/* BCG Matrix - Profitability Analysis */}
-                          <FormatProfitabilityMatrix data={locationFilteredData} />
-                        </TabsContent>
-
-                        <TabsContent value="barre" className="space-y-10">
-                          {/* Heat Map for Barre */}
-                          <FormatPerformanceHeatMap 
-                            data={locationFilteredData.filter(s => s.classType === 'Barre' || s.cleanedClass === 'Barre')} 
-                            selectedFormat="Barre"
-                          />
-
-                          {/* Advanced Metrics for Barre */}
-                          <AdvancedFormatMetrics 
-                            data={locationFilteredData.filter(s => s.classType === 'Barre' || s.cleanedClass === 'Barre')} 
-                            singleFormat={true}
-                          />
-                        </TabsContent>
-
-                        <TabsContent value="powercycle" className="space-y-10">
-                          {/* Heat Map for PowerCycle */}
-                          <FormatPerformanceHeatMap 
-                            data={locationFilteredData.filter(s => s.classType === 'PowerCycle' || s.cleanedClass === 'PowerCycle')} 
-                          selectedFormat="PowerCycle"
-                        />
-
-                        {/* Advanced Metrics for PowerCycle */}
-                        <AdvancedFormatMetrics 
-                          data={locationFilteredData.filter(s => s.classType === 'PowerCycle' || s.cleanedClass === 'PowerCycle')} 
-                          singleFormat={true}
-                        />
-                      </TabsContent>
-
-                      <TabsContent value="strength" className="space-y-10">
-                        {/* Heat Map for Strength */}
-                        <FormatPerformanceHeatMap 
-                          data={locationFilteredData.filter(s => s.classType === 'Strength' || s.cleanedClass === 'Strength')} 
-                          selectedFormat="Strength"
-                        />
-
-                        {/* Advanced Metrics for Strength */}
-                        <AdvancedFormatMetrics 
-                          data={locationFilteredData.filter(s => s.classType === 'Strength' || s.cleanedClass === 'Strength')} 
-                          singleFormat={true}
-                        />
-                      </TabsContent>
-                    </Tabs>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="detailed" className="space-y-10 mt-8">
-                    <div className="animate-fade-in">
-                      <PowerCycleBarreStrengthDetailedAnalytics 
-                        data={locationPayrollData as any}
-                        onItemClick={(item) => setDrill({ scope: 'detailed-format', item })}
-                      />
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                      <ClassFormatsMoMTable sessions={data as any} checkins={allCheckins} />
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">No data available</div>
+                  )}
+                </TabsContent>
+              </Tabs>
               </div>
             );
           })}</div>
