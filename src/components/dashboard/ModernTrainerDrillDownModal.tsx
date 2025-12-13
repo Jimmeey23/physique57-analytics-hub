@@ -126,7 +126,7 @@ export function ModernTrainerDrillDownModal({
       };
     }
 
-    console.log('✅ Processing individual sessions data');
+
     // Calculate totals from individual sessions
     const totals = sessions.reduce((acc: any, session: any) => {
       const revenue = parseFloat(session.totalPaid || 0);
@@ -251,7 +251,7 @@ export function ModernTrainerDrillDownModal({
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
-    console.log(`📚 Processed ${classes.length} classes for display`);
+
 
     return {
       totals,

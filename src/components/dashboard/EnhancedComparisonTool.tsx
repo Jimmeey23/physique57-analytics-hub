@@ -15,9 +15,7 @@ const EnhancedComparisonTool: React.FC<EnhancedComparisonToolProps> = ({ data })
   const [mode, setMode] = useState<ComparisonMode>('trainers');
   const [selected, setSelected] = useState<string[]>([]);
 
-  React.useEffect(() => {
-    console.warn('%c🔵 EnhancedComparisonTool - Sessions count: ' + sessions.length, 'color: blue; font-weight: bold; font-size: 14px');
-  }, [sessions]);
+
 
   const items = useMemo(() => {
     if (mode === 'trainers') return Array.from(new Set(sessions.map(s => s.trainerName).filter(Boolean)));

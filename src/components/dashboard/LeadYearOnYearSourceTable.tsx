@@ -218,7 +218,7 @@ export const LeadYearOnYearSourceTable: React.FC<LeadYearOnYearSourceTableProps>
     return sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />;
   };
   const handleExport = () => {
-    console.log('Exporting year-on-year source data...');
+
   };
 
   // Get current date info for dynamic month display

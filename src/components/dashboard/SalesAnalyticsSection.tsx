@@ -105,9 +105,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   });
 
   const applyFilters = (rawData: SalesData[], includeHistoric: boolean = false) => {
-    console.log('Applying filters to', rawData.length, 'records. IncludeHistoric:', includeHistoric);
-    console.log('Current filters:', filters);
-    console.log('Active location:', activeLocation);
+
     
     let filtered = [...rawData];
 
@@ -123,7 +121,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       });
     }
 
-    console.log('After location filter:', filtered.length, 'records');
+
 
     // Apply date range filter
     if (!includeHistoric && (filters.dateRange.start || filters.dateRange.end)) {
@@ -135,7 +133,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         return date;
       })() : null;
       
-      console.log('Applying date filter:', startDate, 'to', endDate);
+
       
       filtered = filtered.filter(item => {
         if (!item.paymentDate) return false;
@@ -169,7 +167,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         return true;
       });
       
-      console.log('After date filter:', filtered.length, 'records');
+
     }
 
     // Apply category filter
@@ -179,7 +177,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           item.cleanedCategory?.toLowerCase().includes(cat.toLowerCase())
         )
       );
-      console.log('After category filter:', filtered.length, 'records');
+
     }
 
     // Apply payment method filter
@@ -189,7 +187,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           item.paymentMethod?.toLowerCase().includes(method.toLowerCase())
         )
       );
-      console.log('After payment method filter:', filtered.length, 'records');
+
     }
 
     // Apply sold by filter
@@ -199,21 +197,21 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           item.soldBy?.toLowerCase().includes(seller.toLowerCase())
         )
       );
-      console.log('After sold by filter:', filtered.length, 'records');
+
     }
 
     // Apply amount range filters
     if (filters.minAmount) {
       filtered = filtered.filter(item => (item.paymentValue || 0) >= filters.minAmount!);
-      console.log('After min amount filter:', filtered.length, 'records');
+
     }
     
     if (filters.maxAmount) {
       filtered = filtered.filter(item => (item.paymentValue || 0) <= filters.maxAmount!);
-      console.log('After max amount filter:', filtered.length, 'records');
+
     }
 
-    console.log('Final filtered data:', filtered.length, 'records');
+
     return filtered;
   };
 
@@ -235,8 +233,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   }, [data, activeLocation]);
 
   const handleRowClick = useCallback((rowData: any) => {
-    console.log('Row clicked with data:', rowData);
-    console.log('Available properties in rowData:', Object.keys(rowData));
+
     
     // Use RAW DATA for drill-down to be independent of current filters
     // Only apply location filtering to maintain context

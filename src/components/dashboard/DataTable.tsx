@@ -477,7 +477,7 @@ export const DataTable: React.FC<DataTableProps> = ({
         lastYearTransactionData: row.lastYearRawData || []
       })
     };
-    console.log('Row clicked with enriched data:', enrichedRow);
+
     onRowClick?.(enrichedRow);
   };
   const renderMonthlyTable = () => <div className="rounded-3xl border border-slate-200/30 bg-white shadow-2xl overflow-hidden">

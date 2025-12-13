@@ -463,7 +463,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
                       monthKey: key
                     };
                     
-                    console.log(`Category group cell click: ${categoryGroup.category} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
+
                     onRowClick && onRowClick(categoryCellData);
                   }}
                 >
@@ -526,7 +526,7 @@ export const EnhancedYearOnYearTable: React.FC<EnhancedYearOnYearTableProps> = (
                               monthKey: key
                             };
                             
-                            console.log(`Cell click: ${product.product} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
+
                             onRowClick && onRowClick(enhancedCellData);
                           }}
                         >

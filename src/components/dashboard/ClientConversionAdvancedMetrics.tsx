@@ -103,7 +103,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
         : 0
     })).filter(stat => stat.totalClients > 0);
 
-    console.log('Membership stats processed:', processed);
+
     return processed;
   }, [data]);
 
@@ -233,7 +233,7 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
         : 0
     })).filter(stat => stat.totalClients > 0);
 
-    console.log('Trainer stats processed:', processed);
+
     return processed;
   }, [data]);
 
