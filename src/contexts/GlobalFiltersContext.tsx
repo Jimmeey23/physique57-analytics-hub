@@ -40,10 +40,11 @@ export const useGlobalFilters = () => {
     // Instead of throwing, log the error and return a fallback
     console.error('useGlobalFilters must be used within a GlobalFiltersProvider. Returning fallback values.');
     
+    const fallbackDateRange = getPreviousMonthDateRange();
     // Return a fallback context with default values
     return {
       filters: {
-        dateRange: getPreviousMonthDateRange(),
+        dateRange: fallbackDateRange,
         location: [],
         category: [],
         product: [],
@@ -61,9 +62,20 @@ export const useGlobalFilters = () => {
       updateFilters: () => {},
       clearFilters: () => {},
       resetToDefaultDates: () => {},
+      // Computed properties
+      activeLocations: [],
+      startDate: fallbackDateRange.start,
+      endDate: fallbackDateRange.end,
     };
   }
-  return context;
+  
+  // Add computed properties to the context
+  return {
+    ...context,
+    activeLocations: context.filters.location,
+    startDate: context.filters.dateRange.start,
+    endDate: context.filters.dateRange.end,
+  };
 };
 
 interface GlobalFiltersProviderProps {

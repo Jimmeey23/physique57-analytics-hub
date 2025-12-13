@@ -175,13 +175,17 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                     sanitizedHeaderClass,
                     isLastColumn && tableId && "pr-12" // Extra padding for copy button
                   )}
-                  style={isSticky ? {
-                    background: gradientClass.includes('from-') ? 
-                      `linear-gradient(to right, ${gradientClass.split(' ').slice(1).join(' ')})` :
-                      'linear-gradient(to right, rgb(51 65 85), rgb(15 23 42))'
-                  } : undefined}
+                  style={{
+                    minWidth: '80px',
+                    ...(isSticky
+                      ? {
+                          background: gradientClass.includes('from-')
+                            ? `linear-gradient(to right, ${gradientClass.split(' ').slice(1).join(' ')})`
+                            : 'linear-gradient(to right, rgb(51 65 85), rgb(15 23 42))',
+                        }
+                      : {}),
+                  }}
                   onClick={() => handleSort(column)}
-                  style={{ minWidth: '80px' }}
                 >
                 <div className={cn(
                   "flex items-center gap-1 h-full",

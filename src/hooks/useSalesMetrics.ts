@@ -25,6 +25,16 @@ export interface SalesMetric {
     difference: number;
   };
   periodLabel?: string; // e.g., "Sep 2025 vs Aug 2025"
+  // Year-on-year comparison
+  yoyChange?: number;
+  yoyChangeDetails?: {
+    rate: number;
+    isSignificant: boolean;
+    trend: 'strong' | 'moderate' | 'weak';
+  };
+  yoyPreviousValue?: string;
+  yoyPreviousRawValue?: number;
+  yoyPeriodLabel?: string; // e.g., "Sep 2025 vs Sep 2024"
 }
 
 type UseSalesMetricsOptions = {
@@ -141,8 +151,12 @@ export const useSalesMetrics = (
       }
       return 0;
     };
-    // Calculate current period metrics
-    const currentRevenue = currentPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+    // Calculate current period metrics - using NET revenue (paymentValue - VAT)
+    const currentRevenue = currentPeriodData.reduce((sum, item) => {
+      const payment = num((item as any).paymentValue);
+      const vat = num((item as any).paymentVAT) || num((item as any).vat);
+      return sum + (payment - vat);
+    }, 0);
     const currentDiscount = currentPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
     const currentVAT = currentPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
     const currentTransactions = new Set(currentPeriodData.map(item => (item as any).paymentTransactionId || (item as any).paymentTransactionID).filter(Boolean)).size;
@@ -150,11 +164,17 @@ export const useSalesMetrics = (
     const currentUnits = new Set(currentPeriodData.map(item => (item as any).saleItemId || (item as any).saleItemID).filter(Boolean)).size;
     const currentATV = currentTransactions > 0 ? currentRevenue / currentTransactions : 0;
     const currentASV = currentMembers > 0 ? currentRevenue / currentMembers : 0;
-    const currentDiscountPercentage = currentPeriodData.length > 0 ? 
-      currentPeriodData.reduce((sum, item) => sum + num((item as any).discountPercentage), 0) / currentPeriodData.length : 0;
+    // Calculate discount percentage correctly: Total Discounts / (Total Revenue + Total Discounts) * 100
+    const currentGrossRevenue = currentPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+    const currentDiscountPercentage = (currentGrossRevenue + currentDiscount) > 0 ? 
+      (currentDiscount / (currentGrossRevenue + currentDiscount)) * 100 : 0;
 
-    // Calculate comparison period metrics (true previous period)
-  const prevRevenue = previousPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+    // Calculate comparison period metrics (true previous period) - using NET revenue (paymentValue - VAT)
+  const prevRevenue = previousPeriodData.reduce((sum, item) => {
+      const payment = num((item as any).paymentValue);
+      const vat = num((item as any).paymentVAT) || num((item as any).vat);
+      return sum + (payment - vat);
+    }, 0);
   const prevDiscount = previousPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
   const prevVAT = previousPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
     const prevTransactions = new Set(previousPeriodData.map(item => (item as any).paymentTransactionId || (item as any).paymentTransactionID).filter(Boolean)).size;
@@ -162,8 +182,10 @@ export const useSalesMetrics = (
     const prevUnits = new Set(previousPeriodData.map(item => (item as any).saleItemId || (item as any).saleItemID).filter(Boolean)).size;
     const prevATV = prevTransactions > 0 ? prevRevenue / prevTransactions : 0;
     const prevASV = prevMembers > 0 ? prevRevenue / prevMembers : 0;
-    const prevDiscountPercentage = previousPeriodData.length > 0 ? 
-      previousPeriodData.reduce((sum, item) => sum + num((item as any).discountPercentage), 0) / previousPeriodData.length : 0;
+    // Calculate previous period discount percentage correctly
+    const prevGrossRevenue = previousPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+    const prevDiscountPercentage = (prevGrossRevenue + prevDiscount) > 0 ? 
+      (prevDiscount / (prevGrossRevenue + prevDiscount)) * 100 : 0;
 
     // Debug logs removed for production performance
 
@@ -172,9 +194,49 @@ export const useSalesMetrics = (
       if (previous === 0) return { rate: current > 0 ? 100 : 0, isSignificant: current > 0, trend: current > 0 ? 'moderate' : 'weak' };
       const rate = ((current - previous) / previous) * 100;
       const isSignificant = Math.abs(rate) >= 5;
-      const trend = Math.abs(rate) >= 20 ? 'strong' : Math.abs(rate) >= 10 ? 'moderate' : 'weak';
+      
+      // Trend should consider direction of change
+      let trend: 'strong' | 'moderate' | 'weak';
+      if (rate > 0) {
+        // Positive growth
+        trend = rate >= 20 ? 'strong' : rate >= 10 ? 'moderate' : 'weak';
+      } else {
+        // Negative growth (decline) - should always be weak or moderate at best
+        trend = rate <= -20 ? 'weak' : rate <= -10 ? 'moderate' : 'weak';
+      }
+      
       return { rate, isSignificant, trend };
     };
+
+    // YEAR-ON-YEAR COMPARISON: Calculate same period last year
+    const yoyStart = new Date(currentStart.getFullYear() - 1, currentStart.getMonth(), currentStart.getDate());
+    const yoyEnd = new Date(currentEnd.getFullYear() - 1, currentEnd.getMonth(), currentEnd.getDate());
+    yoyEnd.setHours(23, 59, 59, 999);
+
+    const yoyPeriodData = base.filter((it) => {
+      const d = parseDate((it as any).paymentDate);
+      return d && d >= yoyStart && d <= yoyEnd;
+    });
+
+    // Calculate year-on-year metrics
+    const yoyRevenue = yoyPeriodData.reduce((sum, item) => {
+      const payment = num((item as any).paymentValue);
+      const vat = num((item as any).paymentVAT) || num((item as any).vat);
+      return sum + (payment - vat);
+    }, 0);
+    const yoyDiscount = yoyPeriodData.reduce((sum, item) => sum + num((item as any).discountAmount), 0);
+    const yoyVAT = yoyPeriodData.reduce((sum, item) => sum + (num((item as any).paymentVAT) || num((item as any).vat)), 0);
+    const yoyTransactions = new Set(yoyPeriodData.map(item => (item as any).paymentTransactionId || (item as any).paymentTransactionID).filter(Boolean)).size;
+    const yoyMembers = new Set(yoyPeriodData.map(item => item.memberId || item.customerEmail).filter(Boolean)).size;
+    const yoyUnits = new Set(yoyPeriodData.map(item => (item as any).saleItemId || (item as any).saleItemID).filter(Boolean)).size;
+    const yoyATV = yoyTransactions > 0 ? yoyRevenue / yoyTransactions : 0;
+    const yoyASV = yoyMembers > 0 ? yoyRevenue / yoyMembers : 0;
+    const yoyGrossRevenue = yoyPeriodData.reduce((sum, item) => sum + num((item as any).paymentValue), 0);
+    const yoyDiscountPercentage = (yoyGrossRevenue + yoyDiscount) > 0 ? 
+      (yoyDiscount / (yoyGrossRevenue + yoyDiscount)) * 100 : 0;
+
+    const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+    const yoyPeriodLabel = `${fmt(currentStart)} vs ${fmt(yoyStart)}`;
 
     const revenueGrowth = calculateGrowth(currentRevenue, prevRevenue);
     const transactionGrowth = calculateGrowth(currentTransactions, prevTransactions);
@@ -185,6 +247,17 @@ export const useSalesMetrics = (
     const discountGrowth = calculateGrowth(currentDiscount, prevDiscount);
     const discountPercentageGrowth = calculateGrowth(currentDiscountPercentage, prevDiscountPercentage);
     const vatGrowth = calculateGrowth(currentVAT, prevVAT);
+
+    // Year-on-year growth rates
+    const yoyRevenueGrowth = calculateGrowth(currentRevenue, yoyRevenue);
+    const yoyTransactionGrowth = calculateGrowth(currentTransactions, yoyTransactions);
+    const yoyMemberGrowth = calculateGrowth(currentMembers, yoyMembers);
+    const yoyUnitsGrowth = calculateGrowth(currentUnits, yoyUnits);
+    const yoyAtvGrowth = calculateGrowth(currentATV, yoyATV);
+    const yoyAsvGrowth = calculateGrowth(currentASV, yoyASV);
+    const yoyDiscountGrowth = calculateGrowth(currentDiscount, yoyDiscount);
+    const yoyDiscountPercentageGrowth = calculateGrowth(currentDiscountPercentage, yoyDiscountPercentage);
+    const yoyVatGrowth = calculateGrowth(currentVAT, yoyVAT);
 
     const calculatedMetrics: SalesMetric[] = [
       {
@@ -203,7 +276,12 @@ export const useSalesMetrics = (
           previous: prevRevenue,
           difference: currentRevenue - prevRevenue
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyRevenueGrowth.rate,
+        yoyChangeDetails: yoyRevenueGrowth,
+        yoyPreviousValue: formatCurrency(yoyRevenue),
+        yoyPreviousRawValue: yoyRevenue,
+        yoyPeriodLabel
       },
       {
         title: "Units Sold",
@@ -221,7 +299,12 @@ export const useSalesMetrics = (
           previous: prevUnits,
           difference: currentUnits - prevUnits
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyUnitsGrowth.rate,
+        yoyChangeDetails: yoyUnitsGrowth,
+        yoyPreviousValue: formatNumber(yoyUnits),
+        yoyPreviousRawValue: yoyUnits,
+        yoyPeriodLabel
       },
       {
         title: "Transactions",
@@ -239,7 +322,12 @@ export const useSalesMetrics = (
           previous: prevTransactions,
           difference: currentTransactions - prevTransactions
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyTransactionGrowth.rate,
+        yoyChangeDetails: yoyTransactionGrowth,
+        yoyPreviousValue: formatNumber(yoyTransactions),
+        yoyPreviousRawValue: yoyTransactions,
+        yoyPeriodLabel
       },
       {
         title: "Unique Members",
@@ -257,7 +345,12 @@ export const useSalesMetrics = (
           previous: prevMembers,
           difference: currentMembers - prevMembers
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyMemberGrowth.rate,
+        yoyChangeDetails: yoyMemberGrowth,
+        yoyPreviousValue: formatNumber(yoyMembers),
+        yoyPreviousRawValue: yoyMembers,
+        yoyPeriodLabel
       },
       {
         title: "Avg Transaction Value",
@@ -275,7 +368,12 @@ export const useSalesMetrics = (
           previous: prevATV,
           difference: currentATV - prevATV
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyAtvGrowth.rate,
+        yoyChangeDetails: yoyAtvGrowth,
+        yoyPreviousValue: formatCurrency(yoyATV),
+        yoyPreviousRawValue: yoyATV,
+        yoyPeriodLabel
       },
       {
         title: "Avg Spend per Member",
@@ -293,7 +391,12 @@ export const useSalesMetrics = (
           previous: prevASV,
           difference: currentASV - prevASV
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyAsvGrowth.rate,
+        yoyChangeDetails: yoyAsvGrowth,
+        yoyPreviousValue: formatCurrency(yoyASV),
+        yoyPreviousRawValue: yoyASV,
+        yoyPeriodLabel
       },
       {
         title: "Discount Value",
@@ -311,7 +414,12 @@ export const useSalesMetrics = (
           previous: prevDiscount,
           difference: currentDiscount - prevDiscount
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyDiscountGrowth.rate,
+        yoyChangeDetails: yoyDiscountGrowth,
+        yoyPreviousValue: formatCurrency(yoyDiscount),
+        yoyPreviousRawValue: yoyDiscount,
+        yoyPeriodLabel
       },
       {
         title: "Discount Percentage",
@@ -329,7 +437,12 @@ export const useSalesMetrics = (
           previous: prevDiscountPercentage,
           difference: currentDiscountPercentage - prevDiscountPercentage
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyDiscountPercentageGrowth.rate,
+        yoyChangeDetails: yoyDiscountPercentageGrowth,
+        yoyPreviousValue: formatPercentage(yoyDiscountPercentage),
+        yoyPreviousRawValue: yoyDiscountPercentage,
+        yoyPeriodLabel
       },
       {
         title: "VAT Amount",
@@ -347,7 +460,12 @@ export const useSalesMetrics = (
           previous: prevVAT,
           difference: currentVAT - prevVAT
         },
-        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyVatGrowth.rate,
+        yoyChangeDetails: yoyVatGrowth,
+        yoyPreviousValue: formatCurrency(yoyVAT),
+        yoyPreviousRawValue: yoyVAT,
+        yoyPeriodLabel
       }
     ];
 

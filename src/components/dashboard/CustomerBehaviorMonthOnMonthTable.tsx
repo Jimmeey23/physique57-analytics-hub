@@ -47,14 +47,24 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
   const monthKeys = useMemo(() => {
     const months: { key: string; display: string; year: number; month: number }[] = [];
     const now = new Date();
-    for (let i = 0; i < 22; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Generate months from Jan 2024 to current month in ASCENDING order
+    const startDate = new Date(2024, 0, 1); // January 2024
+    const endDate = new Date(currentYear, currentMonth, 1);
+    
+    let date = new Date(startDate);
+    while (date <= endDate) {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
       months.push({
-        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        display: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        year: d.getFullYear(),
-        month: d.getMonth() + 1,
+        key: `${year}-${String(month).padStart(2, '0')}`,
+        display: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        year: year,
+        month: month,
       });
+      date = new Date(year, date.getMonth() + 1, 1);
     }
     return months;
   }, []);

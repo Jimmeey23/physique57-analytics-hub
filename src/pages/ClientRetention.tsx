@@ -29,6 +29,7 @@ import { ClientRetentionMonthByTypePivot } from '@/components/dashboard/ClientRe
 import ClientRetentionYearOnYearPivot from '@/components/dashboard/ClientRetentionYearOnYearPivotNew';
 import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
 import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
+import { TeacherPerformanceTable } from '@/components/dashboard/TeacherPerformanceTable';
 import { LazyClientConversionDrillDownModalV3 } from '@/components/lazy/LazyModals';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
@@ -696,6 +697,28 @@ const ClientRetention = () => {
             {activeTable === 'memberships' && <>
               <div id="memberships-table">
                 <ClientConversionMembershipTable data={filteredData} />
+              </div>
+              {/* AI Notes removed */}
+            </>}
+
+            {activeTable === 'teacherperformance' && <>
+              <div id="teacherperformance-table">
+                <TeacherPerformanceTable 
+                  data={filteredData}
+                  onRowClick={rowData => setDrillDownModal({
+                    isOpen: true,
+                    client: null,
+                    title: `${rowData.trainerName} - Teacher Performance Analysis`,
+                    data: {
+                      type: 'trainer',
+                      item: { name: rowData.trainerName },
+                      metric: 'performance',
+                      relatedClients: filteredData.filter(client => client.trainerName === rowData.trainerName),
+                      relatedPayroll: filteredPayrollData.filter(payroll => payroll.teacherName === rowData.trainerName)
+                    },
+                    type: 'ranking'
+                  })}
+                />
               </div>
               {/* AI Notes removed */}
             </>}

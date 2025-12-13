@@ -54,7 +54,12 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
 
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
-    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    // Use NET revenue: paymentValue - VAT
+    const totalRevenue = items.reduce((sum, item) => {
+      const payment = item.paymentValue || 0;
+      const vat = item.paymentVAT || item.vat || 0;
+      return sum + (payment - vat);
+    }, 0);
     
     // Transactions = unique count of payment transaction ID
     const uniqueTransactionIds = new Set(items.map(item => item.paymentTransactionId || item.transactionId).filter(Boolean));
@@ -71,10 +76,10 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
     const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
     const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     
-    // Calculate average discount percentage
-    const itemsWithDiscount = items.filter(item => (item.discountAmount || 0) > 0);
-    const avgDiscountPercentage = itemsWithDiscount.length > 0
-      ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
+    // Calculate discount percentage correctly: Total Discounts / (Total Gross Revenue) * 100
+    const totalGrossRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const avgDiscountPercentage = totalGrossRevenue > 0
+      ? (totalDiscount / totalGrossRevenue) * 100
       : 0;
     
     // Purchase Frequency in Days
@@ -146,10 +151,9 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
   };
   const previousMonthKey = getPreviousMonthKey();
 
-  // Use standard 22-month range (October 2025 to January 2024)
+  // Use standard month range from Jan 2024 to current month in ASCENDING order
   const monthlyData = useMemo(() => generateStandardMonthRange(), []);
-  // generateStandardMonthRange returns oldest -> newest; use full range reversed (newest -> oldest)
-  const visibleMonths = useMemo(() => [...monthlyData].reverse(), [monthlyData]);
+  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
 
   const processedData = useMemo(() => {
     // Group by category and product

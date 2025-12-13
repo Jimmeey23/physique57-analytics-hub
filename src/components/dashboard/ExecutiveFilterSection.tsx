@@ -3,17 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Filter, 
   ChevronDown, 
   ChevronUp, 
   MapPin, 
   Calendar, 
+  CalendarIcon,
   Users, 
   Package, 
   CreditCard,
   X
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { getPreviousMonthDisplay } from '@/utils/dateUtils';
 
@@ -47,7 +51,23 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
   };
 
   const selectedLocation = Array.isArray(filters.location) ? filters.location[0] : filters.location;
-  const hasActiveFilters = (filters.location && filters.location.length > 0);
+  const hasActiveFilters = (filters.location && filters.location.length > 0) || filters.dateRange?.start || filters.dateRange?.end;
+
+  const handleDateRangeChange = (type: 'start' | 'end', date: Date | null) => {
+    const dateString = date ? date.toISOString().split('T')[0] : '';
+    updateFilters({
+      dateRange: {
+        ...filters.dateRange,
+        [type]: dateString
+      }
+    });
+  };
+
+  const clearDateRange = () => {
+    updateFilters({
+      dateRange: { start: '', end: '' }
+    });
+  };
 
   return (
     <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-0">
@@ -62,13 +82,15 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                 <div>
                   <span className="text-xl font-bold text-gray-900">Filters & Controls</span>
                   <p className="text-sm text-gray-600 font-normal">
-                    Data filtered for {getPreviousMonthDisplay()}
-                    {selectedLocation && ` • ${selectedLocation}`}
+                    {filters.dateRange?.start || filters.dateRange?.end 
+                      ? `Custom date range${selectedLocation ? ` • ${selectedLocation}` : ''}` 
+                      : `Current month vs previous month${selectedLocation ? ` • ${selectedLocation}` : ''}`
+                    }
                   </p>
                 </div>
                 {hasActiveFilters && (
                   <Badge className="bg-blue-100 text-blue-800 ml-2">
-                    {filters.location?.length || 0} filter{filters.location?.length !== 1 ? 's' : ''} active
+                    {(filters.location?.length || 0) + ((filters.dateRange?.start || filters.dateRange?.end) ? 1 : 0)} filter{hasActiveFilters ? 's' : ''} active
                   </Badge>
                 )}
               </CardTitle>
@@ -99,15 +121,139 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
         
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-6">
-            {/* Date Range Info */}
-            <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="font-medium text-blue-900">Date Range</p>
-                <p className="text-sm text-blue-700">
-                  Showing data for {getPreviousMonthDisplay()} (Previous Month)
-                </p>
+            {/* Date Range Filter */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Date Range Filter</h3>
+                {(filters.dateRange?.start || filters.dateRange?.end) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearDateRange}
+                    className="text-gray-500 hover:text-red-600 ml-auto"
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Clear Range
+                  </Button>
+                )}
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-medium text-sm text-gray-700 flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      Start Date
+                    </label>
+                    {filters.dateRange?.start && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDateRangeChange('start', null)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filters.dateRange?.start 
+                          ? format(new Date(filters.dateRange.start), 'PPP')
+                          : 'Select start date'
+                        }
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={filters.dateRange?.start ? new Date(filters.dateRange.start) : undefined}
+                        onSelect={(date) => handleDateRangeChange('start', date || null)}
+                        disabled={(date) => 
+                          filters.dateRange?.end 
+                            ? date > new Date(filters.dateRange.end) 
+                            : false
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-gray-500">Filter data from this date</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-medium text-sm text-gray-700 flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      End Date
+                    </label>
+                    {filters.dateRange?.end && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDateRangeChange('end', null)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filters.dateRange?.end 
+                          ? format(new Date(filters.dateRange.end), 'PPP')
+                          : 'Select end date'
+                        }
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={filters.dateRange?.end ? new Date(filters.dateRange.end) : undefined}
+                        onSelect={(date) => handleDateRangeChange('end', date || null)}
+                        disabled={(date) => 
+                          filters.dateRange?.start 
+                            ? date < new Date(filters.dateRange.start) 
+                            : false
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-gray-500">Filter data up to this date</p>
+                </div>
+              </div>
+              
+              {/* Date Range Info */}
+              {!(filters.dateRange?.start || filters.dateRange?.end) && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-700">
+                    <strong>Default:</strong> Showing current month vs previous month comparison
+                  </p>
+                </div>
+              )}
+              
+              {(filters.dateRange?.start || filters.dateRange?.end) && (
+                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-700">
+                    <strong>Custom Range:</strong> {' '}
+                    {filters.dateRange.start && format(new Date(filters.dateRange.start), 'MMM d, yyyy')}
+                    {filters.dateRange.start && filters.dateRange.end && ' to '}
+                    {filters.dateRange.end && format(new Date(filters.dateRange.end), 'MMM d, yyyy')}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Location Filter */}
@@ -156,8 +302,21 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    <span>Period: {getPreviousMonthDisplay()}</span>
+                    <span>
+                      Period: {(filters.dateRange?.start || filters.dateRange?.end) 
+                        ? 'Custom date range' 
+                        : 'Current month vs Previous month'}
+                    </span>
                   </div>
+                  {(filters.dateRange?.start || filters.dateRange?.end) && (
+                    <div className="flex items-center gap-2 ml-6">
+                      <span className="text-xs text-gray-500">
+                        {filters.dateRange.start && format(new Date(filters.dateRange.start), 'MMM d, yyyy')}
+                        {filters.dateRange.start && filters.dateRange.end && ' to '}
+                        {filters.dateRange.end && format(new Date(filters.dateRange.end), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

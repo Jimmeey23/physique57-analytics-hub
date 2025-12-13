@@ -1,10 +1,11 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight, CalendarDays, Repeat } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight, CalendarDays, Repeat, TrendingDown } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { useClientConversionMetrics } from '@/hooks/useClientConversionMetrics';
+import { cn } from '@/lib/utils';
 
 interface ClientConversionMetricCardsProps {
   data: NewClientData[];

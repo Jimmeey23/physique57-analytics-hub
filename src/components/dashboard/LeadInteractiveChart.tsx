@@ -13,17 +13,41 @@ interface LeadInteractiveChartProps {
 }
 type ChartType = 'bar' | 'line' | 'area' | 'pie';
 export const LeadInteractiveChart: React.FC<LeadInteractiveChartProps> = ({
-  data,
-  title,
+  data = [],
+  title = 'Lead Performance Chart',
   activeMetric
 }) => {
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
 
+  // Add early return if no data
+  if (!data || data.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No lead data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Process data for charts
   const processedData = React.useMemo(() => {
     const monthlyData = data.reduce((acc, item) => {
+      // Add defensive check for createdAt
+      if (!item.createdAt) {
+        return acc;
+      }
+      
       const date = new Date(item.createdAt);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return acc;
+      }
+      
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = date.toLocaleDateString('en-US', {
         month: 'short',
@@ -44,7 +68,7 @@ export const LeadInteractiveChart: React.FC<LeadInteractiveChartProps> = ({
       acc[monthKey].totalLeads++;
       if (item.stage === 'Trial Completed') acc[monthKey].trialsCompleted++;
       if (item.conversionStatus === 'Converted') acc[monthKey].conversions++;
-      acc[monthKey].totalLTV += item.ltv;
+      acc[monthKey].totalLTV += item.ltv || 0;
       return acc;
     }, {} as Record<string, any>);
 

@@ -25,6 +25,7 @@ interface EnhancedExecutiveDataTablesProps {
     payroll: any[];
     newClients: any[];
     leads: any[];
+    expirations?: any[];
   };
   selectedLocation?: string;
 }
@@ -484,8 +485,56 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
         </CardContent>
       </Card>
 
-      <div className="lg:col-span-2">
-      </div>
+      {/* Expirations Analysis - Only if data exists */}
+      {data.expirations && data.expirations.length > 0 && (
+        <Card className="bg-gradient-to-br from-white via-purple-50/30 to-white border-0 shadow-lg lg:col-span-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-purple-600" />
+              Package Expirations Analysis
+              <Badge variant="secondary">{data.expirations.length} packages</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-purple-900">Total Expiring Value</h4>
+                  <DollarSign className="w-5 h-5 text-purple-600" />
+                </div>
+                <p className="text-2xl font-bold text-purple-900">
+                  {formatCurrency(data.expirations.reduce((sum, e) => sum + (e.orderValue || 0), 0))}
+                </p>
+                <p className="text-xs text-purple-600 mt-2">across {data.expirations.length} packages</p>
+              </div>
+
+              <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-amber-900">Avg Days to Expiry</h4>
+                  <Calendar className="w-5 h-5 text-amber-600" />
+                </div>
+                <p className="text-2xl font-bold text-amber-900">
+                  {data.expirations.length > 0 
+                    ? (data.expirations.reduce((sum, e) => sum + (e.daysToExpiry || 0), 0) / data.expirations.length).toFixed(0)
+                    : '0'}
+                </p>
+                <p className="text-xs text-amber-600 mt-2">time to expiration</p>
+              </div>
+
+              <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-red-900">Urgent (&lt; 7 days)</h4>
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                </div>
+                <p className="text-2xl font-bold text-red-900">
+                  {data.expirations.filter(e => (e.daysToExpiry || 0) < 7).length}
+                </p>
+                <p className="text-xs text-red-600 mt-2">packages expiring soon</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

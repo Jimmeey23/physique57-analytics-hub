@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  DollarSign, 
   Users, 
   Target, 
   Activity,
@@ -16,10 +15,14 @@ import {
   Clock,
   Star,
   Zap,
-  BarChart3
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface ExecutiveMetricCardsGridProps {
   data: {
@@ -29,6 +32,7 @@ interface ExecutiveMetricCardsGridProps {
     newClients: any[];
     leads: any[];
     discounts?: any[];
+    lateCancellations?: any[];
   };
   historical?: {
     sales: any[];
@@ -37,103 +41,176 @@ interface ExecutiveMetricCardsGridProps {
     newClients: any[];
     leads: any[];
     discounts?: any[];
+    lateCancellations?: any[];
   };
+  yearOverYear?: {
+    sales: any[];
+    sessions: any[];
+    newClients: any[];
+    leads: any[];
+    discounts?: any[];
+    lateCancellations?: any[];
+  };
+  onMetricClick?: (metricData: any) => void;
 }
 
-export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> = ({ data, historical }) => {
+const iconMap = {
+  Users,
+  Target,
+  Activity,
+  ShoppingCart,
+  UserCheck,
+  Percent,
+  Clock,
+  Zap,
+  TrendingUp,
+  BarChart3,
+  Minus
+};
+
+export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> = ({ 
+  data, 
+  historical, 
+  yearOverYear,
+  onMetricClick 
+}) => {
   const metrics = useMemo(() => {
-    // Build month windows: current = previous calendar month; previous = month before
-    const now = new Date();
-    const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
-    const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-    const currentStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const currentEnd = monthEnd(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-    const prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    const prevEnd = monthEnd(new Date(now.getFullYear(), now.getMonth() - 2, 1));
-    const within = (d?: Date | null, start?: Date, end?: Date) => !!(d && start && end && d >= start && d <= end);
-    const parse = (s: any): Date | null => {
-      if (!s) return null;
-      if (s instanceof Date) return isNaN(s.getTime()) ? null : s;
-      const str = String(s);
-      // Support DD/MM/YYYY
-      const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-      if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
-      const d = new Date(str);
-      return isNaN(d.getTime()) ? null : d;
-    };
-    const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-    const periodLabel = `${fmt(currentStart)} vs ${fmt(prevStart)}`;
-
-    // Calculate real metrics from actual data
-    const totalRevenue = data.sales.reduce((sum, sale) => sum + (sale.paymentValue || 0), 0);
-    const totalVAT = data.sales.reduce((sum, sale) => sum + (sale.paymentVAT || 0), 0);
+    // Use the actual filtered data that was passed in (already filtered by location/date)
+    // Calculate current period metrics from the filtered data
+    const currentSales = data.sales || [];
+    const currentSessions = data.sessions || [];
+    const currentNewClients = data.newClients || [];
+    const currentLeads = data.leads || [];
+    
+    // Use historical data for comparisons (if provided)
+    const historicalSales = historical?.sales || [];
+    const historicalSessions = historical?.sessions || [];
+    const historicalNewClients = historical?.newClients || [];
+    const historicalLeads = historical?.leads || [];
+    
+    // Use year-over-year data for annual comparisons (if provided)
+    const yoySales = yearOverYear?.sales || [];
+    const yoySessions = yearOverYear?.sessions || [];
+    const yoyNewClients = yearOverYear?.newClients || [];
+    const yoyLeads = yearOverYear?.leads || [];
+    
+    // Calculate metrics from filtered data
+    const totalRevenue = currentSales.reduce((sum, sale) => sum + (sale.paymentValue || 0), 0);
+    const totalVAT = currentSales.reduce((sum, sale) => sum + (sale.paymentVAT || 0), 0);
     const netRevenue = totalRevenue - totalVAT;
-    const totalTransactions = data.sales.length;
-    const uniqueMembers = new Set(data.sales.map(sale => sale.memberId)).size;
-    const totalSessions = data.sessions.length;
-    const totalAttendance = data.sessions.reduce((sum, session) => sum + (session.checkedInCount || 0), 0);
-    const totalCapacity = data.sessions.reduce((sum, session) => sum + (session.capacity || 0), 0);
+    const uniqueMembers = new Set(currentSales.map(sale => sale.memberId)).size;
+    const totalSessions = currentSessions.length;
+    const totalAttendance = currentSessions.reduce((sum, session) => sum + (session.checkedInCount || 0), 0);
+    const totalCapacity = currentSessions.reduce((sum, session) => sum + (session.capacity || 0), 0);
     
-    // Count new clients correctly - those with isNew containing "New"
-    const newClientsCount = data.newClients.filter(client => {
-      const isNewValue = client.isNew?.toString().toLowerCase() || '';
-      return isNewValue.includes('new');
-    }).length;
+    // New client checkins/visits (total attendance for all sessions)
+    const checkinsVisits = totalAttendance;
     
-    const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
-    const sessionAttendanceRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
-    const emptySessions = data.sessions.filter(s => (s.checkedInCount || 0) === 0).length;
-    const powerCycleSessions = data.sessions.filter(s => 
+    // Empty sessions
+    const emptySessions = currentSessions.filter(s => (s.checkedInCount || 0) === 0).length;
+    
+    // Class average attendance
+    const classAverage = totalSessions > 0 ? totalAttendance / totalSessions : 0;
+    
+    // Fill rate
+    const fillRate = totalCapacity > 0 ? (totalAttendance / totalCapacity) * 100 : 0;
+    
+    // Discount amount and percentage  
+    const salesDiscountAmount = currentSales?.reduce((sum, sale) => sum + (sale.discountAmount || 0), 0) || 0;
+    const discountAmount = data.discounts?.reduce((sum, d) => sum + (d.discountAmount || 0), 0) || 0;
+    const finalDiscountAmount = discountAmount > 0 ? discountAmount : salesDiscountAmount;
+    const discountPercentage = totalRevenue > 0 ? (finalDiscountAmount / totalRevenue) * 100 : 0;
+    
+    // Late cancellations (from lateCancellations data)
+    const lateCancellations = data.lateCancellations?.length || 0;
+    
+    // PowerCycle, Strength Lab, and Barre sessions count
+    const powerCycleSessions = currentSessions.filter(s => 
       s.cleanedClass?.toLowerCase().includes('cycle') || 
-      s.classType?.toLowerCase().includes('cycle')
+      s.classType?.toLowerCase().includes('cycle') ||
+      s.cleanedClass?.toLowerCase().includes('power')
     ).length;
-    const leads = data.leads.length;
-    const convertedLeads = data.leads.filter(l => l.conversionStatus === 'Converted').length;
-    const leadConversionRate = leads > 0 ? (convertedLeads / leads) * 100 : 0;
-    const retainedClients = data.newClients.filter(c => c.retentionStatus === 'Retained').length;
-    const retentionRate = newClientsCount > 0 ? (retainedClients / newClientsCount) * 100 : 0;
-    const avgSessionSize = totalSessions > 0 ? totalAttendance / totalSessions : 0;
     
-    // Discount metrics - check both discount data and sales data for discount amounts
-    const salesDiscountAmount = data.sales?.reduce((sum, sale) => sum + (sale.discountAmount || 0), 0) || 0;
-    const salesDiscountTransactions = data.sales?.filter(sale => (sale.discountAmount || 0) > 0).length || 0;
+    const strengthLabSessions = currentSessions.filter(s => 
+      s.cleanedClass?.toLowerCase().includes('strength') || 
+      s.classType?.toLowerCase().includes('strength') ||
+      s.cleanedClass?.toLowerCase().includes('lab')
+    ).length;
     
-    const totalDiscountAmount = data.discounts?.reduce((sum, d) => sum + (d.discountAmount || 0), 0) || 0;
-    const discountTransactions = data.discounts?.length || 0;
+    const barreSessions = currentSessions.filter(s => 
+      s.cleanedClass?.toLowerCase().includes('barre') || 
+      s.classType?.toLowerCase().includes('barre')
+    ).length;
 
-    // Use sales data if discount data is empty or zero
-    const finalDiscountAmount = totalDiscountAmount > 0 ? totalDiscountAmount : salesDiscountAmount;
-    const finalDiscountTransactions = discountTransactions > 0 ? discountTransactions : salesDiscountTransactions;
-
-    // Previous period values from historical (last 3 months, location-filtered)
-    const h = historical || { sales: [], sessions: [], newClients: [], leads: [], payroll: [], discounts: [] };
-    const salesPrev = h.sales.filter((s: any) => within(parse(s.paymentDate), prevStart, prevEnd));
+    // Previous period values from historical data (if provided)
+    const h = historical || { sales: [], sessions: [], newClients: [], leads: [], payroll: [], discounts: [], lateCancellations: [] };
+    const salesPrev = historicalSales;
     const salesPrevRevenue = salesPrev.reduce((sum: number, s: any) => sum + (s.paymentValue || 0), 0);
     const salesPrevVAT = salesPrev.reduce((sum: number, s: any) => sum + (s.paymentVAT || 0), 0);
     const salesPrevNet = salesPrevRevenue - salesPrevVAT;
-    const salesPrevTransactions = salesPrev.length;
     const salesPrevUniqueMembers = new Set(salesPrev.map((s: any) => s.memberId)).size;
-    const salesPrevAvgTxn = salesPrevTransactions > 0 ? salesPrevRevenue / salesPrevTransactions : 0;
 
-    const sessionsPrev = h.sessions.filter((s: any) => within(parse(s.date), prevStart, prevEnd));
+    const sessionsPrev = historicalSessions;
     const sessionsPrevAttendance = sessionsPrev.reduce((sum: number, s: any) => sum + (s.checkedInCount || 0), 0);
     const sessionsPrevCapacity = sessionsPrev.reduce((sum: number, s: any) => sum + (s.capacity || 0), 0);
-    const sessionsPrevAvgSize = sessionsPrev.length > 0 ? sessionsPrevAttendance / sessionsPrev.length : 0;
-    const sessionsPrevPowerCycle = sessionsPrev.filter((s: any) => s.cleanedClass?.toLowerCase().includes('cycle') || s.classType?.toLowerCase().includes('cycle')).length;
+    const sessionsPrevLength = sessionsPrev.length;
+    const sessionsPrevEmpty = sessionsPrev.filter((s: any) => (s.checkedInCount || 0) === 0).length;
+    const sessionsPrevAvgSize = sessionsPrevLength > 0 ? sessionsPrevAttendance / sessionsPrevLength : 0;
+    const sessionsPrevFillRate = sessionsPrevCapacity > 0 ? (sessionsPrevAttendance / sessionsPrevCapacity) * 100 : 0;
+    
+    // Previous period class type sessions
+    const sessionsPrevPowerCycle = sessionsPrev.filter((s: any) => 
+      s.cleanedClass?.toLowerCase().includes('cycle') || s.classType?.toLowerCase().includes('cycle') ||
+      s.cleanedClass?.toLowerCase().includes('power')
+    ).length;
+    
+    const sessionsPrevStrength = sessionsPrev.filter((s: any) => 
+      s.cleanedClass?.toLowerCase().includes('strength') || s.classType?.toLowerCase().includes('strength') ||
+      s.cleanedClass?.toLowerCase().includes('lab')
+    ).length;
+    
+    const sessionsPrevBarre = sessionsPrev.filter((s: any) => 
+      s.cleanedClass?.toLowerCase().includes('barre') || s.classType?.toLowerCase().includes('barre')
+    ).length;
 
-    const newClientsPrev = h.newClients.filter((c: any) => within(parse(c.firstVisitDate), prevStart, prevEnd));
-    const newClientsPrevCount = newClientsPrev.filter((c: any) => String(c.isNew || '').toLowerCase().includes('new')).length;
-    const retainedPrev = newClientsPrev.filter((c: any) => c.retentionStatus === 'Retained').length;
-    const retentionPrevRate = newClientsPrevCount > 0 ? (retainedPrev / newClientsPrevCount) * 100 : 0;
-
-    const leadsPrev = h.leads.filter((l: any) => within(parse(l.createdAt || ''), prevStart, prevEnd) || (l.period ? l.period.includes(fmt(prevStart).split(' ')[0]) : false));
-    const leadsPrevCount = leadsPrev.length;
-    const convertedLeadsPrev = leadsPrev.filter((l: any) => l.conversionStatus === 'Converted').length;
-    const leadPrevRate = leadsPrevCount > 0 ? (convertedLeadsPrev / leadsPrevCount) * 100 : 0;
-
-    const discountsPrev = (h.discounts && h.discounts.length ? h.discounts : h.sales).filter((d: any) => within(parse(d.paymentDate), prevStart, prevEnd));
+    // Previous discount calculations
+    const discountsPrev = (historical?.discounts && historical.discounts.length ? historical.discounts : historicalSales);
     const discountPrevAmount = discountsPrev.reduce((sum: number, d: any) => sum + (d.discountAmount || 0), 0);
-    const discountPrevTxns = discountsPrev.filter((d: any) => (d.discountAmount || 0) > 0).length;
+    const discountPrevPercentage = salesPrevRevenue > 0 ? (discountPrevAmount / salesPrevRevenue) * 100 : 0;
+    
+    // Previous late cancellations
+    const lateCancelPrev = historical?.lateCancellations?.length || 0;
+
+    // Year-over-year calculations for same month last year
+    const yoyRevenue = yoySales.reduce((sum: number, s: any) => sum + (s.paymentValue || 0), 0);
+    const yoyVAT = yoySales.reduce((sum: number, s: any) => sum + (s.paymentVAT || 0), 0);
+    const yoyNetRevenue = yoyRevenue - yoyVAT;
+    const yoyUniqueMembers = new Set(yoySales.map((s: any) => s.memberId)).size;
+    const yoyAttendance = yoySessions.reduce((sum: number, s: any) => sum + (s.checkedInCount || 0), 0);
+    const yoyTotalSessions = yoySessions.length;
+    const yoyCapacity = yoySessions.reduce((sum: number, s: any) => sum + (s.capacity || 0), 0);
+    const yoyEmptySessions = yoySessions.filter((s: any) => (s.checkedInCount || 0) === 0).length;
+    const yoyAvgClassSize = yoyTotalSessions > 0 ? yoyAttendance / yoyTotalSessions : 0;
+    const yoyFillRate = yoyCapacity > 0 ? (yoyAttendance / yoyCapacity) * 100 : 0;
+    
+    const yoyPowerCycleSessions = yoySessions.filter((s: any) => 
+      s.cleanedClass?.toLowerCase().includes('cycle') || s.classType?.toLowerCase().includes('cycle') ||
+      s.cleanedClass?.toLowerCase().includes('power')
+    ).length;
+    
+    const yoyStrengthSessions = yoySessions.filter((s: any) => 
+      s.cleanedClass?.toLowerCase().includes('strength') || s.classType?.toLowerCase().includes('strength') ||
+      s.cleanedClass?.toLowerCase().includes('lab')
+    ).length;
+    
+    const yoyBarreSessions = yoySessions.filter((s: any) => 
+      s.cleanedClass?.toLowerCase().includes('barre') || s.classType?.toLowerCase().includes('barre')
+    ).length;
+
+    const yoyDiscountAmount = (yearOverYear?.discounts && yearOverYear.discounts.length ? 
+      yearOverYear.discounts : yoySales).reduce((sum: number, d: any) => sum + (d.discountAmount || 0), 0);
+    const yoyDiscountPercentage = yoyRevenue > 0 ? (yoyDiscountAmount / yoyRevenue) * 100 : 0;
+    const yoyLateCancellations = yearOverYear?.lateCancellations?.length || 0;
 
     const growth = (cur: number, prev: number) => {
       if (!isFinite(prev) || prev === 0) return cur > 0 ? 100 : 0;
@@ -142,189 +219,556 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
 
     return [
       {
-        title: 'Total Revenue',
-        value: formatCurrency(totalRevenue),
-        change: `${growth(totalRevenue, salesPrevRevenue) >= 0 ? '+' : ''}${growth(totalRevenue, salesPrevRevenue).toFixed(1)}%`,
-        changeType: growth(totalRevenue, salesPrevRevenue) >= 0 ? 'positive' : 'negative',
-        icon: DollarSign,
-        color: 'from-green-500 to-emerald-600',
-        description: `Total sales revenue from all transactions\n${periodLabel}: ${formatCurrency(salesPrevRevenue)}`,
-        rawValue: totalRevenue
-      },
-      {
-        title: 'Net Revenue',
+        title: "Net Revenue",
         value: formatCurrency(netRevenue),
-        change: `${growth(netRevenue, salesPrevNet) >= 0 ? '+' : ''}${growth(netRevenue, salesPrevNet).toFixed(1)}%`,
-        changeType: growth(netRevenue, salesPrevNet) >= 0 ? 'positive' : 'negative',
-        icon: DollarSign,
-        color: 'from-emerald-500 to-green-600',
-        description: `Revenue after VAT deduction\n${periodLabel}: ${formatCurrency(salesPrevNet)}`,
-        rawValue: netRevenue
+        rawValue: netRevenue,
+        change: growth(netRevenue, salesPrevNet),
+        changeDetails: {
+          rate: growth(netRevenue, salesPrevNet),
+          isSignificant: Math.abs(growth(netRevenue, salesPrevNet)) > 10,
+          trend: growth(netRevenue, salesPrevNet) > 0 
+            ? (Math.abs(growth(netRevenue, salesPrevNet)) > 20 ? 'strong' : Math.abs(growth(netRevenue, salesPrevNet)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(netRevenue, salesPrevNet)) > 20 ? 'weak' : Math.abs(growth(netRevenue, salesPrevNet)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "TrendingUp",
+        color: "emerald",
+        description: "Revenue after VAT deduction",
+        previousValue: formatCurrency(salesPrevNet),
+        previousRawValue: salesPrevNet,
+        comparison: {
+          current: netRevenue,
+          previous: salesPrevNet,
+          difference: netRevenue - salesPrevNet
+        },
+        yoyChange: yoyNetRevenue > 0 ? growth(netRevenue, yoyNetRevenue) : undefined,
+        yoyChangeDetails: yoyNetRevenue > 0 ? {
+          rate: growth(netRevenue, yoyNetRevenue),
+          isSignificant: Math.abs(growth(netRevenue, yoyNetRevenue)) > 10,
+          trend: growth(netRevenue, yoyNetRevenue) > 0 
+            ? (Math.abs(growth(netRevenue, yoyNetRevenue)) > 20 ? 'strong' : Math.abs(growth(netRevenue, yoyNetRevenue)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(netRevenue, yoyNetRevenue)) > 20 ? 'weak' : Math.abs(growth(netRevenue, yoyNetRevenue)) > 10 ? 'moderate' : 'weak')
+        } : undefined,
+        yoyPreviousValue: yoyNetRevenue > 0 ? formatCurrency(yoyNetRevenue) : undefined,
+        yoyPreviousRawValue: yoyNetRevenue > 0 ? yoyNetRevenue : undefined
       },
       {
-        title: 'Active Members',
+        title: "Unique Members",
         value: formatNumber(uniqueMembers),
-        change: `${growth(uniqueMembers, salesPrevUniqueMembers) >= 0 ? '+' : ''}${growth(uniqueMembers, salesPrevUniqueMembers).toFixed(1)}%`,
-        changeType: growth(uniqueMembers, salesPrevUniqueMembers) >= 0 ? 'positive' : 'negative',
-        icon: Users,
-        color: 'from-blue-500 to-cyan-600',
-        description: `Unique paying members\n${periodLabel}: ${formatNumber(salesPrevUniqueMembers)}`,
-        rawValue: uniqueMembers
+        rawValue: uniqueMembers,
+        change: growth(uniqueMembers, salesPrevUniqueMembers),
+        changeDetails: {
+          rate: growth(uniqueMembers, salesPrevUniqueMembers),
+          isSignificant: Math.abs(growth(uniqueMembers, salesPrevUniqueMembers)) > 10,
+          trend: growth(uniqueMembers, salesPrevUniqueMembers) > 0 
+            ? (Math.abs(growth(uniqueMembers, salesPrevUniqueMembers)) > 20 ? 'strong' : Math.abs(growth(uniqueMembers, salesPrevUniqueMembers)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(uniqueMembers, salesPrevUniqueMembers)) > 20 ? 'weak' : Math.abs(growth(uniqueMembers, salesPrevUniqueMembers)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Users",
+        color: "blue",
+        description: "Unique paying members",
+        previousValue: formatNumber(salesPrevUniqueMembers),
+        previousRawValue: salesPrevUniqueMembers,
+        comparison: {
+          current: uniqueMembers,
+          previous: salesPrevUniqueMembers,
+          difference: uniqueMembers - salesPrevUniqueMembers
+        },
+        yoyChange: yoyUniqueMembers > 0 ? growth(uniqueMembers, yoyUniqueMembers) : undefined,
+        yoyChangeDetails: yoyUniqueMembers > 0 ? {
+          rate: growth(uniqueMembers, yoyUniqueMembers),
+          isSignificant: Math.abs(growth(uniqueMembers, yoyUniqueMembers)) > 10,
+          trend: growth(uniqueMembers, yoyUniqueMembers) > 0 
+            ? (Math.abs(growth(uniqueMembers, yoyUniqueMembers)) > 20 ? 'strong' : Math.abs(growth(uniqueMembers, yoyUniqueMembers)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(uniqueMembers, yoyUniqueMembers)) > 20 ? 'weak' : Math.abs(growth(uniqueMembers, yoyUniqueMembers)) > 10 ? 'moderate' : 'weak')
+        } : undefined,
+        yoyPreviousValue: yoyUniqueMembers > 0 ? formatNumber(yoyUniqueMembers) : undefined,
+        yoyPreviousRawValue: yoyUniqueMembers > 0 ? yoyUniqueMembers : undefined
       },
       {
-        title: 'Lead Conversion',
-        value: `${leadConversionRate.toFixed(1)}%`,
-        change: `${growth(leadConversionRate, leadPrevRate) >= 0 ? '+' : ''}${growth(leadConversionRate, leadPrevRate).toFixed(1)}%`,
-        changeType: growth(leadConversionRate, leadPrevRate) >= 0 ? 'positive' : 'negative',
-        icon: Target,
-        color: 'from-purple-500 to-violet-600',
-        description: `Lead to member conversion\n${periodLabel}: ${leadPrevRate.toFixed(1)}%`,
-        rawValue: leadConversionRate
+        title: "Checkins/Visits",
+        value: formatNumber(checkinsVisits),
+        rawValue: checkinsVisits,
+        change: growth(checkinsVisits, sessionsPrevAttendance),
+        changeDetails: {
+          rate: growth(checkinsVisits, sessionsPrevAttendance),
+          isSignificant: Math.abs(growth(checkinsVisits, sessionsPrevAttendance)) > 10,
+          trend: growth(checkinsVisits, sessionsPrevAttendance) > 0 
+            ? (Math.abs(growth(checkinsVisits, sessionsPrevAttendance)) > 20 ? 'strong' : Math.abs(growth(checkinsVisits, sessionsPrevAttendance)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(checkinsVisits, sessionsPrevAttendance)) > 20 ? 'weak' : Math.abs(growth(checkinsVisits, sessionsPrevAttendance)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "UserCheck",
+        color: "green",
+        description: "Total class attendance",
+        previousValue: formatNumber(sessionsPrevAttendance),
+        previousRawValue: sessionsPrevAttendance,
+        comparison: {
+          current: checkinsVisits,
+          previous: sessionsPrevAttendance,
+          difference: checkinsVisits - sessionsPrevAttendance
+        }
       },
       {
-        title: 'Session Attendance',
-        value: formatNumber(totalAttendance),
-        change: `${growth(totalAttendance, sessionsPrevAttendance) >= 0 ? '+' : ''}${growth(totalAttendance, sessionsPrevAttendance).toFixed(1)}%`,
-        changeType: growth(totalAttendance, sessionsPrevAttendance) >= 0 ? 'positive' : 'negative',
-        icon: Activity,
-        color: 'from-orange-500 to-red-600',
-        description: `Total sessions attended\n${periodLabel}: ${formatNumber(sessionsPrevAttendance)}`,
-        rawValue: totalAttendance
+        title: "Sessions",
+        value: formatNumber(totalSessions),
+        rawValue: totalSessions,
+        change: growth(totalSessions, sessionsPrevLength),
+        changeDetails: {
+          rate: growth(totalSessions, sessionsPrevLength),
+          isSignificant: Math.abs(growth(totalSessions, sessionsPrevLength)) > 10,
+          trend: growth(totalSessions, sessionsPrevLength) > 0 
+            ? (Math.abs(growth(totalSessions, sessionsPrevLength)) > 20 ? 'strong' : Math.abs(growth(totalSessions, sessionsPrevLength)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(totalSessions, sessionsPrevLength)) > 20 ? 'weak' : Math.abs(growth(totalSessions, sessionsPrevLength)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Activity",
+        color: "purple",
+        description: "Total classes conducted",
+        previousValue: formatNumber(sessionsPrevLength),
+        previousRawValue: sessionsPrevLength,
+        comparison: {
+          current: totalSessions,
+          previous: sessionsPrevLength,
+          difference: totalSessions - sessionsPrevLength
+        }
       },
       {
-        title: 'New Clients',
-        value: formatNumber(newClientsCount),
-        change: `${growth(newClientsCount, newClientsPrevCount) >= 0 ? '+' : ''}${growth(newClientsCount, newClientsPrevCount).toFixed(1)}%`,
-        changeType: growth(newClientsCount, newClientsPrevCount) >= 0 ? 'positive' : 'negative',
-        icon: UserCheck,
-        color: 'from-teal-500 to-cyan-600',
-        description: `New member acquisitions\n${periodLabel}: ${formatNumber(newClientsPrevCount)}`,
-        rawValue: newClientsCount
+        title: "Empty Sessions",
+        value: formatNumber(emptySessions),
+        rawValue: emptySessions,
+        change: growth(emptySessions, sessionsPrevEmpty),
+        changeDetails: {
+          rate: growth(emptySessions, sessionsPrevEmpty),
+          isSignificant: Math.abs(growth(emptySessions, sessionsPrevEmpty)) > 5,
+          trend: growth(emptySessions, sessionsPrevEmpty) > 0 
+            ? 'weak' // Increasing empty sessions is bad
+            : (Math.abs(growth(emptySessions, sessionsPrevEmpty)) > 20 ? 'strong' : Math.abs(growth(emptySessions, sessionsPrevEmpty)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Minus",
+        color: "red",
+        description: "Classes with zero attendance",
+        previousValue: formatNumber(sessionsPrevEmpty),
+        previousRawValue: sessionsPrevEmpty,
+        comparison: {
+          current: emptySessions,
+          previous: sessionsPrevEmpty,
+          difference: emptySessions - sessionsPrevEmpty
+        }
       },
       {
-        title: 'Avg. Transaction',
-        value: formatCurrency(avgTransactionValue),
-        change: `${growth(avgTransactionValue, salesPrevAvgTxn) >= 0 ? '+' : ''}${growth(avgTransactionValue, salesPrevAvgTxn).toFixed(1)}%`,
-        changeType: growth(avgTransactionValue, salesPrevAvgTxn) >= 0 ? 'positive' : 'negative',
-        icon: ShoppingCart,
-        color: 'from-indigo-500 to-blue-600',
-        description: `Average transaction value from sales\n${periodLabel}: ${formatCurrency(salesPrevAvgTxn)}`,
-        rawValue: avgTransactionValue
+        title: "Class Average",
+        value: formatNumber(classAverage, 1),
+        rawValue: classAverage,
+        change: growth(classAverage, sessionsPrevAvgSize),
+        changeDetails: {
+          rate: growth(classAverage, sessionsPrevAvgSize),
+          isSignificant: Math.abs(growth(classAverage, sessionsPrevAvgSize)) > 5,
+          trend: growth(classAverage, sessionsPrevAvgSize) > 0 
+            ? (Math.abs(growth(classAverage, sessionsPrevAvgSize)) > 15 ? 'strong' : Math.abs(growth(classAverage, sessionsPrevAvgSize)) > 5 ? 'moderate' : 'weak')
+            : (Math.abs(growth(classAverage, sessionsPrevAvgSize)) > 15 ? 'weak' : Math.abs(growth(classAverage, sessionsPrevAvgSize)) > 5 ? 'moderate' : 'weak')
+        },
+        icon: "BarChart3",
+        color: "indigo",
+        description: "Average attendees per class",
+        previousValue: formatNumber(sessionsPrevAvgSize, 1),
+        previousRawValue: sessionsPrevAvgSize,
+        comparison: {
+          current: classAverage,
+          previous: sessionsPrevAvgSize,
+          difference: classAverage - sessionsPrevAvgSize
+        }
       },
       {
-        title: 'Retention Rate',
-        value: `${retentionRate.toFixed(1)}%`,
-        change: `${growth(retentionRate, retentionPrevRate) >= 0 ? '+' : ''}${growth(retentionRate, retentionPrevRate).toFixed(1)}%`,
-        changeType: growth(retentionRate, retentionPrevRate) >= 0 ? 'positive' : 'negative',
-        icon: Percent,
-        color: 'from-emerald-500 to-green-600',
-        description: `Client retention rate\n${periodLabel}: ${retentionPrevRate.toFixed(1)}%`,
-        rawValue: retentionRate
+        title: "Fill Rate",
+        value: `${formatNumber(fillRate, 1)}%`,
+        rawValue: fillRate,
+        change: growth(fillRate, sessionsPrevFillRate),
+        changeDetails: {
+          rate: growth(fillRate, sessionsPrevFillRate),
+          isSignificant: Math.abs(growth(fillRate, sessionsPrevFillRate)) > 5,
+          trend: growth(fillRate, sessionsPrevFillRate) > 0 
+            ? (Math.abs(growth(fillRate, sessionsPrevFillRate)) > 15 ? 'strong' : Math.abs(growth(fillRate, sessionsPrevFillRate)) > 5 ? 'moderate' : 'weak')
+            : (Math.abs(growth(fillRate, sessionsPrevFillRate)) > 15 ? 'weak' : Math.abs(growth(fillRate, sessionsPrevFillRate)) > 5 ? 'moderate' : 'weak')
+        },
+        icon: "Target",
+        color: "teal",
+        description: "Capacity utilization rate",
+        previousValue: `${formatNumber(sessionsPrevFillRate, 1)}%`,
+        previousRawValue: sessionsPrevFillRate,
+        comparison: {
+          current: fillRate,
+          previous: sessionsPrevFillRate,
+          difference: fillRate - sessionsPrevFillRate
+        }
       },
       {
-        title: 'Class Utilization',
-        value: `${sessionAttendanceRate.toFixed(1)}%`,
-        change: `${growth(sessionAttendanceRate, (sessionsPrevCapacity > 0 ? (sessionsPrevAttendance / sessionsPrevCapacity) * 100 : 0)) >= 0 ? '+' : ''}${growth(sessionAttendanceRate, (sessionsPrevCapacity > 0 ? (sessionsPrevAttendance / sessionsPrevCapacity) * 100 : 0)).toFixed(1)}%`,
-        changeType: growth(sessionAttendanceRate, (sessionsPrevCapacity > 0 ? (sessionsPrevAttendance / sessionsPrevCapacity) * 100 : 0)) >= 0 ? 'positive' : 'negative',
-        icon: Clock,
-        color: 'from-yellow-500 to-orange-600',
-        description: `Average class capacity filled\n${periodLabel}: ${(sessionsPrevCapacity > 0 ? (sessionsPrevAttendance / sessionsPrevCapacity) * 100 : 0).toFixed(1)}%`,
-        rawValue: sessionAttendanceRate
-      },
-      {
-        title: 'Total VAT',
-        value: formatCurrency(totalVAT),
-        change: `${growth(totalVAT, salesPrevVAT) >= 0 ? '+' : ''}${growth(totalVAT, salesPrevVAT).toFixed(1)}%`,
-        changeType: growth(totalVAT, salesPrevVAT) >= 0 ? 'positive' : 'negative',
-        icon: DollarSign,
-        color: 'from-red-500 to-pink-600',
-        description: `Total VAT collected from sales\n${periodLabel}: ${formatCurrency(salesPrevVAT)}`,
-        rawValue: totalVAT
-      },
-      {
-        title: 'PowerCycle Classes',
-        value: formatNumber(powerCycleSessions),
-        change: `${growth(powerCycleSessions, sessionsPrevPowerCycle) >= 0 ? '+' : ''}${growth(powerCycleSessions, sessionsPrevPowerCycle).toFixed(1)}%`,
-        changeType: growth(powerCycleSessions, sessionsPrevPowerCycle) >= 0 ? 'positive' : 'negative',
-        icon: Zap,
-        color: 'from-violet-500 to-purple-600',
-        description: `PowerCycle sessions held\n${periodLabel}: ${formatNumber(sessionsPrevPowerCycle)}`,
-        rawValue: powerCycleSessions
-      },
-      {
-        title: 'Avg. Session Size',
-        value: avgSessionSize.toFixed(1),
-        change: `${growth(avgSessionSize, sessionsPrevAvgSize) >= 0 ? '+' : ''}${growth(avgSessionSize, sessionsPrevAvgSize).toFixed(1)}%`,
-        changeType: growth(avgSessionSize, sessionsPrevAvgSize) >= 0 ? 'positive' : 'negative',
-        icon: Users,
-        color: 'from-lime-500 to-green-600',
-        description: `Average attendees per session\n${periodLabel}: ${sessionsPrevAvgSize.toFixed(1)}`,
-        rawValue: avgSessionSize
-      },
-      {
-        title: 'Discount Amount',
+        title: "Discount Amount",
         value: formatCurrency(finalDiscountAmount),
-        change: `${growth(finalDiscountAmount, discountPrevAmount) >= 0 ? '+' : ''}${growth(finalDiscountAmount, discountPrevAmount).toFixed(1)}%`,
-        changeType: growth(finalDiscountAmount, discountPrevAmount) >= 0 ? 'positive' : 'negative',
-        icon: Percent,
-        color: 'from-pink-500 to-rose-600',
-        description: `Total discount amount given\n${periodLabel}: ${formatCurrency(discountPrevAmount)}`,
-        rawValue: finalDiscountAmount
+        rawValue: finalDiscountAmount,
+        change: growth(finalDiscountAmount, discountPrevAmount),
+        changeDetails: {
+          rate: growth(finalDiscountAmount, discountPrevAmount),
+          isSignificant: Math.abs(growth(finalDiscountAmount, discountPrevAmount)) > 10,
+          trend: growth(finalDiscountAmount, discountPrevAmount) > 0 
+            ? 'weak' // Increasing discounts is bad for revenue
+            : (Math.abs(growth(finalDiscountAmount, discountPrevAmount)) > 20 ? 'strong' : Math.abs(growth(finalDiscountAmount, discountPrevAmount)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Percent",
+        color: "orange",
+        description: "Total discount value given",
+        previousValue: formatCurrency(discountPrevAmount),
+        previousRawValue: discountPrevAmount,
+        comparison: {
+          current: finalDiscountAmount,
+          previous: discountPrevAmount,
+          difference: finalDiscountAmount - discountPrevAmount
+        }
       },
       {
-        title: 'Discount Transactions',
-        value: formatNumber(finalDiscountTransactions),
-        change: `${growth(finalDiscountTransactions, discountPrevTxns) >= 0 ? '+' : ''}${growth(finalDiscountTransactions, discountPrevTxns).toFixed(1)}%`,
-        changeType: growth(finalDiscountTransactions, discountPrevTxns) >= 0 ? 'positive' : 'negative',
-        icon: ShoppingCart,
-        color: 'from-amber-500 to-orange-600',
-        description: `Transactions with discounts\n${periodLabel}: ${formatNumber(discountPrevTxns)}`,
-        rawValue: finalDiscountTransactions
+        title: "Discount %",
+        value: `${formatNumber(discountPercentage, 1)}%`,
+        rawValue: discountPercentage,
+        change: growth(discountPercentage, discountPrevPercentage),
+        changeDetails: {
+          rate: growth(discountPercentage, discountPrevPercentage),
+          isSignificant: Math.abs(growth(discountPercentage, discountPrevPercentage)) > 5,
+          trend: growth(discountPercentage, discountPrevPercentage) > 0 
+            ? 'weak' // Increasing discount % is bad
+            : (Math.abs(growth(discountPercentage, discountPrevPercentage)) > 15 ? 'strong' : Math.abs(growth(discountPercentage, discountPrevPercentage)) > 5 ? 'moderate' : 'weak')
+        },
+        icon: "Percent",
+        color: "yellow",
+        description: "Discount as % of revenue",
+        previousValue: `${formatNumber(discountPrevPercentage, 1)}%`,
+        previousRawValue: discountPrevPercentage,
+        comparison: {
+          current: discountPercentage,
+          previous: discountPrevPercentage,
+          difference: discountPercentage - discountPrevPercentage
+        }
+      },
+      {
+        title: "Late Cancellations",
+        value: formatNumber(lateCancellations),
+        rawValue: lateCancellations,
+        change: growth(lateCancellations, lateCancelPrev),
+        changeDetails: {
+          rate: growth(lateCancellations, lateCancelPrev),
+          isSignificant: Math.abs(growth(lateCancellations, lateCancelPrev)) > 10,
+          trend: growth(lateCancellations, lateCancelPrev) > 0 
+            ? 'weak' // Increasing late cancellations is bad
+            : (Math.abs(growth(lateCancellations, lateCancelPrev)) > 20 ? 'strong' : Math.abs(growth(lateCancellations, lateCancelPrev)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Clock",
+        color: "red",
+        description: "Classes cancelled late",
+        previousValue: formatNumber(lateCancelPrev),
+        previousRawValue: lateCancelPrev,
+        comparison: {
+          current: lateCancellations,
+          previous: lateCancelPrev,
+          difference: lateCancellations - lateCancelPrev
+        }
+      },
+      {
+        title: "PowerCycle Classes",
+        value: formatNumber(powerCycleSessions),
+        rawValue: powerCycleSessions,
+        change: growth(powerCycleSessions, sessionsPrevPowerCycle),
+        changeDetails: {
+          rate: growth(powerCycleSessions, sessionsPrevPowerCycle),
+          isSignificant: Math.abs(growth(powerCycleSessions, sessionsPrevPowerCycle)) > 10,
+          trend: growth(powerCycleSessions, sessionsPrevPowerCycle) > 0 
+            ? (Math.abs(growth(powerCycleSessions, sessionsPrevPowerCycle)) > 20 ? 'strong' : Math.abs(growth(powerCycleSessions, sessionsPrevPowerCycle)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(powerCycleSessions, sessionsPrevPowerCycle)) > 20 ? 'weak' : Math.abs(growth(powerCycleSessions, sessionsPrevPowerCycle)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Zap",
+        color: "blue",
+        description: "Cycle and power classes",
+        previousValue: formatNumber(sessionsPrevPowerCycle),
+        previousRawValue: sessionsPrevPowerCycle,
+        comparison: {
+          current: powerCycleSessions,
+          previous: sessionsPrevPowerCycle,
+          difference: powerCycleSessions - sessionsPrevPowerCycle
+        }
+      },
+      {
+        title: "Strength Lab Classes",
+        value: formatNumber(strengthLabSessions),
+        rawValue: strengthLabSessions,
+        change: growth(strengthLabSessions, sessionsPrevStrength),
+        changeDetails: {
+          rate: growth(strengthLabSessions, sessionsPrevStrength),
+          isSignificant: Math.abs(growth(strengthLabSessions, sessionsPrevStrength)) > 10,
+          trend: growth(strengthLabSessions, sessionsPrevStrength) > 0 
+            ? (Math.abs(growth(strengthLabSessions, sessionsPrevStrength)) > 20 ? 'strong' : Math.abs(growth(strengthLabSessions, sessionsPrevStrength)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(strengthLabSessions, sessionsPrevStrength)) > 20 ? 'weak' : Math.abs(growth(strengthLabSessions, sessionsPrevStrength)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Target",
+        color: "gray",
+        description: "Strength and lab classes",
+        previousValue: formatNumber(sessionsPrevStrength),
+        previousRawValue: sessionsPrevStrength,
+        comparison: {
+          current: strengthLabSessions,
+          previous: sessionsPrevStrength,
+          difference: strengthLabSessions - sessionsPrevStrength
+        }
+      },
+      {
+        title: "Barre Classes",
+        value: formatNumber(barreSessions),
+        rawValue: barreSessions,
+        change: growth(barreSessions, sessionsPrevBarre),
+        changeDetails: {
+          rate: growth(barreSessions, sessionsPrevBarre),
+          isSignificant: Math.abs(growth(barreSessions, sessionsPrevBarre)) > 10,
+          trend: growth(barreSessions, sessionsPrevBarre) > 0 
+            ? (Math.abs(growth(barreSessions, sessionsPrevBarre)) > 20 ? 'strong' : Math.abs(growth(barreSessions, sessionsPrevBarre)) > 10 ? 'moderate' : 'weak')
+            : (Math.abs(growth(barreSessions, sessionsPrevBarre)) > 20 ? 'weak' : Math.abs(growth(barreSessions, sessionsPrevBarre)) > 10 ? 'moderate' : 'weak')
+        },
+        icon: "Activity",
+        color: "pink",
+        description: "Barre classes conducted",
+        previousValue: formatNumber(sessionsPrevBarre),
+        previousRawValue: sessionsPrevBarre,
+        comparison: {
+          current: barreSessions,
+          previous: sessionsPrevBarre,
+          difference: barreSessions - sessionsPrevBarre
+        }
       }
     ];
   }, [data, historical]);
+
+  // Take the first 12 metrics for the cards (all the important ones)
+  const displayMetrics = metrics;
 
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-3xl font-bold text-slate-800 mb-2">Key Performance Metrics</h2>
-        <p className="text-slate-600">Real-time insights from previous month's data</p>
+        <p className="text-slate-600">Real-time insights from filtered data</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => (
-          <motion.div
-            key={metric.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-105 h-full">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${metric.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                    <metric.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <Badge className={`${
-                    metric.changeType === 'positive' 
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                      : 'bg-red-100 text-red-700 hover:bg-red-200'
-                  } transition-colors font-semibold`}>
-                    {metric.changeType === 'positive' ? (
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 mr-1" />
-                    )}
-                    {metric.change}
-                  </Badge>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {displayMetrics.map((metric, index) => {
+          const IconComponent = iconMap[metric.icon as keyof typeof iconMap] || Activity;
+          const isPositive = metric.change > 0;
+          const isNegative = metric.change < 0;
+
+          return (
+            <Card
+              key={metric.title}
+              className={cn(
+                "group relative overflow-hidden cursor-pointer transition-all duration-500",
+                "bg-white hover:bg-gradient-to-br hover:from-slate-900 hover:via-slate-900 hover:to-slate-950",
+                "border border-slate-200 hover:border-slate-800 border-t-4",
+                "shadow-md hover:shadow-2xl hover:shadow-slate-950/60",
+                "hover:-translate-y-1 hover:scale-[1.01]",
+                index % 4 === 0 && "border-t-emerald-500",
+                index % 4 === 1 && "border-t-blue-500",
+                index % 4 === 2 && "border-t-purple-500",
+                index % 4 === 3 && "border-t-rose-500",
+                onMetricClick && "hover:cursor-pointer"
+              )}
+              onClick={() => onMetricClick?.({
+                ...metric,
+                metricType: metric.title.toLowerCase().replace(/\s+/g, '-'),
+                specificData: metric,
+                drillDownType: 'metric'
+              })}
+            >
+              <CardContent className="p-5 relative">
+                {/* Decorative gradient overlay */}
+                <div className={cn(
+                  "absolute inset-0 opacity-[0.03] group-hover:opacity-[0.08] transition-all duration-500",
+                  index % 4 === 0 && "bg-gradient-to-br from-emerald-500 to-teal-500",
+                  index % 4 === 1 && "bg-gradient-to-br from-blue-500 to-cyan-500",
+                  index % 4 === 2 && "bg-gradient-to-br from-purple-500 to-pink-500",
+                  index % 4 === 3 && "bg-gradient-to-br from-rose-500 to-orange-500"
+                )} />
+                
+                {/* Background Icon - Enhanced */}
+                <div className="absolute top-3 right-3 opacity-[0.08] group-hover:opacity-[0.15] transition-all duration-700 ease-out group-hover:scale-110 group-hover:rotate-6">
+                  <IconComponent className="w-20 h-20 text-slate-900 group-hover:text-white" />
                 </div>
-                <h3 className="text-sm font-medium text-slate-600 mb-2">{metric.title}</h3>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{metric.value}</p>
-                <p className="text-xs text-slate-500 whitespace-pre-line">{metric.description}</p>
+                
+                {/* Background pattern */}
+                <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity duration-500" 
+                     style={{backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px'}} />
+                
+                {/* Main Content */}
+                <div className="relative z-10 space-y-2.5">
+                  {/* Header Section - Icon and Title */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={cn(
+                        "p-2.5 rounded-xl shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:shadow-md",
+                        index % 4 === 0 && "bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 text-emerald-700 group-hover:from-emerald-500/25 group-hover:to-emerald-600/20 group-hover:text-emerald-400 group-hover:shadow-emerald-500/20",
+                        index % 4 === 1 && "bg-gradient-to-br from-blue-500/15 to-blue-600/10 text-blue-700 group-hover:from-blue-500/25 group-hover:to-blue-600/20 group-hover:text-blue-400 group-hover:shadow-blue-500/20",
+                        index % 4 === 2 && "bg-gradient-to-br from-purple-500/15 to-purple-600/10 text-purple-700 group-hover:from-purple-500/25 group-hover:to-purple-600/20 group-hover:text-purple-400 group-hover:shadow-purple-500/20",
+                        index % 4 === 3 && "bg-gradient-to-br from-rose-500/15 to-rose-600/10 text-rose-700 group-hover:from-rose-500/25 group-hover:to-rose-600/20 group-hover:text-rose-400 group-hover:shadow-rose-500/20"
+                      )}>
+                        <IconComponent className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className={cn(
+                          "font-bold text-sm text-slate-700 transition-all duration-500 leading-tight",
+                          "group-hover:text-white group-hover:underline group-hover:underline-offset-4 group-hover:decoration-2",
+                          index % 4 === 0 && "group-hover:decoration-emerald-400",
+                          index % 4 === 1 && "group-hover:decoration-blue-400",
+                          index % 4 === 2 && "group-hover:decoration-purple-400",
+                          index % 4 === 3 && "group-hover:decoration-rose-400"
+                        )}>
+                          {metric.title}
+                        </h3>
+                        <p className="text-[9px] text-slate-500 group-hover:text-slate-400 transition-colors duration-500 mt-0.5 uppercase tracking-wide font-semibold">
+                          Current Period
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Value with Background Card */}
+                  <div className={cn(
+                    "p-2.5 rounded-lg transition-all duration-500",
+                    "bg-slate-50 group-hover:bg-slate-800/30",
+                    "border border-slate-100 group-hover:border-slate-700/50"
+                  )}>
+                    <p className="text-3xl font-bold text-slate-900 group-hover:text-white transition-colors duration-500 tracking-tight">
+                      {metric.value}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className={cn(
+                        "h-0.5 flex-1 rounded-full transition-all duration-500",
+                        metric.change > 0 && "bg-emerald-200 group-hover:bg-emerald-500/40",
+                        metric.change < 0 && "bg-rose-200 group-hover:bg-rose-500/40",
+                        metric.change === 0 && "bg-slate-200 group-hover:bg-slate-500/40"
+                      )} />
+                      <div className="flex items-center gap-1">
+                        {metric.change > 0 && <ArrowUpRight className="w-3 h-3 text-emerald-600 group-hover:text-emerald-400" />}
+                        {metric.change < 0 && <ArrowDownRight className="w-3 h-3 text-rose-600 group-hover:text-rose-400" />}
+                        {metric.change === 0 && <Minus className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />}
+                        <span className={cn(
+                          "text-[10px] font-bold transition-colors duration-500",
+                          metric.change > 0 && "text-emerald-600 group-hover:text-emerald-400",
+                          metric.change < 0 && "text-rose-600 group-hover:text-rose-400",
+                          metric.change === 0 && "text-slate-600 group-hover:text-slate-400"
+                        )}>
+                          {metric.changeDetails.trend}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comparison Metrics - Enhanced Cards */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* MoM Card */}
+                    <div className={cn(
+                      "p-2.5 rounded-lg border transition-all duration-500",
+                      "bg-white/50 group-hover:bg-slate-800/20",
+                      "border-slate-200 group-hover:border-slate-700/50"
+                    )}>
+                      <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-500">
+                        Month over Month
+                      </div>
+                      <div className="flex items-baseline gap-1.5 mb-1.5">
+                        <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
+                          {metric.previousValue}
+                        </span>
+                        <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">prev</span>
+                      </div>
+                      <div className={cn(
+                        "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-500 min-w-[65px]",
+                        metric.change > 0 && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
+                        metric.change < 0 && "bg-rose-900/90 text-white group-hover:bg-rose-800 group-hover:shadow-lg group-hover:shadow-rose-900/40",
+                        metric.change === 0 && "bg-slate-700/90 text-white group-hover:bg-slate-600 group-hover:shadow-lg"
+                      )}>
+                        {metric.change > 0 && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                        {metric.change < 0 && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                        {metric.change === 0 && <Minus className="w-3.5 h-3.5 flex-shrink-0" />}
+                        <span>{metric.change > 0 ? '+' : ''}{Math.round(metric.change)}%</span>
+                      </div>
+                    </div>
+                    
+                    {/* YoY Card - Year over Year Comparison */}
+                    <div className={cn(
+                      "p-2.5 rounded-lg border transition-all duration-500",
+                      metric.yoyChange !== undefined 
+                        ? "bg-white/50 group-hover:bg-slate-800/20 border-slate-200 group-hover:border-slate-700/50"
+                        : "bg-slate-50/50 group-hover:bg-slate-800/10 border-slate-200 group-hover:border-slate-700/30"
+                    )}>
+                      {metric.yoyChange !== undefined ? (
+                        <>
+                          <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-500">
+                            Year over Year
+                          </div>
+                          <div className="flex items-baseline gap-1.5 mb-1.5">
+                            <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
+                              {metric.yoyPreviousValue}
+                            </span>
+                            <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">last year</span>
+                          </div>
+                          <div className={cn(
+                            "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-500 min-w-[65px]",
+                            metric.yoyChange > 0 && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
+                            metric.yoyChange < 0 && "bg-rose-900/90 text-white group-hover:bg-rose-800 group-hover:shadow-lg group-hover:shadow-rose-900/40",
+                            metric.yoyChange === 0 && "bg-slate-700/90 text-white group-hover:bg-slate-600 group-hover:shadow-lg"
+                          )}>
+                            {metric.yoyChange > 0 && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                            {metric.yoyChange < 0 && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                            {metric.yoyChange === 0 && <Minus className="w-3.5 h-3.5 flex-shrink-0" />}
+                            <span>{metric.yoyChange > 0 ? '+' : ''}{Math.round(metric.yoyChange)}%</span>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-[9px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500 font-semibold">
+                          No YoY Data
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Description Footer with Enhanced Side Border */}
+                  <div className={cn(
+                    "relative pt-1.5 border-l-3 pl-3 transition-all duration-500",
+                    "before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500",
+                    index % 4 === 0 && "border-l-emerald-500/50 group-hover:border-l-emerald-400 before:bg-emerald-500/20 group-hover:before:bg-emerald-400/30",
+                    index % 4 === 1 && "border-l-blue-500/50 group-hover:border-l-blue-400 before:bg-blue-500/20 group-hover:before:bg-blue-400/30",
+                    index % 4 === 2 && "border-l-purple-500/50 group-hover:border-l-purple-400 before:bg-purple-500/20 group-hover:before:bg-purple-400/30",
+                    index % 4 === 3 && "border-l-rose-500/50 group-hover:border-l-rose-400 before:bg-rose-500/20 group-hover:before:bg-rose-400/30"
+                  )}>
+                    <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
+                      {metric.description}
+                    </p>
+                  </div>
+
+                  {/* Additional Info - Hidden by default, shown on hover */}
+                  <div className={cn(
+                    "pt-2 space-y-2 border-t transition-all duration-500 overflow-hidden",
+                    "max-h-0 opacity-0 group-hover:max-h-40 group-hover:opacity-100",
+                    index % 4 === 0 && "border-emerald-200 group-hover:border-emerald-500/30",
+                    index % 4 === 1 && "border-blue-200 group-hover:border-blue-500/30",
+                    index % 4 === 2 && "border-purple-200 group-hover:border-purple-500/30",
+                    index % 4 === 3 && "border-rose-200 group-hover:border-rose-500/30"
+                  )}>
+                    {/* Trend Info */}
+                    <div className="text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400 font-medium">Trend:</span>
+                        <span className="text-white font-semibold">{metric.changeDetails.trend}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400 font-medium">Difference:</span>
+                        <span className="text-white font-semibold">{formatCurrency(Math.abs(metric.comparison.difference))}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Quick Action Dashboard Button */}

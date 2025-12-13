@@ -53,8 +53,8 @@ export const getDateRangeForMonths = (monthsBack: number) => {
 };
 
 /**
- * Generate a standard month range ending at the current month.
- * Returns 22 months in ascending order (oldest -> newest), with fields:
+ * Generate a standard month range from Jan 2024 to current month.
+ * Returns months in ascending order (oldest -> newest), with fields:
  * { key: 'YYYY-MM', display: 'Mon YYYY', year, month, quarter, sortOrder }
  */
 export const generateStandardMonthRange = () => {
@@ -63,7 +63,7 @@ export const generateStandardMonthRange = () => {
 
   const now = new Date();
   const end = new Date(now.getFullYear(), now.getMonth(), 1); // current month
-  const start = new Date(end.getFullYear(), end.getMonth() - 21, 1); // 21 months before -> 22 total
+  const start = new Date(2024, 0, 1); // January 2024
 
   let iterYear = start.getFullYear();
   let iterMonth = start.getMonth();

@@ -45,7 +45,7 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
           icon: Users,
           gradient: 'from-blue-500 to-indigo-600',
           description: `${category} clients`,
-          change: 12.5,
+          change: null,
           isPositive: true,
           metricType: 'total_clients'
         },
@@ -55,7 +55,7 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
           icon: Eye,
           gradient: 'from-cyan-500 to-blue-600',
           description: 'Avg visits after trial',
-          change: 8.2,
+          change: null,
           isPositive: true,
           metricType: 'visits_post_trial'
         },
@@ -65,7 +65,7 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
           icon: Target,
           gradient: 'from-green-500 to-teal-600',
           description: 'Avg purchases post trial',
-          change: 15.3,
+          change: null,
           isPositive: true,
           metricType: 'purchase_count'
         },
@@ -75,7 +75,7 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
           icon: DollarSign,
           gradient: 'from-pink-500 to-rose-600',
           description: 'Average lifetime value',
-          change: 7.8,
+          change: null,
           isPositive: true,
           metricType: 'avg_ltv'
         },
@@ -85,7 +85,7 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
           icon: Clock,
           gradient: 'from-orange-500 to-red-600',
           description: 'Avg conversion time',
-          change: -3.2,
+          change: null,
           isPositive: false,
           metricType: 'conversion_span'
         },
@@ -95,7 +95,7 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
           icon: ArrowRight,
           gradient: 'from-purple-500 to-violet-600',
           description: 'Avg total visits',
-          change: 9.1,
+          change: null,
           isPositive: true,
           metricType: 'total_visits'
         }
@@ -133,16 +133,18 @@ export const EnhancedClientMetricCards: React.FC<EnhancedClientMetricCardsProps>
                     <div className={`p-2 rounded-lg bg-gradient-to-r ${metric.gradient} shadow-md group-hover:shadow-lg transition-all duration-300`}>
                       <metric.icon className="w-4 h-4 text-white" />
                     </div>
-                    <Badge 
-                      className={cn(
-                        "text-xs px-2 py-1 font-medium transition-all duration-300",
-                        metric.isPositive 
-                          ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200' 
-                          : 'bg-red-100 text-red-700 group-hover:bg-red-200'
-                      )}
-                    >
-                      {metric.isPositive ? '+' : ''}{metric.change}%
-                    </Badge>
+                    {metric.change !== null && (
+                      <Badge 
+                        className={cn(
+                          "text-xs px-2 py-1 font-medium transition-all duration-300",
+                          metric.isPositive 
+                            ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200' 
+                            : 'bg-red-100 text-red-700 group-hover:bg-red-200'
+                        )}
+                      >
+                        {metric.isPositive ? '+' : ''}{metric.change}%
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="space-y-2">

@@ -63,7 +63,12 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
 
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
-    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    // Use NET revenue: paymentValue - VAT
+    const totalRevenue = items.reduce((sum, item) => {
+      const payment = item.paymentValue || 0;
+      const vat = item.paymentVAT || item.vat || 0;
+      return sum + (payment - vat);
+    }, 0);
     
     // Transactions = unique count of payment transaction ID
     const uniqueTransactionIds = new Set(items.map(item => item.paymentTransactionId || item.transactionId).filter(Boolean));
@@ -80,10 +85,10 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
     const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
     const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     
-    // Calculate average discount percentage
-    const itemsWithDiscount = items.filter(item => (item.discountAmount || 0) > 0);
-    const avgDiscountPercentage = itemsWithDiscount.length > 0
-      ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
+    // Calculate discount percentage correctly: Total Discounts / (Total Gross Revenue) * 100
+    const totalGrossRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const avgDiscountPercentage = totalGrossRevenue > 0
+      ? (totalDiscount / totalGrossRevenue) * 100
       : 0;
     
     // Purchase Frequency in Days
@@ -178,32 +183,41 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
     });
   }, [data, filters]);
 
-  // Generate YoY month pairs with 2025 first then 2024, newest month first
+  // Generate YoY month pairs sorted by month (Jan-Dec), with year pairs (2024, 2025) for each month
   const monthlyData = useMemo(() => {
     const months: { key: string; display: string; year: number; month: number }[] = [];
     const now = new Date();
-    // Build from current month back 12 months
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const month = d.getMonth() + 1;
-      const monthName = d.toLocaleDateString('en-US', { month: 'short' });
-      // Current year entry first
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    
+    // Generate from Jan 2024 to current month, sorted by month number
+    for (let monthNum = 1; monthNum <= 12; monthNum++) {
+      const monthName = new Date(2024, monthNum - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+      
+      // Only include months up to current month in current year
+      if (monthNum > currentMonth && currentYear === now.getFullYear()) {
+        continue;
+      }
+      
+      // Add 2024 entry
       months.push({
-        key: `${d.getFullYear()}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${d.getFullYear()}`,
-        year: d.getFullYear(),
-        month
+        key: `2024-${String(monthNum).padStart(2, '0')}`,
+        display: `${monthName} 2024`,
+        year: 2024,
+        month: monthNum
       });
-      // Previous year same month
-      const prevYear = d.getFullYear() - 1;
-      months.push({
-        key: `${prevYear}-${String(month).padStart(2, '0')}`,
-        display: `${monthName} ${prevYear}`,
-        year: prevYear,
-        month
-      });
+      
+      // Add 2025 entry if month has occurred
+      if (monthNum <= currentMonth) {
+        months.push({
+          key: `${currentYear}-${String(monthNum).padStart(2, '0')}`,
+          display: `${monthName} ${currentYear}`,
+          year: currentYear,
+          month: monthNum
+        });
+      }
     }
-    return months; // already newest pair first
+    return months;
   }, []);
 
   const visibleMonths = useMemo(() => monthlyData, [monthlyData]);

@@ -103,7 +103,12 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
 
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
-    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    // Use NET revenue: paymentValue - VAT
+    const totalRevenue = items.reduce((sum, item) => {
+      const payment = item.paymentValue || 0;
+      const vat = item.paymentVAT || item.vat || 0;
+      return sum + (payment - vat);
+    }, 0);
     
     // Transactions = unique count of payment transaction ID
     const uniqueTransactionIds = new Set(items.map(item => item.paymentTransactionId || item.transactionId).filter(Boolean));
@@ -118,8 +123,10 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
     
     const totalDiscountAmount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
-    const avgDiscountPercentage = items.length > 0 ? 
-      items.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / items.length : 0;
+    // Calculate discount percentage correctly: Total Discounts / (Total Gross Revenue) * 100
+    const totalGrossRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const avgDiscountPercentage = totalGrossRevenue > 0 ? 
+      (totalDiscountAmount / totalGrossRevenue) * 100 : 0;
     
     // Purchase Frequency in Days
     const dates = items.map(item => {
@@ -189,9 +196,12 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate last 22 months in descending order (current month back)
-    for (let i = 0; i < 22; i++) {
-      const date = new Date(currentYear, currentMonth - i, 1);
+    // Generate months from Jan 2024 to current month in ASCENDING order
+    const startDate = new Date(2024, 0, 1); // January 2024
+    const endDate = new Date(currentYear, currentMonth, 1);
+    
+    let date = new Date(startDate);
+    while (date <= endDate) {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const monthName = monthNames[date.getMonth()];
@@ -202,6 +212,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
         month: month,
         quarter: Math.ceil(month / 3)
       });
+      date = new Date(year, date.getMonth() + 1, 1);
     }
     return months;
   }, []);
@@ -585,9 +596,10 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                       
                       {visibleMonths.map(({ key }, monthIndex) => {
                         const current = categoryGroup.monthlyValues[key] || 0;
-                        const previousMonthKeyData = visibleMonths[monthIndex + 1]?.key;
+                        // Since months are now ascending (Jan 2024 first), previous month is at monthIndex - 1
+                        const previousMonthKeyData = monthIndex > 0 ? visibleMonths[monthIndex - 1]?.key : null;
                         const previous = previousMonthKeyData ? (categoryGroup.monthlyValues[previousMonthKeyData] || 0) : 0;
-                        const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
+                        const growthPercentage = monthIndex > 0 ? getGrowthPercentage(current, previous) : null;
                         const isPreviousMonth = key === previousMonthKey;
                         
                         return (
@@ -655,9 +667,10 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                           
                           {visibleMonths.map(({ key }, monthIndex) => {
                             const current = product.monthlyValues[key] || 0;
-                            const previousMonthKeyData = visibleMonths[monthIndex + 1]?.key;
+                            // Since months are now ascending (Jan 2024 first), previous month is at monthIndex - 1
+                            const previousMonthKeyData = monthIndex > 0 ? visibleMonths[monthIndex - 1]?.key : null;
                             const previous = previousMonthKeyData ? (product.monthlyValues[previousMonthKeyData] || 0) : 0;
-                            const growthPercentage = monthIndex < visibleMonths.length - 1 ? getGrowthPercentage(current, previous) : null;
+                            const growthPercentage = monthIndex > 0 ? getGrowthPercentage(current, previous) : null;
                             const isPreviousMonth = key === previousMonthKey;
                             
                             return (

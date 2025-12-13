@@ -58,6 +58,9 @@ const LateCancellations = React.lazy(() =>
 const PatternsAndTrends = React.lazy(() => 
   import("./pages/PatternsAndTrends").then(module => ({ default: module.default }))
 );
+const LocationReport = React.lazy(() => 
+  import("./pages/LocationReport").then(module => ({ default: module.default }))
+);
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
 );
@@ -114,6 +117,7 @@ const App = () => {
                     <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
                     <Route path="/late-cancellations" element={<LateCancellations />} />
                     <Route path="/patterns-trends" element={<PatternsAndTrends />} />
+                    <Route path="/location-report" element={<LocationReport />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

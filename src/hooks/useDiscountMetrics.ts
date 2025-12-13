@@ -36,7 +36,17 @@ const calcGrowth = (current: number, previous: number) => {
   if (previous === 0) return { rate: current > 0 ? 100 : 0, isSignificant: current > 0, trend: current > 0 ? 'moderate' as Trend : 'weak' as Trend };
   const rate = ((current - previous) / previous) * 100;
   const mag = Math.abs(rate);
-  const trend: Trend = mag > 20 ? 'strong' : mag > 5 ? 'moderate' : 'weak';
+  
+  // Trend should consider direction of change
+  let trend: Trend;
+  if (rate > 0) {
+    // Positive growth
+    trend = mag > 20 ? 'strong' : mag > 5 ? 'moderate' : 'weak';
+  } else {
+    // Negative growth (decline) - should always be weak or moderate at best
+    trend = mag > 20 ? 'weak' : mag > 5 ? 'moderate' : 'weak';
+  }
+  
   return { rate, isSignificant: mag > 2, trend };
 };
 
@@ -107,7 +117,9 @@ export function useDiscountMetrics(
         list.filter((it) => num(it.discountAmount) > 0).map((it) => it.memberId || it.customerEmail).filter(Boolean)
       ).size;
 
-      const discountRate = totalRevenue + totalDiscounts > 0 ? (totalDiscounts / (totalRevenue + totalDiscounts)) * 100 : 0;
+      // Calculate discount rate: Total Discounts / Gross Revenue (before discount) * 100
+      const grossRevenue = totalRevenue + totalDiscounts;
+      const discountRate = grossRevenue > 0 ? (totalDiscounts / grossRevenue) * 100 : 0;
       const discountPenetration = totalTransactions > 0 ? (discountedTransactions / totalTransactions) * 100 : 0;
       const customerDiscountPenetration = uniqueCustomers > 0 ? (customersWithDiscounts / uniqueCustomers) * 100 : 0;
       const avgDiscountPerTransaction = discountedTransactions > 0 ? totalDiscounts / discountedTransactions : 0;

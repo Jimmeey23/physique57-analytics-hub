@@ -51,7 +51,12 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
 
   const getMetricValue = (items: SalesData[], metric: YearOnYearMetricType) => {
     if (!items.length) return 0;
-    const totalRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    // Use NET revenue: paymentValue - VAT
+    const totalRevenue = items.reduce((sum, item) => {
+      const payment = item.paymentValue || 0;
+      const vat = item.paymentVAT || item.vat || 0;
+      return sum + (payment - vat);
+    }, 0);
     
     // Transactions = unique count of payment transaction ID
     const uniqueTransactionIds = new Set(items.map(item => item.paymentTransactionId || item.transactionId).filter(Boolean));
@@ -68,10 +73,10 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
     const totalVat = items.reduce((sum, item) => sum + (item.paymentVAT || item.vat || 0), 0);
     const totalDiscount = items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     
-    // Calculate average discount percentage
-    const itemsWithDiscount = items.filter(item => (item.discountAmount || 0) > 0);
-    const avgDiscountPercentage = itemsWithDiscount.length > 0
-      ? itemsWithDiscount.reduce((sum, item) => sum + (item.discountPercentage || 0), 0) / itemsWithDiscount.length
+    // Calculate discount percentage correctly: Total Discounts / (Total Gross Revenue) * 100
+    const totalGrossRevenue = items.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    const avgDiscountPercentage = totalGrossRevenue > 0
+      ? (totalDiscount / totalGrossRevenue) * 100
       : 0;
     
     // Purchase Frequency in Days
@@ -140,9 +145,12 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate last 22 months in descending order (October 2025 to January 2024)
-    for (let i = 0; i < 22; i++) {
-      const date = new Date(currentYear, currentMonth - i, 1);
+    // Generate months from Jan 2024 to current month in ASCENDING order
+    const startDate = new Date(2024, 0, 1); // January 2024
+    const endDate = new Date(currentYear, currentMonth, 1);
+    
+    let date = new Date(startDate);
+    while (date <= endDate) {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const monthName = monthNames[date.getMonth()];
@@ -153,6 +161,7 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
         month: month,
         quarter: Math.ceil(month / 3)
       });
+      date = new Date(year, date.getMonth() + 1, 1);
     }
     return months;
   }, []);
@@ -186,7 +195,11 @@ export const CategoryPerformanceTableNewComponent: React.FC<CategoryPerformanceT
         category,
         monthlyValues,
         totalValue: getMetricValue(items, selectedMetric),
-        totalRevenue: items.reduce((sum, item) => sum + (item.paymentValue || 0), 0),
+        totalRevenue: items.reduce((sum, item) => {
+          const payment = item.paymentValue || 0;
+          const vat = item.paymentVAT || item.vat || 0;
+          return sum + (payment - vat);
+        }, 0),
         totalTransactions: items.length,
         uniqueMembers: new Set(items.map(item => item.memberId)).size,
         uniqueProducts,

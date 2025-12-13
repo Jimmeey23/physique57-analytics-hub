@@ -668,7 +668,7 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[85vw] max-w-[1200px] max-h-[85vh] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-0 shadow-2xl rounded-2xl">
         {/* Compact Header */}
-        <DialogHeader className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-800 dark:via-purple-800 dark:to-indigo-800 text-white p-6 -m-6 mb-6 rounded-t-2xl">
+        <DialogHeader className="relative overflow-hidden bg-gradient-to-r from-blue-700 via-blue-800 to-blue-900 dark:from-blue-800 dark:via-blue-900 dark:to-blue-950 text-white p-6 -m-6 mb-6 rounded-t-2xl">
           <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
@@ -732,35 +732,35 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
       <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-slate-100 via-white to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 h-12 border border-slate-200 dark:border-slate-600 rounded-xl p-1 shadow-lg backdrop-blur-md">
               <TabsTrigger 
                 value="overview" 
-                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
               >
                 <Star className="w-3 h-3" />
                 Overview
               </TabsTrigger>
               <TabsTrigger 
                 value="analytics" 
-                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
               >
                 <BarChart3 className="w-3 h-3" />
                 Analytics
               </TabsTrigger>
               <TabsTrigger 
                 value="customers" 
-                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
               >
                 <Users className="w-3 h-3" />
                 Customers
               </TabsTrigger>
               <TabsTrigger 
                 value="transactions" 
-                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
               >
                 <Eye className="w-3 h-3" />
                 Transactions
               </TabsTrigger>
               <TabsTrigger 
                 value="insights" 
-                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
+                className="gap-1 font-medium text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 rounded-lg transition-all duration-300 data-[state=active]:scale-105"
               >
                 <Zap className="w-3 h-3" />
                 Insights

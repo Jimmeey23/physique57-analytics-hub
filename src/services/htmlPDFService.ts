@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { LocationReportData, LocationReportMetrics } from '@/hooks/useLocationReportData';
 
 // Extend jsPDF with autoTable
 declare module 'jspdf' {
@@ -785,4 +786,375 @@ export const generateMultiLocationHTMLPDFReports = async (
   if (onProgress) {
     onProgress('All reports generated successfully!');
   }
+};
+
+const renderLocationReportIntoPDF = (pdf: jsPDF, reportData: LocationReportData): void => {
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 20;
+  let yPos = margin;
+
+  // ============================================
+  // HEADER SECTION
+  // ============================================
+  
+  // Title
+  pdf.setFontSize(24);
+  pdf.setTextColor(59, 130, 246); // Blue color
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Location Performance Report', margin, yPos);
+  yPos += 15;
+
+  // Location and Period
+  pdf.setFontSize(16);
+  pdf.setTextColor(55, 65, 81); // Dark gray
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(reportData.location, margin, yPos);
+  yPos += 8;
+  
+  pdf.setFontSize(12);
+  pdf.setTextColor(107, 114, 128); // Gray
+  pdf.text(`Report Period: ${reportData.reportPeriod.monthName}`, margin, yPos);
+  yPos += 5;
+  
+  pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, margin, yPos);
+  yPos += 15;
+
+  // Performance Score Box
+  const scoreBoxWidth = 60;
+  const scoreBoxHeight = 20;
+  const scoreX = pageWidth - margin - scoreBoxWidth;
+  
+  pdf.setFillColor(59, 130, 246);
+  pdf.roundedRect(scoreX, yPos - 15, scoreBoxWidth, scoreBoxHeight, 3, 3, 'F');
+  
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Performance Score', scoreX + 30, yPos - 8, { align: 'center' });
+  pdf.setFontSize(16);
+  pdf.text(`${reportData.metrics.overallScore}/100`, scoreX + 30, yPos - 2, { align: 'center' });
+
+  yPos += 15;
+
+  // ============================================
+  // EXECUTIVE SUMMARY
+  // ============================================
+  
+  pdf.setFontSize(16);
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Executive Summary', margin, yPos);
+  yPos += 10;
+
+  // Key metrics in a grid
+  const metrics = [
+    { label: 'Total Revenue', value: formatCurrency(reportData.metrics.totalRevenue) },
+    { label: 'Fill Rate', value: formatPercentage(reportData.metrics.fillRate) },
+    { label: 'Retention Rate', value: formatPercentage(reportData.metrics.retentionRate) },
+    { label: 'Conversion Rate', value: formatPercentage(reportData.metrics.conversionRate) },
+    { label: 'New Clients', value: formatNumber(reportData.metrics.newClientsAcquired) },
+    { label: 'Total Sessions', value: formatNumber(reportData.metrics.totalSessions) }
+  ];
+
+  const cols = 3;
+  const rows = Math.ceil(metrics.length / cols);
+  const cellWidth = (pageWidth - 2 * margin) / cols;
+  const cellHeight = 15;
+
+  for (let i = 0; i < metrics.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = margin + col * cellWidth;
+    const y = yPos + row * cellHeight;
+
+    // Background for alternating rows
+    if (row % 2 === 0) {
+      pdf.setFillColor(249, 250, 251);
+      pdf.rect(x, y - 5, cellWidth, cellHeight, 'F');
+    }
+
+    pdf.setFontSize(10);
+    pdf.setTextColor(107, 114, 128);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(metrics[i].label, x + 2, y);
+    
+    pdf.setFontSize(12);
+    pdf.setTextColor(17, 24, 39);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(metrics[i].value, x + 2, y + 7);
+  }
+
+  yPos += rows * cellHeight + 15;
+
+  // ============================================
+  // REVENUE PERFORMANCE SECTION
+  // ============================================
+  
+  if (yPos > pageHeight - 60) {
+    pdf.addPage();
+    yPos = margin;
+  }
+
+  pdf.setFontSize(14);
+  pdf.setTextColor(59, 130, 246);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Revenue Performance', margin, yPos);
+  yPos += 10;
+
+  const revenueData = [
+    ['Metric', 'Value'],
+    ['Gross Revenue', formatCurrency(reportData.metrics.totalRevenue)],
+    ['Net Revenue', formatCurrency(reportData.metrics.netRevenue)],
+    ['VAT Amount', formatCurrency(reportData.metrics.vatAmount)],
+    ['Total Transactions', formatNumber(reportData.metrics.totalTransactions)],
+    ['Unique Members', formatNumber(reportData.metrics.uniqueMembers)],
+    ['Avg Transaction Value', formatCurrency(reportData.metrics.avgTransactionValue)],
+    ['Avg Spend per Member', formatCurrency(reportData.metrics.avgSpendPerMember)],
+    ['Total Discounts', formatCurrency(reportData.metrics.totalDiscounts)],
+    ['Discount Rate', formatPercentage(reportData.metrics.discountRate)]
+  ];
+
+  pdf.autoTable({
+    startY: yPos,
+    head: [revenueData[0]],
+    body: revenueData.slice(1),
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+    alternateRowStyles: { fillColor: [249, 250, 251] }
+  });
+
+  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
+  yPos += 15;
+
+  // ============================================
+  // SESSION PERFORMANCE SECTION
+  // ============================================
+  
+  if (yPos > pageHeight - 60) {
+    pdf.addPage();
+    yPos = margin;
+  }
+
+  pdf.setFontSize(14);
+  pdf.setTextColor(16, 185, 129);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Session Performance', margin, yPos);
+  yPos += 10;
+
+  const sessionData = [
+    ['Metric', 'Value'],
+    ['Total Sessions', formatNumber(reportData.metrics.totalSessions)],
+    ['Total Check-ins', formatNumber(reportData.metrics.totalCheckIns)],
+    ['Fill Rate', formatPercentage(reportData.metrics.fillRate)],
+    ['Average Class Size', formatNumber(reportData.metrics.avgClassSize)],
+    ['PowerCycle Sessions', formatNumber(reportData.metrics.powerCycleSessions)],
+    ['Barre Sessions', formatNumber(reportData.metrics.barreSessions)],
+    ['Strength Sessions', formatNumber(reportData.metrics.strengthSessions)],
+    ['Late Cancellations', formatNumber(reportData.metrics.lateCancellations)]
+  ];
+
+  pdf.autoTable({
+    startY: yPos,
+    head: [sessionData[0]],
+    body: sessionData.slice(1),
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [16, 185, 129], textColor: 255 },
+    alternateRowStyles: { fillColor: [249, 250, 251] }
+  });
+
+  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
+  yPos += 15;
+
+  // ============================================
+  // CLIENT RETENTION SECTION
+  // ============================================
+  
+  if (yPos > pageHeight - 60) {
+    pdf.addPage();
+    yPos = margin;
+  }
+
+  pdf.setFontSize(14);
+  pdf.setTextColor(139, 92, 246);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Client Acquisition & Retention', margin, yPos);
+  yPos += 10;
+
+  const clientData = [
+    ['Metric', 'Value'],
+    ['New Clients Acquired', formatNumber(reportData.metrics.newClientsAcquired)],
+    ['Conversion Rate', formatPercentage(reportData.metrics.conversionRate)],
+    ['Retention Rate', formatPercentage(reportData.metrics.retentionRate)],
+    ['Average LTV', formatCurrency(reportData.metrics.averageLTV)],
+    ['Churn Rate', formatPercentage(reportData.metrics.churnRate)],
+    ['Churned Members', formatNumber(reportData.metrics.churnedMembers)]
+  ];
+
+  pdf.autoTable({
+    startY: yPos,
+    head: [clientData[0]],
+    body: clientData.slice(1),
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [139, 92, 246], textColor: 255 },
+    alternateRowStyles: { fillColor: [249, 250, 251] }
+  });
+
+  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
+  yPos += 15;
+
+  // ============================================
+  // TRAINER PERFORMANCE SECTION
+  // ============================================
+  
+  if (yPos > pageHeight - 60) {
+    pdf.addPage();
+    yPos = margin;
+  }
+
+  pdf.setFontSize(14);
+  pdf.setTextColor(245, 158, 11);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Trainer Performance', margin, yPos);
+  yPos += 10;
+
+  const trainerData = [
+    ['Metric', 'Value'],
+    ['Total Trainers', formatNumber(reportData.metrics.totalTrainers)],
+    ['Sessions per Trainer', formatNumber(reportData.metrics.sessionsPerTrainer)],
+    ['Revenue per Trainer', formatCurrency(reportData.metrics.revenuePerTrainer)],
+    ['Top Trainer', reportData.metrics.topTrainerName],
+    ['Top Trainer Revenue', formatCurrency(reportData.metrics.topTrainerRevenue)]
+  ];
+
+  pdf.autoTable({
+    startY: yPos,
+    head: [trainerData[0]],
+    body: trainerData.slice(1),
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [245, 158, 11], textColor: 255 },
+    alternateRowStyles: { fillColor: [249, 250, 251] }
+  });
+
+  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
+  yPos += 15;
+
+  // ============================================
+  // INSIGHTS SECTION
+  // ============================================
+  
+  if (yPos > pageHeight - 80) {
+    pdf.addPage();
+    yPos = margin;
+  }
+
+  pdf.setFontSize(14);
+  pdf.setTextColor(220, 38, 127);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Key Insights & Recommendations', margin, yPos);
+  yPos += 15;
+
+  // Highlights
+  if (reportData.insights.highlights.length > 0) {
+    pdf.setFontSize(12);
+    pdf.setTextColor(16, 185, 129);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Performance Highlights:', margin, yPos);
+    yPos += 8;
+
+    pdf.setFontSize(10);
+    pdf.setTextColor(55, 65, 81);
+    pdf.setFont('helvetica', 'normal');
+    
+    reportData.insights.highlights.forEach(highlight => {
+      pdf.text(`• ${highlight}`, margin + 5, yPos);
+      yPos += 6;
+    });
+    yPos += 5;
+  }
+
+  // Concerns
+  if (reportData.insights.concerns.length > 0) {
+    pdf.setFontSize(12);
+    pdf.setTextColor(239, 68, 68);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Areas of Concern:', margin, yPos);
+    yPos += 8;
+
+    pdf.setFontSize(10);
+    pdf.setTextColor(55, 65, 81);
+    pdf.setFont('helvetica', 'normal');
+    
+    reportData.insights.concerns.forEach(concern => {
+      pdf.text(`• ${concern}`, margin + 5, yPos);
+      yPos += 6;
+    });
+    yPos += 5;
+  }
+
+  // Recommendations
+  if (reportData.insights.recommendations.length > 0) {
+    pdf.setFontSize(12);
+    pdf.setTextColor(59, 130, 246);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Recommendations:', margin, yPos);
+    yPos += 8;
+
+    pdf.setFontSize(10);
+    pdf.setTextColor(55, 65, 81);
+    pdf.setFont('helvetica', 'normal');
+    
+    reportData.insights.recommendations.forEach(recommendation => {
+      pdf.text(`• ${recommendation}`, margin + 5, yPos);
+      yPos += 6;
+    });
+  }
+
+  // Do not add page numbers or save here; handled by outer generator.
+};
+
+// Generate Location Performance Report PDF (single or multi-report)
+export const generateLocationReportPDF = async (
+  reportData: LocationReportData | LocationReportData[]
+): Promise<void> => {
+  const reports = Array.isArray(reportData) ? reportData : [reportData];
+  if (reports.length === 0) return;
+
+  const pdf = new jsPDF('p', 'mm', 'a4');
+
+  reports.forEach((r, idx) => {
+    if (idx > 0) pdf.addPage();
+    renderLocationReportIntoPDF(pdf, r);
+  });
+
+  // ============================================
+  // FOOTER WITH PAGE NUMBERS (across whole PDF)
+  // ============================================
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 20;
+
+  const totalPages = pdf.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    pdf.setFontSize(8);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+    pdf.text('© 2025 Physique 57 - Location Performance Report', pageWidth - margin, pageHeight - 8, { align: 'right' });
+  }
+
+  // ============================================
+  // SAVE PDF
+  // ============================================
+  const dateStamp = new Date().toISOString().split('T')[0];
+  const fileName =
+    reports.length === 1
+      ? `${reports[0].location.replace(/[^a-z0-9]/gi, '_')}_Location_Report_${dateStamp}.pdf`
+      : `All_Locations_Location_Reports_${dateStamp}.pdf`;
+
+  pdf.save(fileName);
 };

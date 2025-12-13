@@ -175,9 +175,9 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200/50 shadow-2xl backdrop-blur-xl rounded-2xl overflow-hidden">
-        <DialogHeader className="flex-shrink-0 pb-6 border-b border-slate-200/30 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 -m-6 p-8 mb-0 relative overflow-hidden">
+        <DialogHeader className="flex-shrink-0 pb-6 border-b border-slate-200/30 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 -m-6 p-8 mb-0 relative overflow-hidden">
           {/* Premium background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-slate-900/20" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-blue-600/5 to-slate-900/20" />
           <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)' }} />
           
           <div className="flex items-center justify-between relative z-10">

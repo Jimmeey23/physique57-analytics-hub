@@ -20,13 +20,17 @@ interface SourceDataModalProps {
   sources: SourceDefinition[];
 }
 
-export const SourceDataModal: React.FC<SourceDataModalProps> = ({ open, onOpenChange, sources }) => {
+export const SourceDataModal: React.FC<SourceDataModalProps> = ({ open, onOpenChange, sources = [] }) => {
   // Build columns from first row keys, fallback to empty
   const buildColumns = (rows: any[]) => {
-    const sample = rows && rows.length > 0 ? rows[0] : null;
-    const keys = sample ? Object.keys(sample) : [];
+    if (!rows || !Array.isArray(rows) || rows.length === 0) return [];
+    const sample = rows[0];
+    if (!sample || typeof sample !== 'object') return [];
+    const keys = Object.keys(sample);
     return keys;
   };
+
+  const safeSources = sources || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,19 +39,19 @@ export const SourceDataModal: React.FC<SourceDataModalProps> = ({ open, onOpenCh
           <DialogTitle className="text-slate-900">Source Data Viewer</DialogTitle>
         </DialogHeader>
 
-        {sources.length === 0 ? (
+        {safeSources.length === 0 ? (
           <div className="text-sm text-slate-600">No sources provided.</div>
         ) : (
-          <Tabs defaultValue={sources[0]?.name} className="w-full">
+          <Tabs defaultValue={safeSources[0]?.name} className="w-full">
             <TabsList className="mb-4">
-              {sources.map((s) => (
+              {safeSources.map((s) => (
                 <TabsTrigger key={s.name} value={s.name}>
                   {s.name}
                 </TabsTrigger>
               ))}
             </TabsList>
 
-            {sources.map((s) => {
+            {safeSources.map((s) => {
               const cols = buildColumns(s.data);
               const limitedRows = (s.data || []).slice(0, 500);
               return (

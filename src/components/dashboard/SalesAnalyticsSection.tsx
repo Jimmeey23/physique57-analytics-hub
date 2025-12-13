@@ -19,6 +19,7 @@ import { SalesAnimatedMetricCards } from './SalesAnimatedMetricCards';
 import { SalesInteractiveCharts } from './SalesInteractiveCharts';
 import { SoldByMonthOnMonthTableNew } from './SoldByMonthOnMonthTableNew';
 import { PaymentMethodMonthOnMonthTableNew } from './PaymentMethodMonthOnMonthTableNew';
+import { ProductCategoryMetricsTable } from './ProductCategoryMetricsTable';
 import { SalesHeroSection } from './SalesHeroSection';
 import QuickSections from '@/components/ui/QuickSections';
 import SectionTimelineNav from '@/components/ui/SectionTimelineNav';
@@ -878,25 +879,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                     t.find(el => el.getAttribute('data-value') === 'productPerformance')?.click();
                   }} className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-gray-900">Product Performance Analysis</h2>
+                      <h2 className="text-2xl font-bold text-gray-900">Product & Category Metrics</h2>
                     </div>
-                    <ProductPerformanceTableNew 
-                      data={allHistoricData} 
-                      onRowClick={handleRowClick} 
-                      selectedMetric={activeYoyMetric} 
+                    <ProductCategoryMetricsTable
+                      data={filteredData}
+                      filters={filters}
                       onReady={markReady}
-                      contextInfo={{
-                        selectedMetric: activeYoyMetric,
-                        dateRange: filters.dateRange,
-                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
-                        filters: {
-                          location: [activeLocation],
-                          category: filters.category,
-                          product: filters.product,
-                          soldBy: filters.soldBy,
-                          paymentMethod: filters.paymentMethod
-                        }
-                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
