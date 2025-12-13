@@ -41,6 +41,18 @@ export const useFilteredSessionsData = (data: SessionData[]) => {
         return false;
       }
 
+      // Location filtering (support partial matches)
+      if ((filters as any).locations && (filters as any).locations.length > 0) {
+        const allowedLocations: string[] = (filters as any).locations;
+        const sessionLoc = (session.location || '').toLowerCase();
+        const matches = allowedLocations.some(loc => {
+          const l = (loc || '').toLowerCase();
+          if (!l) return false;
+          return sessionLoc.includes(l) || l.includes(sessionLoc) || sessionLoc === l;
+        });
+        if (!matches) return false;
+      }
+
       if (filters.dayOfWeek.length > 0 && !filters.dayOfWeek.includes(session.dayOfWeek)) {
         return false;
       }

@@ -161,6 +161,18 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
     setLoading(isLoading, 'Loading executive dashboard overview...');
   }, [isLoading, setLoading]);
 
+  // Ensure Executive Summary defaults to November 2025 when this component mounts
+  useEffect(() => {
+    try {
+      // Force the Executive Summary to November 2025 on mount
+      updateFilters({ dateRange: { start: '2025-11-01', end: '2025-11-30' } });
+    } catch (e) {
+      console.warn('Failed to set default Executive Summary date range:', e);
+    }
+    // Intentionally only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Get unique locations for the selector
   const availableLocations = useMemo(() => {
     const locations = new Set<string>();
@@ -186,15 +198,30 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
 
   // Filter data by selected date range and location
   const previousMonthData = useMemo(() => {
+<<<<<<< HEAD
     const startDate = filters.dateRange?.start ? new Date(filters.dateRange.start) : null;
     const endDate = filters.dateRange?.end ? (() => {
       const d = new Date(filters.dateRange.end);
       d.setHours(23, 59, 59, 999);
       return d;
     })() : null;
+=======
+    // If a specific dateRange is set in filters, use that; otherwise use last 3 months
+    let rangeStart: Date | null = null;
+    let rangeEnd: Date | null = null;
+    if (filters?.dateRange && filters.dateRange.start && filters.dateRange.end) {
+      rangeStart = new Date(filters.dateRange.start + 'T00:00:00');
+      rangeEnd = new Date(filters.dateRange.end + 'T23:59:59');
+    } else {
+      const now = new Date();
+      rangeStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      rangeEnd = new Date();
+    }
+>>>>>>> 21c55eae54efc2b4e63c016f919f98d972fc6270
 
     const withinDateRange = (dateStr: string) => {
       if (!dateStr) return false;
+<<<<<<< HEAD
       const d = parseDate(dateStr);
       if (!d) return false;
       if (startDate && d < startDate) return false;
@@ -212,6 +239,11 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       // If we already store ids like 'kwality'/'supreme'/'kenkere'
       if (s === 'kwality' || s === 'supreme' || s === 'kenkere') return s as any;
       return null;
+=======
+      const date = new Date(dateStr);
+      if (!rangeStart || !rangeEnd) return false;
+      return date >= rangeStart && date <= rangeEnd;
+>>>>>>> 21c55eae54efc2b4e63c016f919f98d972fc6270
     };
 
     const filterByLocation = (items: any[], locationKey: string) => {
@@ -384,15 +416,34 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
 
   // Previous month data for comparison calculations
   const allDataLast3Months = useMemo(() => {
+<<<<<<< HEAD
     const now = new Date();
     // Get previous month start and end
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+=======
+    // Respect filters.dateRange when provided; otherwise default to last 3 months
+    let rangeStart: Date | null = null;
+    let rangeEnd: Date | null = null;
+    if (filters?.dateRange && filters.dateRange.start && filters.dateRange.end) {
+      rangeStart = new Date(filters.dateRange.start + 'T00:00:00');
+      rangeEnd = new Date(filters.dateRange.end + 'T23:59:59');
+    } else {
+      const now = new Date();
+      rangeStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      rangeEnd = new Date();
+    }
+>>>>>>> 21c55eae54efc2b4e63c016f919f98d972fc6270
 
     const filterByPreviousMonth = (dateStr: string) => {
       if (!dateStr) return false;
       const date = new Date(dateStr);
+<<<<<<< HEAD
       return date >= prevMonthStart && date <= prevMonthEnd;
+=======
+      if (!rangeStart || !rangeEnd) return false;
+      return date >= rangeStart && date <= rangeEnd;
+>>>>>>> 21c55eae54efc2b4e63c016f919f98d972fc6270
     };
 
     const filterByLocation = (items: any[], locationKey: string) => {
@@ -451,6 +502,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       discounts: allDiscounts,
       lateCancellations: allLateCancellations
     };
+<<<<<<< HEAD
   }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, lateCancellationsData, filters.location]);
 
   // Year-over-year data for same month last year
@@ -517,6 +569,9 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       lateCancellations: yoyLateCancellations
     };
   }, [salesData, sessionsData, newClientsData, leadsData, discountData, lateCancellationsData, filters.location]);
+=======
+  }, [salesData, sessionsData, payrollData, newClientsData, leadsData, discountData, filters.location, filters.dateRange]);
+>>>>>>> 21c55eae54efc2b4e63c016f919f98d972fc6270
 
   if (isLoading) {
     return null; // Global loader will handle this

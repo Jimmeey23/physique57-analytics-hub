@@ -118,7 +118,7 @@ export const ClassAttendanceFilterSection: React.FC<ClassAttendanceFilterSection
                 <Select
                   value="all-locations"
                   onValueChange={(value) => 
-                    updateFilters({ trainers: value === 'all-locations' ? [] : [value] })
+                    updateFilters({ locations: value === 'all-locations' ? [] : [value] })
                   }
                 >
                   <SelectTrigger className="w-full border-gray-200 hover:border-gray-300">

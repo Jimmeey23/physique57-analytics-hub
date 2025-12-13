@@ -75,6 +75,9 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
     return arr.slice(-4);
   }, [sessions, checkins]);
 
+  // Canonical format list used across the component
+  const canonicalFormats = (['powercycle','barre','strength','other'] as Canonical[]);
+
   const byYear = useMemo(() => {
     const result: Record<string, Record<Canonical, { sessions: number; checkins: number; capacity: number; revenue: number; late: number }>> = {};
     years.forEach(y => {
@@ -295,10 +298,10 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
               selectedMetric: metric,
               dateRange: copyContext.dateRange,
               filters: copyContext.filters,
-              additionalInfo: {
+                additionalInfo: {
                 metric: metric,
                 yearsCompared: years,
-                totalFormats: canonicals.length
+                totalFormats: canonicalFormats.length
               }
             }}
           />

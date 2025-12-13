@@ -63,6 +63,8 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   const [previewMode, setPreviewMode] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [iframeKey, setIframeKey] = useState(0); // Force iframe refresh
+  const [iframeOk, setIframeOk] = useState<boolean | null>(null); // null = unknown, true = ok, false = not ok
+  const [iframeHtmlFallback, setIframeHtmlFallback] = useState<string | null>(null);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -101,6 +103,18 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open, pinned]);
+
+  // Close on Escape key if not pinned
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!open || pinned) return;
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [open, pinned]);
 
   // Resize handlers
@@ -185,6 +199,49 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   };
 
   const src = getIframeSrc();
+
+  // Pre-flight check: try to fetch the HTML for the iframe source so we can render
+  // a fallback (inline HTML) if the iframe cannot load (or the file is missing).
+  useEffect(() => {
+    if (!src) return;
+    let cancelled = false;
+    setIframeOk(null);
+    setIframeHtmlFallback(null);
+
+    // Try to fetch the resource from the same origin/public folder
+    fetch(src, { method: 'GET', cache: 'no-store' })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setIframeOk(true);
+        } else {
+          setIframeOk(false);
+          try {
+            const text = await res.text();
+            setIframeHtmlFallback(text);
+          } catch (e) {
+            setIframeHtmlFallback(null);
+          }
+        }
+      })
+      .catch(async () => {
+        if (cancelled) return;
+        setIframeOk(false);
+        try {
+          const res = await fetch(src, { method: 'GET' });
+          if (res.ok) {
+            setIframeOk(true);
+            return;
+          }
+          const text = await res.text();
+          setIframeHtmlFallback(text);
+        } catch (e) {
+          setIframeHtmlFallback(null);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [src, iframeKey]);
 
   const renderSidebar = () => (
     <div
@@ -303,30 +360,58 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
               </div>
             ) : (
               <div className="h-full">
-                <iframe
-                  key={`iframe-sidebar-${iframeKey}`}
-                  src={src}
-                  className="w-full h-full border-0"
-                  title={`Info for ${context} - ${locationId}`}
-                  loading="eager"
-                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
-                  allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  style={{
-                    border: 'none',
-                    overflow: 'hidden',
-                    width: '100%',
-                    height: '100%',
-                    display: 'block'
-                  }}
-                  onLoad={() => {
-                    setIframeError(false);
-                  }}
-                  onError={() => {
-                    console.error(`Iframe failed to load: ${src}`);
-                    setIframeError(true);
-                  }}
-                />
+                {iframeOk === null ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-sm text-slate-500">Checking content...</div>
+                  </div>
+                ) : iframeOk === true ? (
+                  <iframe
+                    key={`iframe-sidebar-${iframeKey}`}
+                    src={src}
+                    className="w-full h-full border-0"
+                    title={`Info for ${context} - ${locationId}`}
+                    loading="eager"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
+                    allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    style={{
+                      border: 'none',
+                      overflow: 'hidden',
+                      width: '100%',
+                      height: '100%',
+                      display: 'block'
+                    }}
+                    onLoad={() => {
+                      setIframeError(false);
+                    }}
+                    onError={() => {
+                      console.error(`Iframe failed to load: ${src}`);
+                      setIframeError(true);
+                      setIframeOk(false);
+                    }}
+                  />
+                ) : (
+                  // iframe failed the preflight or fetch; render inline HTML fallback if available
+                  iframeHtmlFallback ? (
+                    <div className="p-4 h-full overflow-auto" dangerouslySetInnerHTML={{ __html: iframeHtmlFallback }} />
+                  ) : (
+                    <div className="flex items-center justify-center h-full p-4">
+                      <div className="text-center">
+                        <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
+                        <div className="text-gray-600 text-sm mb-4">Unable to load: {src.split('?')[0]}</div>
+                        <div className="flex gap-2 justify-center">
+                          <a href={src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
+                          <button
+                            onClick={() => setIsEditing(true)}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                          >
+                            Create Content
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -353,7 +438,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   );
 
   const renderModal = () => (
-    <div className="fixed inset-0 z-[9999] pointer-events-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-8">
+    <div className="fixed inset-0 z-[9999] pointer-events-auto bg-black/20 flex items-center justify-center p-8" onClick={(e) => { if (e.target === e.currentTarget && !pinned) setOpen(false); }}>
       <div 
         ref={panelRef}
         className="bg-white/95 backdrop-blur-md rounded-lg shadow-2xl flex flex-col max-w-4xl w-full h-full max-h-[90vh] border border-white/20"
@@ -458,41 +543,51 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                 </div>
               ) : (
                 <div className="h-full">
-                  <iframe
-                    key={`iframe-modal-${iframeKey}`}
-                    src={src}
-                    className="w-full h-full border-0"
-                    title={`Info for ${context} - ${locationId}`}
-                    loading="eager"
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
-                    allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    onLoad={() => {
-                      setIframeError(false);
-                    }}
-                    onError={() => {
-                      console.error(`Iframe failed to load: ${src}`);
-                      setIframeError(true);
-                    }}
-                  />
-                  {iframeError && (
-                    <div className="absolute inset-0 bg-white flex items-center justify-center p-4">
-                      <div className="text-center">
-                        <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
-                        <div className="text-gray-600 text-sm mb-4">
-                          Unable to load: {src.split('?')[0]}
-                        </div>
-                        <button 
-                          onClick={() => {
-                            setIframeError(false);
-                            setIsEditing(true);
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                          Create Content
-                        </button>
-                      </div>
+                  {iframeOk === null ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-sm text-slate-500">Checking content...</div>
                     </div>
+                  ) : iframeOk === true ? (
+                    <iframe
+                      key={`iframe-modal-${iframeKey}`}
+                      src={src}
+                      className="w-full h-full border-0"
+                      title={`Info for ${context} - ${locationId}`}
+                      loading="eager"
+                      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
+                      allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      onLoad={() => {
+                        setIframeError(false);
+                      }}
+                      onError={() => {
+                        console.error(`Iframe failed to load: ${src}`);
+                        setIframeError(true);
+                        setIframeOk(false);
+                      }}
+                    />
+                  ) : (
+                    iframeHtmlFallback ? (
+                      <div className="p-6 h-full overflow-auto" dangerouslySetInnerHTML={{ __html: iframeHtmlFallback }} />
+                    ) : (
+                      <div className="absolute inset-0 bg-white flex items-center justify-center p-4">
+                        <div className="text-center">
+                          <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
+                          <div className="text-gray-600 text-sm mb-4">Unable to load: {src.split('?')[0]}</div>
+                          <div className="flex gap-2 justify-center">
+                            <a href={src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
+                            <button 
+                              onClick={() => {
+                                setIsEditing(true);
+                              }}
+                              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                            >
+                              Create Content
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
                   )}
                 </div>
               )}
@@ -535,8 +630,8 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
           <div className="fixed inset-0 z-[9999] pointer-events-none">
             {isSidebarMode ? (
               <>
-                {/* Backdrop */}
-                <div className="absolute inset-0 bg-black/20 backdrop-blur-sm pointer-events-auto" />
+                {/* Backdrop - transparent to allow interaction with background data */}
+                <div className="absolute inset-0 pointer-events-none" />
                 {renderSidebar()}
               </>
             ) : (

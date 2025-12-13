@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 
 interface SessionsFilters {
+  locations: string[];
   trainers: string[];
   classTypes: string[];
   dayOfWeek: string[];
@@ -27,22 +28,16 @@ export const useSessionsFilters = () => {
     // Return a fallback context
     return {
       filters: {
-        dateRange: { start: '', end: '' },
         locations: [],
         trainers: [],
-        classes: [],
+        classTypes: [],
         dayOfWeek: [],
-        timeSlots: []
+        timeSlots: [],
+        dateRange: { start: null, end: null }
       },
       updateFilters: () => {},
       clearFilters: () => {},
-      resetToDefaultDates: () => {},
-      availableOptions: {
-        locations: [],
-        trainers: [],
-        classes: [],
-        timeSlots: []
-      }
+      clearAllFilters: () => {}
     };
   }
   return context;
@@ -56,6 +51,7 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
   const [filters, setFilters] = React.useState<SessionsFilters>(() => {
     const previousMonth = getPreviousMonthDateRange();
     return {
+      locations: [],
       trainers: [],
       classTypes: [],
       dayOfWeek: [],
@@ -74,6 +70,7 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
   const clearFilters = () => {
     const previousMonth = getPreviousMonthDateRange();
     setFilters({
+      locations: [],
       trainers: [],
       classTypes: [],
       dayOfWeek: [],

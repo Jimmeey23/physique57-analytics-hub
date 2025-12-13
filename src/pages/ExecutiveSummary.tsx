@@ -87,9 +87,10 @@ const ExecutiveSummaryContent = () => {
         }
       />
 
-      {/* InfoPopover for Executive Overview */}
-      <div className="flex justify-end max-w-5xl mx-auto mt-4">
-        <InfoPopover context="sales-overview" locationId="all" size={24} />
+      {/* InfoPopover triggers for sales overview - explicitly load kwality and supreme popovers */}
+      <div className="flex justify-end max-w-5xl mx-auto mt-4 space-x-2">
+        <InfoPopover context="sales-overview" locationId="kwality" iframeSrc="/popovers/sales-overview/kwality.html" startAsSidebar={true} />
+        <InfoPopover context="sales-overview" locationId="supreme" iframeSrc="/popovers/sales-overview/supreme.html" startAsSidebar={true} />
       </div>
       
       <div className="container mx-auto px-6 py-8">
