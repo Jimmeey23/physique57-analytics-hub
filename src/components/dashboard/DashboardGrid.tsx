@@ -122,79 +122,75 @@ export const DashboardGrid: React.FC<DashboardGridProps> = memo(({ onButtonClick
   }, [onButtonClick]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2">
       {dashboardSections.map((section) => {
         const IconComponent = section.icon;
         return (
           <Card 
             key={section.id}
-            className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-white/95 via-white/90 to-white/85 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-700 ease-out hover:-translate-y-4 hover:scale-105 transform-gpu"
+            className={`group cursor-pointer relative overflow-hidden bg-white/90 border border-slate-200/70 ring-1 ring-white/70 shadow-lg hover:shadow-3xl transition-all duration-500 ease-out hover:-translate-y-4 hover:scale-[1.04] transform-gpu before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-gradient-to-b ${section.color} before:opacity-80`}
             onClick={() => handleCardClick(section.id)}
             style={{
-              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.7)'
             }}
           >
-            {/* Modern Animated Background Gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-15 transition-all duration-700 rounded-2xl`} />
+            {/* Top accent bar removed */}
+
+            {/* Sophisticated Animated Background Gradient */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-10 transition-all duration-500 rounded-2xl`} />
             
-            {/* Enhanced Glow Effect */}
-            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-25 blur-2xl transition-all duration-700 -z-10 scale-110`} />
-            
-            {/* Shimmer Effect */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shimmer" />
+            {/* Overlay shimmer effect on hover */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/12 to-white/0 transform -skew-x-12 group-hover:animate-pulse" />
             </div>
+
+            {/* Glow ring on hover */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-100/0 via-blue-200/0 to-purple-200/0 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             
-            <CardHeader className="pb-4 relative z-10">
-              {/* Enhanced Icon Container with Modern Animation */}
-              <div className={`relative w-16 h-16 rounded-3xl bg-gradient-to-br ${section.color} ${section.hoverColor} flex items-center justify-center mb-6 transition-all duration-700 group-hover:scale-125 group-hover:rotate-12 shadow-xl group-hover:shadow-2xl`}
+
+            
+            <CardHeader className="pb-3 relative z-10 flex items-start gap-3">
+              {/* Premium Icon Container - Inline */}
+              <div className={`relative w-11 h-11 rounded-xl bg-gradient-to-br ${section.color} ${section.hoverColor} flex-shrink-0 flex items-center justify-center transition-all duration-600 group-hover:scale-115 group-hover:-translate-y-2 shadow-lg group-hover:shadow-2xl`}
                 style={{
-                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                  boxShadow: '0 6px 16px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
                 }}>
-                <IconComponent className="w-8 h-8 text-white transition-transform duration-500 group-hover:scale-110 drop-shadow-sm" />
+                <div className="absolute inset-[-10px] rounded-lg bg-white/40 blur-lg opacity-0 group-hover:opacity-80 transition-opacity duration-600" />
+                <IconComponent className="w-5 h-5 text-white transition-all duration-600 group-hover:scale-120 group-hover:rotate-6" />
                 
-                {/* Enhanced Animated Rings */}
-                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-40 animate-ping scale-110`} />
-                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-20 animate-pulse scale-125`} />
+                {/* Enhanced Halo glow */}
+                <div className={`absolute inset-[-2px] rounded-xl bg-gradient-to-r ${section.color} opacity-0 group-hover:opacity-50 blur-lg transition-opacity duration-600 -z-10`} />
               </div>
               
-              {/* Title with Gradient Text Animation */}
-              <CardTitle className="text-xl font-bold text-gray-900 group-hover:bg-gradient-to-r group-hover:from-gray-900 group-hover:to-gray-600 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 leading-tight">
-                {section.title}
-              </CardTitle>
+              {/* Title with High Contrast - Inline */}
+              <div className="flex-1 pt-1">
+                <CardTitle className="text-xl font-bold text-slate-950 group-hover:text-slate-950 transition-all duration-500 leading-tight group-hover:tracking-wide">
+                  {section.title}
+                </CardTitle>
+              </div>
             </CardHeader>
             
-            <CardContent className="pt-0 relative z-10">
-              {/* Description with Fade Animation */}
-              <p className="text-sm text-gray-600 leading-relaxed mb-4 transition-colors duration-300 group-hover:text-gray-700">
+            <CardContent className="pt-2 relative z-10">
+              {/* Description with Sophisticated Animation */}
+              <p className="text-xs text-slate-700 leading-relaxed mb-4 transition-all duration-600 group-hover:text-slate-950 group-hover:font-semibold">
                 {section.description}
               </p>
               
-              {/* Status Indicator with Pulse */}
+              {/* Status + CTA */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center text-xs text-gray-500">
-                  <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full mr-2 animate-pulse shadow-sm shadow-emerald-400/50 group-hover:animate-bounce" />
-                  <span className="font-medium group-hover:text-emerald-600 transition-colors">Active</span>
+                <div className="flex items-center text-[11px] text-slate-500 transition-all duration-600 group-hover:text-emerald-600">
+                  <span className="inline-flex items-center justify-center w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 animate-pulse group-hover:scale-125 transition-all duration-600 mr-2" />
+                  <span className="font-semibold tracking-tight">Live</span>
                 </div>
                 
                 {/* Arrow Indicator */}
-                <div className="w-6 h-6 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
-                  <svg className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`w-7 h-7 rounded-full bg-white/90 group-hover:bg-gradient-to-br ${section.color} group-hover:bg-opacity-25 flex items-center justify-center transition-all duration-600 group-hover:translate-x-2 group-hover:scale-115 border border-slate-200/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_10px_rgba(15,23,42,0.12)] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_8px_16px_rgba(59,130,246,0.25)]`}> 
+                  <svg className="w-3.5 h-3.5 text-slate-700 group-hover:text-white transition-all duration-600 group-hover:scale-120" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               </div>
-              
-              {/* Animated Bottom Border */}
-              <div className={`absolute bottom-0 left-0 h-1 bg-gradient-to-r ${section.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left rounded-full`} />
             </CardContent>
-            
-            {/* Floating Particles Effect */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-              <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-100" />
-              <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-200 mt-1 ml-2" />
-              <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-300 mt-1" />
-            </div>
           </Card>
         );
       })}

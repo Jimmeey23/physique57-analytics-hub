@@ -5,19 +5,19 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden backdrop-blur-sm",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-blue-700 hover:-translate-y-1 hover:scale-105 border border-white/20",
+        default: "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:to-purple-700 hover:-translate-y-1 hover:scale-105 border border-blue-500/30",
         destructive:
-          "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg hover:shadow-xl hover:from-red-700 hover:to-red-800 hover:-translate-y-1 hover:scale-105 border border-white/20",
+          "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md hover:shadow-lg hover:from-red-700 hover:to-red-800 hover:-translate-y-1 hover:scale-105 border border-red-500/30",
         outline:
-          "border border-purple-200/50 bg-white/80 backdrop-blur-md hover:bg-white/90 hover:border-purple-300 hover:-translate-y-1 hover:scale-105 hover:shadow-lg text-gray-700",
+          "border border-slate-300/60 bg-white hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-1 hover:scale-105 hover:shadow-md text-slate-700 hover:shadow-blue-200/40",
         secondary:
-          "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 shadow-md hover:shadow-lg hover:from-gray-200 hover:to-gray-300 hover:-translate-y-1 hover:scale-105 border border-white/30",
-        ghost: "hover:bg-purple-50/80 hover:text-purple-700 hover:-translate-y-0.5 backdrop-blur-sm border border-transparent hover:border-purple-200/50",
-        link: "text-purple-600 underline-offset-4 hover:underline hover:text-purple-700",
+          "bg-gradient-to-r from-slate-100 to-slate-200 text-slate-800 shadow-sm hover:shadow-md hover:from-slate-200 hover:to-slate-300 hover:-translate-y-1 hover:scale-105 border border-slate-300/60",
+        ghost: "hover:bg-blue-50/80 hover:text-blue-700 hover:-translate-y-0.5 border border-transparent hover:border-blue-200/50",
+        link: "text-blue-600 underline-offset-4 hover:underline hover:text-blue-700",
       },
       size: {
         default: "h-10 px-4 py-2",

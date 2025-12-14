@@ -27,13 +27,13 @@ const StatsCard = memo(({
 }: {
   title: string;
   subtitle: string;
-}) => <div className="relative p-6 rounded-xl bg-white/20 backdrop-blur-lg border border-white/30 transform hover:scale-105 transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/20 group">
-    <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+}) => <div className="relative p-6 rounded-2xl bg-white border border-slate-200/60 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 group">
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 to-purple-50/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
     <div className="relative z-10">
-      <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{title}</div>
-      <div className="text-xs text-slate-600 font-medium mt-1">{subtitle}</div>
+      <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-800 bg-clip-text text-transparent">{title}</div>
+      <div className="text-xs text-slate-500 font-medium mt-1">{subtitle}</div>
     </div>
-    <div className="absolute top-2 right-2 w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60 animate-pulse"></div>
+    <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60 animate-pulse"></div>
   </div>);
 const Index = memo(() => {
   const navigate = useNavigate();
@@ -110,78 +110,99 @@ const Index = memo(() => {
         </Card>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/20 to-pink-50/10 relative overflow-hidden">
-      {/* Modern Animated Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-100/30 via-purple-50/20 to-pink-100/20"></div>
+  return <div className="min-h-screen bg-gradient-to-b from-white via-slate-50/50 to-white relative overflow-hidden">
+      {/* Premium Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50/40 to-white"></div>
         
-        {/* Glassmorphism overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-white/20 backdrop-blur-[1px]"></div>
+        {/* Subtle Glassmorphism overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-purple-50/20 backdrop-blur-[2px]"></div>
         
-        {/* Modern Floating Elements with Glassmorphism */}
-        <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-br from-purple-400/10 to-pink-400/8 rounded-full floating-animation stagger-1 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
-        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-br from-blue-400/8 to-cyan-400/10 rounded-full floating-animation stagger-3 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
-        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-emerald-400/12 to-teal-400/8 rounded-full floating-animation stagger-5 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
+        {/* Premium Floating Elements - Subtle and Sophisticated */}
+        <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-br from-blue-400/8 to-purple-400/6 rounded-full floating-animation stagger-1 backdrop-blur-md border border-slate-200/30 shadow-lg"></div>
+        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-br from-purple-400/6 to-pink-400/8 rounded-full floating-animation stagger-3 backdrop-blur-md border border-slate-200/30 shadow-lg"></div>
+        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-blue-400/5 to-cyan-400/6 rounded-full floating-animation stagger-5 backdrop-blur-md border border-slate-200/30 shadow-lg"></div>
         
-        {/* Modern Floating Orbs with Enhanced Aesthetics */}
-        <div className="absolute top-32 right-1/4 w-28 h-28 bg-gradient-to-br from-violet-400/20 to-purple-500/15 rounded-full float-gentle stagger-2 backdrop-blur-md border border-white/20 shadow-lg"></div>
-        <div className="absolute bottom-40 right-16 w-36 h-36 bg-gradient-to-br from-cyan-400/18 to-blue-500/12 rounded-full float-gentle stagger-4 backdrop-blur-md border border-white/20 shadow-lg"></div>
-        <div className="absolute top-3/4 left-20 w-24 h-24 bg-gradient-to-br from-rose-400/25 to-pink-500/20 rounded-full float-gentle stagger-6 backdrop-blur-md border border-white/20 shadow-lg"></div>
+        {/* Premium Floating Orbs - Subtle Accents */}
+        <div className="absolute top-32 right-1/4 w-28 h-28 bg-gradient-to-br from-blue-300/12 to-purple-300/10 rounded-full float-gentle stagger-2 backdrop-blur-md border border-slate-200/40 shadow-md"></div>
+        <div className="absolute bottom-40 right-16 w-36 h-36 bg-gradient-to-br from-purple-300/10 to-pink-300/12 rounded-full float-gentle stagger-4 backdrop-blur-md border border-slate-200/40 shadow-md"></div>
+        <div className="absolute top-3/4 left-20 w-24 h-24 bg-gradient-to-br from-cyan-300/10 to-blue-300/8 rounded-full float-gentle stagger-6 backdrop-blur-md border border-slate-200/40 shadow-md"></div>
         
-        {/* Pulsing Elements */}
-        <div className="absolute top-1/4 left-3/4 w-16 h-16 bg-gradient-to-r from-amber-300/40 to-orange-300/40 rounded-full pulse-gentle stagger-1"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-12 h-12 bg-gradient-to-r from-green-300/45 to-emerald-300/45 rounded-full pulse-gentle stagger-3"></div>
-        <div className="absolute top-1/2 right-1/3 w-14 h-14 bg-gradient-to-r from-indigo-300/35 to-violet-300/35 rounded-full pulse-gentle stagger-5"></div>
+        {/* Subtle Pulsing Elements */}
+        <div className="absolute top-1/4 left-3/4 w-16 h-16 bg-gradient-to-r from-blue-300/20 to-purple-300/20 rounded-full pulse-gentle stagger-1"></div>
+        <div className="absolute bottom-1/4 left-1/4 w-12 h-12 bg-gradient-to-r from-purple-300/20 to-pink-300/20 rounded-full pulse-gentle stagger-3"></div>
+        <div className="absolute top-1/2 right-1/3 w-14 h-14 bg-gradient-to-r from-blue-300/15 to-purple-300/15 rounded-full pulse-gentle stagger-5"></div>
         
         {/* Morphing Shapes */}
-        <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-gradient-to-r from-indigo-300/10 to-purple-300/10 morph-shape stagger-2"></div>
-        <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-gradient-to-r from-pink-300/10 to-rose-300/10 morph-shape stagger-4"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-gradient-to-r from-blue-200/5 to-purple-200/5 morph-shape stagger-2"></div>
+        <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-gradient-to-r from-purple-200/5 to-pink-200/5 morph-shape stagger-4"></div>
       </div>
 
       {/* Content */}
       <div className="relative z-10">
-        <div className="container mx-auto px-6 py-8">
-          {/* Enhanced Header Section */}
-          <header className="mb-8 text-center slide-in-from-left">
-            <div className="inline-flex items-center justify-center mb-4">
-              <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-4 py-2 text-sm font-medium shadow-lg tracking-wide min-w-full w-full fixed top-0 left-0 z-50 rounded-none glass-dark">
-                Business Intelligence Dashboard
+        <div className="container mx-auto px-6 py-12">
+          {/* Premium Header Section */}
+          <header className="mb-12 text-center slide-in-from-left">
+            <div className="inline-flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 text-slate-900 px-6 py-2.5 text-xs font-semibold shadow-sm tracking-widest border border-slate-200/60 rounded-full">
+                BUSINESS INTELLIGENCE DASHBOARD
               </div>
             </div>
             
-            <h1 className="text-4xl md:text-xl font-light text-slate-900 mb-2 tracking-tight font-serif text-center mb-4 perspective-tilt">
-              <span className="font-extralight text-8xl gradient-text-purple">Physique</span>{' '}
-              <span className="font-bold text-9xl animate-dynamic-color">57</span>
-              <span className="text-slate-600 font-light text-7xl">, India</span>
+            <h1 className="text-6xl md:text-7xl font-bold mb-3 tracking-tight text-center perspective-tilt px-6 md:px-12 lg:px-16">
+              <span className="bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 bg-clip-text text-transparent font-black">Physique</span>{' '}
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent font-black">57</span>
+              <span className="text-slate-700 font-black"> , India</span>
             </h1>
             
-            <p className="text-lg text-slate-600 font-light mb-6 max-w-3xl mx-auto leading-relaxed mt-8 slide-in-right stagger-1">
-              Advanced Business Analytics with Real-time Insights
+            <p className="text-lg text-slate-700 font-semibold mb-12 max-w-4xl mx-auto leading-relaxed mt-6 slide-in-right stagger-1">
+              Comprehensive fitness analytics platform delivering actionable intelligence through advanced data visualization and real-time performance metrics
             </p>
             
-            {/* Enhanced Stats Cards */}
-            <div className="flex flex-wrap justify-center gap-4 mb-6">
+            {/* Premium Stats Cards */}
+            <div className="flex flex-wrap justify-center gap-5 mb-10">
               <div className="glass-card modern-card-hover soft-bounce stagger-1">
-                <StatsCard title="Real-time" subtitle="Data Insights" />
+                <div className="relative px-6 py-4 rounded-xl bg-white border border-slate-200/80 transform hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10">
+                    <div className="text-2xl font-black bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Live</div>
+                    <div className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">Updates</div>
+                  </div>
+                  <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full opacity-60 animate-pulse"></div>
+                </div>
               </div>
               <div className="glass-card modern-card-hover soft-bounce stagger-2">
-                <StatsCard title="12" subtitle="Analytics Modules" />
+                <div className="relative px-6 py-4 rounded-xl bg-white border border-slate-200/80 transform hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-50/30 to-pink-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10">
+                    <div className="text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">12</div>
+                    <div className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">Modules</div>
+                  </div>
+                  <div className="absolute top-3 right-3 w-2 h-2 bg-purple-500 rounded-full opacity-60 animate-pulse"></div>
+                </div>
               </div>
               <div className="glass-card modern-card-hover soft-bounce stagger-3">
-                <StatsCard title="Precision" subtitle="Data Accuracy" />
+                <div className="relative px-6 py-4 rounded-xl bg-white border border-slate-200/80 transform hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/20 group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/30 to-teal-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10">
+                    <div className="text-2xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">100%</div>
+                    <div className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">Accuracy</div>
+                  </div>
+                  <div className="absolute top-3 right-3 w-2 h-2 bg-emerald-500 rounded-full opacity-60 animate-pulse"></div>
+                </div>
               </div>
             </div>
 
-            <div className="w-16 h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent mx-auto mb-4 shimmer-effect"></div>
+            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-6 shimmer-effect rounded-full"></div>
           </header>
 
-          {/* Enhanced Dashboard Grid */}
+          {/* Premium Dashboard Grid */}
           <main className="max-w-7xl mx-auto slide-in-from-right stagger-2">
-            <div className="min-w-full glass-card glow-pulse rounded-2xl p-6">
+            <div className="min-w-full bg-white border border-slate-200/60 glow-pulse rounded-3xl p-8 shadow-lg shadow-slate-200/40">
               <SafeWrapper fallback={
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading dashboard...</p>
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-slate-600 font-medium">Loading dashboard...</p>
                 </div>
               }>
                 <DashboardGrid onButtonClick={handleSectionClick} />
