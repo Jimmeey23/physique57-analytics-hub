@@ -18,6 +18,18 @@ export interface ClientMetric {
   description: string;
 }
 
+export interface ClientMetricWithYoY extends ClientMetric {
+  yoyPreviousValue?: string;
+  yoyPreviousRawValue?: number;
+  yoyChange?: number;
+  comparison?: { current: number; previous: number; difference: number };
+  filterData?: () => NewClientData[];
+  metricType?: string;
+  rawValue?: number;
+  previousRawValue?: number;
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
 interface Options {
   dateRange?: { start?: string | Date; end?: string | Date };
 }
@@ -96,6 +108,13 @@ export function useClientConversionMetrics(
     const avgLTVCur = current.length > 0 ? totalLTVCur / current.length : 0;
     const avgLTVPrev = previous.length > 0 ? totalLTVPrev / previous.length : 0;
 
+    // Year-over-year: same month last year
+    const prevYearAnchor = new Date(currentStart.getFullYear() - 1, currentStart.getMonth(), 15);
+    const prevYearStart = monthStart(prevYearAnchor);
+    const prevYearEnd = monthEnd(prevYearAnchor);
+
+    const previousYear = base.filter((it) => within(parseDate((it as any).firstVisitDate), prevYearStart, prevYearEnd));
+
     const metrics = [
       {
         title: 'New Members',
@@ -105,6 +124,10 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(curNew, prevNew),
         previousValue: formatNumber(prevNew),
         previousRawValue: prevNew,
+        yoyPreviousValue: formatNumber(previousYear.filter(isNew).length),
+        yoyPreviousRawValue: previousYear.filter(isNew).length,
+        yoyChange: calcGrowth(curNew, previousYear.filter(isNew).length).rate,
+        comparison: { current: curNew, previous: previousYear.filter(isNew).length, difference: curNew - previousYear.filter(isNew).length },
         periodLabel,
         icon: 'UserPlus',
         description: 'Recently acquired clients',
@@ -117,6 +140,10 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(curConverted, prevConverted),
         previousValue: formatNumber(prevConverted),
         previousRawValue: prevConverted,
+        yoyPreviousValue: formatNumber(previousYear.filter(isConverted).length),
+        yoyPreviousRawValue: previousYear.filter(isConverted).length,
+        yoyChange: calcGrowth(curConverted, previousYear.filter(isConverted).length).rate,
+        comparison: { current: curConverted, previous: previousYear.filter(isConverted).length, difference: curConverted - previousYear.filter(isConverted).length },
         periodLabel,
         icon: 'Award',
         description: 'Trial to paid conversions',
@@ -129,6 +156,10 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(curRetained, prevRetained),
         previousValue: formatNumber(prevRetained),
         previousRawValue: prevRetained,
+        yoyPreviousValue: formatNumber(previousYear.filter(isRetained).length),
+        yoyPreviousRawValue: previousYear.filter(isRetained).length,
+        yoyChange: calcGrowth(curRetained, previousYear.filter(isRetained).length).rate,
+        comparison: { current: curRetained, previous: previousYear.filter(isRetained).length, difference: curRetained - previousYear.filter(isRetained).length },
         periodLabel,
         icon: 'UserCheck',
         description: 'Active retained clients',
@@ -141,6 +172,10 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(overallConvCur, overallConvPrev),
         previousValue: formatPercentage(overallConvPrev),
         previousRawValue: overallConvPrev,
+        yoyPreviousValue: formatPercentage(previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0),
+        yoyPreviousRawValue: previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0,
+        yoyChange: calcGrowth(overallConvCur, previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).rate,
+        comparison: { current: overallConvCur, previous: previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0, difference: overallConvCur - (previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0) },
         periodLabel,
         icon: 'TrendingUp',
         description: 'New to converted rate',
@@ -153,6 +188,10 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(retentionCur, retentionPrev),
         previousValue: formatPercentage(retentionPrev),
         previousRawValue: retentionPrev,
+        yoyPreviousValue: formatPercentage(previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0),
+        yoyPreviousRawValue: previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0,
+        yoyChange: calcGrowth(retentionCur, previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).rate,
+        comparison: { current: retentionCur, previous: previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0, difference: retentionCur - (previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0) },
         periodLabel,
         icon: 'Target',
         description: 'Member retention rate',
@@ -165,12 +204,19 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(avgLTVCur, avgLTVPrev),
         previousValue: formatCurrency(avgLTVPrev),
         previousRawValue: avgLTVPrev,
+        yoyPreviousValue: formatCurrency(previousYear.length > 0 ? (previousYear.reduce((s, c) => s + (c.ltv || 0), 0) / previousYear.length) : 0),
+        yoyPreviousRawValue: previousYear.length > 0 ? (previousYear.reduce((s, c) => s + (c.ltv || 0), 0) / previousYear.length) : 0,
+        yoyChange: calcGrowth(avgLTVCur, previousYear.length > 0 ? (previousYear.reduce((s, c) => s + (c.ltv || 0), 0) / previousYear.length) : 0).rate,
+        comparison: { current: avgLTVCur, previous: previousYear.length > 0 ? (previousYear.reduce((s, c) => s + (c.ltv || 0), 0) / previousYear.length) : 0, difference: avgLTVCur - (previousYear.length > 0 ? (previousYear.reduce((s, c) => s + (c.ltv || 0), 0) / previousYear.length) : 0) },
         periodLabel,
         icon: 'DollarSign',
         description: `Average lifetime value`,
       },
     ];
 
+    // Debug: log computed metrics and YoY values
+    // eslint-disable-next-line no-console
+    console.debug('useClientConversionMetrics -> metrics', metrics.map(m => ({ title: m.title, previous: (m as any).previousValue, yoyPrevious: (m as any).yoyPreviousValue, comparison: (m as any).comparison })));
     return { metrics };
   }, [data, historicalData, options?.dateRange?.start, options?.dateRange?.end]);
 }

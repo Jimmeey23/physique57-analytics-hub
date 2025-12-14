@@ -136,6 +136,8 @@ export const EnhancedHostedClassesTable: React.FC<EnhancedHostedClassesTableProp
       .map(([name, stats]) => ({ name, ...stats, avgAttendance: Math.round(stats.attendance / stats.sessions) }))
       .sort((a, b) => b.avgAttendance - a.avgAttendance)[0];
 
+    const membershipsSold = filtered.reduce((sum, session) => sum + (session.membershipsSold || 0), 0);
+
     const summaryStats = {
       totalSessions,
       totalAttendance,
@@ -144,7 +146,8 @@ export const EnhancedHostedClassesTable: React.FC<EnhancedHostedClassesTableProp
       avgFillRate,
       topTrainer,
       uniqueTrainers: [...new Set(filtered.map(s => s.trainerName).filter(Boolean))].length,
-      uniqueFormats: [...new Set(filtered.map(s => s.cleanedClass || s.classType).filter(Boolean))].length
+      uniqueFormats: [...new Set(filtered.map(s => s.cleanedClass || s.classType).filter(Boolean))].length,
+      membershipsSold
     };
 
     return { filteredData: filtered, monthlyData, summaryStats, locations, months };
@@ -245,6 +248,17 @@ export const EnhancedHostedClassesTable: React.FC<EnhancedHostedClassesTableProp
                   </div>
                   <div className="text-2xl font-bold text-orange-900">{summaryStats.avgFillRate}%</div>
                   <div className="text-xs text-orange-700">{summaryStats.uniqueTrainers} trainers</div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    <span className="text-sm font-medium text-indigo-700">Memberships Sold</span>
+                  </div>
+                  <div className="text-2xl font-bold text-indigo-900">{summaryStats.membershipsSold || 0}</div>
+                  <div className="text-xs text-indigo-700">Data not available</div>
                 </CardContent>
               </Card>
             </div>

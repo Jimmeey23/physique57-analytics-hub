@@ -2,6 +2,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
@@ -51,10 +52,11 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const registry = useMetricsTablesRegistry();
-  const tableId = 'Client Conversion MoM by Type';
+  const tableId = 'By Client Type';
 
   const [sortField, setSortField] = useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [rowType, setRowType] = useState<'clientType' | 'membership' | 'teacher'>('clientType');
 
   const monthlyDataByType = useMemo(() => {
     if (!data || data.length === 0) return [] as MonthlyStats[];
@@ -65,9 +67,17 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       if (!date) return;
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      const clientType = client.isNew || 'Unknown';
+      
+      let groupBy: string;
+      if (rowType === 'clientType') {
+        groupBy = client.isNew || 'Unknown';
+      } else if (rowType === 'membership') {
+        groupBy = client.membershipUsed || 'Unknown';
+      } else {
+        groupBy = client.trainerName || 'Unknown';
+      }
 
-      const key = `${monthKey}-${clientType}`;
+      const key = `${monthKey}-${groupBy}`;
       if (!monthlyStats[key]) {
         const [y, m] = monthKey.split('-');
         const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -76,7 +86,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
         monthlyStats[key] = {
           month: monthName,
           sortKey: monthKey,
-          type: clientType,
+          type: groupBy,
           visits,
           totalTrials: 0,
           newMembers: 0,
@@ -114,11 +124,13 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
     return Object.values(monthlyStats).sort((a, b) => {
       const monthCompare = a.sortKey.localeCompare(b.sortKey);
       if (monthCompare !== 0) return monthCompare;
-      if (a.type.toLowerCase().includes('new') && !b.type.toLowerCase().includes('new')) return -1;
-      if (!a.type.toLowerCase().includes('new') && b.type.toLowerCase().includes('new')) return 1;
+      if (rowType === 'clientType') {
+        if (a.type.toLowerCase().includes('new') && !b.type.toLowerCase().includes('new')) return -1;
+        if (!a.type.toLowerCase().includes('new') && b.type.toLowerCase().includes('new')) return 1;
+      }
       return a.type.localeCompare(b.type);
     });
-  }, [data, checkins, visitsSummary]);
+  }, [data, checkins, visitsSummary, rowType]);
 
   const tableData = useMemo(() => {
     return monthlyDataByType.map(stat => {
@@ -224,14 +236,42 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
 
   return (
     <Card ref={containerRef} className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-indigo-800 to-purple-900 text-white pb-4">
-        <CardTitle className="text-lg font-bold flex items-center gap-2 w-full">
-          <Calendar className="w-5 h-5" />
-          Month-on-Month Analysis by Client Type
-          <Badge variant="secondary" className="ml-2 bg-white/20 text-white border-white/30">
-            {monthlyDataByType.length} Entries
-          </Badge>
-          <div className="ml-auto">
+      <CardHeader className="bg-gradient-to-r from-purple-900 via-purple-950 to-purple-900 text-white pb-4">
+        <div className="flex items-center justify-between w-full">
+          <CardTitle className="text-lg font-bold flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            {tableId}
+            <Badge variant="secondary" className="ml-2 bg-white/20 text-white border-white/30">
+              {monthlyDataByType.length} Entries
+            </Badge>
+          </CardTitle>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setRowType('clientType')}
+                className={`min-w-[100px] ${rowType === 'clientType' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white' : 'text-white hover:bg-white/20'}`}
+              >
+                Client Type
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setRowType('membership')}
+                className={`min-w-[100px] ${rowType === 'membership' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white' : 'text-white hover:bg-white/20'}`}
+              >
+                Membership
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setRowType('teacher')}
+                className={`min-w-[100px] ${rowType === 'teacher' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white' : 'text-white hover:bg-white/20'}`}
+              >
+                Teacher
+              </Button>
+            </div>
             <CopyTableButton
               tableRef={containerRef as any}
               tableName={tableId}
@@ -239,15 +279,15 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
               onCopyAllTabs={registry ? async () => registry.getAllTabsContent() : undefined}
             />
           </div>
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent className="p-0 overflow-hidden">
         <div className="overflow-x-auto max-h-[600px]">
           <Table className="w-full">
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className={`border-b h-12 ${getTableHeaderClasses('retention')}`}>
-                <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 min-w-[100px]">Month</TableHead>
-                <TableHead onClick={() => handleSort('type')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Type</TableHead>
+              <TableRow className="bg-gradient-to-r from-purple-900 via-purple-950 to-purple-900 border-b" style={{ maxHeight: '35px' }}>
+                <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 bg-purple-950" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>Month</TableHead>
+                <TableHead onClick={() => handleSort('type')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[200px]" style={{ maxHeight: '35px' }}>{rowType === 'clientType' ? 'Type' : rowType === 'membership' ? 'Membership' : 'Teacher'}</TableHead>
                 <TableHead onClick={() => handleSort('totalTrials')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Trials</TableHead>
                 <TableHead onClick={() => handleSort('newMembers')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[90px]">New Members</TableHead>
                 <TableHead onClick={() => handleSort('retained')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Retained</TableHead>
@@ -264,10 +304,11 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
               {displayedData.map((row) => (
                 <TableRow
                   key={`${row.month}-${row.type}`}
-                  className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 h-10"
+                  className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100"
+                  style={{ maxHeight: '35px' }}
                   onClick={() => onRowClick?.(row)}
                 >
-                  <TableCell className="text-xs px-4 sticky left-0 bg-slate-100 z-10 border-r">
+                  <TableCell className="text-xs px-4 sticky left-0 bg-white z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>
                     <span className="text-sm font-medium text-slate-900">{row.month}</span>
                   </TableCell>
                   <TableCell className="text-xs px-3 text-left">

@@ -30,6 +30,7 @@ import ClientRetentionYearOnYearPivot from '@/components/dashboard/ClientRetenti
 import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
 import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
 import { TeacherPerformanceTable } from '@/components/dashboard/TeacherPerformanceTable';
+import { NewClientMembershipPurchaseTable } from '@/components/dashboard/NewClientMembershipPurchaseTable';
 import { LazyClientConversionDrillDownModalV3 } from '@/components/lazy/LazyModals';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
@@ -458,6 +459,7 @@ const ClientRetention = () => {
     const yoyExport: any[] = [];
     const membershipExport: any[] = [];
     const hostedClassesExport: any[] = [];
+    const newClientPurchasesExport: any[] = [];
     
     // For Month on Month by Type - build from client types
     const clientTypes = [...new Set(filteredDataNoDateRange.map(c => c.isNew || 'Unknown'))];
@@ -487,11 +489,76 @@ const ClientRetention = () => {
       });
     });
 
+    // For New Client Purchases - build membership purchase stats
+    const newClientsData = filteredDataNoDateRange.filter(c => String(c.isNew || '').toLowerCase().includes('new'));
+    const membershipPurchaseStats: Record<string, any> = {};
+    
+    newClientsData.forEach(client => {
+      const membership = client.membershipsBoughtPostTrial || 'No Membership Purchase';
+      const memberships = membership.split(',').map(m => m.trim()).filter(m => m);
+      
+      if (memberships.length === 0 || membership === '') {
+        if (!membershipPurchaseStats['No Membership Purchase']) {
+          membershipPurchaseStats['No Membership Purchase'] = {
+            units: 0, clients: new Set(), totalLTV: 0, conversionSpans: [], visitsPostTrial: [], convertedClients: 0
+          };
+        }
+        membershipPurchaseStats['No Membership Purchase'].clients.add(client.memberId);
+        membershipPurchaseStats['No Membership Purchase'].totalLTV += client.ltv || 0;
+        return;
+      }
+      
+      memberships.forEach(mem => {
+        if (!membershipPurchaseStats[mem]) {
+          membershipPurchaseStats[mem] = {
+            units: 0, clients: new Set(), totalLTV: 0, conversionSpans: [], visitsPostTrial: [], convertedClients: 0
+          };
+        }
+        membershipPurchaseStats[mem].units++;
+        membershipPurchaseStats[mem].clients.add(client.memberId);
+        membershipPurchaseStats[mem].totalLTV += client.ltv || 0;
+        
+        if (client.conversionStatus === 'Converted') {
+          membershipPurchaseStats[mem].convertedClients++;
+          if (client.conversionSpan && client.conversionSpan > 0) {
+            membershipPurchaseStats[mem].conversionSpans.push(client.conversionSpan);
+          }
+        }
+        
+        if (client.visitsPostTrial) {
+          membershipPurchaseStats[mem].visitsPostTrial.push(client.visitsPostTrial);
+        }
+      });
+    });
+    
+    Object.entries(membershipPurchaseStats).forEach(([membershipType, stats]: [string, any]) => {
+      const newClientsCount = stats.clients.size;
+      const avgDaysTaken = stats.conversionSpans.length > 0 
+        ? stats.conversionSpans.reduce((sum: number, span: number) => sum + span, 0) / stats.conversionSpans.length 
+        : 0;
+      const avgVisitsPostTrial = stats.visitsPostTrial.length > 0
+        ? stats.visitsPostTrial.reduce((sum: number, visits: number) => sum + visits, 0) / stats.visitsPostTrial.length
+        : 0;
+      const conversionRate = newClientsCount > 0 ? (stats.convertedClients / newClientsCount) * 100 : 0;
+      
+      newClientPurchasesExport.push({
+        'Membership Type': membershipType,
+        'Units Sold': stats.units,
+        'New Clients': newClientsCount,
+        'Total Value (LTV)': formatCurrency(stats.totalLTV),
+        'Avg Value': formatCurrency(newClientsCount > 0 ? stats.totalLTV / newClientsCount : 0),
+        'Avg Days to Convert': avgDaysTaken > 0 ? `${avgDaysTaken.toFixed(1)} days` : 'N/A',
+        'Avg Visits': avgVisitsPostTrial.toFixed(1),
+        'Conversion %': `${conversionRate.toFixed(1)}%`
+      });
+    });
+
     return {
       'Client Retention • Month on Month by Type': momByTypeExport,
       'Client Retention • Year on Year': yoyExport,
       'Client Retention • Memberships': membershipExport,
-      'Client Retention • Hosted Classes': hostedClassesExport
+      'Client Retention • Hosted Classes': hostedClassesExport,
+      'Client Retention • New Client Purchases': newClientPurchasesExport
     };
   }, [filteredDataNoDateRange]);
 
@@ -544,7 +611,7 @@ const ClientRetention = () => {
             </div>
 
           {/* Enhanced Metric Cards */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+          <div id="metrics" className="rounded-2xl p-0">
             <ClientConversionMetricCards 
               data={filteredData}
               historicalData={filteredDataNoDateRange}
@@ -718,6 +785,14 @@ const ClientRetention = () => {
                     },
                     type: 'ranking'
                   })}
+                />
+              </div>
+              {/* AI Notes removed */}
+            </>}
+
+            {activeTable === 'newclientpurchases' && <>
+              <div id="newclientpurchases-table">
+                <NewClientMembershipPurchaseTable data={filteredData}
                 />
               </div>
               {/* AI Notes removed */}

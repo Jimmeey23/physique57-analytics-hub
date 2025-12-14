@@ -64,6 +64,13 @@ export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTab
       description: 'Trainer metrics and performance analysis',
       icon: UserCheck,
       gradient: 'from-teal-500 to-cyan-600'
+    },
+    {
+      key: 'newclientpurchases',
+      label: 'New Client Purchases',
+      description: 'Membership purchases by new clients with conversion metrics',
+      icon: Users,
+      gradient: 'from-indigo-500 to-purple-600'
     }
   ];
 
@@ -79,33 +86,26 @@ export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTab
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-7 gap-2">
         {tableOptions.map((option) => (
           <Button
             key={option.key}
             variant={activeTable === option.key ? "default" : "outline"}
-            className={`h-auto min-h-[100px] p-3 flex flex-col items-start gap-2 transition-all duration-300 text-left ${
+            className={`h-16 px-3 py-2 flex items-center justify-center gap-2 transition-all duration-300 ${
               activeTable === option.key
                 ? `bg-gradient-to-r ${option.gradient} text-white shadow-lg hover:shadow-xl`
                 : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => onTableChange(option.key)}
           >
-            <div className="flex items-center gap-2 w-full">
-              <option.icon className={`w-4 h-4 flex-shrink-0 ${
-                activeTable === option.key ? 'text-white' : 'text-gray-600'
-              }`} />
-              <span className={`font-semibold text-xs leading-tight flex-1 ${
-                activeTable === option.key ? 'text-white' : 'text-gray-900'
-              }`}>
-                {option.label}
-              </span>
-            </div>
-            <p className={`text-xs leading-tight text-left w-full hyphens-auto break-words ${
-              activeTable === option.key ? 'text-white/90' : 'text-gray-500'
-            }`} style={{ wordBreak: 'break-word', hyphens: 'auto' }}>
-              {option.description}
-            </p>
+            <option.icon className={`w-4 h-4 flex-shrink-0 ${
+              activeTable === option.key ? 'text-white' : 'text-gray-600'
+            }`} />
+            <span className={`font-semibold text-xs text-center leading-tight ${
+              activeTable === option.key ? 'text-white' : 'text-gray-900'
+            }`}>
+              {option.label}
+            </span>
           </Button>
         ))}
       </div>

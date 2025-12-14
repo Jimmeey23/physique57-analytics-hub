@@ -51,14 +51,21 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
 
   const months = useMemo(() => {
     const arr: { key: string; label: string; year: number; month: number }[] = [];
+    const startDate = new Date(2024, 0, 1); // Jan 2024
     const now = new Date();
-    for (let i = 0; i < 22; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Calculate number of months from Jan 2024 to current month
+    const monthsDiff = (currentYear - 2024) * 12 + currentMonth;
+    
+    for (let i = 0; i <= monthsDiff; i++) {
+      const d = new Date(2024, i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
       arr.push({ key, label, year: d.getFullYear(), month: d.getMonth() + 1 });
     }
-    return arr; // newest first
+    return arr; // Jan 2024 first, current month last
   }, []);
 
   const clientTypes = useMemo(() => {
@@ -440,7 +447,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 size="sm"
                 variant={displayMode === 'values' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('values')}
-                className={displayMode === 'values' ? 'bg-white text-indigo-700 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'values' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:from-slate-600 hover:to-slate-700' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
               >
                 Values
               </Button>
@@ -448,7 +455,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 size="sm"
                 variant={displayMode === 'growth' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('growth')}
-                className={displayMode === 'growth' ? 'bg-white text-indigo-700 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'growth' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:from-slate-600 hover:to-slate-700' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
               >
                 Growth %
               </Button>
@@ -472,10 +479,11 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   <div className="overflow-x-auto max-h-[900px] relative">
           <table className="min-w-full relative">
             <thead>
-              <tr className="bg-gradient-to-r from-indigo-700 to-purple-800 text-white sticky top-0 z-10">
+              <tr className="bg-gradient-to-r from-purple-900 via-purple-950 to-purple-900 text-white sticky top-0 z-10" style={{ maxHeight: '35px' }}>
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-30 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-indigo-700"
+                  className="px-4 py-3 text-left sticky left-0 z-30 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-purple-900"
                   onClick={() => handleSort('type')}
+                  style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}
                 >
                   <div className="flex items-center gap-1">
                     Client Type
@@ -485,8 +493,9 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 {months.map(m => (
                   <th 
                     key={m.key} 
-                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[90px] border-l border-white/20 cursor-pointer hover:bg-indigo-600/50 select-none sticky top-0"
+                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide border-l border-white/20 cursor-pointer hover:bg-purple-800/50 select-none sticky top-0"
                     onClick={() => handleSort(m.key)}
+                    style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}
                   >
                     <div className="flex flex-col items-center gap-0.5">
                       <div className="flex items-center gap-1">
@@ -503,7 +512,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               {sortedTypes.map((t) => (
                 <tr 
                   key={t} 
-                  className="border-b border-slate-100 hover:bg-indigo-50 cursor-pointer transition-colors"
+                  className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                  style={{ maxHeight: '35px' }}
                   onClick={() => {
                     // Aggregate all clients for this type across all months
                     const allMonthsData = months.map(m => pivot[t]?.[m.key]).filter(Boolean);
@@ -511,13 +521,14 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                     onRowClick?.({ type: t, data: pivot[t], metric, clients: allClients });
                   }}
                 >
-                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white z-20 border-r">{t}</td>
+                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white z-20 border-r" style={{ maxHeight: '35px' }}>{t}</td>
                   {months.map((m, idx) => {
                     const cell = pivot[t]?.[m.key] || {};
                     return (
                       <td 
                         key={m.key} 
                         className="px-2 py-2 text-center border-l"
+                        style={{ maxHeight: '35px' }}
                         onClick={(e) => {
                           // Allow clicking individual cells for month-specific drill-down
                           e.stopPropagation();
@@ -537,13 +548,14 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="bg-slate-800 font-bold border-t-4 border-slate-600">
-                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-20 border-r">TOTALS</td>
+              <tr className="bg-slate-800 font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
+                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-20 border-r" style={{ maxHeight: '35px' }}>TOTALS</td>
                 {months.map((m, idx) => {
                   const cell = totalsRow[m.key] || {};
                   return (
                     <td 
-                      key={m.key} 
+                      key={m.key}
+                      style={{ maxHeight: '35px' }} 
                       className="px-2 py-2 text-center border-l cursor-pointer hover:bg-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();

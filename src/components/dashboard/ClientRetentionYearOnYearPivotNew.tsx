@@ -55,10 +55,34 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
   const currentYear = now.getFullYear();
   const previousYear = currentYear - 1;
 
-  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(currentYear, i, 1);
-    return { idx: i, key: d.toLocaleDateString('en-US', { month: 'short' }), month: i + 1 };
-  }), [currentYear]);
+  const months = useMemo(() => {
+    const currentMonth = now.getMonth() + 1;
+    const monthsArr: { key: string; display: string; year: number; month: number; monthName: string }[] = [];
+    
+    // Generate months from Jan to current month only
+    for (let monthNum = 1; monthNum <= currentMonth; monthNum++) {
+      const monthName = new Date(2024, monthNum - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+      
+      // Add 2024 entry
+      monthsArr.push({
+        key: `2024-${String(monthNum).padStart(2, '0')}`,
+        display: `${monthName} 2024`,
+        year: 2024,
+        month: monthNum,
+        monthName: monthName
+      });
+      
+      // Add 2025 entry
+      monthsArr.push({
+        key: `${currentYear}-${String(monthNum).padStart(2, '0')}`,
+        display: `${monthName} ${currentYear}`,
+        year: currentYear,
+        month: monthNum,
+        monthName: monthName
+      });
+    }
+    return monthsArr;
+  }, [currentYear, now]);
 
   const rowKeys = useMemo(() => {
     const set = new Set<string>();
@@ -88,25 +112,25 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
       visitsPostTrial: [] as number[],
       clients: [] as NewClientData[] // Store actual client data for drill-down
     });
-    const map: Record<string, { current: Record<string, any>; previous: Record<string, any> }> = {};
+    const map: Record<string, Record<string, any>> = {};
     
     rowKeys.forEach(rk => {
-      map[rk] = { current: {}, previous: {} };
+      map[rk] = {};
       months.forEach(m => {
-        map[rk].current[m.key] = initCell();
-        map[rk].previous[m.key] = initCell();
+        map[rk][m.key] = initCell();
       });
     });
 
     data.forEach(c => {
       const d = parseDate(c.firstVisitDate || '');
       if (!d) return;
-      const monthKey = d.toLocaleDateString('en-US', { month: 'short' });
       const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const dataKey = `${year}-${String(month).padStart(2, '0')}`;
       const rowKey = rowType === 'clientType' ? (c.isNew || 'Unknown') : (c.membershipUsed || 'Unknown');
       
       if (!map[rowKey]) return;
-      const bucket = year === currentYear ? map[rowKey].current[monthKey] : year === previousYear ? map[rowKey].previous[monthKey] : null;
+      const bucket = map[rowKey][dataKey];
       if (!bucket) return;
       
       bucket.trials += 1;
@@ -128,19 +152,17 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
     // Derived metrics
     rowKeys.forEach(rk => {
       months.forEach(m => {
-        const derive = (b: any) => {
-          b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-          b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
-          b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
-          b.avgConversionDays = b.conversionIntervals.length > 0 
-            ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
-            : 0;
-          b.avgVisits = b.visitsPostTrial.length > 0
-            ? b.visitsPostTrial.reduce((sum: number, val: number) => sum + val, 0) / b.visitsPostTrial.length
-            : 0;
-        };
-        derive(map[rk].current[m.key]);
-        derive(map[rk].previous[m.key]);
+        const b = map[rk][m.key];
+        if (!b) return;
+        b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
+        b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
+        b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+        b.avgConversionDays = b.conversionIntervals.length > 0 
+          ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
+          : 0;
+        b.avgVisits = b.visitsPostTrial.length > 0
+          ? b.visitsPostTrial.reduce((sum: number, val: number) => sum + val, 0) / b.visitsPostTrial.length
+          : 0;
       });
     });
     
@@ -365,10 +387,10 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
 
   // Calculate totals
   const totalsRow = useMemo(() => {
-    const totals: { current: Record<string, any>; previous: Record<string, any> } = { current: {}, previous: {} };
+    const totals: Record<string, any> = {};
     
     months.forEach(m => {
-      const initCell = () => ({ 
+      totals[m.key] = { 
         trials: 0, 
         newMembers: 0, 
         converted: 0, 
@@ -377,50 +399,33 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
         conversionIntervals: [] as number[],
         visitsPostTrial: [] as number[],
         clients: [] as NewClientData[]
-      });
-      totals.current[m.key] = initCell();
-      totals.previous[m.key] = initCell();
+      };
       
       rowKeys.forEach(rk => {
-        const curr = pivot[rk]?.current[m.key];
-        const prev = pivot[rk]?.previous[m.key];
+        const cell = pivot[rk]?.[m.key];
         
-        if (curr) {
-          totals.current[m.key].trials += curr.trials || 0;
-          totals.current[m.key].newMembers += curr.newMembers || 0;
-          totals.current[m.key].converted += curr.converted || 0;
-          totals.current[m.key].retained += curr.retained || 0;
-          totals.current[m.key].totalLTV += curr.totalLTV || 0;
-          totals.current[m.key].conversionIntervals.push(...(curr.conversionIntervals || []));
-          totals.current[m.key].visitsPostTrial.push(...(curr.visitsPostTrial || []));
-          totals.current[m.key].clients.push(...(curr.clients || []));
-        }
-        
-        if (prev) {
-          totals.previous[m.key].trials += prev.trials || 0;
-          totals.previous[m.key].newMembers += prev.newMembers || 0;
-          totals.previous[m.key].converted += prev.converted || 0;
-          totals.previous[m.key].retained += prev.retained || 0;
-          totals.previous[m.key].totalLTV += prev.totalLTV || 0;
-          totals.previous[m.key].conversionIntervals.push(...(prev.conversionIntervals || []));
-          totals.previous[m.key].visitsPostTrial.push(...(prev.visitsPostTrial || []));
-          totals.previous[m.key].clients.push(...(prev.clients || []));
+        if (cell) {
+          totals[m.key].trials += cell.trials || 0;
+          totals[m.key].newMembers += cell.newMembers || 0;
+          totals[m.key].converted += cell.converted || 0;
+          totals[m.key].retained += cell.retained || 0;
+          totals[m.key].totalLTV += cell.totalLTV || 0;
+          totals[m.key].conversionIntervals.push(...(cell.conversionIntervals || []));
+          totals[m.key].visitsPostTrial.push(...(cell.visitsPostTrial || []));
+          totals[m.key].clients.push(...(cell.clients || []));
         }
       });
       
-      const derive = (b: any) => {
-        b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-        b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
-        b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
-        b.avgConversionDays = b.conversionIntervals.length > 0 
-          ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
-          : 0;
-        b.avgVisits = b.visitsPostTrial.length > 0
-          ? b.visitsPostTrial.reduce((sum: number, val: number) => sum + val, 0) / b.visitsPostTrial.length
-          : 0;
-      };
-      derive(totals.current[m.key]);
-      derive(totals.previous[m.key]);
+      const b = totals[m.key];
+      b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
+      b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
+      b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+      b.avgConversionDays = b.conversionIntervals.length > 0 
+        ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
+        : 0;
+      b.avgVisits = b.visitsPostTrial.length > 0
+        ? b.visitsPostTrial.reduce((sum: number, val: number) => sum + val, 0) / b.visitsPostTrial.length
+        : 0;
     });
     
     return totals;
@@ -453,16 +458,15 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
     metricKeys.forEach(mk => {
       sections.push(`\n${METRIC_LABELS[mk].toUpperCase()}`);
       const headers = [rowType === 'clientType' ? 'Client Type' : 'Membership'];
-      months.forEach(m => headers.push(`${m.key} Prev`, `${m.key} Curr`));
+      months.forEach(m => headers.push(m.display));
       sections.push(headers.join('\t'));
       sections.push(headers.map(() => '---').join('\t'));
 
       rowKeys.forEach(rk => {
         const row: string[] = [rk];
         months.forEach(m => {
-          const prevCell = pivot[rk]?.previous[m.key];
-          const currCell = pivot[rk]?.current[m.key];
-          row.push(formatVal(mk, prevCell) as string, formatVal(mk, currCell) as string);
+          const cell = pivot[rk]?.[m.key];
+          row.push(formatVal(mk, cell) as string);
         });
         sections.push(row.join('\t'));
       });
@@ -470,9 +474,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
       // Totals row
       const totalRow: string[] = ['TOTALS'];
       months.forEach(m => {
-        const prevCell = totalsRow.previous[m.key];
-        const currCell = totalsRow.current[m.key];
-        totalRow.push(formatVal(mk, prevCell) as string, formatVal(mk, currCell) as string);
+        const cell = totalsRow[m.key];
+        totalRow.push(formatVal(mk, cell) as string);
       });
       sections.push(totalRow.join('\t'));
     });
@@ -584,9 +587,10 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
   <div className="overflow-x-auto max-h-[900px] relative">
           <table className="min-w-full relative">
             <thead>
-              <tr className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white sticky top-0 z-10">
+              <tr className="bg-gradient-to-r from-green-800 via-green-900 to-green-800 text-white sticky top-0 z-10">
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-20 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-emerald-700"
+                  className="px-4 py-3 text-left sticky left-0 z-20 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-green-900"
+                  style={{ width: '300px', minWidth: '300px' }}
                   onClick={() => handleSort('row')}
                 >
                   <div className="flex items-center gap-1">
@@ -594,35 +598,41 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                {months.map(m => (
-                  <th 
-                    key={m.key} 
-                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide min-w-[100px] border-l border-white/20 cursor-pointer hover:bg-emerald-600/50 select-none sticky top-0"
-                    onClick={() => handleSort(m.key)}
-                  >
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold whitespace-nowrap">{m.key}</span>
-                        <ArrowUpDown className="w-3 h-3" />
+                {months.map((m, index) => {
+                  const prevMonth = index > 0 ? months[index - 1] : null;
+                  const nextMonth = index < months.length - 1 ? months[index + 1] : null;
+                  
+                  const isFirstOfGroup = !prevMonth || prevMonth.month !== m.month;
+                  const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
+                  
+                  return (
+                    <th 
+                      key={m.key} 
+                      className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider min-w-[90px] cursor-pointer hover:bg-green-700/50 select-none sticky top-0 ${
+                        isFirstOfGroup ? 'border-l-2 border-green-400' : ''
+                      } ${
+                        isLastOfGroup ? 'border-r-2 border-green-400' : ''
+                      }`}
+                      onClick={() => handleSort(m.key)}
+                    >
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs font-bold whitespace-nowrap leading-tight">{m.monthName}</span>
+                        <span className="text-green-300 text-xs leading-tight">{m.year}</span>
                       </div>
-                      {displayMode === 'values' && (
-                        <span className="text-white/80 text-[10px]">Prev | Curr</span>
-                      )}
-                    </div>
-                  </th>
-                ))}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {sortedRowKeys.map((rk) => (
                 <tr 
                   key={rk} 
-                  className="border-b border-slate-100 hover:bg-emerald-50 cursor-pointer transition-colors"
+                  className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                  style={{ maxHeight: '35px' }}
                   onClick={() => {
                     // Aggregate clients from all months for this row
-                    const allCurrentClients = months.flatMap(m => pivot[rk]?.current[m.key]?.clients || []);
-                    const allPreviousClients = months.flatMap(m => pivot[rk]?.previous[m.key]?.clients || []);
-                    const allClients = [...allCurrentClients, ...allPreviousClients];
+                    const allClients = months.flatMap(m => pivot[rk]?.[m.key]?.clients || []);
                     onRowClick?.({ 
                       rowKey: rk, 
                       rowType, 
@@ -632,55 +642,113 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                     });
                   }}
                 >
-                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white hover:bg-emerald-50 z-10 border-r">{rk}</td>
-                  {months.map((m) => (
-                    <td 
-                      key={m.key} 
-                      className="px-2 py-2 text-center border-l"
-                      onClick={(e) => {
-                        // Allow clicking individual cells for month-specific drill-down
-                        e.stopPropagation();
-                        const currentClients = pivot[rk]?.current[m.key]?.clients || [];
-                        const previousClients = pivot[rk]?.previous[m.key]?.clients || [];
-                        onRowClick?.({ 
-                          rowKey: rk, 
-                          rowType,
-                          month: m.key,
-                          data: { current: pivot[rk].current[m.key], previous: pivot[rk].previous[m.key] },
-                          metric,
-                          clients: [...currentClients, ...previousClients]
-                        });
-                      }}
-                    >
-                      {renderValue(pivot[rk].current[m.key], pivot[rk].previous[m.key])}
-                    </td>
-                  ))}
+                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white hover:bg-slate-50 z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>{rk}</td>
+                  {months.map((m, index) => {
+                    const prevMonth = index > 0 ? months[index - 1] : null;
+                    const nextMonth = index < months.length - 1 ? months[index + 1] : null;
+                    
+                    const isFirstOfGroup = !prevMonth || prevMonth.month !== m.month;
+                    const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
+                    
+                    const cellData = pivot[rk]?.[m.key];
+                    
+                    return (
+                      <td 
+                        key={m.key} 
+                        className={`px-2 py-2 text-center text-sm font-mono text-slate-800 ${
+                          isFirstOfGroup ? 'border-l-2 border-slate-300' : 'border-l'
+                        } ${
+                          isLastOfGroup ? 'border-r-2 border-slate-300' : ''
+                        }`}
+                        style={{ maxHeight: '35px' }}
+                        onClick={(e) => {
+                          // Allow clicking individual cells for month-specific drill-down
+                          e.stopPropagation();
+                          const clients = cellData?.clients || [];
+                          onRowClick?.({ 
+                            rowKey: rk, 
+                            rowType,
+                            month: m.month,
+                            year: m.year,
+                            data: cellData,
+                            metric,
+                            clients: clients
+                          });
+                        }}
+                      >
+                        {(() => {
+                          const val = cellData || {};
+                          switch (metric) {
+                            case 'trials': return formatNumber(val.trials || 0);
+                            case 'newMembers': return formatNumber(val.newMembers || 0);
+                            case 'converted': return formatNumber(val.converted || 0);
+                            case 'retained': return formatNumber(val.retained || 0);
+                            case 'conversionRate': return `${(val.conversionRate || 0).toFixed(1)}%`;
+                            case 'retentionRate': return `${(val.retentionRate || 0).toFixed(1)}%`;
+                            case 'avgLTV': return formatCurrency(val.avgLTV || 0);
+                            case 'totalLTV': return formatCurrency(val.totalLTV || 0);
+                            case 'avgConversionDays': return `${(val.avgConversionDays || 0).toFixed(0)}`;
+                            case 'avgVisits': return `${(val.avgVisits || 0).toFixed(1)}`;
+                          }
+                        })()}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="bg-slate-800 font-bold border-t-4 border-slate-600">
-                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-10 border-r">TOTALS</td>
-                {months.map((m) => (
-                  <td 
-                    key={m.key} 
-                    className="px-2 py-2 text-center border-l cursor-pointer hover:bg-slate-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const currentClients = totalsRow.current[m.key]?.clients || [];
-                      const previousClients = totalsRow.previous[m.key]?.clients || [];
-                      onRowClick?.({ 
-                        rowKey: 'TOTALS', 
-                        rowType,
-                        month: m.key,
-                        data: { current: totalsRow.current[m.key], previous: totalsRow.previous[m.key] },
-                        metric,
-                        clients: [...currentClients, ...previousClients]
-                      });
-                    }}
-                  >
-                    {renderValueWhite(totalsRow.current[m.key], totalsRow.previous[m.key])}
-                  </td>
-                ))}
+              <tr className="bg-slate-800 font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
+                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>TOTALS</td>
+                {months.map((m, index) => {
+                  const prevMonth = index > 0 ? months[index - 1] : null;
+                  const nextMonth = index < months.length - 1 ? months[index + 1] : null;
+                  
+                  const isFirstOfGroup = !prevMonth || prevMonth.month !== m.month;
+                  const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
+                  
+                  const cellData = totalsRow[m.key];
+                  
+                  return (
+                    <td 
+                      key={m.key} 
+                      className={`px-2 py-2 text-center text-sm font-mono text-white cursor-pointer hover:bg-slate-700 ${
+                        isFirstOfGroup ? 'border-l-2 border-slate-500' : 'border-l'
+                      } ${
+                        isLastOfGroup ? 'border-r-2 border-slate-500' : ''
+                      }`}
+                      style={{ maxHeight: '35px' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const clients = cellData?.clients || [];
+                        onRowClick?.({ 
+                          rowKey: 'TOTALS', 
+                          rowType,
+                          month: m.month,
+                          year: m.year,
+                          data: cellData,
+                          metric,
+                          clients: clients
+                        });
+                      }}
+                    >
+                      {(() => {
+                        const val = cellData || {};
+                        switch (metric) {
+                          case 'trials': return formatNumber(val.trials || 0);
+                          case 'newMembers': return formatNumber(val.newMembers || 0);
+                          case 'converted': return formatNumber(val.converted || 0);
+                          case 'retained': return formatNumber(val.retained || 0);
+                          case 'conversionRate': return `${(val.conversionRate || 0).toFixed(1)}%`;
+                          case 'retentionRate': return `${(val.retentionRate || 0).toFixed(1)}%`;
+                          case 'avgLTV': return formatCurrency(val.avgLTV || 0);
+                          case 'totalLTV': return formatCurrency(val.totalLTV || 0);
+                          case 'avgConversionDays': return `${(val.avgConversionDays || 0).toFixed(0)}`;
+                          case 'avgVisits': return `${(val.avgVisits || 0).toFixed(1)}`;
+                        }
+                      })()}
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
