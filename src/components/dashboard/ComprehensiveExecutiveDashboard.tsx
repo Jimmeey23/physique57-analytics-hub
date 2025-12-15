@@ -808,7 +808,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {salesMetrics?.metrics?.[0]?.change ? `${salesMetrics.metrics[0].change > 0 ? '+' : ''}${salesMetrics.metrics[0].change.toFixed(1)}%` : 'N/A'}
+                          {typeof salesMetrics?.metrics?.[0]?.change === 'number' ? `${salesMetrics.metrics[0].change > 0 ? '+' : ''}${salesMetrics.metrics[0].change.toFixed(1)}%` : 'N/A'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">vs prev</span>
                       </div>
@@ -820,7 +820,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {salesMetrics?.metrics?.[0]?.yoyChange ? `${salesMetrics.metrics[0].yoyChange > 0 ? '+' : ''}${salesMetrics.metrics[0].yoyChange.toFixed(1)}%` : 'N/A'}
+                          {typeof salesMetrics?.metrics?.[0]?.yoyChange === 'number' ? `${salesMetrics.metrics[0].yoyChange > 0 ? '+' : ''}${salesMetrics.metrics[0].yoyChange.toFixed(1)}%` : 'N/A'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">vs 2024</span>
                       </div>
@@ -1141,7 +1141,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {salesMetrics?.metrics?.[6]?.change ? `${salesMetrics.metrics[6].change > 0 ? '+' : ''}${salesMetrics.metrics[6].change.toFixed(1)}%` : 'N/A'}
+                          {typeof salesMetrics?.metrics?.[6]?.change === 'number' ? `${salesMetrics.metrics[6].change > 0 ? '+' : ''}${salesMetrics.metrics[6].change.toFixed(1)}%` : 'N/A'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">vs prev</span>
                       </div>
@@ -1152,7 +1152,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {salesMetrics?.metrics?.[6]?.yoyChange ? `${salesMetrics.metrics[6].yoyChange > 0 ? '+' : ''}${salesMetrics.metrics[6].yoyChange.toFixed(1)}%` : 'N/A'}
+                          {typeof salesMetrics?.metrics?.[6]?.yoyChange === 'number' ? `${salesMetrics.metrics[6].yoyChange > 0 ? '+' : ''}${salesMetrics.metrics[6].yoyChange.toFixed(1)}%` : 'N/A'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">vs 2024</span>
                       </div>
@@ -1303,7 +1303,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {clientMetrics?.metrics?.[3]?.change ? `${clientMetrics.metrics[3].change > 0 ? '+' : ''}${clientMetrics.metrics[3].change.toFixed(1)}%` : 'N/A'}
+                          {typeof clientMetrics?.metrics?.[3]?.change === 'number' ? `${clientMetrics.metrics[3].change > 0 ? '+' : ''}${clientMetrics.metrics[3].change.toFixed(1)}%` : 'N/A'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">vs prev</span>
                       </div>

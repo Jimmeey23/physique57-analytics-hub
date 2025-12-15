@@ -10,9 +10,11 @@ import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { GlobalCommandPalette } from "@/components/ui/GlobalCommandPalette";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
+import { useRouteChangeLoader } from "@/hooks/useRouteChangeLoader";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
 import { MetricsTablesRegistryProvider } from '@/contexts/MetricsTablesRegistryContext';
 import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
+import { RouteLoadingWrapper } from "@/components/RouteLoadingWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Optimized lazy loading with preloading for critical pages
@@ -84,52 +86,65 @@ const queryClient = new QueryClient({
   },
 });
 
+// Inner component that uses the route change loader hook
+const AppRoutes = () => {
+  useRouteChangeLoader();
+  
+  return (
+    <>
+      <GlobalLoader />
+      <GlobalCommandPalette />
+      <RouteLoadingWrapper>
+        <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}>
+          <PageTransition>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/executive-summary" element={<ExecutiveSummary />} />
+              <Route path="/sales-analytics" element={<SalesAnalytics />} />
+              <Route path="/funnel-leads" element={<FunnelLeads />} />
+              <Route path="/client-retention" element={<ClientRetention />} />
+              <Route path="/trainer-performance" element={<TrainerPerformance />} />
+              <Route path="/class-attendance" element={<ClassAttendance />} />
+              <Route path="/class-formats" element={<ClassFormatsComparison />} />
+              <Route path="/powercycle-vs-barre" element={<ClassFormatsComparison />} />
+              <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
+              <Route path="/sessions" element={<Sessions />} />
+              <Route path="/outlier-analysis" element={<OutlierAnalysis />} />
+              <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
+              <Route path="/late-cancellations" element={<LateCancellations />} />
+              <Route path="/patterns-trends" element={<PatternsAndTrends />} />
+              <Route path="/location-report" element={<LocationReport />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PageTransition>
+        </React.Suspense>
+      </RouteLoadingWrapper>
+    </>
+  );
+};
+
 const App = () => {
   usePerformanceOptimization();
   
   return (
     <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <GlobalFiltersProvider>
-          <MetricsTablesRegistryProvider>
-          <SectionNavigationProvider>
-          <GlobalLoader />
-          <GlobalCommandPalette />
-          <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}> {/* Blank white screen during chunk load */}
-            <PageTransition>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/executive-summary" element={<ExecutiveSummary />} />
-                    <Route path="/sales-analytics" element={<SalesAnalytics />} />
-                    <Route path="/funnel-leads" element={<FunnelLeads />} />
-                    <Route path="/client-retention" element={<ClientRetention />} />
-                    <Route path="/trainer-performance" element={<TrainerPerformance />} />
-                    <Route path="/class-attendance" element={<ClassAttendance />} />
-                    <Route path="/class-formats" element={<ClassFormatsComparison />} />
-                    <Route path="/powercycle-vs-barre" element={<ClassFormatsComparison />} />
-                    <Route path="/discounts-promotions" element={<DiscountsPromotions />} />
-                    <Route path="/sessions" element={<Sessions />} />
-                    <Route path="/outlier-analysis" element={<OutlierAnalysis />} />
-                    <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
-                    <Route path="/late-cancellations" element={<LateCancellations />} />
-                    <Route path="/patterns-trends" element={<PatternsAndTrends />} />
-                    <Route path="/location-report" element={<LocationReport />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </PageTransition>
-            </React.Suspense>
-          </SectionNavigationProvider>
-          </MetricsTablesRegistryProvider>
-        </GlobalFiltersProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-  </ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <GlobalFiltersProvider>
+              <MetricsTablesRegistryProvider>
+                <SectionNavigationProvider>
+                  <AppRoutes />
+                </SectionNavigationProvider>
+              </MetricsTablesRegistryProvider>
+            </GlobalFiltersProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

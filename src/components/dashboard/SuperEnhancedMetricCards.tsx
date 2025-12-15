@@ -54,6 +54,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatCurrency(totalRevenue),
         previousValue: formatCurrency(previousRevenue),
         change: ((totalRevenue - previousRevenue) / previousRevenue) * 100,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: totalRevenue - previousRevenue },
         description: 'Total revenue generated from all class sessions',
         icon: 'DollarSign',
@@ -65,6 +67,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatNumber(totalSessions),
         previousValue: formatNumber(previousSessions),
         change: ((totalSessions - previousSessions) / previousSessions) * 100,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: totalSessions - previousSessions },
         description: 'Total number of class sessions conducted',
         icon: 'Calendar',
@@ -76,6 +80,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatNumber(totalAttendance),
         previousValue: formatNumber(previousAttendance),
         change: ((totalAttendance - previousAttendance) / previousAttendance) * 100,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: totalAttendance - previousAttendance },
         description: 'Total number of attendees across all sessions',
         icon: 'Users',
@@ -87,6 +93,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatPercentage(fillRate),
         previousValue: formatPercentage(previousFillRate),
         change: ((fillRate - previousFillRate) / previousFillRate) * 100,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: fillRate - previousFillRate },
         description: 'Percentage of capacity filled across all sessions',
         icon: 'Target',
@@ -98,6 +106,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatNumber(avgClassSize),
         previousValue: formatNumber(avgClassSize * 0.92),
         change: 8.7,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: avgClassSize * 0.08 },
         description: 'Average number of attendees per class session',
         icon: 'Activity',
@@ -109,6 +119,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatPercentage(bookingRate),
         previousValue: formatPercentage(bookingRate * 0.88),
         change: 13.6,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: bookingRate * 0.12 },
         description: 'Percentage of capacity that was booked',
         icon: 'UserCheck',
@@ -120,6 +132,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatPercentage(cancelRate),
         previousValue: formatPercentage(cancelRate * 1.15),
         change: -13.0,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: -(cancelRate * 0.15) },
         description: 'Percentage of bookings that were cancelled late',
         icon: 'Clock',
@@ -131,6 +145,8 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         value: formatNumber(totalCapacity),
         previousValue: formatNumber(totalCapacity * 0.95),
         change: 5.3,
+        yoyChange: undefined,
+        yoyPreviousValue: undefined,
         comparison: { difference: totalCapacity * 0.05 },
         description: 'Total capacity available across all sessions',
         icon: 'Building2',
@@ -194,117 +210,117 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
       {metrics.map((metric, index) => {
         const IconComponent = iconMap[metric.icon as keyof typeof iconMap] || BarChart3;
         const isPositive = metric.change > 0;
+        const isNegative = metric.change < 0;
         
         return (
           <Card 
             key={index} 
             className={cn(
-              "bg-white/95 backdrop-blur-sm shadow-2xl border border-white/20 overflow-hidden hover:shadow-3xl transition-all duration-700 group cursor-pointer",
-              "hover:scale-[1.02] hover:-translate-y-1 transform-gpu"
+              "group relative overflow-hidden cursor-pointer transition-all duration-500",
+              "bg-white hover:bg-gradient-to-br hover:from-slate-900 hover:via-slate-900 hover:to-slate-950",
+              "border border-slate-200 hover:border-slate-800 border-t-4",
+              "shadow-md hover:shadow-2xl hover:shadow-slate-950/60",
+              "hover:-translate-y-1 hover:scale-[1.01]",
+              index % 4 === 0 && "border-t-emerald-500",
+              index % 4 === 1 && "border-t-blue-500",
+              index % 4 === 2 && "border-t-purple-500",
+              index % 4 === 3 && "border-t-rose-500",
+              onMetricClick && "hover:cursor-pointer"
             )}
             onClick={() => handleMetricClick(metric)}
             style={{ animationDelay: `${index * 150}ms` }}
           >
-            <CardContent className="p-0">
-              <div className={`bg-gradient-to-br ${
-                metric.color === 'blue' ? 'from-blue-500 via-blue-600 to-indigo-700' :
-                metric.color === 'green' ? 'from-green-500 via-green-600 to-teal-700' :
-                metric.color === 'purple' ? 'from-purple-500 via-purple-600 to-violet-700' :
-                metric.color === 'orange' ? 'from-orange-500 via-orange-600 to-red-700' :
-                metric.color === 'cyan' ? 'from-cyan-500 via-cyan-600 to-blue-700' :
-                metric.color === 'pink' ? 'from-pink-500 via-pink-600 to-rose-700' :
-                metric.color === 'red' ? 'from-red-500 via-red-600 to-rose-700' :
-                'from-amber-500 via-amber-600 to-orange-700'
-              } p-6 text-white relative overflow-hidden`}>
-                
-                {/* Animated gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                
-                {/* Background decorative elements */}
-                <div className="absolute top-0 right-0 w-24 h-24 transform translate-x-10 -translate-y-10 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
-                  <IconComponent className="w-24 h-24" />
-                </div>
-                <div className="absolute bottom-0 left-0 w-16 h-16 transform -translate-x-8 translate-y-8 opacity-5">
-                  <IconComponent className="w-16 h-16" />
-                </div>
-                
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg group-hover:bg-white/30 transition-colors duration-300">
-                        <IconComponent className="w-5 h-5" />
-                      </div>
-                      <h3 className="font-semibold text-sm tracking-wide">{metric.title}</h3>
-                    </div>
-                    
-                    {/* Growth Indicator Badge - Top Right */}
-                    <div className={cn(
-                      "flex flex-col items-center gap-1.5 px-3 py-2 rounded-full backdrop-blur-sm border transition-all duration-300 shrink-0 group",
-                      "bg-white/0 hover:bg-white/95 border-white/30 hover:border-white/50",
-                      "shadow-lg hover:shadow-xl transform hover:scale-105"
-                    )}>
-                      {/* Growth Percentage and Direction */}
-                      <div className={cn(
-                        "flex items-center gap-1.5 transition-colors duration-300",
-                        isPositive ? "text-green-200 group-hover:text-green-600" : "text-red-200 group-hover:text-red-600"
-                      )}>
-                        {isPositive ? (
-                          <ArrowUpRight className="w-4 h-4" />
-                        ) : (
-                          <ArrowDownRight className="w-4 h-4" />
-                        )}
-                        <span className="font-bold text-sm">
-                          {isPositive ? '+' : ''}{metric.change.toFixed(1)}%
-                        </span>
-                      </div>
-                      
-                      {/* Significance Badge */}
-                      {metric.changeDetails?.isSignificant && (
-                        <div className={cn(
-                          "text-xs px-2 py-0.5 rounded-full font-bold transition-colors duration-300",
-                          "text-white/80 group-hover:text-slate-700",
-                          metric.changeDetails.trend === 'strong' ? "bg-white/20 group-hover:bg-white/90" :
-                          "bg-white/10 group-hover:bg-white/70"
-                        )}>
-                          {metric.changeDetails.trend.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Main Value */}
-                  <div className="mb-4">
-                    <p className="text-4xl font-bold mb-2 tracking-tight group-hover:text-white/95 transition-colors duration-300">
-                      {metric.value}
-                    </p>
-                  </div>
-                  
-                  {/* Previous Value Comparison */}
-                  <div className="pt-3 border-t border-white/20">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="text-xs text-white/70 font-medium uppercase tracking-wider">Previous</div>
-                        <div className="text-sm font-semibold text-white/90">{metric.previousValue}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-white/70 font-medium uppercase tracking-wider">Difference</div>
-                        <div className={cn(
-                          "text-sm font-bold",
-                          isPositive ? "text-green-200" : "text-red-200"
-                        )}>
-                          {isPositive ? '+' : ''}{typeof metric.comparison.difference === 'number' 
-                            ? (metric.title.includes('Revenue') ? formatCurrency(Math.abs(metric.comparison.difference)) : formatNumber(Math.abs(metric.comparison.difference)))
-                            : metric.comparison.difference}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <CardContent className="p-6">
+              {/* Background icon - top right */}
+              <div className="absolute top-3 right-3 opacity-[0.08] group-hover:opacity-[0.15] transition-all duration-700 ease-out group-hover:scale-110 group-hover:rotate-6">
+                <IconComponent className="w-20 h-20 text-slate-900 group-hover:text-white" />
               </div>
               
-              {/* Description section with modern styling */}
-              <div className="p-4 bg-gradient-to-r from-slate-50 to-gray-50 border-t border-white/20">
-                <p className="text-sm text-slate-600 leading-relaxed">{metric.description}</p>
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity duration-500" 
+                   style={{backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px'}} />
+              
+              {/* Main Content */}
+              <div className="relative z-10 space-y-2.5">
+                {/* Header Section - Icon and Title */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={cn(
+                      "p-2.5 rounded-xl shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:shadow-md",
+                      index % 4 === 0 && "bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 text-emerald-700 group-hover:from-emerald-500/25 group-hover:to-emerald-600/20 group-hover:text-emerald-400 group-hover:shadow-emerald-500/20",
+                      index % 4 === 1 && "bg-gradient-to-br from-blue-500/15 to-blue-600/10 text-blue-700 group-hover:from-blue-500/25 group-hover:to-blue-600/20 group-hover:text-blue-400 group-hover:shadow-blue-500/20",
+                      index % 4 === 2 && "bg-gradient-to-br from-purple-500/15 to-purple-600/10 text-purple-700 group-hover:from-purple-500/25 group-hover:to-purple-600/20 group-hover:text-purple-400 group-hover:shadow-purple-500/20",
+                      index % 4 === 3 && "bg-gradient-to-br from-rose-500/15 to-rose-600/10 text-rose-700 group-hover:from-rose-500/25 group-hover:to-rose-600/20 group-hover:text-rose-400 group-hover:shadow-rose-500/20"
+                    )}>
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className={cn(
+                        "font-bold text-sm text-slate-700 transition-all duration-500 leading-tight",
+                        "group-hover:text-white group-hover:underline group-hover:underline-offset-4 group-hover:decoration-2",
+                        index % 4 === 0 && "group-hover:decoration-emerald-400",
+                        index % 4 === 1 && "group-hover:decoration-blue-400",
+                        index % 4 === 2 && "group-hover:decoration-purple-400",
+                        index % 4 === 3 && "group-hover:decoration-rose-400"
+                      )}>
+                        {metric.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 group-hover:text-slate-300 transition-colors duration-500 mt-0.5">
+                        {metric.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Value */}
+                <div className="pt-2">
+                  <div className="text-3xl font-bold text-slate-900 group-hover:text-white transition-colors duration-500">
+                    {metric.value}
+                  </div>
+                </div>
+
+                {/* Comparison Cards - Month over Month & YoY */}
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  {/* MoM Card */}
+                  <div className={cn(
+                    "p-2.5 rounded-lg border transition-all duration-500 bg-white group-hover:bg-slate-800/20 border-slate-200 group-hover:border-slate-700/50"
+                  )}>
+                    <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-500">
+                      Month over Month
+                    </div>
+                    <div className="flex items-baseline gap-1.5 mb-1.5">
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
+                        {metric.previousValue}
+                      </span>
+                      <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">prev</span>
+                    </div>
+                    <div className={cn(
+                      "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-500 min-w-[65px]",
+                      isPositive && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
+                      isNegative && "bg-rose-900/90 text-white group-hover:bg-rose-800 group-hover:shadow-lg group-hover:shadow-rose-900/40",
+                      !isPositive && !isNegative && "bg-slate-700/90 text-white group-hover:bg-slate-600 group-hover:shadow-lg"
+                    )}>
+                      {isPositive && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {isNegative && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {!isPositive && !isNegative && <Activity className="w-3.5 h-3.5 flex-shrink-0" />}
+                      <span>{isPositive ? '+' : ''}{Math.round(metric.change)}%</span>
+                    </div>
+                  </div>
+
+                  {/* Description - now showing as hover content */}
+                  <div className={cn(
+                    "p-2.5 rounded-lg border transition-all duration-500 bg-slate-50 group-hover:bg-slate-800/10 border-slate-200 group-hover:border-slate-700/30"
+                  )}>
+                    <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-500">
+                      Additional Info
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xs font-bold text-slate-700 group-hover:text-white transition-colors duration-500">
+                        {metric.changeDetails?.trend || 'normal'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

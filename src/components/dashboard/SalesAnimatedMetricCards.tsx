@@ -161,13 +161,13 @@ export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCard
                     <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-500">
                       Month over Month
                     </div>
-                    <div className="flex items-baseline gap-1.5 mb-1.5">
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                        {metric.previousValue}
-                      </span>
+                      <div className="flex items-baseline gap-1.5 mb-1.5">
+                        <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
+                          {metric.previousValue ?? '—'}
+                        </span>
                       <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">prev</span>
                     </div>
-                    <div className={cn(
+                      <div className={cn(
                       "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-500 min-w-[65px]",
                       metric.change > 0 && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
                       metric.change < 0 && "bg-rose-900/90 text-white group-hover:bg-rose-800 group-hover:shadow-lg group-hover:shadow-rose-900/40",
@@ -176,12 +176,12 @@ export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCard
                       {metric.change > 0 && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
                       {metric.change < 0 && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
                       {metric.change === 0 && <Minus className="w-3.5 h-3.5 flex-shrink-0" />}
-                      <span>{metric.change > 0 ? '+' : ''}{Math.round(metric.change)}%</span>
+                      <span>{typeof metric.change === 'number' ? (metric.change > 0 ? '+' : '') + Math.round(metric.change) + '%' : 'N/A'}</span>
                     </div>
                   </div>
                   
                   {/* YoY Card */}
-                  {metric.yoyPreviousValue ? (
+                  {metric.yoyPreviousValue != null ? (
                     <div className={cn(
                       "p-2.5 rounded-lg border transition-all duration-500",
                       "bg-white/50 group-hover:bg-slate-800/20",
@@ -192,11 +192,11 @@ export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCard
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {metric.yoyPreviousValue}
+                          {metric.yoyPreviousValue ?? '—'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">prev</span>
                       </div>
-                      {metric.yoyChange !== undefined && (
+                      {typeof metric.yoyChange === 'number' && (
                         <div className={cn(
                           "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-500 min-w-[65px]",
                           metric.yoyChange > 0 && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
@@ -206,7 +206,7 @@ export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCard
                           {metric.yoyChange > 0 && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
                           {metric.yoyChange < 0 && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
                           {metric.yoyChange === 0 && <Minus className="w-3.5 h-3.5 flex-shrink-0" />}
-                          <span>{metric.yoyChange > 0 ? '+' : ''}{Math.round(metric.yoyChange)}%</span>
+                          <span>{typeof metric.yoyChange === 'number' ? (metric.yoyChange > 0 ? '+' : '') + Math.round(metric.yoyChange) + '%' : 'N/A'}</span>
                         </div>
                       )}
                     </div>

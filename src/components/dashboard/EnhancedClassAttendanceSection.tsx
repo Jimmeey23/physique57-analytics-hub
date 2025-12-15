@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, BarChart3, Users, Target, Filter, MapPin, Building2, Star, TrendingUp, Calendar, Activity, Trophy } from 'lucide-react';
-import { useSessionsData, SessionData } from '@/hooks/useSessionsDataDemo';
+import { useSessionsData, SessionData } from '@/hooks/useSessionsData';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { EnhancedClassAttendanceFilterSection } from './EnhancedClassAttendanceFilterSection';
 import { SuperEnhancedMetricCards } from './SuperEnhancedMetricCards';

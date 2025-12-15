@@ -682,7 +682,7 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
                       </div>
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-500 tabular-nums">
-                          {metric.previousValue}
+                          {metric.previousValue ?? '—'}
                         </span>
                         <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-500">prev</span>
                       </div>
@@ -695,7 +695,7 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
                         {metric.change > 0 && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
                         {metric.change < 0 && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
                         {metric.change === 0 && <Minus className="w-3.5 h-3.5 flex-shrink-0" />}
-                        <span>{metric.change > 0 ? '+' : ''}{Math.round(metric.change)}%</span>
+                        <span>{typeof metric.change === 'number' ? (metric.change > 0 ? '+' : '') + Math.round(metric.change) + '%' : 'N/A'}</span>
                       </div>
                     </div>
                     
@@ -706,7 +706,7 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
                         ? "bg-white/50 group-hover:bg-slate-800/20 border-slate-200 group-hover:border-slate-700/50"
                         : "bg-slate-50/50 group-hover:bg-slate-800/10 border-slate-200 group-hover:border-slate-700/30"
                     )}>
-                      {metric.yoyChange !== undefined ? (
+                      {metric.yoyChange != null ? (
                         <>
                           <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-500">
                             Year over Year
@@ -726,7 +726,7 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
                             {metric.yoyChange > 0 && <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />}
                             {metric.yoyChange < 0 && <ArrowDownRight className="w-3.5 h-3.5 flex-shrink-0" />}
                             {metric.yoyChange === 0 && <Minus className="w-3.5 h-3.5 flex-shrink-0" />}
-                            <span>{metric.yoyChange > 0 ? '+' : ''}{Math.round(metric.yoyChange)}%</span>
+                            <span>{typeof metric.yoyChange === 'number' ? (metric.yoyChange > 0 ? '+' : '') + Math.round(metric.yoyChange) + '%' : 'N/A'}</span>
                           </div>
                         </>
                       ) : (

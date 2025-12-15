@@ -14,7 +14,7 @@ export const GlobalLoader: React.FC = () => {
       setVisible(true);
     } else {
       // allow last frame to reach 100% visually before fading out
-      t = setTimeout(() => setVisible(false), 200);
+      t = setTimeout(() => setVisible(false), 300);
     }
     return () => clearTimeout(t);
   }, [isLoading]);
@@ -48,7 +48,7 @@ export const GlobalLoader: React.FC = () => {
             opacity: 0,
           }}
           transition={{ 
-            duration: 0.5,
+            duration: 0.2,
             ease: [0.4, 0, 0.2, 1]
           }}
         >

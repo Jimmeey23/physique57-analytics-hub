@@ -29,10 +29,13 @@ interface GlobalLoadingState {
   getStepProgress: () => number;
 }
 
+let hideLoaderTimeoutId: NodeJS.Timeout | null = null;
+const MIN_LOADER_DISPLAY_TIME = 600; // Minimum time to show loader in milliseconds
+
 export const useGlobalLoading = create<GlobalLoadingState>()(
   subscribeWithSelector((set, get) => ({
     isLoading: false,
-    loadingMessage: 'Loading...',
+    loadingMessage: '...',
     progress: 0,
     loadingStartTime: null,
     steps: [],
@@ -40,14 +43,53 @@ export const useGlobalLoading = create<GlobalLoadingState>()(
     autoProgressEnabled: true,
     
     setLoading: (loading, message = 'Loading...') => {
-      set({ 
-        isLoading: loading, 
-        loadingMessage: message,
-        loadingStartTime: loading ? Date.now() : null,
-        progress: loading ? 0 : 100,
-        steps: loading ? [] : get().steps, // Clear steps when starting new load
-        currentStepId: null
-      });
+      // Clear any pending hide timeout
+      if (hideLoaderTimeoutId) {
+        clearTimeout(hideLoaderTimeoutId);
+        hideLoaderTimeoutId = null;
+      }
+
+      if (loading) {
+        // Show loader immediately
+        set({ 
+          isLoading: true, 
+          loadingMessage: message,
+          loadingStartTime: Date.now(),
+          progress: 0,
+          steps: [],
+          currentStepId: null
+        });
+      } else {
+        // When hiding, enforce minimum display time
+        const state = get();
+        if (state.isLoading && state.loadingStartTime) {
+          const elapsedTime = Date.now() - state.loadingStartTime;
+          const remainingTime = Math.max(0, MIN_LOADER_DISPLAY_TIME - elapsedTime);
+
+          if (remainingTime > 0) {
+            // Delay the actual hiding
+            hideLoaderTimeoutId = setTimeout(() => {
+              set({ 
+                isLoading: false,
+                progress: 100
+              });
+              hideLoaderTimeoutId = null;
+            }, remainingTime);
+          } else {
+            // Minimum time has passed, hide now
+            set({ 
+              isLoading: false,
+              progress: 100
+            });
+          }
+        } else {
+          // Not currently loading, hide immediately
+          set({ 
+            isLoading: false,
+            progress: 100
+          });
+        }
+      }
     },
     
     setProgress: (progress) => {
