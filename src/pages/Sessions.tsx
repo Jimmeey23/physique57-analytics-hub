@@ -23,7 +23,8 @@ const Sessions = () => {
     const locations = [
       { key: 'Kwality House, Kemps Corner', name: 'Kwality' },
       { key: 'Supreme HQ, Bandra', name: 'Supreme' },
-      { key: 'Kenkere House', name: 'Kenkere' }
+      { key: 'Kenkere House', name: 'Kenkere' },
+      { key: 'Pop-up', name: 'Pop-up' }
     ];
 
     return locations.map(location => {

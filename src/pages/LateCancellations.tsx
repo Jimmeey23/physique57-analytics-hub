@@ -56,15 +56,17 @@ const LateCancellations = () => {
     }
     
     const uniqueLocations = Array.from(new Set(dataToCheck.map(item => item?.location).filter(Boolean)));
-    return [
-      { id: 'all', name: 'All Locations' },
-      { id: 'kwality', name: 'Kwality House' },
-      { id: 'supreme', name: 'Supreme HQ' },
-      { id: 'kenkere', name: 'Kenkere House' }
-    ].filter(loc => loc.id === 'all' || uniqueLocations.some(ul => 
+      return [
+        { id: 'all', name: 'All Locations' },
+        { id: 'kwality', name: 'Kwality House' },
+        { id: 'supreme', name: 'Supreme HQ' },
+        { id: 'kenkere', name: 'Kenkere House' },
+        { id: 'popup', name: 'Pop-up' }
+      ].filter(loc => loc.id === 'all' || uniqueLocations.some(ul => 
       loc.id === 'kwality' ? ul.includes('Kwality') :
       loc.id === 'supreme' ? ul.includes('Supreme') :
-      loc.id === 'kenkere' ? ul.includes('Kenkere') : false
+      loc.id === 'kenkere' ? ul.includes('Kenkere') :
+      loc.id === 'popup' ? (ul.includes('Pop') || ul.includes('Pop-up') || ul.includes('Popup')) : false
     ));
   }, [lateCancellationsData, allCheckins]);
   
@@ -110,10 +112,12 @@ const LateCancellations = () => {
     // Location tab filter
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
-        const location = item?.location || '';
-        return activeLocation === 'kwality' ? location.includes('Kwality') :
-               activeLocation === 'supreme' ? location.includes('Supreme') :
-               activeLocation === 'kenkere' ? location.includes('Kenkere') : true;
+        const location = (item?.location || '').toString().toLowerCase();
+        if (activeLocation === 'kwality') return location.includes('kwality') || location.includes('kemps');
+        if (activeLocation === 'supreme') return location.includes('supreme') || location.includes('bandra');
+        if (activeLocation === 'kenkere') return location.includes('kenkere');
+        if (activeLocation === 'popup') return location.includes('pop') || location.includes('popup') || location.includes('pop-up');
+        return true;
       });
     }
     
@@ -251,10 +255,12 @@ const LateCancellations = () => {
     // Apply all filters except timeframe for charts
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
-        const location = item?.location || '';
-        return activeLocation === 'kwality' ? location.includes('Kwality') :
-               activeLocation === 'supreme' ? location.includes('Supreme') :
-               activeLocation === 'kenkere' ? location.includes('Kenkere') : true;
+        const location = (item?.location || '').toString().toLowerCase();
+        if (activeLocation === 'kwality') return location.includes('kwality') || location.includes('kemps');
+        if (activeLocation === 'supreme') return location.includes('supreme') || location.includes('bandra');
+        if (activeLocation === 'kenkere') return location.includes('kenkere');
+        if (activeLocation === 'popup') return location.includes('pop') || location.includes('popup') || location.includes('pop-up');
+        return true;
       });
     }
     

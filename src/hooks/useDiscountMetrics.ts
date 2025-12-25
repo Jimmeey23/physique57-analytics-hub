@@ -56,17 +56,6 @@ export function useDiscountMetrics(
   options?: Options
 ) {
   return useMemo(() => {
-    // Debug logging
-    console.log('useDiscountMetrics input:', {
-      dataLength: data?.length || 0,
-      historicalDataLength: historicalData?.length || 0,
-      dateRange: options?.dateRange,
-      sampleData: data?.slice(0, 2).map(d => ({
-        paymentValue: d.paymentValue,
-        discountAmount: d.discountAmount,
-        paymentDate: d.paymentDate
-      }))
-    });
 
     // Current period metrics come directly from `data` (which is already filtered)
     // Historical/previous period comes from `historicalData` filtered by previous month
@@ -99,12 +88,7 @@ export function useDiscountMetrics(
     const histBase = (historicalData && historicalData.length > 0) ? historicalData : [];
     const previous = histBase.filter((it) => within(parseDate((it as any).paymentDate), prevStart, prevEnd));
     
-    console.log('useDiscountMetrics periods:', {
-      currentCount: current.length,
-      previousCount: previous.length,
-      prevStart: prevStart.toISOString(),
-      prevEnd: prevEnd.toISOString()
-    });
+
 
     // Compute metrics for a list
     // Note: totalRevenue here = paymentValue (net revenue after discount, before VAT)
@@ -143,12 +127,7 @@ export function useDiscountMetrics(
     const cur = totals(current);
     const prev = totals(previous);
     
-    console.log('useDiscountMetrics computed:', {
-      curTotalDiscounts: cur.totalDiscounts,
-      curTotalRevenue: cur.totalRevenue,
-      curTransactions: cur.totalTransactions,
-      prevTotalDiscounts: prev.totalDiscounts
-    });
+
 
     const m: DiscountMetric[] = [
       {

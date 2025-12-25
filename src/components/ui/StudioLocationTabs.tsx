@@ -86,6 +86,17 @@ const defaultLocations: StudioLocation[] = [
       ],
     },
   },
+  {
+    id: 'popup',
+    name: 'Pop-up',
+    location: 'Pop-up',
+    media: {
+      type: 'image',
+      sources: [
+        '/images/B1.jpg'
+      ],
+    },
+  },
 ];
 
 export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({

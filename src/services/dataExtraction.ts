@@ -123,62 +123,62 @@ export interface ExtractedData {
 export const PAGE_REGISTRY = {
   'Executive Summary': {
     path: '/',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useSalesData', 'useCheckinsData', 'useNewClientData'],
   },
   'Sales Analytics': {
     path: '/sales-analytics',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useSalesData', 'useDiscountsData'],
     tabs: ['Overview', 'Products', 'Trends', 'Discounts'],
   },
   'Client Retention': {
     path: '/client-retention',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useNewClientData', 'useCheckinsData'],
     tabs: ['New Clients', 'Retention Metrics', 'Conversion Funnel'],
   },
   'Trainer Performance': {
     path: '/trainer-performance',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['usePayrollData', 'useCheckinsData'],
   },
   'Class Attendance': {
     path: '/class-attendance',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useCheckinsData', 'useSessionsData'],
     tabs: ['Attendance Overview', 'Class Formats', 'Time Analysis'],
   },
   'Class Formats Comparison': {
     path: '/class-formats-comparison',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useCheckinsData', 'useSessionsData'],
   },
   'Discounts & Promotions': {
     path: '/discounts-promotions',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useDiscountsData', 'useSalesData'],
     tabs: ['Discount Analysis', 'Product Performance', 'Customer Segments'],
   },
   'Sessions': {
     path: '/sessions',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useFilteredSessionsData'],
     tabs: ['All Sessions', 'By Trainer', 'By Class Type'],
   },
   'Expiration Analytics': {
     path: '/expiration-analytics',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useExpirationsData'],
   },
   'Late Cancellations': {
     path: '/late-cancellations',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useLateCancellationsData'],
   },
   'Funnel & Leads': {
     path: '/funnel-leads',
-    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+    locations: ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
     dataHooks: ['useLeadsData'],
   },
 };
@@ -323,20 +323,20 @@ function formatMetricTitle(key: string): string {
  * Filter data by location
  */
 export function filterByLocation(data: any[], location: string): any[] {
-  if (!location || location === 'All Locations') {
+  if (!location || /^\s*all locations\s*$/i.test(location)) {
     return data;
   }
-  
+
+  const normalize = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const target = normalize(location);
+
   return data.filter(item => {
     const itemLocation = item.calculatedLocation || item.location || '';
-    
-    // Handle Kenkere House special case (with or without Bengaluru)
-    if (location.includes('Kenkere')) {
-      return itemLocation.includes('Kenkere');
-    }
-    
-    // Exact match for other locations
-    return itemLocation === location;
+    const itemNorm = normalize(itemLocation);
+
+    // Match by inclusion of normalized tokens (handles Pop-up, Pop up, Popup, Kenkere/Bengaluru variants)
+    if (!itemNorm) return false;
+    return itemNorm.includes(target) || target.includes(itemNorm) || (target === 'kenkere' && itemNorm.includes('kenkere'));
   });
 }
 

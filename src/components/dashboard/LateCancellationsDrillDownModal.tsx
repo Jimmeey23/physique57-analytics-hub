@@ -38,17 +38,8 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
   const safeRawData = rawData;
   const title = data?.title || data?.name || 'Late Cancellations Detail';
   
-  console.log('Modal received data structure:', { data, safeRawData });
-  console.log('Raw data length:', safeRawData.length);
-  if (safeRawData.length > 0) {
-    console.log('Sample data item:', safeRawData[0]);
-    console.log('Data field keys:', Object.keys(safeRawData[0] || {}));
-  }
-  
   // Calculate metrics from raw data
   const metrics = useMemo(() => {
-    console.log('Modal data received:', data); // Debug log
-    console.log('Safe raw data:', safeRawData); // Debug log
     
     if (safeRawData.length === 0) {
       return {

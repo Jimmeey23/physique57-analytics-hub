@@ -23,7 +23,8 @@ const locations = [
   { id: 'all', name: 'All Locations' },
   { id: 'kwality', name: 'Kwality House, Kemps Corner' },
   { id: 'supreme', name: 'Supreme HQ, Bandra' },
-  { id: 'kenkere', name: 'Kenkere House' }
+  { id: 'kenkere', name: 'Kenkere House' },
+  { id: 'popup', name: 'Pop-up' }
 ];
 
 const getPreviousMonthDateRange = () => {
@@ -175,12 +176,12 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     // Apply location filter
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
-        const locationMatch = activeLocation === 'kwality' 
-          ? item.calculatedLocation === 'Kwality House, Kemps Corner' 
-          : activeLocation === 'supreme' 
-          ? item.calculatedLocation === 'Supreme HQ, Bandra' 
-          : item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House';
-        return locationMatch;
+        const loc = (item.calculatedLocation || '').toString().toLowerCase();
+        if (activeLocation === 'kwality') return loc.includes('kwality') || loc.includes('kemps');
+        if (activeLocation === 'supreme') return loc.includes('supreme') || loc.includes('bandra');
+        if (activeLocation === 'kenkere') return loc.includes('kenkere') || loc.includes('bengaluru');
+        if (activeLocation === 'popup') return loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up');
+        return false;
       });
     }
 

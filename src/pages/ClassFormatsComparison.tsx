@@ -27,7 +27,8 @@ const locations = [
   { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
   { id: 'kwality', name: 'Kwality House, Kemps Corner', fullName: 'Kwality House, Kemps Corner' },
   { id: 'supreme', name: 'Supreme HQ, Bandra', fullName: 'Supreme HQ, Bandra' },
-  { id: 'kenkere', name: 'Kenkere House, Bengaluru', fullName: 'Kenkere House' }
+  { id: 'kenkere', name: 'Kenkere House, Bengaluru', fullName: 'Kenkere House' },
+  { id: 'popup', name: 'Pop-up', fullName: 'Pop-up' }
 ];
 
 const ClassFormatsComparison: React.FC = () => {
@@ -65,6 +66,7 @@ const ClassFormatsComparison: React.FC = () => {
         if (activeLocation === 'kwality') return sl.includes('kwality');
         if (activeLocation === 'supreme') return sl.includes('supreme');
         if (activeLocation === 'kenkere') return sl.includes('kenkere');
+        if (activeLocation === 'popup') return sl.includes('pop') || sl.includes('popup') || sl.includes('pop-up');
         return true;
       });
     }, [filteredSessionsByFilters, activeLocation]);
@@ -88,6 +90,7 @@ const ClassFormatsComparison: React.FC = () => {
         if (activeLocation === 'kwality') return rl.includes('kwality');
         if (activeLocation === 'supreme') return rl.includes('supreme');
         if (activeLocation === 'kenkere') return rl.includes('kenkere');
+        if (activeLocation === 'popup') return rl.includes('pop') || rl.includes('popup') || rl.includes('pop-up');
         return true;
       });
       return byLoc;
@@ -148,18 +151,9 @@ const ClassFormatsComparison: React.FC = () => {
     const filteredAll = useFilteredSessionsData(sessions || []);
     
     React.useEffect(() => {
-      console.warn('%c🎯 ClassFormatsBody - Data flow', 'color: purple; font-weight: bold; font-size: 14px');
-      console.log({
-        sessionsReceived: sessions?.length || 0,
-        filteredAllCount: filteredAll?.length || 0,
-        allCheckinsCount: allCheckins?.length || 0,
-        activeLocation,
-        sampleSession: sessions?.[0],
-        filterKeys: filters ? Object.keys(filters) : 'no filters'
-      });
       if (sessions && sessions.length > 0) {
         const uniqueClasses = new Set(sessions.map(s => s?.cleanedClass || s?.classType));
-        console.log('  Unique classes found:', Array.from(uniqueClasses));
+
       }
     }, [sessions, filteredAll, allCheckins, activeLocation, filters]);
     
@@ -184,6 +178,7 @@ const ClassFormatsComparison: React.FC = () => {
         if (activeLocation === 'kwality') return sl.includes('kwality');
         if (activeLocation === 'supreme') return sl.includes('supreme');
         if (activeLocation === 'kenkere') return sl.includes('kenkere');
+        if (activeLocation === 'popup') return sl.includes('pop') || sl.includes('popup') || sl.includes('pop-up');
         return s.location === loc.fullName;
       });
     }, [filteredAll, activeLocation]);
@@ -314,7 +309,8 @@ const ClassFormatsComparison: React.FC = () => {
           const loc = String(c.location || '').toLowerCase();
           if (activeLocation === 'kwality' && !loc.includes('kwality')) return false;
           if (activeLocation === 'supreme' && !loc.includes('supreme')) return false;
-          if (activeLocation === 'kenkere') return loc.includes('kenkere');
+          if (activeLocation === 'kenkere' && !loc.includes('kenkere')) return false;
+          if (activeLocation === 'popup' && !loc.includes('pop') && !loc.includes('popup') && !loc.includes('pop-up')) return false;
           const cls = c.cleanedClass || c['Cleaned Class'];
           const t = c.teacherName || c['Teacher Name'];
           const trainerOk = trainerName ? (t === trainerName) : true;
@@ -346,6 +342,7 @@ const ClassFormatsComparison: React.FC = () => {
         if (activeLocation === 'kwality' && !loc.includes('kwality')) return false;
         if (activeLocation === 'supreme' && !loc.includes('supreme')) return false;
         if (activeLocation === 'kenkere' && !loc.includes('kenkere')) return false;
+        if (activeLocation === 'popup' && !loc.includes('pop') && !loc.includes('popup') && !loc.includes('pop-up')) return false;
         // match class and trainer broadly
         const cls = c.cleanedClass || c['Cleaned Class'];
         const t = c.teacherName || c['Teacher Name'];
@@ -398,6 +395,7 @@ const ClassFormatsComparison: React.FC = () => {
               if (location.id === 'kwality') return sl.includes('kwality');
               if (location.id === 'supreme') return sl.includes('supreme');
               if (location.id === 'kenkere') return sl.includes('kenkere');
+              if (location.id === 'popup') return sl.includes('pop') || sl.includes('popup') || sl.includes('pop-up');
               return false;
             });
 
@@ -407,17 +405,13 @@ const ClassFormatsComparison: React.FC = () => {
               if (location.id === 'kwality') return loc.includes('kwality');
               if (location.id === 'supreme') return loc.includes('supreme');
               if (location.id === 'kenkere') return loc.includes('kenkere');
+              if (location.id === 'popup') return loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up');
               return false;
             });
 
             if (activeLocation === location.id) {
-              console.warn('%c📍 ClassFormatsComparison - Location: ' + location.id + ' | Data count: ' + (locationFilteredData?.length || 0), 'color: green; font-weight: bold; font-size: 14px');
-              console.table({
-                location: location.id,
-                dataCount: locationFilteredData?.length || 0,
-                checkinsCount: locationFilteredCheckins?.length || 0,
-                sampleData: locationFilteredData?.[0]
-              });
+
+
             }
 
             return (

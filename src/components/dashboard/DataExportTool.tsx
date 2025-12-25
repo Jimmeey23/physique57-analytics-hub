@@ -46,14 +46,14 @@ export const DataExportTool: React.FC<DataExportToolProps> = ({ dataSources }) =
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
   const [selectedPages, setSelectedPages] = useState<string[]>(Object.keys(PAGE_REGISTRY));
-  const [selectedLocations, setSelectedLocations] = useState<string[]>(['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru']);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up']);
   const [includeTables, setIncludeTables] = useState(true);
   const [includeMetrics, setIncludeMetrics] = useState(true);
   const [previewData, setPreviewData] = useState<ExtractedData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const allPages = Object.keys(PAGE_REGISTRY);
-  const allLocations = ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'];
+  const allLocations = ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'];
 
   const handlePageToggle = (page: string) => {
     setSelectedPages(prev => 

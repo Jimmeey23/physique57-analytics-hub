@@ -38,6 +38,10 @@ const locations = [{
   id: 'kenkere',
   name: 'Kenkere House',
   fullName: 'Kenkere House'
+}, {
+  id: 'popup',
+  name: 'Pop-up',
+  fullName: 'Pop-up'
 }];
 
 export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProps> = ({ data }) => {
@@ -68,13 +72,15 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
     };
 
     data?.forEach(item => {
-      const location = item.homeLocation || '';
+      const location = (item.homeLocation || '').toString();
       if (location.includes('Kwality') || location.includes('Kemps Corner')) {
         counts.kwality++;
       } else if (location.includes('Supreme') || location.includes('Bandra')) {
         counts.supreme++;
       } else if (location.includes('Kenkere') || location.includes('Bengaluru')) {
         counts.kenkere++;
+      } else if (location.toLowerCase().includes('pop') || location.toLowerCase().includes('popup') || location.toLowerCase().includes('pop-up')) {
+        counts.popup++;
       }
     });
 
@@ -89,12 +95,12 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
     // Apply location filter from activeLocation (location tabs)
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
-        const locationMatch = activeLocation === 'kwality' 
-          ? item.homeLocation?.includes('Kwality') || item.homeLocation?.includes('Kemps Corner')
-          : activeLocation === 'supreme' 
-          ? item.homeLocation?.includes('Supreme') || item.homeLocation?.includes('Bandra')
-          : item.homeLocation?.includes('Kenkere') || item.homeLocation?.includes('Bengaluru');
-        return locationMatch;
+        const loc = (item.homeLocation || '').toString().toLowerCase();
+        if (activeLocation === 'kwality') return loc.includes('kwality') || loc.includes('kemps');
+        if (activeLocation === 'supreme') return loc.includes('supreme') || loc.includes('bandra');
+        if (activeLocation === 'kenkere') return loc.includes('kenkere') || loc.includes('bengaluru');
+        if (activeLocation === 'popup') return loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up');
+        return false;
       });
       console.log(`📍 LOCATION FILTER: Reduced to ${filtered.length} records for location: ${activeLocation}`);
     }

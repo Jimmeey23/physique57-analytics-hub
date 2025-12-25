@@ -102,7 +102,7 @@ export const useLocationReportData = () => {
     };
   }, []);
   
-  console.log('Location Report Date Range (Last 3 Months):', previousMonthRange);
+
   
   // Fetch all required data
   const { data: salesData = [], loading: salesLoading } = useSalesData();
@@ -206,13 +206,13 @@ export const useLocationReportData = () => {
         leads: leadsData.length
       },
       sampleSalesData: salesData.slice(0, 3).map(s => ({
-        date: s.date || s.timestamp || s.createdAt,
-        location: s.location || s.calculatedLocation || s.studio,
-        amount: s.totalPaid
+        date: s.paymentDate,
+        location: s.calculatedLocation,
+        amount: s.paymentValue
       })),
       sampleSessionsData: sessionsData.slice(0, 3).map(s => ({
-        date: s.date || s.timestamp || s.createdAt,
-        location: s.location || s.calculatedLocation || s.studio,
+        date: s.date,
+        location: s.location,
         sessionName: s.sessionName
       }))
     });
@@ -317,13 +317,15 @@ export const useLocationReportData = () => {
       );
 
       return {
-        highlights: result.keyInsights?.slice(0, 3) || [],
-        concerns: result.trends?.filter(trend => 
-          trend.toLowerCase().includes('concern') || 
-          trend.toLowerCase().includes('low') || 
-          trend.toLowerCase().includes('decline')
-        ) || [],
-        recommendations: result.recommendations?.slice(0, 3) || []
+        highlights: Array.isArray(result) ? result.slice(0, 3) : [],
+        concerns: Array.isArray(result) ? result.filter(trend => 
+          typeof trend === 'string' && (
+            trend.toLowerCase().includes('concern') || 
+            trend.toLowerCase().includes('low') || 
+            trend.toLowerCase().includes('decline')
+          )
+        ).slice(0, 3) : [],
+        recommendations: Array.isArray(result) ? result.slice(0, 3) : []
       };
     } catch (error) {
       console.error('Error generating AI insights:', error);
@@ -382,20 +384,20 @@ export const useLocationReportData = () => {
     const { sales, sessions, payroll, newClients, leads, discounts, lateCancellations, expirations } = filteredData;
 
     // Revenue & Sales Performance
-    const totalRevenue = sales.reduce((sum, item) => sum + (parseFloat(item.totalPaid) || 0), 0);
-    const vatAmount = sales.reduce((sum, item) => sum + (parseFloat(item.vatAmount) || 0), 0);
+    const totalRevenue = sales.reduce((sum, item) => sum + (parseFloat(String(item.paymentValue)) || 0), 0);
+    const vatAmount = sales.reduce((sum, item) => sum + (parseFloat(String(item.paymentVAT)) || 0), 0);
     const netRevenue = totalRevenue - vatAmount;
     const totalTransactions = sales.length;
-    const uniqueMembers = new Set(sales.map(item => item.memberId || item.customerId)).size;
+    const uniqueMembers = new Set(sales.map(item => item.memberId)).size;
     const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
     const avgSpendPerMember = uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
-    const totalDiscounts = discounts.reduce((sum, item) => sum + (parseFloat(item.discountAmount) || 0), 0);
+    const totalDiscounts = discounts.reduce((sum, item) => sum + (parseFloat(String(item.discountAmount)) || 0), 0);
     const discountRate = totalRevenue > 0 ? (totalDiscounts / totalRevenue) * 100 : 0;
 
     // Session & Class Performance
     const totalSessions = sessions.length;
-    const totalCheckIns = sessions.reduce((sum, item) => sum + (parseInt(item.checkedInCount) || 0), 0);
-    const totalCapacity = sessions.reduce((sum, item) => sum + (parseInt(item.capacity) || 0), 0);
+    const totalCheckIns = sessions.reduce((sum, item) => sum + (parseInt(String(item.checkedInCount)) || 0), 0);
+    const totalCapacity = sessions.reduce((sum, item) => sum + (parseInt(String(item.capacity)) || 0), 0);
     const fillRate = totalCapacity > 0 ? (totalCheckIns / totalCapacity) * 100 : 0;
     const capacityUtilization = fillRate;
     
@@ -415,26 +417,26 @@ export const useLocationReportData = () => {
 
     const lateCancellationCount = lateCancellations.length;
     const lateCancellationRevenueLoss = lateCancellations.reduce((sum, item) => 
-      sum + (parseFloat(item.revenueImpact) || 0), 0
+      sum + (parseFloat(String(item.revenueImpact)) || 0), 0
     );
 
     // Trainer Performance
     const trainerStats = payroll.reduce((acc, item) => {
-      const trainerId = item.trainerId || item.trainerName;
+      const trainerId = item.teacherId;
       if (!trainerId) return acc;
       
       if (!acc[trainerId]) {
         acc[trainerId] = {
-          name: item.trainerName || trainerId,
+          name: item.teacherName,
           sessions: 0,
           revenue: 0,
           customersServed: 0
         };
       }
       
-      acc[trainerId].sessions += 1;
-      acc[trainerId].revenue += parseFloat(item.revenueGenerated) || 0;
-      acc[trainerId].customersServed += parseInt(item.customersServed) || 0;
+      acc[trainerId].sessions += item.cycleSessions + item.barreSessions + (item.strengthSessions || 0);
+      acc[trainerId].revenue += item.cyclePaid + item.barrePaid + (item.strengthPaid || 0);
+      acc[trainerId].customersServed += item.cycleCustomers + item.barreCustomers + (item.strengthCustomers || 0);
       
       return acc;
     }, {} as Record<string, any>);
@@ -456,7 +458,7 @@ export const useLocationReportData = () => {
     const conversionRate = trialClients > 0 ? (convertedClients / trialClients) * 100 : 0;
     
     const averageLTV = newClients.reduce((sum, item) => 
-      sum + (parseFloat(item.estimatedLTV) || 0), 0
+      sum + (parseFloat(String(item.ltv)) || 0), 0
     ) / (newClients.length || 1);
     
     const churnedMembers = expirations.length;
@@ -471,10 +473,10 @@ export const useLocationReportData = () => {
     
     // Calculate average conversion days
     const conversionTimes = leads.filter(lead => 
-      lead.convertedDate && lead.createdAt
+      lead.convertedToCustomerAt && lead.createdAt
     ).map(lead => {
       const created = parseDate(lead.createdAt);
-      const converted = parseDate(lead.convertedDate);
+      const converted = parseDate(lead.convertedToCustomerAt);
       return created && converted ? Math.abs(converted.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) : 0;
     });
     const avgConversionDays = conversionTimes.length > 0 ? 
@@ -482,7 +484,7 @@ export const useLocationReportData = () => {
 
     // Lead sources breakdown
     const leadsBySource = leads.reduce((acc, lead) => {
-      const source = lead.source || lead.leadSource || 'Unknown';
+      const source = lead.source || 'Unknown';
       acc[source] = (acc[source] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);

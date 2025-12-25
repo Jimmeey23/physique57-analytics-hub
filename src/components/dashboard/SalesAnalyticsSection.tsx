@@ -58,6 +58,10 @@ const locations = [{
   id: 'kenkere',
   name: 'Kenkere House, Bengaluru',
   fullName: 'Kenkere House, Bengaluru'
+}, {
+  id: 'popup',
+  name: 'Pop-up',
+  fullName: 'Pop-up'
 }];
 
 export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ data, onReady }) => {
@@ -112,11 +116,16 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     // Apply location filter
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
-        const locationMatch = activeLocation === 'kwality' 
-          ? item.calculatedLocation === 'Kwality House, Kemps Corner' 
-          : activeLocation === 'supreme' 
-          ? item.calculatedLocation === 'Supreme HQ, Bandra' 
-          : item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House';
+        const loc = (item.calculatedLocation || '').toString().toLowerCase();
+        const locationMatch = activeLocation === 'kwality'
+          ? loc.includes('kwality') || loc.includes('kemps')
+          : activeLocation === 'supreme'
+          ? loc.includes('supreme') || loc.includes('bandra')
+          : activeLocation === 'kenkere'
+          ? loc.includes('kenkere') || loc.includes('bengaluru')
+          : activeLocation === 'popup'
+          ? loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up')
+          : false;
         return locationMatch;
       });
     }
@@ -223,10 +232,11 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     if (activeLocation !== 'all') {
       filtered = filtered.filter(item => {
         const loc = (item.calculatedLocation || '').toString().toLowerCase();
-        if (activeLocation === 'kwality') return loc.includes('kwality');
-        if (activeLocation === 'supreme') return loc.includes('supreme');
-        // kenkere
-        return loc.includes('kenkere') || loc.includes('bengaluru');
+        if (activeLocation === 'kwality') return loc.includes('kwality') || loc.includes('kemps');
+        if (activeLocation === 'supreme') return loc.includes('supreme') || loc.includes('bandra');
+        if (activeLocation === 'kenkere') return loc.includes('kenkere') || loc.includes('bengaluru');
+        if (activeLocation === 'popup') return loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up');
+        return false;
       });
     }
     return filtered;
@@ -243,11 +253,16 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     
     if (activeLocation !== 'all') {
       baseData = data.filter(item => {
-        const locationMatch = activeLocation === 'kwality' 
-          ? item.calculatedLocation === 'Kwality House, Kemps Corner' 
-          : activeLocation === 'supreme' 
-          ? item.calculatedLocation === 'Supreme HQ, Bandra' 
-          : item.calculatedLocation?.includes('Kenkere') || item.calculatedLocation === 'Kenkere House';
+        const loc = (item.calculatedLocation || '').toString().toLowerCase();
+        const locationMatch = activeLocation === 'kwality'
+          ? loc.includes('kwality') || loc.includes('kemps')
+          : activeLocation === 'supreme'
+          ? loc.includes('supreme') || loc.includes('bandra')
+          : activeLocation === 'kenkere'
+          ? loc.includes('kenkere') || loc.includes('bengaluru')
+          : activeLocation === 'popup'
+          ? loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up')
+          : false;
         return locationMatch;
       });
       console.log(`📍 LOCATION FILTER: Reduced to ${baseData.length} records for location: ${activeLocation}`);

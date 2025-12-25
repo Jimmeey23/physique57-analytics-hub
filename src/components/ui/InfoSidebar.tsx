@@ -12,10 +12,18 @@ import {
   Copy, 
   Download, 
   Maximize2,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Brain,
+  Tabs
 } from 'lucide-react';
 import { Button } from './button';
 import { Textarea } from './textarea';
+import { Tabs as TabsComponent, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SummaryDisplay } from './SummaryDisplay';
+import { summaryManager } from '@/services/summaryManager';
+import { useDataContext } from '@/hooks/useDataContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface InfoPopoverProps {
   context: string;
@@ -65,6 +73,16 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   const [iframeKey, setIframeKey] = useState(0); // Force iframe refresh
   const [iframeOk, setIframeOk] = useState<boolean | null>(null); // null = unknown, true = ok, false = not ok
   const [iframeHtmlFallback, setIframeHtmlFallback] = useState<string | null>(null);
+  
+  // AI Summary states
+  const [activeTab, setActiveTab] = useState<'content' | 'summary'>('content');
+  const [aiSummary, setAiSummary] = useState<any>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  
+  // Get contextual data for AI analysis
+  const { data: contextData, activeFilters, dateRange } = useDataContext(context, locationId);
+  const { toast } = useToast();
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -169,6 +187,78 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
       .replace(/\*(.*?)\*/gim, '<em>$1</em>')
       .replace(/^\* (.*$)/gim, '<li class="ml-4">• $1</li>')
       .replace(/\n/gim, '<br/>');
+  };
+
+  // AI Summary handlers
+  const handleGenerateSummary = async () => {
+    if (summaryLoading) return;
+    
+    setSummaryLoading(true);
+    setSummaryError(null);
+    
+    try {
+      // Switch to summary tab
+      setActiveTab('summary');
+      
+      // Use fallback data if contextData is empty
+      const dataToAnalyze = contextData && contextData.length > 0 
+        ? contextData 
+        : [{
+            context: context,
+            location: locationId,
+            timestamp: new Date().toISOString(),
+            placeholder: 'Sample analytics data for ' + context
+          }];
+      
+      const result = await summaryManager.generateSummary({
+        context,
+        locationId,
+        data: dataToAnalyze,
+        tableName: context.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        activeFilters,
+        dateRange,
+        forceRegenerate: false
+      });
+      
+      if (result.success && result.summary) {
+        setAiSummary(result.summary);
+        toast({
+          title: "AI Summary Generated",
+          description: result.fromCache ? "Retrieved from cache" : "Generated new insights",
+        });
+      } else {
+        setSummaryError(result.error || 'Failed to generate summary');
+        toast({
+          title: "Summary Generation Failed",
+          description: result.error || 'Unknown error occurred',
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Summary generation error:', error);
+      setSummaryError(error.message || 'Failed to generate summary');
+      toast({
+        title: "Summary Generation Failed",
+        description: error.message || 'Unknown error occurred',
+        variant: "destructive",
+      });
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+  
+  const handleRegenerateSummary = () => {
+    // Force regeneration
+    handleGenerateSummary();
+  };
+  
+  const handleDeleteSummary = () => {
+    setAiSummary(null);
+    setSummaryError(null);
+    toast({
+      title: "Summary Cleared",
+      description: "AI summary has been removed",
+    });
   };
 
   // Build iframe URL: prefer explicit prop, otherwise map to existing HTML files
@@ -278,6 +368,20 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
           <Button
             size="sm"
             variant="ghost"
+            onClick={handleGenerateSummary}
+            className="h-7 w-7 p-0 text-purple-600 hover:text-purple-700"
+            title="Generate AI Summary"
+            disabled={summaryLoading}
+          >
+            {summaryLoading ? (
+              <RefreshCw className="h-3 w-3 animate-spin" />
+            ) : (
+              <Brain className="h-3 w-3" />
+            )}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={handleCopy}
             className="h-7 w-7 p-0"
             title="Copy content"
@@ -332,90 +436,149 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
         </div>
       </div>
 
-      {/* Content Area */}
+      {/* Content Area with Tabs */}
       <div className="flex-1 overflow-hidden">
-        {isEditing ? (
-          <div className="h-full flex flex-col p-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm text-gray-600">Editing Mode</span>
-              <Button size="sm" onClick={handleSave} className="flex items-center space-x-1">
-                <Save className="h-3 w-3" />
-                <span>Save</span>
-              </Button>
-            </div>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="flex-1 resize-none font-mono text-sm"
-              placeholder="Enter your content here... (Supports basic Markdown)"
-            />
-          </div>
-        ) : (
-          <div className="h-full">
-            {previewMode ? (
-              <div className="p-4 prose max-w-none h-full overflow-auto">
-                <div dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(content || 'No content yet. Click the edit button to add content.')
-                }} />
+        <TabsComponent value={activeTab} onValueChange={(value) => setActiveTab(value as 'content' | 'summary')} className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 mx-4 mt-2">
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Content
+            </TabsTrigger>
+            <TabsTrigger value="summary" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Summary
+              {aiSummary && <div className="w-2 h-2 bg-green-500 rounded-full" />}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="content" className="flex-1 overflow-hidden mt-2">
+            {isEditing ? (
+              <div className="h-full flex flex-col p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm text-gray-600">Editing Mode</span>
+                  <Button size="sm" onClick={handleSave} className="flex items-center space-x-1">
+                    <Save className="h-3 w-3" />
+                    <span>Save</span>
+                  </Button>
+                </div>
+                <Textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="flex-1 resize-none font-mono text-sm"
+                  placeholder="Enter your content here... (Supports basic Markdown)"
+                />
               </div>
             ) : (
               <div className="h-full">
-                {iframeOk === null ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-sm text-slate-500">Checking content...</div>
+                {previewMode ? (
+                  <div className="p-4 prose max-w-none h-full overflow-auto">
+                    <div dangerouslySetInnerHTML={{
+                      __html: renderMarkdown(content || 'No content yet. Click the edit button to add content.')
+                    }} />
                   </div>
-                ) : iframeOk === true ? (
-                  <iframe
-                    key={`iframe-sidebar-${iframeKey}`}
-                    src={src}
-                    className="w-full h-full border-0"
-                    title={`Info for ${context} - ${locationId}`}
-                    loading="eager"
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
-                    allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    style={{
-                      border: 'none',
-                      overflow: 'hidden',
-                      width: '100%',
-                      height: '100%',
-                      display: 'block'
-                    }}
-                    onLoad={() => {
-                      setIframeError(false);
-                    }}
-                    onError={() => {
-                      console.error(`Iframe failed to load: ${src}`);
-                      setIframeError(true);
-                      setIframeOk(false);
-                    }}
-                  />
                 ) : (
-                  // iframe failed the preflight or fetch; render inline HTML fallback if available
-                  iframeHtmlFallback ? (
-                    <div className="p-4 h-full overflow-auto" dangerouslySetInnerHTML={{ __html: iframeHtmlFallback }} />
-                  ) : (
-                    <div className="flex items-center justify-center h-full p-4">
-                      <div className="text-center">
-                        <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
-                        <div className="text-gray-600 text-sm mb-4">Unable to load: {src.split('?')[0]}</div>
-                        <div className="flex gap-2 justify-center">
-                          <a href={src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
-                          <button
-                            onClick={() => setIsEditing(true)}
-                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-                          >
-                            Create Content
-                          </button>
-                        </div>
+                  <div className="h-full">
+                    {iframeOk === null ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-sm text-slate-500">Checking content...</div>
                       </div>
-                    </div>
-                  )
+                    ) : iframeOk === true ? (
+                      <iframe
+                        key={`iframe-sidebar-${iframeKey}`}
+                        src={src}
+                        className="w-full h-full border-0"
+                        title={`Info for ${context} - ${locationId}`}
+                        loading="eager"
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
+                        allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        style={{
+                          border: 'none',
+                          overflow: 'hidden',
+                          width: '100%',
+                          height: '100%',
+                          display: 'block'
+                        }}
+                        onLoad={() => {
+                          setIframeError(false);
+                        }}
+                        onError={() => {
+                          console.error(`Iframe failed to load: ${src}`);
+                          setIframeError(true);
+                          setIframeOk(false);
+                        }}
+                      />
+                    ) : (
+                      // iframe failed the preflight or fetch; render inline HTML fallback if available
+                      iframeHtmlFallback ? (
+                        <div className="p-4 h-full overflow-auto" dangerouslySetInnerHTML={{ __html: iframeHtmlFallback }} />
+                      ) : (
+                        <div className="flex items-center justify-center h-full p-4">
+                          <div className="text-center">
+                            <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
+                            <div className="text-gray-600 text-sm mb-4">Unable to load: {src.split('?')[0]}</div>
+                            <div className="flex gap-2 justify-center">
+                              <a href={src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
+                              <button
+                                onClick={() => setIsEditing(true)}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                              >
+                                Create Content
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
                 )}
               </div>
             )}
-          </div>
-        )}
+          </TabsContent>
+          
+          <TabsContent value="summary" className="flex-1 overflow-hidden mt-2">
+            <div className="h-full overflow-auto p-4">
+              {summaryError ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="text-red-500 mb-4">{summaryError}</div>
+                  <Button onClick={handleGenerateSummary} disabled={summaryLoading}>
+                    {summaryLoading ? 'Generating...' : 'Try Again'}
+                  </Button>
+                </div>
+              ) : aiSummary ? (
+                <SummaryDisplay 
+                  summary={aiSummary}
+                  onRegenerate={handleRegenerateSummary}
+                  onDelete={handleDeleteSummary}
+                  showActions={true}
+                  variant="default"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="mb-6">
+                    <Sparkles className="h-16 w-16 text-purple-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">AI-Powered Insights</h3>
+                    <p className="text-sm text-gray-500 max-w-sm">
+                      Generate deep, contextual analysis of your {context.replace('-', ' ')} data with AI-powered insights and recommendations.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleGenerateSummary} 
+                    disabled={summaryLoading}
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+                  >
+                    {summaryLoading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Brain className="h-4 w-4" />
+                    )}
+                    {summaryLoading ? 'Generating Summary...' : 'Generate AI Summary'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </TabsComponent>
       </div>
 
       {/* Resize Handle */}

@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { getPreviousMonthDisplay } from '@/utils/dateUtils';
+import { ExecutivePDFExportButton } from './ExecutivePDFExportButton';
 
 interface ExecutiveFilterSectionProps {
   availableLocations: string[];
@@ -109,6 +110,13 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                     Clear
                   </Button>
                 )}
+                <ExecutivePDFExportButton
+                  dateRange={filters.dateRange ? { start: filters.dateRange.start, end: filters.dateRange.end } : undefined}
+                  location={selectedLocation}
+                  size="sm"
+                  variant="outline"
+                  showLabel={false}
+                />
                 {isOpen ? (
                   <ChevronUp className="w-5 h-5 text-gray-500" />
                 ) : (

@@ -51,7 +51,7 @@ export function EnhancedTrainerDrillDownModal({
 
   // Process individual session data
   const processedData = useMemo(() => {
-    console.log('🔍 Enhanced Modal trainerData:', trainerData);
+
     
     if (!trainerData || !trainerData.individualSessions) {
       return {

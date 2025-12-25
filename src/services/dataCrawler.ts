@@ -48,7 +48,7 @@ export async function crawlAllData(
     
     const {
       pages = Object.keys(PAGE_REGISTRY),
-      locations = ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'],
+      locations = ['All Locations', 'Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru', 'Pop-up'],
       includeTables = true,
       includeMetrics = true,
       maxRowsPerTable = 10000,

@@ -65,6 +65,15 @@ import { SalesInteractiveCharts } from './SalesInteractiveCharts';
 import { ProductCategoryMetricsTable } from './ProductCategoryMetricsTable';
 import { DiscountsAnimatedMetricCards } from './DiscountsAnimatedMetricCards';
 import { EnhancedClientMetricCards } from './EnhancedClientMetricCards';
+import { ExecutiveSalesSection } from './ExecutiveSalesSection';
+import { ExecutiveSessionsSection } from './ExecutiveSessionsSection';
+import { ExecutiveClientsSection } from './ExecutiveClientsSection';
+import { ExecutiveTrainersSection } from './ExecutiveTrainersSection';
+import { ExecutiveLeadsSection } from './ExecutiveLeadsSection';
+import { ExecutiveDiscountsSection } from './ExecutiveDiscountsSection';
+import { ExecutiveCancellationsSection } from './ExecutiveCancellationsSection';
+import { ExecutiveExpirationsSection } from './ExecutiveExpirationsSection';
+import { ExecutivePDFExportButton } from './ExecutivePDFExportButton';
 import InfoPopover from '@/components/ui/InfoSidebar';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useSalesData } from '@/hooks/useSalesData';
@@ -281,52 +290,13 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
     const expirationsBase = filterByLocation(expirationsData || [], 'homeLocation');
     const filteredExpirations = expirationsBase.filter((item) => withinDateRange(item.endDate || item.orderAt));
 
-    // Debug logging
-    console.log('Executive Dashboard Data Counts:', {
-      sales: filteredSales.length,
-      sessions: filteredSessions.length,
-      payroll: filteredPayroll.length,
-      newClients: filteredNewClients.length,
-      leads: filteredLeads.length,
-      discounts: filteredDiscounts.length,
-      lateCancellations: filteredLateCancellations.length,
-      expirations: filteredExpirations.length,
-      selectedLocation: filters.location
-    });
 
-      // Debug sessions data structure
-      if (filteredSessions.length > 0) {
-        console.log('Sample session data:', filteredSessions[0]);
-        console.log('Sessions fields check:', {
-          hasCleanedClass: 'cleanedClass' in filteredSessions[0],
-          hasCapacity: 'capacity' in filteredSessions[0],
-          hasCheckedInCount: 'checkedInCount' in filteredSessions[0],
-          hasTotalPaid: 'totalPaid' in filteredSessions[0]
-        });
-      }
 
-      // Debug new clients data structure
-      if (filteredNewClients.length > 0) {
-        console.log('Sample client data:', filteredNewClients[0]);
-        console.log('Client fields check:', {
-          hasFirstVisitDate: 'firstVisitDate' in filteredNewClients[0],
-          hasConversionStatus: 'conversionStatus' in filteredNewClients[0],
-          hasRetentionStatus: 'retentionStatus' in filteredNewClients[0],
-          hasLTV: 'ltv' in filteredNewClients[0],
-          hasIsNew: 'isNew' in filteredNewClients[0]
-        });
-      }
 
-    console.log('Executive Dashboard Data:', {
-      salesDataLength: salesData?.length || 0,
-      sessionsDataLength: sessionsData?.length || 0,
-      newClientsDataLength: newClientsData?.length || 0,
-      filteredSales: filteredSales.length,
-      filteredSessions: filteredSessions.length,
-      filteredNewClients: filteredNewClients.length,
-      selectedLocation: filters.location,
-      dateRange: filters.dateRange
-    });
+
+
+
+
 
     return {
       sales: filteredSales,
@@ -1422,6 +1392,52 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
           </div>
         )}
 
+        {/* Sales Table (Exportable) */}
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-slate-900">Product & Category Metrics</h2>
+          </div>
+
+          <ProductCategoryMetricsTable
+            data={previousMonthData.sales || []}
+            filters={filters}
+          />
+        </div>
+
+        {/* New Executive Sections - Complete Performance Overview */}
+        <div className="mt-12">
+          <div className="border-t-2 border-slate-200 pt-8 mb-8">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Complete Performance Overview</h2>
+            <p className="text-sm text-slate-600">All key metrics filtered by your selected date range and location</p>
+          </div>
+
+          <div className="space-y-5">
+            {/* Sales Section */}
+            <ExecutiveSalesSection onMetricClick={() => {}} />
+
+            {/* Sessions Section */}
+            <ExecutiveSessionsSection onMetricClick={() => {}} />
+
+            {/* Clients Section */}
+            <ExecutiveClientsSection onMetricClick={() => {}} />
+
+            {/* Trainers Section */}
+            <ExecutiveTrainersSection onMetricClick={() => {}} />
+
+            {/* Leads Section */}
+            <ExecutiveLeadsSection onMetricClick={() => {}} />
+
+            {/* Discounts Section */}
+            <ExecutiveDiscountsSection onMetricClick={() => {}} />
+
+            {/* Cancellations Section */}
+            <ExecutiveCancellationsSection onMetricClick={() => {}} />
+
+            {/* Expirations Section */}
+            <ExecutiveExpirationsSection onMetricClick={() => {}} />
+          </div>
+        </div>
+        
         {/* Sales Table (Exportable) */}
         <div className="mt-10">
           <div className="flex items-center justify-between mb-4">

@@ -102,6 +102,10 @@ export default function FunnelLeads() {
       id: 'kenkere',
       name: 'Kenkere House',
       fullName: 'Kenkere House'
+    }, {
+      id: 'popup',
+      name: 'Pop-up',
+      fullName: 'Pop-up'
     }];
     return predefinedLocations;
   }, []);
@@ -118,6 +122,8 @@ export default function FunnelLeads() {
           return leadCenter.includes('supreme') || leadCenter.includes('bandra');
         case 'kenkere':
           return leadCenter.includes('kenkere');
+        case 'popup':
+          return leadCenter.includes('pop') || leadCenter.includes('popup') || leadCenter.includes('pop-up');
         default:
           return true;
       }
@@ -181,7 +187,7 @@ export default function FunnelLeads() {
 
   // Calculate tab counts for location tabs using filtered data
   const tabCounts = useMemo(() => {
-    const counts = { all: 0, kwality: 0, supreme: 0, kenkere: 0 };
+  const counts = { all: 0, kwality: 0, supreme: 0, kenkere: 0, popup: 0 };
     
     const dataToCount = filteredData || allLeadsData || [];
     dataToCount.forEach(lead => {
@@ -193,6 +199,8 @@ export default function FunnelLeads() {
         counts.supreme++;
       } else if (leadCenter.includes('kenkere')) {
         counts.kenkere++;
+      } else if (leadCenter.includes('pop') || leadCenter.includes('popup') || leadCenter.includes('pop-up')) {
+        counts.popup++;
       }
     });
     

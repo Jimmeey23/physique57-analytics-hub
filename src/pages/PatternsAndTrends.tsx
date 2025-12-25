@@ -390,6 +390,7 @@ export const PatternsAndTrends = () => {
       
       if (item.sessionId) {
         monthData.allSessionIds.add(item.sessionId);
+        monthData.sessions.add(item.sessionId);
       }
       
       if (item.isLateCancelled) {
@@ -405,30 +406,6 @@ export const PatternsAndTrends = () => {
       monthData.capacity += item.capacity || 0;
       
       monthsSet.add(monthYear);
-    });
-
-  // Calculate sessions and empty sessions
-  fd.forEach(item => {
-      if (!item.sessionId) return;
-      
-      let groupKey = '';
-      if (groupBy === 'product') {
-        groupKey = item.cleanedProduct || 'Unknown';
-      } else if (groupBy === 'category') {
-        groupKey = item.cleanedCategory || 'Unknown';
-      } else if (groupBy === 'teacher') {
-        groupKey = item.teacherName || 'Unknown';
-      } else if (groupBy === 'location') {
-        groupKey = item.location || 'Unknown';
-      } else if (groupBy === 'memberStatus') {
-        groupKey = item.isNew || 'Unknown';
-      }
-      
-      const monthYear = `${item.month} ${item.year}`;
-      
-      if (grouped[groupKey] && grouped[groupKey][monthYear]) {
-        grouped[groupKey][monthYear].sessions.add(item.sessionId);
-      }
     });
 
   // Calculate revenue and units from sales data
@@ -1396,7 +1373,7 @@ export const PatternsAndTrends = () => {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
               {METRICS.map((metric) => {
                 const Icon = metric.icon;
                 const isSelected = selectedMetric === metric.id;
@@ -1406,24 +1383,36 @@ export const PatternsAndTrends = () => {
                     variant={isSelected ? 'default' : 'outline'}
                     onClick={() => setSelectedMetric(metric.id)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 h-auto py-3 px-2 text-center transition-all",
+                      "flex flex-col items-center gap-2 h-auto py-4 px-3 text-center transition-all duration-200 rounded-xl",
                       isSelected 
-                        ? `${metric.color.replace('text-', 'bg-')} hover:opacity-90 text-white border-transparent` 
-                        : `hover:${metric.color.replace('text-', 'bg-')}/10 ${metric.color} border-slate-200 hover:border-current`
+                        ? `bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white border-transparent shadow-lg shadow-indigo-200` 
+                        : `hover:bg-gradient-to-br hover:from-slate-50 hover:to-slate-100 ${metric.color} border-slate-200 hover:border-indigo-300 hover:shadow-md`
                     )}
                     title={metric.description}
                   >
                     <Icon className={cn("w-5 h-5", isSelected ? "text-white" : metric.color)} />
-                    <span className="text-xs font-medium leading-tight">{metric.label}</span>
+                    <span className={cn("text-xs font-semibold leading-tight", isSelected ? "text-white" : "text-slate-700")}>{metric.label}</span>
+                    {isSelected && (
+                      <div className="w-6 h-0.5 bg-white/60 rounded-full"></div>
+                    )}
                   </Button>
                 );
               })}
             </div>
-            <div className="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-              <p className="text-sm text-indigo-900">
-                <span className="font-semibold">Currently viewing: </span>
-                {METRICS.find(m => m.id === selectedMetric)?.description}
-              </p>
+            <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <Target className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-indigo-900 mb-1">
+                    Currently Analyzing: {METRICS.find(m => m.id === selectedMetric)?.label}
+                  </h4>
+                  <p className="text-sm text-indigo-800">
+                    {METRICS.find(m => m.id === selectedMetric)?.description}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1567,18 +1556,24 @@ export const PatternsAndTrends = () => {
 
                     return (
                       <React.Fragment key={productData.product}>
-                        <TableRow className="hover:bg-slate-50/50 transition-colors border-b">
-                          <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r">
-                            <div className="flex items-center gap-2">
+                        <TableRow className="hover:bg-gradient-to-r hover:from-slate-50/50 hover:to-indigo-50/30 transition-all duration-200 border-b border-slate-200/50">
+                          <TableCell className="font-semibold text-slate-800 sticky left-0 bg-gradient-to-r from-white to-slate-50/30 z-10 border-r border-slate-200">
+                            <div className="flex items-center gap-3 py-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => toggleProductExpansion(productData.product)}
-                                className="p-1 h-6 w-6"
+                                className="p-1 h-7 w-7 rounded-md hover:bg-indigo-100 transition-colors"
                               >
-                                {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                {isExpanded ? <ChevronDown className="w-3 h-3 text-indigo-600" /> : <ChevronRight className="w-3 h-3 text-indigo-600" />}
                               </Button>
-                              <span className="text-sm">{productData.product}</span>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-slate-800">{productData.product}</span>
+                                <span className="text-xs text-slate-500">{metricConfig?.format === 'currency' 
+                                  ? formatRevenue(metricTotal)
+                                  : formatNumber(metricTotal)} total
+                                </span>
+                              </div>
                             </div>
                           </TableCell>
                           {productData.monthlyBreakdown.map((monthData, index) => {
@@ -1593,17 +1588,31 @@ export const PatternsAndTrends = () => {
                             
                             return (
                               <TableCell key={monthData.month} className={cn(
-                                "text-center text-sm font-medium",
-                                metricConfig?.color || "text-slate-800"
+                                "text-center text-sm font-medium transition-colors hover:bg-slate-50/50 py-3",
+                                metricConfig?.color || "text-slate-800",
+                                value === 0 ? "text-slate-400" : "",
+                                value > 0 && metricConfig?.id === 'emptySessions' ? "text-red-600 bg-red-50/30" : ""
                               )}>
                                 <TooltipProvider>
                                   <Tooltip>
-                                    <TooltipTrigger className="cursor-help">{formattedValue}</TooltipTrigger>
+                                    <TooltipTrigger className="cursor-help">
+                                      <div className="flex flex-col items-center">
+                                        <span className="font-semibold">{formattedValue}</span>
+                                        {metricConfig?.id !== 'emptySessions' && value > 0 && (
+                                          <span className="text-xs text-slate-500">
+                                            {monthData.uniqueMembers} members
+                                          </span>
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
                                     <TooltipContent>
                                       <div className="space-y-1">
                                         <p className="font-semibold">{monthData.month}</p>
                                         <p>{metricConfig?.label}: {formattedValue}</p>
                                         <p className="text-xs text-slate-400">{monthData.uniqueMembers} unique members</p>
+                                        {metricConfig?.description && (
+                                          <p className="text-xs text-slate-500 italic">{metricConfig.description}</p>
+                                        )}
                                       </div>
                                     </TooltipContent>
                                   </Tooltip>
@@ -1611,19 +1620,29 @@ export const PatternsAndTrends = () => {
                               </TableCell>
                             );
                           })}
-                          <TableCell className="text-center font-bold text-slate-700">
-                            {metricConfig?.format === 'currency' 
-                              ? formatRevenue(metricTotal)
-                              : metricConfig?.format === 'percentage'
-                              ? formatPercentage(metricTotal / productData.monthlyBreakdown.length)
-                              : metricConfig?.format === 'decimal'
-                              ? (metricTotal / productData.monthlyBreakdown.length).toFixed(1)
-                              : formatNumber(metricTotal)}
+                          <TableCell className="text-center font-bold text-slate-700 bg-gradient-to-r from-slate-50 to-slate-100/50 py-3 border-l border-slate-200">
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-bold">
+                                {metricConfig?.format === 'currency' 
+                                  ? formatRevenue(metricTotal)
+                                  : metricConfig?.format === 'percentage'
+                                  ? formatPercentage(metricTotal / productData.monthlyBreakdown.length)
+                                  : metricConfig?.format === 'decimal'
+                                  ? (metricTotal / productData.monthlyBreakdown.length).toFixed(1)
+                                  : formatNumber(metricTotal)}
+                              </span>
+                              <span className="text-xs text-slate-500 mt-1">
+                                {metricConfig?.format === 'percentage' ? 'avg' : 'total'}
+                              </span>
+                            </div>
                           </TableCell>
-                          <TableCell className="text-center font-bold text-blue-600">
-                            <div className="flex items-center justify-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {formatNumber(productData.totalUniqueMembers)}
+                          <TableCell className="text-center font-bold text-indigo-600 bg-gradient-to-r from-indigo-50 to-indigo-100/50 py-3">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1">
+                                <Users className="w-4 h-4" />
+                                <span className="text-sm font-bold">{formatNumber(productData.totalUniqueMembers)}</span>
+                              </div>
+                              <span className="text-xs text-indigo-500">unique members</span>
                             </div>
                           </TableCell>
                         </TableRow>
