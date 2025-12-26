@@ -17,6 +17,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Calendar, Users, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
+import { logger } from '@/utils/logger';
 
 interface ExpirationAnalyticsSectionProps {
   data: ExpirationData[];
@@ -88,7 +89,7 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
   }, [data]);
 
   const applyFilters = (rawData: ExpirationData[]) => {
-    console.log('Applying filters to', rawData.length, 'expiration records');
+    logger.debug('Applying filters to', rawData.length, 'expiration records');
     
     let filtered = [...rawData];
 
@@ -102,7 +103,7 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
         if (activeLocation === 'popup') return loc.includes('pop') || loc.includes('popup') || loc.includes('pop-up');
         return false;
       });
-      console.log(`📍 LOCATION FILTER: Reduced to ${filtered.length} records for location: ${activeLocation}`);
+      logger.debug(`📍 LOCATION FILTER: Reduced to ${filtered.length} records for location: ${activeLocation}`);
     }
 
     // Apply status filter

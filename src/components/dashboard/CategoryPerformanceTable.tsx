@@ -3,6 +3,7 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { YearOnYearMetricTabs } from './YearOnYearMetricTabs';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { FolderOpen, TrendingUp, TrendingDown } from 'lucide-react';
+import { logger } from '@/utils/logger';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface CategoryPerformanceTableProps {
@@ -125,7 +126,7 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
     }
   };
   const processedData = useMemo(() => {
-    console.log('Processing category data:', data.length, 'records');
+    logger.debug('Processing category data:', data.length, 'records');
     const categoryGroups = data.reduce((acc: Record<string, SalesData[]>, item) => {
       const category = item.cleanedCategory || 'Unknown';
       if (!acc[category]) {
@@ -134,7 +135,7 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
       acc[category].push(item);
       return acc;
     }, {});
-    console.log('Category groups:', Object.keys(categoryGroups));
+    logger.debug('Category groups:', Object.keys(categoryGroups));
     const categoryData = Object.entries(categoryGroups).map(([category, items]) => {
       const monthlyValues: Record<string, number> = {};
       monthlyData.forEach(({
@@ -180,8 +181,8 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
         }, {} as Record<string, any>)
       };
     });
-    console.log('Processed category data:', categoryData.length, 'categories');
-    console.log('Sample category data:', categoryData[0]);
+    logger.debug('Processed category data:', categoryData.length, 'categories');
+    logger.debug('Sample category data:', categoryData[0]);
     return categoryData.sort((a, b) => b.metricValue - a.metricValue);
   }, [data, selectedMetric, monthlyData]);
   const getGrowthIndicator = (current: number, previous: number, period: 'month' = 'month') => {

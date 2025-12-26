@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
-import { TrendingUp } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { TrendingUp, Users, CheckCircle, Zap } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
-import { ImprovedLeadMetricCards } from './ImprovedLeadMetricCards';
+import { ExecutiveDrillDownModal } from './ExecutiveDrillDownModal';
+import { StandardizedMetricCard } from './StandardizedMetricCard';
+import { StandardizedTable } from './StandardizedTable';
 import { useLeadsData } from '@/hooks/useLeadsData';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
+import { parseDate } from '@/utils/dateUtils';
 
 interface ExecutiveLeadsSectionProps {
   onMetricClick?: (metricData: any) => void;
@@ -16,25 +18,56 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
   onMetricClick,
 }) => {
   const { data: leadsData, loading: leadsLoading } = useLeadsData();
+  const { filters } = useGlobalFilters();
+  const [drillDownOpen, setDrillDownOpen] = useState(false);
+
+  // Filter leads by date range and location
+  const filteredLeads = useMemo(() => {
+    if (!leadsData) return [];
+
+    return leadsData.filter(lead => {
+      // Apply date range filter
+      if (filters.dateRange?.start && filters.dateRange?.end) {
+        const leadDate = parseDate(lead.createdAt);
+        const filterStart = new Date(filters.dateRange.start);
+        const filterEnd = new Date(filters.dateRange.end);
+        filterEnd.setHours(23, 59, 59, 999);
+
+        if (!leadDate || leadDate < filterStart || leadDate > filterEnd) {
+          return false;
+        }
+      }
+
+      // Apply location filter
+      if (filters.location && filters.location.length > 0) {
+        const locations = Array.isArray(filters.location) ? filters.location : [filters.location];
+        if (!locations.includes('all') && !locations.some(loc => lead.center?.includes(loc))) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [leadsData, filters.dateRange, filters.location]);
 
   // Transform leads data into source-based summary
   const leadSummary = useMemo(() => {
-    if (!leadsData || leadsData.length === 0) return null;
+    if (!filteredLeads || filteredLeads.length === 0) return null;
 
     const sources = new Map<string, { count: number; converted: number; contacted: number }>();
 
-    leadsData.forEach((lead: any) => {
-      const source = lead.source || lead.leadSource || 'Direct';
+    filteredLeads.forEach((lead: any) => {
+      const source = lead.source || 'Direct';
       if (!sources.has(source)) {
         sources.set(source, { count: 0, converted: 0, contacted: 0 });
       }
 
       const data = sources.get(source)!;
       data.count += 1;
-      if (lead.status === 'converted' || lead.conversionStatus === 'Converted') {
+      if (lead.convertedToCustomerAt) {
         data.converted += 1;
       }
-      if (lead.contacted === true || lead.isContacted === true) {
+      if (lead.stage === 'qualified' || lead.stage === 'Qualified') {
         data.contacted += 1;
       }
     });
@@ -45,7 +78,7 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
       conversionRate: (data.converted / data.count) * 100,
       contactRate: (data.contacted / data.count) * 100,
     }));
-  }, [leadsData]);
+  }, [filteredLeads]);
 
   if (leadsLoading) {
     return (
@@ -63,90 +96,116 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
   }
 
   return (
-    <ExecutiveSectionCard
-      title="Lead Conversion & Funnel"
-      icon={TrendingUp}
-      borderColor="pink"
-      description="Conversion rates, lead sources, and funnel analytics"
-      contentClassName="space-y-6"
-    >
-      {/* Metric Cards */}
-      <div>
-        <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
-        <ImprovedLeadMetricCards data={leadsData} />
-      </div>
-
-      {/* Lead Sources Table */}
-      {leadSummary && leadSummary.length > 0 && (
-        <div className="pt-4 border-t border-slate-100">
-          <h4 className="text-sm font-semibold text-slate-700 mb-4">Leads by Source</h4>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-pink-700 to-pink-900 text-white">
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Source</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Total Leads</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Contacted</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Converted</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Conv. Rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leadSummary.map((source) => (
-                  <tr
-                    key={source.source}
-                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-slate-800">{source.source}</td>
-                    <td className="px-4 py-3 text-center text-slate-700">
-                      {formatNumber(source.count)}
-                    </td>
-                    <td className="px-4 py-3 text-center text-slate-700">
-                      {formatNumber(source.contacted)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge
-                        className={source.converted > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}
-                      >
-                        {formatNumber(source.converted)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-center font-semibold">
-                      <span className={source.conversionRate > 30 ? 'text-emerald-600' : 'text-amber-600'}>
-                        {formatPercentage(source.conversionRate)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-slate-800 text-white font-bold">
-                  <td className="px-4 py-3">TOTAL</td>
-                  <td className="px-4 py-3 text-center">
-                    {formatNumber(leadsData?.length || 0)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {formatNumber(leadSummary.reduce((sum, s) => sum + s.contacted, 0))}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {formatNumber(leadSummary.reduce((sum, s) => sum + s.converted, 0))}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {leadsData && leadsData.length > 0
-                      ? formatPercentage(
-                          (leadSummary.reduce((sum, s) => sum + s.converted, 0) /
-                            leadsData.length) *
-                            100
-                        )
-                      : '0%'}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+    <>
+      <ExecutiveSectionCard
+        title="Lead Conversion & Funnel"
+        icon={TrendingUp}
+        borderColor="pink"
+        description="Conversion rates, lead sources, and funnel analytics"
+        contentClassName="space-y-6"
+      >
+        {/* Metric Cards */}
+        <div
+          className="cursor-pointer"
+          onClick={() => setDrillDownOpen(true)}
+        >
+          <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StandardizedMetricCard
+              title="Total Leads"
+              value={filteredLeads.length}
+              icon={Users}
+              color="pink"
+            />
+            <StandardizedMetricCard
+              title="Converted"
+              value={filteredLeads.filter(l => l.convertedToCustomerAt).length}
+              icon={CheckCircle}
+              color="emerald"
+              change={filteredLeads.length > 0 ? (filteredLeads.filter(l => l.convertedToCustomerAt).length / filteredLeads.length) * 100 : 0}
+            />
+            <StandardizedMetricCard
+              title="Qualified"
+              value={filteredLeads.filter(l => l.stage === 'qualified' || l.stage === 'Qualified').length}
+              icon={TrendingUp}
+              color="blue"
+              change={filteredLeads.length > 0 ? (filteredLeads.filter(l => l.stage === 'qualified' || l.stage === 'Qualified').length / filteredLeads.length) * 100 : 0}
+            />
+            <StandardizedMetricCard
+              title="Conversion Rate"
+              value={filteredLeads.length > 0 ? ((filteredLeads.filter(l => l.convertedToCustomerAt).length / filteredLeads.length) * 100).toFixed(1) : '0'}
+              subtitle="%"
+              icon={Zap}
+              color="amber"
+            />
           </div>
         </div>
-      )}
-    </ExecutiveSectionCard>
+
+        {/* Lead Sources Table */}
+        {leadSummary && leadSummary.length > 0 && (
+          <div className="pt-4 border-t border-slate-100">
+            <h4 className="text-sm font-semibold text-slate-700 mb-4">Leads by Source</h4>
+            <StandardizedTable
+              data={leadSummary}
+              columns={[
+                { key: 'source', header: 'Source', align: 'left' },
+                { key: 'count', header: 'Total', align: 'center', render: (val) => formatNumber(val) },
+                { key: 'contacted', header: 'Contacted', align: 'center', render: (val) => formatNumber(val) },
+                { key: 'converted', header: 'Converted', align: 'center', render: (val) => formatNumber(val) },
+                { key: 'conversionRate', header: 'Conv. Rate', align: 'center', render: (val) => formatPercentage(val) },
+              ]}
+              headerColor="slate"
+              footerData={{
+                source: 'TOTAL',
+                count: filteredLeads?.length || 0,
+                contacted: leadSummary.reduce((sum, s) => sum + s.contacted, 0),
+                converted: leadSummary.reduce((sum, s) => sum + s.converted, 0),
+                conversionRate: filteredLeads && filteredLeads.length > 0
+                  ? (leadSummary.reduce((sum, s) => sum + s.converted, 0) / filteredLeads.length) * 100
+                  : 0,
+              }}
+              striped
+            />
+          </div>
+        )}
+      </ExecutiveSectionCard>
+
+      {/* Drill-Down Modal */}
+      <ExecutiveDrillDownModal
+        open={drillDownOpen}
+        onOpenChange={setDrillDownOpen}
+        title="Lead Conversion & Funnel Analysis"
+        metric="Total Leads"
+        currentValue={formatNumber(filteredLeads?.length || 0)}
+        description="Detailed breakdown of lead generation, conversion, and funnel metrics"
+        borderColor="pink"
+        breakdownData={
+          leadSummary
+            ?.slice(0, 5)
+            .map((source) => ({
+              label: source.source,
+              value: formatNumber(source.converted),
+              percentage: (source.converted / (leadSummary?.reduce((sum) => sum + 1, 0) || 1)) * 100,
+              color: 'bg-pink-500',
+            })) || []
+        }
+        analyticsText="Lead metrics track generation sources, conversion rates, and funnel efficiency to optimize marketing ROI and sales pipeline."
+        rawData={
+          filteredLeads?.slice(0, 20).map((lead: any, idx: number) => ({
+            source: lead.source || 'Direct',
+            name: lead.name || lead.leadName || `Lead ${idx}`,
+            status: lead.status || lead.conversionStatus || 'Pending',
+            contacted: lead.contacted ? 'Yes' : 'No',
+          })) || []
+        }
+        rawDataColumns={[
+          { key: 'source', label: 'Source', format: 'text' },
+          { key: 'name', label: 'Lead', format: 'text' },
+          { key: 'status', label: 'Status', format: 'text' },
+          { key: 'contacted', label: 'Contacted', format: 'text' },
+        ]}
+      />
+    </>
   );
 };
 

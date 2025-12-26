@@ -13,6 +13,7 @@ import { useGeminiAnalysis } from '@/hooks/useGeminiAnalysis';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { parseDate } from '@/utils/dateUtils';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 export interface LocationReportMetrics {
   // Revenue & Sales Performance
@@ -114,8 +115,8 @@ export const useLocationReportData = () => {
   const { data: lateCancellationsData = [], loading: lateCancellationsLoading } = useLateCancellationsData();
   const { data: expirationsData = [], loading: expirationsLoading } = useExpirationsData();
 
-  // Log raw data availability
-  console.log('Raw Data Availability:', {
+  // Log raw data availability (debug)
+  logger.debug('Raw Data Availability:', {
     salesData: salesData.length,
     sessionsData: sessionsData.length,
     payrollData: payrollData.length,
@@ -195,7 +196,7 @@ export const useLocationReportData = () => {
     const filteredExpirations = expirationsData.filter(item => filterByLocation(item) && filterByDateRange(item));
 
     // Debug logging with sample data
-    console.log('Location Report Debug Info:', {
+    logger.debug('Location Report Debug Info:', {
       dateRange: previousMonthRange,
       primaryLocation,
       totalRawData: {
@@ -217,7 +218,7 @@ export const useLocationReportData = () => {
       }))
     });
     
-    console.log('Filtered Data Counts (Last 3 Months):', {
+    logger.debug('Filtered Data Counts (Last 3 Months):', {
       sales: filteredSales.length,
       sessions: filteredSessions.length,
       payroll: filteredPayroll.length,

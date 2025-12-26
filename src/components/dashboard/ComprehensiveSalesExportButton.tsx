@@ -9,6 +9,7 @@ import { Download, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 interface TableExportData {
   name: string;
@@ -599,7 +600,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
 
         if (!shouldExport) continue;
 
-        console.log(`Exporting tab: ${tabValue}`);
+        logger.debug(`Exporting tab: ${tabValue}`);
         
         // Click the tab to make it active
         trigger.click();

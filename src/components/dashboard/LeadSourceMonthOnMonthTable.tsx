@@ -8,6 +8,7 @@ import { LeadMetricTabs } from './LeadMetricTabs';
 import { LeadsMetricType } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
+import { logger } from '@/utils/logger';
 interface LeadSourceMonthOnMonthTableProps {
   data: Record<string, Record<string, number>>;
   months: string[];
@@ -115,11 +116,11 @@ export const LeadSourceMonthOnMonthTable: React.FC<LeadSourceMonthOnMonthTablePr
     count: sourceWithTotals.filter(s => s.total === 0).length
   }];
   const handleRowClick = (source: string) => {
-    console.log('Drill-down data for source:', source, data[source]);
+    logger.debug('Drill-down data for source:', source, data[source]);
   };
   const handleSaveInsights = () => {
     setIsEditingInsights(false);
-    console.log('Insights saved:', insights);
+    logger.debug('Insights saved:', insights);
   };
   return <Card className="bg-white shadow-sm border border-gray-200">
       <CardHeader className="border-b border-gray-100 space-y-4">

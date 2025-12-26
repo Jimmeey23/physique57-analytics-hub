@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/utils/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,36 +36,36 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
 
     // For ranking drill-downs, use the relatedClients array
     if (type === 'ranking' && data.relatedClients) {
-      console.log('Drill-down V3: Using ranking related clients:', data.relatedClients.length);
+      logger.debug('Drill-down V3: Using ranking related clients:', data.relatedClients.length);
       return data.relatedClients;
     }
 
     // For metric card clicks, use the filtered clients array
     if (type === 'metric' && data.clients) {
-      console.log('Drill-down V3: Using metric card filtered clients:', data.clients.length, 'MetricType:', data.metricType);
+      logger.debug('Drill-down V3: Using metric card filtered clients:', data.clients.length, 'MetricType:', data.metricType);
       return data.clients;
     }
 
     // For month/year table row clicks, use the clients array from the row data
     if ((type === 'month' || type === 'year') && data.clients) {
-      console.log('Drill-down V3: Using table row clients:', data.clients.length);
+      logger.debug('Drill-down V3: Using table row clients:', data.clients.length);
       return data.clients;
     }
 
     // For other table types, check if data has clients property
     if (data.clients && Array.isArray(data.clients)) {
-      console.log('Drill-down V3: Using generic clients array:', data.clients.length);
+      logger.debug('Drill-down V3: Using generic clients array:', data.clients.length);
       return data.clients;
     }
 
     // For direct array format
     if (Array.isArray(data)) {
-      console.log('Drill-down V3: Using direct array data:', data.length);
+      logger.debug('Drill-down V3: Using direct array data:', data.length);
       return data;
     }
 
     // Fallback to empty array
-    console.log('Drill-down V3: No targeted clients found, showing empty. Data structure:', Object.keys(data || {}));
+    logger.debug('Drill-down V3: No targeted clients found, showing empty. Data structure:', Object.keys(data || {}));
     return [];
   }, [data, type]);
 
@@ -89,7 +90,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
     const clientsWithConversionData = clients.filter(c => c.conversionSpan > 0).length;
     
     // Debug logging to understand the data
-    console.log('Modal Summary Calculation (Updated Logic):', {
+    logger.debug('Modal Summary Calculation (Updated Logic):', {
       totalMembers,
       newMembers,
       convertedMembers,

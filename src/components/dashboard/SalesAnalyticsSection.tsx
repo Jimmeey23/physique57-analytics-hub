@@ -30,6 +30,7 @@ import { SalesData, FilterOptions, MetricCardData, YearOnYearMetricType } from '
 import { formatCurrency, formatNumber, formatPercentage, formatDiscount } from '@/utils/formatters';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
+import { createLogger } from '@/utils/logger';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { ComprehensiveSalesExportButton } from './ComprehensiveSalesExportButton';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
@@ -77,12 +78,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeYoyMetric, setActiveYoyMetric] = useState<YearOnYearMetricType>('revenue');
 
+  const logger = createLogger('SalesAnalyticsSection');
+
   // Debug CSS variables
   React.useEffect(() => {
     const root = document.documentElement;
     const heroAccent = root.style.getPropertyValue('--hero-accent') || getComputedStyle(root).getPropertyValue('--hero-accent');
-    console.log('Sales Section: Current --hero-accent:', heroAccent);
-    console.log('Sales Section: Active location:', activeLocation);
+    logger.debug('Sales Section: Current --hero-accent:', heroAccent);
+    logger.debug('Sales Section: Active location:', activeLocation);
   }, [activeLocation]);
   const [isReady, setIsReady] = useState(false);
   const markReady = React.useCallback(() => setIsReady(true), []);
@@ -248,8 +251,8 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     // Use RAW DATA for drill-down to be independent of current filters
     // Only apply location filtering to maintain context
     let baseData = data;
-    console.log(`🔍 DRILL-DOWN: Starting with ${data.length} total records (RAW DATA)`);
-    console.log(`📊 COMPARISON: Current filtered view has ${filteredData.length} records`);
+    logger.debug(`🔍 DRILL-DOWN: Starting with ${data.length} total records (RAW DATA)`);
+    logger.debug(`📊 COMPARISON: Current filtered view has ${filteredData.length} records`);
     
     if (activeLocation !== 'all') {
       baseData = data.filter(item => {
@@ -265,7 +268,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           : false;
         return locationMatch;
       });
-      console.log(`📍 LOCATION FILTER: Reduced to ${baseData.length} records for location: ${activeLocation}`);
+      logger.debug(`📍 LOCATION FILTER: Reduced to ${baseData.length} records for location: ${activeLocation}`);
     }
     
     let specificFilteredData = baseData;
@@ -273,13 +276,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     
     // Handle the new contextual filtering system - filter from ALL DATA, not current filtered view
     if (rowData.filterCriteria && rowData.drillDownContext) {
-      console.log('Using enhanced contextual filtering on raw data:', rowData.drillDownContext);
+      logger.debug('Using enhanced contextual filtering on raw data:', rowData.drillDownContext);
       const criteria = rowData.filterCriteria;
       
       // Check MORE SPECIFIC conditions first (combinations) before general conditions
       if (criteria.month && criteria.product) {
         // Month-specific product filtering - match YYYY-MM format from ALL DATA
-        console.log('🎯 CELL-SPECIFIC FILTERING:', {
+        logger.debug('🎯 CELL-SPECIFIC FILTERING:', {
           month: criteria.month,
           product: criteria.product,
           baseDataCount: baseData.length
@@ -303,7 +306,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           const monthMatches = itemKey === criteria.month;
           
           if (productMatches && monthMatches) {
-            console.log('✅ EXACT MATCH FOUND:', {
+            logger.debug('✅ EXACT MATCH FOUND:', {
               product: item.cleanedProduct || item.paymentItem,
               date: item.paymentDate,
               itemKey,
@@ -315,13 +318,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           return productMatches && monthMatches;
         });
         
-        console.log(`🎯 FINAL CELL-SPECIFIC RESULT: Found ${specificFilteredData.length} transactions for ${criteria.product} in ${criteria.month}`);
+        logger.debug(`🎯 FINAL CELL-SPECIFIC RESULT: Found ${specificFilteredData.length} transactions for ${criteria.product} in ${criteria.month}`);
         if (specificFilteredData.length > 0) {
           const totalRevenue = specificFilteredData.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
-          console.log(`💰 CELL REVENUE: ${totalRevenue} (should NOT be 13.4L if filtering correctly)`);
+          logger.debug(`💰 CELL REVENUE: ${totalRevenue} (should NOT be 13.4L if filtering correctly)`);
         }
         drillDownTypeToSet = 'product';
-        console.log(`Context-filtered by product + month: ${criteria.product} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by product + month: ${criteria.product} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.month && criteria.category) {
         // Month-specific category filtering from ALL DATA
         specificFilteredData = baseData.filter(item => {
@@ -338,7 +341,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           return categoryMatches && monthMatches;
         });
         drillDownTypeToSet = 'category';
-        console.log(`Context-filtered by category + month: ${criteria.category} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by category + month: ${criteria.category} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.month && criteria.soldBy) {
         // Month-specific seller filtering from ALL DATA
         specificFilteredData = baseData.filter(item => {
@@ -355,7 +358,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           return sellerMatches && monthMatches;
         });
         drillDownTypeToSet = 'soldBy';
-        console.log(`Context-filtered by seller + month: ${criteria.soldBy} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by seller + month: ${criteria.soldBy} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.month && criteria.paymentMethod) {
         // Month-specific payment method filtering from ALL DATA
         specificFilteredData = baseData.filter(item => {
@@ -372,7 +375,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           return methodMatches && monthMatches;
         });
         drillDownTypeToSet = 'paymentMethod';
-        console.log(`Context-filtered by payment method + month: ${criteria.paymentMethod} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by payment method + month: ${criteria.paymentMethod} in ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.month) {
         // Month-only filtering (for month total rows)
         specificFilteredData = baseData.filter(item => {
@@ -385,7 +388,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           
           return itemKey === criteria.month;
         });
-        console.log(`Context-filtered by month only: ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by month only: ${criteria.month} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.product) {
         // Product-only filtering (no month specified)
         specificFilteredData = baseData.filter(item => 
@@ -393,45 +396,45 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           item.paymentItem?.toLowerCase() === criteria.product?.toLowerCase()
         );
         drillDownTypeToSet = 'product';
-        console.log(`Context-filtered by product from ALL DATA: ${criteria.product} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by product from ALL DATA: ${criteria.product} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.category) {
         // Category-only filtering (no month specified)
         specificFilteredData = baseData.filter(item => 
           item.cleanedCategory?.toLowerCase() === criteria.category?.toLowerCase()
         );
         drillDownTypeToSet = 'category';
-        console.log(`Context-filtered by category from ALL DATA: ${criteria.category} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by category from ALL DATA: ${criteria.category} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.soldBy) {
         // Seller-only filtering (no month specified)
         specificFilteredData = baseData.filter(item => 
           item.soldBy?.toLowerCase() === criteria.soldBy?.toLowerCase()
         );
         drillDownTypeToSet = 'soldBy';
-        console.log(`Context-filtered by seller from ALL DATA: ${criteria.soldBy} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by seller from ALL DATA: ${criteria.soldBy} - Found ${specificFilteredData.length} matching transactions`);
       } else if (criteria.paymentMethod) {
         // Payment method-only filtering (no month specified)
         specificFilteredData = baseData.filter(item => 
           item.paymentMethod?.toLowerCase() === criteria.paymentMethod?.toLowerCase()
         );
         drillDownTypeToSet = 'paymentMethod';
-        console.log(`Context-filtered by payment method from ALL DATA: ${criteria.paymentMethod} - Found ${specificFilteredData.length} matching transactions`);
+        logger.debug(`Context-filtered by payment method from ALL DATA: ${criteria.paymentMethod} - Found ${specificFilteredData.length} matching transactions`);
       }
       
     } else if (rowData.rawData && Array.isArray(rowData.rawData) && rowData.rawData.length > 0) {
       // Legacy: If we have transaction data already attached to the row, use that
       specificFilteredData = rowData.rawData;
-      console.log(`Using pre-filtered rawData: ${specificFilteredData.length} transactions`);
+      logger.debug(`Using pre-filtered rawData: ${specificFilteredData.length} transactions`);
     } else if (Array.isArray(rowData) && rowData.length > 0) {
       // Legacy: If rowData itself is an array of transactions, use it directly
       specificFilteredData = rowData;
-      console.log(`Using rowData array directly: ${specificFilteredData.length} transactions`);
+      logger.debug(`Using rowData array directly: ${specificFilteredData.length} transactions`);
     } else if (rowData.transactionData && Array.isArray(rowData.transactionData) && rowData.transactionData.length > 0) {
       specificFilteredData = rowData.transactionData;
-      console.log(`Using pre-filtered transactionData: ${specificFilteredData.length} transactions`);
+      logger.debug(`Using pre-filtered transactionData: ${specificFilteredData.length} transactions`);
     } else if (rowData.currentYearRawData && rowData.lastYearRawData) {
       // For Year-on-Year data, combine current and last year data for this specific product/category
       specificFilteredData = [...rowData.currentYearRawData, ...rowData.lastYearRawData];
-      console.log(`Using YoY data: ${rowData.currentYearRawData.length} current year + ${rowData.lastYearRawData.length} last year transactions`);
+      logger.debug(`Using YoY data: ${rowData.currentYearRawData.length} current year + ${rowData.lastYearRawData.length} last year transactions`);
     } else {
       // Apply specific filters based on row properties as fallback
       specificFilteredData = filteredData.filter(item => {
@@ -455,8 +458,8 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           rowData.paymentCategory
         ].filter(Boolean);
         
-        console.log('Product identifiers to match:', productIdentifiers);
-        console.log('Category identifiers to match:', categoryIdentifiers);
+        logger.debug('Product identifiers to match:', productIdentifiers);
+        logger.debug('Category identifiers to match:', categoryIdentifiers);
         
         // Product-specific filtering - try exact matches
         for (const identifier of productIdentifiers) {
@@ -466,7 +469,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
               (item.paymentItem && item.paymentItem.includes(identifier)) ||
               (item.cleanedProduct && item.cleanedProduct.includes(identifier))) {
             matches = true;
-            console.log(`Product match found: ${identifier} matches item ${item.paymentItem || item.cleanedProduct}`);
+            logger.debug(`Product match found: ${identifier} matches item ${item.paymentItem || item.cleanedProduct}`);
             break;
           }
         }
@@ -479,7 +482,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                 (item.cleanedCategory && item.cleanedCategory.includes(identifier))) {
               matches = true;
               drillDownTypeToSet = 'category';
-              console.log(`Category match found: ${identifier} matches item ${item.cleanedCategory}`);
+              logger.debug(`Category match found: ${identifier} matches item ${item.cleanedCategory}`);
               break;
             }
           }
@@ -499,18 +502,18 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         
         return matches;
       });
-      console.log(`Using fallback filtering: ${specificFilteredData.length} transactions from ${filteredData.length} total`);
+      logger.debug(`Using fallback filtering: ${specificFilteredData.length} transactions from ${filteredData.length} total`);
       
     }
     
-    console.log(`Filtered ${specificFilteredData.length} transactions for drill-down from ${filteredData.length} total`);
+    logger.debug(`Filtered ${specificFilteredData.length} transactions for drill-down from ${filteredData.length} total`);
     
     // Log the filtering results
-    console.log(`Final drill-down data preparation:`);
-    console.log(`- Context type: ${rowData.contextType || 'unknown'}`);
-    console.log(`- Filter criteria:`, rowData.filterCriteria);
-    console.log(`- Specific filtered transactions: ${specificFilteredData.length}`);
-    console.log(`- Sample transactions:`, specificFilteredData.slice(0, 3));
+    logger.debug(`Final drill-down data preparation:`);
+    logger.debug(`- Context type: ${rowData.contextType || 'unknown'}`);
+    logger.debug(`- Filter criteria:`, rowData.filterCriteria);
+    logger.debug(`- Specific filtered transactions: ${specificFilteredData.length}`);
+    logger.debug(`- Sample transactions:`, specificFilteredData.slice(0, 3));
     
     // Ensure we have valid transaction data - if no specific filter worked, use a fallback
     if (specificFilteredData.length === 0) {
@@ -525,13 +528,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           item.cleanedProduct === productName ||
           item.paymentItem === productName
         );
-        console.log(`Fallback product filter found ${specificFilteredData.length} transactions for "${productName}"`);
+        logger.debug(`Fallback product filter found ${specificFilteredData.length} transactions for "${productName}"`);
       } else if (rowData.category) {
         specificFilteredData = filteredData.filter(item => 
           item.cleanedCategory?.includes(rowData.category) || 
           item.cleanedCategory === rowData.category
         );
-        console.log(`Fallback category filter found ${specificFilteredData.length} transactions for "${rowData.category}"`);
+        logger.debug(`Fallback category filter found ${specificFilteredData.length} transactions for "${rowData.category}"`);
       } else {
         // Last resort - use all filtered data but log warning
         console.warn('Using all filtered data as last resort');
@@ -582,30 +585,30 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     };
     
     // Final validation and logging
-    console.log('🎉 === DRILL-DOWN MODAL DATA FINAL SUMMARY ===');
-    console.log('📋 Filter Criteria:', rowData.filterCriteria);
-    console.log('📊 Drill-down Context:', rowData.drillDownContext);
-    console.log('🔢 Specific Filtered Data Count:', specificFilteredData.length);
-    console.log('💰 Calculated Revenue:', calculatedRevenue);
-    console.log('👥 Calculated Customers:', calculatedCustomers);
-    console.log('📦 Enhanced Data Properties:');
-    console.log('  - rawData length:', enhancedData.rawData?.length);
-    console.log('  - filteredTransactionData length:', enhancedData.filteredTransactionData?.length);
-    console.log('  - transactionData length:', enhancedData.transactionData?.length);
-    console.log('  - totalRevenue:', enhancedData.totalRevenue);
-    console.log('  - revenue:', enhancedData.revenue);
-    console.log('  - transactions:', enhancedData.transactions);
-    console.log('  - totalTransactions:', enhancedData.totalTransactions);
-    console.log('🎯 Drill-down Type:', drillDownTypeToSet);
-    console.log('📝 Context Description:', enhancedData.contextDescription);
-    console.log('✅ === END DRILL-DOWN SUMMARY ===');
+    logger.debug('🎉 === DRILL-DOWN MODAL DATA FINAL SUMMARY ===');
+    logger.debug('📋 Filter Criteria:', rowData.filterCriteria);
+    logger.debug('📊 Drill-down Context:', rowData.drillDownContext);
+    logger.debug('🔢 Specific Filtered Data Count:', specificFilteredData.length);
+    logger.debug('💰 Calculated Revenue:', calculatedRevenue);
+    logger.debug('👥 Calculated Customers:', calculatedCustomers);
+    logger.debug('📦 Enhanced Data Properties:');
+    logger.debug('  - rawData length:', enhancedData.rawData?.length);
+    logger.debug('  - filteredTransactionData length:', enhancedData.filteredTransactionData?.length);
+    logger.debug('  - transactionData length:', enhancedData.transactionData?.length);
+    logger.debug('  - totalRevenue:', enhancedData.totalRevenue);
+    logger.debug('  - revenue:', enhancedData.revenue);
+    logger.debug('  - transactions:', enhancedData.transactions);
+    logger.debug('  - totalTransactions:', enhancedData.totalTransactions);
+    logger.debug('🎯 Drill-down Type:', drillDownTypeToSet);
+    logger.debug('📝 Context Description:', enhancedData.contextDescription);
+    logger.debug('✅ === END DRILL-DOWN SUMMARY ===');
     
     setDrillDownData(enhancedData);
     setDrillDownType(drillDownTypeToSet);
   }, [data, activeLocation, filteredData]);
 
   const handleMetricClick = useCallback((metricData: any) => {
-    console.log('Metric clicked with data:', metricData);
+    logger.debug('Metric clicked with data:', metricData);
     
     // Filter data based on the specific metric clicked
     let specificData = filteredData;
@@ -679,7 +682,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
       isMetricSpecific: true
     };
     
-    console.log(`Metric-specific drill-down for '${metricData.title}' with ${specificData.length} filtered transactions, revenue: ${dynamicRevenue}`);
+    logger.debug(`Metric-specific drill-down for '${metricData.title}' with ${specificData.length} filtered transactions, revenue: ${dynamicRevenue}`);
     setDrillDownData(enhancedData);
     setDrillDownType('metric');
   }, [filteredData]);

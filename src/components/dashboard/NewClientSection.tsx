@@ -20,6 +20,7 @@ import { Eye, BarChart3, Users, Target, TrendingUp } from 'lucide-react';
 import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { logger } from '@/utils/logger';
 
 interface NewClientSectionProps {
   data: NewClientData[];
@@ -158,7 +159,7 @@ export const NewClientSection: React.FC<NewClientSectionProps> = ({
   }, [data]);
 
   const handleItemClick = (item: any) => {
-    console.log('Item clicked:', item);
+    logger.debug('Item clicked:', item);
     setDrillDownData(item);
   };
 

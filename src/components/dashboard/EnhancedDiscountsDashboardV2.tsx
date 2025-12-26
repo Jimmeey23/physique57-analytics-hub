@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { parseDate } from '@/utils/dateUtils';
+import { logger } from '@/utils/logger';
 
 interface EnhancedDiscountsDashboardV2Props {
   data: SalesData[];
@@ -42,7 +43,7 @@ const getPreviousMonthDateRange = () => {
   const lastDayPreviousMonth = new Date(year, month, 0);
   const lastFormatted = `${lastDayPreviousMonth.getFullYear()}-${String(lastDayPreviousMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayPreviousMonth.getDate()).padStart(2, '0')}`;
   
-  console.log('Date range calculation:', {
+  logger.debug('Date range calculation:', {
     today: now.toLocaleDateString(),
     currentMonth: month,
     previousMonth: month - 1,
@@ -90,7 +91,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       
       const sortedMonths = Object.entries(monthCounts).sort((a, b) => b[0].localeCompare(a[0]));
       
-      console.log('EnhancedDiscountsDashboardV2 received data:', {
+      logger.debug('EnhancedDiscountsDashboardV2 received data:', {
         totalRecords: data?.length || 0,
         samplePaymentDates: data?.slice(0, 5).map(d => d.paymentDate),
         availableMonths: sortedMonths.slice(0, 10), // Top 10 most recent months
@@ -142,7 +143,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       });
       
       if (hasDataInPreviousMonth) {
-        console.log('Using previous month (has data):', previousMonth);
+        logger.debug('Using previous month (has data):', previousMonth);
         setFilters(prev => ({
           ...prev,
           dateRange: {
@@ -154,7 +155,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
         // Fall back to latest month with data
         const latestMonth = getLatestMonthWithData();
         if (latestMonth) {
-          console.log('Previous month has no data. Using latest month with data:', latestMonth);
+          logger.debug('Previous month has no data. Using latest month with data:', latestMonth);
           setFilters(prev => ({
             ...prev,
             dateRange: {
@@ -171,7 +172,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   const applyFilters = (rawData: SalesData[], includeHistoric: boolean = false) => {
     let filtered = rawData.slice();
     
-    console.log('Starting filter with:', filtered.length, 'records');
+    logger.debug('Starting filter with:', filtered.length, 'records');
 
     // Apply location filter
     if (activeLocation !== 'all') {
@@ -185,7 +186,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       });
     }
 
-    console.log('After location filter:', filtered.length, 'records');
+    logger.debug('After location filter:', filtered.length, 'records');
 
     // Apply date range filter (skip if includeHistoric is true)
     if (!includeHistoric && (filters.dateRange.start || filters.dateRange.end)) {
@@ -196,7 +197,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
         return date;
       })() : null;
 
-      console.log('Date filtering with range:', { 
+      logger.debug('Date filtering with range:', { 
         start: startDate?.toISOString(), 
         end: endDate?.toISOString() 
       });
@@ -218,7 +219,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           return itemInRange;
         });
         
-        console.log('After date filter:', filtered.length, 'records');
+        logger.debug('After date filter:', filtered.length, 'records');
       }
     }
 
@@ -250,7 +251,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       );
     }
 
-    console.log('Final filtered data:', filtered.length, 'records');
+    logger.debug('Final filtered data:', filtered.length, 'records');
     return filtered;
   };
 
@@ -260,15 +261,15 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   // For discount analysis, we need ALL sales data to calculate discount opportunities and performance
   // Show all filtered data (both discounted and non-discounted transactions)
   const discountAnalysisData = useMemo(() => {
-    console.log('Discount Analysis Data:', filteredData.length, 'total transactions');
-    console.log('Sample data:', filteredData.slice(0, 3));
+    logger.debug('Discount Analysis Data:', filteredData.length, 'total transactions');
+    logger.debug('Sample data:', filteredData.slice(0, 3));
     return filteredData;
   }, [filteredData]);
 
   // Separate data for components that specifically need only discounted transactions
   const onlyDiscountedData = useMemo(() => {
     const discounted = filteredData.filter(item => (item.discountAmount || 0) > 0);
-    console.log('Only Discounted Data:', discounted.length, 'discounted transactions');
+    logger.debug('Only Discounted Data:', discounted.length, 'discounted transactions');
     return discounted;
   }, [filteredData]);
 

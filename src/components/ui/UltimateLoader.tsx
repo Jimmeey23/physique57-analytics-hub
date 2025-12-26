@@ -158,18 +158,30 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
   }, [loadingMessages.length]);
 
   return (
-    <motion.div 
-      className="fixed inset-0 z-[9999] overflow-hidden flex items-center justify-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      style={{
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 25%, #f1f5f9 50%, #f8fafc 75%, #ffffff 100%)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientShift 8s ease infinite'
-      }}
-    >
+    <>
+      <style>{`
+        @keyframes gradientShift {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+      `}</style>
+      
+      <motion.div 
+        className="fixed inset-0 z-[9999] overflow-hidden flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 25%, #f1f5f9 50%, #f8fafc 75%, #ffffff 100%)',
+          backgroundSize: '400% 400%',
+          animation: 'gradientShift 8s ease infinite'
+        }}
+      >
       {/* Subtle animated background elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Single refined gradient blob */}
@@ -399,19 +411,8 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
           </AnimatePresence>
         </motion.div>
       </motion.div>
-
-      {/* Simple CSS animations */}
-      <style jsx>{`
-        @keyframes gradientShift {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-      `}</style>
-    </motion.div>
+      </motion.div>
+    </>
   );
 };
 

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useExecutiveReportGenerator } from '@/hooks/useExecutiveReportGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { exportDashboardToPDF } from '@/services/hybridPDFExportService';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 
 interface ExecutivePDFExportButtonProps {
   dateRange?: {
@@ -27,12 +28,28 @@ export const ExecutivePDFExportButton: React.FC<ExecutivePDFExportButtonProps> =
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
-  const { generateAndDownloadPDF } = useExecutiveReportGenerator({ dateRange, location });
+  const { filters } = useGlobalFilters();
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      await generateAndDownloadPDF();
+      
+      // Use hybrid PDF export service with dashboard HTML capture
+      await exportDashboardToPDF(
+        'executive-dashboard',
+        'Executive Dashboard Report',
+        {
+          dateRange: dateRange || filters.dateRange,
+          location: location ? [location] : filters.location,
+        },
+        {
+          filename: `Executive-Report-${new Date().toISOString().split('T')[0]}.pdf`,
+          scale: 2,
+          quality: 0.95,
+          margin: 10,
+        }
+      );
+
       toast({
         title: 'Success',
         description: 'Executive report PDF has been generated and downloaded.',
@@ -41,7 +58,7 @@ export const ExecutivePDFExportButton: React.FC<ExecutivePDFExportButtonProps> =
       console.error('PDF export failed:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate PDF report. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to generate PDF report. Please try again.',
         variant: 'destructive',
       });
     } finally {

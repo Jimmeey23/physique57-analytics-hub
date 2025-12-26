@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, Grid3X3, Filter, Eye, Edit3, Save, X } from 'lu
 import { LeadMetricTabs } from './LeadMetricTabs';
 import { LeadsMetricType } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 interface LeadPivotTableProps {
   data: Record<string, Record<string, number>>;
@@ -108,11 +109,11 @@ export const LeadPivotTable: React.FC<LeadPivotTableProps> = ({
     count: rowWithTotals.filter(r => r.total === 0).length
   }];
   const handleRowClick = (row: string) => {
-    console.log('Drill-down data for row:', row, data[row]);
+    logger.debug('Drill-down data for row:', row, data[row]);
   };
   const handleSaveInsights = () => {
     setIsEditingInsights(false);
-    console.log('Insights saved:', insights);
+    logger.debug('Insights saved:', insights);
   };
   return <Card className="bg-white shadow-sm border border-gray-200">
       <CardHeader className="border-b border-gray-100 space-y-4">

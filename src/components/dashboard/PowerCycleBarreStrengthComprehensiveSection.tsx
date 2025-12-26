@@ -14,6 +14,7 @@ import { PowerCycleBarreStrengthDrillDownModal } from './PowerCycleBarreStrength
 import { PayrollData } from '@/types/dashboard';
 import { getThemeColors, getActiveTabClasses } from '@/utils/colorThemes';
 import { getPreviousMonthDateRange, getPreviousMonthPeriod } from '@/utils/dateUtils';
+import { logger } from '@/utils/logger';
 import { 
   BarChart3, 
   Activity, 
@@ -62,9 +63,9 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
   const filteredData = useMemo(() => {
     if (!data) return [];
     
-    console.log('PowerCycle filtering - Input data:', data.length, 'items');
-    console.log('Sample monthYear formats:', data.slice(0, 5).map(item => item.monthYear));
-    console.log('Filters:', { selectedLocation, selectedPeriod, selectedTrainer });
+    logger.debug('PowerCycle filtering - Input data:', data.length, 'items');
+    logger.debug('Sample monthYear formats:', data.slice(0, 5).map(item => item.monthYear));
+    logger.debug('Filters:', { selectedLocation, selectedPeriod, selectedTrainer });
     
     let filtered = [...data];
     
@@ -83,7 +84,7 @@ export const PowerCycleBarreStrengthComprehensiveSection: React.FC<PowerCycleBar
       filtered = filtered.filter(item => item.monthYear === selectedPeriod);
     }
     
-    console.log('PowerCycle filtering - Filtered data:', filtered.length, 'items');
+    logger.debug('PowerCycle filtering - Filtered data:', filtered.length, 'items');
     return filtered;
   }, [data, selectedLocation, selectedPeriod, selectedTrainer]);
 

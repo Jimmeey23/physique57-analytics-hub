@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
+import { ExecutiveDrillDownModal } from './ExecutiveDrillDownModal';
 import { SalesAnimatedMetricCardsComponent } from './SalesAnimatedMetricCards';
 import { ModernSalesTable } from './ModernSalesTable';
 import { useSalesData } from '@/hooks/useSalesData';
+import { useSalesMetrics } from '@/hooks/useSalesMetrics';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 interface ExecutiveSalesSectionProps {
   locationId?: string;
@@ -18,9 +21,10 @@ export const ExecutiveSalesSection: React.FC<ExecutiveSalesSectionProps> = ({
 }) => {
   const { filters } = useGlobalFilters();
   const { data: salesData, loading: salesLoading } = useSalesData();
-
-  // Get previous period data for comparison (same data for now - can be enhanced)
   const { data: previousSalesData } = useSalesData();
+  const salesMetrics = useSalesMetrics(salesData, previousSalesData);
+  const [drillDownOpen, setDrillDownOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<string>('revenue');
 
   // Prepare table data - top products/categories
   const tableData = useMemo(() => {
@@ -57,46 +61,82 @@ export const ExecutiveSalesSection: React.FC<ExecutiveSalesSectionProps> = ({
   }
 
   return (
-    <ExecutiveSectionCard
-      title="Sales Overview"
-      icon={ShoppingCart}
-      borderColor="emerald"
-      description="Revenue, transactions, and ATV metrics"
-      contentClassName="space-y-6"
-    >
-      {/* Metric Cards */}
-      <div>
-        <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
-        <SalesAnimatedMetricCardsComponent
-          data={salesData}
-          historicalData={previousSalesData}
-          dateRange={filters.dateRange}
-          onMetricClick={onMetricClick}
-          locationId={locationId}
-        />
-      </div>
-
-      {/* Sales Table */}
-      {tableData.length > 0 && (
-        <div className="pt-4 border-t border-slate-100">
-          <h4 className="text-sm font-semibold text-slate-700 mb-4">Top Products & Categories</h4>
-          <ModernSalesTable
-            data={tableData}
-            loading={salesLoading}
-            title=""
-            maxHeight="400px"
-            showFooter={true}
-            footerData={{
-              name: 'TOTAL',
-              revenue: tableData.reduce((sum: number, item: any) => sum + item.revenue, 0),
-              transactions: tableData.reduce((sum: number, item: any) => sum + item.transactions, 0),
-              discountAmount: tableData.reduce((sum: number, item: any) => sum + item.discountAmount, 0),
-              atv: tableData.reduce((sum: number, item: any) => sum + item.atv, 0) / tableData.length,
-            }}
-          />
+    <>
+      <ExecutiveSectionCard
+        title="Sales Overview"
+        icon={ShoppingCart}
+        borderColor="emerald"
+        description="Revenue, transactions, and ATV metrics"
+        contentClassName="space-y-6"
+      >
+        {/* Metric Cards */}
+        <div>
+          <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
+          <div className="cursor-pointer" onClick={() => {
+            setSelectedMetric('revenue');
+            setDrillDownOpen(true);
+          }}>
+            <SalesAnimatedMetricCardsComponent
+              data={salesData || []}
+              historicalData={previousSalesData || salesData || []}
+              dateRange={filters.dateRange}
+              onMetricClick={onMetricClick}
+              locationId={locationId}
+            />
+          </div>
         </div>
-      )}
-    </ExecutiveSectionCard>
+
+        {/* Sales Table */}
+        {tableData.length > 0 && (
+          <div className="pt-4 border-t border-slate-100">
+            <h4 className="text-sm font-semibold text-slate-700 mb-4">Top Products & Categories</h4>
+            <ModernSalesTable
+              data={tableData}
+              loading={salesLoading}
+              title=""
+              maxHeight="400px"
+              showFooter={true}
+              footerData={{
+                name: 'TOTAL',
+                revenue: tableData.reduce((sum: number, item: any) => sum + item.revenue, 0),
+                transactions: tableData.reduce((sum: number, item: any) => sum + item.transactions, 0),
+                discountAmount: tableData.reduce((sum: number, item: any) => sum + item.discountAmount, 0),
+                atv: tableData.reduce((sum: number, item: any) => sum + item.atv, 0) / tableData.length,
+              }}
+            />
+          </div>
+        )}
+      </ExecutiveSectionCard>
+
+      {/* Drill-Down Modal */}
+      <ExecutiveDrillDownModal
+        open={drillDownOpen}
+        onOpenChange={setDrillDownOpen}
+        title={`${selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1)} Analysis`}
+        metric="Total Revenue"
+        currentValue={formatCurrency(salesMetrics[0]?.rawValue || 0)}
+        previousValue={salesMetrics[0] ? formatCurrency(salesMetrics[0].previousRawValue) : undefined}
+        description="Detailed breakdown of sales metrics and trends"
+        borderColor="emerald"
+        breakdownData={
+          tableData.slice(0, 5).map((item: any) => ({
+            label: item.category || item.name,
+            value: formatCurrency(item.revenue),
+            percentage: (item.revenue / tableData.reduce((sum: number, i: any) => sum + i.revenue, 0)) * 100,
+            color: 'bg-emerald-500',
+          }))
+        }
+        analyticsText={salesMetrics[0]?.description || 'Sales metrics provide insights into revenue performance across products and categories.'}
+        rawData={tableData}
+        rawDataColumns={[
+          { key: 'name', label: 'Product', format: 'text' },
+          { key: 'category', label: 'Category', format: 'text' },
+          { key: 'revenue', label: 'Revenue', format: 'currency' },
+          { key: 'transactions', label: 'Transactions', format: 'number' },
+          { key: 'atv', label: 'ATV', format: 'currency' },
+        ]}
+      />
+    </>
   );
 };
 

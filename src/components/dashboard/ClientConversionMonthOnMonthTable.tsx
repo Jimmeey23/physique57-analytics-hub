@@ -8,6 +8,7 @@ import { NewClientData } from '@/types/dashboard';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { motion } from 'framer-motion';
 import { parseDate } from '@/utils/dateUtils';
+import { logger } from '@/utils/logger';
 
 interface ClientConversionMonthOnMonthTableProps {
   data: NewClientData[];
@@ -16,7 +17,7 @@ interface ClientConversionMonthOnMonthTableProps {
 }
 
 export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOnMonthTableProps> = ({ data, visitsSummary, onRowClick }) => {
-  console.log('MonthOnMonth data:', data.length, 'records');
+  logger.debug('MonthOnMonth data:', data.length, 'records');
   const [sortField, setSortField] = React.useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
 
@@ -133,7 +134,7 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
       }))
       .sort((a, b) => b.sortKey.localeCompare(a.sortKey));
 
-    console.log('Monthly data processed:', processed);
+    logger.debug('Monthly data processed:', processed);
     return processed;
   }, [data]);
 

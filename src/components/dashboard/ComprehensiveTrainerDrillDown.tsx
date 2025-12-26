@@ -59,6 +59,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 
 interface ComprehensiveTrainerDrillDownProps {
@@ -236,7 +237,7 @@ export function ComprehensiveTrainerDrillDown({
 
   // Process all the data comprehensively
   const processedData = useMemo(() => {
-    console.log('🔍 [Modal] Processing drill-down', {
+    logger.debug('🔍 [Modal] Processing drill-down', {
       trainerName,
       filters,
       trainerDataKeys: Object.keys(trainerData || {}),

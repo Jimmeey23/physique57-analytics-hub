@@ -1,9 +1,10 @@
 
 import { NewClientData } from '@/types/dashboard';
 import { format, parseISO, isValid } from 'date-fns';
+import { logger } from './logger';
 
 export const calculateNewClientMetrics = (data: NewClientData[]) => {
-  console.log('Calculating new client metrics for:', data.length, 'records');
+  logger.debug('Calculating new client metrics for:', data.length, 'records');
 
   // Group data by month and trainer
   const monthlyData = data.reduce((acc, client) => {
@@ -22,7 +23,7 @@ export const calculateNewClientMetrics = (data: NewClientData[]) => {
       }
 
       if (!isValid(date)) {
-        console.warn('Invalid date:', dateStr);
+        logger.warn('Invalid date:', dateStr);
         return acc;
       }
 
@@ -75,7 +76,7 @@ export const calculateNewClientMetrics = (data: NewClientData[]) => {
       }
 
     } catch (error) {
-      console.error('Error processing client:', client, error);
+      logger.error('Error processing client:', { client, error });
     }
 
     return acc;
@@ -92,7 +93,7 @@ export const calculateNewClientMetrics = (data: NewClientData[]) => {
     }))
   );
 
-  console.log('Calculated metrics:', metrics.length, 'trainer-month combinations');
+  logger.debug('Calculated metrics:', metrics.length, 'trainer-month combinations');
   return metrics;
 };
 

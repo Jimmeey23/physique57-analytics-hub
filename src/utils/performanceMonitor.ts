@@ -64,57 +64,58 @@ class PerformanceMonitor {
     }
 
     // Cumulative Layout Shift (CLS)
+    import { logger } from './logger';
     let clsValue = 0;
     const observeCLS = new PerformanceObserver((entryList) => {
       for (const entry of entryList.getEntries() as any[]) {
         if (!entry.hadRecentInput) {
           clsValue += entry.value;
+        // Log to console in development (centralized)
+        if (process.env.NODE_ENV === 'development') {
+          const emoji = metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌';
+          logger.debug(`${emoji} ${name}: ${value.toFixed(2)}ms (${metric.rating})`);
         }
-      }
-      this.recordMetric('CLS', clsValue);
-    });
-    
     try {
       observeCLS.observe({ type: 'layout-shift', buffered: true });
     } catch (e) {
-      console.warn('CLS observation not supported');
+              logger.warn(`⚠️ Long task detected: ${entry.duration.toFixed(2)}ms`, entry);
     }
 
     // Time to First Byte (TTFB)
-    window.addEventListener('load', () => {
+          logger.warn('Long task observation not supported');
       const navTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       if (navTiming) {
-        const ttfb = navTiming.responseStart - navTiming.requestStart;
+          logger.warn(`Failed to measure ${name}`, e);
         this.recordMetric('TTFB', ttfb);
         
         const fcp = navTiming.domContentLoadedEventEnd - navTiming.fetchStart;
-        this.recordMetric('FCP', fcp);
-      }
+        logger.debug('📦 Bundle Analysis:');
+        logger.debug(`Total JS Size: ${(totalSize / 1024 / 1024).toFixed(2)}MB`);
     });
 
-    // Long Tasks (tasks taking more than 50ms)
+            logger.debug(`  ${r.name}: ${((r.transferSize || 0) / 1024).toFixed(2)}KB (${r.duration.toFixed(2)}ms)`);
     const observeLongTasks = new PerformanceObserver((entryList) => {
       for (const entry of entryList.getEntries()) {
-        if (entry.duration > 50) {
-          this.recordMetric('LongTask', entry.duration);
-          console.warn(`⚠️ Long task detected: ${entry.duration.toFixed(2)}ms`, entry);
-        }
+          logger.debug('💾 Memory Usage:');
+          logger.debug(`  Used: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB`);
+          logger.debug(`  Total: ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)}MB`);
+          logger.debug(`  Limit: ${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)}MB`);
       }
     });
     
-    try {
-      observeLongTasks.observe({ type: 'longtask', buffered: true });
+        logger.debug('📊 Performance Report:');
+        logger.debug('─'.repeat(50));
     } catch (e) {
       console.warn('Long task observation not supported');
     }
   }
-
+            logger.debug(`${emoji} ${name}: ${avg.toFixed(2)}ms (${rating})`);
   recordMetric(name: string, value: number) {
     const metric: PerformanceMetric = {
-      name,
-      value,
-      timestamp: Date.now(),
-      rating: this.getRating(name, value),
+          logger.debug(`\n⚠️ ${slowResources.length} slow resources detected (>1s):`);
+          slowResources.forEach(r => {
+            logger.debug(`  ${r.name}: ${r.duration.toFixed(2)}ms`);
+          });
     };
     
     this.metrics.push(metric);

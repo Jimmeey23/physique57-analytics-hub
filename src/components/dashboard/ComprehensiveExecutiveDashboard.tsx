@@ -73,7 +73,9 @@ import { ExecutiveLeadsSection } from './ExecutiveLeadsSection';
 import { ExecutiveDiscountsSection } from './ExecutiveDiscountsSection';
 import { ExecutiveCancellationsSection } from './ExecutiveCancellationsSection';
 import { ExecutiveExpirationsSection } from './ExecutiveExpirationsSection';
+import { ComprehensiveMonthOnMonthTable } from './ComprehensiveMonthOnMonthTable';
 import { ExecutivePDFExportButton } from './ExecutivePDFExportButton';
+import { DashboardChatbot } from './DashboardChatbot';
 import InfoPopover from '@/components/ui/InfoSidebar';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useSalesData } from '@/hooks/useSalesData';
@@ -670,7 +672,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 p-6">
+    <div id="executive-dashboard" className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 p-6">
       {/* Hidden audio element */}
       <audio ref={audioRef} onEnded={() => setIsPlaying(false)} preload="metadata">
         <source src="/placeholder-audio.mp3" type="audio/mpeg" />
@@ -1404,6 +1406,15 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
           />
         </div>
 
+        {/* Independent Month-On-Month Overview */}
+        <div className="mt-12 mb-12">
+          <div className="border-t-2 border-slate-200 pt-8 mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Complete Month-On-Month History</h2>
+            <p className="text-sm text-slate-600">All metrics across all time periods, independent of current filters</p>
+          </div>
+          <ComprehensiveMonthOnMonthTable />
+        </div>
+
         {/* New Executive Sections - Complete Performance Overview */}
         <div className="mt-12">
           <div className="border-t-2 border-slate-200 pt-8 mb-8">
@@ -1438,18 +1449,8 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
           </div>
         </div>
         
-        {/* Sales Table (Exportable) */}
-        <div className="mt-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-slate-900">Product & Category Metrics</h2>
-          </div>
+        {/* (Duplicate sales table removed) */}
 
-          <ProductCategoryMetricsTable
-            data={previousMonthData.sales || []}
-            filters={filters}
-          />
-        </div>
-        
         {/* Source Data Modal */}
         <SourceDataModal 
           open={showSourceData} 
@@ -1481,7 +1482,11 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
             }
           ]}
         />
+        
       </div>
+
+      {/* Dashboard Chatbot */}
+      <DashboardChatbot />
     </div>
   );
 });

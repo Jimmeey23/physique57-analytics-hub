@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { logger } from '@/utils/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,12 +32,12 @@ export const PaginatedDrillDownModal: React.FC<PaginatedDrillDownModalProps> = (
   const filteredData = useMemo(() => {
     // First, check if we already have pre-filtered specific data
     if (data?.filteredTransactionData && data.filteredTransactionData.length > 0) {
-      console.log(`PaginatedDrillDownModal: Using pre-filtered data with ${data.filteredTransactionData.length} transactions`);
+      logger.debug(`PaginatedDrillDownModal: Using pre-filtered data with ${data.filteredTransactionData.length} transactions`);
       return data.filteredTransactionData;
     }
     
     if (data?.rawData && data.rawData.length > 0) {
-      console.log(`PaginatedDrillDownModal: Using raw data with ${data.rawData.length} transactions`);
+      logger.debug(`PaginatedDrillDownModal: Using raw data with ${data.rawData.length} transactions`);
       return data.rawData;
     }
     
@@ -76,7 +77,7 @@ export const PaginatedDrillDownModal: React.FC<PaginatedDrillDownModalProps> = (
         filtered = relatedData;
     }
     
-    console.log(`Filtered ${filtered.length} items for ${type}: ${data.name || data.title}`);
+    logger.debug(`Filtered ${filtered.length} items for ${type}: ${data.name || data.title}`);
     return filtered;
   }, [data, relatedData, type]);
 

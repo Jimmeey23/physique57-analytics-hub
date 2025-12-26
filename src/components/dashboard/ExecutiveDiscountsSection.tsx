@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
-import { Percent } from 'lucide-react';
+import { Percent, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
+import { StandardizedMetricCard } from './StandardizedMetricCard';
+import { StandardizedTable } from './StandardizedTable';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
+import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatPercentage } from '@/utils/formatters';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { formatCurrency, formatPercentage, formatNumber } from '@/utils/formatters';
+import { parseDate } from '@/utils/dateUtils';
 
 interface ExecutiveDiscountsSectionProps {
   onMetricClick?: (metricData: any) => void;
@@ -16,10 +17,40 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
   onMetricClick,
 }) => {
   const { data: discountData, loading: discountLoading } = useDiscountAnalysis();
+  const { filters } = useGlobalFilters();
+
+  // Filter discounts by date range and location
+  const filteredDiscounts = useMemo(() => {
+    if (!discountData) return [];
+
+    return discountData.filter(discount => {
+      // Apply date range filter
+      if (filters.dateRange?.start && filters.dateRange?.end) {
+        const discountDate = parseDate(discount.paymentDate);
+        const filterStart = new Date(filters.dateRange.start);
+        const filterEnd = new Date(filters.dateRange.end);
+        filterEnd.setHours(23, 59, 59, 999);
+
+        if (!discountDate || discountDate < filterStart || discountDate > filterEnd) {
+          return false;
+        }
+      }
+
+      // Apply location filter
+      if (filters.location && filters.location.length > 0) {
+        const locations = Array.isArray(filters.location) ? filters.location : [filters.location];
+        if (!locations.includes('all') && !locations.some(loc => discount.location?.includes(loc))) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [discountData, filters.dateRange, filters.location]);
 
   // Calculate discount metrics
   const discountMetrics = useMemo(() => {
-    if (!discountData || discountData.length === 0) {
+    if (!filteredDiscounts || filteredDiscounts.length === 0) {
       return {
         totalDiscounts: 0,
         avgDiscount: 0,
@@ -29,9 +60,9 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
       };
     }
 
-    const discounts = discountData.map((d: any) => d.discountAmount || 0);
+    const discounts = filteredDiscounts.map((d: any) => d.discountAmount || 0);
     const totalDiscounts = discounts.reduce((sum, d) => sum + d, 0);
-    const discountCount = discountData.length;
+    const discountCount = filteredDiscounts.length;
 
     return {
       totalDiscounts,
@@ -40,14 +71,14 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
       minDiscount: Math.min(...discounts),
       discountCount,
     };
-  }, [discountData]);
+  }, [filteredDiscounts]);
 
   // Group discounts by category
   const discountsByCategory = useMemo(() => {
-    if (!discountData || discountData.length === 0) return [];
+    if (!filteredDiscounts || filteredDiscounts.length === 0) return [];
 
     const map = new Map<string, { count: number; total: number }>();
-    discountData.forEach((d: any) => {
+    filteredDiscounts.forEach((d: any) => {
       const category = d.category || d.discountType || 'General';
       if (!map.has(category)) {
         map.set(category, { count: 0, total: 0 });
@@ -65,7 +96,7 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
         avg: data.total / data.count,
       }))
       .sort((a, b) => b.total - a.total);
-  }, [discountData]);
+  }, [filteredDiscounts]);
 
   if (discountLoading) {
     return (
@@ -92,47 +123,36 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
     >
       {/* Metric Cards */}
       <div>
-        <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
+          <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200">
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-amber-700 uppercase">Total Discounts</p>
-                <p className="text-2xl font-bold text-amber-900">{formatCurrency(discountMetrics.totalDiscounts)}</p>
-                <p className="text-xs text-amber-600">Revenue reduced</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200">
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-blue-700 uppercase">Discount Count</p>
-                <p className="text-2xl font-bold text-blue-900">{discountMetrics.discountCount}</p>
-                <p className="text-xs text-blue-600">Transactions</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200">
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-emerald-700 uppercase">Avg Discount</p>
-                <p className="text-2xl font-bold text-emerald-900">{formatCurrency(discountMetrics.avgDiscount)}</p>
-                <p className="text-xs text-emerald-600">Per transaction</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-rose-50 to-rose-100/50 border-rose-200">
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-rose-700 uppercase">Max Discount</p>
-                <p className="text-2xl font-bold text-rose-900">{formatCurrency(discountMetrics.maxDiscount)}</p>
-                <p className="text-xs text-rose-600">Highest value</p>
-              </div>
-            </CardContent>
-          </Card>
+          <StandardizedMetricCard
+            title="Total Discounts"
+            value={formatCurrency(discountMetrics.totalDiscounts)}
+            icon={DollarSign}
+            color="amber"
+            subtitle="Revenue reduced"
+          />
+          <StandardizedMetricCard
+            title="Discount Count"
+            value={discountMetrics.discountCount}
+            icon={Percent}
+            color="blue"
+            subtitle="Transactions"
+          />
+          <StandardizedMetricCard
+            title="Avg Discount"
+            value={formatCurrency(discountMetrics.avgDiscount)}
+            icon={TrendingUp}
+            color="emerald"
+            subtitle="Per transaction"
+          />
+          <StandardizedMetricCard
+            title="Max Discount"
+            value={formatCurrency(discountMetrics.maxDiscount)}
+            icon={AlertCircle}
+            color="rose"
+            subtitle="Highest value"
+          />
         </div>
       </div>
 
@@ -140,52 +160,23 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
       {discountsByCategory.length > 0 && (
         <div className="pt-4 border-t border-slate-100">
           <h4 className="text-sm font-semibold text-slate-700 mb-4">Discounts by Category</h4>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-amber-700 to-amber-900 text-white">
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Category</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Count</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Total Discount</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Avg Discount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {discountsByCategory.map((item) => (
-                  <tr
-                    key={item.category}
-                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-slate-800">{item.category}</td>
-                    <td className="px-4 py-3 text-center text-slate-700">{item.count}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-amber-700">
-                      {formatCurrency(item.total)}
-                    </td>
-                    <td className="px-4 py-3 text-center text-slate-700">
-                      {formatCurrency(item.avg)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-slate-800 text-white font-bold">
-                  <td className="px-4 py-3">TOTAL</td>
-                  <td className="px-4 py-3 text-center">
-                    {discountsByCategory.reduce((sum, item) => sum + item.count, 0)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {formatCurrency(discountsByCategory.reduce((sum, item) => sum + item.total, 0))}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {formatCurrency(
-                      discountsByCategory.reduce((sum, item) => sum + item.avg, 0) /
-                        discountsByCategory.length
-                    )}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <StandardizedTable
+            data={discountsByCategory}
+            columns={[
+              { key: 'category', header: 'Category', align: 'left' },
+              { key: 'count', header: 'Count', align: 'center', render: (val) => formatNumber(val) },
+              { key: 'total', header: 'Total Discount', align: 'center', render: (val) => formatCurrency(val) },
+              { key: 'avg', header: 'Avg Discount', align: 'center', render: (val) => formatCurrency(val) },
+            ]}
+            headerColor="slate"
+            footerData={{
+              category: 'TOTAL',
+              count: discountsByCategory.reduce((sum, item) => sum + item.count, 0),
+              total: discountsByCategory.reduce((sum, item) => sum + item.total, 0),
+              avg: discountsByCategory.reduce((sum, item) => sum + item.avg, 0) / discountsByCategory.length,
+            }}
+            striped
+          />
         </div>
       )}
     </ExecutiveSectionCard>

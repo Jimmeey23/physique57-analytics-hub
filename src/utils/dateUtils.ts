@@ -1,5 +1,7 @@
 
 // Date utility functions for the dashboard
+import { logger } from './logger';
+
 export const getPreviousMonthDateRange = () => {
   const now = new Date();
   // Get the first day of the previous month
@@ -20,7 +22,7 @@ export const getPreviousMonthDateRange = () => {
     end: formatDate(lastDayPreviousMonth)
   };
   
-  console.log('Previous month date range:', result, { 
+  logger.debug('Previous month date range:', result, { 
     firstDay: firstDayPreviousMonth.toDateString(), 
     lastDay: lastDayPreviousMonth.toDateString(),
     currentMonth: now.getMonth() + 1,
@@ -151,7 +153,7 @@ export const parseDate = (dateString: string): Date | null => {
     
     return null;
   } catch (error) {
-    console.warn('Failed to parse date:', dateString, error);
+    logger.warn('Failed to parse date:', dateString, error);
     return null;
   }
 };

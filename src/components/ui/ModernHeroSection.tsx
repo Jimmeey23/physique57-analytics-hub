@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Home, Download, TrendingUp, Users, UserCheck, Calendar, Percent, Filter, CheckCircle, Zap, Calendar as CalendarIcon, X, BarChart3, DollarSign, Target, Clock, Trophy, Star, Award, Activity, Sparkles, Play, Pause } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 interface MetricData {
   label: string;
   value: string;
@@ -136,8 +137,8 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
         ? '/kwality-house-audio.mp3' 
         : '/placeholder-audio.mp3';
       
-      console.log('Attempting to play audio:', audioSrc);
-      console.log('Current audio element:', audioRef.current);
+      logger.debug('Attempting to play audio:', audioSrc);
+      logger.debug('Current audio element:', audioRef.current);
       
       // Set the source
       audioRef.current.src = audioSrc;
@@ -154,10 +155,10 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
       if (playPromise !== undefined) {
         await playPromise;
         setIsPlaying(true);
-        console.log('Audio started playing successfully');
+        logger.debug('Audio started playing successfully');
       }
     } catch (error: any) {
-      console.error('Failed to play audio:', error);
+      logger.error('Failed to play audio:', error);
       let errorMessage = 'Failed to play audio.';
       
       if (error.name === 'NotAllowedError') {
@@ -181,18 +182,18 @@ export const ModernHeroSection: React.FC<ModernHeroSectionProps> = ({
       <audio 
         ref={audioRef} 
         onEnded={() => {
-          console.log('Audio ended');
+          logger.debug('Audio ended');
           setIsPlaying(false);
         }}
         onError={(e) => {
-          console.error('Audio element error:', e);
+          logger.error('Audio element error:', e);
           setAudioError('Audio file could not be loaded');
           setIsPlaying(false);
         }}
-        onLoadStart={() => console.log('Audio load started')}
-        onCanPlay={() => console.log('Audio can play')}
-        onPlay={() => console.log('Audio play event')}
-        onPause={() => console.log('Audio pause event')}
+        onLoadStart={() => logger.debug('Audio load started')}
+        onCanPlay={() => logger.debug('Audio can play')}
+        onPlay={() => logger.debug('Audio play event')}
+        onPause={() => logger.debug('Audio pause event')}
         preload="metadata"
         controls={false}
       >

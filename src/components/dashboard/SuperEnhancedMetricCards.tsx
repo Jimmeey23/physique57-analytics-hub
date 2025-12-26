@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Users, Calendar, Target, BarChart3, Clock, DollarSign, ArrowUpRight, ArrowDownRight, Activity, UserCheck, Percent, Building2 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 
 interface SuperEnhancedMetricCardsProps {
@@ -186,7 +187,7 @@ export const SuperEnhancedMetricCards: React.FC<SuperEnhancedMetricCardsProps> =
         calculatedFromFiltered: true
       };
       
-      console.log(`Metric ${metric.title} clicked: ${dynamicSessions} sessions, ${dynamicAttendance} attendance`);
+      logger.debug(`Metric ${metric.title} clicked: ${dynamicSessions} sessions, ${dynamicAttendance} attendance`);
       onMetricClick(drillDownData);
     }
   };

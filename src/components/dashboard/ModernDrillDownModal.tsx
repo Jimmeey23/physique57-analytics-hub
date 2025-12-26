@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/utils/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -144,7 +145,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
           item.paymentItem === productName
         );
       }
-      console.log(`ModernDrillDownModal: Using ${filteredData.length} filtered transactions for product ${productName}`);
+      logger.debug(`ModernDrillDownModal: Using ${filteredData.length} filtered transactions for product ${productName}`);
       return {
         ...data,
         filteredData,
@@ -163,7 +164,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
           item.category === categoryName
         );
       }
-      console.log(`ModernDrillDownModal: Using ${filteredData.length} filtered transactions for category ${categoryName}`);
+      logger.debug(`ModernDrillDownModal: Using ${filteredData.length} filtered transactions for category ${categoryName}`);
       return {
         ...data,
         filteredData,

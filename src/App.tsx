@@ -14,6 +14,7 @@ import { useRouteChangeLoader } from "@/hooks/useRouteChangeLoader";
 import { GlobalFiltersProvider } from "@/contexts/GlobalFiltersContext";
 import { MetricsTablesRegistryProvider } from '@/contexts/MetricsTablesRegistryContext';
 import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
+import { SessionsFiltersProvider } from "@/contexts/SessionsFiltersContext";
 import { RouteLoadingWrapper } from "@/components/RouteLoadingWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -135,11 +136,13 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <GlobalFiltersProvider>
-              <MetricsTablesRegistryProvider>
-                <SectionNavigationProvider>
-                  <AppRoutes />
-                </SectionNavigationProvider>
-              </MetricsTablesRegistryProvider>
+              <SessionsFiltersProvider>
+                <MetricsTablesRegistryProvider>
+                  <SectionNavigationProvider>
+                    <AppRoutes />
+                  </SectionNavigationProvider>
+                </MetricsTablesRegistryProvider>
+              </SessionsFiltersProvider>
             </GlobalFiltersProvider>
           </BrowserRouter>
         </TooltipProvider>

@@ -3,6 +3,7 @@ import { SalesData, YearOnYearMetricType } from '@/types/dashboard';
 import { ModernTableWrapper, ModernGroupBadge, ModernMetricTabs, STANDARD_METRICS } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 import { ChevronDown, ChevronRight, ShoppingCart, TrendingUp, TrendingDown, BarChart3, DollarSign, Users, Target, Trophy, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
@@ -574,7 +575,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                               title={growthPercentage ? `${growthPercentage}% vs previous month` : ''}
                               onClick={(e) => {
                                 e.stopPropagation(); // Prevent row click
-                                console.log('🎯 CELL CLICKED:', {
+                                logger.debug('🎯 CELL CLICKED:', {
                                   productName: product.product,
                                   monthKey: key,
                                   value: current,

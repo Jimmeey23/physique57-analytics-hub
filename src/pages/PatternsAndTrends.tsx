@@ -65,6 +65,8 @@ export const PatternsAndTrends = () => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<GroupByOption>('product');
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('visits');
+  const [drillDownData, setDrillDownData] = useState<any>(null);
+  const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
   
   // Combine loading states
   const loading = checkinsLoading || salesLoading;
@@ -444,14 +446,14 @@ export const PatternsAndTrends = () => {
       }
     });
 
-    // Sort months chronologically
+    // Sort months chronologically (ascending order)
     const months = Array.from(monthsSet).sort((a, b) => {
       const parseMonth = (str: string) => {
         const [month, year] = str.split(' ');
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return new Date(parseInt(year), monthNames.indexOf(month), 1);
       };
-      return parseMonth(b).getTime() - parseMonth(a).getTime();
+      return parseMonth(a).getTime() - parseMonth(b).getTime();
     });
 
     // Convert to array and calculate totals
@@ -769,6 +771,37 @@ export const PatternsAndTrends = () => {
       newExpanded.add(product);
     }
     setExpandedRows(newExpanded);
+  };
+
+  const handleCellDrillDown = (product: string, month: string, metric: MetricType, value: any) => {
+    // Filter raw data for the specific product/month combination
+    const filteredRawData = deferredFilteredData.filter(item => {
+      const itemMonth = `${item.month} ${item.year}`;
+      let itemGroupKey = '';
+      if (groupBy === 'product') {
+        itemGroupKey = item.cleanedProduct || 'Unknown';
+      } else if (groupBy === 'category') {
+        itemGroupKey = item.cleanedCategory || 'Unknown';
+      } else if (groupBy === 'teacher') {
+        itemGroupKey = item.teacherName || 'Unknown';
+      } else if (groupBy === 'location') {
+        itemGroupKey = item.location || 'Unknown';
+      } else if (groupBy === 'memberStatus') {
+        itemGroupKey = item.isNew || 'Unknown';
+      }
+      return itemGroupKey === product && itemMonth === month;
+    });
+
+    setDrillDownData({
+      product,
+      month,
+      metric,
+      value,
+      rawData: filteredRawData,
+      groupBy,
+      metricConfig: METRICS.find(m => m.id === metric)
+    });
+    setIsDrillDownOpen(true);
   };
 
   // Calculate visit frequency buckets (monthly check-ins per member) - TABULAR FORMAT WITH MONTH FILTER
@@ -1587,23 +1620,23 @@ export const PatternsAndTrends = () => {
                               : formatNumber(value);
                             
                             return (
-                              <TableCell key={monthData.month} className={cn(
-                                "text-center text-sm font-medium transition-colors hover:bg-slate-50/50 py-3",
-                                metricConfig?.color || "text-slate-800",
-                                value === 0 ? "text-slate-400" : "",
-                                value > 0 && metricConfig?.id === 'emptySessions' ? "text-red-600 bg-red-50/30" : ""
-                              )}>
+                              <TableCell 
+                                key={monthData.month} 
+                                className={cn(
+                                  "text-center text-sm font-medium transition-all duration-200 py-3 cursor-pointer border-r border-slate-200/50",
+                                  "hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md",
+                                  metricConfig?.color || "text-slate-800",
+                                  value === 0 ? "text-slate-400" : "",
+                                  value > 0 && metricConfig?.id === 'emptySessions' ? "text-red-600 bg-red-50/30" : ""
+                                )}
+                                onClick={() => handleCellDrillDown(productData.product, monthData.month, selectedMetric, value)}
+                              >
                                 <TooltipProvider>
                                   <Tooltip>
-                                    <TooltipTrigger className="cursor-help">
-                                      <div className="flex flex-col items-center">
-                                        <span className="font-semibold">{formattedValue}</span>
-                                        {metricConfig?.id !== 'emptySessions' && value > 0 && (
-                                          <span className="text-xs text-slate-500">
-                                            {monthData.uniqueMembers} members
-                                          </span>
-                                        )}
-                                      </div>
+                                    <TooltipTrigger className="cursor-pointer">
+                                      <span className="font-bold text-base hover:text-indigo-700 transition-colors">
+                                        {formattedValue}
+                                      </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <div className="space-y-1">
@@ -2423,8 +2456,150 @@ export const PatternsAndTrends = () => {
           </div>
         </div>
         <Footer />
+        
+        {/* Drill-Down Modal */}
+        {isDrillDownOpen && (
+          <PatternsDrillDownModal
+            isOpen={isDrillDownOpen}
+            onClose={() => setIsDrillDownOpen(false)}
+            data={drillDownData}
+          />
+        )}
       </div>
     </GlobalFiltersProvider>
+  );
+};
+
+// Drill-Down Modal Component
+const PatternsDrillDownModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  data: any;
+}> = ({ isOpen, onClose, data }) => {
+  if (!data) return null;
+
+  const { product, month, metric, value, rawData, groupBy, metricConfig } = data;
+
+  // Calculate analytics for the filtered data
+  const analytics = React.useMemo(() => {
+    const totalRecords = rawData.length;
+    const checkedInRecords = rawData.filter((item: any) => item.checkedIn).length;
+    const uniqueMembers = new Set(rawData.map((item: any) => item.memberId)).size;
+    const uniqueSessions = new Set(rawData.map((item: any) => item.sessionId)).size;
+    const totalRevenue = rawData.reduce((sum: number, item: any) => sum + (item.paid || 0), 0);
+    const avgRevenuePerMember = uniqueMembers > 0 ? totalRevenue / uniqueMembers : 0;
+    
+    return {
+      totalRecords,
+      checkedInRecords,
+      uniqueMembers,
+      uniqueSessions,
+      totalRevenue,
+      avgRevenuePerMember
+    };
+  }, [rawData]);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl max-h-[90vh] w-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-1">
+              {metricConfig?.label} Details
+            </h2>
+            <p className="text-slate-600">
+              {product} • {month} • {formatNumber(value)} {metricConfig?.label.toLowerCase()}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="text-slate-500 hover:text-slate-900"
+          >
+            <XCircle className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* Analytics Cards */}
+        <div className="p-6 border-b border-slate-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
+              <div className="text-2xl font-bold text-blue-900">{formatNumber(analytics.totalRecords)}</div>
+              <div className="text-sm text-blue-700">Total Records</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl">
+              <div className="text-2xl font-bold text-green-900">{formatNumber(analytics.checkedInRecords)}</div>
+              <div className="text-sm text-green-700">Check-ins</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl">
+              <div className="text-2xl font-bold text-purple-900">{formatNumber(analytics.uniqueMembers)}</div>
+              <div className="text-sm text-purple-700">Unique Members</div>
+            </div>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl">
+              <div className="text-2xl font-bold text-amber-900">{formatRevenue(analytics.totalRevenue)}</div>
+              <div className="text-sm text-amber-700">Revenue</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-auto p-6">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100">
+                    <TableHead className="font-semibold text-slate-900">Member</TableHead>
+                    <TableHead className="font-semibold text-slate-900">Session</TableHead>
+                    <TableHead className="font-semibold text-slate-900">Date</TableHead>
+                    <TableHead className="font-semibold text-slate-900">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-900">Revenue</TableHead>
+                    <TableHead className="font-semibold text-slate-900">Teacher</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rawData.slice(0, 100).map((item: any, index: number) => (
+                    <TableRow key={index} className="hover:bg-slate-50 transition-colors">
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-slate-900">{item.customerName || 'Unknown'}</div>
+                          <div className="text-sm text-slate-500">ID: {item.memberId}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-slate-900">{item.cleanedClass}</div>
+                          <div className="text-sm text-slate-500">{item.sessionId}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-700">
+                        {new Date(`${item.month} ${item.day}, ${item.year}`).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.checkedIn ? 'default' : 'secondary'}>
+                          {item.checkedIn ? 'Checked In' : 'Booked'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium text-slate-900">
+                        {formatRevenue(item.paid || 0)}
+                      </TableCell>
+                      <TableCell className="text-slate-700">{item.teacherName || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {rawData.length > 100 && (
+                <div className="p-4 text-center text-slate-500 border-t">
+                  Showing first 100 of {rawData.length} records
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

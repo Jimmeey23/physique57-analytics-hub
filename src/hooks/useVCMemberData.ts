@@ -5,7 +5,7 @@ import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useVCMemberData');
 
-const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SESSIONS_SPREADSHEET_ID || '16wFlke0bHFcmfn-3UyuYlGnImBq0DY7ouVYAlAFTZys';
+const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SESSIONS_SPREADSHEET_ID;
 const VC_SHEET_NAME = 'VC';
 
 interface UseVCMemberDataResult {
@@ -60,6 +60,14 @@ export const useVCMemberData = (): UseVCMemberDataResult => {
   const fetchData = async () => {
     setLoading(true);
     setError(null);
+
+    if (!SPREADSHEET_ID) {
+      const msg = 'VITE_GOOGLE_SESSIONS_SPREADSHEET_ID not configured';
+      logger.error(msg);
+      setError(msg);
+      setLoading(false);
+      return;
+    }
 
     try {
       logger.info('🔄 Fetching VC member data from Google Sheets...');

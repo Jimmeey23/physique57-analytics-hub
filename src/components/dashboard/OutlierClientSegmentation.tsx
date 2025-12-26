@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Users, TrendingUp, UserPlus, Repeat } from 'lucide-react';
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -90,7 +91,7 @@ export const OutlierClientSegmentation: React.FC<Props> = ({
 
       const totalRevenue = data.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
 
-      console.log(`📊 Client Segmentation ${month}:`, {
+      logger.debug(`📊 Client Segmentation ${month}:`, {
         totalCustomers: customerMap.size,
         newCustomers: newCustomers.length,
         existingCustomers: existingCustomers.length,

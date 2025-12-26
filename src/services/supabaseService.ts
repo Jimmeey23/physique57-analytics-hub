@@ -336,7 +336,7 @@ class SupabaseService {
         ON analytics_summaries (updated_at DESC);
     `;
 
-    console.log('Table creation SQL:', tableSQL);
+    // Table SQL is kept here for reference; do not log in production to avoid leaking schema details
     return { success: true };
   }
 }

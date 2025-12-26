@@ -5,7 +5,7 @@ import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useLateCancellationsData');
 
-const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_PAYROLL_SPREADSHEET_ID || "1DSRuJJBhl1Sc9yfY6ki-ZFhdmQ_OeVeGyPDE6n9zpK4";
+const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_PAYROLL_SPREADSHEET_ID;
 
 export const useLateCancellationsData = () => {
   const [data, setData] = useState<LateCancellationsData[]>([]);
@@ -15,6 +15,12 @@ export const useLateCancellationsData = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchLateCancellationsData = async () => {
+    if (!SPREADSHEET_ID) {
+      logger.error('No spreadsheet ID configured for late cancellations (VITE_GOOGLE_PAYROLL_SPREADSHEET_ID)');
+      setError('Data source not configured');
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);

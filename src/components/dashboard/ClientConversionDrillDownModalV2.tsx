@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/utils/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +30,7 @@ export const ClientConversionDrillDownModalV2: React.FC<ClientConversionDrillDow
     
     // For month/year type, use the specific clients from the clicked row
     if ((type === 'month' || type === 'year') && data.clients) {
-      console.log('Drill-down: Using targeted clients from clicked row:', data.clients.length);
+      logger.debug('Drill-down: Using targeted clients from clicked row:', data.clients.length);
       return data.clients;
     }
     
@@ -39,7 +40,7 @@ export const ClientConversionDrillDownModalV2: React.FC<ClientConversionDrillDow
     }
     
     // Fallback to empty array
-    console.log('Drill-down: No targeted clients found, showing empty');
+    logger.debug('Drill-down: No targeted clients found, showing empty');
     return [];
   }, [data, type]);
 

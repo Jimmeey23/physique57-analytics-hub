@@ -1,66 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { 
-  Info, X, Pin, PinOff, GripHorizontal, Edit2, Save, Eye, EyeOff, 
-  Maximize2, Minimize2, Copy, Download, RefreshCw, Wand2
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+// Archived duplicate: InfoSidebar_backup.tsx
+// This backup copy was left in the repository by accident. It has been replaced with
+// a small placeholder to avoid duplicate components being bundled.
 
-interface InfoPopoverProps {
-  context: string; // unique key for the tab/section
-  locationId?: string; // location identifier
-  size?: number; // initial width in px
-  startOpen?: boolean;
-  startAsSidebar?: boolean;
-  iframeSrc?: string; // optional explicit iframe src override
-}
-
-// Helper to build a stable storage key unique per browser tab (pathname) + context + location
-const buildStorageKey = (context: string, locationId?: string) => {
-  const path = typeof window !== 'undefined' ? window.location.pathname : 'unknown-path';
-  return `info-sidebar:${path}:${context}:${locationId ?? 'all'}`;
-};
-
-const DEFAULT_WIDTH = 520;
-const MIN_WIDTH = 320;
-const MAX_WIDTH = 1200;
-
-const InfoPopover: React.FC<InfoPopoverProps> = ({ 
-  context, 
-  locationId = 'all', 
-  size, 
-  startOpen = false, 
-  startAsSidebar = false,
-  iframeSrc 
-}) => {
-  const storageKey = buildStorageKey(context, locationId);
-  const [open, setOpen] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(storageKey + ':open');
-      return raw ? JSON.parse(raw) : startOpen;
-    } catch (e) {
-      return startOpen;
-    }
-  });
-
-  const [pinned, setPinned] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(storageKey + ':pinned');
-      return raw ? JSON.parse(raw) : false;
-    } catch (e) {
-      return false;
-    }
-  });
-
-  const [width, setWidth] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem(storageKey + ':width');
-      return raw ? Number(raw) : size ?? DEFAULT_WIDTH;
-    } catch (e) {
-      return size ?? DEFAULT_WIDTH;
-    }
-  });
+export {};
 
   const [isSidebarMode, setIsSidebarMode] = useState<boolean>(() => {
     try {

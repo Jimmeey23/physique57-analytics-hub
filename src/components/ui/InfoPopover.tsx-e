@@ -1,23 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import DOMPurify, { type Config as DomPurifyConfig } from 'dompurify';
-import { 
-  Info, Edit2, Save, X, Loader2, Trash2, RefreshCw, Pin, PinOff, Maximize2, Minimize2, 
-  GripHorizontal, Copy, Download, Link as LinkIcon, Wand2, Palette, BarChart3, 
-  PieChart, LineChart, Settings, Code2, Eye, EyeOff, Zap, Sparkles, Layers
-} from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { googleDriveService } from '@/services/googleDriveService';
-import { useToast } from '@/hooks/use-toast';
-import { SalesAnalysisService } from '@/services/salesAnalysisService';
-import { SalesData } from '@/types/dashboard';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+// Archived duplicate: InfoPopover.tsx-e
+// This file is a leftover temporary copy and has been archived to avoid duplication.
+// If you need the original `InfoPopover.tsx`, refer to `src/components/ui/InfoPopover.tsx`.
 
-type SalesContextKey =
-  | 'sales-metrics'
-  | 'sales-top-bottom'
+export {}; // keep as a valid module without side effects
   | 'sales-mom'
   | 'sales-yoy'
   | 'sales-product'
