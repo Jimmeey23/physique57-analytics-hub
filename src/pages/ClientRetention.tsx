@@ -426,28 +426,20 @@ const ClientRetention = () => {
     
     return [
       {
-        location: 'Overview',
         label: 'Total Trials',
-        value: formatNumber(totalTrials),
-        subtext: `${formatNumber(newMembers)} new members`
+        value: formatNumber(totalTrials)
       },
       {
-        location: 'Conversion',
         label: 'Conversion Rate',
-        value: formatPercentage(conversionRate),
-        subtext: `${formatNumber(converted)} converted`
+        value: formatPercentage(conversionRate)
       },
       {
-        location: 'Retention',
         label: 'Retention Rate',
-        value: formatPercentage(retentionRate),
-        subtext: `${formatNumber(retained)} retained`
+        value: formatPercentage(retentionRate)
       },
       {
-        location: 'LTV',
         label: 'Avg LTV',
-        value: formatCurrency(avgLTV),
-        subtext: `${formatCurrency(totalLTV)} total`
+        value: formatCurrency(avgLTV)
       }
     ];
   }, [filteredData]);

@@ -5,7 +5,7 @@ import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useLateCancellationsData');
 
-const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_PAYROLL_SPREADSHEET_ID;
+const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_PAYROLL_SPREADSHEET_ID||"1a7XKv2WCog7o8nYuV8YcFdqtfPYJNRO6DelJ6Hn_z6Q";
 
 export const useLateCancellationsData = () => {
   const [data, setData] = useState<LateCancellationsData[]>([]);

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, TrendingDown, Users, Target, AlertTriangle, Award, Crown, Trophy, Medal, Star, ArrowDownCircle, ThumbsDown, BarChart3 } from 'lucide-react';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { isLeadConverted } from '@/utils/leadConversions';
 import { cn } from '@/lib/utils';
 import { LeadsData } from '@/types/leads';
 
@@ -36,7 +37,7 @@ export const EnhancedFunnelRankings: React.FC<EnhancedFunnelRankingsProps> = ({ 
       const sourceData = sourceMap.get(source);
       sourceData.count += 1;
       
-      if (lead.conversionStatus === 'Converted') {
+      if (isLeadConverted(lead)) {
         sourceData.converted += 1;
       }
       
@@ -66,7 +67,7 @@ export const EnhancedFunnelRankings: React.FC<EnhancedFunnelRankingsProps> = ({ 
       const stageData = stageMap.get(stage);
       stageData.count += 1;
       
-      if (lead.conversionStatus === 'Converted') {
+      if (isLeadConverted(lead)) {
         stageData.converted += 1;
       }
       

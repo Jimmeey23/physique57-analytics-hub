@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SalesData, SessionData, NewClientData, LeadsData, PayrollData, ExpirationData } from '@/types/dashboard';
+import { SalesData, NewClientData, PayrollData, ExpirationData, SessionData, LeadsData } from '@/types/dashboard';
 import { useSalesData } from './useSalesData';
 import { useSessionsData } from './useSessionsData';
 import { useNewClientData } from './useNewClientData';
@@ -7,7 +7,6 @@ import { useLeadsData } from './useLeadsData';
 import { usePayrollData } from './usePayrollData';
 import { useExpirationsData } from './useExpirationsData';
 import { useDiscountsData } from './useDiscountsData';
-import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { parseDate as robustParseDate } from '@/utils/dateUtils';
 
 /**
@@ -120,8 +119,8 @@ export const useIndependentMonthOnMonthMetrics = () => {
 
     const sessionsByMonth = aggregateByMonth(
       sessionsData.data || [],
-      'sessionDate' as keyof SessionData,
-      (item: SessionData) => ({
+      'sessionDate',
+      (item) => ({
         sessions: 1,
         attendance: item.attendance || 0,
       })

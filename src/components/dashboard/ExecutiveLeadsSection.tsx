@@ -9,6 +9,7 @@ import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
+import { countConvertedLeads, calculateConversionRate, isLeadConverted } from '@/utils/leadConversions';
 
 interface ExecutiveLeadsSectionProps {
   onMetricClick?: (metricData: any) => void;
@@ -64,7 +65,7 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
 
       const data = sources.get(source)!;
       data.count += 1;
-      if (lead.convertedToCustomerAt) {
+      if (isLeadConverted(lead)) {
         data.converted += 1;
       }
       if (lead.stage === 'qualified' || lead.stage === 'Qualified') {
@@ -133,7 +134,7 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
             />
             <StandardizedMetricCard
               title="Conversion Rate"
-              value={filteredLeads.length > 0 ? ((filteredLeads.filter(l => l.convertedToCustomerAt).length / filteredLeads.length) * 100).toFixed(1) : '0'}
+              value={filteredLeads.length > 0 ? calculateConversionRate(filteredLeads).toFixed(1) : '0'}
               subtitle="%"
               icon={Zap}
               color="amber"

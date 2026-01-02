@@ -57,6 +57,7 @@ export const LateCancellationsInteractiveCharts: React.FC<LateCancellationsInter
       
       if (!acc[monthKey]) {
         acc[monthKey] = {
+          monthKey,
           month: date.toLocaleDateString('en', { month: 'short', year: 'numeric' }),
           count: 0,
           members: new Set(),
@@ -75,7 +76,7 @@ export const LateCancellationsInteractiveCharts: React.FC<LateCancellationsInter
       ...group,
       members: group.members.size,
       locations: group.locations.size
-    })).sort((a: any, b: any) => a.month.localeCompare(b.month));
+    })).sort((a: any, b: any) => a.monthKey.localeCompare(b.monthKey));
   }, [filteredData]);
 
   // Top locations data

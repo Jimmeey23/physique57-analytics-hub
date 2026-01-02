@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Users, Target, AlertTriangle, CheckCircle, ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { isLeadConverted } from '@/utils/leadConversions';
 import { motion } from 'framer-motion';
 
 interface FunnelStageAnalyticsProps {
@@ -34,7 +35,7 @@ export const FunnelStageAnalytics: React.FC<FunnelStageAnalyticsProps> = ({ data
       const stageData = stageMap.get(stage);
       stageData.count += 1;
       
-      if (lead.conversionStatus === 'Converted') {
+      if (isLeadConverted(lead)) {
         stageData.converted += 1;
       }
       

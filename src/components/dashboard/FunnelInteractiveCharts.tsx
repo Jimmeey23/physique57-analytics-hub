@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TrendingUp, BarChart3, PieChart as PieChartIcon, Users, Target, Calendar, RotateCcw, Download, ZoomIn, Maximize2, Filter, Clock, IndianRupee } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatCurrency } from '@/utils/formatters';
+import { isLeadConverted } from '@/utils/leadConversions';
 import { cn } from '@/lib/utils';
 
 interface FunnelInteractiveChartsProps {
@@ -51,7 +52,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
             acc[stage] = { name: stage, leads: 0, converted: 0, totalLTV: 0 };
           }
           acc[stage].leads += 1;
-          if (lead.conversionStatus === 'Converted') acc[stage].converted += 1;
+          if (isLeadConverted(lead)) acc[stage].converted += 1;
           acc[stage].totalLTV += lead.ltv || 0;
           return acc;
         }, {} as Record<string, any>);

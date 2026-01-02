@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { isLeadConverted, countConvertedLeads } from '@/utils/leadConversions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import CopyTableButton from '@/components/ui/CopyTableButton';
@@ -136,7 +137,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
       const st = (lead.stage || '').toLowerCase();
       if ((ts.includes('trial') && !ts.includes('completed')) || (st.includes('trial') && !st.includes('completed'))) acc[source].trialsScheduled += 1;
       if (lead.trialStatus === 'Trial Completed' || lead.stage === 'Trial Completed') acc[source].trialsCompleted += 1;
-      if (lead.conversionStatus === 'Converted') acc[source].converted += 1;
+      if (isLeadConverted(lead)) acc[source].converted += 1;
       if (lead.stage?.includes('Proximity')) acc[source].proximityIssues += 1;
       acc[source].totalLTV += lead.ltv || 0;
       acc[source].totalVisits += lead.visits || 0;
@@ -174,7 +175,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
       }
       
       acc[stage].totalLeads += 1;
-      if (lead.conversionStatus === 'Converted') acc[stage].converted += 1;
+      if (isLeadConverted(lead)) acc[stage].converted += 1;
       if (lead.retentionStatus === 'Retained') acc[stage].retained += 1;
       acc[stage].totalLTV += lead.ltv || 0;
       
@@ -211,7 +212,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         return daysDiff >= range.min && daysDiff <= range.max;
       });
 
-      const convertedInRange = leadsInRange.filter(lead => lead.conversionStatus === 'Converted');
+      const convertedInRange = leadsInRange.filter(isLeadConverted);
       
       return {
         timeRange: range.label,
@@ -240,7 +241,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         return ltv >= range.min && ltv <= range.max;
       });
 
-      const convertedInRange = leadsInRange.filter(lead => lead.conversionStatus === 'Converted');
+      const convertedInRange = leadsInRange.filter(isLeadConverted);
       
       return {
         ltvRange: range.label,
@@ -263,7 +264,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         acc[key] = { count: 0, converted: 0, totalLTV: 0 };
       }
       acc[key].count += 1;
-      if (lead.conversionStatus === 'Converted') acc[key].converted += 1;
+      if (isLeadConverted(lead)) acc[key].converted += 1;
       acc[key].totalLTV += lead.ltv || 0;
       return acc;
     }, {} as Record<string, { count: number; converted: number; totalLTV: number }>);
@@ -275,7 +276,7 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
         percentage: (stats.count / total) * 100,
         converted: stats.converted,
         conversionRate: stats.count > 0 ? (stats.converted / stats.count) * 100 : 0,
-        avgLTV: stats.count > 0 ? stats.totalLTV / stats.count : 0,
+        avgLTV: stats.converted > 0 ? stats.totalLTV / stats.converted : 0, // LTV per converted lead, not per total lead
         stagePopularity: (stats.count / total) * 100
       }))
       .sort((a, b) => b.leadCount - a.leadCount)

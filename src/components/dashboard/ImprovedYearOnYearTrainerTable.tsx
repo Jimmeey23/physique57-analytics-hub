@@ -389,22 +389,22 @@ export const ImprovedYearOnYearTrainerTable = ({
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="bg-black" style={{ height: '35px', maxHeight: '35px' }}>
-                <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 z-30 min-w-[200px] border-r border-white/20" style={{ height: '35px' }}>
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-30 min-w-[200px] border-r border-white/20" style={{ height: '35px' }}>
                   <div className="flex items-center justify-center">
                     <span className="text-white font-bold">Trainer</span>
                   </div>
                 </TableHead>
                 {processedData.organizedMonths.map(({ display }) => (
-                  <TableHead key={display} className="text-center font-bold text-white bg-black min-w-[120px] border-l border-white/20" style={{ height: '35px' }}>
+                  <TableHead key={display} className="text-center font-bold text-white bg-slate-900 min-w-[120px] border-l border-white/20" style={{ height: '35px' }}>
                     <div className="flex flex-col">
                       <span className="text-sm">{display.split(' ')[0]}</span>
                       <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
                     </div>
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-white bg-black min-w-[100px]" style={{ height: '35px' }}>YoY Growth</TableHead>
-                <TableHead className="text-center font-bold text-white bg-black min-w-[120px]" style={{ height: '35px' }}>Total</TableHead>
+                <TableHead className="text-center font-bold text-white bg-slate-900 min-w-[100px] border-l border-white/20" style={{ height: '35px' }}>YoY Growth</TableHead>
+                <TableHead className="text-center font-bold text-white bg-slate-900 min-w-[120px] border-l border-white/20" style={{ height: '35px' }}>Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, Users, Target, TrendingUp, CreditCard, MapPin, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLeadsData } from '@/hooks/useLeadsData';
+import { countConvertedLeads, isLeadConverted } from '@/utils/leadConversions';
 import { FilterPanel } from './LeadsFilterSection';
 import { LeadsFunnelVisualization } from './LeadsFunnelVisualization';
 import { MetricCard } from './MetricCard';
@@ -121,7 +122,7 @@ const LeadsSectionContent: React.FC = () => {
   const metrics = useMemo((): MetricCardData[] => {
     const totalLeads = filteredData.length;
     const trialsCompleted = filteredData.filter(item => item.stage === 'Trial Completed').length;
-    const membershipsSold = filteredData.filter(item => item.conversionStatus === 'Converted').length;
+    const membershipsSold = countConvertedLeads(filteredData); // Use unified conversion logic
     const avgLTV = totalLeads > 0 ? filteredData.reduce((sum, item) => sum + item.ltv, 0) / totalLeads : 0;
     const leadToTrialRate = totalLeads > 0 ? trialsCompleted / totalLeads * 100 : 0;
     const trialToMembershipRate = trialsCompleted > 0 ? membershipsSold / trialsCompleted * 100 : 0;
@@ -168,7 +169,7 @@ const LeadsSectionContent: React.FC = () => {
         };
       }
       acc[source].leads++;
-      if (item.conversionStatus === 'Converted') {
+      if (isLeadConverted(item)) {
         acc[source].conversions++;
       }
       acc[source].ltv += item.ltv;
@@ -199,7 +200,7 @@ const LeadsSectionContent: React.FC = () => {
         };
       }
       acc[associate].leads++;
-      if (item.conversionStatus === 'Converted') {
+      if (isLeadConverted(item)) {
         acc[associate].conversions++;
       }
       acc[associate].ltv += item.ltv;
@@ -239,7 +240,7 @@ const LeadsSectionContent: React.FC = () => {
       if (item.stage === 'Trial Completed') {
         acc[source][stage].trialsCompleted++;
       }
-      if (item.conversionStatus === 'Converted') {
+      if (isLeadConverted(item)) {
         acc[source][stage].membershipsSold++;
       }
       acc[source][stage].ltvSum += item.ltv || 0;
@@ -299,7 +300,7 @@ const LeadsSectionContent: React.FC = () => {
       if (item.stage === 'Trial Completed') {
         acc[stage][month].trialsCompleted++;
       }
-      if (item.conversionStatus === 'Converted') {
+      if (isLeadConverted(item)) {
         acc[stage][month].membershipsSold++;
       }
       acc[stage][month].ltvSum += item.ltv;
@@ -357,7 +358,7 @@ const LeadsSectionContent: React.FC = () => {
       if (item.stage === 'Trial Completed') {
         acc[source][month].trialsCompleted++;
       }
-      if (item.conversionStatus === 'Converted') {
+      if (isLeadConverted(item)) {
         acc[source][month].membershipsSold++;
       }
       acc[source][month].ltvSum += item.ltv || 0;
@@ -505,11 +506,11 @@ const LeadsSectionContent: React.FC = () => {
                       <CardTitle className="text-gray-800 text-xl font-bold">Lead Conversion Funnel</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
-                      <LeadsFunnelVisualization data={{
+                  <LeadsFunnelVisualization data={{
                     totalLeads: filteredData.length,
                     trialScheduled: filteredData.filter(item => item.trialStatus !== 'Not Tried').length,
                     trialCompleted: filteredData.filter(item => item.stage === 'Trial Completed').length,
-                    membershipsSold: filteredData.filter(item => item.conversionStatus === 'Converted').length
+                    membershipsSold: countConvertedLeads(filteredData)
                   }} />
                     </CardContent>
                   </Card>

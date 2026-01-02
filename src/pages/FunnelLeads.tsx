@@ -7,6 +7,7 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { useNavigate } from 'react-router-dom';
+import { countConvertedLeads, calculateConversionRate } from '@/utils/leadConversions';
 
 // Import components
 import { FunnelLeadsFilterSection } from '@/components/dashboard/FunnelLeadsFilterSection';
@@ -240,8 +241,8 @@ export default function FunnelLeads() {
         subtitle="Analyze your marketing funnel, lead quality, source effectiveness, and conversion patterns to improve acquisition and retention."
         metrics={[
           { label: 'Total Leads', value: filteredData.length.toLocaleString() },
-          { label: 'Converted', value: filteredData.filter(lead => lead.conversionStatus === 'Converted').length.toString() },
-          { label: 'Conversion Rate', value: `${(filteredData.length ? (filteredData.filter(lead => lead.conversionStatus === 'Converted').length / filteredData.length * 100) : 0).toFixed(1)}%` },
+          { label: 'Converted', value: countConvertedLeads(filteredData).toString() },
+          { label: 'Conversion Rate', value: `${calculateConversionRate(filteredData).toFixed(1)}%` },
         ]}
       />
 

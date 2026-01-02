@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Activity, TrendingUp, TrendingDown, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { LeadsData } from '@/types/leads';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
+import { isLeadConverted } from '@/utils/leadConversions';
 import { cn } from '@/lib/utils';
 
 interface FunnelStageRankingsProps {
@@ -30,7 +31,7 @@ export const FunnelStageRankings: React.FC<FunnelStageRankingsProps> = ({ data }
       }
       
       acc[stage].count += 1;
-      if (lead.conversionStatus === 'Converted') acc[stage].converted += 1;
+      if (isLeadConverted(lead)) acc[stage].converted += 1;
       acc[stage].totalLTV += lead.ltv || 0;
       acc[stage].totalVisits += lead.visits || 0;
       

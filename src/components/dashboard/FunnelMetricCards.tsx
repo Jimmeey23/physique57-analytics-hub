@@ -1,6 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { countConvertedLeads, calculateConversionRate } from '@/utils/leadConversions';
 import { 
   Users, 
   Target, 
@@ -57,11 +58,11 @@ export const FunnelMetricCards: React.FC<FunnelMetricCardsProps> = ({ data, onCa
       return statusSuggestsTrial || stageSuggestsTrial;
     }).length;
     const proximityIssues = data.filter(lead => lead.stage?.includes('Proximity') || lead.remarks?.toLowerCase().includes('proximity')).length;
-    const convertedLeads = data.filter(lead => lead.conversionStatus === 'Converted').length;
+    const convertedLeads = countConvertedLeads(data); // Use unified conversion logic
     
     const trialToMemberConversion = trialsCompleted > 0 ? (convertedLeads / trialsCompleted) * 100 : 0;
     const leadToTrialConversion = leadsReceived > 0 ? (trialsScheduled / leadsReceived) * 100 : 0;
-    const leadToMemberConversion = leadsReceived > 0 ? (convertedLeads / leadsReceived) * 100 : 0;
+    const leadToMemberConversion = calculateConversionRate(data); // Use unified conversion rate calculation
     
     const totalLTV = data.reduce((sum, lead) => sum + (lead.ltv || 0), 0);
     const avgLTV = leadsReceived > 0 ? totalLTV / leadsReceived : 0;
