@@ -302,16 +302,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
       return data;
     }
 
-    const expandedData: (SessionData | GroupedRow)[] = [];
-    (processedData as GroupedRow[]).forEach((row) => {
-      expandedData.push(row);
-      if (expandedGroups.has(row.groupValue) && row.children) {
-        expandedData.push(...row.children);
-      }
-    });
-
-    return expandedData;
-  }, [processedData, viewMode, expandedGroups, data]);
+    // Return only the grouped rows (without children expanded yet)
+    // We'll handle expansion in the rendering phase to preserve sort order
+    return processedData as GroupedRow[];
+  }, [processedData, viewMode, data]);
 
   const toggleGroup = useCallback((groupValue: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -1054,31 +1048,86 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
               {table.getRowModel().rows.map((row) => {
                 const isGroupRow = 'isGroupRow' in row.original && row.original.isGroupRow;
                 const groupData = isGroupRow ? (row.original as GroupedRow) : null;
+                const isExpanded = groupData && expandedGroups.has(groupData.groupValue);
+                
                 return (
-                  <tr
-                    key={row.id}
-                    style={{ height: '35px', maxHeight: '35px' }}
-                    onClick={() => {
-                      if (isGroupRow && groupData) {
-                        handleRowClick(groupData);
+                  <React.Fragment key={row.id}>
+                    {/* Group Row */}
+                    <tr
+                      style={{ height: '35px', maxHeight: '35px' }}
+                      onClick={() => {
+                        if (isGroupRow && groupData) {
+                          handleRowClick(groupData);
+                        }
+                      }}
+                      className={`transition-all ${
+                        isGroupRow
+                          ? 'bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 cursor-pointer'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: `${cell.column.getSize()}px`, height: '35px', maxHeight: '35px' }}
+                          className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                    
+                    {/* Expanded Child Rows - Render immediately after parent */}
+                    {isExpanded && groupData?.children?.map((childSession, idx) => {
+                      const childRow = table.getRowModel().rows.find(r => r.original === childSession);
+                      if (!childRow) {
+                        // Manually render child row if not in table model
+                        return (
+                          <tr
+                            key={`${row.id}-child-${idx}`}
+                            style={{ height: '35px', maxHeight: '35px' }}
+                            className="hover:bg-gray-50 bg-blue-50/30"
+                          >
+                            {columns.map((col, colIdx) => {
+                              const cellValue = col.accessorFn 
+                                ? col.accessorFn(childSession, idx)
+                                : (childSession as any)[col.id || ''];
+                              
+                              return (
+                                <td
+                                  key={`${row.id}-child-${idx}-col-${colIdx}`}
+                                  style={{ width: `${col.size}px`, height: '35px', maxHeight: '35px' }}
+                                  className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
+                                >
+                                  {col.cell && typeof col.cell === 'function'
+                                    ? col.cell({ getValue: () => cellValue, row: { original: childSession } } as any)
+                                    : cellValue}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
                       }
-                    }}
-                    className={`transition-all ${
-                      isGroupRow
-                        ? 'bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 cursor-pointer'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: `${cell.column.getSize()}px`, height: '35px', maxHeight: '35px' }}
-                        className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
+                      
+                      return (
+                        <tr
+                          key={childRow.id}
+                          style={{ height: '35px', maxHeight: '35px' }}
+                          className="hover:bg-gray-50 bg-blue-50/30"
+                        >
+                          {childRow.getVisibleCells().map((cell) => (
+                            <td
+                              key={cell.id}
+                              style={{ width: `${cell.column.getSize()}px`, height: '35px', maxHeight: '35px' }}
+                              className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
                 );
               })}
             </tbody>

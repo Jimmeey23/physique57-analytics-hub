@@ -1,6 +1,6 @@
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { LayoutDashboard } from 'lucide-react';
-import { Rankings } from '@/components/dashboard/Rankings';
+import Rankings from '@/components/dashboard/Rankings';
 import { DataTableEnhanced } from '@/components/dashboard/DataTableEnhanced';
 import { MetricsCardsEnhanced } from '@/components/dashboard/MetricsCardsEnhanced';
 import { ExecutiveFilterSection } from '@/components/dashboard/ExecutiveFilterSection';
