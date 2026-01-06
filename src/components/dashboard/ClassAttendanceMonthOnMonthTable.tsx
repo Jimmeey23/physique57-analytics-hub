@@ -124,6 +124,38 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
     return 'text-red-600';
   };
 
+  if (!data || data.length === 0) {
+    return (
+      <Card className="bg-white shadow-lg border-0">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Calendar className="w-6 h-6" />
+            Month-on-Month Performance Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8 text-center">
+          <p className="text-slate-600">No session data available for month-on-month analysis</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (monthOnMonthData.length === 0) {
+    return (
+      <Card className="bg-white shadow-lg border-0">
+        <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Calendar className="w-6 h-6" />
+            Month-on-Month Performance Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8 text-center">
+          <p className="text-slate-600">No monthly data available yet. Data will appear once sessions are tracked across multiple months.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-white shadow-lg border-0">
       <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">

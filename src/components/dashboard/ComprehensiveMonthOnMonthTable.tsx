@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useIndependentMonthOnMonthMetrics, MonthlyMetrics } from '@/hooks/useIndependentMonthOnMonthMetrics';
+import { useMonthOnMonthMetricsWithLocation, MonthlyMetrics } from '@/hooks/useMonthOnMonthMetricsWithLocation';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
@@ -8,11 +8,11 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner';
  * Comprehensive Month-On-Month Metrics Table
  * 
  * Displays a table with one row per month, showing key metrics across all business dimensions.
- * Data is independent of current date range and location filters.
+ * Data is filtered by location but independent of date range filters.
  */
 
 export const ComprehensiveMonthOnMonthTable: React.FC = () => {
-  const { metrics, loading } = useIndependentMonthOnMonthMetrics();
+  const { metrics, loading } = useMonthOnMonthMetricsWithLocation();
 
   const columns = useMemo(() => [
     { key: 'monthLabel', label: 'Month', width: '12%' },

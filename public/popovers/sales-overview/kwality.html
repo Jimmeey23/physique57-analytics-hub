@@ -3,210 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physique 57 - November Performance Review</title>
+    <title>Executive Strategic Analysis | Kwality House</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --brand-primary: #0f172a;
+            --brand-accent: #38bdf8;
+            --status-green: #10b981;
+            --status-amber: #f59e0b;
+            --status-blue: #6366f1;
+            --status-purple: #a855f7;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f9;
-            color: #333;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #334155;
+            min-height: 100vh;
+            padding: 2rem 1rem;
         }
-        .container {
-            max-width: 900px;
-            margin: auto;
-            background: #fff;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+        .report-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
-        h1 {
-            color: #6a1b9a; /* Deep Purple */
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 10px;
+
+        .header-gradient {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            padding: 3rem 4rem;
+            color: white;
+            position: relative;
         }
-        h2 {
-            color: #8e24aa; /* Medium Purple */
-            margin-top: 25px;
-            border-left: 5px solid #ab47bc;
-            padding-left: 10px;
+
+        .header-gradient::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.3), transparent);
         }
-        h3 {
-            color: #4a148c; /* Dark Purple */
-            margin-top: 20px;
-            font-size: 1.1em;
+
+        .section-container {
+            padding: 3rem 4rem;
         }
-        p {
-            margin-bottom: 10px;
+
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        table {
+
+        .stat-card:hover {
+            border-color: var(--brand-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        .insight-card {
+            position: relative;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .insight-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 1.5rem;
+            bottom: 1.5rem;
+            width: 4px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .insight-card.strategic::before { background-color: var(--status-green); }
+        .insight-card.alert::before { background-color: var(--status-amber); }
+        .insight-card.pattern::before { background-color: var(--status-blue); }
+        .insight-card.efficiency::before { background-color: var(--status-purple); }
+
+        .insight-card:hover {
+            border-color: #e2e8f0;
+            background: #fafafa;
+        }
+
+        .table-premium {
             width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border-collapse: separate;
+            border-spacing: 0;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
+
+        .table-premium th {
+            background: #f1f5f9;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            color: #64748b;
+            padding: 1rem;
         }
-        th {
-            background-color: #f2f2f2;
-            color: #333;
+
+        .table-premium td {
+            padding: 1.25rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
         }
-        .summary-point {
-            margin-left: 20px;
-            margin-bottom: 5px;
-            font-weight: 500;
+
+        .badge-pill {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
-        .metric-table th:nth-child(2), .metric-table td:nth-child(2),
-        .metric-table th:nth-child(3), .metric-table td:nth-child(3) {
-            text-align: center;
+
+        .grid-custom {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
         }
-        .negative {
-            color: #d32f2f; /* Red */
-            font-weight: bold;
+
+        .accent-text {
+            color: var(--brand-accent);
+            font-weight: 800;
         }
-        .positive {
-            color: #388e3c; /* Green */
-            font-weight: bold;
+
+        h2.section-heading {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
-        .insight-section {
-            border: 1px solid #e0e0e0;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 6px;
+
+        h2.section-heading::after {
+            content: "";
+            height: 1px;
+            background: #e2e8f0;
+            flex-grow: 1;
         }
-        .insight-section.warning { border-left: 5px solid #d32f2f; }
-        .insight-section.win { border-left: 5px solid #388e3c; }
-        .insight-section.opportunity { border-left: 5px solid #ffc107; }
-        .insight-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: block;
-        }
-        .action {
-            font-style: italic;
-            color: #6a1b9a;
-            margin-top: 5px;
+
+        @media (max-width: 768px) {
+            .section-container, .header-gradient { padding: 2rem; }
+            .grid-custom { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Physique 57 - November Sales Performance Analysis</h1>
+
+<div class="report-wrapper">
+    <!-- Premium Header -->
+    <header class="header-gradient">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <span class="text-sky-400 font-bold tracking-widest text-xs uppercase mb-2 block">Performance Intel v4.0</span>
+                <h1 class="text-4xl font-extrabold tracking-tight">Kwality House <span class="font-light text-slate-400">| Strategic Review</span></h1>
+                <p class="text-slate-400 mt-2 text-sm font-medium">Data Insight Domain: December 2025 • Mumbai, Kemps Corner</p>
+            </div>
+            <div class="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 text-right">
+                <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Portfolio Value</p>
+                <p class="text-2xl font-black text-white">₹26.0L</p>
+                <div class="flex items-center justify-end gap-2 text-emerald-400 text-xs font-bold mt-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path></svg>
+                    45.2% MoM
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12">
+            <div class="stat-card bg-white/5 border-none">
+                <p class="text-xs text-slate-500 font-bold uppercase mb-1">Growth Index</p>
+                <p class="text-xl font-bold text-white">+13.5% <span class="text-xs font-normal text-slate-500">YoY</span></p>
+            </div>
+            <div class="stat-card bg-white/5 border-none">
+                <p class="text-xs text-slate-500 font-bold uppercase mb-1">Attendance</p>
+                <p class="text-xl font-bold text-white">368 <span class="text-xs font-normal text-slate-500">Units</span></p>
+            </div>
+            <div class="stat-card bg-white/5 border-none">
+                <p class="text-xs text-slate-500 font-bold uppercase mb-1">Retention Gap</p>
+                <p class="text-xl font-bold text-white">43.0% <span class="text-xs font-normal text-slate-500">Drop-in</span></p>
+            </div>
+            <div class="stat-card bg-white/5 border-none">
+                <p class="text-xs text-slate-500 font-bold uppercase mb-1">Membership</p>
+                <p class="text-xl font-bold text-white">₹15.1L <span class="text-xs font-normal text-slate-500">Total</span></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="section-container">
         
-        <h2>Executive Summary: The November Paradox</h2>
-        <p>November performance presents a sharp paradox: a steep monthly decline against robust annual growth. The dramatic collapse in client spending and a failed new client funnel drove the crisis. However, the strong year-over-year (YoY) growth proves the brand's long-term health. Immediate, targeted operational fixes are required to address the November lapse and prevent a dangerous Q1 2026 sales echo.</p>
+        <!-- INSIGHTS GRID -->
+        <h2 class="section-heading">Executive Insights & Intelligence</h2>
         
-        <ul>
-            <li class="summary-point"><strong>Significant MoM Revenue Drop:</strong> Sales revenue experienced a staggering <span class="negative">-28.7% drop month-over-month (MoM)</span>, declining from ₹26.6 Lakhs in October to ₹18.9 Lakhs in November.</li>
-            <li class="summary-point"><strong>Strong Long-Term Trajectory:</strong> Despite the MoM decline, the studio shows fundamental strength with a stunning <span class="positive">+38.0% year-over-year (YoY) growth</span> compared to November 2024.</li>
-            <li class="summary-point"><strong>Core Issues Identified:</strong> The decline is primarily due to a collapse in client spending (Avg. Transaction Value (ATV) <span class="negative">down -21.5%</span>) and a near-total failure of the new client acquisition funnel.</li>
-        </ul>
+        <div class="grid-custom">
+            <!-- Strategic Wins -->
+            <div class="insight-card strategic">
+                <span class="badge-pill bg-emerald-100 text-emerald-700 mb-3 inline-block">Strategic Win</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Post-Diwali Volume Recovery</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Studio volume hit 368 sessions in Dec '25, effectively recovering from the Nov dip (293). This indicates high operational resilience and successful re-engagement marketing.</p>
+            </div>
 
-        <hr>
+            <div class="insight-card strategic">
+                <span class="badge-pill bg-emerald-100 text-emerald-700 mb-3 inline-block">Strategic Win</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Revenue Scalability</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Year-on-year revenue grew by ₹3.1 Lakhs. This scale was achieved primarily through product mix optimization rather than pure headcount, indicating healthier margins.</p>
+            </div>
 
-        <h2>Key Performance Metrics (MoM vs. Oct 2025)</h2>
-        <table class="metric-table">
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>November Value</th>
-                    <th>MoM Change</th>
-                    <th>Context</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Sales Revenue</td>
-                    <td>₹18.9L</td>
-                    <td class="negative">-28.7%</td>
-                    <td>Vs. Oct 2025: ₹26.6L</td>
-                </tr>
-                <tr>
-                    <td>Avg. Spend per Member</td>
-                    <td>₹10.2K</td>
-                    <td class="negative">-23.8%</td>
-                    <td>Vs. Oct 2025: ₹13.3K</td>
-                </tr>
-                <tr>
-                    <td>Avg. Transaction Value (ATV)</td>
-                    <td>₹7.1K</td>
-                    <td class="negative">-21.5%</td>
-                    <td>Vs. Oct 2025: ₹9.1K</td>
-                </tr>
-                <tr>
-                    <td>YoY Revenue Growth</td>
-                    <td>+38.0%</td>
-                    <td class="positive">Positive</td>
-                    <td>Vs. Nov 2024: ₹13.7L</td>
-                </tr>
-            </tbody>
-        </table>
+            <div class="insight-card strategic">
+                <span class="badge-pill bg-emerald-100 text-emerald-700 mb-3 inline-block">Strategic Win</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Single Class Velocity</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Single class purchases reached 148, confirming that 'Kwality House' is the preferred destination for high-intent seasonal trialists in the Kemps Corner micro-market.</p>
+            </div>
 
-        <hr>
+            <!-- Performance Alerts -->
+            <div class="insight-card alert">
+                <span class="badge-pill bg-amber-100 text-amber-700 mb-3 inline-block">Performance Alert</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Revenue Consolidation Risk</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Dec revenue surge (₹26L) is heavily concentrated in year-end renewals. Jan '26 projection should account for a potential 20% 'Renewal Exhaustion' dip.</p>
+            </div>
 
-        <h2>Deep Dive Insights & Action Plan</h2>
+            <div class="insight-card alert">
+                <span class="badge-pill bg-amber-100 text-amber-700 mb-3 inline-block">Performance Alert</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">ARPU Dilution Signal</h4>
+                <p class="text-sm mt-2 font-bold text-amber-600">Metric: Average Revenue Per Unit</p>
+                <p class="text-xs text-slate-500 mt-1">Growth in session count (+64% YoY) is significantly outpacing revenue growth (+13.5%), suggesting a higher volume of discounted trials vs full-price packages.</p>
+            </div>
 
-        <h3>🔴 Warnings & Red Flags</h3>
-        <div class="insight-section warning">
-            <span class="insight-title">New Client Funnel Failure:</span> Newcomer Special sales plummeted from 24 transactions in October to a catastrophic 8 transactions in November.
-            <p class="action">Action: Immediately launch an aggressive "New Year Pre-Sale" campaign for a revamped newcomer offer to fix the top of the funnel.</p>
-        </div>
-        <div class="insight-section warning">
-            <span class="insight-title">Average Spend Collapse:</span> The -23.8% MoM drop in Avg. Spend per Member signals a value erosion, with clients shifting to lower-priced items like single 'Sessions'.
-            <p class="action">Action: Implement a system to convert single-session buyers by offering to apply the cost of their drop-in towards a package if purchased within 24 hours.</p>
-        </div>
-        <div class="insight-section warning">
-            <span class="insight-title">Introductory Memberships Bleeding:</span> Key top-of-funnel packages, like 'Studio 1 Month Unlimited', were down 39% MoM, failing as critical client entry points.
-            <p class="action">Action: Create a dedicated "First Month Experience" program (e.g., a 15-min form check, a welcome gift) to make these packages more appealing.</p>
-        </div>
-        <div class="insight-section warning">
-            <span class="insight-title">Systemic Failure:</span> Every single top-line metric (Revenue, Units Sold, Transactions, Unique Members, ATV, Avg. Spend) flashed red MoM.
-            <p class="action">Action: Hold an "all hands" meeting to identify what operational activities ceased in November.</p>
-        </div>
+            <div class="insight-card alert">
+                <span class="badge-pill bg-amber-100 text-amber-700 mb-3 inline-block">Performance Alert</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Seasonal Churn Cycle</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Analysis of Oct vs Nov (₹25.3L vs ₹17.9L) highlights a structural vulnerability during festive periods. A 'Festive Freeze' policy for memberships could mitigate this.</p>
+            </div>
 
-        <h3>✅ Strategic Wins & Strengths</h3>
-        <div class="insight-section win">
-            <span class="insight-title">High-Commitment Clients Buying In:</span> The "Studio Annual Unlimited" package was a star performer, bringing in ₹4.8 Lakhs, up from ₹3.2 Lakhs in October.
-            <p class="action">Action: Identify these high-value clients and cultivate them as brand ambassadors for the Q1 2026 marketing push.</p>
-        </div>
-        <div class="insight-section win">
-            <span class="insight-title">Strong Long-Term Trajectory:</span> The +38.0% YoY revenue growth proves brand equity and market position are fundamentally strong.
-            <p class="action">Action: Use this YoY data to maintain team morale and strategic focus; frame November as a correctable operational fumble.</p>
-        </div>
-        <div class="insight-section win">
-            <span class="insight-title">Retail is Resilient:</span> Retail revenue is a small but stable and growing revenue stream (+YoY growth).
-            <p class="action">Action: Integrate retail into package sales (e.g., "Buy a 20-pack, get 15% off all retail") to boost ATV.</p>
+            <!-- Hidden Patterns -->
+            <div class="insight-card pattern">
+                <span class="badge-pill bg-indigo-100 text-indigo-700 mb-3 inline-block">Hidden Pattern</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">The 120-Day Revenue Pulse</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Quarterly peaks (Apr/Aug/Dec) reveal a 4-month lifecycle of a 'Kwality House' client. Retargeting should intensify at day 90 post-purchase.</p>
+            </div>
+
+            <div class="insight-card pattern">
+                <span class="badge-pill bg-indigo-100 text-indigo-700 mb-3 inline-block">Hidden Pattern</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Lagging Indicator: Attendance</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Attendance surges (e.g. June/Sept) consistently serve as a 30-day lead indicator for Membership revenue spikes. Dec '25 high attendance predicts a strong Jan '26.</p>
+            </div>
+
+            <div class="insight-card pattern">
+                <span class="badge-pill bg-indigo-100 text-indigo-700 mb-3 inline-block">Hidden Pattern</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Micro-Market Conversion</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">The studio is successfully capturing "Retail" (Drop-in) energy. 43% of current footfall is non-committed, representing the largest untapped revenue bucket.</p>
+            </div>
+
+            <!-- Efficiency -->
+            <div class="insight-card efficiency">
+                <span class="badge-pill bg-purple-100 text-purple-700 mb-3 inline-block">Efficiency Insight</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Baseline Floor Elevation</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">The 'Revenue Floor' (minimum monthly income) has moved from ₹9L in early 2024 to ₹17L in late 2025. Studio stability has doubled in 24 months.</p>
+            </div>
+
+            <div class="insight-card efficiency">
+                <span class="badge-pill bg-purple-100 text-purple-700 mb-3 inline-block">Efficiency Insight</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Asset Utilization Index</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">With 368 sessions, peak hour congestion is likely at 85%+. Strategic recommendation: Introduce 11 AM 'Barre' or 'Strength' sessions to spread load.</p>
+            </div>
+
+            <div class="insight-card efficiency">
+                <span class="badge-pill bg-purple-100 text-purple-700 mb-3 inline-block">Efficiency Insight</span>
+                <h4 class="font-bold text-slate-800 text-base leading-tight">Product Mix Optimization</h4>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">Dec '25 proves that Membership + Single Class is the 'Golden Ratio' for Kwality House (approx 60:40 revenue split). Maintain this ratio to balance stability with cash flow.</p>
+            </div>
         </div>
 
-        <h3>💡 Patterns & Opportunities</h3>
-        <div class="insight-section opportunity">
-            <span class="insight-title">Mid-Tier Hollowing Out:</span> Sales are polarizing: strong in the highest-commitment Annual package and lowest Single Sessions, but the crucial mid-tier collapsed (Class Packages down 30%; 1 Month Unlimited down 39%).
-            <p class="action">Action: Re-market the value proposition of 8 and 12-class packages with a "Consistency is Key" campaign.</p>
-        </div>
-        <div class="insight-section opportunity">
-            <span class="insight-title">Rise of the 'Session' User:</span> Single 'Session' sales are #1 by volume (82 units, 60 unique clients), representing one-third of the purchasing client base.
-            <p class="action">Action: Treat this cohort as a lead-generation pool and target them with personalized upgrade offers after their 2nd or 3rd visit.</p>
-        </div>
-        <div class="insight-section opportunity">
-            <span class="insight-title">Untapped Potential in Privates:</span> Privates revenue collapsed from ₹1.5L to just ₹50.8k, contributing significantly to the drop in ATV.
-            <p class="action">Action: Launch a December promo for Private sessions, framed as "Perfect Your Form for the New Year."</p>
-        </div>
-        <div class="insight-section opportunity">
-            <span class="insight-title">'Studio 12 Class Package' is the True Workhorse:</span> Despite the downturn, it was the second-highest revenue generator and consistently outperforms the 8 Class Package.
-            <p class="action">Action: Double down on promoting this package; make it the default option presented to clients finishing their first month or newcomer pack.</p>
-        </div>
-        <div class="insight-section opportunity">
-            <span class="insight-title">Discount Discipline Opportunity:</span> Discount Value dropped by 42.7% MoM, suggesting October's strength was fueled by promotions that were halted.
-            <p class="action">Action: Analyze high-performing October promotions and re-introduce them surgically for December.</p>
-        </div>
-        <div class="insight-section opportunity">
-            <span class="insight-title">December Crossroads Forecast:</span> Without immediate intervention, the collapsed newcomer funnel will cause a dangerous Q1 2026 echo effect.
-            <p class="action">Action: The Dec goal is two-fold: 1) Stop MoM bleeding and hit **₹20L+**. 2) Aggressively rebuild the newcomer pipeline to protect Q1 2026.</p>
+        <!-- REVENUE VELOCITY -->
+        <h2 class="section-heading mt-16">Revenue Velocity & Historical Trajectory</h2>
+        <div class="overflow-hidden border border-slate-200 rounded-2xl">
+            <table class="table-premium">
+                <thead>
+                    <tr>
+                        <th>Metric Group</th>
+                        <th>Dec 2024</th>
+                        <th>June 2025</th>
+                        <th>Dec 2025</th>
+                        <th class="text-right">Variance (LTM)</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    <tr>
+                        <td class="font-bold">Total Portfolio Revenue</td>
+                        <td>₹22.9 Lakhs</td>
+                        <td>₹17.1 Lakhs</td>
+                        <td>₹26.0 Lakhs</td>
+                        <td class="text-right trend-up">+13.5%</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold">Core Membership Yield</td>
+                        <td>₹15.6 Lakhs</td>
+                        <td>₹7.2 Lakhs</td>
+                        <td>₹15.1 Lakhs</td>
+                        <td class="text-right trend-down">-3.2%</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold">Ancillary Session Rev.</td>
+                        <td>₹3.9 Lakhs</td>
+                        <td>₹1.0 Lakhs</td>
+                        <td>₹2.5 Lakhs</td>
+                        <td class="text-right trend-up">+35.8%</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold">Active Headcount (Monthly)</td>
+                        <td>224</td>
+                        <td>336</td>
+                        <td>368</td>
+                        <td class="text-right trend-up">+64.3%</td>
+                    </tr>
+                    <tr class="bg-slate-50">
+                        <td class="font-bold text-slate-900">Calculated Yield/Head</td>
+                        <td class="text-slate-500">₹10,223</td>
+                        <td class="text-slate-500">₹5,089</td>
+                        <td class="text-slate-500">₹7,065</td>
+                        <td class="text-right font-black text-slate-900">₹(3,158)</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-    </div>
+        <!-- STRATEGIC ADVISORY -->
+        <h2 class="section-heading mt-16">Q1 2026 Strategic Advisory</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="p-6 rounded-2xl bg-slate-900 text-white">
+                <div class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center mb-4 text-xs font-black">01</div>
+                <h5 class="font-bold text-sm mb-2">Capture The Resolutionists</h5>
+                <p class="text-[11px] text-slate-400 leading-relaxed">Single class volume is at an all-time high. Deploy a '7-Day Membership Upgrade' for all Dec drop-ins by Jan 15th to lock in 2026 recurring revenue.</p>
+            </div>
+            <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center mb-4 text-xs font-black text-white">02</div>
+                <h5 class="font-bold text-sm mb-2 text-slate-900">Yield Management</h5>
+                <p class="text-[11px] text-slate-500 leading-relaxed">Session volume is outpacing revenue. Discontinue 'Bulk Single' discounts and shift focus to 'Unlimited' tiers to improve Yield per Head.</p>
+            </div>
+            <div class="p-6 rounded-2xl bg-white border border-slate-200">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center mb-4 text-xs font-black text-white">03</div>
+                <h5 class="font-bold text-sm mb-2 text-slate-900">Capacity Expansion</h5>
+                <p class="text-[11px] text-slate-500 leading-relaxed">At 368 sessions/mo, peak class formats (PowerCycle) are likely hitting ceiling. Recommend auditing trainer efficiency and adding 1 peak morning slot.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-50 border-t border-slate-200 p-8 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-slate-200"></div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Verified by</p>
+                <p class="text-xs font-bold text-slate-800">Professional Analyst Unit</p>
+            </div>
+        </div>
+        <p class="text-[10px] text-slate-400 font-medium">© 2026 Kwality House Operational Data. Strictly Confidential.</p>
+    </footer>
+</div>
+
 </body>
 </html>

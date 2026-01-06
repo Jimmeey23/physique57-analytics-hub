@@ -87,7 +87,7 @@ export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ ch
     const previousMonth = getPreviousMonthDateRange();
     return {
       dateRange: previousMonth,
-      location: [],
+      location: ['Kwality House'], // Default location set to Kwality House
       category: [],
       product: [],
       soldBy: [],
@@ -113,7 +113,7 @@ export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ ch
     const previousMonth = getPreviousMonthDateRange();
     setFilters({
       dateRange: previousMonth,
-      location: [],
+      location: ['Kwality House'], // Reset to Kwality House as default
       category: [],
       product: [],
       soldBy: [],

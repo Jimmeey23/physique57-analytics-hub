@@ -82,25 +82,28 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader className={cn('border-l-4 pb-4', borderColorMap[borderColor])}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
+        <DialogHeader className={cn('border-l-4 pb-4 pt-6 px-6 flex-shrink-0', borderColorMap[borderColor])}>
           <div className="flex items-start justify-between gap-4 pl-4">
-            <div>
-              <DialogTitle className="text-xl text-slate-900">{title}</DialogTitle>
-              <DialogDescription className="text-slate-600 mt-1">{description}</DialogDescription>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-xl font-bold text-slate-900">{title}</DialogTitle>
+              {description && (
+                <DialogDescription className="text-slate-600 mt-1">{description}</DialogDescription>
+              )}
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 flex-shrink-0"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 p-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="space-y-6 pt-2">
           {/* Metric Header */}
           <div className="grid grid-cols-3 gap-4">
             <Card className="border-l-4 border-l-slate-200">
@@ -207,56 +210,62 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
               <CardHeader>
                 <CardTitle className="text-base">Detailed Records ({rawData.length})</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      {rawDataColumns.map((col) => (
-                        <th
-                          key={col.key}
-                          className="px-3 py-2 text-left font-semibold text-slate-700 text-xs uppercase tracking-wide"
-                        >
-                          {col.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rawData.slice(0, 20).map((row, idx) => (
-                      <tr
-                        key={idx}
-                        className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                      >
-                        {rawDataColumns.map((col) => {
-                          const value = row[col.key];
-                          let displayValue = String(value);
-
-                          if (col.format === 'currency') {
-                            displayValue = `₹${typeof value === 'number' ? value.toLocaleString() : value}`;
-                          } else if (col.format === 'percentage') {
-                            displayValue = `${value}%`;
-                          } else if (col.format === 'number') {
-                            displayValue = typeof value === 'number' ? value.toLocaleString() : value;
-                          }
-
-                          return (
-                            <td key={col.key} className="px-3 py-2 text-slate-700 font-mono text-xs">
-                              {displayValue}
-                            </td>
-                          );
-                        })}
+              <CardContent className="p-0">
+                <div className="overflow-x-auto max-h-96">
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-slate-100 border-b-2 border-slate-300">
+                        {rawDataColumns.map((col) => (
+                          <th
+                            key={col.key}
+                            className="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wide whitespace-nowrap"
+                          >
+                            {col.label}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {rawData.length > 20 && (
-                  <p className="text-xs text-slate-500 mt-3 text-center">
-                    Showing 20 of {rawData.length} records
+                    </thead>
+                    <tbody>
+                      {rawData.slice(0, 50).map((row, idx) => (
+                        <tr
+                          key={idx}
+                          className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                        >
+                          {rawDataColumns.map((col) => {
+                            const value = row[col.key];
+                            let displayValue = String(value || '');
+
+                            if (col.format === 'currency') {
+                              const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+                              displayValue = `₹${numValue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                            } else if (col.format === 'percentage') {
+                              displayValue = `${typeof value === 'number' ? value.toFixed(1) : value}%`;
+                            } else if (col.format === 'number') {
+                              displayValue = typeof value === 'number' ? value.toLocaleString('en-IN') : value;
+                            }
+
+                            return (
+                              <td key={col.key} className="px-4 py-3 text-slate-700 text-xs whitespace-nowrap">
+                                <span className={col.format === 'currency' || col.format === 'number' ? 'font-mono' : ''}>
+                                  {displayValue}
+                                </span>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {rawData.length > 50 && (
+                  <p className="text-xs text-slate-500 mt-3 text-center px-4 pb-3">
+                    Showing 50 of {rawData.length} records
                   </p>
                 )}
               </CardContent>
             </Card>
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

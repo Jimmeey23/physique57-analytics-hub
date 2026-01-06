@@ -97,17 +97,70 @@ class GeminiServiceImpl {
 
   async generateQuickInsights(data: any[], columns: TableColumn[], tableName?: string): Promise<string[]> {
     try {
-      if (!data || data.length === 0) return ['No data available'];
+      if (!data || data.length === 0) return ['No data available for analysis'];
       const stats = this.extractTableStatistics(data, columns);
-      const { label, prevLabel } = this.resolveFocusPeriod(data, columns);
+      const { label, prevLabel, prev, yoyLabel, yoy } = this.resolveFocusPeriod(data, columns);
+      const monthSet = this.collectMonthValues(data, columns);
 
-      const prompt = `Analyze this ${tableName || 'business'} data with EXCLUSIVE FOCUS on ${label} performance and provide 5 detailed key insights:\n\nData: ${data.length} rows\nKey metrics: ${Object.values(stats.numericColumns).map((stat: any) => `${stat.header}: ${formatCurrency(stat.sum)}`).join(', ')}\n\n${label} FOCUS REQUIREMENTS for insights:\n1. Start each insight with "${label}:" when referring to performance data\n2. Include ${label} vs ${prevLabel} comparisons (month-over-month) if available\n3. Show how ${label} ranks against other months in the dataset\n4. Highlight ${label} specific performance metrics and achievements\n5. Compare ${label} to historical averages and identify trends\n\nProvide exactly 5 detailed bullet points focusing EXCLUSIVELY on ${label} performance with specific numbers, percentages, and month-over-month comparisons for the Indian fitness/wellness market:`;
+      // Build detailed metrics summary with INR currency
+      let metricsDetails = '';
+      Object.entries(stats.numericColumns).forEach(([key, stat]: [string, any]) => {
+        const formatValue = (val: number) => {
+          if (stat.type === 'currency') return formatCurrency(val);
+          if (stat.type === 'percentage') return `${val.toFixed(1)}%`;
+          return formatNumber(val);
+        };
+        metricsDetails += `\n• ${stat.header}: Total ${formatValue(stat.sum)}, Average ${formatValue(stat.average)}, Range ${formatValue(stat.min)}-${formatValue(stat.max)}`;
+      });
+
+      const hasMoMData = monthSet.has(prev);
+      const hasYoYData = monthSet.has(yoy);
+
+      const prompt = `You are analyzing ${tableName || 'business performance'} data for an Indian fitness/wellness studio.
+
+📊 DATASET OVERVIEW:
+• Total Records: ${data.length} entries
+• Analysis Period: ${label}
+• Previous Period (MoM): ${hasMoMData ? prevLabel : 'Not Available'}
+• Year-over-Year: ${hasYoYData ? yoyLabel : 'Not Available'}
+• Currency: Indian Rupees (₹)
+
+📈 KEY METRICS FOR ${label.toUpperCase()}:${metricsDetails}
+
+🎯 ANALYSIS REQUIREMENTS:
+Generate 5-7 HIGHLY DETAILED and ACTIONABLE insights focusing EXCLUSIVELY on ${label}. Each insight MUST:
+
+1. **Be Specific & Quantitative**: Include exact numbers, percentages, and currency values in INR (₹)
+2. **Show Comparisons**: ${hasMoMData ? `Compare ${label} vs ${prevLabel} (month-over-month)` : 'Focus on absolute performance'}
+3. **Identify Trends**: Highlight positive/negative trends with specific percentage changes
+4. **Be Actionable**: Provide context that leads to business decisions
+5. **Focus on Impact**: Prioritize insights that affect revenue, client retention, and operational efficiency
+6. **Use Indian Market Context**: Reference Indian fitness industry benchmarks when relevant
+
+💡 INSIGHT CATEGORIES TO COVER:
+• Revenue Performance & Growth Trends (in ₹)
+• Client Acquisition & Retention Metrics
+• Operational Efficiency (fill rates, utilization)
+• Conversion & Sales Performance
+• Areas of Concern or Risk
+• Opportunities for Growth
+
+FORMAT: Return as bullet points starting with • or -
+EXAMPLE: "• ${label} revenue reached ₹8.5L, showing a 12.3% increase from ${prevLabel}'s ₹7.6L, driven by higher transaction values"
+
+Provide ${hasMoMData ? '7' : '5'} detailed, data-driven insights:`;
 
       const text = await this.callModelWithRetries(prompt);
-      return this.extractBulletPoints(text, 5);
+      const insights = this.extractBulletPoints(text, hasMoMData ? 7 : 5);
+      
+      // Ensure insights are not empty and have substance
+      return insights.length > 0 ? insights : [
+        `${label}: ${Object.values(stats.numericColumns)[0] ? formatCurrency((Object.values(stats.numericColumns)[0] as any).sum) : 'Data available'} across ${data.length} records`,
+        'AI analysis temporarily unavailable - showing basic metrics'
+      ];
     } catch (error: any) {
       console.error('Quick insights error:', error);
-      return ['Insights unavailable at this time'];
+      return ['AI insights temporarily unavailable. Please try again.'];
     }
   }
 
@@ -120,7 +173,7 @@ class GeminiServiceImpl {
     const focus = this.resolveFocusPeriod(tableData, columns);
     const { label: focusLabel, prevLabel, yoyLabel } = focus;
 
-    let prompt = `You are a senior business intelligence analyst for fitness/wellness (India). Produce JSON ONLY, no prose outside JSON.\n\nFOCUS: Entire analysis must focus on ${focusLabel}. Where comparisons are requested, compare ${focusLabel} vs ${prevLabel} (MoM) and vs ${yoyLabel} (YoY) ONLY if those periods exist in the data; otherwise state \"not available\".\n\n📊 DATA CONTEXT & OVERVIEW - ${focusLabel} FOCUS\n**Business Entity**: ${tableName || 'Business Performance Analytics'}\n**Primary Analysis Focus**: **${focusLabel} PERFORMANCE ASSESSMENT**\n**Context**: ${context || `${focusLabel} business performance tracking and optimization`}\n**Dataset Size**: ${stats.totalRows} total records\n**Analysis Framework**: ${summaryType || 'comprehensive'} deep-dive analysis of ${focusLabel}\n**Currency**: All financial figures in Indian Rupees (₹)\n`;
+    let prompt = `You are a senior business intelligence analyst for fitness/wellness studios in India. Produce JSON ONLY, no prose outside JSON.\n\nFOCUS: Entire analysis must focus on ${focusLabel}. Where comparisons are requested, compare ${focusLabel} vs ${prevLabel} (MoM) and vs ${yoyLabel} (YoY) ONLY if those periods exist in the data; otherwise state "not available".\n\n📊 DATA CONTEXT & OVERVIEW - ${focusLabel} FOCUS\n**Business Entity**: ${tableName || 'Business Performance Analytics'}\n**Primary Analysis Focus**: **${focusLabel} PERFORMANCE ASSESSMENT**\n**Context**: ${context || `${focusLabel} business performance tracking and optimization`}\n**Dataset Size**: ${stats.totalRows} total records\n**Analysis Framework**: ${summaryType || 'comprehensive'} deep-dive analysis of ${focusLabel}\n**Currency**: ALL financial figures MUST be in Indian Rupees (₹) - NEVER use USD ($) or other currencies\n`;
 
     // Numeric metrics
     if (Object.keys(stats.numericColumns).length > 0) {
@@ -241,6 +294,10 @@ class GeminiServiceImpl {
     return result;
   }
 
+  private formatNumber(value: number): string {
+    return formatNumber(value);
+  }
+
   private parseGeminiResponse(text: string): any { return { summary: '', keyInsights: [], trends: [], recommendations: undefined }; }
   private extractBulletPoints(text: string, count?: number): string[] { const lines = text.split('\n').filter(l => l.trim().startsWith('•') || l.trim().startsWith('-')); return count ? lines.slice(0, count) : lines; }
 
@@ -304,7 +361,7 @@ class GeminiServiceImpl {
       try {
         const result = await this.model.generateContent({
           contents: [{ role: 'user', parts: [{ text: prompt }]}],
-          generationConfig: { temperature: 0.2, topP: 0.9, topK: 40, maxOutputTokens: 2048 },
+          generationConfig: { temperature: 0.3, topP: 0.95, topK: 50, maxOutputTokens: 4096 },
           safetySettings: []
         });
         const response = await result.response; return response.text();

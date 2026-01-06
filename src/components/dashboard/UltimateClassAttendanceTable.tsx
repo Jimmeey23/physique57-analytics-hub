@@ -310,32 +310,32 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
 
   return (
     <>
-    <Card className="w-full shadow-2xl bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
-      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+    <div className="glass-card rounded-3xl overflow-hidden shadow-2xl">
+      <div className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 px-6 py-5 border-b-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3">
+          <div className="flex items-center gap-3 text-white">
             <BarChart3 className="w-6 h-6" />
-            Ultimate Class Attendance Analytics
-          </CardTitle>
-          <Badge variant="secondary" className="bg-white/20 text-white">
+            <h2 className="text-xl font-bold">Ultimate Class Attendance Analytics</h2>
+          </div>
+          <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
             {totalItems} {groupingType === 'none' ? 'Sessions' : 'Groups'}
           </Badge>
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="p-6">
+      <div className="p-6">
         {/* Control Panel */}
         <div className="space-y-6 mb-8">
           {/* View and Grouping Controls */}
           <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <div className="space-y-2">
-                <Label className="text-sm font-semibold">View Type</Label>
+                <Label className="text-sm font-semibold text-gray-700">View Type</Label>
                 <Select value={viewType} onValueChange={(value: ViewType) => setViewType(value)}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-48 px-4 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {viewOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         <div className="flex items-center gap-2">
@@ -349,12 +349,12 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-semibold">Group By</Label>
+                <Label className="text-sm font-semibold text-gray-700">Group By</Label>
                 <Select value={groupingType} onValueChange={(value: GroupingType) => setGroupingType(value)}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-48 px-4 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {groupingOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         <div className="flex items-center gap-2">
@@ -368,12 +368,12 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-semibold">Rank By</Label>
+                <Label className="text-sm font-semibold text-gray-700">Rank By</Label>
                 <Select value={rankingCriteria} onValueChange={(value: RankingCriteria) => setRankingCriteria(value)}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-48 px-4 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {rankingOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         <div className="flex items-center gap-2">
@@ -390,7 +390,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                 variant="outline"
                 size="sm"
                 onClick={() => setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc')}
-                className="mt-7"
+                className="mt-7 px-4 py-2 rounded-xl hover:bg-blue-50 transition-all border-2"
               >
                 {sortDirection === 'desc' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
               </Button>
@@ -398,12 +398,12 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
 
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="px-4 py-2 rounded-xl hover:bg-blue-50 transition-all border-2">
                   <Settings className="w-4 h-4 mr-2" />
                   Columns
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md rounded-2xl">
                 <DialogHeader>
                   <DialogTitle>Select Columns</DialogTitle>
                 </DialogHeader>
@@ -415,7 +415,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                         checked={selectedColumns.has(column.key)}
                         onCheckedChange={() => toggleColumn(column.key)}
                       />
-                      <Label htmlFor={column.key} className="flex items-center gap-2 text-sm">
+                      <Label htmlFor={column.key} className="flex items-center gap-2 text-sm cursor-pointer">
                         <column.icon className="w-4 h-4" />
                         {column.label}
                       </Label>
@@ -427,26 +427,26 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           </div>
 
           {/* Filters and Search */}
-          <div className="flex gap-4 items-center">
-            <div className="flex-1 relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="flex-1 min-w-[300px] relative">
+              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Search classes, trainers, locations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-11 px-4 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all"
               />
             </div>
             
             <div className="flex items-center gap-2">
-              <Label className="text-sm">Min Classes:</Label>
+              <Label className="text-sm font-semibold text-gray-700">Min Classes:</Label>
               <Input
                 type="number"
                 min="1"
                 max="10"
                 value={minClassesFilter}
                 onChange={(e) => setMinClassesFilter(Number(e.target.value))}
-                className="w-20"
+                className="w-20 px-3 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all"
               />
             </div>
 
@@ -457,7 +457,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                   checked={showTrainerSpecific}
                   onCheckedChange={setShowTrainerSpecific}
                 />
-                <Label htmlFor="trainer-specific" className="text-sm">
+                <Label htmlFor="trainer-specific" className="text-sm font-semibold text-gray-700 cursor-pointer">
                   Include Trainers
                 </Label>
               </div>
@@ -466,90 +466,92 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         </div>
 
         {/* Table */}
-        <div className="border rounded-lg overflow-hidden bg-white shadow-lg">
+        <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-xl">
           <div className="overflow-x-auto" style={{ maxHeight: '600px' }}>
-            <Table>
-              <TableHeader className="sticky top-0 bg-gray-50 z-10">
+            <Table className="border-separate border-spacing-0">
+              <TableHeader className="sticky top-0 z-20">
                 <TableRow>
                   {groupingType !== 'none' && (
-                    <TableHead className="w-10">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white w-10 px-3 py-3">
                       <ChevronDown className="w-4 h-4" />
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('class') && (
-                    <TableHead className="min-w-[200px]">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white min-w-[200px] px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4" />
-                        {groupingType === 'trainer' ? 'Trainer' : 
-                         groupingType === 'location' ? 'Location' :
-                         groupingType === 'dayOfWeek' ? 'Day' :
-                         groupingType === 'timeSlot' ? 'Time' :
-                         groupingType === 'month' ? 'Month' :
-                         'Class/Group'}
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          {groupingType === 'trainer' ? 'Trainer' : 
+                           groupingType === 'location' ? 'Location' :
+                           groupingType === 'dayOfWeek' ? 'Day' :
+                           groupingType === 'timeSlot' ? 'Time' :
+                           groupingType === 'month' ? 'Month' :
+                           'Class/Group'}
+                        </span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('sessions') && groupingType !== 'none' && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <Calendar className="w-4 h-4" />
-                        Sessions
+                        <span className="text-xs font-bold uppercase tracking-wider">Sessions</span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('attendance') && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <Users className="w-4 h-4" />
-                        Attendance
+                        <span className="text-xs font-bold uppercase tracking-wider">Attendance</span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('capacity') && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <Building2 className="w-4 h-4" />
-                        Capacity
+                        <span className="text-xs font-bold uppercase tracking-wider">Capacity</span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('fillRate') && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <Target className="w-4 h-4" />
-                        Fill Rate
+                        <span className="text-xs font-bold uppercase tracking-wider">Fill Rate</span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('classAverage') && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <BarChart3 className="w-4 h-4" />
-                        Class Avg
+                        <span className="text-xs font-bold uppercase tracking-wider">Class Avg</span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('revenue') && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <DollarSign className="w-4 h-4" />
-                        Revenue
+                        <span className="text-xs font-bold uppercase tracking-wider">Revenue</span>
                       </div>
                     </TableHead>
                   )}
                   
                   {selectedColumns.has('consistency') && (
-                    <TableHead className="text-center">
+                    <TableHead className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800 text-white text-center px-4 py-3">
                       <div className="flex items-center gap-2 justify-center">
                         <TrendingUp className="w-4 h-4" />
-                        Consistency
+                        <span className="text-xs font-bold uppercase tracking-wider">Consistency</span>
                       </div>
                     </TableHead>
                   )}
@@ -560,16 +562,16 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                 {paginatedData.map((group, index) => (
                   <React.Fragment key={group.groupKey}>
                     <TableRow className={cn(
-                      "hover:bg-blue-50/50 transition-colors",
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                      "hover:bg-blue-50/50 transition-all border-b border-gray-100",
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50/30"
                     )}>
                       {groupingType !== 'none' && (
-                        <TableCell>
+                        <TableCell className="px-3 py-3">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleRowExpansion(group.groupKey)}
-                            className="p-1"
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-all"
                           >
                             {expandedRows.has(group.groupKey) ? (
                               <ChevronUp className="w-4 h-4" />
@@ -581,9 +583,9 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                       )}
                       
                       {selectedColumns.has('class') && (
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium px-4 py-3">
                           <div className="space-y-1">
-                            <div className="font-semibold">{group.groupLabel}</div>
+                            <div className="font-bold text-gray-800">{group.groupLabel}</div>
                             {groupingType !== 'none' && (
                               <div className="text-xs text-gray-500">
                                 {group.sessions.length} sessions
@@ -594,30 +596,30 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                       )}
                       
                       {selectedColumns.has('sessions') && groupingType !== 'none' && (
-                        <TableCell className="text-center">
-                          <Badge variant="outline">
+                        <TableCell className="text-center px-4 py-3">
+                          <Badge variant="outline" className="font-semibold">
                             {group.metrics.totalSessions}
                           </Badge>
                         </TableCell>
                       )}
                       
                       {selectedColumns.has('attendance') && (
-                        <TableCell className="text-center font-semibold">
+                        <TableCell className="text-center font-bold text-gray-800 px-4 py-3">
                           {formatNumber(group.metrics.totalAttendance)}
                         </TableCell>
                       )}
                       
                       {selectedColumns.has('capacity') && (
-                        <TableCell className="text-center">
+                        <TableCell className="text-center text-gray-700 px-4 py-3">
                           {formatNumber(group.metrics.totalCapacity)}
                         </TableCell>
                       )}
                       
                       {selectedColumns.has('fillRate') && (
-                        <TableCell className="text-center">
+                        <TableCell className="text-center px-4 py-3">
                           <div className="flex items-center gap-2 justify-center">
                             <div className={cn(
-                              "px-2 py-1 rounded-full text-xs font-bold",
+                              "px-3 py-1 rounded-full text-xs font-bold shadow-sm",
                               group.metrics.fillRate >= 80 ? "bg-green-100 text-green-800" :
                               group.metrics.fillRate >= 60 ? "bg-yellow-100 text-yellow-800" :
                               "bg-red-100 text-red-800"
@@ -629,21 +631,21 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                       )}
                       
                       {selectedColumns.has('classAverage') && (
-                        <TableCell className="text-center font-semibold text-blue-600">
+                        <TableCell className="text-center font-bold text-blue-600 px-4 py-3">
                           {formatNumber(group.metrics.classAverage)}
                         </TableCell>
                       )}
                       
                       {selectedColumns.has('revenue') && (
-                        <TableCell className="text-center font-semibold">
+                        <TableCell className="text-center font-bold text-gray-800 px-4 py-3">
                           {formatNumber(group.metrics.totalRevenue)}
                         </TableCell>
                       )}
                       
                       {selectedColumns.has('consistency') && (
-                        <TableCell className="text-center">
+                        <TableCell className="text-center px-4 py-3">
                           <div className={cn(
-                            "px-2 py-1 rounded-full text-xs font-bold",
+                            "px-3 py-1 rounded-full text-xs font-bold shadow-sm inline-block",
                             group.metrics.consistency >= 80 ? "bg-green-100 text-green-800" :
                             group.metrics.consistency >= 60 ? "bg-yellow-100 text-yellow-800" :
                             "bg-red-100 text-red-800"
@@ -657,27 +659,30 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                     {/* Expanded row details */}
                     {expandedRows.has(group.groupKey) && groupingType !== 'none' && (
                       <TableRow>
-                        <TableCell colSpan={selectedColumns.size + 1} className="bg-gray-50 p-0">
-                          <div className="p-4 space-y-3">
-                            <h4 className="font-semibold text-sm text-gray-700">Individual Sessions</h4>
+                        <TableCell colSpan={selectedColumns.size + 1} className="bg-gradient-to-r from-gray-50 to-blue-50/30 p-0 border-b border-gray-100">
+                          <div className="p-6 space-y-4">
+                            <h4 className="font-bold text-sm text-gray-700 flex items-center gap-2">
+                              <Activity className="w-4 h-4" />
+                              Individual Sessions
+                            </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {group.sessions.slice(0, 6).map((session, idx) => (
-                                <div key={idx} className="bg-white p-3 rounded border text-xs">
-                                  <div className="font-medium">{session.cleanedClass}</div>
-                                  <div className="text-gray-600">{session.trainerName}</div>
-                                  <div className="text-gray-500">{session.date} - {session.time}</div>
-                                  <div className="flex gap-2 mt-1">
-                                    <Badge variant="outline" className="text-xs">
+                                <div key={idx} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all text-xs">
+                                  <div className="font-bold text-gray-800">{session.cleanedClass}</div>
+                                  <div className="text-gray-600 font-medium mt-1">{session.trainerName}</div>
+                                  <div className="text-gray-500 mt-1">{session.date} - {session.time}</div>
+                                  <div className="flex gap-2 mt-2">
+                                    <Badge variant="outline" className="text-xs font-semibold">
                                       {session.checkedInCount}/{session.capacity}
                                     </Badge>
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className="text-xs font-semibold text-green-700">
                                       {formatNumber(session.totalPaid || 0)}
                                     </Badge>
                                   </div>
                                 </div>
                               ))}
                               {group.sessions.length > 6 && (
-                                <div className="bg-gray-100 p-3 rounded border text-xs flex items-center justify-center text-gray-500">
+                                <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-xl border border-gray-300 text-xs flex items-center justify-center text-gray-600 font-semibold">
                                   +{group.sessions.length - 6} more sessions
                                 </div>
                               )}
@@ -694,16 +699,16 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 font-medium">
               Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} items
             </div>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-24 px-3 py-2 rounded-xl border-2 border-gray-300">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {[10, 25, 50, 100].map(size => (
                   <SelectItem key={size} value={size.toString()}>
                     {size}
@@ -719,8 +724,9 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
               size="sm"
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
+              className="px-4 py-2 rounded-xl border-2 border-gray-300 disabled:opacity-50 hover:bg-blue-50 transition-all"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 mr-1" />
               Previous
             </Button>
             
@@ -733,7 +739,12 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                     variant={pageNum === currentPage ? "default" : "outline"}
                     size="sm"
                     onClick={() => setCurrentPage(pageNum)}
-                    className="w-8 h-8 p-0"
+                    className={cn(
+                      "w-10 h-10 p-0 rounded-xl transition-all",
+                      pageNum === currentPage 
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:from-blue-700 hover:to-blue-800" 
+                        : "border-2 border-gray-300 hover:bg-blue-50"
+                    )}
                   >
                     {pageNum}
                   </Button>
@@ -746,14 +757,15 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
               size="sm"
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-xl border-2 border-gray-300 disabled:opacity-50 hover:bg-blue-50 transition-all"
             >
               Next
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
     <div className="mt-4">
     </div>
     </>

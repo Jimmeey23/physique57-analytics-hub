@@ -3,446 +3,929 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Obsidian: Kemps Corner Trainer Performance Analysis - Nov 2025</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <title>Trainer Performance Report - December 2025</title>
     <style>
-        :root {
-            --bg-dark: #0d1117;
-            --bg-card: #161b22;
-            --border-color: #30363d;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --accent-primary: #a5b4fc;
-            --accent-secondary: #79c0ff;
-            --success: #56d364;
-            --warning: #e3b341;
-            --danger: #ff7b72;
-            --glow-success: rgba(63, 185, 80, 0.5);
-            --glow-warning: rgba(210, 153, 34, 0.5);
-            --glow-danger: rgba(248, 81, 73, 0.5);
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            padding: 0;
+            box-sizing: border-box;
         }
-
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
+            color: #333333;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
         .container {
             max-width: 1200px;
-            margin: auto;
-            background: var(--bg-card);
-            border-radius: 15px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
-            overflow: hidden;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
         }
-
-        .header {
-            background: linear-gradient(135deg, #1e133a, #2f1c4f);
-            padding: 50px 40px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .header h1 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 3.2em;
-            font-weight: 700;
+        
+        header {
+            background: #1a2a4a;
             color: #ffffff;
-            text-shadow: 0 0 15px rgba(165, 180, 252, 0.6);
-            letter-spacing: -2px;
-            margin: 0;
-        }
-
-        .header p {
-            font-size: 1.2em;
-            color: var(--accent-primary);
-            font-style: italic;
-            margin-top: 10px;
-        }
-
-        .sassy-intro {
+            padding: 40px 50px;
             text-align: center;
-            padding: 30px 40px;
-            font-style: italic;
-            color: var(--text-secondary);
-            font-size: 1.1em;
-            border-bottom: 1px solid var(--border-color);
-            background: rgba(0,0,0,0.1);
+            border-bottom: 3px solid #0066cc;
         }
-
-        .section {
-            padding: 40px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .section:last-child { border-bottom: none; }
-
-        h2 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 2.5em;
-            font-weight: 600;
-            margin-bottom: 30px;
-            color: #e0e0e0;
-            border-left: 5px solid var(--accent-primary);
-            padding-left: 15px;
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        .stat-card {
-            background-color: var(--bg-dark);
-            padding: 25px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0 15px rgba(121, 192, 255, 0.2);
-        }
-        .stat-card .value {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #ffffff;
+        
+        header h1 {
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: 1px;
             margin-bottom: 5px;
         }
-        .stat-card .value .increase { color: var(--success); }
-        .stat-card .value .decrease { color: var(--danger); }
-        .stat-card .label {
-            font-size: 1em;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        
+        header h2 {
+            font-size: 18px;
+            font-weight: 300;
+            color: #cccccc;
         }
-
-        .trainer-card {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 25px;
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            background: rgba(13, 17, 23, 0.5);
-            transition: all 0.3s ease;
+        
+        .meta-info {
+            background: #f5f5f5;
+            padding: 12px 50px;
+            font-size: 12px;
+            color: #666666;
+            border-bottom: 1px solid #d0d0d0;
         }
-        .trainer-card:hover { background: rgba(13, 17, 23, 0.8); }
-
-        .trainer-card.god-tier {
-            border-left: 8px solid var(--success);
-            box-shadow: inset 5px 0 15px -5px var(--glow-success), 0 0 20px rgba(0,0,0,0.2);
+        
+        .section {
+            padding: 40px 50px;
+            border-bottom: 1px solid #e0e0e0;
         }
-        .god-tier .rank { color: var(--success); }
-        .god-tier .praise { color: var(--success); font-weight: 700; }
-
-        .trainer-card.purgatory {
-            border-left: 8px solid var(--warning);
-            box-shadow: inset 5px 0 15px -5px var(--glow-warning), 0 0 20px rgba(0,0,0,0.2);
+        
+        .section:last-child {
+            border-bottom: none;
         }
-        .purgatory .rank { color: var(--warning); }
-        .purgatory .burn { color: var(--warning); font-weight: 700; }
-
-        .trainer-card.abyss {
-            border-left: 8px solid var(--danger);
-            box-shadow: inset 5px 0 15px -5px var(--glow-danger), 0 0 20px rgba(0,0,0,0.2);
-        }
-        .abyss .rank { color: var(--danger); }
-        .abyss .burn { color: var(--danger); font-weight: 700; }
-
-        .trainer-card .rank {
-            font-family: 'Poppins', sans-serif;
-            font-size: 3em;
-            font-weight: 700;
-            margin-right: 25px;
-            min-width: 50px;
-            text-align: center;
-            line-height: 1;
-        }
-        .trainer-info h3 {
-            margin: 0 0 5px 0;
-            font-size: 1.8em;
-            font-weight: 600;
-            color: #ffffff;
-        }
-        .trainer-info .title {
-            font-style: italic;
-            color: var(--accent-primary);
+        
+        h2 {
+            font-size: 20px;
+            color: #1a2a4a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0066cc;
             font-weight: 500;
-            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .trainer-stats {
-            margin: 15px 0;
-            font-size: 1.1em;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px 25px;
-            border-left: 2px solid var(--border-color);
-            padding-left: 15px;
-        }
-        .trainer-stats strong {
-            color: var(--text-primary);
+        
+        h3 {
+            font-size: 16px;
+            color: #333333;
+            margin: 25px 0 12px 0;
             font-weight: 600;
         }
-        .analysis {
-            margin-top: 15px;
-            font-size: 1.05em;
-            line-height: 1.7;
-            color: var(--text-secondary);
+        
+        .executive-summary {
+            background: #fafafa;
         }
-
-        .recommendation {
-            background-color: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--accent-secondary);
-            padding: 20px;
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
             margin-top: 20px;
-            border-radius: 8px;
         }
-        .recommendation h3 {
-            margin: 0 0 10px 0;
-            color: var(--accent-secondary);
-            font-size: 1.4em;
+        
+        .metric-card {
+            background: #ffffff;
+            padding: 20px;
+            border: 1px solid #d0d0d0;
+        }
+        
+        .metric-card h4 {
+            font-size: 11px;
+            color: #666666;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
             font-weight: 600;
         }
-        .recommendation p {
-            color: var(--text-primary);
-            line-height: 1.6;
+        
+        .metric-card .value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a2a4a;
+            margin-bottom: 5px;
         }
-        .recommendation strong {
-            color: var(--text-secondary);
+        
+        .metric-card .change {
+            font-size: 11px;
+            padding: 3px 8px;
+            display: inline-block;
+            font-weight: 500;
         }
-
-        .footer {
+        
+        .change.negative {
+            color: #cc0000;
+        }
+        
+        .change.positive {
+            color: #006600;
+        }
+        
+        .leaderboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .leaderboard-card {
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+        }
+        
+        .leaderboard-card h4 {
+            background: #f0f0f0;
+            padding: 15px 20px;
+            margin: 0;
+            font-size: 14px;
+            color: #1a2a4a;
+            border-bottom: 1px solid #d0d0d0;
+            font-weight: 600;
+        }
+        
+        .leaderboard-list {
+            list-style: none;
+        }
+        
+        .leaderboard-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+        
+        .rank {
+            width: 30px;
+            height: 30px;
+            background: #0066cc;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+            font-size: 12px;
+        }
+        
+        .trainer-info {
+            flex: 1;
+        }
+        
+        .trainer-name {
+            font-weight: 600;
+            color: #1a2a4a;
+            font-size: 14px;
+        }
+        
+        .trainer-metric {
+            font-size: 11px;
+            color: #666666;
+        }
+        
+        .metric-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a2a4a;
+        }
+        
+        .trend-chart {
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+        }
+        
+        .chart-label {
+            width: 140px;
+            font-weight: 500;
+            color: #333333;
+            font-size: 13px;
+        }
+        
+        .chart-bar-visual {
+            flex: 1;
+            height: 26px;
+            background: #e8e8e8;
+            margin: 0 12px;
+            position: relative;
+        }
+        
+        .chart-fill {
+            height: 100%;
+            background: #0066cc;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .chart-fill.negative {
+            background: #cc0000;
+        }
+        
+        .chart-value {
+            width: 70px;
+            text-align: right;
+            font-weight: 500;
+            color: #1a2a4a;
+            font-size: 12px;
+        }
+        
+        .concern-box {
+            background: #fff8e1;
+            border-left: 3px solid #ff9800;
+            padding: 18px;
+            margin: 15px 0;
+        }
+        
+        .concern-box h4 {
+            color: #e65100;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .concern-box ul {
+            margin-left: 18px;
+            color: #333333;
+        }
+        
+        .concern-box li {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        .concern-box p {
+            font-size: 12px;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-top: 20px;
+        }
+        
+        .rec-card {
+            background: #e3f2fd;
+            border-left: 3px solid #1976d2;
+            padding: 18px;
+        }
+        
+        .rec-card h4 {
+            color: #0d47a1;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .rec-card ul {
+            margin-left: 18px;
+            color: #333333;
+        }
+        
+        .rec-card li {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            border: 1px solid #d0d0d0;
+        }
+        
+        th {
+            background: #1a2a4a;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 2px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-excellent {
+            background: #e8f5e8;
+            color: #006600;
+        }
+        
+        .status-good {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        
+        .status-average {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .status-concerning {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+        
+        footer {
+            background: #1a2a4a;
+            color: white;
+            padding: 25px 50px;
             text-align: center;
-            padding: 30px;
-            font-size: 0.9em;
-            color: var(--text-secondary);
-            background-color: var(--bg-dark);
-            border-top: 1px solid var(--border-color);
+            font-size: 11px;
+        }
+        
+        footer p {
+            opacity: 0.8;
+        }
+        
+        p {
+            font-size: 13px;
+            color: #333333;
+        }
+        
+        ul {
+            margin-left: 18px;
+        }
+        
+        li {
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #333333;
+        }
+        
+        strong {
+            color: #1a2a4a;
+        }
+        
+        @media (max-width: 768px) {
+            .section {
+                padding: 25px 20px;
+            }
+            
+            header {
+                padding: 30px 20px;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .leaderboard {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <header class="header">
-            <h1>The Sacred Scrolls of Savage Scrutiny</h1>
-            <p>Kwality House, Kemps Corner | November 2025 Performance Autopsy</p>
+        <header>
+            <h1>Trainer Performance Analysis</h1>
+            <h2>December 2025 Comprehensive Report</h2>
         </header>
-
-        <p class="sassy-intro">
-            Welcome, esteemed leaders, to the monthly ritual where we separate the wheat from the chaff, the legends from the... well, the other people who work here. This report was compiled with the help of advanced data analytics and a lethal dose of sarcasm. If you feel personally attacked, please consult the numbers. They attacked you first.
-        </p>
-
-        <div class="section">
-            <h2>The 30,000-Foot View: Are We Printing Money or Just Paper?</h2>
-            <p>Overall, November was a month of... numbers. Some went up, which is nice. It means the ship isn't actively sinking, just taking on a bit of water in certain compartments. Let's look at the shiny stats to feel good about ourselves before we dive into the abyss.</p>
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div class="value">₹17.2L <span class="increase">+8.7%</span></div>
-                    <div class="label">Total Revenue</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">370 <span class="increase">+12.8%</span></div>
-                    <div class="label">Total Sessions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">1,963 <span class="increase">+15.3%</span></div>
-                    <div class="label">Total Members</div>
-                </div>
-                <div class="stat-card">
-                    <div class="value">94.1%</div>
-                    <div class="label">Fill Rate (Utilization)</div>
-                </div>
-            </div>
-            <div class="analysis" style="margin-top: 20px;">
-                Look at those green arrows! More money, more sessions, more people. On paper, we're killing it. But as we all know, the devil, and the deep disappointment, are in the details. A 94.1% fill rate is fantastic, it means people are showing up. But are they signing up? Let's find out who's actually contributing to the bottom line versus who is running a very popular, very free fitness-themed social club.
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>The Pantheon of Profit: Our Glorious Overlords</h2>
-            <p>These are the trainers who aren't just here for the free Wi-Fi. They're turning sweat into sweet, sweet cash. Let's bow down.</p>
-
-            <div class="trainer-card god-tier">
-                <div class="rank">1</div>
-                <div class="trainer-info">
-                    <h3>Mrigakshi Jaiswal</h3>
-                    <div class="title">The Conversion Sorceress</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 20</span>
-                        <span><strong>Members:</strong> 120</span>
-                        <span><strong>Class Avg:</strong> 6.0</span>
-                        <span><strong>CONVERSION:</strong> <strong>100.0%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        A <span class="praise">100% conversion rate.</span> One hundred. Percent. We had to check if the data was broken. It's not. Is Mrigakshi a trainer or a hypnotist? Does she whisper sweet nothings about membership benefits while people are in their final rep? Whatever black magic she is performing, we need to bottle it and sell it. <span class="praise">She is not just setting the bar; she IS the bar.</span> Everyone else, take notes. No, seriously, grab a pen.
-                    </div>
-                </div>
-            </div>
-
-            <div class="trainer-card god-tier">
-                <div class="rank">2</div>
-                <div class="trainer-info">
-                    <h3>Cauveri Vikrant</h3>
-                    <div class="title">The Silver-Tongued Smasher</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 16</span>
-                        <span><strong>Members:</strong> 103</span>
-                        <span><strong>Class Avg:</strong> 6.4</span>
-                        <span><strong>CONVERSION:</strong> <strong>25.0%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        While not wielding the same dark arts as Mrigakshi, Cauveri's 25% conversion rate is what we'd call "spectacularly effective." She's not just training bodies; she's training wallets to open up. A solid class average and a fantastic conversion rate prove she's a powerhouse. <span class="praise">A true asset. We'd clone her if we could.</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="trainer-card god-tier">
-                <div class="rank">3</div>
-                <div class="trainer-info">
-                    <h3>Pranjali Jain</h3>
-                    <div class="title">The Consistent Cash Cow</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 28</span>
-                        <span><strong>Members:</strong> 188</span>
-                        <span><strong>Class Avg:</strong> 7.0</span>
-                        <span><strong>CONVERSION:</strong> <strong>18.2%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        With a beastly 28 sessions and a stellar 18.2% conversion, Pranjali is the engine room of this studio. She handles high volume and still manages to convert better than almost everyone else. Her classes are packed, and she's converting nearly 1 in 5. <span class="praise">This isn't luck; this is pure, unadulterated competence.</span>
-                    </div>
-                </div>
-            </div>
+        
+        <div class="meta-info">
+            <strong>Report Period:</strong> December 2025 | <strong>Generated:</strong> January 6, 2026 | <strong>Studio:</strong> Kwality House, Kemps Corner
         </div>
         
-        <div class="section">
-            <h2>The Purgatory of Performance: The "Almosts" and "Could-Be's"</h2>
-            <p>This group isn't terrible, but they're not exactly popping champagne corks either. They're the lukewarm oatmeal of the trainer world. Let's see who's just floating by.</p>
+        <section class="section executive-summary">
+            <h2>Executive Summary</h2>
+            <p style="margin-bottom: 25px;">
+                December 2025 saw a total of <strong>349 trainer sessions</strong>, representing a <span class="change negative">5.7% decline</span> from November 2025 (370 sessions). While overall volume decreased, the month demonstrated strong individual performances with notable variations in trainer productivity and conversion efficiency.
+            </p>
             
-            <div class="trainer-card purgatory">
-                <div class="rank">6</div>
-                <div class="trainer-info">
-                    <h3>Rohan Dahima</h3>
-                    <div class="title">The Volume King with a Conversion Quibble</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 43</span>
-                        <span><strong>Members:</strong> 321</span>
-                        <span><strong>Class Avg:</strong> 7.6</span>
-                        <span><strong>CONVERSION:</strong> <strong>13.3%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        My goodness, 43 sessions! Did Rohan even go home in November? He saw more members than anyone else and kept his classes packed. He's a machine, a workhorse, a human bulldozer of fitness. For that, we salute him. However... a 13.3% conversion rate, while decent, feels like a missed opportunity with that much traffic. <span class="burn">Imagine the revenue if he had Pranjali's closing skills. He'd be buying the studio, not working in it.</span> So close to god-tier, yet so far.
-                    </div>
+            <div class="summary-grid">
+                <div class="metric-card">
+                    <h4>Total Sessions</h4>
+                    <div class="value">349</div>
+                    <span class="change negative">↓ 5.7% MoM</span>
+                </div>
+                <div class="metric-card">
+                    <h4>Average Session/Trainer</h4>
+                    <div class="value">18.4</div>
+                    <span class="change negative">↓ 3.2% MoM</span>
+                </div>
+                <div class="metric-card">
+                    <h4>Active Trainers</h4>
+                    <div class="value">19</div>
+                    <span class="change negative">↓ 1 from Nov</span>
+                </div>
+                <div class="metric-card">
+                    <h4>Top Conversion Rate</h4>
+                    <div class="value">66.7%</div>
+                    <span class="change positive">Mrigakshi Jaiswal</span>
                 </div>
             </div>
             
-             <div class="trainer-card purgatory">
-                <div class="rank">7</div>
-                <div class="trainer-info">
-                    <h3>Reshma Sharma</h3>
-                    <div class="title">The Popular Hostess of a Mostly Free Party</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 40</span>
-                        <span><strong>Members:</strong> 226</span>
-                        <span><strong>Class Avg:</strong> 5.9</span>
-                        <span><strong>CONVERSION:</strong> <strong>4.5%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        Another volume hero with 40 sessions. People clearly like Reshma's classes. The problem is, they like them for free. A 4.5% conversion rate is... cute. It's like a participation trophy. <span class="burn">Is she asking them to sign up, or just for their favorite color?</span> The potential here is enormous, but we're haemorrhaging money with every person that walks out unconverted.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>The Abyss: Welcome to the Zen Masters of Zero Conversion</h2>
-            <p>And now, for the main event. The trainers who, despite being surrounded by potential customers, managed to convert a grand total of... zero. Zilch. Nada. It's almost impressive, like a perfect score in reverse. Let's "celebrate" their achievements.</p>
-            
-            <div class="trainer-card abyss">
-                <div class="rank">8</div>
-                <div class="trainer-info">
-                    <h3>Anisha Shah - The Master Trainer</h3>
-                    <div class="title">Leading by Example... An Example of What, Exactly?</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 33</span>
-                        <span><strong>Members:</strong> 200</span>
-                        <span><strong>Class Avg:</strong> 6.3</span>
-                        <span><strong>CONVERSION:</strong> <strong>0.0%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        Alright, let's be gentle. Anisha is our Master Trainer. She is a pillar of this establishment. She conducted a whopping 33 sessions with 200 people. Her classes are popular. And she converted... let me check my notes... <span class="burn">fewer people than a broken vending machine.</span> A 0% conversion rate from a Master Trainer is a paradox that could break the space-time continuum. Are we mastering the art of the perfect lunge or the art of letting money walk out the door? We love you, Anisha, but <span class="burn">this number is so painful to look at, it should come with a trigger warning.</span> Perhaps it's time to master the art of the sales pitch.
-                    </div>
-                </div>
-            </div>
-            
-            <div class="trainer-card abyss">
-                <div class="rank">10</div>
-                <div class="trainer-info">
-                    <h3>Atulan Purohit</h3>
-                    <div class="title">The Hardest Working Philanthropist</div>
-                    <div class="trainer-stats">
-                        <span><strong>Sessions:</strong> 39</span>
-                        <span><strong>Members:</strong> 197</span>
-                        <span><strong>Class Avg:</strong> 5.1</span>
-                        <span><strong>CONVERSION:</strong> <strong>0.0%</strong></span>
-                    </div>
-                    <div class="analysis">
-                        39 sessions. One-hundred-and-ninety-seven potential customers. And zero conversions. Atulan isn't a trainer; he's running a non-profit organization out of our studio. We applaud his charitable spirit but must gently remind him this is a for-profit enterprise. <span class="burn">He could have spent the month handing out free puppies and had a better financial return.</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="trainer-card abyss">
-                 <div class="rank">?</div>
-                <div class="trainer-info">
-                    <h3>The Rest of the 0% Club</h3>
-                    <div class="title">(Anmol, Bret, Karan B., Raunak, Richard, Simonelle, Vivaran, Sovena)</div>
-                    <div class="analysis">
-                        Let's just group the rest of our zero-heroes together to save time. From Sovena's whirlwind tour of 3 sessions to Richard's 33-session charity marathon, the story is the same. People came, they saw, they squatted, and they left without paying. Special shoutout to Raunak Khemuka, whose 5 sessions and 10 members give him a class average of 2. <span class="burn">Was he training people or just having intense one-on-one chats?</span> And Anmol Sharma, with a class average of 3, you're not far behind. It seems the smaller the class, the less chance there is of accidentally signing someone up. <span class="burn">Collectively, this group hosted over 150 free fitness classes for the city of Mumbai. Our community outreach is officially off the charts.</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Strategic Gibberish... I Mean, *Actionable Insights*</h2>
-            <p>Laughs aside, let's fix this mess. Here are some blindingly obvious recommendations that somehow still need to be written down.</p>
-            
-            <div class="recommendation">
-                <h3>Recommendation 1: The Mrigakshi Method™</h3>
-                <p><strong>Problem:</strong> Most of our trainers couldn't sell water in a desert. <br>
-                <strong>Solution:</strong> We are immediately enrolling every single trainer with a sub-15% conversion rate in "The Mrigakshi Method™" a mandatory workshop hosted by Mrigakshi Jaiswal herself. She will teach her ways. Attendance is not optional. Those who still post a 0% next month will be retrained as receptionists. Maybe.</p>
-            </div>
-            
-            <div class="recommendation">
-                <h3>Recommendation 2: The "Why Are You Here?" Audit</h3>
-                <p><strong>Problem:</strong> Trainers with extremely low session counts (looking at you, Sovena and Raunak). <br>
-                <strong>Solution:</strong> A one-on-one chat to determine if they are actually available to work, or if this is more of a hobby. We need to optimize the schedule for trainers who can both show up and, you know, do the job. We're not running a social club for part-timers.</p>
-            </div>
-            
-            <div class="recommendation">
-                <h3>Recommendation 3: Incentivize... Duh.</h3>
-                <p><strong>Problem:</strong> A clear disconnect between effort (sessions) and results (revenue).<br>
-                <strong>Solution:</strong> A new, aggressive commission structure. Let's make it rain for the closers. A fat bonus for every conversion. Let's see how quickly our "philanthropists" like Atulan and Richard discover their inner salesman when there's a tangible reward for not giving our services away for free.</p>
-            </div>
-        </div>
+            <p style="margin-top: 25px; padding: 20px; background: white; border-left: 3px solid #0066cc;">
+                <strong>Key Finding:</strong> While session volume declined, top performers like <strong>Pranjali Jain (+53.6% MoM)</strong> and <strong>Richard D'Costa (+27.3% MoM)</strong> demonstrated significant growth, indicating uneven performance distribution and opportunity for capacity optimization.
+            </p>
+        </section>
         
-        <div class="footer">
-            <p>Report generated on 12/9/2025. All data is final. No feelings were harmed in the making of this report that weren't already harmed by the performance numbers themselves.</p>
-            <p><strong>Next month, let's aim for fewer zeros and more heroes. Or else.</strong></p>
-        </div>
+        <section class="section">
+            <h2>Top Performers - December 2025</h2>
+            
+            <div class="leaderboard">
+                <div class="leaderboard-card">
+                    <h4>Most Sessions Conducted</h4>
+                    <ul class="leaderboard-list">
+                        <li class="leaderboard-item">
+                            <div class="rank">1</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Pranjali Jain</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">43</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">2</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Richard D'Costa</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">42</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">3</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Reshma Sharma</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">36</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">4</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Rohan Dahima</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">31</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">5</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Atulan Purohit</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">27</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="leaderboard-card">
+                    <h4>Highest Conversion Rates (Cumulative)</h4>
+                    <ul class="leaderboard-list">
+                        <li class="leaderboard-item">
+                            <div class="rank">1</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Bret Saldanha</div>
+                                <div class="trainer-metric">Cycle Instructor</div>
+                            </div>
+                            <div class="metric-value">100%</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">2</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Mrigakshi Jaiswal</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">66.7%</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">3</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Raunak Khemuka</div>
+                                <div class="trainer-metric">Cycle Instructor</div>
+                            </div>
+                            <div class="metric-value">50.0%</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">4</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Rohan Dahima</div>
+                                <div class="trainer-metric">Barre Specialist</div>
+                            </div>
+                            <div class="metric-value">38.5%</div>
+                        </li>
+                        <li class="leaderboard-item">
+                            <div class="rank">5</div>
+                            <div class="trainer-info">
+                                <div class="trainer-name">Multiple Trainers</div>
+                                <div class="trainer-metric">33.3% average</div>
+                            </div>
+                            <div class="metric-value">—</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Revenue Leaders (Cumulative Performance)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Trainer</th>
+                        <th>Total Revenue</th>
+                        <th>Revenue/Session</th>
+                        <th>Avg Class Size</th>
+                        <th>Fill Rate</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pranjali Jain</strong></td>
+                        <td>₹2.6L</td>
+                        <td>₹5.2K</td>
+                        <td>5.8</td>
+                        <td>29.1%</td>
+                        <td><span class="status-badge status-excellent">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rohan Dahima</strong></td>
+                        <td>₹2.1L</td>
+                        <td>₹7.6K</td>
+                        <td>7.7</td>
+                        <td>38.7%</td>
+                        <td><span class="status-badge status-excellent">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Anisha Shah</strong></td>
+                        <td>₹1.9L</td>
+                        <td>₹5.2K</td>
+                        <td>6.7</td>
+                        <td>33.3%</td>
+                        <td><span class="status-badge status-excellent">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Richard D'Costa</strong></td>
+                        <td>₹1.7L</td>
+                        <td>₹3.8K</td>
+                        <td>4.4</td>
+                        <td>21.8%</td>
+                        <td><span class="status-badge status-excellent">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reshma Sharma</strong></td>
+                        <td>₹1.4L</td>
+                        <td>₹4.8K</td>
+                        <td>5.4</td>
+                        <td>27.1%</td>
+                        <td><span class="status-badge status-excellent">Excellent</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section class="section">
+            <h2>Month-over-Month Trend Analysis</h2>
+            <p style="margin-bottom: 25px;">
+                Comparing November 2025 vs December 2025 performance reveals critical insights about trainer productivity shifts and seasonal effects.
+            </p>
+            
+            <div class="trend-chart">
+                <h3 style="margin-bottom: 20px;">Session Volume Changes (Nov → Dec 2025)</h3>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Pranjali Jain</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill" style="width: 100%;">
+                            +53.6%
+                        </div>
+                    </div>
+                    <div class="chart-value">28 → 43</div>
+                </div>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Richard D'Costa</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill" style="width: 75%;">
+                            +27.3%
+                        </div>
+                    </div>
+                    <div class="chart-value">33 → 42</div>
+                </div>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Mrigakshi Jaiswal</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill" style="width: 25%;">
+                            +5.0%
+                        </div>
+                    </div>
+                    <div class="chart-value">20 → 21</div>
+                </div>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Rohan Dahima</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill negative" style="width: 60%;">
+                            -27.9%
+                        </div>
+                    </div>
+                    <div class="chart-value">43 → 31</div>
+                </div>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Anisha Shah</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill negative" style="width: 70%;">
+                            -33.3%
+                        </div>
+                    </div>
+                    <div class="chart-value">33 → 22</div>
+                </div>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Simran Dutt</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill negative" style="width: 70%;">
+                            -33.3%
+                        </div>
+                    </div>
+                    <div class="chart-value">24 → 16</div>
+                </div>
+                
+                <div class="chart-bar">
+                    <div class="chart-label">Atulan Purohit</div>
+                    <div class="chart-bar-visual">
+                        <div class="chart-fill negative" style="width: 65%;">
+                            -30.8%
+                        </div>
+                    </div>
+                    <div class="chart-value">39 → 27</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">Key Trend Insights</h3>
+            <ul>
+                <li style="margin-bottom: 8px;"><strong>Polarized Performance:</strong> Top 3 trainers (Pranjali, Richard, Reshma) accounted for <strong>34.7%</strong> of all sessions, indicating high dependency on key personnel.</li>
+                <li style="margin-bottom: 8px;"><strong>Seasonal Dip:</strong> 13 of 19 active trainers (68%) experienced month-over-month declines, suggesting December holiday impact.</li>
+                <li style="margin-bottom: 8px;"><strong>Emerging Leaders:</strong> Pranjali Jain's 53.6% growth and Richard D'Costa's 27.3% growth defy the downward trend, showing strong client retention and acquisition ability.</li>
+                <li><strong>Format Resilience:</strong> Barre specialists showed more consistent performance compared to Cycle instructors, who experienced steeper declines.</li>
+            </ul>
+        </section>
+        
+        <section class="section">
+            <h2>Areas of Concern</h2>
+            
+            <div class="concern-box">
+                <h4>Zero Conversion Trainers</h4>
+                <p>Three trainers maintain 0% conversion rates despite conducting sessions:</p>
+                <ul style="margin-top: 8px;">
+                    <li><strong>Cauveri Vikrant:</strong> 0% conversion (16 Dec sessions, 10 new customers)</li>
+                    <li><strong>Karan Bhatia:</strong> 0% conversion (11 Dec sessions, 1 new customer)</li>
+                    <li><strong>Anmol Sharma:</strong> 0% conversion (17 Dec sessions, 21 Cycle sessions total)</li>
+                </ul>
+                <p style="margin-top: 8px;"><em>Recommendation: Immediate sales training and client engagement audit required.</em></p>
+            </div>
+            
+            <div class="concern-box">
+                <h4>Inactive Trainers (Zero December Sessions)</h4>
+                <p>Six trainers recorded no sessions in December 2025:</p>
+                <ul style="margin-top: 8px;">
+                    <li>Janhavi Jain (last active: Aug 2025)</li>
+                    <li>Upasna Paranjpe (last active: Feb 2024)</li>
+                    <li>Saniya Jaiswal (last active: Mar 2025)</li>
+                    <li>Nishanth Raj (last active: Aug 2025)</li>
+                    <li>Kabir Varma (last active: Aug 2025)</li>
+                    <li>Sovena Shetty (last active: Nov 2025)</li>
+                </ul>
+                <p style="margin-top: 8px;"><em>Recommendation: Review employment status and market demand for these trainers.</em></p>
+            </div>
+            
+            <div class="concern-box">
+                <h4>Low Revenue per Session</h4>
+                <p>Trainers generating below ₹4K per session despite high session counts:</p>
+                <ul style="margin-top: 8px;">
+                    <li><strong>Anmol Sharma:</strong> ₹3.0K/session (27 sessions, 3.0 avg class size)</li>
+                    <li><strong>Richard D'Costa:</strong> ₹3.8K/session (45 sessions, 4.4 avg class size)</li>
+                    <li><strong>Raunak Khemuka:</strong> ₹3.7K/session (5 sessions, 4.0 avg class size)</li>
+                </ul>
+                <p style="margin-top: 8px;"><em>Recommendation: Implement class size optimization and premium pricing strategies.</em></p>
+            </div>
+            
+            <h3>Performance Ranking Matrix - December 2025</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Trainer</th>
+                        <th>Dec Sessions</th>
+                        <th>MoM Change</th>
+                        <th>Conversion Rate</th>
+                        <th>Revenue/Session</th>
+                        <th>Overall Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Pranjali Jain</strong></td>
+                        <td>43</td>
+                        <td><span class="change positive">+53.6%</span></td>
+                        <td>21.1%</td>
+                        <td>₹5.2K</td>
+                        <td><span class="status-badge status-excellent">High Performer</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Richard D'Costa</strong></td>
+                        <td>42</td>
+                        <td><span class="change positive">+27.3%</span></td>
+                        <td>25.0%</td>
+                        <td>₹3.8K</td>
+                        <td><span class="status-badge status-excellent">Growth Leader</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reshma Sharma</strong></td>
+                        <td>36</td>
+                        <td><span class="change negative">-10.0%</span></td>
+                        <td>33.3%</td>
+                        <td>₹4.8K</td>
+                        <td><span class="status-badge status-good">Stable</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rohan Dahima</strong></td>
+                        <td>31</td>
+                        <td><span class="change negative">-27.9%</span></td>
+                        <td>38.5%</td>
+                        <td>₹7.6K</td>
+                        <td><span class="status-badge status-good">Efficient</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Anisha Shah</strong></td>
+                        <td>22</td>
+                        <td><span class="change negative">-33.3%</span></td>
+                        <td>33.3%</td>
+                        <td>₹5.2K</td>
+                        <td><span class="status-badge status-average">Declining</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cauveri Vikrant</strong></td>
+                        <td>16</td>
+                        <td><span class="change">0.0%</span></td>
+                        <td>0.0%</td>
+                        <td>₹5.6K</td>
+                        <td><span class="status-badge status-concerning">Action Required</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section class="section">
+            <h2>Strategic Recommendations</h2>
+            
+            <div class="recommendation-grid">
+                <div class="rec-card">
+                    <h4>Conversion Rate Optimization</h4>
+                    <ul>
+                        <li>Implement mandatory sales training for trainers below 25% conversion</li>
+                        <li>Pair low-conversion trainers (Cauveri, Karan, Anmol) with high-performers for mentorship</li>
+                        <li>Introduce conversion-based incentive structure starting Q1 2026</li>
+                    </ul>
+                </div>
+                
+                <div class="rec-card">
+                    <h4>Capacity Balancing</h4>
+                    <ul>
+                        <li>Redistribute 15-20% of sessions from top 3 trainers to underutilized staff</li>
+                        <li>Launch waitlist system for high-demand trainers to capture missed revenue</li>
+                        <li>Consider premium pricing for sessions with top conversion trainers</li>
+                    </ul>
+                </div>
+                
+                <div class="rec-card">
+                    <h4>Format Diversification</h4>
+                    <ul>
+                        <li>Barre sessions show higher conversion (avg 33%) vs Cycle (avg 33% but with zeros)</li>
+                        <li>Increase Barre class capacity for Rohan Dahima (7.7 avg size, ₹7.6K/session)</li>
+                        <li>Evaluate discontinuing Cycle program if conversion doesn't improve by March 2026</li>
+                    </ul>
+                </div>
+                
+                <div class="rec-card">
+                    <h4>Trainer Development</h4>
+                    <ul>
+                        <li>Create development plans for declining performers (Anisha, Simran)</li>
+                        <li>Conduct exit interviews for inactive trainers to understand attrition</li>
+                        <li>Recruit 2-3 new trainers to replace inactive staff and meet demand</li>
+                    </ul>
+                </div>
+                
+                <div class="rec-card">
+                    <h4>Revenue Maximization</h4>
+                    <ul>
+                        <li>Target avg class size of 6+ for all trainers (currently 5.8 overall)</li>
+                        <li>Implement dynamic pricing: ₹6K/session for >50% conversion trainers</li>
+                        <li>Bundle packages with high-conversion trainers to increase client LTV</li>
+                    </ul>
+                </div>
+                
+                <div class="rec-card">
+                    <h4>Seasonal Planning</h4>
+                    <ul>
+                        <li>December shows 5.7% dip; plan 15% trainer overhead for Dec 2026</li>
+                        <li>Launch holiday promotions in November to buffer December slowdown</li>
+                        <li>Schedule trainer vacations in December to align with natural demand drop</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 35px;">Q1 2026 Action Items</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Action</th>
+                        <th>Owner</th>
+                        <th>Deadline</th>
+                        <th>Expected Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="status-badge status-concerning">High</span></td>
+                        <td>Zero-conversion trainer remediation plan</td>
+                        <td>Studio Manager</td>
+                        <td>Jan 15, 2026</td>
+                        <td>+15% overall conversion</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-concerning">High</td>
+                        <td>Inactive trainer status review</td>
+                        <td>HR/Operations</td>
+                        <td>Jan 31, 2026</td>
+                        <td>Reduce overhead 8-10%</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-average">Medium</td>
+                        <td>Implement new pricing structure</td>
+                        <td>Finance & Ops</td>
+                        <td>Feb 28, 2026</td>
+                        <td>Revenue +12%</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-average">Medium</td>
+                        <td>Recruit 2 new Barre specialists</td>
+                        <td>Talent Acquisition</td>
+                        <td>Mar 31, 2026</td>
+                        <td>Capacity +25%</td>
+                    </tr>
+                    <tr>
+                        <td><span class="status-badge status-good">Low</td>
+                        <td>Launch trainer mentorship program</td>
+                        <td>Senior Trainers</td>
+                        <td>Mar 31, 2026</td>
+                        <td>Conversion +5-8%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <footer>
+            <p>Trainer Performance Analysis Report | Kwality House, Kemps Corner | Generated January 6, 2026</p>
+            <p style="margin-top: 10px;">For questions or additional analysis, contact the Operations Team</p>
+        </footer>
     </div>
-
 </body>
 </html>

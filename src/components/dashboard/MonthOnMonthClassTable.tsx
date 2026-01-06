@@ -22,7 +22,7 @@ import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContex
 import { ModernTableWrapper, ModernGroupBadge } from './ModernTableWrapper';
 
 interface MonthOnMonthClassTableProps {
-  data: SessionData[]; // This should be ALL data, ignoring current date filters
+  data: SessionData[];
   location: string;
 }
 

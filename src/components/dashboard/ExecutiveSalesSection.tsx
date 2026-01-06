@@ -30,19 +30,30 @@ export const ExecutiveSalesSection: React.FC<ExecutiveSalesSectionProps> = ({
   const tableData = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
+    // Calculate net revenue (paymentValue is already net, excluding VAT)
     return salesData
       .slice(0, 8) // Top 8 items
-      .map((item: any, index: number) => ({
-        ...item,
-        name: item.name || item.product || `Item ${index + 1}`,
-        revenue: item.paymentValue || 0,
-        transactions: 1, // Each row is one transaction
-        discountAmount: item.paymentDiscount || 0,
-        atv: item.paymentValue || 0,
-        category: item.product || item.productCategory || 'General',
-        previousRevenue: 0,
-        previousTransactions: 0,
-      }));
+      .map((item: any, index: number) => {
+        // paymentValue is NET revenue (excluding VAT)
+        const netRevenue = item.paymentValue || 0;
+        const vatAmount = item.paymentVAT || 0;
+        const grossRevenue = netRevenue + vatAmount;
+        
+        return {
+          ...item,
+          name: item.customerName || item.product || `Item ${index + 1}`,
+          revenue: netRevenue, // Use NET revenue for consistency with table
+          grossRevenue: grossRevenue,
+          netRevenue: netRevenue,
+          vatAmount: vatAmount,
+          transactions: 1, // Each row is one transaction
+          discountAmount: item.paymentDiscount || 0,
+          atv: netRevenue, // ATV based on net revenue
+          category: item.cleanedProduct || item.cleanedCategory || item.product || item.productCategory || 'General',
+          previousRevenue: 0,
+          previousTransactions: 0,
+        };
+      });
   }, [salesData]);
 
   if (salesLoading) {
@@ -113,10 +124,10 @@ export const ExecutiveSalesSection: React.FC<ExecutiveSalesSectionProps> = ({
         open={drillDownOpen}
         onOpenChange={setDrillDownOpen}
         title={`${selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1)} Analysis`}
-        metric="Total Revenue"
+        metric="Net Revenue (Excluding VAT)"
         currentValue={formatCurrency(salesMetrics[0]?.rawValue || 0)}
         previousValue={salesMetrics[0] ? formatCurrency(salesMetrics[0].previousRawValue) : undefined}
-        description="Detailed breakdown of sales metrics and trends"
+        description="Detailed breakdown of net sales revenue excluding VAT. All values shown are net amounts."
         borderColor="emerald"
         breakdownData={
           tableData.slice(0, 5).map((item: any) => ({
@@ -126,12 +137,14 @@ export const ExecutiveSalesSection: React.FC<ExecutiveSalesSectionProps> = ({
             color: 'bg-emerald-500',
           }))
         }
-        analyticsText={salesMetrics[0]?.description || 'Sales metrics provide insights into revenue performance across products and categories.'}
+        analyticsText={`Net revenue analysis shows ${formatCurrency(tableData.reduce((sum: number, i: any) => sum + i.revenue, 0))} in total net sales across ${tableData.length} transactions. All figures exclude VAT (${formatCurrency(tableData.reduce((sum: number, i: any) => sum + (i.vatAmount || 0), 0))} total VAT).`}
         rawData={tableData}
         rawDataColumns={[
-          { key: 'name', label: 'Product', format: 'text' },
+          { key: 'name', label: 'Customer/Product', format: 'text' },
           { key: 'category', label: 'Category', format: 'text' },
-          { key: 'revenue', label: 'Revenue', format: 'currency' },
+          { key: 'netRevenue', label: 'Net Revenue', format: 'currency' },
+          { key: 'vatAmount', label: 'VAT Amount', format: 'currency' },
+          { key: 'grossRevenue', label: 'Gross Revenue', format: 'currency' },
           { key: 'transactions', label: 'Transactions', format: 'number' },
           { key: 'atv', label: 'ATV', format: 'currency' },
         ]}

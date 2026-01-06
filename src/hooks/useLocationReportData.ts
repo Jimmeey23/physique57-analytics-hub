@@ -252,87 +252,196 @@ export const useLocationReportData = () => {
     if (!metrics) return null;
     
     try {
-      // Prepare data summary for AI analysis
+      // Get previous month's data for comparison
+      const currentMonth = new Date(previousMonthRange.startDate);
+      const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      const prevMonthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0);
+      
+      // Filter sales data for previous month (for MoM comparison)
+      const prevMonthSales = (filteredData.sales || []).filter((row: any) => {
+        if (!row.paymentDate) return false;
+        const date = parseDate(row.paymentDate);
+        return date >= prevMonth && date <= prevMonthEnd;
+      });
+
+      // Calculate previous month metrics for comparison
+      let prevMetrics = null;
+      if (prevMonthSales.length > 0) {
+        const prevRevenue = prevMonthSales.reduce((sum: number, row: any) => sum + (parseFloat(row.paymentValue) || 0), 0);
+        const prevClients = new Set(prevMonthSales.map((row: any) => row.clientName)).size;
+        const prevTransactions = prevMonthSales.length;
+        prevMetrics = {
+          revenue: prevRevenue,
+          clients: prevClients,
+          transactions: prevTransactions,
+          avgTransaction: prevTransactions > 0 ? prevRevenue / prevTransactions : 0
+        };
+      }
+
+      // Prepare comprehensive data for AI analysis with month identifiers
+      const currentMonthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const prevMonthName = prevMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      
       const reportData = [
         {
           metric: 'Total Revenue',
           value: metrics.totalRevenue,
           formatted: formatCurrency(metrics.totalRevenue),
-          category: 'revenue'
+          category: 'revenue',
+          type: 'currency',
+          monthYear: currentMonthName,
+          previousValue: prevMetrics?.revenue || null,
+          change: prevMetrics ? ((metrics.totalRevenue - prevMetrics.revenue) / prevMetrics.revenue * 100) : null
         },
         {
           metric: 'Fill Rate',
           value: metrics.fillRate,
           formatted: formatPercentage(metrics.fillRate),
-          category: 'sessions'
+          category: 'sessions',
+          type: 'percentage',
+          monthYear: currentMonthName,
+          previousValue: null,
+          change: null
         },
         {
           metric: 'Retention Rate',
           value: metrics.retentionRate,
           formatted: formatPercentage(metrics.retentionRate),
-          category: 'retention'
+          category: 'retention',
+          type: 'percentage',
+          monthYear: currentMonthName,
+          previousValue: null,
+          change: null
         },
         {
           metric: 'Conversion Rate',
           value: metrics.conversionRate,
           formatted: formatPercentage(metrics.conversionRate),
-          category: 'leads'
+          category: 'leads',
+          type: 'percentage',
+          monthYear: currentMonthName,
+          previousValue: null,
+          change: null
         },
         {
           metric: 'New Clients',
           value: metrics.newClientsAcquired,
           formatted: formatNumber(metrics.newClientsAcquired),
-          category: 'growth'
+          category: 'growth',
+          type: 'number',
+          monthYear: currentMonthName,
+          previousValue: null,
+          change: null
         },
         {
           metric: 'Churn Rate',
           value: metrics.churnRate,
           formatted: formatPercentage(metrics.churnRate),
-          category: 'retention'
+          category: 'retention',
+          type: 'percentage',
+          monthYear: currentMonthName,
+          previousValue: null,
+          change: null
         },
         {
           metric: 'Avg Transaction Value',
           value: metrics.avgTransactionValue,
           formatted: formatCurrency(metrics.avgTransactionValue),
-          category: 'revenue'
+          category: 'revenue',
+          type: 'currency',
+          monthYear: currentMonthName,
+          previousValue: prevMetrics?.avgTransaction || null,
+          change: prevMetrics ? ((metrics.avgTransactionValue - prevMetrics.avgTransaction) / prevMetrics.avgTransaction * 100) : null
         },
         {
           metric: 'Discount Rate',
           value: metrics.discountRate,
           formatted: formatPercentage(metrics.discountRate),
-          category: 'revenue'
+          category: 'revenue',
+          type: 'percentage',
+          monthYear: currentMonthName,
+          previousValue: null,
+          change: null
+        },
+        {
+          metric: 'Total Transactions',
+          value: metrics.totalTransactions,
+          formatted: formatNumber(metrics.totalTransactions),
+          category: 'operations',
+          type: 'number',
+          monthYear: currentMonthName,
+          previousValue: prevMetrics?.transactions || null,
+          change: prevMetrics ? ((metrics.totalTransactions - prevMetrics.transactions) / prevMetrics.transactions * 100) : null
+        },
+        {
+          metric: 'Unique Members',
+          value: metrics.uniqueMembers,
+          formatted: formatNumber(metrics.uniqueMembers),
+          category: 'clients',
+          type: 'number',
+          monthYear: currentMonthName,
+          previousValue: prevMetrics?.clients || null,
+          change: prevMetrics ? ((metrics.uniqueMembers - prevMetrics.clients) / prevMetrics.clients * 100) : null
         }
       ];
+
+      // Add previous month data if available
+      if (prevMetrics) {
+        reportData.push({
+          metric: 'Total Revenue',
+          value: prevMetrics.revenue,
+          formatted: formatCurrency(prevMetrics.revenue),
+          category: 'revenue',
+          type: 'currency',
+          monthYear: prevMonthName,
+          previousValue: null,
+          change: null
+        });
+      }
 
       const columns = [
         { header: 'Metric', key: 'metric', type: 'text' },
         { header: 'Value', key: 'value', type: 'number' },
         { header: 'Formatted', key: 'formatted', type: 'text' },
-        { header: 'Category', key: 'category', type: 'text' }
+        { header: 'Category', key: 'category', type: 'text' },
+        { header: 'Month', key: 'monthYear', type: 'text' },
+        { header: 'Change %', key: 'change', type: 'percentage' }
       ];
 
       const result = await generateQuickInsights(
         reportData, 
         columns, 
-        `${primaryLocation} Location Performance Report`
+        `${primaryLocation} Location Performance Report - ${currentMonthName}`
       );
 
       return {
-        highlights: Array.isArray(result) ? result.slice(0, 3) : [],
+        highlights: Array.isArray(result) ? result.filter(r => 
+          typeof r === 'string' && !r.toLowerCase().includes('concern') && !r.toLowerCase().includes('risk')
+        ).slice(0, 4) : [],
         concerns: Array.isArray(result) ? result.filter(trend => 
           typeof trend === 'string' && (
             trend.toLowerCase().includes('concern') || 
             trend.toLowerCase().includes('low') || 
-            trend.toLowerCase().includes('decline')
+            trend.toLowerCase().includes('decline') ||
+            trend.toLowerCase().includes('drop') ||
+            trend.toLowerCase().includes('decrease') ||
+            trend.toLowerCase().includes('risk')
           )
         ).slice(0, 3) : [],
-        recommendations: Array.isArray(result) ? result.slice(0, 3) : []
+        recommendations: Array.isArray(result) ? result.filter(r =>
+          typeof r === 'string' && (
+            r.toLowerCase().includes('recommend') ||
+            r.toLowerCase().includes('should') ||
+            r.toLowerCase().includes('consider') ||
+            r.toLowerCase().includes('opportunity')
+          )
+        ).slice(0, 3) : []
       };
     } catch (error) {
       console.error('Error generating AI insights:', error);
       return null;
     }
-  }, [generateQuickInsights, primaryLocation]);
+  }, [generateQuickInsights, primaryLocation, previousMonthRange, filteredData]);
 
   // Calculate metrics
   const metrics = useMemo((): LocationReportMetrics | null => {

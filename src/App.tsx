@@ -22,6 +22,9 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 const Index = React.lazy(() => 
   import("./pages/Index").then(module => ({ default: module.default }))
 );
+const MainDashboard = React.lazy(() => 
+  import("./pages/MainDashboard").then(module => ({ default: module.default }))
+);
 const ExecutiveSummary = React.lazy(() => 
   import("./pages/ExecutiveSummary").then(module => ({ default: module.default }))
 );
@@ -100,6 +103,7 @@ const AppRoutes = () => {
           <PageTransition>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/main-dashboard" element={<MainDashboard />} />
               <Route path="/executive-summary" element={<ExecutiveSummary />} />
               <Route path="/sales-analytics" element={<SalesAnalytics />} />
               <Route path="/funnel-leads" element={<FunnelLeads />} />

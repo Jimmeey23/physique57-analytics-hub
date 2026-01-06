@@ -3,7 +3,7 @@ import { fetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useCheckinsData');
-const SPREADSHEET_ID = "1DSRuJJBhl1Sc9yfY6ki-ZFhdmQ_OeVeGyPDE6n9zpK4";
+const SPREADSHEET_ID = "1a7XKv2WCog7o8nYuV8YcFdqtfPYJNRO6DelJ6Hn_z6Q";
 
 export interface CheckinData {
   memberId: string;

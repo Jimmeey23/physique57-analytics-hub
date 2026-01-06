@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { EnhancedClassAttendanceFilterSection } from '@/components/dashboard/EnhancedClassAttendanceFilterSection';
-import { SuperEnhancedMetricCards } from '@/components/dashboard/SuperEnhancedMetricCards';
-import { UltimateClassAttendanceTable } from '@/components/dashboard/UltimateClassAttendanceTable';
-import { MonthOnMonthClassTable } from '@/components/dashboard/MonthOnMonthClassTable';
-import { DualRankingLists } from '@/components/dashboard/DualRankingLists';
+import { EnhancedClassAttendanceMetricCards } from '@/components/dashboard/EnhancedClassAttendanceMetricCards';
+import { UltimateClassAttendanceTable } from '@/components/dashboard/UltimateClassAttendanceTableNew';
+import ClassDeepDive from '@/components/dashboard/ClassDeepDive';
+import Rankings from '@/components/dashboard/Rankings';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { BarChart3, Users, MapPin, Building2, Calendar, Trophy } from 'lucide-react';
 import { useState } from 'react';
@@ -24,15 +24,15 @@ const locations = [{
   name: 'All Locations',
   fullName: 'All Locations'
 }, {
-  id: 'Kwality House, Kemps Corner',
+  id: 'kwality',
   name: 'Kwality House',
   fullName: 'Kwality House, Kemps Corner'
 }, {
-  id: 'Supreme HQ, Bandra',
+  id: 'supreme',
   name: 'Supreme HQ',
   fullName: 'Supreme HQ, Bandra'
 }, {
-  id: 'Kenkere House',
+  id: 'kenkere',
   name: 'Kenkere House',
   fullName: 'Kenkere House'
 }];
@@ -90,33 +90,53 @@ const ClassAttendance = () => {
   // Inner component rendered under SessionsFiltersProvider so filtering applies
   const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawData, payrollData }) => {
     const filteredData = useFilteredSessionsData(rawData || []);
-    const [activeLocation, setActiveLocation] = useState('Kwality House, Kemps Corner');
+    const [activeLocation, setActiveLocation] = useState('kwality');
     const [activeTab, setActiveTab] = useState('overview');
 
     // Filter data by location
     const locationFilteredData = useMemo(() => {
-      if (!filteredData || activeLocation === 'all') return filteredData || [];
+      console.log('🏢 Location filtering:', {
+        activeLocation,
+        totalFilteredData: filteredData?.length || 0,
+        sampleLocations: filteredData?.slice(0, 3).map(s => s.location) || []
+      });
+
+      if (!filteredData || activeLocation === 'all') {
+        console.log('✅ Returning all locations:', filteredData?.length || 0);
+        return filteredData || [];
+      }
       
       const selectedLocation = locations.find(loc => loc.id === activeLocation);
-      if (!selectedLocation) return filteredData || [];
+      if (!selectedLocation) {
+        console.warn('⚠️ Location not found:', activeLocation);
+        return filteredData || [];
+      }
 
-      return filteredData.filter(session => {
+      const filtered = filteredData.filter(session => {
         if (session.location === selectedLocation.fullName) return true;
         
         const sessionLoc = session.location?.toLowerCase() || '';
         const targetLoc = selectedLocation.fullName.toLowerCase();
         
-        if (selectedLocation.id === 'Kwality House, Kemps Corner' && sessionLoc.includes('kwality')) return true;
-        if (selectedLocation.id === 'Supreme HQ, Bandra' && sessionLoc.includes('supreme')) return true;
-        if (selectedLocation.id === 'Kenkere House' && sessionLoc.includes('kenkere')) return true;
+        if (selectedLocation.id === 'kwality' && sessionLoc.includes('kwality')) return true;
+        if (selectedLocation.id === 'supreme' && sessionLoc.includes('supreme')) return true;
+        if (selectedLocation.id === 'kenkere' && sessionLoc.includes('kenkere')) return true;
         
         return false;
       });
+
+      console.log('✅ Location filtered to:', {
+        location: selectedLocation.name,
+        sessions: filtered.length,
+        sampleLocations: [...new Set(filtered.slice(0, 5).map(s => s.location))]
+      });
+
+      return filtered;
     }, [filteredData, activeLocation]);
 
-    // Calculate hero metrics
+    // Calculate hero metrics - should use locationFilteredData to match metric cards
     const metrics = useMemo(() => {
-      if (!filteredData || filteredData.length === 0) {
+      if (!locationFilteredData || locationFilteredData.length === 0) {
         return [
           { label: 'Total Classes', value: '0' },
           { label: 'Total Attendance', value: '0' },
@@ -124,9 +144,9 @@ const ClassAttendance = () => {
         ];
       }
 
-      const totalClasses = filteredData.length;
-      const totalAttendance = filteredData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
-      const totalCapacity = filteredData.reduce((sum, s) => sum + (s.capacity || 0), 0);
+      const totalClasses = locationFilteredData.length;
+      const totalAttendance = locationFilteredData.reduce((sum, s) => sum + (s.checkedInCount || 0), 0);
+      const totalCapacity = locationFilteredData.reduce((sum, s) => sum + (s.capacity || 0), 0);
       const fillRate = totalCapacity > 0 ? ((totalAttendance / totalCapacity) * 100).toFixed(1) : '0';
 
       return [
@@ -134,7 +154,7 @@ const ClassAttendance = () => {
         { label: 'Total Attendance', value: totalAttendance.toLocaleString() },
         { label: 'Fill Rate', value: `${fillRate}%` },
       ];
-    }, [filteredData]);
+    }, [locationFilteredData]);
 
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
@@ -171,7 +191,7 @@ const ClassAttendance = () => {
 
             {/* Metric Cards */}
             <div>
-              <SuperEnhancedMetricCards data={locationFilteredData} payrollData={payrollData || []} />
+              <EnhancedClassAttendanceMetricCards data={locationFilteredData} />
             </div>
 
             {/* Analysis Tabs - matching Sales style exactly */}
@@ -201,21 +221,11 @@ const ClassAttendance = () => {
               </TabsContent>
 
               <TabsContent value="monthlyTrends" className="mt-8">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900">Month-on-Month Analysis</h2>
-                  </div>
-                  <MonthOnMonthClassTable data={filteredData || []} location={activeLocation} />
-                </div>
+                <ClassDeepDive data={locationFilteredData} />
               </TabsContent>
 
               <TabsContent value="rankings" className="mt-8">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900">Performance Rankings</h2>
-                  </div>
-                  <DualRankingLists data={locationFilteredData} />
-                </div>
+                <Rankings data={locationFilteredData} />
               </TabsContent>
             </Tabs>
           </div>
@@ -228,11 +238,9 @@ const ClassAttendance = () => {
   };
 
   return (
-    <GlobalFiltersProvider>
-      <SessionsFiltersProvider>
-        <InnerContent rawData={data || []} payrollData={payrollData || []} />
-      </SessionsFiltersProvider>
-    </GlobalFiltersProvider>
+    <SessionsFiltersProvider>
+      <InnerContent rawData={data || []} payrollData={payrollData || []} />
+    </SessionsFiltersProvider>
   );
 };
 

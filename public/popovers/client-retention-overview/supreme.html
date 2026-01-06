@@ -3,255 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supreme HQ - The Acquisition Engine Blueprint</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Supreme HQ - Client Conversion Analysis</title>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
         }
-        .gradient-text {
-            background: linear-gradient(to right, #ec4899, #d946ef, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+        ol {
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        li {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        strong {
+            color: #2c3e50;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-300">
-
-    <div class="max-w-7xl mx-auto p-4 sm:p-8 my-12">
-
-        <!-- Report Header -->
-        <header class="text-center mb-16">
-            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight gradient-text">The Acquisition Engine</h1>
-            <p class="text-lg text-slate-400 mt-3 max-w-3xl mx-auto">A Forensic Analysis of Supreme HQ's New Client Funnel</p>
-            <p class="text-xs text-slate-500 mt-1">Analysis of November 2025 Data</p>
-        </header>
+<body>
+    <div class="container">
+        <h1>Supreme HQ - Client Conversion Analysis</h1>
         
-        <!-- Main Content Container -->
-        <main class="bg-slate-800/50 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700">
-            <section id="executive-summary" class="mb-12">
-                <h2 class="text-3xl font-bold text-white mb-4 tracking-tight">Executive Summary: The Engine, The Leak, & The Anomaly</h2>
-                <p class="text-base text-slate-300 leading-relaxed max-w-4xl">
-                    Supreme HQ's November acquisition funnel is a study in contrasts. On one hand, the `Trial Class` channel is operating as a spectacular, high-performance engine, single-handedly responsible for nearly 90% of all new member conversions. However, its success is being diluted by two critical issues: a persistent leak in the form of a high-volume, low-value `Hosted Class` strategy, and a sudden, alarming anomaly—the complete failure of the historically reliable `Referral` channel, which dropped to a 0% conversion rate.
-                </p>
-                <p class="mt-4 p-4 bg-pink-900/40 border-l-4 border-pink-500 rounded-r-lg text-pink-200 text-base font-semibold">
-                    The immediate priorities are twofold: first, investigate and rectify the referral program failure to restore a vital source of warm leads. Second, re-engineer the acquisition strategy to starve the inefficient channels and pour every available resource into amplifying the `Trial Class` and `Paid First Visit` funnels, which are proven to attract clients who are ready and willing to commit.
-                </p>
-            </section>
-            
-            <!-- Funnel Performance Snapshot -->
-            <section class="mb-16">
-                <h2 class="text-2xl font-bold text-white mb-6 tracking-tight">November Funnel Performance: The Stark Reality</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead class="border-b border-slate-700">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Channel</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Trials (% of Total)</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Conversions (% of Total)</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Conversion %</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Avg. LTV</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-800">
-                            <tr class="bg-rose-900/20">
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-200 border-l-4 border-rose-600">New - Hosted Class</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">42 <span class="text-slate-500">(36%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">1 <span class="text-slate-500">(5%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-rose-400">2.4%</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">₹627</td>
-                            </tr>
-                            <tr class="bg-amber-900/20">
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-200 border-l-4 border-amber-500">New - Referral Class</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">11 <span class="text-slate-500">(9%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">0 <span class="text-slate-500">(0%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-amber-400">0.0%</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">₹0</td>
-                            </tr>
-                            <tr class="bg-emerald-900/20">
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-200 border-l-4 border-emerald-600">New - Paid First Visit</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">5 <span class="text-slate-500">(4%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-300">1 <span class="text-slate-500">(5%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-emerald-400">20.0%</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-emerald-400">₹2,700</td>
-                            </tr>
-                            <tr class="bg-emerald-900/40">
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-100 border-l-4 border-emerald-400">New - Trial Class</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-200">57 <span class="text-slate-400">(48%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-slate-100">17 <span class="text-slate-400">(89%)</span></td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-emerald-300">29.8%</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-emerald-300">₹4,200</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="strategic-recommendations">
-                <h2 class="text-3xl font-bold text-white mb-8 tracking-tight">The 15-Point Blueprint for High-Quality Growth</h2>
-                
-                <!-- Section I -->
-                <div class="mb-12">
-                    <h3 class="text-xl font-semibold mb-6 text-pink-400 tracking-wide border-b border-slate-700 pb-2">I. Triage & Diagnosis (The Immediate Fixes)</h3>
-                    <ol class="space-y-6">
-                        <li class="flex">
-                            <span class="text-pink-400 font-bold mr-4">1.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Launch an Immediate Investigation into the Referral Program.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> A 0% conversion rate from your warmest leads is a critical failure. Was there a technical glitch in the sign-up process? Did the referral offer change? Interview the 11 referred clients and your team to find the root cause within 7 days. This is your top priority.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-pink-400 font-bold mr-4">2.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Place a Moratorium on Most "Hosted Classes".</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> With a 2.4% conversion rate, this channel is a resource drain. Halt all new bookings except for partners who fit the profile of your one successful event ("Aditi's Barre"). Your studio is not an event space; it's a conversion center.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-pink-400 font-bold mr-4">3.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Protect the `Trial Class` Engine at All Costs.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> This channel is carrying the entire business. Ensure these trialists are getting into your best classes (like `Studio FIT`) with your best instructors. Their first experience must be flawless to maintain your ~30% conversion rate.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-pink-400 font-bold mr-4">4.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Simplify Your "Paid First Visit" Offer.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Only 5 people took this high-converting offer. Is it hard to find on your website? Is the price point confusing? Make it a clear, compelling, can't-miss "First Class Pass" to attract more of these valuable, high-intent clients.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-pink-400 font-bold mr-4">5.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Analyze the "Aditi's Barre Hosted Class" Success.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> This event converted at 14.3%, 6x the channel average. Deconstruct it. Was Aditi's audience a perfect fit? Was there a special offer for attendees? This is your only successful hosted event template.
-                                </p>
-                            </div>
-                        </li>
-                    </ol>
-                </div>
-
-                <!-- Section II -->
-                <div class="mb-12">
-                    <h3 class="text-xl font-semibold mb-6 text-purple-400 tracking-wide border-b border-slate-700 pb-2">II. Funnel Optimization (The Strategic Shift)</h3>
-                    <ol class="space-y-6" start="6">
-                         <li class="flex">
-                            <span class="text-purple-400 font-bold mr-4">6.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Pivot Hosted Events to a Paid Corporate Model.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Instead of free events for influencers, sell private class packages to corporations. This pre-qualifies attendees as professionals (higher LTV) and generates guaranteed revenue regardless of conversion.
-                                </p>
-                            </div>
-                        </li>
-                         <li class="flex">
-                            <span class="text-purple-400 font-bold mr-4">7.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Launch a "Double-Sided" Referral Campaign.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Once the technical/process issues are fixed, relaunch the program with an irresistible offer: the new member gets a discount, and the referrer gets an equal credit. This incentivizes both parties to ensure the trial happens.
-                                </p>
-                            </div>
-                        </li>
-                         <li class="flex">
-                            <span class="text-purple-400 font-bold mr-4">8.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Create a High-Converting Landing Page for `Trial Class`.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Since this is your main source of business, its digital storefront must be perfect. The page should feature testimonials, highlight the value, and have a frictionless sign-up process.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-purple-400 font-bold mr-4">9.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Introduce a `Trial Class` Follow-Up Protocol.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> The 6-day conversion window is key. Implement an automated SMS or email 24 hours after their first class with a personal message and a direct link to a "New Member Offer."
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-purple-400 font-bold mr-4">10.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Focus Digital Ads Exclusively on the `Trial Class` Funnel.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Stop spending money promoting low-conversion offers. Every ad dollar should be directed at getting more people into your proven, high-LTV `Trial Class` pipeline.
-                                </p>
-                            </div>
-                        </li>
-                    </ol>
-                </div>
-                
-                 <!-- Section III -->
-                <div>
-                    <h3 class="text-xl font-semibold mb-6 text-emerald-400 tracking-wide border-b border-slate-700 pb-2">III. Systems & Growth (The Flywheel)</h3>
-                    <ol class="space-y-6" start="11">
-                         <li class="flex">
-                            <span class="text-emerald-400 font-bold mr-4">11.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Define and Track your "Ideal Client" Profile.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Your `Trial Class` and `Paid First Visit` converters are your ideal clients. Survey them. What are their goals? Where do they live? Use this data to refine your marketing targeting.
-                                </p>
-                            </div>
-                        </li>
-                         <li class="flex">
-                            <span class="text-emerald-400 font-bold mr-4">12.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Set Clear Monthly KPIs for Conversions, Not Just Trials.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Shift the team's focus from a vanity metric (trials) to what actually matters (new paying members). The goal isn't "50 trials," it's "15 high-quality conversions."
-                                </p>
-                            </div>
-                        </li>
-                         <li class="flex">
-                            <span class="text-emerald-400 font-bold mr-4">13.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Test a Multi-Class Trial Pack.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Since clients visit 4.4 times before converting, a single trial class might not be enough. Test a paid "3-Class Intro Pack" to increase their immersion and commitment, likely boosting conversion rates further.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-emerald-400 font-bold mr-4">14.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Implement a Staff Incentive for Conversions.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> Offer a small bonus to front desk staff or instructors for each trial client they personally help convert to a full membership. This aligns the entire team around the goal of growth.
-                                </p>
-                            </div>
-                        </li>
-                        <li class="flex">
-                            <span class="text-emerald-400 font-bold mr-4">15.</span>
-                            <div>
-                                <strong class="text-slate-100 font-semibold">Review Funnel Metrics Weekly.</strong>
-                                <p class="mt-1 text-sm text-slate-400 pl-6 border-l border-slate-700 leading-relaxed">
-                                    <strong>Rationale:</strong> The referral program's failure shows how quickly a key channel can break. A brief, 15-minute weekly review of conversion rates will allow you to spot and fix problems before they derail an entire month's growth.
-                                </p>
-                            </div>
-                        </li>
-                    </ol>
-                </div>
-            </section>
-        </main>
+        <h2>Top 10 Most Useful Findings</h2>
+        <ol>
+            <li><strong>December 2025 Performance Snapshot</strong>: 124 trials led to 120 new members (97.2% trial-to-member rate), 8 retained (6.7% retention), and 11 converted (9.2% conversion), with total LTV of ₹2.3L.</li>
+            <li><strong>Trial Class Dominance</strong>: New - Trial Class accounted for 54 trials (43.5% of total) and 54 new members (45% of total), but only 4 retained (7.4% retention), highlighting volume but low loyalty.</li>
+            <li><strong>Hosted Class Underperformance</strong>: 35 hosted class trials resulted in 35 new members, but only 2 retained (5.7% retention) and 1 converted (2.9% conversion), indicating event-specific challenges.</li>
+            <li><strong>Referral Growth</strong>: New - Referral Class trials increased to 20 in Dec 2025, with 1 retained (5% retention) and 1 converted (5% conversion), showing steady but inconsistent referral pipeline.</li>
+            <li><strong>High LTV from Premium Packages</strong>: Studio 2 Week Unlimited membership yielded ₹26.3K avg LTV for 1 client (100% retention), proving value in targeted offers.</li>
+            <li><strong>Teacher Performance Variability</strong>: Karan Bhatia led with 30.8% conversion (4/13) and 23.1% retention (3/13), while Richard D'Costa had 0% conversion (0/17) and 0% retention.</li>
+            <li><strong>Seasonal Trial Trends</strong>: Trials peaked at 385 in May 2024 and declined to 124 in Dec 2025, with conversion rates ranging from 9.2% (Dec 2025) to 39.3% (Sep 2024).</li>
+            <li><strong>Retention Crisis</strong>: Overall retention dropped to 6.7% in Dec 2025, with New - Trial Class at 7.4% and New - Hosted Class at 5.7%, signaling post-acquisition engagement issues.</li>
+            <li><strong>Paid First Visit Challenges</strong>: 5 paid first visits resulted in 0 retained (0% retention) and 0 converted (0% conversion), despite ₹1.7K avg LTV.</li>
+            <li><strong>Hosted Class Success in One Instance</strong>: Physique 57 x Kareena's Barre had 25% retention (2/8) and 12.5% conversion (1/8), outperforming other hosted classes.</li>
+        </ol>
+        
+        <h2>10 Insights</h2>
+        <ol>
+            <li><strong>Trial Volume vs. Retention Inverse Relationship</strong>: High trial volumes (e.g., 145 in May 2024) correlate with lower retention (37.2%), suggesting overwhelmed follow-up capacity.</li>
+            <li><strong>Referral Loyalty Gap</strong>: New - Referral Class has 5% retention vs. 7.4% for trials, indicating referrals need better onboarding to boost loyalty.</li>
+            <li><strong>Teacher Specialization Opportunity</strong>: Karan Bhatia’s 30.8% conversion vs. others’ 0-20% shows potential for assigning high-performers to trial classes.</li>
+            <li><strong>Hosted Class Event Optimization</strong>: Only 1 of 3 hosted classes converted (Physique 57 x Kareena's Barre), suggesting instructor or promotion issues in others.</li>
+            <li><strong>Premium Package Profitability</strong>: Studio 2 Week Unlimited’s 100% retention (1/1) and ₹26.3K LTV highlight untapped potential in short-term memberships.</li>
+            <li><strong>Conversion Speed Variability</strong>: Avg conv days ranged from 0 (Dec 2025) to 466 (Sep 2024), with faster conversions (e.g., New - Paid First Visit: 0 days) yielding lower retention.</li>
+            <li><strong>Data Anomalies in "Others" Category</strong>: New - Others had 100% retention (1/1) in Dec 2025 but erratic LTV (₹26.3K), indicating niche but high-value segments.</li>
+            <li><strong>Staff/Family Visit Ineffectiveness</strong>: 2 trials resulted in 0 new members, showing minimal contribution to growth.</li>
+            <li><strong>Repeat Visit Decline</strong>: Repeat visits dropped to 2 in Dec 2025 (from 34 in Jul 2025), signaling lost loyalty among existing clients.</li>
+            <li><strong>Total LTV Volatility</strong>: From ₹23.7L (May 2024) to ₹2.3L (Dec 2025), with New - Trial Class contributing 41% of LTV, indicating market saturation.</li>
+        </ol>
+        
+        <h2>10 Things That Went Well</h2>
+        <ol>
+            <li><strong>New - Others 100% Retention</strong>: 1 out of 1 client retained (100%), with ₹26.3K LTV, proving niche segments can be highly profitable.</li>
+            <li><strong>Physique 57 x Kareena's Barre Success</strong>: 25% retention and 12.5% conversion, outperforming other hosted classes.</li>
+            <li><strong>Karan Bhatia’s Teacher Excellence</strong>: 30.8% conversion and 23.1% retention, demonstrating effective client engagement.</li>
+            <li><strong>Studio 2 Week Unlimited Performance</strong>: 100% retention and ₹26.3K LTV, showing premium packages resonate with a small audience.</li>
+            <li><strong>Referral Trial Growth</strong>: Trials increased from 0 (Jan 2024) to 20 (Dec 2025), with steady conversion (5% in Dec 2025).</li>
+            <li><strong>New - Paid First Visit Conversion</strong>: 57.1% conversion in Dec 2024 (4/7), indicating walk-in effectiveness.</li>
+            <li><strong>Hosted Class Trial Volume</strong>: 35 trials in Dec 2025, showing event popularity despite low conversion.</li>
+            <li><strong>Data Completeness</strong>: Comprehensive MoM tracking enabled trend analysis, allowing proactive adjustments.</li>
+            <li><strong>Mrigakshi Jaiswal’s Retention</strong>: 50% retention (1/2) with 50% conversion, highlighting individual teacher strengths.</li>
+            <li><strong>Dec 2025 Total Revenue</strong>: ₹2.3L LTV from 124 trials, a rebound from Nov 2025 lows.</li>
+        </ol>
+        
+        <h2>10 That Didn't</h2>
+        <ol>
+            <li><strong>Overall Retention Crisis</strong>: Dropped to 6.7% in Dec 2025, with New - Trial Class at 7.4% and New - Hosted Class at 5.7%.</li>
+            <li><strong>Hosted Class Low Conversion</strong>: 2.9% conversion (1/35) and 5.7% retention, wasting marketing efforts.</li>
+            <li><strong>Richard D'Costa’s 0% Performance</strong>: 17 new members, 0 converted, 0 retained, indicating poor client handling.</li>
+            <li><strong>New - Paid First Visit Failure</strong>: 0% retention (0/5) and 0% conversion (0/5) in Dec 2025, despite ₹1.7K avg LTV.</li>
+            <li><strong>Trial Retention Decline</strong>: From 48.4% (Sep 2024) to 7.4% (Dec 2025), showing lost engagement post-trial.</li>
+            <li><strong>Staff/Family Visit Ineffectiveness</strong>: 2 trials, 0 new members, 0 retention, contributing nothing to growth.</li>
+            <li><strong>Repeat Visit Collapse</strong>: Dropped to 2 in Dec 2025 (from 34 in Jul 2025), signaling lost loyalty.</li>
+            <li><strong>Hosted Class Inconsistency</strong>: Physique 57 x Meghana's powerCycle and Denver's Birthday Barre had 0% retention.</li>
+            <li><strong>Conversion Rate Volatility</strong>: Fluctuated from 39.3% (Sep 2024) to 9.2% (Dec 2025), indicating inconsistent strategies.</li>
+            <li><strong>Total Trials Decline</strong>: From 385 (May 2024) to 124 (Dec 2025), signaling reduced inbound interest.</li>
+        </ol>
+        
+        <h2>10 Corrective Suggested Next Steps</h2>
+        <ol>
+            <li><strong>Boost Trial Retention</strong>: Implement post-trial follow-ups (e.g., emails, calls) to increase retention from 7.4% to 15% by Q1 2026.</li>
+            <li><strong>Optimize Hosted Class Promotion</strong>: Analyze why 2/3 hosted classes failed and pilot smaller, instructor-focused events to boost conversion to 10%.</li>
+            <li><strong>Train Low-Performing Teachers</strong>: Provide coaching to Richard D'Costa and others with 0% conversion, focusing on client engagement and follow-up.</li>
+            <li><strong>Leverage Referral Programs</strong>: Create incentives (e.g., free sessions) to increase referral trials to 30+ monthly, targeting 10% retention.</li>
+            <li><strong>Promote Premium Packages</strong>: Market Studio 2 Week Unlimited more aggressively, aiming for 5+ trials monthly to capitalize on 100% retention.</li>
+            <li><strong>Improve Paid First Visit Retention</strong>: Use CRM tools to follow up within 24 hours, targeting 20% retention by mid-2026.</li>
+            <li><strong>Address Repeat Visit Decline</strong>: Introduce loyalty rewards for existing clients to increase repeat visits from 2 to 20+ monthly.</li>
+            <li><strong>Refine Hosted Class Strategy</strong>: Assign high-retention teachers (e.g., Karan Bhatia) to hosted classes and limit events to 2/month.</li>
+            <li><strong>Eliminate Data Gaps</strong>: Audit "Unknown" and "Others" categories to improve tracking accuracy and identify high-value segments.</li>
+            <li><strong>Monitor MoM Trends</strong>: Set quarterly reviews of retention/conversion data to adjust strategies, targeting 15% overall retention by Q3 2026.</li>
+        </ol>
     </div>
 </body>
 </html>

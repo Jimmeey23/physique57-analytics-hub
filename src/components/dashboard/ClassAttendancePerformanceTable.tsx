@@ -149,7 +149,7 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
       }
     });
   };
-  return <Card className="bg-white shadow-xl border-0 rounded-2xl overflow-hidden">
+  return <Card className="bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white border-b-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="flex items-center gap-3 text-xl">
