@@ -1,5 +1,4 @@
-import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { LayoutDashboard } from 'lucide-react';
+import { SectionLayout } from '@/components/layout/SectionLayout';
 import Rankings from '@/components/dashboard/Rankings';
 import { DataTableEnhanced } from '@/components/dashboard/DataTableEnhanced';
 import { MetricsCardsEnhanced } from '@/components/dashboard/MetricsCardsEnhanced';
@@ -19,11 +18,7 @@ export default function MainDashboard() {
   }, [sessions]);
 
   return (
-    <DashboardLayout
-      title="Main Dashboard"
-      description="Comprehensive analytics with rankings and grouping"
-      icon={LayoutDashboard}
-    >
+    <SectionLayout title="Main Dashboard">
       <div className="space-y-8">
         {/* Filter Section */}
         <ExecutiveFilterSection availableLocations={availableLocations} />
@@ -37,6 +32,6 @@ export default function MainDashboard() {
         {/* Data Table Section */}
         <DataTableEnhanced sessions={filteredSessions} />
       </div>
-    </DashboardLayout>
+    </SectionLayout>
   );
 }
