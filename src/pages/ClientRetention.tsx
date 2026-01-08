@@ -203,9 +203,6 @@ const ClientRetention = () => {
       if (client.firstVisitLocation && mainLocations.includes(client.firstVisitLocation)) {
         locations.add(client.firstVisitLocation);
       }
-      if (client.homeLocation && mainLocations.includes(client.homeLocation)) {
-        locations.add(client.homeLocation);
-      }
     });
     return Array.from(locations).filter(Boolean);
   }, [data]);
@@ -245,27 +242,26 @@ const ClientRetention = () => {
       });
     }
 
-    // Apply location filter - check both firstVisitLocation and homeLocation
+    // Apply location filter - check ONLY firstVisitLocation (where the trial/first visit occurred)
     if (selectedLocation !== 'All Locations') {
       filtered = filtered.filter(client => {
         const firstLocation = client.firstVisitLocation || '';
-        const homeLocation = client.homeLocation || '';
 
         // For Kenkere House, try more flexible matching
         if (selectedLocation === 'Kenkere House, Bengaluru') {
-          const matchesFirst = firstLocation.toLowerCase().includes('kenkere') || firstLocation.toLowerCase().includes('bengaluru') || firstLocation === 'Kenkere House';
-          const matchesHome = homeLocation.toLowerCase().includes('kenkere') || homeLocation.toLowerCase().includes('bengaluru') || homeLocation === 'Kenkere House';
-          return matchesFirst || matchesHome;
+          return firstLocation.toLowerCase().includes('kenkere') || 
+                 firstLocation.toLowerCase().includes('bengaluru') || 
+                 firstLocation === 'Kenkere House';
         }
 
         // For other locations, use exact match
-        return firstLocation === selectedLocation || homeLocation === selectedLocation;
+        return firstLocation === selectedLocation;
       });
     }
 
     // Apply additional filters
     if (filters.location.length > 0) {
-      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || '') || filters.location.includes(client.homeLocation || ''));
+      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || ''));
     }
     if (filters.trainer.length > 0) {
       filtered = filtered.filter(client => filters.trainer.includes(client.trainerName || ''));
@@ -317,7 +313,7 @@ const ClientRetention = () => {
 
     // Apply additional filters (but NOT the selectedLocation tab filter)
     if (filters.location.length > 0) {
-      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || '') || filters.location.includes(client.homeLocation || ''));
+      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || ''));
     }
     if (filters.trainer.length > 0) {
       filtered = filtered.filter(client => filters.trainer.includes(client.trainerName || ''));
@@ -351,9 +347,9 @@ const ClientRetention = () => {
     const countFor = (predicate: (c: typeof data[number]) => boolean) => filteredByFiltersOnly.filter(predicate).length;
 
     const all = filteredByFiltersOnly.length;
-    const kwality = countFor(c => (c.firstVisitLocation === 'Kwality House, Kemps Corner') || (c.homeLocation === 'Kwality House, Kemps Corner'));
-    const supreme = countFor(c => (c.firstVisitLocation === 'Supreme HQ, Bandra') || (c.homeLocation === 'Supreme HQ, Bandra'));
-    const kenkere = countFor(c => matchKenkere(c.firstVisitLocation || '') || matchKenkere(c.homeLocation || ''));
+    const kwality = countFor(c => c.firstVisitLocation === 'Kwality House, Kemps Corner');
+    const supreme = countFor(c => c.firstVisitLocation === 'Supreme HQ, Bandra');
+    const kenkere = countFor(c => matchKenkere(c.firstVisitLocation || ''));
 
     return { all, kwality, supreme, kenkere };
   }, [filteredByFiltersOnly]);
@@ -362,27 +358,26 @@ const ClientRetention = () => {
   const filteredDataNoDateRange = React.useMemo(() => {
     let filtered = data;
 
-    // Apply location filter - check both firstVisitLocation and homeLocation
+    // Apply location filter - check ONLY firstVisitLocation (where the trial/first visit occurred)
     if (selectedLocation !== 'All Locations') {
       filtered = filtered.filter(client => {
         const firstLocation = client.firstVisitLocation || '';
-        const homeLocation = client.homeLocation || '';
 
         // For Kenkere House, try more flexible matching
         if (selectedLocation === 'Kenkere House, Bengaluru') {
-          const matchesFirst = firstLocation.toLowerCase().includes('kenkere') || firstLocation.toLowerCase().includes('bengaluru') || firstLocation === 'Kenkere House';
-          const matchesHome = homeLocation.toLowerCase().includes('kenkere') || homeLocation.toLowerCase().includes('bengaluru') || homeLocation === 'Kenkere House';
-          return matchesFirst || matchesHome;
+          return firstLocation.toLowerCase().includes('kenkere') || 
+                 firstLocation.toLowerCase().includes('bengaluru') || 
+                 firstLocation === 'Kenkere House';
         }
 
         // For other locations, use exact match
-        return firstLocation === selectedLocation || homeLocation === selectedLocation;
+        return firstLocation === selectedLocation;
       });
     }
 
     // Apply additional filters (but NOT date range)
     if (filters.location.length > 0) {
-      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || '') || filters.location.includes(client.homeLocation || ''));
+      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || ''));
     }
     if (filters.trainer.length > 0) {
       filtered = filtered.filter(client => filters.trainer.includes(client.trainerName || ''));
@@ -412,6 +407,8 @@ const ClientRetention = () => {
     
     return filtered;
   }, [data, selectedLocation, filters]);
+
+
   const heroMetrics = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return [];
     
@@ -638,7 +635,7 @@ const ClientRetention = () => {
                   if (type === 'trainer') {
                     match = client.trainerName === item.name;
                   } else if (type === 'location') {
-                    match = client.firstVisitLocation === item.name || client.homeLocation === item.name;
+                    match = client.firstVisitLocation === item.name;
                   } else if (type === 'membership') {
                     match = client.membershipUsed === item.name;
                   }
