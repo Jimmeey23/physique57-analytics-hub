@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { SalesData, NewClientData, PayrollData, ExpirationData, SessionData, LeadsData } from '@/types/dashboard';
+import { SalesData, NewClientData, PayrollData, ExpirationData } from '@/types/dashboard';
+import { LeadsData } from '@/types/leads';
 import { useSalesData } from './useSalesData';
-import { useSessionsData } from './useSessionsData';
+import { useSessionsData, SessionData } from './useSessionsData';
 import { useNewClientData } from './useNewClientData';
 import { useLeadsData } from './useLeadsData';
 import { usePayrollData } from './usePayrollData';
@@ -119,10 +120,10 @@ export const useIndependentMonthOnMonthMetrics = () => {
 
     const sessionsByMonth = aggregateByMonth(
       sessionsData.data || [],
-      'sessionDate',
-      (item) => ({
+      'date' as keyof SessionData,
+      (item: SessionData) => ({
         sessions: 1,
-        attendance: item.attendance || 0,
+        attendance: item.checkedInCount || 0,
       })
     );
 
@@ -136,7 +137,7 @@ export const useIndependentMonthOnMonthMetrics = () => {
 
     const leadsByMonth = aggregateByMonth(
       leadsData.data || [],
-      'leadDate' as keyof LeadsData,
+      'createdAt' as keyof LeadsData,
       (item: LeadsData) => ({
         leads: 1,
         converted: item.status === 'Converted' ? 1 : 0,
@@ -145,9 +146,9 @@ export const useIndependentMonthOnMonthMetrics = () => {
 
     const payrollByMonth = aggregateByMonth(
       payrollData.data || [],
-      'paymentDate' as keyof PayrollData,
+      'monthYear' as keyof PayrollData,
       (item: PayrollData) => ({
-        payroll: item.amount || 0,
+        payroll: item.totalPaid || 0,
       })
     );
 

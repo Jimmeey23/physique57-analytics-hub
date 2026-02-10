@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { PayrollData } from '@/types/dashboard';
 
 const GOOGLE_CONFIG = {
-  CLIENT_ID: "YOUR_CLIENT_ID_2.apps.googleusercontent.com",
-  CLIENT_SECRET: "GOCSPX-REDACTED_SECRET_2",
-  REFRESH_TOKEN: "REDACTED_REFRESH_TOKEN_2",
-  TOKEN_URL: "https://oauth2.googleapis.com/token"
+  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  CLIENT_SECRET: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+  REFRESH_TOKEN: import.meta.env.VITE_GOOGLE_REFRESH_TOKEN,
+  TOKEN_URL: import.meta.env.VITE_GOOGLE_TOKEN_URL
 };
 
-const SPREADSHEET_ID = "149ILDqovzZA6FRUJKOwzutWdVqmqWBtWPfzG3A0zxTI";
+const SPREADSHEET_ID = import.meta.env.VITE_PAYROLL_SPREADSHEET_ID;
 
 export const usePayrollData = () => {
   const [data, setData] = useState<PayrollData[]>([]);
