@@ -34,7 +34,7 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [clickedMetric, setClickedMetric] = useState<string | null>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
+  const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isRendering, setIsRendering] = useState(true);
   const [filters, setFilters] = useState({
     location: '',
