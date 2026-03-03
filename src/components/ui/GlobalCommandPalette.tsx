@@ -25,7 +25,7 @@ const pages: { group: string; items: QuickLink[] }[] = [
     items: [
       { label: "Home", to: "/", keywords: ["index", "home", "landing"] },
       { label: "Executive Summary", to: "/executive-summary", keywords: ["exec", "summary"] },
-      { label: "Outlier Analysis", to: "/outlier-analysis", keywords: ["outlier", "april", "august", "exceptional", "performance"] },
+      { label: "Custom Data Lab", to: "/outlier-analysis", keywords: ["data lab", "pivot", "chart builder", "joins", "relationships"] },
       { label: "Sales Analytics", to: "/sales-analytics", keywords: ["revenue", "sales", "kpi"] },
       { label: "Funnel & Leads", to: "/funnel-leads", keywords: ["leads", "funnel", "mql"] },
       { label: "Client Retention", to: "/client-retention", keywords: ["retention", "churn"] },

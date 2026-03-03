@@ -7,14 +7,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { TrendingUp, TrendingDown, Users, ShoppingCart, Calendar, MapPin, BarChart3, DollarSign, Activity, CreditCard, Target, Clock, Star, Zap, X, Download, Copy, LayoutGrid, List } from 'lucide-react';
+import { TrendingUp, Users, BarChart3, DollarSign, Target, Star, Zap, X, Download, Copy, LayoutGrid, List } from 'lucide-react';
 import { NewClientData } from '@/types/dashboard';
+
+type DrillDownModalType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ranking';
+
+type DrillDownDataPayload = {
+  clients?: NewClientData[];
+  relatedClients?: NewClientData[];
+  metricType?: string;
+  [key: string]: unknown;
+};
+
 interface ClientConversionDrillDownModalV3Props {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  data: any;
-  type: 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ranking';
+  data: DrillDownDataPayload | NewClientData[] | null;
+  type: DrillDownModalType;
 }
 export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDownModalV3Props> = ({
   isOpen,
@@ -23,39 +33,40 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
   data,
   type
 }) => {
-  if (!data) return null;
-
   // Local UI state for premium interactions
   const [quickFilter, setQuickFilter] = React.useState<'all' | 'new' | 'converted' | 'retained' | 'highLTV'>('all');
   const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('table');
   const [search, setSearch] = React.useState('');
+  const hasData = Boolean(data);
+  const payload = data && !Array.isArray(data) ? data : null;
+  const metricType = typeof payload?.metricType === 'string' ? payload.metricType : '';
 
   // Extract targeted client data based on type and drill-down context
   const clients: NewClientData[] = React.useMemo(() => {
-    if (!data) return [];
+    if (!hasData) return [];
 
     // For ranking drill-downs, use the relatedClients array
-    if (type === 'ranking' && data.relatedClients) {
-      logger.debug('Drill-down V3: Using ranking related clients:', data.relatedClients.length);
-      return data.relatedClients;
+    if (type === 'ranking' && payload?.relatedClients && Array.isArray(payload.relatedClients)) {
+      logger.debug('Drill-down V3: Using ranking related clients:', payload.relatedClients.length);
+      return payload.relatedClients;
     }
 
     // For metric card clicks, use the filtered clients array
-    if (type === 'metric' && data.clients) {
-      logger.debug('Drill-down V3: Using metric card filtered clients:', data.clients.length, 'MetricType:', data.metricType);
-      return data.clients;
+    if (type === 'metric' && payload?.clients && Array.isArray(payload.clients)) {
+      logger.debug('Drill-down V3: Using metric card filtered clients:', payload.clients.length, 'MetricType:', metricType);
+      return payload.clients;
     }
 
     // For month/year table row clicks, use the clients array from the row data
-    if ((type === 'month' || type === 'year') && data.clients) {
-      logger.debug('Drill-down V3: Using table row clients:', data.clients.length);
-      return data.clients;
+    if ((type === 'month' || type === 'year') && payload?.clients && Array.isArray(payload.clients)) {
+      logger.debug('Drill-down V3: Using table row clients:', payload.clients.length);
+      return payload.clients;
     }
 
     // For other table types, check if data has clients property
-    if (data.clients && Array.isArray(data.clients)) {
-      logger.debug('Drill-down V3: Using generic clients array:', data.clients.length);
-      return data.clients;
+    if (payload?.clients && Array.isArray(payload.clients)) {
+      logger.debug('Drill-down V3: Using generic clients array:', payload.clients.length);
+      return payload.clients;
     }
 
     // For direct array format
@@ -65,9 +76,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
     }
 
     // Fallback to empty array
-    logger.debug('Drill-down V3: No targeted clients found, showing empty. Data structure:', Object.keys(data || {}));
+    logger.debug('Drill-down V3: No targeted clients found, showing empty. Data structure:', Object.keys(payload || {}));
     return [];
-  }, [data, type]);
+  }, [data, hasData, metricType, payload, type]);
 
   // Calculate summary metrics from targeted clients
   const summary = React.useMemo(() => {
@@ -95,7 +106,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
       newMembers,
       convertedMembers,
       retainedMembers,
-      metricType: data?.metricType,
+      metricType,
       sampleIsNewValues: clients.slice(0, 5).map(c => c.isNew),
       sampleConversionStatus: clients.slice(0, 5).map(c => c.conversionStatus),
       sampleRetentionStatus: clients.slice(0, 5).map(c => c.retentionStatus),
@@ -116,7 +127,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
       totalLTV,
       avgConversionTime: clientsWithConversionData > 0 ? totalConversionSpan / clientsWithConversionData : 0
     };
-  }, [clients]);
+  }, [clients, metricType]);
 
   // Apply local quick filters and search within the modal scope
   const displayedClients = React.useMemo(() => {
@@ -164,96 +175,65 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
     navigator.clipboard.writeText(emails);
   }, []);
   const renderMetricCards = () => {
-    // Determine labels based on drill-down context
-    const metricType = data?.metricType || '';
     const isConvertedDrillDown = metricType === 'converted_members';
     const isRetainedDrillDown = metricType === 'retained_members';
-    const isNewMembersDrillDown = metricType === 'new_members';
-    
-    // Contextual labels for better understanding
-    const newMembersLabel = isConvertedDrillDown ? 'New → Converted' : 
-                           isRetainedDrillDown ? 'New → Retained' : 
-                           'New Members';
-    const newMembersDescription = isConvertedDrillDown ? 'New members who converted' : 
-                                 isRetainedDrillDown ? 'New members who were retained' : 
-                                 'New Members';
-    
-    const conversionRateLabel = isConvertedDrillDown ? 'Subset Conv. Rate' :
-                               isRetainedDrillDown ? 'Subset Conv. Rate' :
-                               'Conversion Rate';
-    const conversionRateDescription = isConvertedDrillDown ? 'Converted from this subset' :
-                                     isRetainedDrillDown ? 'Converted from this subset' :
-                                     'Overall conversion rate';
 
-    return <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-white border-2 border-blue-500 shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-blue-600 mb-1">
-                <Users className="w-5 h-5 animate-pulse" />
-                <span className="text-xs font-semibold">Total</span>
-              </div>
-              <div className="text-3xl font-bold text-blue-700">{formatNumber(summary.totalMembers)}</div>
-              <div className="text-slate-600 text-sm font-medium">Total Members</div>
-            </div>
-          </CardContent>
-        </Card>
+    const newMembersLabel = isConvertedDrillDown
+      ? 'New → Converted'
+      : isRetainedDrillDown
+      ? 'New → Retained'
+      : 'New Members';
 
-        <Card className="bg-white border-2 border-emerald-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-100">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                <Target className="w-5 h-5" />
-                <span className="text-xs font-semibold">New</span>
-              </div>
-              <div className="text-3xl font-bold text-emerald-700">{formatNumber(summary.newMembers)}</div>
-              <div className="text-slate-600 text-sm font-medium">{newMembersLabel}</div>
-              <div className="text-slate-500 text-xs mt-1">{newMembersDescription}</div>
-            </div>
-          </CardContent>
-        </Card>
+    const conversionRateLabel = isConvertedDrillDown || isRetainedDrillDown ? 'Subset Conv. Rate' : 'Conversion Rate';
 
-        <Card className="bg-white border-2 border-purple-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-200">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-purple-600 mb-1">
-                <Star className="w-5 h-5" />
-                <span className="text-xs font-semibold">Conv</span>
-              </div>
-              <div className="text-3xl font-bold text-purple-700">{formatNumber(summary.convertedMembers)}</div>
-              <div className="text-slate-600 text-sm font-medium">Converted</div>
-            </div>
-          </CardContent>
-        </Card>
+    const cards = [
+      {
+        label: 'Total Members',
+        value: formatNumber(summary.totalMembers),
+        icon: Users,
+      },
+      {
+        label: newMembersLabel,
+        value: formatNumber(summary.newMembers),
+        icon: Target,
+      },
+      {
+        label: 'Converted',
+        value: formatNumber(summary.convertedMembers),
+        icon: Star,
+      },
+      {
+        label: conversionRateLabel,
+        value: `${summary.conversionRate.toFixed(1)}%`,
+        icon: TrendingUp,
+      },
+      {
+        label: 'Avg LTV',
+        value: formatCurrency(summary.avgLTV),
+        icon: DollarSign,
+        sub: `Total: ${formatCurrency(summary.totalLTV)}`,
+      },
+    ];
 
-        <Card className="bg-white border-2 border-amber-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-300">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-amber-600 mb-1">
-                <TrendingUp className="w-5 h-5" />
-                <span className="text-xs font-semibold">Rate</span>
-              </div>
-              <div className="text-3xl font-bold text-amber-700">{summary.conversionRate.toFixed(1)}%</div>
-              <div className="text-slate-600 text-sm font-medium">{conversionRateLabel}</div>
-              <div className="text-slate-500 text-xs mt-1">{conversionRateDescription}</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border-2 border-rose-500 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 animate-in fade-in slide-in-from-bottom-4 delay-400">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-rose-600 mb-1">
-                <DollarSign className="w-5 h-5" />
-                <span className="text-xs font-semibold">LTV</span>
-              </div>
-              <div className="text-3xl font-bold text-rose-700">{formatCurrency(summary.avgLTV)}</div>
-              <div className="text-slate-600 text-sm font-medium">Avg LTV</div>
-              <div className="text-slate-500 text-xs mt-1">Total: {formatCurrency(summary.totalLTV)}</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>;
+    return (
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Card key={card.label} className="border border-slate-200 bg-white shadow-sm">
+              <CardContent className="p-4">
+                <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="text-xl font-bold text-slate-900">{card.value}</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</div>
+                {card.sub && <div className="mt-1 text-[11px] text-slate-500">{card.sub}</div>}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
   };
   const renderClientTable = () => {
     if (clients.length === 0) {
@@ -264,7 +244,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           </CardContent>
         </Card>;
     }
-    return <Card className="border-0 shadow-md">
+    return <Card className="border border-slate-200 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">
@@ -283,7 +263,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <div className="inline-flex rounded-full bg-slate-100 p-1">
               {(['all','new','converted','retained','highLTV'] as const).map(q => (
-                <button key={q} onClick={() => setQuickFilter(q)} className={`px-3 py-1.5 text-xs rounded-full transition-all ${quickFilter===q? 'bg-green-700 shadow text-white font-medium' : 'text-slate-600'}`}>
+                <button key={q} onClick={() => setQuickFilter(q)} className={`px-3 py-1.5 text-xs rounded-full transition-all ${quickFilter===q? 'bg-slate-900 shadow text-white font-medium' : 'text-slate-600'}`}>
                   {q==='all'?'All': q==='new'?'New': q==='converted'?'Converted': q==='retained'?'Retained':'High LTV'}
                 </button>
               ))}
@@ -292,10 +272,10 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name or email" className="h-9 w-56 rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200" />
             </div>
             <div className="inline-flex rounded-full bg-slate-100 p-1">
-              <button onClick={()=>setViewMode('table')} className={`px-2 py-1.5 rounded-full ${viewMode==='table'?'bg-green-700 shadow text-white':''}`} title="Table View">
+              <button onClick={()=>setViewMode('table')} className={`px-2 py-1.5 rounded-full ${viewMode==='table'?'bg-slate-900 shadow text-white':''}`} title="Table View">
                 <List className="w-4 h-4" />
               </button>
-              <button onClick={()=>setViewMode('cards')} className={`px-2 py-1.5 rounded-full ${viewMode==='cards'?'bg-green-700 shadow text-white':''}`} title="Card View">
+              <button onClick={()=>setViewMode('cards')} className={`px-2 py-1.5 rounded-full ${viewMode==='cards'?'bg-slate-900 shadow text-white':''}`} title="Card View">
                 <LayoutGrid className="w-4 h-4" />
               </button>
             </div>
@@ -386,9 +366,12 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
         </CardContent>
       </Card>;
   };
+
+  if (!hasData) return null;
+
   return <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-white border-slate-200 shadow-2xl">
-        <DialogHeader className="pb-6 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white -m-6 mb-6 p-6 shadow-xl">
+      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-white border border-slate-200 shadow-2xl">
+        <DialogHeader className="-m-6 mb-6 border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-6 pb-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
@@ -397,22 +380,22 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                 </div>
                 {title} - Detailed Analysis
               </DialogTitle>
-              <p className="text-slate-300 mt-2 text-sm">
+              <p className="mt-2 text-sm text-slate-300">
                 Targeted client conversion and retention analysis
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+              <Badge className="border-white/30 bg-white/20 text-white backdrop-blur-sm">
                 {type === 'month' ? 'Monthly' : type === 'year' ? 'Yearly' : type === 'metric' ? 'Metric Analysis' : 'Analytics'}
               </Badge>
-              <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+              <Badge className="border-white/30 bg-white/20 text-white backdrop-blur-sm">
                 {formatNumber(displayedClients.length)} of {formatNumber(clients.length)}
               </Badge>
               <div className="flex items-center gap-2">
-                <Button size="sm" className="bg-white text-slate-900 hover:bg-slate-100 font-medium" onClick={() => exportCSV(displayedClients)}>
+                <Button size="sm" className="bg-white font-medium text-slate-900 hover:bg-slate-100" onClick={() => exportCSV(displayedClients)}>
                   <Download className="w-4 h-4 mr-1" /> Export
                 </Button>
-                <Button size="sm" className="bg-white text-slate-900 hover:bg-slate-100 font-medium" onClick={() => copyEmails(displayedClients)}>
+                <Button size="sm" className="bg-white font-medium text-slate-900 hover:bg-slate-100" onClick={() => copyEmails(displayedClients)}>
                   <Copy className="w-4 h-4 mr-1" /> Emails
                 </Button>
                 <Button size="sm" variant="ghost" className="text-white hover:bg-white/20" onClick={onClose}>
@@ -423,12 +406,12 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
           </div>
         </DialogHeader>
         
-        <div className="overflow-y-auto px-8 py-6 space-y-8" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+        <div className="space-y-6 overflow-y-auto px-8 py-6" style={{ maxHeight: 'calc(90vh - 140px)' }}>
           
           {/* Key Metrics Section */}
-          <div className="p-6 bg-white border-2 border-blue-400 rounded-xl shadow-lg">
-            <h3 className="text-lg font-semibold text-blue-700 mb-6 flex items-center gap-2 pb-4 border-b border-blue-200">
-              <BarChart3 className="w-5 h-5 text-blue-600" />
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-6 flex items-center gap-2 border-b border-slate-200 pb-4 text-lg font-semibold text-slate-800">
+              <BarChart3 className="h-5 w-5 text-slate-700" />
               Key Performance Metrics
             </h3>
             {renderMetricCards()}
@@ -436,25 +419,25 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-50 h-14 border-2 border-slate-200 rounded-lg p-1.5">
-              <TabsTrigger value="overview" className="gap-2 font-medium text-slate-600 data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+            <TabsList className="grid h-14 w-full grid-cols-3 rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+              <TabsTrigger value="overview" className="gap-2 font-medium text-slate-600 transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-md">
                 <Star className="w-4 h-4" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="clients" className="gap-2 font-medium text-slate-600 data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+              <TabsTrigger value="clients" className="gap-2 font-medium text-slate-600 transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-md">
                 <Users className="w-4 h-4" />
                 Client Details
               </TabsTrigger>
-              <TabsTrigger value="insights" className="gap-2 font-medium text-slate-600 data-[state=active]:bg-green-700 data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+              <TabsTrigger value="insights" className="gap-2 font-medium text-slate-600 transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-md">
                 <Zap className="w-4 h-4" />
                 Insights
               </TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="mt-8">
-              <div className="p-6 bg-white border-2 border-slate-200 rounded-xl shadow-lg space-y-6">
-                <h3 className="text-lg font-semibold text-amber-700 mb-6 flex items-center gap-2 pb-4 border-b border-amber-200">
-                  <Star className="w-5 h-5 text-amber-600" />
+              <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-6 flex items-center gap-2 border-b border-slate-200 pb-4 text-lg font-semibold text-slate-800">
+                  <Star className="h-5 w-5 text-slate-700" />
                   Overview Analysis
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -498,7 +481,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   <CardContent>
                     {/* Top by Location */}
                     <div className="mb-3">
-                      <div className="text-xs font-semibold text-amber-700 mb-1">Locations</div>
+                      <div className="mb-1 text-xs font-semibold text-slate-700">Locations</div>
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(
                           clients.reduce((acc, c) => {
@@ -513,7 +496,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     </div>
                     {/* Top by Trainer */}
                     <div className="mb-3">
-                      <div className="text-xs font-semibold text-amber-700 mb-1">Trainers</div>
+                      <div className="mb-1 text-xs font-semibold text-slate-700">Trainers</div>
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(
                           clients.reduce((acc, c) => {
@@ -528,7 +511,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     </div>
                     {/* Top by Membership */}
                     <div>
-                      <div className="text-xs font-semibold text-amber-700 mb-1">Memberships</div>
+                      <div className="mb-1 text-xs font-semibold text-slate-700">Memberships</div>
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(
                           clients.reduce((acc, c) => {
@@ -575,9 +558,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
             </TabsContent>
 
             <TabsContent value="clients" className="mt-8">
-              <div className="p-6 bg-white border-2 border-emerald-400 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold text-emerald-700 mb-6 flex items-center gap-2 pb-4 border-b border-emerald-200">
-                  <Users className="w-5 h-5 text-emerald-600" />
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-6 flex items-center gap-2 border-b border-slate-200 pb-4 text-lg font-semibold text-slate-800">
+                  <Users className="h-5 w-5 text-slate-700" />
                   Client Details
                 </h3>
                 {renderClientTable()}
@@ -585,18 +568,18 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
             </TabsContent>
 
             <TabsContent value="insights" className="mt-8">
-              <Card className="bg-white border-2 border-amber-400 shadow-lg">
+              <Card className="border border-slate-200 bg-white shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-amber-700 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-600" />
+                  <CardTitle className="flex items-center gap-2 text-slate-800">
+                    <Zap className="h-5 w-5 text-slate-700" />
                     AI-Powered Insights
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-5 bg-slate-50 rounded-lg border-l-4 border-blue-600 shadow-sm">
-                      <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-blue-600" />
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                      <h4 className="mb-2 flex items-center gap-2 font-semibold text-slate-700">
+                        <BarChart3 className="h-4 w-4 text-slate-700" />
                         Key Metrics
                       </h4>
                       <ul className="text-sm text-slate-700 space-y-1">
@@ -606,9 +589,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                         <li>• Average Customer Value: {formatCurrency(summary.avgLTV)}</li>
                       </ul>
                     </div>
-                    <div className="p-5 bg-slate-50 rounded-lg border-l-4 border-emerald-600 shadow-sm">
-                      <h4 className="font-semibold text-emerald-700 mb-2 flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-emerald-600" />
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                      <h4 className="mb-2 flex items-center gap-2 font-semibold text-slate-700">
+                        <TrendingUp className="h-4 w-4 text-slate-700" />
                         Performance Analysis
                       </h4>
                       <ul className="text-sm text-slate-700 space-y-1">

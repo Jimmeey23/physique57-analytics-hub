@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useGlobalLoading } from './useGlobalLoading';
 
@@ -12,18 +12,9 @@ const ROUTE_CHANGE_LOADER_KEY = '__route_change_loader__';
 export function useRouteChangeLoader() {
   const location = useLocation();
   const { setLoading } = useGlobalLoading();
-  const loaderTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const loaderStartTimeRef = useRef<number | null>(null);
-  const minDisplayTimeMs = 600; // Minimum loader display time
 
   useEffect(() => {
-    // Clear any existing timer
-    if (loaderTimerRef.current) {
-      clearTimeout(loaderTimerRef.current);
-    }
-
     // Show loader immediately when route changes
-    loaderStartTimeRef.current = Date.now();
     setLoading(true, 'Loading page...');
   }, [location.pathname, setLoading]);
 
@@ -35,11 +26,4 @@ export function useRouteChangeLoader() {
       delete (window as any)[ROUTE_CHANGE_LOADER_KEY];
     };
   }, [location.pathname]);
-
-  // Cleanup timer on unmount
-  return () => {
-    if (loaderTimerRef.current) {
-      clearTimeout(loaderTimerRef.current);
-    }
-  };
 }

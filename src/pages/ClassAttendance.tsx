@@ -15,6 +15,7 @@ import { EnhancedClassAttendanceMetricCards } from '@/components/dashboard/Enhan
 import { UltimateClassAttendanceTable } from '@/components/dashboard/UltimateClassAttendanceTableNew';
 import ClassDeepDive from '@/components/dashboard/ClassDeepDive';
 import Rankings from '@/components/dashboard/Rankings';
+import { DataScienceInsightsPanel } from '@/components/dashboard/DataScienceInsightsPanel';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { BarChart3, Users, MapPin, Building2, Calendar, Trophy } from 'lucide-react';
 import { useState } from 'react';
@@ -50,7 +51,7 @@ const ClassAttendance = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
+      <div className="class-attendance-unified min-h-screen bg-white relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
           <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
@@ -65,7 +66,7 @@ const ClassAttendance = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
+      <div className="class-attendance-unified min-h-screen bg-white relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
           <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
@@ -95,14 +96,7 @@ const ClassAttendance = () => {
 
     // Filter data by location
     const locationFilteredData = useMemo(() => {
-      console.log('🏢 Location filtering:', {
-        activeLocation,
-        totalFilteredData: filteredData?.length || 0,
-        sampleLocations: filteredData?.slice(0, 3).map(s => s.location) || []
-      });
-
       if (!filteredData || activeLocation === 'all') {
-        console.log('✅ Returning all locations:', filteredData?.length || 0);
         return filteredData || [];
       }
       
@@ -123,12 +117,6 @@ const ClassAttendance = () => {
         if (selectedLocation.id === 'kenkere' && sessionLoc.includes('kenkere')) return true;
         
         return false;
-      });
-
-      console.log('✅ Location filtered to:', {
-        location: selectedLocation.name,
-        sessions: filtered.length,
-        sampleLocations: [...new Set(filtered.slice(0, 5).map(s => s.location))]
       });
 
       return filtered;
@@ -157,7 +145,7 @@ const ClassAttendance = () => {
     }, [locationFilteredData]);
 
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
+      <div className="class-attendance-unified min-h-screen bg-white relative overflow-hidden">
         {/* Enhanced Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
@@ -193,6 +181,50 @@ const ClassAttendance = () => {
             <div>
               <EnhancedClassAttendanceMetricCards data={locationFilteredData} />
             </div>
+
+            <DataScienceInsightsPanel
+              title="Class Attendance Analytics Toolkit"
+              description="Use anomaly detection and distribution diagnostics to spot unusual session behavior before it impacts operations."
+              data={locationFilteredData}
+              initiallyCollapsed={true}
+              metricOptions={[
+                {
+                  key: 'checkedInCount',
+                  label: 'Checked-in Members',
+                  accessor: (row: any) => Number(row?.checkedInCount || 0),
+                },
+                {
+                  key: 'capacity',
+                  label: 'Class Capacity',
+                  accessor: (row: any) => Number(row?.capacity || 0),
+                },
+                {
+                  key: 'fillRate',
+                  label: 'Fill Rate %',
+                  accessor: (row: any) => {
+                    const capacity = Number(row?.capacity || 0);
+                    const checkedIn = Number(row?.checkedInCount || 0);
+                    return capacity > 0 ? (checkedIn / capacity) * 100 : 0;
+                  },
+                },
+                {
+                  key: 'lateCancellations',
+                  label: 'Late Cancellations',
+                  accessor: (row: any) => Number(row?.lateCancelledCount || row?.lateCancellations || 0),
+                },
+              ]}
+              dateAccessor={(row: any) => {
+                const raw =
+                  row?.classDate ||
+                  row?.sessionDate ||
+                  row?.startDate ||
+                  row?.startTime ||
+                  row?.date;
+                if (!raw) return null;
+                const parsed = new Date(raw);
+                return Number.isNaN(parsed.getTime()) ? null : parsed;
+              }}
+            />
 
             {/* Analysis Tabs - matching Sales style exactly */}
             <Tabs defaultValue="overview" className="w-full">

@@ -1,40 +1,103 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 import { useNewClientData } from '@/hooks/useNewClientData';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { useSectionNavigation } from '@/contexts/SectionNavigationContext';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Home, Users } from 'lucide-react';
+import { BarChart3, Clock3, Gauge, Rocket, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { Card, CardContent } from '@/components/ui/card';
-import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
-import { getPreviousMonthDateRange, getCurrentMonthDateRange, parseDate } from '@/utils/dateUtils';
-import { cn } from '@/lib/utils';
+import { getPreviousMonthDateRange, parseDate } from '@/utils/dateUtils';
 
 // Import new components for rebuilt client conversion tab
 import { EnhancedClientConversionFilterSection } from '@/components/dashboard/EnhancedClientConversionFilterSection';
 import { ClientConversionMetricCards } from '@/components/dashboard/ClientConversionMetricCards';
-import { ClientConversionSimplifiedRanks } from '@/components/dashboard/ClientConversionSimplifiedRanks';
-import { ClientConversionEnhancedCharts } from '@/components/dashboard/ClientConversionEnhancedCharts';
 import { ClientConversionDataTableSelector } from '@/components/dashboard/ClientConversionDataTableSelector';
-import { ClientConversionMonthOnMonthByTypeTable } from '@/components/dashboard/ClientConversionMonthOnMonthByTypeTable';
-import { ClientRetentionMonthByTypePivot } from '@/components/dashboard/ClientRetentionMonthByTypePivot';
-import ClientRetentionYearOnYearPivot from '@/components/dashboard/ClientRetentionYearOnYearPivotNew';
-import { ClientConversionMembershipTable } from '@/components/dashboard/ClientConversionMembershipTable';
-import { ClientHostedClassesTable } from '@/components/dashboard/ClientHostedClassesTable';
-import { TeacherPerformanceTable } from '@/components/dashboard/TeacherPerformanceTable';
-import { NewClientMembershipPurchaseTable } from '@/components/dashboard/NewClientMembershipPurchaseTable';
 import { LazyClientConversionDrillDownModalV3 } from '@/components/lazy/LazyModals';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
+
+const ClientConversionSimplifiedRanks = lazy(() =>
+  import('@/components/dashboard/ClientConversionSimplifiedRanks').then((module) => ({
+    default: module.ClientConversionSimplifiedRanks,
+  }))
+);
+const ClientConversionEnhancedCharts = lazy(() =>
+  import('@/components/dashboard/ClientConversionEnhancedCharts').then((module) => ({
+    default: module.ClientConversionEnhancedCharts,
+  }))
+);
+const ClientConversionMonthOnMonthByTypeTable = lazy(() =>
+  import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTable').then((module) => ({
+    default: module.ClientConversionMonthOnMonthByTypeTable,
+  }))
+);
+const ClientRetentionMonthByTypePivot = lazy(() =>
+  import('@/components/dashboard/ClientRetentionMonthByTypePivot').then((module) => ({
+    default: module.ClientRetentionMonthByTypePivot,
+  }))
+);
+const ClientRetentionYearOnYearPivot = lazy(() =>
+  import('@/components/dashboard/ClientRetentionYearOnYearPivotNew').then((module) => ({
+    default: module.default,
+  }))
+);
+const ClientConversionMembershipTable = lazy(() =>
+  import('@/components/dashboard/ClientConversionMembershipTable').then((module) => ({
+    default: module.ClientConversionMembershipTable,
+  }))
+);
+const ClientHostedClassesTable = lazy(() =>
+  import('@/components/dashboard/ClientHostedClassesTable').then((module) => ({
+    default: module.ClientHostedClassesTable,
+  }))
+);
+const TeacherPerformanceTable = lazy(() =>
+  import('@/components/dashboard/TeacherPerformanceTable').then((module) => ({
+    default: module.TeacherPerformanceTable,
+  }))
+);
+const NewClientMembershipPurchaseTable = lazy(() =>
+  import('@/components/dashboard/NewClientMembershipPurchaseTable').then((module) => ({
+    default: module.NewClientMembershipPurchaseTable,
+  }))
+);
+
+type DrillDownType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ranking';
+
+interface DrillDownModalState {
+  isOpen: boolean;
+  client: null;
+  title: string;
+  data: unknown;
+  type: DrillDownType;
+}
+
+type ExportValue = string | number;
+type ExportRow = Record<string, ExportValue>;
+
+interface MembershipPurchaseStats {
+  units: number;
+  clients: Set<string>;
+  totalLTV: number;
+  conversionSpans: number[];
+  visitsPostTrial: number[];
+  convertedClients: number;
+}
+
 const ClientRetention = () => {
   const {
     data,
@@ -49,19 +112,32 @@ const ClientRetention = () => {
     isLoading: payrollLoading
   } = usePayrollData();
   const {
-    isLoading,
     setLoading
   } = useGlobalLoading();
-  const navigate = useNavigate();
   const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
-  const [activeTable, setActiveTable] = useState('monthonmonthbytype');
-  const [selectedMetric, setSelectedMetric] = useState('conversion'); // New state for metric selection
-  const [drillDownModal, setDrillDownModal] = useState({
+  const [isPendingTableSwitch, startTableSwitch] = useTransition();
+  const [rememberLastTable, setRememberLastTable] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.localStorage.getItem('p57-retention-remember-table') !== '0';
+  });
+  const [activeTable, setActiveTable] = useState(() => {
+    if (typeof window === 'undefined') return 'monthonmonthbytype';
+    const remember = window.localStorage.getItem('p57-retention-remember-table') !== '0';
+    const saved = window.localStorage.getItem('p57-retention-active-table');
+    return remember && saved ? saved : 'monthonmonthbytype';
+  });
+  const [compactTableMode, setCompactTableMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('p57-retention-compact-mode') === '1';
+  });
+  const [prefetchDone, setPrefetchDone] = useState(false);
+  const [selectedMetric] = useState('conversion');
+  const [drillDownModal, setDrillDownModal] = useState<DrillDownModalState>({
     isOpen: false,
     client: null,
     title: '',
     data: null,
-    type: 'month' as any
+    type: 'month'
   });
 
   // Filters state
@@ -408,6 +484,78 @@ const ClientRetention = () => {
     return filtered;
   }, [data, selectedLocation, filters]);
 
+  const deferredFilteredData = useDeferredValue(filteredData);
+  const deferredFilteredDataNoDateRange = useDeferredValue(filteredDataNoDateRange);
+  const deferredFilteredPayrollData = useDeferredValue(filteredPayrollData);
+
+  const handleTableChange = useCallback((table: string) => {
+    startTableSwitch(() => setActiveTable(table));
+  }, [startTableSwitch]);
+
+  const resetViewPreferences = useCallback(() => {
+    setCompactTableMode(false);
+    setRememberLastTable(true);
+    setPrefetchDone(false);
+    startTableSwitch(() => setActiveTable('monthonmonthbytype'));
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('p57-retention-compact-mode');
+      window.localStorage.removeItem('p57-retention-active-table');
+      window.localStorage.setItem('p57-retention-remember-table', '1');
+    }
+  }, [startTableSwitch]);
+
+  const preloadHeavyRetentionViews = useCallback(() => {
+    void import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTable');
+    void import('@/components/dashboard/ClientRetentionMonthByTypePivot');
+    void import('@/components/dashboard/ClientRetentionYearOnYearPivotNew');
+    void import('@/components/dashboard/ClientHostedClassesTable');
+    void import('@/components/dashboard/ClientConversionMembershipTable');
+    void import('@/components/dashboard/TeacherPerformanceTable');
+    void import('@/components/dashboard/NewClientMembershipPurchaseTable');
+    void import('@/components/dashboard/ClientConversionEnhancedCharts');
+    void import('@/components/dashboard/ClientConversionSimplifiedRanks');
+    setPrefetchDone(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (rememberLastTable) {
+      window.localStorage.setItem('p57-retention-active-table', activeTable);
+    }
+  }, [activeTable, rememberLastTable]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('p57-retention-remember-table', rememberLastTable ? '1' : '0');
+    if (!rememberLastTable) {
+      window.localStorage.removeItem('p57-retention-active-table');
+    }
+  }, [rememberLastTable]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('p57-retention-compact-mode', compactTableMode ? '1' : '0');
+  }, [compactTableMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const preload = () => preloadHeavyRetentionViews();
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (idleWindow.requestIdleCallback) {
+      const idleId = idleWindow.requestIdleCallback(preload, { timeout: 3000 });
+      return () => idleWindow.cancelIdleCallback?.(idleId);
+    }
+
+    const timer = window.setTimeout(preload, 1200);
+    return () => window.clearTimeout(timer);
+  }, [preloadHeavyRetentionViews]);
+
 
   const heroMetrics = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return [];
@@ -444,11 +592,11 @@ const ClientRetention = () => {
   // Build section-wise processed export maps (not raw sheet rows)
   const exportAdditionalData = React.useMemo(() => {
     // Export visible pivot table data
-    const momByTypeExport: any[] = [];
-    const yoyExport: any[] = [];
-    const membershipExport: any[] = [];
-    const hostedClassesExport: any[] = [];
-    const newClientPurchasesExport: any[] = [];
+    const momByTypeExport: ExportRow[] = [];
+    const yoyExport: ExportRow[] = [];
+    const membershipExport: ExportRow[] = [];
+    const hostedClassesExport: ExportRow[] = [];
+    const newClientPurchasesExport: ExportRow[] = [];
     
     // For Month on Month by Type - build from client types
     const clientTypes = [...new Set(filteredDataNoDateRange.map(c => c.isNew || 'Unknown'))];
@@ -480,47 +628,56 @@ const ClientRetention = () => {
 
     // For New Client Purchases - build membership purchase stats
     const newClientsData = filteredDataNoDateRange.filter(c => String(c.isNew || '').toLowerCase().includes('new'));
-    const membershipPurchaseStats: Record<string, any> = {};
+    const membershipPurchaseStats: Record<string, MembershipPurchaseStats> = {};
+    const getOrCreateStats = (membershipKey: string): MembershipPurchaseStats => {
+      if (!membershipPurchaseStats[membershipKey]) {
+        membershipPurchaseStats[membershipKey] = {
+          units: 0,
+          clients: new Set<string>(),
+          totalLTV: 0,
+          conversionSpans: [],
+          visitsPostTrial: [],
+          convertedClients: 0
+        };
+      }
+      return membershipPurchaseStats[membershipKey];
+    };
     
     newClientsData.forEach(client => {
       const membership = client.membershipsBoughtPostTrial || 'No Membership Purchase';
       const memberships = membership.split(',').map(m => m.trim()).filter(m => m);
       
       if (memberships.length === 0 || membership === '') {
-        if (!membershipPurchaseStats['No Membership Purchase']) {
-          membershipPurchaseStats['No Membership Purchase'] = {
-            units: 0, clients: new Set(), totalLTV: 0, conversionSpans: [], visitsPostTrial: [], convertedClients: 0
-          };
+        const noMembershipStats = getOrCreateStats('No Membership Purchase');
+        if (client.memberId) {
+          noMembershipStats.clients.add(String(client.memberId));
         }
-        membershipPurchaseStats['No Membership Purchase'].clients.add(client.memberId);
-        membershipPurchaseStats['No Membership Purchase'].totalLTV += client.ltv || 0;
+        noMembershipStats.totalLTV += client.ltv || 0;
         return;
       }
       
       memberships.forEach(mem => {
-        if (!membershipPurchaseStats[mem]) {
-          membershipPurchaseStats[mem] = {
-            units: 0, clients: new Set(), totalLTV: 0, conversionSpans: [], visitsPostTrial: [], convertedClients: 0
-          };
+        const stats = getOrCreateStats(mem);
+        stats.units++;
+        if (client.memberId) {
+          stats.clients.add(String(client.memberId));
         }
-        membershipPurchaseStats[mem].units++;
-        membershipPurchaseStats[mem].clients.add(client.memberId);
-        membershipPurchaseStats[mem].totalLTV += client.ltv || 0;
+        stats.totalLTV += client.ltv || 0;
         
         if (client.conversionStatus === 'Converted') {
-          membershipPurchaseStats[mem].convertedClients++;
+          stats.convertedClients++;
           if (client.conversionSpan && client.conversionSpan > 0) {
-            membershipPurchaseStats[mem].conversionSpans.push(client.conversionSpan);
+            stats.conversionSpans.push(client.conversionSpan);
           }
         }
         
         if (client.visitsPostTrial) {
-          membershipPurchaseStats[mem].visitsPostTrial.push(client.visitsPostTrial);
+          stats.visitsPostTrial.push(client.visitsPostTrial);
         }
       });
     });
     
-    Object.entries(membershipPurchaseStats).forEach(([membershipType, stats]: [string, any]) => {
+    Object.entries(membershipPurchaseStats).forEach(([membershipType, stats]) => {
       const newClientsCount = stats.clients.size;
       const avgDaysTaken = stats.conversionSpans.length > 0 
         ? stats.conversionSpans.reduce((sum: number, span: number) => sum + span, 0) / stats.conversionSpans.length 
@@ -552,6 +709,12 @@ const ClientRetention = () => {
   }, [filteredDataNoDateRange]);
 
   const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" />;
+  const lazySectionFallback = (
+    <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+      <p className="text-sm font-medium text-slate-600">Loading section...</p>
+    </div>
+  );
+
   return <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -602,8 +765,8 @@ const ClientRetention = () => {
           {/* Enhanced Metric Cards */}
           <div id="metrics" className="rounded-2xl p-0">
             <ClientConversionMetricCards 
-              data={filteredData}
-              historicalData={filteredDataNoDateRange}
+              data={deferredFilteredData}
+              historicalData={deferredFilteredDataNoDateRange}
               dateRange={filters.dateRange}
               onCardClick={(title, data, metricType) => setDrillDownModal({
               isOpen: true,
@@ -620,9 +783,10 @@ const ClientRetention = () => {
 
           {/* Enhanced Simplified Ranking System */}
           <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-3" id="rankings">
-            <ClientConversionSimplifiedRanks 
-              data={filteredData} 
-              payrollData={filteredPayrollData}
+            <Suspense fallback={lazySectionFallback}>
+              <ClientConversionSimplifiedRanks 
+              data={deferredFilteredData} 
+              payrollData={deferredFilteredPayrollData}
               allPayrollData={payrollData}
               allClientData={data}
               selectedLocation={selectedLocation}
@@ -630,7 +794,7 @@ const ClientRetention = () => {
               selectedMetric={selectedMetric}
               onDrillDown={(type, item, metric) => {
                 // Enhanced filtering
-                const relatedClients = filteredData.filter(client => {
+                const relatedClients = deferredFilteredData.filter(client => {
                   let match = false;
                   if (type === 'trainer') {
                     match = client.trainerName === item.name;
@@ -642,7 +806,7 @@ const ClientRetention = () => {
                   return match;
                 });
 
-                const relatedPayroll = filteredPayrollData.filter(payroll => {
+                const relatedPayroll = deferredFilteredPayrollData.filter(payroll => {
                   if (type === 'trainer') return payroll.teacherName === item.name;
                   if (type === 'location') return payroll.location === item.name;
                   return false;
@@ -663,6 +827,7 @@ const ClientRetention = () => {
                 });
               }}
             />
+            </Suspense>
           </div>
 
           {/* Enhanced Interactive Charts - Collapsed by default */}
@@ -670,122 +835,228 @@ const ClientRetention = () => {
             <div className="glass-card rounded-2xl border-0 shadow-lg">
               <details className="group">
                 <summary className="cursor-pointer p-6 font-semibold text-slate-800 border-b border-white/20 group-open:bg-gradient-to-r group-open:from-purple-50/50 group-open:to-pink-50/50 rounded-t-2xl transition-all duration-300">
-                  📊 Interactive Charts & Visualizations
+                  <span className="inline-flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-slate-700" />
+                    Interactive Charts & Visualizations
+                  </span>
                 </summary>
                 <div className="p-6 bg-gradient-to-br from-white to-slate-50/50">
-                  <ClientConversionEnhancedCharts data={filteredData} />
+                  <Suspense fallback={lazySectionFallback}>
+                    <ClientConversionEnhancedCharts data={deferredFilteredData} />
+                  </Suspense>
                 </div>
               </details>
             </div>
           </div>
 
+          {/* Performance & view controls (collapsed by default to reduce clutter) */}
+          <div className="glass-card modern-card-hover rounded-2xl border border-slate-200/80 shadow-lg" id="performance-controls">
+            <details>
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl px-6 py-4 text-sm font-semibold text-slate-800 hover:bg-slate-50/70">
+                <SlidersHorizontal className="h-4 w-4 text-slate-700" />
+                Performance & View Controls
+              </summary>
+              <div className="grid gap-4 border-t border-slate-200/80 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
+                <button
+                  type="button"
+                  onClick={() => setCompactTableMode((prev) => !prev)}
+                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    compactTableMode
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Gauge className="h-4 w-4" />
+                    Compact Table Density
+                  </div>
+                  <div className={`mt-1 text-xs ${compactTableMode ? 'text-slate-200' : 'text-slate-500'}`}>
+                    Reduces row spacing for faster scanning.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRememberLastTable((prev) => !prev)}
+                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    rememberLastTable
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Clock3 className="h-4 w-4" />
+                    Remember Last Table
+                  </div>
+                  <div className={`mt-1 text-xs ${rememberLastTable ? 'text-slate-200' : 'text-slate-500'}`}>
+                    Reopens the last viewed table automatically.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={preloadHeavyRetentionViews}
+                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    prefetchDone
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Rocket className="h-4 w-4" />
+                    {prefetchDone ? 'Views Preloaded' : 'Preload Heavy Views'}
+                  </div>
+                  <div className={`mt-1 text-xs ${prefetchDone ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    Loads heavy table modules ahead of tab switches.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetViewPreferences}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 transition hover:border-slate-300"
+                >
+                  <div className="flex items-center gap-2 font-semibold">
+                    <RotateCcw className="h-4 w-4" />
+                    Reset View Preferences
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    Restores default table view controls.
+                  </div>
+                </button>
+              </div>
+            </details>
+          </div>
+
           {/* Enhanced Data Table Selector */}
           <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-5" id="table-selector">
-            <ClientConversionDataTableSelector activeTable={activeTable} onTableChange={setActiveTable} dataLength={filteredData.length} />
+            <ClientConversionDataTableSelector
+              activeTable={activeTable}
+              onTableChange={handleTableChange}
+              dataLength={deferredFilteredData.length}
+              isPending={isPendingTableSwitch}
+            />
           </div>
 
           {/* Selected Data Table */}
           <div className="space-y-8">
-            {activeTable === 'monthonmonthbytype' && <>
-              <div id="monthonmonthbytype-table">
-                <ClientConversionMonthOnMonthByTypeTable 
-                data={filteredData} 
-                visitsSummary={visitsSummary}
-                onRowClick={rowData => setDrillDownModal({
-              isOpen: true,
-              client: null,
-              title: `${rowData.month} - ${rowData.type} Analysis`,
-              data: rowData,
-              type: 'month'
-            })} />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+            <Suspense fallback={lazySectionFallback}>
+              {activeTable === 'monthonmonthbytype' && (
+                <div
+                  id="monthonmonthbytype-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <ClientConversionMonthOnMonthByTypeTable
+                    data={deferredFilteredData}
+                    visitsSummary={visitsSummary}
+                    onRowClick={rowData => setDrillDownModal({
+                      isOpen: true,
+                      client: null,
+                      title: `${rowData.month} - ${rowData.type} Analysis`,
+                      data: rowData,
+                      type: 'month'
+                    })}
+                  />
+                </div>
+              )}
 
-            {activeTable === 'monthonmonth' && <>
-              <div id="monthonmonth-table">
-                {/* Pivoted MoM by Client Type with months as columns, independent from date range */}
-                <ClientRetentionMonthByTypePivot
-                  data={filteredDataNoDateRange}
-                  visitsSummary={visitsSummaryNoDateRange}
-                  onRowClick={rowData => setDrillDownModal({
-                    isOpen: true,
-                    client: null,
-                    title: `${rowData.type} - Analysis`,
-                    data: rowData,
-                    type: 'month'
-                  })}
-                />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+              {activeTable === 'monthonmonth' && (
+                <div
+                  id="monthonmonth-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <ClientRetentionMonthByTypePivot
+                    data={deferredFilteredDataNoDateRange}
+                    visitsSummary={visitsSummaryNoDateRange}
+                    onRowClick={rowData => setDrillDownModal({
+                      isOpen: true,
+                      client: null,
+                      title: `${rowData.type} - Analysis`,
+                      data: rowData,
+                      type: 'month'
+                    })}
+                  />
+                </div>
+              )}
 
-            {activeTable === 'yearonyear' && <>
-              <div id="yearonyear-table">
-                {/* Pivoted YoY with months as columns and prev/curr values */}
-                <ClientRetentionYearOnYearPivot 
-                  data={filteredDataNoDateRange}
-                  onRowClick={rowData => setDrillDownModal({
-                    isOpen: true,
-                    client: null,
-                    title: `${rowData.rowKey} - Year Comparison`,
-                    data: rowData,
-                    type: 'year'
-                  })}
-                />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+              {activeTable === 'yearonyear' && (
+                <div
+                  id="yearonyear-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <ClientRetentionYearOnYearPivot
+                    data={deferredFilteredDataNoDateRange}
+                    onRowClick={rowData => setDrillDownModal({
+                      isOpen: true,
+                      client: null,
+                      title: `${rowData.rowKey} - Year Comparison`,
+                      data: rowData,
+                      type: 'year'
+                    })}
+                  />
+                </div>
+              )}
 
-            {activeTable === 'hostedclasses' && <>
-              <div id="hostedclasses-table">
-                <ClientHostedClassesTable data={filteredData} onRowClick={rowData => setDrillDownModal({
-              isOpen: true,
-              client: null,
-              title: `${rowData.className} - ${rowData.month}`,
-              data: rowData,
-              type: 'class'
-            })} />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+              {activeTable === 'hostedclasses' && (
+                <div
+                  id="hostedclasses-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <ClientHostedClassesTable
+                    data={deferredFilteredData}
+                    onRowClick={rowData => setDrillDownModal({
+                      isOpen: true,
+                      client: null,
+                      title: `${rowData.className} - ${rowData.month}`,
+                      data: rowData,
+                      type: 'class'
+                    })}
+                  />
+                </div>
+              )}
 
-            {activeTable === 'memberships' && <>
-              <div id="memberships-table">
-                <ClientConversionMembershipTable data={filteredData} />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+              {activeTable === 'memberships' && (
+                <div
+                  id="memberships-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <ClientConversionMembershipTable data={deferredFilteredData} />
+                </div>
+              )}
 
-            {activeTable === 'teacherperformance' && <>
-              <div id="teacherperformance-table">
-                <TeacherPerformanceTable 
-                  data={filteredData}
-                  onRowClick={rowData => setDrillDownModal({
-                    isOpen: true,
-                    client: null,
-                    title: `${rowData.trainerName} - Teacher Performance Analysis`,
-                    data: {
-                      type: 'trainer',
-                      item: { name: rowData.trainerName },
-                      metric: 'performance',
-                      relatedClients: filteredData.filter(client => client.trainerName === rowData.trainerName),
-                      relatedPayroll: filteredPayrollData.filter(payroll => payroll.teacherName === rowData.trainerName)
-                    },
-                    type: 'ranking'
-                  })}
-                />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+              {activeTable === 'teacherperformance' && (
+                <div
+                  id="teacherperformance-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <TeacherPerformanceTable
+                    data={deferredFilteredData}
+                    onRowClick={rowData => setDrillDownModal({
+                      isOpen: true,
+                      client: null,
+                      title: `${rowData.trainerName} - Teacher Performance Analysis`,
+                      data: {
+                        type: 'trainer',
+                        item: { name: rowData.trainerName },
+                        metric: 'performance',
+                        relatedClients: deferredFilteredData.filter(client => client.trainerName === rowData.trainerName),
+                        relatedPayroll: deferredFilteredPayrollData.filter(payroll => payroll.teacherName === rowData.trainerName)
+                      },
+                      type: 'ranking'
+                    })}
+                  />
+                </div>
+              )}
 
-            {activeTable === 'newclientpurchases' && <>
-              <div id="newclientpurchases-table">
-                <NewClientMembershipPurchaseTable data={filteredData}
-                />
-              </div>
-              {/* AI Notes removed */}
-            </>}
+              {activeTable === 'newclientpurchases' && (
+                <div
+                  id="newclientpurchases-table"
+                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                >
+                  <NewClientMembershipPurchaseTable data={deferredFilteredData} />
+                </div>
+              )}
+            </Suspense>
           </div>
         </main>
 

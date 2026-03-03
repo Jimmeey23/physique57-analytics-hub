@@ -9,12 +9,6 @@ export const useFilteredSessions = (sessions: SessionData[]) => {
   const locationKey = filters.location.join(',');
   
   const filteredSessions = useMemo(() => {
-    console.log('🔍 Filtering sessions:', {
-      totalSessions: sessions.length,
-      dateFilter: filters.dateRange,
-      locationFilter: filters.location,
-    });
-
     const filtered = sessions.filter((session) => {
       // Apply date filter
       if (filters.dateRange.start && filters.dateRange.end) {
@@ -48,14 +42,8 @@ export const useFilteredSessions = (sessions: SessionData[]) => {
       return true;
     });
 
-    console.log('✅ Filtered to:', filtered.length, 'sessions');
-    if (filtered.length > 0) {
-      console.log('Sample locations in filtered data:', [...new Set(filtered.slice(0, 5).map(s => s.location))]);
-    }
-    
     return filtered;
   }, [sessions, filters.dateRange.start, filters.dateRange.end, locationKey]);
 
   return filteredSessions;
 };
-

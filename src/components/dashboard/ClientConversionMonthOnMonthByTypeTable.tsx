@@ -7,7 +7,6 @@ import { Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getTableHeaderClasses } from '@/utils/colorThemes';
 import { parseDate } from '@/utils/dateUtils';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
@@ -235,8 +234,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
   }, [registry, tableData]);
 
   return (
-    <Card ref={containerRef} className="bg-white shadow-lg border border-gray-200 rounded-lg overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-purple-900 via-purple-950 to-purple-900 text-white pb-4">
+    <Card ref={containerRef} className="bg-white shadow-none border-0 rounded-lg overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white pb-4">
         <div className="flex items-center justify-between w-full">
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5" />
@@ -285,8 +284,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
         <div className="overflow-x-auto max-h-[600px]">
           <Table className="w-full">
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="bg-gradient-to-r from-purple-900 via-purple-950 to-purple-900 border-b" style={{ maxHeight: '35px' }}>
-                <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 bg-purple-950" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>Month</TableHead>
+              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b" style={{ maxHeight: '35px' }}>
+                <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 bg-slate-900" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>Month</TableHead>
                 <TableHead onClick={() => handleSort('type')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[200px]" style={{ maxHeight: '35px' }}>{rowType === 'clientType' ? 'Type' : rowType === 'membership' ? 'Membership' : 'Teacher'}</TableHead>
                 <TableHead onClick={() => handleSort('totalTrials')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Trials</TableHead>
                 <TableHead onClick={() => handleSort('newMembers')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[90px]">New Members</TableHead>
@@ -330,27 +329,27 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
                   <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{row.avgVisits.toFixed(1)}</TableCell>
                 </TableRow>
               ))}
-              <TableRow className="border-t-4 border-gray-800 text-gray-900">
-                <TableCell className="border-t-4 border-gray-800 text-gray-900">{totalsRow.month}</TableCell>
+              <TableRow className="retention-totals-row border-t-4 border-slate-700">
+                <TableCell className="border-t-4 border-slate-700 font-bold text-white">{totalsRow.month}</TableCell>
                 <TableCell className="text-xs px-3 text-center">
-                  <Badge variant="outline" className="text-xs font-bold">
+                  <Badge variant="outline" className="text-xs font-bold border-white/40 text-white">
                     {totalsRow.type}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.totalTrials)}</TableCell>
-                <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.newMembers)}</TableCell>
-                <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.retained)}</TableCell>
+                <TableCell className="text-xs px-3 text-center font-bold text-white">{formatNumber(totalsRow.totalTrials)}</TableCell>
+                <TableCell className="text-xs px-3 text-center font-bold text-white">{formatNumber(totalsRow.newMembers)}</TableCell>
+                <TableCell className="text-xs px-3 text-center font-bold text-white">{formatNumber(totalsRow.retained)}</TableCell>
                 <TableCell className="text-xs px-3 text-center">
-                  <span className={`font-bold ${totalsRow.retentionRate >= 70 ? 'text-green-600' : totalsRow.retentionRate >= 50 ? 'text-orange-600' : 'text-red-600'}`}>{totalsRow.retentionRate.toFixed(1)}%</span>
+                  <span className="font-bold text-white">{totalsRow.retentionRate.toFixed(1)}%</span>
                 </TableCell>
-                <TableCell className="text-xs px-3 text-center font-bold">{formatNumber(totalsRow.converted)}</TableCell>
+                <TableCell className="text-xs px-3 text-center font-bold text-white">{formatNumber(totalsRow.converted)}</TableCell>
                 <TableCell className="text-xs px-3 text-center">
-                  <span className={`font-bold ${totalsRow.conversionRate >= 50 ? 'text-green-600' : totalsRow.conversionRate >= 30 ? 'text-orange-600' : 'text-red-600'}`}>{totalsRow.conversionRate.toFixed(1)}%</span>
+                  <span className="font-bold text-white">{totalsRow.conversionRate.toFixed(1)}%</span>
                 </TableCell>
-                <TableCell className="text-xs px-3 text-right font-bold text-emerald-600">{formatCurrency(totalsRow.avgLTV)}</TableCell>
-                <TableCell className="text-xs px-3 text-right font-bold text-green-600">{formatCurrency(totalsRow.totalLTV)}</TableCell>
-                <TableCell className="text-xs px-3 text-center font-bold">{totalsRow.avgConversionDays.toFixed(0)} days</TableCell>
-                <TableCell className="text-xs px-3 text-center font-bold">{totalsRow.avgVisits.toFixed(1)}</TableCell>
+                <TableCell className="text-xs px-3 text-right font-bold text-white">{formatCurrency(totalsRow.avgLTV)}</TableCell>
+                <TableCell className="text-xs px-3 text-right font-bold text-white">{formatCurrency(totalsRow.totalLTV)}</TableCell>
+                <TableCell className="text-xs px-3 text-center font-bold text-white">{totalsRow.avgConversionDays.toFixed(0)} days</TableCell>
+                <TableCell className="text-xs px-3 text-center font-bold text-white">{totalsRow.avgVisits.toFixed(1)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>

@@ -327,7 +327,6 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
                         monthKey: key
                       };
                       
-                      console.log(`Cell click: ${item.category} - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
                       onRowClick(enhancedCellData);
                     }}
                   >
@@ -369,7 +368,6 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
                       isTotal: true
                     };
                     
-                    console.log(`Total row click: All categories - ${totalTransactions} transactions, ${totalRevenue} revenue`);
                     onRowClick(totalRowData);
                   }}
                 >
@@ -417,7 +415,6 @@ export const CategoryPerformanceTable: React.FC<CategoryPerformanceTableProps> =
                     monthKey: key
                   };
                   
-                  console.log(`Total cell click: All categories - ${display}: ${monthTransactions} transactions, ${monthRevenue} revenue`);
                   onRowClick(totalCellData);
                 }}
               >

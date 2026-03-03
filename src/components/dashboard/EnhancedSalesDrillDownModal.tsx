@@ -52,9 +52,6 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
     // Use the most specific transaction data available
     const transactionData = data.filteredTransactionData || data.rawData || data.transactionData || [];
     
-    console.log(`Processing drill-down modal with ${transactionData.length} transactions`);
-    console.log('Data has dynamic flags:', data.isDynamic, data.calculatedFromFiltered);
-    
     // Use dynamic metrics if available (calculated from filtered data), otherwise calculate fresh
     const totalRevenue = data.isDynamic && data.totalRevenue !== undefined ? data.totalRevenue : 
                         transactionData.reduce((sum: number, item: any) => sum + (item.paymentValue || 0), 0);

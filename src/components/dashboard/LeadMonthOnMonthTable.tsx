@@ -101,12 +101,10 @@ export const LeadMonthOnMonthTable: React.FC<LeadMonthOnMonthTableProps> = ({
   };
 
   const handleRowClick = (stage: string) => {
-    console.log('Drill-down data for stage:', stage, data[stage]);
   };
 
   const handleSaveInsights = () => {
     setIsEditingInsights(false);
-    console.log('Insights saved:', insights);
   };
 
   return (

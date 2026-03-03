@@ -4,11 +4,11 @@ import { Footer } from '@/components/ui/footer';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Activity, AlertCircle, BarChart3, LayoutGrid, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
-import { AiNotes } from '@/components/ui/AiNotes';
+import { motion } from 'framer-motion';
 
 // Error boundary wrapper for critical sections
 const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) => {
@@ -23,54 +23,33 @@ const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallba
 // Memoized stats card component
 const StatsCard = memo(({
   title,
-  subtitle
+  subtitle,
+  icon: IconComponent,
+  accent = 'from-blue-400 to-purple-400'
 }: {
   title: string;
   subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accent?: string;
 }) => <div className="relative p-6 rounded-2xl bg-white border border-slate-200/60 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 group">
     <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 to-purple-50/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div className="absolute right-4 top-4 p-1.5 rounded-lg bg-slate-50 border border-slate-100 group-hover:bg-white/90 transition-colors duration-300">
+      <IconComponent className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-800 transition-colors duration-300" />
+    </div>
     <div className="relative z-10">
       <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-800 bg-clip-text text-transparent">{title}</div>
       <div className="text-xs text-slate-500 font-medium mt-1">{subtitle}</div>
     </div>
-    <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60 animate-pulse"></div>
+    <div className={`absolute top-3 right-3 w-2 h-2 bg-gradient-to-r ${accent} rounded-full opacity-60 animate-pulse`}></div>
   </div>);
 const Index = memo(() => {
   const navigate = useNavigate();
-  
-  // Wrap hook usage in try-catch to prevent context errors
-  let globalLoadingHook;
-  let googleSheetsHook;
-  
-  try {
-    globalLoadingHook = useGlobalLoading();
-    googleSheetsHook = useGoogleSheets();
-  } catch (error) {
-    console.error('Hook initialization error:', error);
-    // Return a fallback UI
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-4">
-        <Card className="p-12 bg-white/80 backdrop-blur-sm shadow-xl border border-white/20 rounded-2xl max-w-lg">
-          <CardContent className="text-center space-y-6">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
-            <div>
-              <p className="text-xl font-semibold text-slate-800">Application Error</p>
-              <p className="text-sm text-slate-600 mt-2">There was an issue loading the application. Please refresh the page.</p>
-            </div>
-            <Button onClick={() => window.location.reload()} className="gap-2 bg-slate-800 hover:bg-slate-900 text-white">
-              <RefreshCw className="w-4 h-4" />
-              Refresh Page
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const { setLoading } = globalLoadingHook;
-  const { data, loading, error, refetch } = googleSheetsHook;
+  const { setLoading } = useGlobalLoading();
+  const { data, loading, error, refetch } = useGoogleSheets();
 
   const memoizedData = useMemo(() => data, [data]);
+  const totalRecords = memoizedData.length;
+  const moduleCount = 12;
 
   useEffect(() => {
     setLoading(loading, 'Loading dashboard overview...');
@@ -110,7 +89,7 @@ const Index = memo(() => {
         </Card>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-b from-white via-slate-50/50 to-white relative overflow-hidden">
+  return <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Premium Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50/40 to-white"></div>
@@ -142,62 +121,54 @@ const Index = memo(() => {
       <div className="relative z-10">
         <div className="container mx-auto px-6 py-12">
           {/* Premium Header Section */}
-          <header className="mb-12 text-center slide-in-from-left">
-            <div className="inline-flex items-center justify-center mb-6">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 text-slate-900 px-6 py-2.5 text-xs font-semibold shadow-sm tracking-widest border border-slate-200/60 rounded-full">
-                BUSINESS INTELLIGENCE DASHBOARD
-              </div>
-            </div>
-            
-            <h1 className="text-6xl md:text-7xl font-bold mb-3 tracking-tight text-center perspective-tilt px-6 md:px-12 lg:px-16">
-              <span className="bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 bg-clip-text text-transparent font-black">Physique</span>{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent font-black">57</span>
-              <span className="text-slate-700 font-black"> , India</span>
-            </h1>
-            
-            <p className="text-lg text-slate-700 font-semibold mb-12 max-w-4xl mx-auto leading-relaxed mt-6 slide-in-right stagger-1">
-              Comprehensive fitness analytics platform delivering actionable intelligence through advanced data visualization and real-time performance metrics
-            </p>
-            
-            {/* Premium Stats Cards */}
-            <div className="flex flex-wrap justify-center gap-5 mb-10">
-              <div className="glass-card modern-card-hover soft-bounce stagger-1">
-                <div className="relative px-6 py-4 rounded-xl bg-white border border-slate-200/80 transform hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10">
-                    <div className="text-2xl font-black bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Live</div>
-                    <div className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">Updates</div>
-                  </div>
-                  <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full opacity-60 animate-pulse"></div>
-                </div>
-              </div>
-              <div className="glass-card modern-card-hover soft-bounce stagger-2">
-                <div className="relative px-6 py-4 rounded-xl bg-white border border-slate-200/80 transform hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-50/30 to-pink-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10">
-                    <div className="text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">12</div>
-                    <div className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">Modules</div>
-                  </div>
-                  <div className="absolute top-3 right-3 w-2 h-2 bg-purple-500 rounded-full opacity-60 animate-pulse"></div>
-                </div>
-              </div>
-              <div className="glass-card modern-card-hover soft-bounce stagger-3">
-                <div className="relative px-6 py-4 rounded-xl bg-white border border-slate-200/80 transform hover:scale-110 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/20 group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/30 to-teal-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="relative z-10">
-                    <div className="text-2xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">100%</div>
-                    <div className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">Accuracy</div>
-                  </div>
-                  <div className="absolute top-3 right-3 w-2 h-2 bg-emerald-500 rounded-full opacity-60 animate-pulse"></div>
-                </div>
-              </div>
+          <motion.header
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="dashboard-hero-header mb-12 text-center slide-in-from-left"
+          >
+            <div className="dashboard-hero-graphics" aria-hidden="true">
+              <span className="dashboard-hero-orb dashboard-hero-orb-left floating-animation stagger-1" />
+              <span className="dashboard-hero-orb dashboard-hero-orb-right floating-animation stagger-3" />
+              <span className="dashboard-hero-orb dashboard-hero-orb-mid pulse-gentle stagger-2" />
+              <span className="dashboard-hero-ring dashboard-hero-ring-left" />
+              <span className="dashboard-hero-ring dashboard-hero-ring-right" />
             </div>
 
-            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-6 shimmer-effect rounded-full"></div>
-          </header>
+            <div className="relative z-10">
+              <div className="dashboard-title-frame mb-12 mx-auto max-w-full">
+                <h1 className="dashboard-main-title">
+                  BUSINESS INTELLIGENCE DASHBOARD
+                </h1>
+                <p className="dashboard-title-subtitle">
+                  PHYSIQUE 57 INDIA
+                </p>
+              </div>
+              
+              {/* Premium Stats Cards */}
+              <div className="flex flex-wrap justify-center gap-5 mb-10">
+                <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 280, damping: 20 }} className="glass-card modern-card-hover soft-bounce stagger-1">
+                  <StatsCard title={String(moduleCount)} subtitle="No of Modules" icon={LayoutGrid} accent="from-blue-400 to-cyan-400" />
+                </motion.div>
+                <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 280, damping: 20 }} className="glass-card modern-card-hover soft-bounce stagger-2">
+                  <StatsCard title={totalRecords.toLocaleString()} subtitle="Real-Time Data" icon={Activity} accent="from-purple-400 to-pink-400" />
+                </motion.div>
+                <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 280, damping: 20 }} className="glass-card modern-card-hover soft-bounce stagger-3">
+                  <StatsCard title="Advanced" subtitle="Analytics" icon={BarChart3} accent="from-emerald-400 to-teal-400" />
+                </motion.div>
+              </div>
+
+              <div className="w-24 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-6 shimmer-effect rounded-full"></div>
+            </div>
+          </motion.header>
 
           {/* Premium Dashboard Grid */}
-          <main className="max-w-7xl mx-auto slide-in-from-right stagger-2">
+          <motion.main
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-7xl mx-auto slide-in-from-right stagger-2"
+          >
             <div className="min-w-full bg-white border border-slate-200/60 glow-pulse rounded-3xl p-8 shadow-lg shadow-slate-200/40">
               <SafeWrapper fallback={
                 <div className="text-center py-12">
@@ -208,25 +179,11 @@ const Index = memo(() => {
                 <DashboardGrid onButtonClick={handleSectionClick} />
               </SafeWrapper>
             </div>
-          </main>
+          </motion.main>
         </div>
       </div>
       
       <Footer />
-      
-      <style>{`
-        @keyframes color-cycle {
-          0% { color: #3b82f6; }
-          25% { color: #ef4444; }
-          50% { color: #6366f1; }
-          75% { color: #8b5cf6; }
-          100% { color: #3b82f6; }
-        }
-        
-        .animate-color-cycle {
-          animation: color-cycle 4s infinite ease-in-out;
-        }
-      `}</style>
     </div>;
 });
 

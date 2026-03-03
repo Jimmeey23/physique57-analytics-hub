@@ -18,6 +18,7 @@ import { FunnelYearOnYearTable } from '@/components/dashboard/FunnelYearOnYearTa
 import { EnhancedFunnelRankings } from '@/components/dashboard/EnhancedFunnelRankings';
 import { FunnelHealthMetricsTable } from '@/components/dashboard/FunnelHealthMetricsTable';
 import { FunnelAnalyticsTables } from '@/components/dashboard/FunnelAnalyticsTables';
+import { DataScienceInsightsPanel } from '@/components/dashboard/DataScienceInsightsPanel';
 import { LazyFunnelDrillDownModal } from '@/components/lazy/LazyModals';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { LeadsFilterOptions } from '@/types/leads';
@@ -235,7 +236,7 @@ export default function FunnelLeads() {
         </Card>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
+  return <div className="funnel-leads-unified min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
       <DashboardMotionHero
         title="Funnel & Leads Analytics"
         subtitle="Analyze your marketing funnel, lead quality, source effectiveness, and conversion patterns to improve acquisition and retention."
@@ -273,6 +274,40 @@ export default function FunnelLeads() {
 
                   {/* Metric Cards */}
                   <FunnelMetricCards data={filteredData} onCardClick={handleDrillDown} />
+
+                  <DataScienceInsightsPanel
+                    title="Leads Data Science Toolkit"
+                    description="Monitor distribution skew, outliers, and momentum shifts to prioritize high-quality lead segments."
+                    data={filteredData}
+                    initiallyCollapsed={true}
+                    metricOptions={[
+                      {
+                        key: 'ltv',
+                        label: 'Lead LTV',
+                        accessor: (row: any) => Number(row?.ltv || 0),
+                      },
+                      {
+                        key: 'convertedFlag',
+                        label: 'Converted Leads (0/1)',
+                        accessor: (row: any) => {
+                          const status = String(row?.conversionStatus || row?.stage || '').toLowerCase();
+                          return status.includes('convert') ? 1 : 0;
+                        },
+                      },
+                      {
+                        key: 'responseTimeDays',
+                        label: 'Response Time (Days)',
+                        accessor: (row: any) =>
+                          Number(row?.responseDays || row?.daysToRespond || row?.daysToConversion || 0),
+                      },
+                    ]}
+                    dateAccessor={(row: any) => {
+                      const raw = row?.createdAt || row?.leadDate || row?.date;
+                      if (!raw) return null;
+                      const parsed = new Date(raw);
+                      return Number.isNaN(parsed.getTime()) ? null : parsed;
+                    }}
+                  />
 
                   {/* Interactive Charts - Collapsible */}
                   <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">

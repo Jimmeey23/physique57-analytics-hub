@@ -1,114 +1,111 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React, { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, TrendingUp, Users, BarChart3, UserCheck } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, BarChart3, TrendingUp, UserCheck, Users } from 'lucide-react';
 
 interface ClientConversionDataTableSelectorProps {
   activeTable: string;
   onTableChange: (table: string) => void;
   dataLength: number;
+  isPending?: boolean;
 }
 
 type TableOption = {
   key: string;
   label: string;
-  description: string;
   icon: React.ElementType;
-  gradient: string;
+  activeClass: string;
 };
 
-export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTableSelectorProps> = ({
-  activeTable,
-  onTableChange,
-  dataLength
-}) => {
-  const tableOptions: TableOption[] = [
-    {
-      key: 'monthonmonthbytype',
-      label: 'By Client Type',
-      description: 'Monthly breakdown by client type',
-      icon: Users,
-      gradient: 'from-purple-500 to-pink-600'
-    },
-    {
-      key: 'monthonmonth',
-      label: 'Month on Month',
-      description: 'Monthly trends and comparisons',
-      icon: Calendar,
-      gradient: 'from-blue-500 to-indigo-600'
-    },
-    {
-      key: 'yearonyear',
-      label: 'Year on Year',
-      description: 'Annual performance comparison',
-      icon: TrendingUp,
-      gradient: 'from-green-500 to-emerald-600'
-    },
-    {
-      key: 'hostedclasses',
-      label: 'Hosted Classes',
-      description: 'Class performance metrics',
-      icon: Users,
-      gradient: 'from-purple-500 to-violet-600'
-    },
-    {
-      key: 'memberships',
-      label: 'Membership Analysis',
-      description: 'Membership type breakdown',
-      icon: BarChart3,
-      gradient: 'from-orange-500 to-red-600'
-    },
-    {
-      key: 'teacherperformance',
-      label: 'Teacher Performance',
-      description: 'Trainer metrics and performance analysis',
-      icon: UserCheck,
-      gradient: 'from-teal-500 to-cyan-600'
-    },
-    {
-      key: 'newclientpurchases',
-      label: 'New Client Purchases',
-      description: 'Membership purchases by new clients with conversion metrics',
-      icon: Users,
-      gradient: 'from-indigo-500 to-purple-600'
-    }
-  ];
+const TABLE_OPTIONS: TableOption[] = [
+  {
+    key: 'monthonmonthbytype',
+    label: 'By Client Type',
+    icon: Users,
+    activeClass:
+      'data-[state=active]:from-blue-600 data-[state=active]:via-blue-700 data-[state=active]:to-blue-800',
+  },
+  {
+    key: 'monthonmonth',
+    label: 'Month on Month',
+    icon: Calendar,
+    activeClass:
+      'data-[state=active]:from-emerald-600 data-[state=active]:via-emerald-700 data-[state=active]:to-emerald-800',
+  },
+  {
+    key: 'yearonyear',
+    label: 'Year on Year',
+    icon: TrendingUp,
+    activeClass:
+      'data-[state=active]:from-purple-600 data-[state=active]:via-purple-700 data-[state=active]:to-purple-800',
+  },
+  {
+    key: 'hostedclasses',
+    label: 'Hosted Classes',
+    icon: Users,
+    activeClass:
+      'data-[state=active]:from-indigo-600 data-[state=active]:via-indigo-700 data-[state=active]:to-indigo-800',
+  },
+  {
+    key: 'memberships',
+    label: 'Memberships',
+    icon: BarChart3,
+    activeClass:
+      'data-[state=active]:from-orange-600 data-[state=active]:via-orange-700 data-[state=active]:to-orange-800',
+  },
+  {
+    key: 'teacherperformance',
+    label: 'Teacher Performance',
+    icon: UserCheck,
+    activeClass:
+      'data-[state=active]:from-teal-600 data-[state=active]:via-teal-700 data-[state=active]:to-teal-800',
+  },
+  {
+    key: 'newclientpurchases',
+    label: 'New Client Purchases',
+    icon: Users,
+    activeClass:
+      'data-[state=active]:from-pink-600 data-[state=active]:via-pink-700 data-[state=active]:to-pink-800',
+  },
+];
 
-  return (
-    <div className="bg-gradient-to-r from-slate-50 to-gray-100 p-6 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">Data Analysis Tables</h3>
-          <p className="text-sm text-gray-600">Select a table to view detailed metrics</p>
+export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTableSelectorProps> = memo(
+  ({ activeTable, onTableChange, dataLength, isPending = false }) => {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Data Analysis Tables</h3>
+            <p className="text-sm text-gray-600">Consistent Sales-style table navigation</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isPending && (
+              <Badge className="border-amber-200 bg-amber-50 text-amber-700">Optimizing...</Badge>
+            )}
+            <Badge className="border-slate-200 bg-slate-100 text-slate-800">{dataLength} Records</Badge>
+          </div>
         </div>
-        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-          {dataLength} Records
-        </Badge>
+
+        <Tabs value={activeTable} onValueChange={onTableChange} className="w-full">
+          <TabsList className="bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-2xl border-2 border-slate-200 flex w-full max-w-7xl mx-auto overflow-visible relative">
+            {TABLE_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              return (
+                <TabsTrigger
+                  key={option.key}
+                  value={option.key}
+                  className={`relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br ${option.activeClass} data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="whitespace-nowrap">{option.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
       </div>
-      
-      <div className="grid grid-cols-7 gap-2">
-        {tableOptions.map((option) => (
-          <Button
-            key={option.key}
-            variant={activeTable === option.key ? "default" : "outline"}
-            className={`h-16 px-3 py-2 flex items-center justify-center gap-2 transition-all duration-300 ${
-              activeTable === option.key
-                ? `bg-gradient-to-r ${option.gradient} text-white shadow-lg hover:shadow-xl`
-                : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300'
-            }`}
-            onClick={() => onTableChange(option.key)}
-          >
-            <option.icon className={`w-4 h-4 flex-shrink-0 ${
-              activeTable === option.key ? 'text-white' : 'text-gray-600'
-            }`} />
-            <span className={`font-semibold text-xs text-center leading-tight ${
-              activeTable === option.key ? 'text-white' : 'text-gray-900'
-            }`}>
-              {option.label}
-            </span>
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+ClientConversionDataTableSelector.displayName = 'ClientConversionDataTableSelector';

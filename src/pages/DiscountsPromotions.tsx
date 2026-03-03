@@ -156,7 +156,7 @@ const DiscountsPromotions: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/20">
+    <div className="discounts-promotions-unified min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/20">
       <DashboardMotionHero 
         title="Discounts & Promotions"
         subtitle="Comprehensive analysis of discount strategies, promotional effectiveness, and customer savings patterns"

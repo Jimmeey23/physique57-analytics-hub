@@ -1,3 +1,541 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Space+Grotesk:wght@700;800&display=swap');
+
+/* Dashboard title: modern sans-serif + bottom-border shine */
+@keyframes dashboard-title-intro {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-cinematic-glow {
+  0%, 100% {
+    text-shadow:
+      0 0 0 rgba(255, 255, 255, 0),
+      0 10px 26px rgba(30, 64, 175, 0.16),
+      0 3px 8px rgba(15, 23, 42, 0.2);
+  }
+  50% {
+    text-shadow:
+      0 0 14px rgba(255, 255, 255, 0.44),
+      0 0 36px rgba(59, 130, 246, 0.3),
+      0 14px 30px rgba(76, 29, 149, 0.24);
+  }
+}
+
+@keyframes dashboard-bottom-line-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 220% 50%;
+  }
+}
+
+@keyframes dashboard-bottom-line-shine {
+  0% {
+    transform: translateX(-155%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(240%);
+    opacity: 0;
+  }
+}
+
+@keyframes dashboard-hero-gradient-drift {
+  0%, 100% {
+    background-position: 0% 0%, 12% 18%, 85% 24%, 52% 100%;
+  }
+  50% {
+    background-position: 0% 0%, 18% 24%, 78% 18%, 46% 92%;
+  }
+}
+
+.dashboard-hero-header {
+  position: relative;
+  margin: 0 calc(50% - 50vw) 3rem;
+  padding:
+    clamp(2.2rem, 4.6vw, 3.8rem)
+    max(1.5rem, calc((100vw - 80rem) / 2))
+    clamp(1.8rem, 3.4vw, 2.7rem);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.dashboard-hero-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(241, 245, 249, 0.94) 0%, rgba(248, 250, 252, 0.88) 58%, rgba(255, 255, 255, 0.74) 100%),
+    radial-gradient(circle at 14% 22%, rgba(59, 130, 246, 0.17) 0%, rgba(59, 130, 246, 0.05) 34%, transparent 58%),
+    radial-gradient(circle at 86% 20%, rgba(167, 139, 250, 0.16) 0%, rgba(167, 139, 250, 0.05) 32%, transparent 56%),
+    radial-gradient(circle at 52% 102%, rgba(14, 165, 233, 0.1) 0%, transparent 56%);
+  background-repeat: no-repeat;
+  animation: dashboard-hero-gradient-drift 10s ease-in-out infinite;
+  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.22);
+}
+
+.dashboard-hero-graphics {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.dashboard-hero-orb {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+}
+
+.dashboard-hero-orb-left {
+  width: clamp(140px, 18vw, 260px);
+  height: clamp(140px, 18vw, 260px);
+  top: 10%;
+  left: 4%;
+  background: radial-gradient(circle at 30% 30%, rgba(191, 219, 254, 0.35), rgba(219, 234, 254, 0.12) 56%, transparent 72%);
+}
+
+.dashboard-hero-orb-right {
+  width: clamp(120px, 16vw, 220px);
+  height: clamp(120px, 16vw, 220px);
+  top: 16%;
+  right: 6%;
+  background: radial-gradient(circle at 40% 30%, rgba(221, 214, 254, 0.34), rgba(233, 213, 255, 0.12) 56%, transparent 72%);
+}
+
+.dashboard-hero-orb-mid {
+  width: clamp(46px, 5vw, 72px);
+  height: clamp(46px, 5vw, 72px);
+  top: 48%;
+  left: 72%;
+  background: radial-gradient(circle at 35% 35%, rgba(186, 230, 253, 0.44), rgba(125, 211, 252, 0.18) 56%, transparent 74%);
+}
+
+.dashboard-hero-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(148, 163, 184, 0.22);
+  opacity: 0.52;
+}
+
+.dashboard-hero-ring-left {
+  width: clamp(180px, 20vw, 300px);
+  height: clamp(180px, 20vw, 300px);
+  left: -5%;
+  top: 8%;
+}
+
+.dashboard-hero-ring-right {
+  width: clamp(190px, 21vw, 320px);
+  height: clamp(190px, 21vw, 320px);
+  right: -6%;
+  top: 20%;
+}
+
+.dashboard-title-frame {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.52rem;
+  overflow: visible;
+  width: min(100%, 74rem);
+  padding: 0.2rem clamp(0.4rem, 1.3vw, 1rem) 1rem;
+}
+
+.dashboard-title-frame::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.12) 0%,
+    rgba(59, 130, 246, 0.9) 28%,
+    rgba(139, 92, 246, 0.9) 56%,
+    rgba(14, 165, 233, 0.9) 78%,
+    rgba(59, 130, 246, 0.12) 100%
+  );
+  background-size: 220% 100%;
+  animation: dashboard-bottom-line-flow 6.2s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.dashboard-title-frame::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: -40%;
+  width: 22%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.96) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(0.4px);
+  mix-blend-mode: screen;
+  animation: dashboard-bottom-line-shine 2.4s ease-in-out infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.dashboard-main-title {
+  position: relative;
+  z-index: 3;
+  margin: 0;
+  font-family: 'Sora', 'Plus Jakarta Sans', 'Avenir Next', 'Helvetica Neue', sans-serif;
+  font-size: clamp(1.65rem, 5.4vw, 4.4rem);
+  line-height: 1.1;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  animation:
+    dashboard-title-intro 0.72s cubic-bezier(0.22, 1, 0.36, 1) both,
+    dashboard-cinematic-glow 5.2s ease-in-out 0.85s infinite;
+}
+
+.dashboard-title-subtitle {
+  position: relative;
+  z-index: 3;
+  margin: 0;
+  font-family: 'Space Grotesk', 'Sora', 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(0.86rem, 2vw, 1.35rem);
+  line-height: 1.1;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-hero-header::before {
+    animation: none;
+  }
+
+  .dashboard-main-title {
+    text-shadow: none;
+    animation: none;
+  }
+
+  .dashboard-hero-orb,
+  .dashboard-hero-ring,
+  .dashboard-title-frame::before,
+  .dashboard-title-frame::after {
+    animation: none;
+  }
+}
+
+/* Client Retention: force Sales-style table consistency */
+.client-retention-sales-table table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.client-retention-sales-table thead tr {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 50%, #1e293b 100%) !important;
+}
+
+.client-retention-sales-table thead th {
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.client-retention-sales-table thead th:last-child {
+  border-right: 0;
+}
+
+.client-retention-sales-table tbody tr {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 180ms ease;
+}
+
+.client-retention-sales-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.client-retention-sales-table tbody td {
+  color: #334155;
+  font-size: 0.8rem;
+  border-right: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.client-retention-sales-table tbody td:last-child {
+  border-right: 0;
+}
+
+.client-retention-sales-table tbody tr.retention-totals-row,
+.client-retention-sales-table tbody tr.retention-totals-row:hover {
+  background: #1e293b !important;
+}
+
+.client-retention-sales-table tbody tr.retention-totals-row td,
+.client-retention-sales-table tbody tr.retention-totals-row td:hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.client-retention-sales-table tbody tr.retention-totals-row td *,
+.client-retention-sales-table tbody tr.retention-totals-row td span {
+  color: #f8fafc !important;
+}
+
+.client-retention-sales-table tfoot tr,
+.client-retention-sales-table tfoot tr:hover {
+  background: #1e293b !important;
+}
+
+.client-retention-sales-table tfoot td,
+.client-retention-sales-table tfoot td:hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.client-retention-sales-table tfoot td *,
+.client-retention-sales-table tfoot td span {
+  color: #f8fafc !important;
+}
+
+.client-retention-sales-table.client-retention-compact thead th,
+.client-retention-sales-table.client-retention-compact tbody td {
+  padding-top: 0.38rem !important;
+  padding-bottom: 0.38rem !important;
+  font-size: 0.72rem !important;
+}
+
+/* Unified Sales-style tables for Class Attendance / Trainer / Leads / Discounts tabs */
+.class-attendance-unified table,
+.trainer-performance-unified table,
+.funnel-leads-unified table,
+.discounts-promotions-unified table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.class-attendance-unified thead tr,
+.trainer-performance-unified thead tr,
+.funnel-leads-unified thead tr,
+.discounts-promotions-unified thead tr {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 50%, #1e293b 100%) !important;
+}
+
+.class-attendance-unified thead th,
+.trainer-performance-unified thead th,
+.funnel-leads-unified thead th,
+.discounts-promotions-unified thead th {
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 50%, #1e293b 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.class-attendance-unified thead th:last-child,
+.trainer-performance-unified thead th:last-child,
+.funnel-leads-unified thead th:last-child,
+.discounts-promotions-unified thead th:last-child {
+  border-right: 0;
+}
+
+.class-attendance-unified thead th.sticky,
+.trainer-performance-unified thead th.sticky,
+.funnel-leads-unified thead th.sticky,
+.discounts-promotions-unified thead th.sticky,
+.class-attendance-unified thead th[class*="sticky"],
+.trainer-performance-unified thead th[class*="sticky"],
+.funnel-leads-unified thead th[class*="sticky"],
+.discounts-promotions-unified thead th[class*="sticky"] {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 50%, #1e293b 100%) !important;
+}
+
+.class-attendance-unified tbody tr,
+.trainer-performance-unified tbody tr,
+.funnel-leads-unified tbody tr,
+.discounts-promotions-unified tbody tr {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.class-attendance-unified tbody tr:hover,
+.trainer-performance-unified tbody tr:hover,
+.funnel-leads-unified tbody tr:hover,
+.discounts-promotions-unified tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+.class-attendance-unified tbody td,
+.trainer-performance-unified tbody td,
+.funnel-leads-unified tbody td,
+.discounts-promotions-unified tbody td {
+  color: #334155 !important;
+  font-size: 0.8rem;
+  border-right: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.class-attendance-unified tbody td:last-child,
+.trainer-performance-unified tbody td:last-child,
+.funnel-leads-unified tbody td:last-child,
+.discounts-promotions-unified tbody td:last-child {
+  border-right: 0;
+}
+
+.class-attendance-unified tfoot tr,
+.class-attendance-unified tfoot tr:hover,
+.trainer-performance-unified tfoot tr,
+.trainer-performance-unified tfoot tr:hover,
+.funnel-leads-unified tfoot tr,
+.funnel-leads-unified tfoot tr:hover,
+.discounts-promotions-unified tfoot tr,
+.discounts-promotions-unified tfoot tr:hover,
+.class-attendance-unified tbody tr.retention-totals-row,
+.class-attendance-unified tbody tr.retention-totals-row:hover,
+.trainer-performance-unified tbody tr.retention-totals-row,
+.trainer-performance-unified tbody tr.retention-totals-row:hover,
+.funnel-leads-unified tbody tr.retention-totals-row,
+.funnel-leads-unified tbody tr.retention-totals-row:hover,
+.discounts-promotions-unified tbody tr.retention-totals-row,
+.discounts-promotions-unified tbody tr.retention-totals-row:hover,
+.class-attendance-unified tbody tr[class*="total"],
+.trainer-performance-unified tbody tr[class*="total"],
+.funnel-leads-unified tbody tr[class*="total"],
+.discounts-promotions-unified tbody tr[class*="total"] {
+  background: #1e293b !important;
+}
+
+.class-attendance-unified tfoot td,
+.class-attendance-unified tfoot td:hover,
+.class-attendance-unified tfoot th,
+.class-attendance-unified tfoot th:hover,
+.trainer-performance-unified tfoot td,
+.trainer-performance-unified tfoot td:hover,
+.trainer-performance-unified tfoot th,
+.trainer-performance-unified tfoot th:hover,
+.funnel-leads-unified tfoot td,
+.funnel-leads-unified tfoot td:hover,
+.funnel-leads-unified tfoot th,
+.funnel-leads-unified tfoot th:hover,
+.discounts-promotions-unified tfoot td,
+.discounts-promotions-unified tfoot td:hover,
+.discounts-promotions-unified tfoot th,
+.discounts-promotions-unified tfoot th:hover,
+.class-attendance-unified tbody tr.retention-totals-row td,
+.class-attendance-unified tbody tr.retention-totals-row td:hover,
+.class-attendance-unified tbody tr.retention-totals-row th,
+.class-attendance-unified tbody tr.retention-totals-row th:hover,
+.trainer-performance-unified tbody tr.retention-totals-row td,
+.trainer-performance-unified tbody tr.retention-totals-row td:hover,
+.trainer-performance-unified tbody tr.retention-totals-row th,
+.trainer-performance-unified tbody tr.retention-totals-row th:hover,
+.funnel-leads-unified tbody tr.retention-totals-row td,
+.funnel-leads-unified tbody tr.retention-totals-row td:hover,
+.funnel-leads-unified tbody tr.retention-totals-row th,
+.funnel-leads-unified tbody tr.retention-totals-row th:hover,
+.discounts-promotions-unified tbody tr.retention-totals-row td,
+.discounts-promotions-unified tbody tr.retention-totals-row td:hover,
+.discounts-promotions-unified tbody tr.retention-totals-row th,
+.discounts-promotions-unified tbody tr.retention-totals-row th:hover,
+.class-attendance-unified tbody tr[class*="total"] td,
+.class-attendance-unified tbody tr[class*="total"] th,
+.trainer-performance-unified tbody tr[class*="total"] td,
+.trainer-performance-unified tbody tr[class*="total"] th,
+.funnel-leads-unified tbody tr[class*="total"] td,
+.funnel-leads-unified tbody tr[class*="total"] th,
+.discounts-promotions-unified tbody tr[class*="total"] td,
+.discounts-promotions-unified tbody tr[class*="total"] th {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.class-attendance-unified tfoot td *,
+.class-attendance-unified tfoot th *,
+.class-attendance-unified tbody tr.retention-totals-row td *,
+.class-attendance-unified tbody tr.retention-totals-row th *,
+.trainer-performance-unified tfoot td *,
+.trainer-performance-unified tfoot th *,
+.trainer-performance-unified tbody tr.retention-totals-row td *,
+.trainer-performance-unified tbody tr.retention-totals-row th *,
+.funnel-leads-unified tfoot td *,
+.funnel-leads-unified tfoot th *,
+.funnel-leads-unified tbody tr.retention-totals-row td *,
+.funnel-leads-unified tbody tr.retention-totals-row th *,
+.discounts-promotions-unified tfoot td *,
+.discounts-promotions-unified tfoot th *,
+.discounts-promotions-unified tbody tr.retention-totals-row td *,
+.discounts-promotions-unified tbody tr.retention-totals-row th *,
+.class-attendance-unified tbody tr[class*="total"] td *,
+.class-attendance-unified tbody tr[class*="total"] th *,
+.trainer-performance-unified tbody tr[class*="total"] td *,
+.trainer-performance-unified tbody tr[class*="total"] th *,
+.funnel-leads-unified tbody tr[class*="total"] td *,
+.funnel-leads-unified tbody tr[class*="total"] th *,
+.discounts-promotions-unified tbody tr[class*="total"] td *,
+.discounts-promotions-unified tbody tr[class*="total"] th * {
+  color: #f8fafc !important;
+}
+
+/* Remove badge-like styling from trainer/discount table body values for consistent Sales-table readability */
+.trainer-performance-unified tbody td .inline-flex.items-center.rounded-full,
+.trainer-performance-unified tbody td .inline-flex.items-center.rounded-md,
+.discounts-promotions-unified tbody td .inline-flex.items-center.rounded-full,
+.discounts-promotions-unified tbody td .inline-flex.items-center.rounded-md {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  min-height: auto !important;
+  box-shadow: none !important;
+  color: #334155 !important;
+}
+
+.trainer-performance-unified tbody td span,
+.trainer-performance-unified tbody td div,
+.discounts-promotions-unified tbody td span,
+.discounts-promotions-unified tbody td div {
+  color: #334155 !important;
+}
+
+.trainer-performance-unified tbody td svg,
+.discounts-promotions-unified tbody td svg {
+  color: #64748b !important;
+}
+
 /* Modern glassmorphism and aesthetic animations */
 @keyframes pulse-neon {
   0%, 100% {

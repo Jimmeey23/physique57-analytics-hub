@@ -512,9 +512,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
   }, [registry, metric, displayMode, rowType, pivot, sortedRowKeys]);
 
   return (
-    <Card ref={containerRef} className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-emerald-700 to-teal-800 text-white pt-4">
+    <Card ref={containerRef} className="bg-white shadow-none border-0 overflow-hidden">
+      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white pt-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -535,7 +534,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 size="sm"
                 variant={displayMode === 'values' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('values')}
-                className={displayMode === 'values' ? 'bg-white text-emerald-700 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'values' ? 'bg-white text-slate-900 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
               >
                 Values
               </Button>
@@ -543,7 +542,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 size="sm"
                 variant={displayMode === 'growth' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('growth')}
-                className={displayMode === 'growth' ? 'bg-white text-emerald-700 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'growth' ? 'bg-white text-slate-900 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
               >
                 Growth %
               </Button>
@@ -555,7 +554,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 size="sm"
                 variant="ghost"
                 onClick={() => setRowType('clientType')}
-                className={`min-w-[110px] ${rowType === 'clientType' ? 'bg-white text-emerald-700' : 'text-white hover:bg-white/20'}`}
+                className={`min-w-[110px] ${rowType === 'clientType' ? 'bg-white text-slate-900' : 'text-white hover:bg-white/20'}`}
               >
                 Client Type
               </Button>
@@ -563,7 +562,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 size="sm"
                 variant="ghost"
                 onClick={() => setRowType('membership')}
-                className={`min-w-[110px] ${rowType === 'membership' ? 'bg-white text-emerald-700' : 'text-white hover:bg-white/20'}`}
+                className={`min-w-[110px] ${rowType === 'membership' ? 'bg-white text-slate-900' : 'text-white hover:bg-white/20'}`}
               >
                 Membership
               </Button>
@@ -573,7 +572,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 <button
                   key={k}
                   onClick={() => setMetric(k)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'bg-white text-emerald-700 shadow-md' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'bg-white text-slate-900 shadow-md' : 'bg-white/10 text-white hover:bg-white/20'}`}
                   title={METRIC_LABELS[k]}
                 >
                   {METRIC_LABELS[k]}
@@ -587,9 +586,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
   <div className="overflow-x-auto max-h-[900px] relative">
           <table className="min-w-full relative">
             <thead>
-              <tr className="bg-gradient-to-r from-green-800 via-green-900 to-green-800 text-white sticky top-0 z-10">
+              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white sticky top-0 z-10">
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-20 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-green-900"
+                  className="px-4 py-3 text-left sticky left-0 z-20 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-slate-900"
                   style={{ width: '300px', minWidth: '300px' }}
                   onClick={() => handleSort('row')}
                 >
@@ -608,16 +607,16 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                   return (
                     <th 
                       key={m.key} 
-                      className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider min-w-[90px] cursor-pointer hover:bg-green-700/50 select-none sticky top-0 ${
-                        isFirstOfGroup ? 'border-l-2 border-green-400' : ''
+                      className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider min-w-[90px] cursor-pointer hover:bg-slate-800/60 select-none sticky top-0 ${
+                        isFirstOfGroup ? 'border-l-2 border-slate-400' : ''
                       } ${
-                        isLastOfGroup ? 'border-r-2 border-green-400' : ''
+                        isLastOfGroup ? 'border-r-2 border-slate-400' : ''
                       }`}
                       onClick={() => handleSort(m.key)}
                     >
                       <div className="flex flex-col items-center">
                         <span className="text-xs font-bold whitespace-nowrap leading-tight">{m.monthName}</span>
-                        <span className="text-green-300 text-xs leading-tight">{m.year}</span>
+                        <span className="text-slate-300 text-xs leading-tight">{m.year}</span>
                       </div>
                     </th>
                   );
@@ -697,7 +696,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="bg-slate-800 font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
+              <tr className="retention-totals-row font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
                 <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>TOTALS</td>
                 {months.map((m, index) => {
                   const prevMonth = index > 0 ? months[index - 1] : null;

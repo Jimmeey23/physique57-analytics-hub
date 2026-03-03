@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { ModernTableWrapper } from './ModernTableWrapper';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
-import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Users, Activity, Target, TrendingUp, TrendingDown, UserCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
 interface TrainerPerformanceDetailTableProps {
@@ -269,13 +268,14 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       align: 'center' as const,
       render: (value: string, row: any) => (
         <div className="flex flex-col items-center">
-          <Badge className={`
+          <span className={`
+            text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-sm
             ${value === 'Cycle' ? 'bg-blue-100 text-blue-800' : 
               value === 'Barre' ? 'bg-pink-100 text-pink-800' : 
               'bg-green-100 text-green-800'}
           `}>
             {value}
-          </Badge>
+          </span>
           <div className="text-xs text-slate-500 mt-1">
             {value === 'Cycle' ? row.cycleSessions : 
              value === 'Barre' ? row.barreSessions : 
@@ -345,14 +345,15 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       align: 'center' as const,
       render: (value: string, row: any) => (
         <div className="flex flex-col items-center">
-          <Badge className={`
+          <span className={`
+            text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-sm
             ${value === 'Excellent' ? 'bg-green-100 text-green-800' :
               value === 'Good' ? 'bg-blue-100 text-blue-800' :
               value === 'Average' ? 'bg-yellow-100 text-yellow-800' :
               'bg-red-100 text-red-800'}
           `}>
             {value}
-          </Badge>
+          </span>
           <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
             {row.growthTrend >= 0 ? (
               <TrendingUp className="w-3 h-3 text-green-500" />
@@ -372,6 +373,30 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
     }));
   };
+
+  const totalsRow = useMemo(() => {
+    const totalSessions = processedTableData.reduce((sum, row) => sum + row.totalSessions, 0);
+    const totalCustomers = processedTableData.reduce((sum, row) => sum + row.totalCustomers, 0);
+    const totalRevenue = processedTableData.reduce((sum, row) => sum + row.totalRevenue, 0);
+    const avgClassSize = totalSessions > 0 ? totalCustomers / totalSessions : 0;
+    const revenuePerSession = totalSessions > 0 ? totalRevenue / totalSessions : 0;
+    const fillRate =
+      totalSessions > 0 ? (totalCustomers / (totalSessions * 20)) * 100 : 0;
+    const avgConversion =
+      processedTableData.length > 0
+        ? processedTableData.reduce((sum, row) => sum + row.conversionRate, 0) / processedTableData.length
+        : 0;
+
+    return {
+      totalSessions,
+      totalCustomers,
+      totalRevenue,
+      avgClassSize,
+      revenuePerSession,
+      fillRate,
+      avgConversion,
+    };
+  }, [processedTableData]);
 
   return (
     <ModernTableWrapper
@@ -429,6 +454,20 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="retention-totals-row">
+                <td className="px-4 py-2 text-sm font-bold">TOTALS</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totalsRow.totalSessions)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totalsRow.totalCustomers)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totalsRow.totalRevenue)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.avgClassSize.toFixed(1)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totalsRow.revenuePerSession)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">-</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.fillRate.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.avgConversion.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">-</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

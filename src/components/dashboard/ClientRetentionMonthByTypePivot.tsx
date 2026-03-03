@@ -2,7 +2,7 @@ import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, TrendingUp, ArrowUpDown } from 'lucide-react';
+import { Calendar, ArrowUpDown } from 'lucide-react';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
@@ -424,8 +424,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   }, [registry, metric, displayMode, pivot, sortedTypes]);
 
   return (
-    <Card ref={containerRef} className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+    <Card ref={containerRef} className="bg-white border-0 shadow-none overflow-hidden">
       <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white pt-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -466,7 +465,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               <button
                 key={k}
                 onClick={() => setMetric(k)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'bg-white text-indigo-700 shadow-md' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'bg-white text-slate-900 shadow-md' : 'bg-white/10 text-white hover:bg-white/20'}`}
                 title={METRIC_LABELS[k]}
               >
                 {METRIC_LABELS[k]}
@@ -479,9 +478,9 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   <div className="overflow-x-auto max-h-[900px] relative">
           <table className="min-w-full relative">
             <thead>
-              <tr className="bg-gradient-to-r from-purple-900 via-purple-950 to-purple-900 text-white sticky top-0 z-10" style={{ maxHeight: '35px' }}>
+              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white sticky top-0 z-10" style={{ maxHeight: '35px' }}>
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-30 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-purple-900"
+                  className="px-4 py-3 text-left sticky left-0 z-30 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-slate-900"
                   onClick={() => handleSort('type')}
                   style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}
                 >
@@ -493,7 +492,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 {months.map(m => (
                   <th 
                     key={m.key} 
-                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide border-l border-white/20 cursor-pointer hover:bg-purple-800/50 select-none sticky top-0"
+                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide border-l border-white/20 cursor-pointer hover:bg-slate-800/60 select-none sticky top-0"
                     onClick={() => handleSort(m.key)}
                     style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}
                   >
@@ -548,7 +547,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="bg-slate-800 font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
+              <tr className="retention-totals-row font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
                 <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-20 border-r" style={{ maxHeight: '35px' }}>TOTALS</td>
                 {months.map((m, idx) => {
                   const cell = totalsRow[m.key] || {};

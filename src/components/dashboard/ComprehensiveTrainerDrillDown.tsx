@@ -344,14 +344,6 @@ export function ComprehensiveTrainerDrillDown({
     });
 
     // Current period data (aggregate contextual records filtered by trainer + location + month)
-    console.log('🔍 [Modal] Context filtering', {
-      trainerName,
-      filters,
-      contextRecordCount: trainerRecordsContext.length,
-      allMonthsCount: trainerRecordsAllMonths.length,
-      contextRecordsSample: trainerRecordsContext.slice(0, 2),
-      trainerDataPassed: trainerData
-    });
 
     // Use trainerData directly as the source for the clicked context
     // Only aggregate from payroll if trainerData is missing key fields
@@ -389,13 +381,6 @@ export function ComprehensiveTrainerDrillDown({
           }, {})
         : {}
     );
-
-    console.log('🔍 [Modal] Data source selected', {
-      hasDirectData,
-      trainerDataSessions: trainerData?.totalSessions || trainerData?.currentSessions || trainerData?.sessions,
-      sourceUsed: hasDirectData ? 'trainerData' : 'aggregated payroll',
-      sourceTotalSessions: source.totalSessions || source.currentSessions || source.sessions
-    });
 
     // clicked-cell authoritative count (if provided by the table click)
     const clickedCellSessions = Number(trainerData?.totalSessions || trainerData?.currentSessions || trainerData?.sessions || 0);
@@ -445,12 +430,6 @@ export function ComprehensiveTrainerDrillDown({
     // Build session metrics from sessions sheet
     const sessionMetrics = (() => {
       const sessions = trainerSessionsAll;
-      console.log('🔍 [Modal] Sessions filter result', {
-        trainerName,
-        filters,
-        matchedSessions: sessions.length,
-        sampleDates: sessions.slice(0, 3).map((s: any) => ({ date: s.date, parsed: toMonthYear(s.date) })),
-      });
       const totals = sessions.reduce((acc: any, s: any) => {
         const isCancelled = (s.lateCancelledCount || 0) > 0 && (s.checkedInCount || 0) === 0;
         const paid = Number(s.totalPaid || s.revenue || 0);
@@ -495,10 +474,6 @@ export function ComprehensiveTrainerDrillDown({
 
       // populate diagnostic counts
       current.sessionsSheetCount = sessionMetrics.list ? sessionMetrics.list.length : 0;
-
-      // Add a simple discrepancy flag
-      const discrepancy = current.clickedCellSessions !== 0 && (current.clickedCellSessions !== current.sessionsSheetCount);
-      console.log('🔍 [Modal] Clicked vs Sheet', { clickedCellSessions: current.clickedCellSessions, sessionsSheetCount: current.sessionsSheetCount, discrepancy });
 
     // Format breakdown
     const byFormat = [

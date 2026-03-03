@@ -8,6 +8,7 @@ import { EnhancedDiscountDataTable } from './EnhancedDiscountDataTable';
 import { EnhancedDiscountBreakdownTables } from './EnhancedDiscountBreakdownTables';
 import { DiscountDrillDownModal } from './DiscountDrillDownModal';
 import { MonthOnMonthDiscountTable } from './MonthOnMonthDiscountTable';
+import { DataScienceInsightsPanel } from './DataScienceInsightsPanel';
 import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
@@ -373,6 +374,40 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           historicalData={allHistoricData}
           dateRange={filters.dateRange}
           onMetricClick={handleMetricClick}
+        />
+
+        <DataScienceInsightsPanel
+          title="Discount Data Science Toolkit"
+          description="Track discount elasticity, outliers, and concentration risk to improve promotional strategy quality."
+          data={discountAnalysisData}
+          initiallyCollapsed={true}
+          metricOptions={[
+            {
+              key: 'discountAmount',
+              label: 'Discount Amount',
+              accessor: (row: any) => Number(row?.discountAmount || 0),
+            },
+            {
+              key: 'discountPercentage',
+              label: 'Discount %',
+              accessor: (row: any) => Number(row?.discountPercentage || 0),
+            },
+            {
+              key: 'paymentValue',
+              label: 'Net Payment Value',
+              accessor: (row: any) => Number(row?.paymentValue || 0),
+            },
+            {
+              key: 'grossPotentialValue',
+              label: 'Gross Potential Value',
+              accessor: (row: any) => Number(row?.paymentValue || 0) + Number(row?.discountAmount || 0),
+            },
+          ]}
+          dateAccessor={(row: any) => {
+            if (!row?.paymentDate) return null;
+            const parsed = parseDate(row.paymentDate);
+            return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+          }}
         />
 
         <DiscountInteractiveCharts data={allHistoricData} />

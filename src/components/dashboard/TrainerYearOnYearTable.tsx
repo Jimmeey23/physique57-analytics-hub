@@ -2,9 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ModernTableWrapper } from './ModernTableWrapper';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 interface TrainerYearOnYearTableProps {
   data: ProcessedTrainerData[];
@@ -349,6 +348,20 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="retention-totals-row">
+                <td className="px-4 py-2 text-sm font-bold">TOTALS</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totals.currentSessions)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totals.previousSessions)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totals.sessionsGrowth.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totals.currentRevenue)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totals.previousRevenue)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totals.revenueGrowth.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totals.currentAvgClassSize.toFixed(1)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totals.previousAvgClassSize.toFixed(1)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totals.classSizeGrowth.toFixed(1)}%</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

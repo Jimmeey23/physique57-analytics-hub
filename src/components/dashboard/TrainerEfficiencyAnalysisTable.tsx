@@ -4,7 +4,6 @@ import { ProcessedTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Zap, Clock, Target, TrendingUp, TrendingDown, Award } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 
 interface TrainerEfficiencyAnalysisTableProps {
@@ -190,16 +189,16 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
         <div className="flex flex-col gap-1">
           <TrainerNameCell name={value} className="text-nowrap" />
           <div className="text-xs text-slate-500 ml-10">{row.location}</div>
-          <Badge className={`mt-1 text-xs ml-10 w-fit ${
+          <span className={`mt-1 text-xs ml-10 w-fit font-semibold ${
             row.productivityRank === 'S+' ? 'bg-purple-100 text-purple-800' :
             row.productivityRank === 'A+' ? 'bg-green-100 text-green-800' :
             row.productivityRank === 'A' ? 'bg-blue-100 text-blue-800' :
             row.productivityRank === 'B+' ? 'bg-yellow-100 text-yellow-800' :
             row.productivityRank === 'B' ? 'bg-orange-100 text-orange-800' :
             'bg-red-100 text-red-800'
-          }`}>
+          } px-2 py-0.5 rounded-sm`}>
             Rank {row.productivityRank}
-          </Badge>
+          </span>
         </div>
       )
     },
@@ -455,6 +454,35 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
     return { avgEfficiency, topPerformers, avgCapacityUtilization };
   }, [efficiencyData]);
 
+  const totalsRow = useMemo(() => {
+    if (!efficiencyData.length) {
+      return {
+        efficiencyScore: 0,
+        capacityUtilization: 0,
+        revenuePerHour: 0,
+        avgClassFill: 0,
+        customerRetention: 0,
+        timeOptimization: 0,
+        qualityIndex: 0,
+        growthMomentum: 0,
+        impactScore: 0,
+      };
+    }
+
+    const count = efficiencyData.length;
+    return {
+      efficiencyScore: efficiencyData.reduce((sum, row) => sum + row.efficiencyScore, 0) / count,
+      capacityUtilization: efficiencyData.reduce((sum, row) => sum + row.capacityUtilization, 0) / count,
+      revenuePerHour: efficiencyData.reduce((sum, row) => sum + row.revenuePerHour, 0) / count,
+      avgClassFill: efficiencyData.reduce((sum, row) => sum + row.avgClassFill, 0) / count,
+      customerRetention: efficiencyData.reduce((sum, row) => sum + row.customerRetention, 0) / count,
+      timeOptimization: efficiencyData.reduce((sum, row) => sum + row.timeOptimization, 0) / count,
+      qualityIndex: efficiencyData.reduce((sum, row) => sum + row.qualityIndex, 0) / count,
+      growthMomentum: efficiencyData.reduce((sum, row) => sum + row.growthMomentum, 0) / count,
+      impactScore: efficiencyData.reduce((sum, row) => sum + row.impactScore, 0) / count,
+    };
+  }, [efficiencyData]);
+
   return (
     <ModernTableWrapper
       title="Trainer Efficiency & Productivity Analysis"
@@ -532,6 +560,20 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="retention-totals-row">
+                <td className="px-4 py-2 text-sm font-bold">TOTALS</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.efficiencyScore.toFixed(0)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.capacityUtilization.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totalsRow.revenuePerHour)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.avgClassFill.toFixed(1)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.customerRetention.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.timeOptimization.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.qualityIndex.toFixed(0)}</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.growthMomentum.toFixed(1)}%</td>
+                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.impactScore.toFixed(0)}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

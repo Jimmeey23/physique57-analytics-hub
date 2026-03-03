@@ -24,11 +24,6 @@ const iconMap = {
 export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanceMetricCardsProps> = ({ data }) => {
 
   const metrics = useMemo(() => {
-    console.log('📊 EnhancedClassAttendanceMetricCards received data:', {
-      totalSessions: data?.length || 0,
-      sampleLocations: [...new Set(data?.slice(0, 5).map(s => s.location) || [])]
-    });
-
     if (!data || data.length === 0) return null;
 
     // Get current date and calculate periods

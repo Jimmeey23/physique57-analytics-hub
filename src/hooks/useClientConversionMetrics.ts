@@ -221,9 +221,6 @@ export function useClientConversionMetrics(
       },
     ];
 
-    // Debug: log computed metrics and YoY values
-    // eslint-disable-next-line no-console
-    console.debug('useClientConversionMetrics -> metrics', metrics.map(m => ({ title: m.title, previous: (m as any).previousValue, yoyPrevious: (m as any).yoyPreviousValue, comparison: (m as any).comparison })));
     return { metrics };
   }, [data, historicalData, options?.dateRange?.start, options?.dateRange?.end]);
 }

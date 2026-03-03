@@ -2,9 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Search, Download, Filter, TrendingUp, TrendingDown, Percent, DollarSign, Eye } from 'lucide-react';
+import { Search, Download, TrendingUp, TrendingDown, Percent, Eye } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { SalesData } from '@/types/dashboard';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
@@ -87,10 +86,6 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
   const getSortIcon = (column: string) => {
     if (sortColumn !== column) return null;
     return sortDirection === 'asc' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />;
-  };
-  const getDiscountBadgeColor = (percentage: number) => {
-    if (percentage >= 25) return 'secondary';
-    return 'outline';
   };
   // Columns definition for AI analysis footer
   const footerColumns = [
@@ -211,7 +206,7 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
                     Customer {getSortIcon('customerName')}
                   </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort('cleanedProduct')} className="cursor-pointer bg-gradient-to-br from-gray-800 to-indigo-900 ">
+                <TableHead onClick={() => handleSort('cleanedProduct')} className="cursor-pointer">
                   <div className="flex items-center gap-2">
                     Product {getSortIcon('cleanedProduct')}
                   </div>
@@ -275,9 +270,9 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
                     </span>
                   </TableCell>
                   <TableCell className="text-right py-2 max-h-[35px]">
-                    <Badge variant={getDiscountBadgeColor(item.discountPercentage || 0)} className="text-xs h-6 px-2 font-medium w-16 justify-center">
+                    <span className="inline-flex justify-end text-sm font-semibold text-slate-700">
                       {formatPercentage(item.discountPercentage || 0)}
-                    </Badge>
+                    </span>
                   </TableCell>
                   <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
                     <span className="truncate block">{formatCurrency(item.paymentValue || 0)}</span>
@@ -298,7 +293,7 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={3} className="font-bold text-white">
-                  Summary ({formatNumber(summaryStats.totalTransactions)} transactions)
+                  TOTALS ({formatNumber(summaryStats.totalTransactions)} transactions)
                 </TableCell>
                 <TableCell className="text-right font-bold text-white">
                   {formatCurrency(summaryStats.totalMrp)}

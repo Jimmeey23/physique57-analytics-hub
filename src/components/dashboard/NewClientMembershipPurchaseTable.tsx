@@ -504,7 +504,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
 
   return (
     <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-indigo-800 via-indigo-900 to-indigo-800 text-white">
+      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
         <CardTitle className="flex items-center gap-2 flex-wrap">
           <ShoppingCart className="w-5 h-5" />
           New Client Membership Purchases
@@ -532,7 +532,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     size="sm"
                     variant={groupBy === 'detailed' ? 'default' : 'outline'}
                     onClick={() => setGroupBy('detailed')}
-                    className={groupBy === 'detailed' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+                    className={groupBy === 'detailed' ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
                   >
                     Detailed View
                   </Button>
@@ -540,7 +540,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     size="sm"
                     variant={groupBy === 'membership' ? 'default' : 'outline'}
                     onClick={() => setGroupBy('membership')}
-                    className={groupBy === 'membership' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+                    className={groupBy === 'membership' ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
                   >
                     By Membership
                   </Button>
@@ -548,7 +548,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     size="sm"
                     variant={groupBy === 'clientType' ? 'default' : 'outline'}
                     onClick={() => setGroupBy('clientType')}
-                    className={groupBy === 'clientType' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+                    className={groupBy === 'clientType' ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
                   >
                     By Client Type
                   </Button>
@@ -645,33 +645,33 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     </tr>
                   ))}
                   {/* Totals Row */}
-                  <tr className="bg-slate-100 font-bold border-t-2 border-slate-300" style={{ maxHeight: '35px' }}>
+                  <tr className="retention-totals-row font-bold border-t-2 border-slate-600" style={{ maxHeight: '35px' }}>
                     {groupBy !== 'clientType' && (
-                      <td className="py-2 px-3 text-sm text-slate-900 border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                      <td className="py-2 px-3 text-sm border-r border-slate-300" style={{ maxHeight: '35px' }}>
                         {totals.membershipType}
                       </td>
                     )}
                     {groupBy !== 'membership' && (
-                      <td className="py-2 px-3 text-sm text-slate-900 border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                      <td className="py-2 px-3 text-sm border-r border-slate-300" style={{ maxHeight: '35px' }}>
                         {totals.clientType}
                       </td>
                     )}
-                    <td className="py-2 px-3 text-sm text-center text-slate-900 border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-center border-r border-slate-300" style={{ maxHeight: '35px' }}>
                       {formatNumber(totals.units)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center text-slate-900 border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-center border-r border-slate-300" style={{ maxHeight: '35px' }}>
                       {formatNumber(totals.newClientsCount)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-right text-slate-900 font-semibold border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-right font-semibold border-r border-slate-300" style={{ maxHeight: '35px' }}>
                       {formatCurrency(totals.totalRevenue)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-right text-slate-900 border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-right border-r border-slate-300" style={{ maxHeight: '35px' }}>
                       {formatCurrency(totals.avgRevenue)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center text-slate-900 border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-center border-r border-slate-300" style={{ maxHeight: '35px' }}>
                       {totals.avgDaysTaken > 0 ? totals.avgDaysTaken.toFixed(1) : 'N/A'}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center text-slate-900" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-center" style={{ maxHeight: '35px' }}>
                       {totals.avgVisitsPostTrial.toFixed(1)}
                     </td>
                   </tr>
@@ -680,9 +680,9 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
             </div>
             
             {insights && (
-              <div className="border-t border-slate-200 p-6 bg-gradient-to-br from-slate-50 to-indigo-50">
+              <div className="border-t border-slate-200 p-6 bg-slate-50">
                 <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-indigo-600" />
+                  <TrendingUp className="w-4 h-4 text-slate-700" />
                   Key Insights
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -734,12 +734,12 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
 
       {/* Drill-Down Modal */}
       <Dialog open={!!drillDownData} onOpenChange={() => setDrillDownData(null)}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto border border-slate-200 bg-white shadow-2xl">
           {drillDownData && (
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-xl">
-                  <ShoppingCart className="w-6 h-6 text-indigo-600" />
+                  <ShoppingCart className="w-6 h-6 text-slate-700" />
                   {drillDownData.fieldLabel} - {drillDownData.membershipType}
                 </DialogTitle>
                 <DialogDescription>
@@ -750,64 +750,64 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
               <div className="space-y-6 mt-4">
                 {/* Summary Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-2 mb-2">
-                      <Users className="w-4 h-4 text-blue-600" />
-                      <p className="text-xs font-medium text-blue-800">Total Clients</p>
+                      <Users className="w-4 h-4 text-slate-700" />
+                      <p className="text-xs font-medium text-slate-700">Total Clients</p>
                     </div>
-                    <p className="text-2xl font-bold text-blue-900">{formatNumber(drillDownData.stats.newClientsCount)}</p>
-                    <p className="text-xs text-blue-700 mt-1">{formatNumber(drillDownData.stats.units)} units sold</p>
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(drillDownData.stats.newClientsCount)}</p>
+                    <p className="text-xs text-slate-600 mt-1">{formatNumber(drillDownData.stats.units)} units sold</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="w-4 h-4 text-green-600" />
-                      <p className="text-xs font-medium text-green-800">Total Value</p>
+                      <DollarSign className="w-4 h-4 text-slate-700" />
+                      <p className="text-xs font-medium text-slate-700">Total Value</p>
                     </div>
-                    <p className="text-2xl font-bold text-green-900">{formatCurrency(drillDownData.stats.totalRevenue)}</p>
-                    <p className="text-xs text-green-700 mt-1">{formatCurrency(drillDownData.stats.avgRevenue)} avg per client</p>
+                    <p className="text-2xl font-bold text-slate-900">{formatCurrency(drillDownData.stats.totalRevenue)}</p>
+                    <p className="text-xs text-slate-600 mt-1">{formatCurrency(drillDownData.stats.avgRevenue)} avg per client</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-purple-600" />
-                      <p className="text-xs font-medium text-purple-800">Conversion Time</p>
+                      <Calendar className="w-4 h-4 text-slate-700" />
+                      <p className="text-xs font-medium text-slate-700">Conversion Time</p>
                     </div>
-                    <p className="text-2xl font-bold text-purple-900">
+                    <p className="text-2xl font-bold text-slate-900">
                       {drillDownData.stats.avgDaysTaken > 0 ? `${drillDownData.stats.avgDaysTaken.toFixed(1)}` : 'N/A'}
                     </p>
-                    <p className="text-xs text-purple-700 mt-1">days average</p>
+                    <p className="text-xs text-slate-600 mt-1">days average</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-2 mb-2">
-                      <Activity className="w-4 h-4 text-orange-600" />
-                      <p className="text-xs font-medium text-orange-800">Conversion Rate</p>
+                      <Activity className="w-4 h-4 text-slate-700" />
+                      <p className="text-xs font-medium text-slate-700">Conversion Rate</p>
                     </div>
-                    <p className="text-2xl font-bold text-orange-900">{drillDownData.stats.avgVisitsPostTrial.toFixed(1)}</p>
-                    <p className="text-xs text-orange-700 mt-1">avg visits post-trial</p>
+                    <p className="text-2xl font-bold text-slate-900">{drillDownData.stats.avgVisitsPostTrial.toFixed(1)}</p>
+                    <p className="text-xs text-slate-600 mt-1">avg visits post-trial</p>
                   </div>
                 </div>
 
                 {/* Client Type Info */}
-                <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-lg border border-teal-200">
-                  <h4 className="text-sm font-semibold text-teal-900 mb-2 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-teal-600" />
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-slate-700" />
                     Client Segment
                   </h4>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg text-teal-800 font-bold">{drillDownData.stats.clientType}</span>
-                    <span className="text-sm text-teal-700">{drillDownData.clients.length} clients (100%)</span>
+                    <span className="text-lg text-slate-900 font-bold">{drillDownData.stats.clientType}</span>
+                    <span className="text-sm text-slate-600">{drillDownData.clients.length} clients (100%)</span>
                   </div>
-                  <p className="text-xs text-teal-700 mt-2">
+                  <p className="text-xs text-slate-600 mt-2">
                     All clients in this analysis belong to the same type segment for targeted insights.
                   </p>
                 </div>
 
                 {/* Contextual Analysis */}
-                <div className="bg-gradient-to-br from-slate-50 to-indigo-50 p-6 rounded-lg border border-slate-200">
+                <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                   <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-indigo-600" />
+                    <TrendingUp className="w-4 h-4 text-slate-700" />
                     Contextual Insights
                   </h4>
                   <div className="space-y-3 text-sm text-slate-700">

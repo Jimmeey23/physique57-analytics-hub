@@ -4,30 +4,40 @@ export const usePerformanceOptimization = () => {
   useEffect(() => {
     const disableLongTaskLogs = (import.meta as any)?.env?.VITE_DISABLE_LONGTASK_LOGS === 'true';
     const LONG_TASK_THRESHOLD = 200; // ms (raised from 100ms to reduce noise)
-    let lastLogTime = 0;
     // Warm up critical page bundles for faster navigation by dynamically importing
-    // the page modules instead of prefetching the route URLs (which triggers
-    // browser requests to those paths and can produce 404s on some servers).
-    const preloadPages = async () => {
-      const imports: Record<string, () => Promise<any>> = {
-        '/executive-summary': () => import('../pages/ExecutiveSummary'),
-        '/sales-analytics': () => import('../pages/SalesAnalytics'),
-        '/funnel-leads': () => import('../pages/FunnelLeads'),
-        '/client-retention': () => import('../pages/ClientRetention'),
-        '/trainer-performance': () => import('../pages/TrainerPerformance'),
-      };
+    // the page modules instead of prefetching route URLs.
+    const preloadPages = () => {
+      const imports: Array<() => Promise<any>> = [
+        () => import('../pages/ExecutiveSummary'),
+        () => import('../pages/SalesAnalytics'),
+        () => import('../pages/FunnelLeads'),
+        () => import('../pages/ClientRetention'),
+        () => import('../pages/TrainerPerformance'),
+      ];
 
-      // Fire-and-forget imports to warm the code-split chunks. We intentionally
-      // don't await all of them serially to avoid blocking the main thread.
-      Object.values(imports).forEach((fn) => {
+      // Skip speculative preloading on constrained connections.
+      const connection = (navigator as any)?.connection;
+      const isConstrainedConnection = Boolean(
+        connection?.saveData ||
+        connection?.effectiveType === 'slow-2g' ||
+        connection?.effectiveType === '2g'
+      );
+      if (isConstrainedConnection) return;
+
+      const warmChunk = (fn: () => Promise<any>) => {
         try {
           fn().catch(() => {
-            // Ignore any load errors -- warming bundles should be best-effort
+            // Ignore warmup failures; route navigation remains source of truth.
           });
-        } catch (e) {
-          // Defensive: ignore synchronous import errors
+        } catch {
+          // Ignore synchronous errors from dynamic imports.
         }
-      });
+      };
+
+      // Prioritize the most frequently visited analytics routes first.
+      imports.slice(0, 3).forEach(warmChunk);
+      // Defer lower-priority warmups to keep the main thread responsive.
+      setTimeout(() => imports.slice(3).forEach(warmChunk), 800);
     };
 
     // Preload critical resources on idle

@@ -1,6 +1,0 @@
-// Archived duplicate: footer.tsx.new
-// This is a temporary/backup copy of the Footer component. It has been archived to avoid duplicate
-// components being included in the build. If you need the working Footer, use `src/components/ui/footer.tsx`.
-
-export {};
-

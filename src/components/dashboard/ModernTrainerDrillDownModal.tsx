@@ -79,8 +79,6 @@ export function ModernTrainerDrillDownModal({
 
   // Process individual session data from trainerData.individualSessions
   const processedMetrics = useMemo(() => {
-    console.log('🔍 Modal trainerData:', trainerData);
-    
     if (!trainerData) {
       console.warn('⚠️ No trainer data provided');
       return {
@@ -96,11 +94,8 @@ export function ModernTrainerDrillDownModal({
 
     // Use individualSessions if available (from handleRowClick with sessions data), otherwise use the aggregated data
     const sessions = trainerData.individualSessions || [];
-    const hasDetailedData = trainerData.hasDetailedSessions ?? false;
-    console.log(`📊 Processing ${sessions.length} individual sessions ${hasDetailedData ? '(from sessions sheet)' : '(from payroll sheet)'}`);
     
     if (sessions.length === 0) {
-      console.log('📦 Using aggregated data as fallback');
       // Fallback to aggregated data
       const totals = {
         revenue: trainerData.totalRevenue || trainerData.totalPaid || 0,

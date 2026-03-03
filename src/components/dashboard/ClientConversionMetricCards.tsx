@@ -17,9 +17,6 @@ interface ClientConversionMetricCardsProps {
 
 const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCardsProps> = ({ data, historicalData, dateRange, onCardClick }) => {
   const { metrics } = useClientConversionMetrics(data, historicalData, { dateRange });
-  React.useEffect(() => {
-    console.debug('ClientConversion metrics:', metrics.slice(0, 6));
-  }, [metrics]);
 
   const [showDebug, setShowDebug] = React.useState(false);
   
@@ -81,17 +78,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
 
   const avgVisitsPostTrialPrev = React.useMemo(() => computeAvgForRange(prevPeriodData, 'visitsPostTrial'), [prevPeriodData]);
   const avgVisitsPostTrialYoY = React.useMemo(() => computeAvgForRange(prevYearData, 'visitsPostTrial'), [prevYearData]);
-  
-  React.useEffect(() => {
-    console.debug('YoY Debug:', {
-      prevYearDataLength: prevYearData.length,
-      avgConversionTimeYoY,
-      avgVisitsPostTrialYoY,
-      avgConversionTime,
-      avgVisitsPostTrial
-    });
-  }, [prevYearData, avgConversionTimeYoY, avgVisitsPostTrialYoY, avgConversionTime, avgVisitsPostTrial]);
-  
+
   const iconMap: Record<string, any> = {
     'New Members': UserPlus,
     'Converted Members': Award,

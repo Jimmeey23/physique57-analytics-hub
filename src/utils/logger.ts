@@ -15,6 +15,7 @@ interface LogEntry {
 }
 
 const isProd = import.meta.env.PROD;
+const isVerboseLoggingEnabled = !isProd && import.meta.env.VITE_APP_DEBUG === 'true';
 
 // Log history for debugging (keeps last 50 entries in production, 100 in dev)
 const logHistory: LogEntry[] = [];
@@ -28,12 +29,11 @@ const addToHistory = (entry: LogEntry) => {
 };
 
 const shouldLog = (level: LogLevel): boolean => {
-  if (isProd) {
-    // In production, only log errors and warnings
-    return level === 'warn' || level === 'error';
-  }
-  // In development, log all levels
-  return true;
+  // Always keep warnings/errors.
+  if (level === 'warn' || level === 'error') return true;
+
+  // Debug/info logs are opt-in to reduce runtime noise and overhead.
+  return isVerboseLoggingEnabled;
 };
 
 /**
@@ -45,9 +45,9 @@ export const createLogger = (source?: string) => ({
     const entry: LogEntry = { level: 'debug', message, data, timestamp: new Date(), source };
     addToHistory(entry);
     if (data !== undefined) {
-      console.log(`[${source || 'App'}] ${message}`, data);
+      console.debug(`[${source || 'App'}] ${message}`, data);
     } else {
-      console.log(`[${source || 'App'}] ${message}`);
+      console.debug(`[${source || 'App'}] ${message}`);
     }
   },
 

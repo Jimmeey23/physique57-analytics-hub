@@ -96,16 +96,6 @@ export function EnhancedDrillDownModal({
 
   // Process individual session data from trainerData.individualSessions
   const processedMetrics = useMemo(() => {
-    console.log('🎯 Modal Processing - TrainerData:', {
-      trainerData,
-      hasIndividualSessions: !!(trainerData?.individualSessions),
-      individualSessionsLength: trainerData?.individualSessions?.length || 0,
-      hasCheckins: !!(trainerData?.checkins),
-      checkinsLength: trainerData?.checkins?.length || 0,
-      dataSource: trainerData?.dataSource,
-      totalCombinedSessions: trainerData?.totalCombinedSessions
-    });
-
     if (!trainerData) {
       console.warn('⚠️ No trainer data provided to modal');
       return {
@@ -124,13 +114,6 @@ export function EnhancedDrillDownModal({
 
     const sessions = trainerData.individualSessions || [];
     const checkins = trainerData.checkins || [];
-    
-    console.log('📈 Sessions Analysis:', {
-      sessionsCount: sessions.length,
-      checkinsCount: checkins.length,
-      sampleSession: sessions[0],
-      sampleCheckin: checkins[0]
-    });
 
     if (sessions.length === 0) {
       console.warn('⚠️ No individual sessions found, using aggregate data');

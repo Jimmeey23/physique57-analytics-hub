@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Table, 
@@ -176,8 +175,8 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
   };
 
   const getPerformanceBadge = (percentage: number) => {
-    if (percentage >= 20) return { variant: 'secondary' as const, label: 'High' };
-    return { variant: 'outline' as const, label: 'Low' };
+    if (percentage >= 20) return { label: 'High' };
+    return { label: 'Low' };
   };
 
   return (
@@ -233,15 +232,15 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                         <span className="text-sm text-slate-600 truncate block">{item.category}</span>
                       </TableCell>
                       <TableCell className="text-center py-2 max-h-[35px]">
-                        <Badge variant="outline" className="text-xs h-6 px-2 w-16 justify-center">{formatNumber(item.transactions)}</Badge>
+                        <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.transactions)}</span>
                       </TableCell>
                       <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
                         <span className="truncate block">{formatCurrency(item.totalDiscount)}</span>
                       </TableCell>
                       <TableCell className="text-right py-2 max-h-[35px]">
-                        <Badge variant={badge.variant} className="text-xs h-6 px-2 w-20 justify-center">
+                        <span className="inline-flex text-sm font-semibold text-slate-700">
                           {formatPercentage(item.avgDiscountPercentage)}
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
                         <span className="truncate block">{formatCurrency(item.totalRevenue)}</span>
@@ -355,18 +354,18 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                     <TableRow key={index}>
                       <TableCell className="font-medium">{item.location}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="w-16 justify-center">{formatNumber(item.transactions)}</Badge>
+                        <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.transactions)}</span>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary" className="w-16 justify-center">{formatNumber(item.uniqueCustomers)}</Badge>
+                        <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.uniqueCustomers)}</span>
                       </TableCell>
                       <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.totalDiscount)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={badge.variant} className="w-20 justify-center">
+                        <span className="inline-flex text-sm font-semibold text-slate-700">
                           {formatPercentage(item.avgDiscountPercentage)}
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.avgDiscountPerTransaction)}
@@ -487,24 +486,26 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
                     <TableRow key={index}>
                       <TableCell className="font-medium">{item.staff}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline">{formatNumber(item.transactions)}</Badge>
+                        <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.transactions)}</span>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-red-600">
+                      <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.totalDiscount)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={badge.variant}>
+                        <span className="inline-flex text-sm font-semibold text-slate-700">
                           {formatPercentage(item.avgDiscountPercentage)}
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.discountRate)}
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-green-600">
+                      <TableCell className="text-right font-medium text-slate-700">
                         {formatCurrency(item.totalRevenue)}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={badge.variant}>{badge.label}</Badge>
+                        <span className="inline-flex text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-sm bg-slate-100 text-slate-700">
+                          {badge.label}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <Button

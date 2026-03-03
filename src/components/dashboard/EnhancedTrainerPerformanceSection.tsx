@@ -12,8 +12,8 @@ import { TrainerEfficiencyAnalysisTable } from './TrainerEfficiencyAnalysisTable
 import { MonthOnMonthTrainerTable } from './MonthOnMonthTrainerTable';
 import { ComprehensiveTrainerDrillDown } from './ComprehensiveTrainerDrillDown';
 import { TrainerFilterSection } from './TrainerFilterSection';
-import { TrainerMetricTabs } from './TrainerMetricTabs';
 import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
+import { DataScienceInsightsPanel } from './DataScienceInsightsPanel';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
@@ -225,7 +225,6 @@ export const EnhancedTrainerPerformanceSection = () => {
   const handleRowClick = (trainer: string, data: any) => {
     // Simply pass the data directly - the modal will handle processing
     // The data object already contains all the processed trainer information
-    console.log('🔍 Trainer clicked:', trainer, data);
     // Determine context strictly by source type
     const clickType = data?.type || 'generic';
     const effectiveLocation = data.location || (filters.location || selectedLocation);
@@ -432,7 +431,6 @@ export const EnhancedTrainerPerformanceSection = () => {
             'kenkere': 'Kenkere House'  // Match actual data: just 'Kenkere House'
           };
           const newLocation = locationMap[locationId] || 'All Locations';
-          console.log(`📍 Location tab clicked: ${locationId} → ${newLocation}`);
           setSelectedLocation(newLocation);
           
           // Clear the location filter in the filter section to avoid conflicts
@@ -463,7 +461,7 @@ export const EnhancedTrainerPerformanceSection = () => {
       </div>
 
       {/* Enhanced Metric Cards - matching Sales styling */}
-  <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
+      <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
         <EnhancedTrainerMetricCards 
           data={processedData} 
           onCardClick={(title, data) => {
@@ -477,6 +475,57 @@ export const EnhancedTrainerPerformanceSection = () => {
           }}
         />
       </div>
+
+      <DataScienceInsightsPanel
+        title="Trainer Data Science Toolkit"
+        description="Validate trainer distribution quality with robust outlier, trend, and concentration diagnostics."
+        data={processedDataNoMonth}
+        initiallyCollapsed={true}
+        metricOptions={[
+          {
+            key: 'totalPaid',
+            label: 'Revenue',
+            accessor: (row: any) => Number(row?.totalPaid || 0),
+          },
+          {
+            key: 'totalSessions',
+            label: 'Sessions',
+            accessor: (row: any) => Number(row?.totalSessions || 0),
+          },
+          {
+            key: 'totalCustomers',
+            label: 'Members',
+            accessor: (row: any) => Number(row?.totalCustomers || 0),
+          },
+          {
+            key: 'revenuePerSession',
+            label: 'Revenue per Session',
+            accessor: (row: any) => {
+              const sessions = Number(row?.totalSessions || 0);
+              const revenue = Number(row?.totalPaid || 0);
+              return sessions > 0 ? revenue / sessions : 0;
+            },
+          },
+          {
+            key: 'conversionRate',
+            label: 'Conversion Rate %',
+            accessor: (row: any) => Number(row?.conversionRate || 0),
+          },
+        ]}
+        dateAccessor={(row: any) => {
+          const key = String(row?.monthKey || row?.monthYear || '').trim();
+          if (!key) return null;
+
+          if (/^\d{4}-\d{2}$/.test(key)) {
+            const parsedIso = new Date(`${key}-01`);
+            return Number.isNaN(parsedIso.getTime()) ? null : parsedIso;
+          }
+
+          const normalized = key.replace('-', ' ');
+          const parsedLabel = new Date(`1 ${normalized}`);
+          return Number.isNaN(parsedLabel.getTime()) ? null : parsedLabel;
+        }}
+      />
 
       {/* Charts Section - Enhanced 3D Interactive */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

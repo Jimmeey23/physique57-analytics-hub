@@ -650,8 +650,6 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
                           );
                         });
                         
-                        console.log('Member data found:', memberData.length, 'items for', member);
-                        
                         onDrillDown({
                           type: 'member',
                           title: `Member: ${member.memberName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown'} (${memberData.length} cancellations)`,

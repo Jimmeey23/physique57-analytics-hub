@@ -530,19 +530,19 @@ export const MonthOnMonthTrainerTable = ({
             </TableHeader>
             <TableBody>
               {/* Totals Row */}
-              <TableRow className="bg-slate-100 font-bold h-9 max-h-9" style={{ height: '35px', maxHeight: '35px' }}>
-                <TableCell className="font-bold text-slate-900 sticky left-0 bg-slate-100 z-10 whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
-                  TOTAL
+              <TableRow className="retention-totals-row font-bold h-9 max-h-9" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableCell className="font-bold sticky left-0 z-10 whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
+                  TOTALS
                 </TableCell>
                 {processedData.months.map((month) => (
-                  <TableCell key={`total-${month}`} className="text-center font-bold text-slate-900 whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
+                  <TableCell key={`total-${month}`} className="text-center font-bold whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
                     {formatValue(monthlyTotals[month] || 0, selectedMetric)}
                   </TableCell>
                 ))}
                 <TableCell className="text-center">
-                  <Badge className={cn(
-                    "flex items-center gap-1 text-xs px-2 py-1",
-                    summaryStats.growth >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  <span className={cn(
+                    "inline-flex items-center gap-1 text-xs font-semibold",
+                    summaryStats.growth >= 0 ? 'text-emerald-100' : 'text-rose-100'
                   )}>
                     {summaryStats.growth >= 0 ? (
                       <TrendingUp className="w-3 h-3" />
@@ -550,9 +550,9 @@ export const MonthOnMonthTrainerTable = ({
                       <TrendingDown className="w-3 h-3" />
                     )}
                     {Math.abs(summaryStats.growth).toFixed(1)}%
-                  </Badge>
+                  </span>
                 </TableCell>
-                <TableCell className="text-center font-bold text-slate-900">
+                <TableCell className="text-center font-bold">
                   {formatValue(summaryStats.total, selectedMetric)}
                 </TableCell>
               </TableRow>
@@ -652,10 +652,10 @@ export const MonthOnMonthTrainerTable = ({
                         </TableCell>
                       ))}
                       <TableCell className="text-center">
-                        <Badge
+                        <span
                           className={cn(
-                            "flex items-center gap-1 w-fit mx-auto",
-                            growth >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            "inline-flex items-center gap-1 w-fit mx-auto text-xs font-semibold",
+                            growth >= 0 ? 'text-emerald-700' : 'text-rose-700'
                           )}
                         >
                           {growth >= 0 ? (
@@ -664,7 +664,7 @@ export const MonthOnMonthTrainerTable = ({
                             <TrendingDown className="w-3 h-3" />
                           )}
                           {Math.abs(growth).toFixed(1)}%
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell className="text-center font-bold text-slate-700">
                         {formatValue(trainerTotal, selectedMetric)}
