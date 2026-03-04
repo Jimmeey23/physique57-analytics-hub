@@ -6,7 +6,6 @@ import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { useNavigate } from 'react-router-dom';
 import { countConvertedLeads, calculateConversionRate } from '@/utils/leadConversions';
 
 // Import components
@@ -22,8 +21,6 @@ import { DataScienceInsightsPanel } from '@/components/dashboard/DataScienceInsi
 import { LazyFunnelDrillDownModal } from '@/components/lazy/LazyModals';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { LeadsFilterOptions } from '@/types/leads';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
-import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 export default function FunnelLeads() {
   const {
@@ -32,12 +29,11 @@ export default function FunnelLeads() {
     error
   } = useLeadsData();
   const { setLoading } = useGlobalLoading();
-  const navigate = useNavigate();
   
   useEffect(() => {
     setLoading(loading, 'Loading funnel and lead conversion data...');
   }, [loading, setLoading]);
-  const [activeLocation, setActiveLocation] = useState('kwality');
+  const [activeLocation, setActiveLocation] = useState('all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{
@@ -52,26 +48,12 @@ export default function FunnelLeads() {
     type: ''
   });
 
-  // Get previous month date range function
-  const getPreviousMonthRange = () => {
-    const now = new Date();
-    const firstDayPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    return {
-      start: formatDate(firstDayPreviousMonth),
-      end: formatDate(lastDayPreviousMonth)
-    };
-  };
   const [filters, setFilters] = useState<LeadsFilterOptions>(() => {
-    const previousMonth = getPreviousMonthRange();
     return {
-      dateRange: previousMonth,
+      dateRange: {
+        start: '',
+        end: '',
+      },
       location: [],
       source: [],
       stage: [],
@@ -85,32 +67,6 @@ export default function FunnelLeads() {
       maxLTV: undefined
     };
   });
-
-  // Define locations
-  const locations = useMemo(() => {
-    const predefinedLocations = [{
-      id: 'all',
-      name: 'All Locations',
-      fullName: 'All Locations'
-    }, {
-      id: 'kwality',
-      name: 'Kwality House',
-      fullName: 'Kwality House, Kemps Corner'
-    }, {
-      id: 'supreme',
-      name: 'Supreme HQ',
-      fullName: 'Supreme HQ, Bandra'
-    }, {
-      id: 'kenkere',
-      name: 'Kenkere House',
-      fullName: 'Kenkere House'
-    }, {
-      id: 'popup',
-      name: 'Pop-up',
-      fullName: 'Pop-up'
-    }];
-    return predefinedLocations;
-  }, []);
 
   // Filter data by location
   const locationFilteredData = useMemo(() => {
@@ -187,30 +143,26 @@ export default function FunnelLeads() {
     };
   }, [allLeadsData]);
 
-  // Calculate tab counts for location tabs using filtered data
-  const tabCounts = useMemo(() => {
-  const counts = { all: 0, kwality: 0, supreme: 0, kenkere: 0, popup: 0 };
-    
-    const dataToCount = filteredData || allLeadsData || [];
-    dataToCount.forEach(lead => {
-      counts.all++;
-      const leadCenter = lead.center?.toLowerCase() || '';
-      if (leadCenter.includes('kwality') || leadCenter.includes('kemps')) {
-        counts.kwality++;
-      } else if (leadCenter.includes('supreme') || leadCenter.includes('bandra')) {
-        counts.supreme++;
-      } else if (leadCenter.includes('kenkere')) {
-        counts.kenkere++;
-      } else if (leadCenter.includes('pop') || leadCenter.includes('popup') || leadCenter.includes('pop-up')) {
-        counts.popup++;
-      }
-    });
-    
-    return counts;
-  }, [filteredData, allLeadsData]);
-
   const handleFiltersChange = (newFilters: LeadsFilterOptions) => {
     setFilters(newFilters);
+  };
+
+  const resetAllFilters = () => {
+    setActiveLocation('all');
+    setFilters({
+      dateRange: { start: '', end: '' },
+      location: [],
+      source: [],
+      stage: [],
+      status: [],
+      associate: [],
+      channel: [],
+      trialStatus: [],
+      conversionStatus: [],
+      retentionStatus: [],
+      minLTV: undefined,
+      maxLTV: undefined,
+    });
   };
   const handleDrillDown = (title: string, data: any[], type: string) => {
     setDrillDownModal({
@@ -258,6 +210,29 @@ export default function FunnelLeads() {
 
         {/* Content Sections */}
         <div className="space-y-8">
+                  {!loading && allLeadsData.length === 0 && (
+                    <Card className="bg-slate-50 border border-slate-200 shadow-sm">
+                      <CardContent className="p-4">
+                        <p className="text-sm text-slate-700">
+                          No lead rows were returned from the data source. Please check the Leads sheet data and refresh.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {!loading && allLeadsData.length > 0 && filteredData.length === 0 && (
+                    <Card className="bg-amber-50/80 border border-amber-200 shadow-sm">
+                      <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <p className="text-sm text-amber-900">
+                          No leads match the current filters. Reset filters to repopulate metric cards, tables, and rankings.
+                        </p>
+                        <Button variant="outline" className="border-amber-300 text-amber-900 hover:bg-amber-100" onClick={resetAllFilters}>
+                          Reset Filters
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Collapsible Filters Section */}
                   <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
                     <CardContent className="p-6 w-full">

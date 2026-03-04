@@ -59,30 +59,52 @@ export function useClientConversionMetrics(
   options?: Options
 ) {
   return useMemo(() => {
-    // Use historicalData as the base dataset that contains data across multiple periods
-    // This should have location/trainer filters applied but NOT date filters
     const base = (historicalData && historicalData.length > 0 ? historicalData : data) as NewClientData[];
-    
-    const compareEnd = options?.dateRange?.end
-      ? (typeof options.dateRange.end === 'string' ? new Date(options.dateRange.end) : (options.dateRange.end as Date))
-      : new Date();
+
     const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
     const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-    const currentStart = monthStart(compareEnd);
-    const currentEnd = monthEnd(compareEnd);
-    const prevAnchor = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 15);
-    const prevStart = monthStart(prevAnchor);
-    const prevEnd = monthEnd(prevAnchor);
-    const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-    const periodLabel = `${fmt(currentStart)} vs ${fmt(prevStart)}`;
-
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    const normalizeInputDate = (value?: string | Date, end = false): Date | null => {
+      if (!value) return null;
+      const date = typeof value === 'string' ? new Date(value) : value;
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+      return end ? endOfDay(date) : startOfDay(date);
+    };
     const within = (d?: Date | null, start?: Date, end?: Date) => !!(d && start && end && d >= start && d <= end);
+    const formatPeriodDate = (d: Date) =>
+      d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
 
-    // Filter base data for current period by the selected date range
-    const current = base.filter((it) => within(parseDate((it as any).firstVisitDate), currentStart, currentEnd));
-    
-    // Filter base data for previous period by previous month date range
+    const explicitStart = normalizeInputDate(options?.dateRange?.start, false);
+    const explicitEnd = normalizeInputDate(options?.dateRange?.end, true);
+
+    const datedCurrent = (data || []).filter(item =>
+      within(parseDate((item as any).firstVisitDate), explicitStart || new Date(0), explicitEnd || new Date(8640000000000000)),
+    );
+    const currentDateCandidates = (datedCurrent.length > 0 ? datedCurrent : data)
+      .map(item => parseDate((item as any).firstVisitDate))
+      .filter((d): d is Date => Boolean(d));
+
+    const fallbackAnchor = currentDateCandidates.length
+      ? new Date(Math.max(...currentDateCandidates.map(d => d.getTime())))
+      : new Date();
+
+    const currentStart = explicitStart || monthStart(fallbackAnchor);
+    const currentEnd = explicitEnd || monthEnd(fallbackAnchor);
+
+    const current =
+      explicitStart && explicitEnd
+        ? datedCurrent
+        : (data || []).filter(item => within(parseDate((item as any).firstVisitDate), currentStart, currentEnd));
+
+    // Use the same window length for previous period comparison.
+    const windowMs = Math.max(1, currentEnd.getTime() - currentStart.getTime() + 1);
+    const prevEnd = new Date(currentStart.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - windowMs + 1);
+
     const previous = base.filter((it) => within(parseDate((it as any).firstVisitDate), prevStart, prevEnd));
+
+    const periodLabel = `${formatPeriodDate(currentStart)} to ${formatPeriodDate(currentEnd)} vs previous period`;
 
     const isNew = (c: NewClientData) => String(c.isNew || '').toLowerCase().includes('new');
     const isConverted = (c: NewClientData) => c.conversionStatus === 'Converted';
@@ -109,10 +131,11 @@ export function useClientConversionMetrics(
     const avgLTVCur = current.length > 0 ? totalLTVCur / current.length : 0;
     const avgLTVPrev = previous.length > 0 ? totalLTVPrev / previous.length : 0;
 
-    // Year-over-year: same month last year
-    const prevYearAnchor = new Date(currentStart.getFullYear() - 1, currentStart.getMonth(), 15);
-    const prevYearStart = monthStart(prevYearAnchor);
-    const prevYearEnd = monthEnd(prevYearAnchor);
+    // Year-over-year: same date window last year.
+    const prevYearStart = new Date(currentStart);
+    prevYearStart.setFullYear(prevYearStart.getFullYear() - 1);
+    const prevYearEnd = new Date(currentEnd);
+    prevYearEnd.setFullYear(prevYearEnd.getFullYear() - 1);
 
     const previousYear = base.filter((it) => within(parseDate((it as any).firstVisitDate), prevYearStart, prevYearEnd));
 

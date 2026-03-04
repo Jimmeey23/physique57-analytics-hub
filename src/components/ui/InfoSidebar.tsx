@@ -779,7 +779,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
         </button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes neonColorCycle {
           0%, 100% { color: #ffffff; }
           25% { color: #fef3c7; }

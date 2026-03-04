@@ -214,34 +214,39 @@ const AGGREGATE_OPTIONS: Array<{ value: Aggregate; label: string }> = [
 
 const THEME_CLASS: Record<
   PivotConfig['style']['theme'],
-  { header: string; subtotal: string; totals: string; cardTint: string }
+  { header: string; headerSolid: string; subtotal: string; totals: string; cardTint: string }
 > = {
   slate: {
     header: 'from-slate-900 via-slate-800 to-slate-900 text-white',
+    headerSolid: 'bg-slate-900 text-white',
     subtotal: 'bg-slate-100 text-slate-900',
     totals: 'bg-slate-900 text-white',
     cardTint: 'from-slate-50 to-slate-100/40',
   },
   indigo: {
     header: 'from-indigo-900 via-indigo-800 to-slate-900 text-white',
+    headerSolid: 'bg-indigo-900 text-white',
     subtotal: 'bg-indigo-50 text-indigo-900',
     totals: 'bg-indigo-900 text-white',
     cardTint: 'from-indigo-50 to-indigo-100/30',
   },
   emerald: {
     header: 'from-emerald-900 via-emerald-800 to-slate-900 text-white',
+    headerSolid: 'bg-emerald-900 text-white',
     subtotal: 'bg-emerald-50 text-emerald-900',
     totals: 'bg-emerald-900 text-white',
     cardTint: 'from-emerald-50 to-emerald-100/30',
   },
   rose: {
     header: 'from-rose-900 via-rose-800 to-slate-900 text-white',
+    headerSolid: 'bg-rose-900 text-white',
     subtotal: 'bg-rose-50 text-rose-900',
     totals: 'bg-rose-900 text-white',
     cardTint: 'from-rose-50 to-rose-100/30',
   },
   mono: {
     header: 'from-neutral-900 via-neutral-800 to-neutral-900 text-white',
+    headerSolid: 'bg-neutral-900 text-white',
     subtotal: 'bg-neutral-100 text-neutral-900',
     totals: 'bg-neutral-900 text-white',
     cardTint: 'from-neutral-50 to-neutral-100/30',
@@ -514,38 +519,53 @@ const makeDefaultConfig = (primarySource: string): PivotConfig => ({
   },
 });
 
+const normalizePivotConfig = (rawConfig: any, fallbackSource: string): PivotConfig => {
+  const base = makeDefaultConfig(fallbackSource);
+  const raw = rawConfig && typeof rawConfig === 'object' ? rawConfig : {};
+  return {
+    ...base,
+    ...raw,
+    relationship: {
+      ...base.relationship,
+      ...(raw.relationship || {}),
+    },
+    style: {
+      ...base.style,
+      ...(raw.style || {}),
+    },
+    processing: {
+      ...base.processing,
+      ...(raw.processing || {}),
+      rowMode:
+        raw.processing && ['top', 'bottom', 'all'].includes(raw.processing.rowMode)
+          ? raw.processing.rowMode
+          : base.processing.rowMode,
+      filterLogic:
+        raw.processing && ['and', 'or'].includes(raw.processing.filterLogic)
+          ? raw.processing.filterLogic
+          : base.processing.filterLogic,
+    },
+    valueFields: Array.isArray(raw.valueFields) ? raw.valueFields : [],
+    filterRules: Array.isArray(raw.filterRules) ? raw.filterRules : [],
+    rowFields: Array.isArray(raw.rowFields) ? raw.rowFields : [],
+    columnFields: Array.isArray(raw.columnFields) ? raw.columnFields : [],
+    columnWidths:
+      raw.columnWidths && typeof raw.columnWidths === 'object' && !Array.isArray(raw.columnWidths)
+        ? raw.columnWidths
+        : {},
+  };
+};
+
 const normalizeLoadedView = (view: any, fallbackSource: string): SavedView | null => {
   if (!view || typeof view !== 'object') return null;
-  const base = makeDefaultConfig(fallbackSource);
-  const cfg = view.config || {};
+  const cfg = normalizePivotConfig(view.config || {}, fallbackSource);
   return {
     id: typeof view.id === 'string' ? view.id : makeId('view'),
     name: typeof view.name === 'string' && view.name.trim() ? view.name : 'Data Lab View',
     createdAt: Number(view.createdAt) || Date.now(),
     updatedAt: Number(view.updatedAt) || Date.now(),
     config: {
-      ...base,
       ...cfg,
-      relationship: {
-        ...base.relationship,
-        ...(cfg.relationship || {}),
-      },
-      style: {
-        ...base.style,
-        ...(cfg.style || {}),
-      },
-      processing: {
-        ...base.processing,
-        ...(cfg.processing || {}),
-        rowMode:
-          cfg.processing && ['top', 'bottom', 'all'].includes(cfg.processing.rowMode)
-            ? cfg.processing.rowMode
-            : base.processing.rowMode,
-        filterLogic:
-          cfg.processing && ['and', 'or'].includes(cfg.processing.filterLogic)
-            ? cfg.processing.filterLogic
-            : base.processing.filterLogic,
-      },
       valueFields: Array.isArray(cfg.valueFields)
         ? cfg.valueFields.map((item: any) => ({
             id: item.id || makeId('value'),
@@ -613,26 +633,45 @@ const DatePickerCell: React.FC<{
   );
 };
 
-export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources }) => {
+export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources = {} as Record<string, RowData[]> }) => {
+  const safeDataSources = dataSources && typeof dataSources === 'object' ? dataSources : {};
   const sourceNames = useMemo(
     () =>
-      Object.keys(dataSources)
-        .filter(source => Array.isArray(dataSources[source]) && dataSources[source].length > 0)
+      Object.keys(safeDataSources)
+        .filter(source => Array.isArray(safeDataSources[source]) && safeDataSources[source].length > 0)
         .sort((a, b) => a.localeCompare(b)),
-    [dataSources],
+    [safeDataSources],
   );
 
   const [views, setViews] = useState<SavedView[]>([]);
   const [activeViewId, setActiveViewId] = useState('');
   const [fieldSearch, setFieldSearch] = useState('');
-  const [showSettingsSections, setShowSettingsSections] = useState(true);
+  const [workspacePage, setWorkspacePage] = useState<'workspace' | 'settings'>('workspace');
+  const [showTopControls, setShowTopControls] = useState(false);
   const [collapsedFieldGroupsByView, setCollapsedFieldGroupsByView] = useState<
+    Record<string, Record<string, boolean>>
+  >({});
+  const [collapsedPivotGroupsByView, setCollapsedPivotGroupsByView] = useState<
     Record<string, Record<string, boolean>>
   >({});
   const [dragField, setDragField] = useState<{
     field: string;
     from: 'available' | 'rows' | 'columns' | 'values';
   } | null>(null);
+  const stableViews = useMemo(
+    () =>
+      (Array.isArray(views) ? views : []).filter(
+        (view): view is SavedView =>
+          Boolean(
+            view &&
+            typeof view === 'object' &&
+            (view as SavedView).id &&
+            (view as SavedView).config &&
+            typeof (view as SavedView).config === 'object',
+          ),
+      ),
+    [views],
+  );
 
   useEffect(() => {
     if (!sourceNames.length) return;
@@ -677,9 +716,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
   }, [sourceNames]);
 
   useEffect(() => {
-    if (!views.length) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(views));
-  }, [views]);
+    if (!stableViews.length) return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stableViews));
+  }, [stableViews]);
 
   useEffect(() => {
     if (!activeViewId) return;
@@ -703,32 +742,80 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     window.localStorage.setItem(STORAGE_FIELD_GROUPS_KEY, JSON.stringify(collapsedFieldGroupsByView));
   }, [collapsedFieldGroupsByView]);
 
-  const activeView = useMemo(() => views.find(view => view.id === activeViewId) || null, [views, activeViewId]);
-  const config = activeView?.config || null;
+  const activeView = useMemo(
+    () => stableViews.find(view => view.id === activeViewId) || null,
+    [stableViews, activeViewId],
+  );
+  const config = useMemo(() => {
+    if (!activeView?.config) return null;
+    const fallbackSource = activeView.config.primarySource || sourceNames[0] || '';
+    const base = makeDefaultConfig(fallbackSource);
+    const raw = activeView.config as any;
+
+    return {
+      ...base,
+      ...raw,
+      relationship: {
+        ...base.relationship,
+        ...(raw.relationship || {}),
+      },
+      style: {
+        ...base.style,
+        ...(raw.style || {}),
+      },
+      processing: {
+        ...base.processing,
+        ...(raw.processing || {}),
+      },
+      rowFields: Array.isArray(raw.rowFields) ? raw.rowFields : [],
+      columnFields: Array.isArray(raw.columnFields) ? raw.columnFields : [],
+      valueFields: Array.isArray(raw.valueFields) ? raw.valueFields : [],
+      filterRules: Array.isArray(raw.filterRules) ? raw.filterRules : [],
+      columnWidths:
+        raw.columnWidths && typeof raw.columnWidths === 'object' && !Array.isArray(raw.columnWidths)
+          ? raw.columnWidths
+          : {},
+    } as PivotConfig;
+  }, [activeView, sourceNames]);
   const collapsedFieldGroups = useMemo(
     () => collapsedFieldGroupsByView[activeViewId] || {},
     [collapsedFieldGroupsByView, activeViewId],
   );
+  const collapsedPivotGroups = useMemo(
+    () => collapsedPivotGroupsByView[activeViewId] || {},
+    [collapsedPivotGroupsByView, activeViewId],
+  );
 
   const updateConfig = (updater: (current: PivotConfig) => PivotConfig) => {
     if (!activeViewId) return;
-    setViews(current =>
-      current.map(view =>
+    setViews(current => {
+      const currentViews = (Array.isArray(current) ? current : []).filter(
+        (view): view is SavedView => Boolean(view && typeof view === 'object' && (view as SavedView).id),
+      );
+      return currentViews.map(view =>
         view.id === activeViewId
-          ? {
-              ...view,
-              updatedAt: Date.now(),
-              config: updater(view.config),
-            }
+          ? (() => {
+              const fallbackSource = view.config?.primarySource || sourceNames[0] || '';
+              const normalizedCurrent = normalizePivotConfig(view.config, fallbackSource);
+              const updated = updater(normalizedCurrent);
+              return {
+                ...view,
+                updatedAt: Date.now(),
+                config: normalizePivotConfig(updated, fallbackSource),
+              };
+            })()
           : view,
-      ),
-    );
+      );
+    });
   };
 
   const updateViewName = (name: string) => {
     if (!activeViewId) return;
-    setViews(current =>
-      current.map(view =>
+    setViews(current => {
+      const currentViews = (Array.isArray(current) ? current : []).filter(
+        (view): view is SavedView => Boolean(view && typeof view === 'object' && (view as SavedView).id),
+      );
+      return currentViews.map(view =>
         view.id === activeViewId
           ? {
               ...view,
@@ -736,8 +823,8 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
               name,
             }
           : view,
-      ),
-    );
+      );
+    });
   };
 
   const createView = () => {
@@ -745,18 +832,19 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     const baseSource = config?.primarySource || sourceNames[0];
     const next: SavedView = {
       id: makeId('view'),
-      name: `Data Lab View ${views.length + 1}`,
+      name: `Data Lab View ${stableViews.length + 1}`,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       config: config ? { ...config, columnWidths: { ...(config.columnWidths || {}) } } : makeDefaultConfig(baseSource),
     };
-    setViews(current => [next, ...current]);
+    setViews(current => [next, ...(Array.isArray(current) ? current : [])]);
     setActiveViewId(next.id);
   };
 
   const deleteView = (id: string) => {
     setViews(current => {
-      const next = current.filter(view => view.id !== id);
+      const currentViews = Array.isArray(current) ? current : [];
+      const next = currentViews.filter(view => view && view.id !== id);
       if (!next.length && sourceNames.length) {
         const fallback: SavedView = {
           id: makeId('view'),
@@ -777,15 +865,15 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
 
   const primaryRows = useMemo(() => {
     if (!config) return [] as RowData[];
-    return (dataSources[config.primarySource] || []).map(row => ({ ...row }));
-  }, [config, dataSources]);
+    return (safeDataSources[config.primarySource] || []).map(row => ({ ...row }));
+  }, [config, safeDataSources]);
 
   const primaryFields = useMemo(() => inferFieldMeta(primaryRows), [primaryRows]);
 
   const secondaryRows = useMemo(() => {
     if (!config?.relationship.source) return [] as RowData[];
-    return (dataSources[config.relationship.source] || []).map(row => ({ ...row }));
-  }, [config, dataSources]);
+    return (safeDataSources[config.relationship.source] || []).map(row => ({ ...row }));
+  }, [config, safeDataSources]);
 
   const secondaryFields = useMemo(() => inferFieldMeta(secondaryRows), [secondaryRows]);
 
@@ -797,7 +885,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
       return primaryRows;
     }
 
-    const rightRows = dataSources[relation.source] || [];
+    const rightRows = safeDataSources[relation.source] || [];
     const lookup = new Map<string, RowData[]>();
     rightRows.forEach(row => {
       const key = normalizeValueKey(row?.[relation.rightKey]);
@@ -825,7 +913,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     });
 
     return joined;
-  }, [config, dataSources, primaryRows]);
+  }, [config, safeDataSources, primaryRows]);
 
   const relationshipDiagnostics = useMemo(() => {
     if (
@@ -837,7 +925,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
       return null;
     }
 
-    const rightRows = dataSources[config.relationship.source] || [];
+    const rightRows = safeDataSources[config.relationship.source] || [];
     const rightCounts = new Map<string, number>();
     rightRows.forEach(row => {
       const key = normalizeValueKey(row?.[config.relationship.rightKey]);
@@ -872,7 +960,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
       fanOut,
       confidence,
     };
-  }, [config, dataSources, primaryRows]);
+  }, [config, safeDataSources, primaryRows]);
 
   const mergedFields = useMemo(() => inferFieldMeta(mergedRows), [mergedRows]);
   const fieldMap = useMemo(() => new Map(mergedFields.map(field => [field.name, field])), [mergedFields]);
@@ -1033,7 +1121,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
 
   const filteredRows = useMemo(() => {
     if (!config) return [] as RowData[];
-    const validRules = config.filterRules.filter(rule => rule.field && !isEmpty(rule.value));
+    const validRules = (Array.isArray(config.filterRules) ? config.filterRules : []).filter(
+      rule => rule.field && !isEmpty(rule.value),
+    );
     if (!validRules.length) return mergedRows;
 
     return mergedRows.filter(row => {
@@ -1356,12 +1446,15 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config?.processing.sortMetricKey, metricColumns.length]);
 
+  const buildRowLabel = (row: MatrixRow) =>
+    (Array.isArray(row.labels) ? row.labels.filter(Boolean).join(' · ') : '') || row.id;
+
   const chartData = useMemo(() => {
     if (!metricColumns.length) return [] as Array<{ name: string; value: number }>;
     const metric = metricColumns[0];
     return pivot.rows
       .map(row => ({
-        name: row.labels.filter(Boolean).join(' · ') || row.id,
+        name: buildRowLabel(row),
         value: row.values[metric.key] || 0,
       }))
       .slice(0, 25);
@@ -1385,6 +1478,40 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
       concentration: total > 0 ? (sorted[0].value / total) * 100 : 0,
     };
   }, [chartData]);
+
+  const groupedPreviewRows = useMemo(() => {
+    if (!config || config.rowFields.length < 2 || !metricColumns.length) return [];
+    const grouped = new Map<
+      string,
+      {
+        rows: MatrixRow[];
+        totals: Record<string, number>;
+      }
+    >();
+
+    pivot.rowsForDisplay.forEach(row => {
+      const labels = Array.isArray(row.labels) ? row.labels : [];
+      const groupKey = String(row.groupLabel ?? labels[0] ?? 'Ungrouped');
+      const existing = grouped.get(groupKey) || {
+        rows: [],
+        totals: Object.fromEntries(metricColumns.map(metric => [metric.key, 0])),
+      };
+      existing.rows.push(row);
+      if (!row.isSubtotal) {
+        metricColumns.forEach(metric => {
+          existing.totals[metric.key] += row.values?.[metric.key] || 0;
+        });
+      }
+      grouped.set(groupKey, existing);
+    });
+
+    return Array.from(grouped.entries()).map(([groupKey, value]) => ({
+      groupKey,
+      rows: value.rows,
+      totals: value.totals,
+      rowCount: value.rows.filter(row => !row.isSubtotal).length,
+    }));
+  }, [config, metricColumns, pivot.rowsForDisplay]);
 
   const autoMapJoinKeys = () => {
     if (!config?.relationship.source) return;
@@ -1527,6 +1654,20 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     });
   };
 
+  const togglePivotGroupCollapsed = (groupKey: string) => {
+    if (!activeViewId) return;
+    setCollapsedPivotGroupsByView(current => {
+      const existing = current[activeViewId] || {};
+      return {
+        ...current,
+        [activeViewId]: {
+          ...existing,
+          [groupKey]: !existing[groupKey],
+        },
+      };
+    });
+  };
+
   if (!sourceNames.length || !config || !activeView) {
     return (
       <Card className="border border-slate-200 bg-white">
@@ -1560,9 +1701,34 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
       : config.style.sheetPreset === 'numbers'
         ? 'bg-gradient-to-r from-slate-100 to-indigo-50 text-slate-800'
         : 'bg-slate-100 text-slate-800';
+  const stickyHeaderCellClass = isClassicPreset
+    ? activeTheme.headerSolid
+    : config.style.sheetPreset === 'excel'
+      ? 'bg-emerald-50 text-emerald-900'
+      : config.style.sheetPreset === 'numbers'
+        ? 'bg-slate-100 text-slate-800'
+        : 'bg-slate-100 text-slate-800';
   const headerDividerClass = isClassicPreset ? 'border-white/20' : 'border-slate-200';
   const totalsDividerClass = isClassicPreset ? 'border-white/20' : 'border-slate-300';
-
+  const settingsSummaryClass =
+    'list-none cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 group-open:bg-slate-900 group-open:text-white group-open:border-slate-900';
+  const settingsSelectClass = 'w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs';
+  const settingsLabelClass = 'block space-y-1';
+  const settingsLabelTextClass = 'text-[11px] font-semibold uppercase tracking-wide text-slate-500';
+  const showSettingsSections = workspacePage === 'settings';
+  const previewRowBackgroundClass = 'bg-white';
+  const previewHoverClass = config.style.showRowHover ? 'hover:bg-blue-50 transition-colors' : '';
+  const savedTablesCount = stableViews.length;
+  const savedChartsCount = stableViews.filter(
+    view => Array.isArray(view.config?.valueFields) && view.config.valueFields.length > 0,
+  ).length;
+  const savedMetricCardsCount = stableViews.reduce(
+    (count, view) => count + (Array.isArray(view.config?.valueFields) ? view.config.valueFields.length : 0),
+    0,
+  );
+  const savedListsCount = stableViews.filter(
+    view => Array.isArray(view.config?.rowFields) && view.config.rowFields.length > 0,
+  ).length;
   const renderPreviewTable = (withChart: boolean) => (
     <Card className={`border border-slate-200 ${previewShellClass} shadow-sm ${config.style.rounded ? 'rounded-xl' : ''}`}>
       <CardHeader className="pb-3">
@@ -1598,8 +1764,8 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
         </div>
 
         <div className={`overflow-hidden border ${config.style.bordered ? 'border-slate-200' : 'border-transparent'} ${config.style.rounded ? 'rounded-lg' : ''}`}>
-          <div className="overflow-auto max-h-[560px]">
-            <table className="w-full border-collapse text-sm">
+          <div className="overflow-auto max-h-[560px] bg-white">
+            <table className="w-full border-collapse text-sm bg-white">
               <thead className={headerClass}>
                 <tr>
                   {(config.rowFields.length ? config.rowFields : ['Row']).map((field, index) => (
@@ -1609,7 +1775,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         `px-3 text-left text-xs font-semibold uppercase tracking-wide border-r ${headerDividerClass}`,
                         cellPadding,
                         wrapClass,
-                        config.style.freezeHeader ? 'sticky top-0 z-30' : '',
+                        config.style.freezeHeader ? `sticky top-0 z-30 ${stickyHeaderCellClass}` : '',
                         config.style.freezeFirstColumns ? 'sticky z-40' : '',
                       ].join(' ')}
                       style={{
@@ -1628,7 +1794,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         `px-3 text-right text-xs font-semibold uppercase tracking-wide border-r ${headerDividerClass}`,
                         cellPadding,
                         wrapClass,
-                        config.style.freezeHeader ? 'sticky top-0 z-30' : '',
+                        config.style.freezeHeader ? `sticky top-0 z-30 ${stickyHeaderCellClass}` : '',
                       ].join(' ')}
                       style={{
                         minWidth: config.columnWidths[`metric_${metric.key}`] || 150,
@@ -1652,21 +1818,137 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                     </td>
                   </tr>
                 )}
-                {!!metricColumns.length &&
-                  pivot.rowsForDisplay.map((row, index) => (
+                {!!metricColumns.length && config.rowFields.length > 1 && groupedPreviewRows.length > 0 &&
+                  groupedPreviewRows.map(group => {
+                    const isCollapsed = Boolean(collapsedPivotGroups[group.groupKey]);
+                    return (
+                      <React.Fragment key={`group-${group.groupKey}`}>
+                        <tr
+                          className={[
+                            'bg-slate-100/80',
+                            config.style.bordered ? 'border-b border-slate-200' : '',
+                          ].join(' ')}
+                        >
+                          {Array.from({ length: rowFieldCount }).map((_, labelIndex) => (
+                            <td
+                              key={`group-label-${group.groupKey}-${labelIndex}`}
+                              className={[
+                                'px-3 text-left font-semibold text-slate-900 border-r border-slate-200',
+                                cellPadding,
+                                wrapClass,
+                                config.style.freezeFirstColumns ? 'sticky z-20 bg-slate-100/80' : '',
+                              ].join(' ')}
+                              style={{
+                                minWidth: rowWidths[labelIndex] || 190,
+                                width: rowWidths[labelIndex] || 190,
+                                left: config.style.freezeFirstColumns ? rowStickyOffsets[labelIndex] : undefined,
+                              }}
+                            >
+                              {labelIndex === 0 ? (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-2"
+                                  onClick={() => togglePivotGroupCollapsed(group.groupKey)}
+                                >
+                                  <span className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white text-[11px]">
+                                    {isCollapsed ? '+' : '−'}
+                                  </span>
+                                  <span>{group.groupKey}</span>
+                                </button>
+                              ) : labelIndex === 1 ? (
+                                <span className="text-xs text-slate-600">{group.rowCount} row(s)</span>
+                              ) : (
+                                ''
+                              )}
+                            </td>
+                          ))}
+
+                          {metricColumns.map(metric => (
+                            <td
+                              key={`group-total-${group.groupKey}-${metric.key}`}
+                              className={[
+                                'px-3 text-right font-semibold text-slate-900 border-r border-slate-200 bg-slate-100/80',
+                                cellPadding,
+                                wrapClass,
+                              ].join(' ')}
+                              style={{
+                                minWidth: config.columnWidths[`metric_${metric.key}`] || 150,
+                                width: config.columnWidths[`metric_${metric.key}`] || 150,
+                              }}
+                            >
+                              {formatMetricForField(group.totals[metric.key] || 0, metric.valueField, config)}
+                            </td>
+                          ))}
+                        </tr>
+
+                        {!isCollapsed &&
+                          group.rows.map((row, index) => (
+                            <tr
+                              key={row.id}
+                              className={[
+                                row.isSubtotal ? activeTheme.subtotal : previewRowBackgroundClass,
+                                previewHoverClass,
+                                config.style.bordered ? 'border-b border-slate-200' : '',
+                              ].join(' ')}
+                            >
+                              {(Array.isArray(row.labels) ? row.labels : []).map((label, labelIndex) => (
+                                <td
+                                  key={`${row.id}-label-${labelIndex}`}
+                                  className={[
+                                    'px-3 text-left font-medium text-slate-800 border-r border-slate-200',
+                                    cellPadding,
+                                    wrapClass,
+                                    config.style.freezeFirstColumns ? 'sticky z-20' : '',
+                                    row.isSubtotal ? activeTheme.subtotal : previewRowBackgroundClass,
+                                  ].join(' ')}
+                                  style={{
+                                    minWidth: rowWidths[labelIndex] || 190,
+                                    width: rowWidths[labelIndex] || 190,
+                                    left: config.style.freezeFirstColumns ? rowStickyOffsets[labelIndex] : undefined,
+                                  }}
+                                >
+                                  {row.isSubtotal
+                                    ? label
+                                    : labelIndex === 0
+                                      ? ''
+                                      : labelIndex === 1
+                                        ? `↳ ${label}`
+                                        : label}
+                                </td>
+                              ))}
+
+                              {metricColumns.map(metric => (
+                                <td
+                                  key={`${row.id}-${metric.key}`}
+                                  className={[
+                                    `px-3 text-right font-medium text-slate-800 border-r border-slate-200 ${previewRowBackgroundClass}`,
+                                    cellPadding,
+                                    wrapClass,
+                                  ].join(' ')}
+                                  style={{
+                                    minWidth: config.columnWidths[`metric_${metric.key}`] || 150,
+                                    width: config.columnWidths[`metric_${metric.key}`] || 150,
+                                  }}
+                                >
+                                  {formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                      </React.Fragment>
+                    );
+                  })}
+                {!!metricColumns.length && !(config.rowFields.length > 1 && groupedPreviewRows.length > 0) &&
+                  pivot.rowsForDisplay.map(row => (
                     <tr
                       key={row.id}
                       className={[
-                        row.isSubtotal
-                          ? activeTheme.subtotal
-                          : config.style.zebra && index % 2 === 1
-                            ? 'bg-slate-50/80'
-                            : 'bg-white',
-                        config.style.showRowHover ? 'hover:bg-blue-50/40 transition-colors' : '',
+                        row.isSubtotal ? activeTheme.subtotal : previewRowBackgroundClass,
+                        previewHoverClass,
                         config.style.bordered ? 'border-b border-slate-200' : '',
                       ].join(' ')}
                     >
-                      {row.labels.map((label, labelIndex) => (
+                      {(Array.isArray(row.labels) ? row.labels : []).map((label, labelIndex) => (
                         <td
                           key={`${row.id}-label-${labelIndex}`}
                           className={[
@@ -1674,11 +1956,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                             cellPadding,
                             wrapClass,
                             config.style.freezeFirstColumns ? 'sticky z-20' : '',
-                            row.isSubtotal
-                              ? activeTheme.subtotal
-                              : config.style.zebra && index % 2 === 1
-                                ? 'bg-slate-50/80'
-                                : 'bg-white',
+                            row.isSubtotal ? activeTheme.subtotal : previewRowBackgroundClass,
                           ].join(' ')}
                           style={{
                             minWidth: rowWidths[labelIndex] || 190,
@@ -1694,7 +1972,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         <td
                           key={`${row.id}-${metric.key}`}
                           className={[
-                            'px-3 text-right font-medium text-slate-800 border-r border-slate-200',
+                            `px-3 text-right font-medium text-slate-800 border-r border-slate-200 ${previewRowBackgroundClass}`,
                             cellPadding,
                             wrapClass,
                           ].join(' ')}
@@ -1841,10 +2119,10 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
         <CardContent className="pt-0 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Saved Tables</div>
-            <div className="text-xs text-slate-500">{views.length} total</div>
+            <div className="text-xs text-slate-500">{stableViews.length} total</div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {views.map(view => (
+            {stableViews.map(view => (
               <button
                 key={view.id}
                 type="button"
@@ -1890,69 +2168,89 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
               transition={{ duration: 0.25 }}
               className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md ring-1 ring-slate-100"
             >
-              <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/70 px-3 py-2">
-                <span className="text-[11px] uppercase tracking-wide font-semibold text-slate-500">
-                  Workbook Ribbon
-                </span>
-                <select
-                  value={config.style.sheetPreset}
-                  onChange={event =>
-                    updateConfig(current => ({
-                      ...current,
-                      style: {
-                        ...current.style,
-                        sheetPreset: event.target.value as StyleConfig['sheetPreset'],
-                      },
-                    }))
-                  }
-                  className="h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                >
-                  <option value="airtable">Airtable</option>
-                  <option value="numbers">Apple Numbers</option>
-                  <option value="excel">Microsoft Excel</option>
-                  <option value="classic">Classic Data Lab</option>
-                </select>
-                <Button
-                  size="sm"
-                  variant={config.style.wrapCells ? 'default' : 'outline'}
-                  className="h-8 text-xs"
-                  onClick={() =>
-                    updateConfig(current => ({
-                      ...current,
-                      style: { ...current.style, wrapCells: !current.style.wrapCells },
-                    }))
-                  }
-                >
-                  Wrap Cells
-                </Button>
-                <Button
-                  size="sm"
-                  variant={config.style.freezeHeader ? 'default' : 'outline'}
-                  className="h-8 text-xs"
-                  onClick={() =>
-                    updateConfig(current => ({
-                      ...current,
-                      style: { ...current.style, freezeHeader: !current.style.freezeHeader },
-                    }))
-                  }
-                >
-                  Freeze Header
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs gap-1"
-                  onClick={() => setShowSettingsSections(previous => !previous)}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  {showSettingsSections ? 'Close Settings' : 'Open Settings'}
-                </Button>
+              <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/70">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                  <span className="text-[11px] uppercase tracking-wide font-semibold text-slate-500">
+                    Workbook Ribbon
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={() => setShowTopControls(previous => !previous)}
+                    >
+                      {showTopControls ? 'Hide Controls' : 'Show Controls'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs gap-1"
+                      onClick={() =>
+                        setWorkspacePage(current => (current === 'settings' ? 'workspace' : 'settings'))
+                      }
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      {showSettingsSections ? 'Back To Workspace' : 'Open Settings'}
+                    </Button>
+                  </div>
+                </div>
+
+                {showTopControls && (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 px-3 py-2">
+                    <select
+                      value={config.style.sheetPreset}
+                      onChange={event =>
+                        updateConfig(current => ({
+                          ...current,
+                          style: {
+                            ...current.style,
+                            sheetPreset: event.target.value as StyleConfig['sheetPreset'],
+                          },
+                        }))
+                      }
+                      className="h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
+                    >
+                      <option value="airtable">Airtable</option>
+                      <option value="numbers">Apple Numbers</option>
+                      <option value="excel">Microsoft Excel</option>
+                      <option value="classic">Classic Data Lab</option>
+                    </select>
+                    <Button
+                      size="sm"
+                      variant={config.style.wrapCells ? 'default' : 'outline'}
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        updateConfig(current => ({
+                          ...current,
+                          style: { ...current.style, wrapCells: !current.style.wrapCells },
+                        }))
+                      }
+                    >
+                      Wrap Cells
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={config.style.freezeHeader ? 'default' : 'outline'}
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        updateConfig(current => ({
+                          ...current,
+                          style: { ...current.style, freezeHeader: !current.style.freezeHeader },
+                        }))
+                      }
+                    >
+                      Freeze Header
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="overflow-x-auto p-4">
+              {showSettingsSections ? (
               <div
-                className="min-w-[1220px] grid gap-4"
-                style={{ gridTemplateColumns: 'minmax(320px, 24%) minmax(900px, 76%)' }}
+                className="min-w-[1480px] grid gap-4"
+                style={{ gridTemplateColumns: 'minmax(320px, 23%) minmax(860px, 54%) minmax(320px, 23%)' }}
               >
               <aside className="space-y-4 sticky top-4 self-start">
                 <Card className="border border-slate-200 bg-white shadow-sm">
@@ -2054,8 +2352,8 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                     </div>
 
                     {([
-                      { key: 'rows', title: 'Rows', fields: config.rowFields },
-                      { key: 'columns', title: 'Columns', fields: config.columnFields },
+                      { key: 'rows', configKey: 'rowFields', title: 'Rows', fields: config.rowFields },
+                      { key: 'columns', configKey: 'columnFields', title: 'Columns', fields: config.columnFields },
                     ] as const).map(zone => (
                       <div
                         key={zone.key}
@@ -2077,7 +2375,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                                 onClick={() =>
                                   updateConfig(current => ({
                                     ...current,
-                                    [zone.key]: (current as any)[zone.key].filter((value: string) => value !== field),
+                                    [zone.configKey]: (Array.isArray((current as any)[zone.configKey]) ? (current as any)[zone.configKey] : []).filter(
+                                      (value: string) => value !== field,
+                                    ),
                                   }))
                                 }
                               >
@@ -2122,9 +2422,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </Card>
 
                 {showSettingsSections ? (
-                <>
+                <div className="space-y-3">
                 <details open className="group">
-                <summary className="list-none cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 group-open:bg-slate-900 group-open:text-white group-open:border-slate-900">
+                <summary className={settingsSummaryClass}>
                   Sources & Relationships
                 </summary>
                 <div className="pt-2">
@@ -2135,9 +2435,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                       Source Mapping
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <label className="text-xs text-slate-700 space-y-1 block">
-                      <span className="font-medium">Primary Source</span>
+                  <CardContent className="space-y-4">
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Primary Source</span>
                       <select
                         value={config.primarySource}
                         onChange={event =>
@@ -2156,106 +2456,120 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                             filterRules: [],
                           }))
                         }
-                        className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
+                        className={settingsSelectClass}
                       >
                         {sourceNames.map(source => (
                           <option key={source} value={source}>
-                            {source} ({(dataSources[source] || []).length.toLocaleString('en-IN')})
+                            {source} ({(safeDataSources[source] || []).length.toLocaleString('en-IN')})
                           </option>
                         ))}
                       </select>
                     </label>
 
-                    <div className="rounded-md border border-slate-200 p-2 bg-slate-50/60 space-y-2">
+                    <div className="rounded-md border border-slate-200 p-3 bg-slate-50/60 space-y-3">
                       <div className="text-xs font-semibold text-slate-700 flex items-center gap-1">
                         <Link2 className="w-3 h-3" />
                         Relationship Mapping
                       </div>
-                      <select
-                        value={config.relationship.source}
-                        onChange={event =>
-                          updateConfig(current => ({
-                            ...current,
-                            relationship: {
-                              ...current.relationship,
-                              source: event.target.value,
-                              leftKey: '',
-                              rightKey: '',
-                            },
-                          }))
-                        }
-                        className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                      >
-                        <option value="">No Secondary Source</option>
-                        {sourceNames
-                          .filter(source => source !== config.primarySource)
-                          .map(source => (
-                            <option key={source} value={source}>
-                              {source}
-                            </option>
-                          ))}
-                      </select>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Secondary Source</span>
+                          <select
+                            value={config.relationship.source}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                relationship: {
+                                  ...current.relationship,
+                                  source: event.target.value,
+                                  leftKey: '',
+                                  rightKey: '',
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="">No Secondary Source</option>
+                            {sourceNames
+                              .filter(source => source !== config.primarySource)
+                              .map(source => (
+                                <option key={source} value={source}>
+                                  {source}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
 
-                      <select
-                        value={config.relationship.joinType}
-                        onChange={event =>
-                          updateConfig(current => ({
-                            ...current,
-                            relationship: {
-                              ...current.relationship,
-                              joinType: event.target.value as JoinType,
-                            },
-                          }))
-                        }
-                        className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                      >
-                        <option value="left">Left Join</option>
-                        <option value="inner">Inner Join</option>
-                      </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Join Type</span>
+                          <select
+                            value={config.relationship.joinType}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                relationship: {
+                                  ...current.relationship,
+                                  joinType: event.target.value as JoinType,
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="left">Left Join</option>
+                            <option value="inner">Inner Join</option>
+                          </select>
+                        </label>
 
-                      <select
-                        value={config.relationship.leftKey}
-                        onChange={event =>
-                          updateConfig(current => ({
-                            ...current,
-                            relationship: {
-                              ...current.relationship,
-                              leftKey: event.target.value,
-                            },
-                          }))
-                        }
-                        className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        disabled={!config.relationship.source}
-                      >
-                        <option value="">Primary Key</option>
-                        {primaryFields.map(field => (
-                          <option key={field.name} value={field.name}>
-                            {field.name}
-                          </option>
-                        ))}
-                      </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Primary Key</span>
+                          <select
+                            value={config.relationship.leftKey}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                relationship: {
+                                  ...current.relationship,
+                                  leftKey: event.target.value,
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                            disabled={!config.relationship.source}
+                          >
+                            <option value="">Select key</option>
+                            {primaryFields.map(field => (
+                              <option key={field.name} value={field.name}>
+                                {field.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
 
-                      <select
-                        value={config.relationship.rightKey}
-                        onChange={event =>
-                          updateConfig(current => ({
-                            ...current,
-                            relationship: {
-                              ...current.relationship,
-                              rightKey: event.target.value,
-                            },
-                          }))
-                        }
-                        className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        disabled={!config.relationship.source}
-                      >
-                        <option value="">Secondary Key</option>
-                        {secondaryFields.map(field => (
-                          <option key={field.name} value={field.name}>
-                            {field.name}
-                          </option>
-                        ))}
-                      </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Secondary Key</span>
+                          <select
+                            value={config.relationship.rightKey}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                relationship: {
+                                  ...current.relationship,
+                                  rightKey: event.target.value,
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                            disabled={!config.relationship.source}
+                          >
+                            <option value="">Select key</option>
+                            {secondaryFields.map(field => (
+                              <option key={field.name} value={field.name}>
+                                {field.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={autoMapJoinKeys}>
@@ -2313,7 +2627,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </details>
 
                 <details open className="group">
-                <summary className="list-none cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 group-open:bg-slate-900 group-open:text-white group-open:border-slate-900">
+                <summary className={settingsSummaryClass}>
                   Filters
                 </summary>
                 <div className="pt-2">
@@ -2324,25 +2638,28 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                       Advanced Filters
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <select
-                      value={config.processing.filterLogic}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          processing: {
-                            ...current.processing,
-                            filterLogic: event.target.value as ProcessingConfig['filterLogic'],
-                          },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="and">Filter Logic: Match ALL rules (AND)</option>
-                      <option value="or">Filter Logic: Match ANY rule (OR)</option>
-                    </select>
+                  <CardContent className="space-y-3">
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Filter Logic</span>
+                      <select
+                        value={config.processing.filterLogic}
+                        onChange={event =>
+                          updateConfig(current => ({
+                            ...current,
+                            processing: {
+                              ...current.processing,
+                              filterLogic: event.target.value as ProcessingConfig['filterLogic'],
+                            },
+                          }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="and">Match ALL rules (AND)</option>
+                        <option value="or">Match ANY rule (OR)</option>
+                      </select>
+                    </label>
 
-                    {config.filterRules.map(rule => {
+                    {config.filterRules.map((rule, ruleIndex) => {
                       const type = fieldType(rule.field);
                       const operators: Array<{ value: FilterOperator; label: string }> =
                         type === 'date'
@@ -2368,49 +2685,61 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
 
                       const options = rule.field ? (filterValueOptions[rule.field] || []) : [];
                       return (
-                        <div key={rule.id} className="rounded-md border border-slate-200 bg-slate-50/60 p-2 space-y-2">
-                          <select
-                            value={rule.field}
-                            onChange={event =>
-                              updateConfig(current => ({
-                                ...current,
-                                filterRules: current.filterRules.map(item =>
-                                  item.id === rule.id
-                                    ? { ...item, field: event.target.value, operator: 'equals', value: '', valueTo: '' }
-                                    : item,
-                                ),
-                              }))
-                            }
-                            className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                          >
-                            <option value="">Select field</option>
-                            {mergedFields.map(field => (
-                              <option key={field.name} value={field.name}>
-                                {field.name}
-                              </option>
-                            ))}
-                          </select>
+                        <div key={rule.id} className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-3">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Rule {ruleIndex + 1}
+                          </div>
 
-                          <select
-                            value={rule.operator}
-                            onChange={event =>
-                              updateConfig(current => ({
-                                ...current,
-                                filterRules: current.filterRules.map(item =>
-                                  item.id === rule.id
-                                    ? { ...item, operator: event.target.value as FilterOperator }
-                                    : item,
-                                ),
-                              }))
-                            }
-                            className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                          >
-                            {operators.map(option => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                              <span className={settingsLabelTextClass}>Field</span>
+                              <select
+                                value={rule.field}
+                                onChange={event =>
+                                  updateConfig(current => ({
+                                    ...current,
+                                    filterRules: current.filterRules.map(item =>
+                                      item.id === rule.id
+                                        ? { ...item, field: event.target.value, operator: 'equals', value: '', valueTo: '' }
+                                        : item,
+                                    ),
+                                  }))
+                                }
+                                className={settingsSelectClass}
+                              >
+                                <option value="">Select field</option>
+                                {mergedFields.map(field => (
+                                  <option key={field.name} value={field.name}>
+                                    {field.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                              <span className={settingsLabelTextClass}>Operator</span>
+                              <select
+                                value={rule.operator}
+                                onChange={event =>
+                                  updateConfig(current => ({
+                                    ...current,
+                                    filterRules: current.filterRules.map(item =>
+                                      item.id === rule.id
+                                        ? { ...item, operator: event.target.value as FilterOperator }
+                                        : item,
+                                    ),
+                                  }))
+                                }
+                                className={settingsSelectClass}
+                              >
+                                {operators.map(option => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
 
                           {type === 'date' ? (
                             <div className="space-y-2">
@@ -2453,7 +2782,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                                     ),
                                   }))
                                 }
-                                className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
+                                className={settingsSelectClass}
                               >
                                 <option value="">Select value</option>
                                 {options.map(option => (
@@ -2473,7 +2802,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                                       ),
                                     }))
                                   }
-                                  className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
+                                  className={settingsSelectClass}
                                 >
                                   <option value="">Select upper bound</option>
                                   {options.map(option => (
@@ -2531,7 +2860,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </details>
 
                 <details open className="group">
-                <summary className="list-none cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 group-open:bg-slate-900 group-open:text-white group-open:border-slate-900">
+                <summary className={settingsSummaryClass}>
                   Style & Processing
                 </summary>
                 <div className="pt-2">
@@ -2542,229 +2871,738 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                       Style & Processing
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <select
-                      value={config.chartType}
-                      onChange={event => updateConfig(current => ({ ...current, chartType: event.target.value as ChartType }))}
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="bar">Chart: Bar</option>
-                      <option value="line">Chart: Line</option>
-                      <option value="area">Chart: Area</option>
-                      <option value="pie">Chart: Pie</option>
-                    </select>
+                  <CardContent className="space-y-3">
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Display</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Chart Type</span>
+                          <select
+                            value={config.chartType}
+                            onChange={event =>
+                              updateConfig(current => ({ ...current, chartType: event.target.value as ChartType }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="bar">Bar</option>
+                            <option value="line">Line</option>
+                            <option value="area">Area</option>
+                            <option value="pie">Pie</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.style.theme}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          style: { ...current.style, theme: event.target.value as PivotConfig['style']['theme'] },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="slate">Theme: Slate</option>
-                      <option value="indigo">Theme: Indigo</option>
-                      <option value="emerald">Theme: Emerald</option>
-                      <option value="rose">Theme: Rose</option>
-                      <option value="mono">Theme: Mono</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Theme</span>
+                          <select
+                            value={config.style.theme}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                style: { ...current.style, theme: event.target.value as PivotConfig['style']['theme'] },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="slate">Slate</option>
+                            <option value="indigo">Indigo</option>
+                            <option value="emerald">Emerald</option>
+                            <option value="rose">Rose</option>
+                            <option value="mono">Mono</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.style.sheetPreset}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          style: {
-                            ...current.style,
-                            sheetPreset: event.target.value as StyleConfig['sheetPreset'],
-                          },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="airtable">Layout Preset: Airtable</option>
-                      <option value="numbers">Layout Preset: Apple Numbers</option>
-                      <option value="excel">Layout Preset: Microsoft Excel</option>
-                      <option value="classic">Layout Preset: Classic Data Lab</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Layout Preset</span>
+                          <select
+                            value={config.style.sheetPreset}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                style: {
+                                  ...current.style,
+                                  sheetPreset: event.target.value as StyleConfig['sheetPreset'],
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="airtable">Airtable</option>
+                            <option value="numbers">Apple Numbers</option>
+                            <option value="excel">Microsoft Excel</option>
+                            <option value="classic">Classic Data Lab</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.revenueScale}
-                      onChange={event =>
-                        updateConfig(current => ({ ...current, revenueScale: event.target.value as RevenueScale }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="auto">Revenue Scale: Auto</option>
-                      <option value="full">Revenue Scale: Full</option>
-                      <option value="K">Revenue Scale: K</option>
-                      <option value="L">Revenue Scale: L</option>
-                      <option value="Cr">Revenue Scale: Cr</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Date Bucket</span>
+                          <select
+                            value={config.dateBucket}
+                            onChange={event =>
+                              updateConfig(current => ({ ...current, dateBucket: event.target.value as DateBucket }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="none">None</option>
+                            <option value="day">Day</option>
+                            <option value="week">Week</option>
+                            <option value="month">Month</option>
+                            <option value="quarter">Quarter</option>
+                            <option value="year">Year</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={String(config.decimals)}
-                      onChange={event => updateConfig(current => ({ ...current, decimals: Number(event.target.value) }))}
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="0">Decimals: 0</option>
-                      <option value="1">Decimals: 1</option>
-                      <option value="2">Decimals: 2</option>
-                      <option value="3">Decimals: 3</option>
-                      <option value="4">Decimals: 4</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700 sm:col-span-2`}>
+                          <span className={settingsLabelTextClass}>Date Format</span>
+                          <select
+                            value={config.dateFormat}
+                            onChange={event =>
+                              updateConfig(current => ({ ...current, dateFormat: event.target.value as DateFormat }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="dd-mmm-yyyy">DD MMM YYYY</option>
+                            <option value="mmm-yyyy">MMM YYYY</option>
+                            <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                            <option value="dd-mm-yyyy">DD/MM/YYYY</option>
+                          </select>
+                        </label>
+                      </div>
+                    </div>
 
-                    <select
-                      value={String(config.processing.rowLimit)}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          processing: { ...current.processing, rowLimit: Number(event.target.value) },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="50">Row Limit: 50</option>
-                      <option value="100">Row Limit: 100</option>
-                      <option value="250">Row Limit: 250</option>
-                      <option value="500">Row Limit: 500</option>
-                      <option value="0">Row Limit: No Limit</option>
-                    </select>
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Processing</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Row Limit</span>
+                          <select
+                            value={String(config.processing.rowLimit)}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                processing: { ...current.processing, rowLimit: Number(event.target.value) },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="250">250</option>
+                            <option value="500">500</option>
+                            <option value="0">No Limit</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.processing.rowMode}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          processing: {
-                            ...current.processing,
-                            rowMode: event.target.value as ProcessingConfig['rowMode'],
-                          },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="top">Row Selection: Top rows by sort</option>
-                      <option value="bottom">Row Selection: Bottom rows by sort</option>
-                      <option value="all">Row Selection: All rows (ignore row limit)</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Row Selection</span>
+                          <select
+                            value={config.processing.rowMode}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                processing: {
+                                  ...current.processing,
+                                  rowMode: event.target.value as ProcessingConfig['rowMode'],
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="top">Top by sort</option>
+                            <option value="bottom">Bottom by sort</option>
+                            <option value="all">All rows</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.processing.sortMetricKey}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          processing: { ...current.processing, sortMetricKey: event.target.value },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="">Sort Metric</option>
-                      {metricColumns.map(metric => (
-                        <option key={metric.key} value={metric.key}>
-                          {metric.label}
-                        </option>
-                      ))}
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Sort Metric</span>
+                          <select
+                            value={config.processing.sortMetricKey}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                processing: { ...current.processing, sortMetricKey: event.target.value },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="">Select metric</option>
+                            {metricColumns.map(metric => (
+                              <option key={metric.key} value={metric.key}>
+                                {metric.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.processing.sortDirection}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          processing: {
-                            ...current.processing,
-                            sortDirection: event.target.value as 'asc' | 'desc',
-                          },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="desc">Sort: High to Low</option>
-                      <option value="asc">Sort: Low to High</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Sort Direction</span>
+                          <select
+                            value={config.processing.sortDirection}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                processing: {
+                                  ...current.processing,
+                                  sortDirection: event.target.value as 'asc' | 'desc',
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="desc">High to Low</option>
+                            <option value="asc">Low to High</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.dateBucket}
-                      onChange={event =>
-                        updateConfig(current => ({ ...current, dateBucket: event.target.value as DateBucket }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="none">Date Bucket: None</option>
-                      <option value="day">Date Bucket: Day</option>
-                      <option value="week">Date Bucket: Week</option>
-                      <option value="month">Date Bucket: Month</option>
-                      <option value="quarter">Date Bucket: Quarter</option>
-                      <option value="year">Date Bucket: Year</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700 sm:col-span-2`}>
+                          <span className={settingsLabelTextClass}>Null Handling</span>
+                          <select
+                            value={config.processing.nullHandling}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                processing: {
+                                  ...current.processing,
+                                  nullHandling: event.target.value as 'zero' | 'ignore',
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="zero">Treat nulls as 0</option>
+                            <option value="ignore">Ignore nulls</option>
+                          </select>
+                        </label>
+                      </div>
+                    </div>
 
-                    <select
-                      value={config.dateFormat}
-                      onChange={event =>
-                        updateConfig(current => ({ ...current, dateFormat: event.target.value as DateFormat }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="dd-mmm-yyyy">Date Format: DD MMM YYYY</option>
-                      <option value="mmm-yyyy">Date Format: MMM YYYY</option>
-                      <option value="yyyy-mm-dd">Date Format: YYYY-MM-DD</option>
-                      <option value="dd-mm-yyyy">Date Format: DD/MM/YYYY</option>
-                    </select>
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Formatting</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Revenue Scale</span>
+                          <select
+                            value={config.revenueScale}
+                            onChange={event =>
+                              updateConfig(current => ({ ...current, revenueScale: event.target.value as RevenueScale }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="auto">Auto</option>
+                            <option value="full">Full</option>
+                            <option value="K">K</option>
+                            <option value="L">L</option>
+                            <option value="Cr">Cr</option>
+                          </select>
+                        </label>
 
-                    <select
-                      value={config.processing.nullHandling}
-                      onChange={event =>
-                        updateConfig(current => ({
-                          ...current,
-                          processing: {
-                            ...current.processing,
-                            nullHandling: event.target.value as 'zero' | 'ignore',
-                          },
-                        }))
-                      }
-                      className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                    >
-                      <option value="zero">Null Handling: Treat as 0</option>
-                      <option value="ignore">Null Handling: Ignore</option>
-                    </select>
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Decimals</span>
+                          <select
+                            value={String(config.decimals)}
+                            onChange={event =>
+                              updateConfig(current => ({ ...current, decimals: Number(event.target.value) }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                          </select>
+                        </label>
+                      </div>
+                    </div>
 
-                    {([
-                      { key: 'showTotals', label: 'Show Totals' },
-                      { key: 'showSubtotals', label: 'Show Subtotals' },
-                    ] as const).map(toggle => (
-                      <label key={toggle.key} className="inline-flex items-center gap-2 text-xs text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={config.processing[toggle.key]}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              processing: {
-                                ...current.processing,
-                                [toggle.key]: event.target.checked,
-                              },
-                            }))
-                          }
-                        />
-                        {toggle.label}
-                      </label>
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Totals</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {([
+                          { key: 'showTotals', label: 'Show Totals' },
+                          { key: 'showSubtotals', label: 'Show Subtotals' },
+                        ] as const).map(toggle => (
+                          <label
+                            key={toggle.key}
+                            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={config.processing[toggle.key]}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  processing: {
+                                    ...current.processing,
+                                    [toggle.key]: event.target.checked,
+                                  },
+                                }))
+                              }
+                            />
+                            {toggle.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Table Appearance</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {([
+                          { key: 'wrapCells', label: 'Wrap Cells' },
+                          { key: 'dense', label: 'Dense Rows' },
+                          { key: 'zebra', label: 'Zebra Rows' },
+                          { key: 'bordered', label: 'Borders' },
+                          { key: 'rounded', label: 'Rounded Table' },
+                          { key: 'freezeHeader', label: 'Freeze Header Row' },
+                          { key: 'freezeFirstColumns', label: 'Freeze Row Fields' },
+                          { key: 'freezeTotalsRow', label: 'Freeze Totals Row' },
+                          { key: 'showRowHover', label: 'Row Hover Highlight' },
+                        ] as const).map(toggle => (
+                          <label
+                            key={toggle.key}
+                            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={config.style[toggle.key]}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  style: {
+                                    ...current.style,
+                                    [toggle.key]: event.target.checked,
+                                  },
+                                }))
+                              }
+                            />
+                            {toggle.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                </div>
+                </details>
+
+                <details open className="group">
+                <summary className={settingsSummaryClass}>
+                  Value Fields
+                </summary>
+                <div className="pt-2">
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-900">Value Field Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {config.valueFields.length === 0 && (
+                      <div className="rounded-md border border-dashed border-slate-300 bg-slate-50/70 px-3 py-2 text-xs text-slate-600">
+                        Drag a field into the Values zone to configure metric settings.
+                      </div>
+                    )}
+
+                    {config.valueFields.map((valueField, index) => (
+                      <div key={valueField.id} className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-3">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Metric {index + 1}
+                        </div>
+
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Metric Label</span>
+                          <Input
+                            value={valueField.label}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                valueFields: current.valueFields.map(item =>
+                                  item.id === valueField.id ? { ...item, label: event.target.value } : item,
+                                ),
+                              }))
+                            }
+                            className="h-8 bg-white"
+                          />
+                        </label>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                            <span className={settingsLabelTextClass}>Source Field</span>
+                            <select
+                              value={valueField.field}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  valueFields: current.valueFields.map(item =>
+                                    item.id === valueField.id ? { ...item, field: event.target.value } : item,
+                                  ),
+                                }))
+                              }
+                              className={settingsSelectClass}
+                            >
+                              {mergedFields.map(field => (
+                                <option key={field.name} value={field.name}>
+                                  {field.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                            <span className={settingsLabelTextClass}>Aggregate</span>
+                            <select
+                              value={valueField.aggregate}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  valueFields: current.valueFields.map(item =>
+                                    item.id === valueField.id
+                                      ? { ...item, aggregate: event.target.value as Aggregate }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              className={settingsSelectClass}
+                            >
+                              {AGGREGATE_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                            <span className={settingsLabelTextClass}>Format</span>
+                            <select
+                              value={valueField.format}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  valueFields: current.valueFields.map(item =>
+                                    item.id === valueField.id
+                                      ? { ...item, format: event.target.value as ValueFormat }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              className={settingsSelectClass}
+                            >
+                              <option value="number">Number</option>
+                              <option value="currency">Currency</option>
+                              <option value="percent">Percent</option>
+                            </select>
+                          </label>
+
+                          <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                            <span className={settingsLabelTextClass}>Post Process</span>
+                            <select
+                              value={valueField.postProcess}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  valueFields: current.valueFields.map(item =>
+                                    item.id === valueField.id
+                                      ? {
+                                          ...item,
+                                          postProcess:
+                                            event.target.value as ValueFieldConfig['postProcess'],
+                                        }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              className={settingsSelectClass}
+                            >
+                              <option value="none">None</option>
+                              <option value="share_of_total">Share of Total %</option>
+                              <option value="row_percent">Row Percent %</option>
+                              <option value="running_total">Running Total</option>
+                            </select>
+                          </label>
+
+                          <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                            <span className={settingsLabelTextClass}>Decimal Override</span>
+                            <select
+                              value={String(valueField.decimalsOverride)}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  valueFields: current.valueFields.map(item =>
+                                    item.id === valueField.id
+                                      ? {
+                                          ...item,
+                                          decimalsOverride: Number(event.target.value) as ValueFieldConfig['decimalsOverride'],
+                                        }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              className={settingsSelectClass}
+                            >
+                              <option value="-1">Inherit</option>
+                              <option value="0">0</option>
+                              <option value="1">1</option>
+                              <option value="2">2</option>
+                              <option value="3">3</option>
+                              <option value="4">4</option>
+                            </select>
+                          </label>
+
+                          <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                            <span className={settingsLabelTextClass}>Revenue Scale Override</span>
+                            <select
+                              value={valueField.revenueScaleOverride}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  valueFields: current.valueFields.map(item =>
+                                    item.id === valueField.id
+                                      ? {
+                                          ...item,
+                                          revenueScaleOverride: event.target.value as ValueFieldConfig['revenueScaleOverride'],
+                                        }
+                                      : item,
+                                  ),
+                                }))
+                              }
+                              className={settingsSelectClass}
+                            >
+                              <option value="inherit">Inherit</option>
+                              <option value="auto">Auto</option>
+                              <option value="full">Full</option>
+                              <option value="K">K</option>
+                              <option value="L">L</option>
+                              <option value="Cr">Cr</option>
+                            </select>
+                          </label>
+                        </div>
+
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Accent Color</span>
+                          <select
+                            value={valueField.accentColor}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                valueFields: current.valueFields.map(item =>
+                                  item.id === valueField.id
+                                    ? {
+                                        ...item,
+                                        accentColor: event.target.value,
+                                      }
+                                    : item,
+                                ),
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            {VALUE_COLOR_OPTIONS.map(color => (
+                              <option key={color} value={color}>
+                                {color}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
                     ))}
+                  </CardContent>
+                </Card>
+                </div>
+                </details>
 
+                <details open className="group">
+                <summary className={settingsSummaryClass}>
+                  Layout Controls
+                </summary>
+                <div className="pt-2">
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-900">Column Width Controls</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Row Field Widths</div>
+                      {(config.rowFields.length ? config.rowFields : ['Row']).map((field, index) => (
+                        <label key={`row-width-${field}-${index}`} className="block text-xs text-slate-700 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span>{field}: {Math.round(config.columnWidths[`row_${index}`] || 190)}px</span>
+                            <Input
+                              type="number"
+                              min={120}
+                              max={420}
+                              value={Math.round(config.columnWidths[`row_${index}`] || 190)}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  columnWidths: {
+                                    ...current.columnWidths,
+                                    [`row_${index}`]: Math.max(120, Math.min(420, Number(event.target.value) || 190)),
+                                  },
+                                }))
+                              }
+                              className="h-7 w-20 text-xs bg-white"
+                            />
+                          </div>
+                          <input
+                            type="range"
+                            min={120}
+                            max={420}
+                            value={config.columnWidths[`row_${index}`] || 190}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                columnWidths: {
+                                  ...current.columnWidths,
+                                  [`row_${index}`]: Number(event.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full"
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Metric Widths</div>
+                      {metricColumns.map(metric => (
+                        <label key={`metric-width-${metric.key}`} className="block text-xs text-slate-700 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate block" title={metric.label}>
+                              {metric.label}: {Math.round(config.columnWidths[`metric_${metric.key}`] || 150)}px
+                            </span>
+                            <Input
+                              type="number"
+                              min={100}
+                              max={360}
+                              value={Math.round(config.columnWidths[`metric_${metric.key}`] || 150)}
+                              onChange={event =>
+                                updateConfig(current => ({
+                                  ...current,
+                                  columnWidths: {
+                                    ...current.columnWidths,
+                                    [`metric_${metric.key}`]: Math.max(100, Math.min(360, Number(event.target.value) || 150)),
+                                  },
+                                }))
+                              }
+                              className="h-7 w-20 text-xs shrink-0 bg-white"
+                            />
+                          </div>
+                          <input
+                            type="range"
+                            min={100}
+                            max={360}
+                            value={config.columnWidths[`metric_${metric.key}`] || 150}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                columnWidths: {
+                                  ...current.columnWidths,
+                                  [`metric_${metric.key}`]: Number(event.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full"
+                          />
+                        </label>
+                      ))}
+                      {!metricColumns.length && (
+                        <div className="text-xs text-slate-500">Add value fields to enable metric width controls.</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+                </div>
+                </details>
+                </div>
+                ) : (
+                <Card className="border border-slate-200 bg-slate-50/70 shadow-sm">
+                  <CardContent className="p-3 text-xs text-slate-600">
+                    Settings sections are hidden. Use <span className="font-semibold text-slate-800">Open Settings</span> in the ribbon to edit source mapping, filters, styling, value fields, and layout controls.
+                  </CardContent>
+                </Card>
+                )}
+              </aside>
+
+              <main className="space-y-4">
+                {renderPreviewTable(true)}
+              </main>
+              <aside className="space-y-3 sticky top-4 self-start">
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-900">Quick Display Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Theme</span>
+                      <select
+                        value={config.style.theme}
+                        onChange={event =>
+                          updateConfig(current => ({
+                            ...current,
+                            style: { ...current.style, theme: event.target.value as PivotConfig['style']['theme'] },
+                          }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="slate">Slate</option>
+                        <option value="indigo">Indigo</option>
+                        <option value="emerald">Emerald</option>
+                        <option value="rose">Rose</option>
+                        <option value="mono">Mono</option>
+                      </select>
+                    </label>
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Chart Type</span>
+                      <select
+                        value={config.chartType}
+                        onChange={event =>
+                          updateConfig(current => ({ ...current, chartType: event.target.value as ChartType }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="bar">Bar</option>
+                        <option value="line">Line</option>
+                        <option value="area">Area</option>
+                        <option value="pie">Pie</option>
+                      </select>
+                    </label>
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Date Bucket</span>
+                      <select
+                        value={config.dateBucket}
+                        onChange={event =>
+                          updateConfig(current => ({ ...current, dateBucket: event.target.value as DateBucket }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="none">None</option>
+                        <option value="day">Day</option>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                        <option value="quarter">Quarter</option>
+                        <option value="year">Year</option>
+                      </select>
+                    </label>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-900">Freeze + Table Behavior</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
                     {([
-                      { key: 'wrapCells', label: 'Wrap Cells' },
-                      { key: 'dense', label: 'Dense Rows' },
-                      { key: 'zebra', label: 'Zebra Rows' },
-                      { key: 'bordered', label: 'Borders' },
-                      { key: 'rounded', label: 'Rounded Table' },
                       { key: 'freezeHeader', label: 'Freeze Header Row' },
                       { key: 'freezeFirstColumns', label: 'Freeze Row Fields' },
-                      { key: 'freezeTotalsRow', label: 'Freeze Totals Row' },
+                      { key: 'wrapCells', label: 'Wrap Cells' },
+                      { key: 'dense', label: 'Dense Rows' },
                       { key: 'showRowHover', label: 'Row Hover Highlight' },
                     ] as const).map(toggle => (
-                      <label key={toggle.key} className="inline-flex items-center gap-2 text-xs text-slate-700">
+                      <label
+                        key={`right-toggle-${toggle.key}`}
+                        className="inline-flex w-full items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700"
+                      >
                         <input
                           type="checkbox"
                           checked={config.style[toggle.key]}
@@ -2783,303 +3621,152 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                     ))}
                   </CardContent>
                 </Card>
-                </div>
-                </details>
 
-                <details open className="group">
-                <summary className="list-none cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 group-open:bg-slate-900 group-open:text-white group-open:border-slate-900">
-                  Value Fields
-                </summary>
-                <div className="pt-2">
                 <Card className="border border-slate-200 bg-white shadow-sm">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-slate-900">Value Field Settings</CardTitle>
+                    <CardTitle className="text-sm font-semibold text-slate-900">Metric + Layout Defaults</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {config.valueFields.map(valueField => (
-                      <div key={valueField.id} className="rounded-md border border-slate-200 bg-slate-50/60 p-2 space-y-2">
-                        <Input
-                          value={valueField.label}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              valueFields: current.valueFields.map(item =>
-                                item.id === valueField.id ? { ...item, label: event.target.value } : item,
-                              ),
-                            }))
-                          }
-                          className="h-8"
-                        />
-                        <select
-                          value={valueField.field}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              valueFields: current.valueFields.map(item =>
-                                item.id === valueField.id ? { ...item, field: event.target.value } : item,
-                              ),
-                            }))
-                          }
-                          className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        >
-                          {mergedFields.map(field => (
-                            <option key={field.name} value={field.name}>
-                              {field.name}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={valueField.aggregate}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              valueFields: current.valueFields.map(item =>
-                                item.id === valueField.id
-                                  ? { ...item, aggregate: event.target.value as Aggregate }
-                                  : item,
-                              ),
-                            }))
-                          }
-                          className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        >
-                          {AGGREGATE_OPTIONS.map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={valueField.format}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              valueFields: current.valueFields.map(item =>
-                                item.id === valueField.id
-                                  ? { ...item, format: event.target.value as ValueFormat }
-                                  : item,
-                              ),
-                            }))
-                          }
-                          className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        >
-                          <option value="number">Format: Number</option>
-                          <option value="currency">Format: Currency</option>
-                          <option value="percent">Format: Percent</option>
-                        </select>
-                        <select
-                          value={valueField.postProcess}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              valueFields: current.valueFields.map(item =>
-                                item.id === valueField.id
-                                  ? {
-                                      ...item,
-                                      postProcess:
-                                        event.target.value as ValueFieldConfig['postProcess'],
-                                    }
-                                  : item,
-                              ),
-                            }))
-                          }
-                          className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        >
-                          <option value="none">Post Process: None</option>
-                          <option value="share_of_total">Post Process: Share of Total %</option>
-                          <option value="row_percent">Post Process: Row Percent %</option>
-                          <option value="running_total">Post Process: Running Total</option>
-                        </select>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <select
-                            value={String(valueField.decimalsOverride)}
-                            onChange={event =>
-                              updateConfig(current => ({
-                                ...current,
-                                valueFields: current.valueFields.map(item =>
-                                  item.id === valueField.id
-                                    ? {
-                                        ...item,
-                                        decimalsOverride: Number(event.target.value) as ValueFieldConfig['decimalsOverride'],
-                                      }
-                                    : item,
-                                ),
-                              }))
-                            }
-                            className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                          >
-                            <option value="-1">Decimals: Inherit</option>
-                            <option value="0">Decimals: 0</option>
-                            <option value="1">Decimals: 1</option>
-                            <option value="2">Decimals: 2</option>
-                            <option value="3">Decimals: 3</option>
-                            <option value="4">Decimals: 4</option>
-                          </select>
-
-                          <select
-                            value={valueField.revenueScaleOverride}
-                            onChange={event =>
-                              updateConfig(current => ({
-                                ...current,
-                                valueFields: current.valueFields.map(item =>
-                                  item.id === valueField.id
-                                    ? {
-                                        ...item,
-                                        revenueScaleOverride: event.target.value as ValueFieldConfig['revenueScaleOverride'],
-                                      }
-                                    : item,
-                                ),
-                              }))
-                            }
-                            className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                          >
-                            <option value="inherit">Scale: Inherit</option>
-                            <option value="auto">Scale: Auto</option>
-                            <option value="full">Scale: Full</option>
-                            <option value="K">Scale: K</option>
-                            <option value="L">Scale: L</option>
-                            <option value="Cr">Scale: Cr</option>
-                          </select>
-                        </div>
-
-                        <select
-                          value={valueField.accentColor}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              valueFields: current.valueFields.map(item =>
-                                item.id === valueField.id
-                                  ? {
-                                      ...item,
-                                      accentColor: event.target.value,
-                                    }
-                                  : item,
-                              ),
-                            }))
-                          }
-                          className="w-full h-8 rounded-md border border-slate-200 px-2 bg-white text-xs"
-                        >
-                          {VALUE_COLOR_OPTIONS.map(color => (
-                            <option key={color} value={color}>
-                              Accent Color: {color}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Revenue Scale</span>
+                      <select
+                        value={config.revenueScale}
+                        onChange={event =>
+                          updateConfig(current => ({ ...current, revenueScale: event.target.value as RevenueScale }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="auto">Auto</option>
+                        <option value="full">Full</option>
+                        <option value="K">K</option>
+                        <option value="L">L</option>
+                        <option value="Cr">Cr</option>
+                      </select>
+                    </label>
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Decimals</span>
+                      <select
+                        value={String(config.decimals)}
+                        onChange={event =>
+                          updateConfig(current => ({ ...current, decimals: Number(event.target.value) }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                      </select>
+                    </label>
+                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                      <span className={settingsLabelTextClass}>Row Limit</span>
+                      <select
+                        value={String(config.processing.rowLimit)}
+                        onChange={event =>
+                          updateConfig(current => ({
+                            ...current,
+                            processing: { ...current.processing, rowLimit: Number(event.target.value) },
+                          }))
+                        }
+                        className={settingsSelectClass}
+                      >
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                        <option value="500">500</option>
+                        <option value="0">No Limit</option>
+                      </select>
+                    </label>
                   </CardContent>
                 </Card>
-                </div>
-                </details>
-
-                <details open className="group">
-                <summary className="list-none cursor-pointer rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 group-open:bg-slate-900 group-open:text-white group-open:border-slate-900">
-                  Layout Controls
-                </summary>
-                <div className="pt-2">
-                <Card className="border border-slate-200 bg-white shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-slate-900">Column Width Controls</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {(config.rowFields.length ? config.rowFields : ['Row']).map((field, index) => (
-                      <label key={`row-width-${field}-${index}`} className="block text-xs text-slate-700 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span>{field}: {Math.round(config.columnWidths[`row_${index}`] || 190)}px</span>
-                          <Input
-                            type="number"
-                            min={120}
-                            max={420}
-                            value={Math.round(config.columnWidths[`row_${index}`] || 190)}
-                            onChange={event =>
-                              updateConfig(current => ({
-                                ...current,
-                                columnWidths: {
-                                  ...current.columnWidths,
-                                  [`row_${index}`]: Math.max(120, Math.min(420, Number(event.target.value) || 190)),
-                                },
-                              }))
-                            }
-                            className="h-7 w-20 text-xs"
-                          />
-                        </div>
-                        <input
-                          type="range"
-                          min={120}
-                          max={420}
-                          value={config.columnWidths[`row_${index}`] || 190}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              columnWidths: {
-                                ...current.columnWidths,
-                                [`row_${index}`]: Number(event.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full"
-                        />
-                      </label>
-                    ))}
-                    {metricColumns.map(metric => (
-                      <label key={`metric-width-${metric.key}`} className="block text-xs text-slate-700 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate block" title={metric.label}>
-                            {metric.label}: {Math.round(config.columnWidths[`metric_${metric.key}`] || 150)}px
-                          </span>
-                          <Input
-                            type="number"
-                            min={100}
-                            max={360}
-                            value={Math.round(config.columnWidths[`metric_${metric.key}`] || 150)}
-                            onChange={event =>
-                              updateConfig(current => ({
-                                ...current,
-                                columnWidths: {
-                                  ...current.columnWidths,
-                                  [`metric_${metric.key}`]: Math.max(100, Math.min(360, Number(event.target.value) || 150)),
-                                },
-                              }))
-                            }
-                            className="h-7 w-20 text-xs shrink-0"
-                          />
-                        </div>
-                        <input
-                          type="range"
-                          min={100}
-                          max={360}
-                          value={config.columnWidths[`metric_${metric.key}`] || 150}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              columnWidths: {
-                                ...current.columnWidths,
-                                [`metric_${metric.key}`]: Number(event.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full"
-                        />
-                      </label>
-                    ))}
-                  </CardContent>
-                </Card>
-                </div>
-                </details>
-                </>
-                ) : (
-                <Card className="border border-slate-200 bg-slate-50/70 shadow-sm">
-                  <CardContent className="p-3 text-xs text-slate-600">
-                    Settings sections are hidden. Use <span className="font-semibold text-slate-800">Open Settings</span> in the ribbon to edit source mapping, filters, styling, value fields, and layout controls.
-                  </CardContent>
-                </Card>
-                )}
               </aside>
-
-              <main className="space-y-4">
-                {renderPreviewTable(true)}
-              </main>
               </div>
+              ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <Card className="border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="p-3">
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">Saved Tables</div>
+                      <div className="text-xl font-semibold text-slate-900">{savedTablesCount}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="p-3">
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">Saved Charts</div>
+                      <div className="text-xl font-semibold text-slate-900">{savedChartsCount}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="p-3">
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">Metric Cards</div>
+                      <div className="text-xl font-semibold text-slate-900">{savedMetricCardsCount}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="p-3">
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">Lists</div>
+                      <div className="text-xl font-semibold text-slate-900">{savedListsCount}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4">
+                  <Card className="border border-slate-200 bg-white shadow-sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-semibold text-slate-900">Saved Assets</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {stableViews.map(view => {
+                        const viewValueFields = Array.isArray(view.config?.valueFields) ? view.config.valueFields : [];
+                        const viewRowFields = Array.isArray(view.config?.rowFields) ? view.config.rowFields : [];
+                        const viewChartType = view.config?.chartType || 'bar';
+                        return (
+                          <button
+                            key={`saved-asset-${view.id}`}
+                            type="button"
+                            onClick={() => setActiveViewId(view.id)}
+                            className={[
+                              'w-full rounded-md border px-2.5 py-2 text-left transition',
+                              view.id === activeViewId
+                                ? 'border-slate-900 bg-slate-900 text-white'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                            ].join(' ')}
+                          >
+                            <div className="font-semibold text-xs">{view.name}</div>
+                            <div className="mt-1 text-[11px] opacity-80">
+                              Table • {viewChartType} chart • {viewValueFields.length} metric card(s) • {Math.max(viewRowFields.length, 1)} list level(s)
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border border-slate-200 bg-white shadow-sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-semibold text-slate-900">List Preview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {pivot.rows.slice(0, 8).map(row => (
+                        <div key={`list-row-${row.id}`} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+                          <div className="text-xs font-medium text-slate-800 truncate">
+                            {buildRowLabel(row)}
+                          </div>
+                        </div>
+                      ))}
+                      {pivot.rows.length === 0 && (
+                        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-xs text-slate-500">
+                          No list rows yet. Add row/value fields in Settings.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {renderPreviewTable(true)}
+              </div>
+              )}
               </div>
             </motion.div>
       </div>
