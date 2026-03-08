@@ -3,6 +3,12 @@ import autoTable from 'jspdf-autotable';
 import { overviewModules, overviewModulesById } from '@/components/dashboard/overview/registry';
 import { buildOverviewModuleContent } from '@/components/dashboard/overview/moduleBuilders';
 import {
+  asOverviewCharts,
+  asOverviewTables,
+  getDataLabAssetsForModule,
+  type DataLabDashboardCard,
+} from '@/services/dataLabDashboardBridge';
+import {
   filterByOverviewFilters,
   formatOverviewValue,
   getOverviewLocationLabelById,
@@ -35,6 +41,9 @@ interface OverviewReportSection {
   moduleId: OverviewModuleId;
   moduleContent: OverviewModuleContent;
   summaries: string[];
+  customCards: DataLabDashboardCard[];
+  customCharts: OverviewChartDefinition[];
+  customTables: OverviewTableDefinition[];
 }
 
 interface DashboardOverviewExportOptions {
@@ -47,6 +56,12 @@ type AccentPalette = {
   primary: [number, number, number];
   soft: [number, number, number];
   border: [number, number, number];
+};
+
+type PdfMetricCardItem = {
+  title: string;
+  value: string;
+  description: string;
 };
 
 const MODULE_POPOVER_CONTEXT: Record<OverviewModuleId, string> = {
@@ -136,6 +151,31 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\
 
 const BRAND_LOGO_PATH = '/physique57-logo.png';
 const COVER_IMAGE_PATH = '/images/013-10210-Physique-57-by-Atelier-Birjis-5.png';
+const EXTERNAL_BRAND_IMAGE_URLS = [
+  'https://i.postimg.cc/8k9M7m5c/IMG-6314.png',
+  'https://i.postimg.cc/nVgBXGzz/IMG-6315.png',
+  'https://i.postimg.cc/v8kf4tBZ/IMG-6316.png',
+  'https://i.postimg.cc/tRwWsNTC/IMG-6317.png',
+  'https://i.postimg.cc/8k9M7m5T/IMG-6318.png',
+  'https://i.postimg.cc/VspnJW61/IMG-6319.png',
+  'https://i.postimg.cc/7Pd05n6x/IMG-6320.png',
+  'https://i.postimg.cc/G3VG4x2d/IMG-6321.png',
+  'https://i.postimg.cc/XNmdrkJS/IMG-6322.png',
+  'https://i.postimg.cc/wxZL1QBC/IMG-6324.png',
+  'https://i.postimg.cc/tJKx8pfv/IMG-6326.png',
+  'https://i.postimg.cc/1R2w8rtx/IMG-6327.png',
+  'https://i.postimg.cc/0jTwhP3J/IMG-6329.png',
+  'https://i.postimg.cc/gjCZ1m5R/IMG-6330.png',
+  'https://i.postimg.cc/9067sCSw/IMG-6331.png',
+  'https://i.postimg.cc/yxMZ2s5R/IMG-6332.png',
+  'https://i.postimg.cc/GmXDv4nW/IMG-6336.png',
+  'https://i.postimg.cc/x16mLXVB/IMG-6337.png',
+  'https://i.postimg.cc/zGxhTyYM/IMG-6338.png',
+  'https://i.postimg.cc/HkY5JQRz/IMG-6339.png',
+  'https://i.postimg.cc/13vFD816/IMG-6340.png',
+  'https://i.postimg.cc/6pWR7dgz/IMG-6341.png',
+  'https://i.postimg.cc/NjsTy1Sp/IMG-6342.png',
+];
 
 const collapseSpacedRuns = (value: string) =>
   value
@@ -180,6 +220,26 @@ const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
     console.warn(`Unable to load image asset: ${src}`, error);
     return null;
   }
+};
+
+const loadBrandImagePool = async (limit = 8): Promise<string[]> => {
+  const uniqueUrls = Array.from(new Set(EXTERNAL_BRAND_IMAGE_URLS)).slice(0, limit);
+  const loaded = await Promise.all(uniqueUrls.map((url) => loadImageAsDataUrl(url)));
+  return loaded.filter((item): item is string => Boolean(item));
+};
+
+const estimateNarrativeBlockHeight = (pdf: jsPDF, summaries: string[]) => {
+  const summaryText = toPdfSafeText(summaries.join(' '));
+  const summaryLines = pdf.splitTextToSize(summaryText, CONTENT_WIDTH_MM - 10);
+  return Math.max(18, summaryLines.length * 3.5 + 10) + 4;
+};
+
+const estimateMetricGridHeight = (cardsCount: number) => {
+  if (!cardsCount) return 0;
+  const cardsPerRow = 4;
+  const gap = 4;
+  const boxHeight = 22;
+  return Math.ceil(cardsCount / cardsPerRow) * (boxHeight + gap);
 };
 
 const normaliseSummaryText = (value: string) =>
@@ -346,13 +406,13 @@ const buildRecommendations = (sections: OverviewReportSection[]) =>
     )
     .slice(0, 6);
 
-const drawMetricGrid = (pdf: jsPDF, startY: number, moduleContent: OverviewModuleContent, palette: AccentPalette) => {
+const drawMetricGrid = (pdf: jsPDF, startY: number, cards: PdfMetricCardItem[], palette: AccentPalette) => {
   const cardsPerRow = 4;
   const gap = 4;
   const boxWidth = (CONTENT_WIDTH_MM - gap * (cardsPerRow - 1)) / cardsPerRow;
-  const boxHeight = 22;
+  const boxHeight = 24;
 
-  moduleContent.cards.forEach((card, index) => {
+  cards.forEach((card, index) => {
     const column = index % cardsPerRow;
     const row = Math.floor(index / cardsPerRow);
     const x = PAGE_MARGIN + column * (boxWidth + gap);
@@ -369,19 +429,19 @@ const drawMetricGrid = (pdf: jsPDF, startY: number, moduleContent: OverviewModul
     pdf.setFont('helvetica', 'bold');
     pdf.text(toPdfSafeText(card.title).toUpperCase(), x + 2.5, y + 5.5);
 
-    pdf.setFontSize(11);
+    pdf.setFontSize(10.6);
     pdf.setTextColor(15, 23, 42);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(toPdfSafeText(card.value), x + 2.5, y + 12.5);
+    pdf.text(splitPdfSafeText(pdf, card.value, boxWidth - 5).slice(0, 1), x + 2.5, y + 12.2);
 
     pdf.setFontSize(6.6);
     pdf.setTextColor(71, 85, 105);
     pdf.setFont('helvetica', 'normal');
     const descriptionLines = splitPdfSafeText(pdf, card.description, boxWidth - 5);
-    pdf.text(descriptionLines.slice(0, 2), x + 2.5, y + 17);
+    pdf.text(descriptionLines.slice(0, 3), x + 2.5, y + 16.8);
   });
 
-  return startY + Math.ceil(moduleContent.cards.length / cardsPerRow) * (boxHeight + gap);
+  return startY + Math.ceil(cards.length / cardsPerRow) * (boxHeight + gap);
 };
 
 const drawRankingColumn = (
@@ -541,18 +601,20 @@ const drawNarrativeBlock = (pdf: jsPDF, startY: number, summaries: string[], pal
 
 const drawSectionHeader = (pdf: jsPDF, startY: number, title: string, subtitle: string, palette: AccentPalette) => {
   pdf.setFillColor(palette.primary[0], palette.primary[1], palette.primary[2]);
-  pdf.roundedRect(PAGE_MARGIN, startY, CONTENT_WIDTH_MM, 16, 3, 3, 'F');
+  pdf.roundedRect(PAGE_MARGIN, startY, CONTENT_WIDTH_MM, 18, 3, 3, 'F');
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(PAGE_MARGIN + 2, startY + 13.2, CONTENT_WIDTH_MM - 4, 0.6, 0.2, 0.2, 'F');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(15);
   pdf.setTextColor(255, 255, 255);
-  pdf.text(toPdfSafeText(title), PAGE_MARGIN + 4, startY + 6.5);
+  pdf.text(toPdfSafeText(title), PAGE_MARGIN + 4, startY + 7);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7.5);
-  pdf.text(splitPdfSafeText(pdf, subtitle, CONTENT_WIDTH_MM - 8).slice(0, 2), PAGE_MARGIN + 4, startY + 11.5);
+  pdf.text(splitPdfSafeText(pdf, subtitle, CONTENT_WIDTH_MM - 8).slice(0, 2), PAGE_MARGIN + 4, startY + 12);
 
-  return startY + 20;
+  return startY + 22;
 };
 
 const drawTableBlock = (
@@ -590,19 +652,79 @@ const drawTableBlock = (
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 7,
+      halign: 'left',
+      valign: 'middle',
+      cellPadding: { top: 1.6, right: 1.4, bottom: 1.6, left: 1.4 },
     },
     bodyStyles: {
-      fontSize: 6.5,
+      fontSize: 6.4,
       textColor: [30, 41, 59],
+      overflow: 'linebreak',
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+      cellPadding: { top: 1.6, right: 1.4, bottom: 1.6, left: 1.4 },
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],
     },
+    tableLineColor: [203, 213, 225],
+    tableLineWidth: 0.18,
+    styles: {
+      overflow: 'linebreak',
+      valign: 'middle',
+    },
+    columnStyles: table.columns.reduce((acc, column, index) => {
+      const isFirst = index === 0;
+      acc[index] = {
+        cellWidth: isFirst ? CONTENT_WIDTH_MM * 0.34 : 'auto',
+        halign: column.align === 'center' ? 'center' : column.align === 'right' ? 'right' : 'left',
+      };
+      return acc;
+    }, {} as Record<number, { cellWidth: number | 'auto'; halign: 'left' | 'center' | 'right' }>),
     margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
     tableWidth: CONTENT_WIDTH_MM,
   });
 
   return (pdf.lastAutoTable?.finalY || startY + 24) + 5;
+};
+
+const fillRemainingSpaceWithBrandVisual = (
+  pdf: jsPDF,
+  startY: number,
+  imageData: string | null,
+  title: string
+) => {
+  if (!imageData) return;
+  const availableHeight = PAGE_HEIGHT_MM - 24 - startY;
+  if (availableHeight < 28) return;
+
+  const blockHeight = Math.min(availableHeight, 52);
+  pdf.setFillColor(245, 247, 250);
+  pdf.roundedRect(PAGE_MARGIN, startY, CONTENT_WIDTH_MM, blockHeight, 2.5, 2.5, 'F');
+  pdf.setDrawColor(203, 213, 225);
+  pdf.roundedRect(PAGE_MARGIN, startY, CONTENT_WIDTH_MM, blockHeight, 2.5, 2.5, 'S');
+
+  const imageWidth = Math.min(56, CONTENT_WIDTH_MM * 0.34);
+  const imageHeight = blockHeight - 8;
+  pdf.addImage(imageData, 'JPEG', PAGE_MARGIN + 4, startY + 4, imageWidth, imageHeight, undefined, 'FAST');
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8.8);
+  pdf.setTextColor(30, 41, 59);
+  pdf.text('Brand Spotlight', PAGE_MARGIN + imageWidth + 8, startY + 10);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.1);
+  pdf.setTextColor(71, 85, 105);
+  pdf.text(
+    splitPdfSafeText(
+      pdf,
+      `${title} section generated from the dashboard canvas with aligned A4 spacing, wrapped text blocks, and balanced content hierarchy.`,
+      CONTENT_WIDTH_MM - imageWidth - 14
+    ),
+    PAGE_MARGIN + imageWidth + 8,
+    startY + 16
+  );
 };
 
 const decoratePages = (pdf: jsPDF, locationName: string, periodLabel: string) => {
@@ -611,6 +733,10 @@ const decoratePages = (pdf: jsPDF, locationName: string, periodLabel: string) =>
   for (let page = 1; page <= totalPages; page += 1) {
     pdf.setPage(page);
 
+    if (page > 1) {
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(8.5, 8.5, PAGE_WIDTH_MM - 17, 7, 'F');
+    }
     pdf.setDrawColor(203, 213, 225);
     pdf.setLineWidth(0.5);
     pdf.rect(6, 6, PAGE_WIDTH_MM - 12, PAGE_HEIGHT_MM - 12);
@@ -621,6 +747,9 @@ const decoratePages = (pdf: jsPDF, locationName: string, periodLabel: string) =>
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(100, 116, 139);
+    if (page > 1) {
+      pdf.text('Physique 57 India - Dashboard Overview', PAGE_MARGIN, 13.3);
+    }
     pdf.text(toPdfSafeText(locationName), PAGE_MARGIN, PAGE_HEIGHT_MM - 8);
     pdf.text(toPdfSafeText(periodLabel), PAGE_WIDTH_MM / 2, PAGE_HEIGHT_MM - 8, { align: 'center' });
     pdf.text(`Page ${page} of ${totalPages}`, PAGE_WIDTH_MM - PAGE_MARGIN, PAGE_HEIGHT_MM - 8, { align: 'right' });
@@ -651,75 +780,107 @@ const buildSectionPages = async (
   periodLabel: string,
   data: OverviewDataBundle
 ) => {
-  const [logoImageData, coverImageData] = await Promise.all([loadImageAsDataUrl(BRAND_LOGO_PATH), loadImageAsDataUrl(COVER_IMAGE_PATH)]);
+  const [logoImageData, localCoverImageData, externalBrandImages] = await Promise.all([
+    loadImageAsDataUrl(BRAND_LOGO_PATH),
+    loadImageAsDataUrl(COVER_IMAGE_PATH),
+    loadBrandImagePool(10),
+  ]);
+  const brandImagePool = externalBrandImages.length ? externalBrandImages : localCoverImageData ? [localCoverImageData] : [];
+  const coverImageData = brandImagePool[0] || localCoverImageData;
   const sections: OverviewReportSection[] = [];
 
   for (const module of overviewModules) {
     const summaries = await loadModuleSummaries(module.id, locationId);
+    const customAssets = getDataLabAssetsForModule(module.id);
     sections.push({
       moduleId: module.id,
       moduleContent: buildOverviewModuleContent(module.id, data),
       summaries,
+      customCards: customAssets.cards,
+      customCharts: asOverviewCharts(customAssets.charts),
+      customTables: asOverviewTables(customAssets.tables),
     });
   }
 
   const executiveSummary = buildExecutiveSummary(locationName, periodLabel, sections);
 
-  pdf.setFillColor(5, 15, 37);
-  pdf.rect(0, 0, PAGE_WIDTH_MM, 76, 'F');
-  pdf.setFillColor(30, 41, 59);
-  pdf.rect(0, 76, PAGE_WIDTH_MM, 10, 'F');
+  pdf.setFillColor(9, 18, 37);
+  pdf.rect(0, 0, PAGE_WIDTH_MM, 86, 'F');
+  pdf.setFillColor(15, 23, 42);
+  pdf.rect(0, 86, PAGE_WIDTH_MM, 8, 'F');
 
   if (coverImageData) {
-    pdf.addImage(coverImageData, 'JPEG', PAGE_WIDTH_MM - 78, 11, 64, 48, undefined, 'FAST');
+    pdf.addImage(coverImageData, 'JPEG', PAGE_WIDTH_MM - 86, 8, 74, 56, undefined, 'FAST');
   }
   if (logoImageData) {
-    pdf.addImage(logoImageData, 'JPEG', PAGE_MARGIN, 12, 33, 16, undefined, 'FAST');
+    pdf.addImage(logoImageData, 'JPEG', PAGE_MARGIN, 10, 35, 17, undefined, 'FAST');
   }
 
   const coverTitle = toPdfSafeText(`PERFORMANCE REPORT - ${locationName} - ${periodLabel}`);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(18);
+  pdf.setFontSize(18.5);
   pdf.setTextColor(255, 255, 255);
-  pdf.text(splitPdfSafeText(pdf, coverTitle, CONTENT_WIDTH_MM - 72), PAGE_MARGIN, 36);
+  pdf.text(splitPdfSafeText(pdf, coverTitle, CONTENT_WIDTH_MM - 84), PAGE_MARGIN, 38);
 
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(9);
+  pdf.setFontSize(9.2);
   pdf.setTextColor(191, 219, 254);
-  pdf.text(toPdfSafeText('Dashboard Overview Consolidated Report'), PAGE_MARGIN, 50);
-  pdf.text(toPdfSafeText(`Prepared on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`), PAGE_MARGIN, 56);
+  pdf.text(toPdfSafeText('Dashboard Overview Consolidated Report'), PAGE_MARGIN, 52);
+  pdf.text(toPdfSafeText(`Prepared on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`), PAGE_MARGIN, 58);
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(PAGE_MARGIN, 66, 58, 13, 2, 2, 'F');
+  pdf.setDrawColor(148, 163, 184);
+  pdf.roundedRect(PAGE_MARGIN, 66, 58, 13, 2, 2, 'S');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7.8);
+  pdf.setTextColor(30, 41, 59);
+  pdf.text('LOCATION', PAGE_MARGIN + 3, 71.4);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.2);
+  pdf.text(toPdfSafeText(locationName), PAGE_MARGIN + 3, 76.4);
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(PAGE_MARGIN + 62, 66, 48, 13, 2, 2, 'F');
+  pdf.roundedRect(PAGE_MARGIN + 62, 66, 48, 13, 2, 2, 'S');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7.8);
+  pdf.text('PERIOD', PAGE_MARGIN + 65, 71.4);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.2);
+  pdf.text(toPdfSafeText(periodLabel), PAGE_MARGIN + 65, 76.4);
 
   pdf.setFillColor(248, 250, 252);
-  pdf.roundedRect(PAGE_MARGIN, 95, CONTENT_WIDTH_MM, 50, 3, 3, 'F');
+  pdf.roundedRect(PAGE_MARGIN, 100, CONTENT_WIDTH_MM, 50, 3, 3, 'F');
   pdf.setDrawColor(203, 213, 225);
-  pdf.roundedRect(PAGE_MARGIN, 95, CONTENT_WIDTH_MM, 50, 3, 3, 'S');
+  pdf.roundedRect(PAGE_MARGIN, 100, CONTENT_WIDTH_MM, 50, 3, 3, 'S');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(10);
   pdf.setTextColor(15, 23, 42);
-  pdf.text('Executive Overview', PAGE_MARGIN + 4, 103);
+  pdf.text('Executive Overview', PAGE_MARGIN + 4, 108);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(8);
   pdf.setTextColor(51, 65, 85);
-  pdf.text(splitPdfSafeText(pdf, executiveSummary, CONTENT_WIDTH_MM - 8), PAGE_MARGIN + 4, 110);
+  pdf.text(splitPdfSafeText(pdf, executiveSummary, CONTENT_WIDTH_MM - 8), PAGE_MARGIN + 4, 115);
 
   pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(PAGE_MARGIN, 152, CONTENT_WIDTH_MM, 126, 3, 3, 'F');
+  pdf.roundedRect(PAGE_MARGIN, 156, CONTENT_WIDTH_MM, 122, 3, 3, 'F');
   pdf.setDrawColor(203, 213, 225);
-  pdf.roundedRect(PAGE_MARGIN, 152, CONTENT_WIDTH_MM, 126, 3, 3, 'S');
+  pdf.roundedRect(PAGE_MARGIN, 156, CONTENT_WIDTH_MM, 122, 3, 3, 'S');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(10);
   pdf.setTextColor(15, 23, 42);
-  pdf.text('Included Analytics Sections', PAGE_MARGIN + 4, 160);
+  pdf.text('Included Analytics Sections', PAGE_MARGIN + 4, 164);
 
   const columnWidth = (CONTENT_WIDTH_MM - 10) / 2;
   overviewModules.forEach((module, index) => {
     const row = index % 5;
     const column = Math.floor(index / 5);
     const baseX = PAGE_MARGIN + 4 + column * (columnWidth + 2);
-    const baseY = 168 + row * 11;
+    const baseY = 172 + row * 10.2;
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(7.5);
     pdf.setTextColor(15, 23, 42);
@@ -732,7 +893,7 @@ const buildSectionPages = async (
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(9);
   pdf.setTextColor(15, 23, 42);
-  pdf.text('Report Methodology', PAGE_MARGIN + 4, 228);
+  pdf.text('Report Methodology', PAGE_MARGIN + 4, 226.5);
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7.4);
   pdf.setTextColor(71, 85, 105);
@@ -743,8 +904,14 @@ const buildSectionPages = async (
       CONTENT_WIDTH_MM - 8
     ),
     PAGE_MARGIN + 4,
-    234
+    232
   );
+
+  if (brandImagePool[1]) {
+    pdf.addImage(brandImagePool[1], 'JPEG', PAGE_MARGIN + CONTENT_WIDTH_MM - 62, 236, 58, 38, undefined, 'FAST');
+    pdf.setDrawColor(203, 213, 225);
+    pdf.rect(PAGE_MARGIN + CONTENT_WIDTH_MM - 62, 236, 58, 38);
+  }
 
   pdf.addPage();
   const tocPage = pdf.getNumberOfPages();
@@ -752,30 +919,87 @@ const buildSectionPages = async (
 
   const recommendations = buildRecommendations(sections);
 
-  sections.forEach((section) => {
+  sections.forEach((section, sectionIndex) => {
     pdf.addPage();
+    const customAssetCount = section.customCards.length + section.customCharts.length + section.customTables.length;
+    const sectionImage = brandImagePool.length ? brandImagePool[(sectionIndex + 2) % brandImagePool.length] : coverImageData;
     tocEntries.push({
-      title: overviewModulesById[section.moduleId].label,
+      title: `${overviewModulesById[section.moduleId].label}${customAssetCount ? ` (+${customAssetCount} custom)` : ''}`,
       page: pdf.getNumberOfPages(),
     });
 
     const palette = ACCENT_PALETTES[overviewModulesById[section.moduleId].accent];
+    const sectionCards: PdfMetricCardItem[] = [
+      ...section.moduleContent.cards.map((card) => ({
+        title: card.title,
+        value: card.value,
+        description: card.description,
+      })),
+      ...section.customCards.map((card) => ({
+        title: card.title,
+        value: card.value,
+        description: card.description,
+      })),
+    ];
+    const sectionCharts = [...section.moduleContent.charts, ...section.customCharts];
+    const sectionTables = [...section.moduleContent.tables, ...section.customTables];
     let y = 16;
 
     y = drawSectionHeader(pdf, y, section.moduleContent.title, section.moduleContent.subtitle, palette);
-    y = ensurePageSpace(pdf, y, 26);
+    const narrativeItems = section.summaries.length
+      ? section.summaries
+      : [`No saved InfoPopover insight was found for ${overviewModulesById[section.moduleId].label}.`];
+    y = ensurePageSpace(pdf, y, estimateNarrativeBlockHeight(pdf, narrativeItems));
     y = drawNarrativeBlock(
       pdf,
       y,
-      section.summaries.length
-        ? section.summaries
-        : [`No saved InfoPopover insight was found for ${overviewModulesById[section.moduleId].label}.`],
+      narrativeItems,
       palette
     );
-    y = ensurePageSpace(pdf, y, 55);
-    y = drawMetricGrid(pdf, y, section.moduleContent, palette);
-    y = ensurePageSpace(pdf, y, 60);
-    y = drawChartsRow(pdf, y, section.moduleContent, palette);
+
+    if (sectionImage) {
+      y = ensurePageSpace(pdf, y, 34);
+      pdf.setFillColor(250, 250, 250);
+      pdf.roundedRect(PAGE_MARGIN, y, CONTENT_WIDTH_MM, 30, 2.4, 2.4, 'F');
+      pdf.setDrawColor(203, 213, 225);
+      pdf.roundedRect(PAGE_MARGIN, y, CONTENT_WIDTH_MM, 30, 2.4, 2.4, 'S');
+      pdf.addImage(sectionImage, 'JPEG', PAGE_MARGIN + 2.5, y + 2.5, 44, 25, undefined, 'FAST');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('Visual Context', PAGE_MARGIN + 50, y + 9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.2);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text(
+        splitPdfSafeText(
+          pdf,
+          `This module blends KPI cards, chart trends, rankings, and tables into one structured A4 view for ${locationName}.`,
+          CONTENT_WIDTH_MM - 54
+        ),
+        PAGE_MARGIN + 50,
+        y + 14
+      );
+      y += 34;
+    }
+
+    y = ensurePageSpace(pdf, y, estimateMetricGridHeight(sectionCards.length));
+    y = drawMetricGrid(pdf, y, sectionCards, palette);
+
+    for (let index = 0; index < sectionCharts.length; index += 2) {
+      y = ensurePageSpace(pdf, y, 60);
+      const gap = 5;
+      const chartWidth = (CONTENT_WIDTH_MM - gap) / 2;
+      const chartHeight = 54;
+      const leftChart = sectionCharts[index];
+      const rightChart = sectionCharts[index + 1];
+
+      drawChartPanel(pdf, leftChart, PAGE_MARGIN, y, chartWidth, chartHeight, palette);
+      if (rightChart) {
+        drawChartPanel(pdf, rightChart, PAGE_MARGIN + chartWidth + gap, y, chartWidth, chartHeight, palette);
+      }
+      y += chartHeight + 4;
+    }
 
     y = ensurePageSpace(pdf, y, 54);
     drawRankingColumn(pdf, section.moduleContent.topRanking, PAGE_MARGIN, y, (CONTENT_WIDTH_MM - 5) / 2, palette);
@@ -789,14 +1013,12 @@ const buildSectionPages = async (
     );
 
     let tableY = y + 49;
-    tableY = drawTableBlock(pdf, tableY, section.moduleContent.tables[0], palette);
-
-    if (tableY > PAGE_HEIGHT_MM - 60) {
-      pdf.addPage();
-      tableY = 18;
+    for (const table of sectionTables) {
+      tableY = ensurePageSpace(pdf, tableY, 62);
+      tableY = drawTableBlock(pdf, tableY, table, palette);
     }
 
-    drawTableBlock(pdf, tableY, section.moduleContent.tables[1], palette);
+    fillRemainingSpaceWithBrandVisual(pdf, tableY + 2, sectionImage, overviewModulesById[section.moduleId].label);
   });
 
   pdf.addPage();
@@ -848,11 +1070,17 @@ const buildSectionPages = async (
   pdf.text(
     splitPdfSafeText(
       pdf,
-      `Filter context: ${locationName}, ${periodLabel}. Each section preserves 8 cards, 2 charts, top/bottom rankings, and 2 tables to maintain consistent cross-module comparison.`,
+      `Filter context: ${locationName}, ${periodLabel}. Sections preserve the core rankings and include both standard overview content and any Custom Data Lab assets added to module cards, charts, or tables.`,
       CONTENT_WIDTH_MM - 8
     ),
     PAGE_MARGIN + 4,
     recommendationY + 8
+  );
+  fillRemainingSpaceWithBrandVisual(
+    pdf,
+    recommendationY + 32,
+    brandImagePool.length ? brandImagePool[(sections.length + 3) % brandImagePool.length] : coverImageData,
+    'Strategic Focus Areas'
   );
 
   pdf.setPage(tocPage);

@@ -11,7 +11,7 @@ import { formatNumber } from '@/utils/formatters';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
-import { DataLabWorkspace } from '@/components/dashboard/DataLabWorkspace';
+import { ImprovedDataLab } from '@/components/dashboard/ImprovedDataLab';
 
 const DataLabPageContent = () => {
   const { data: salesData, loading: salesLoading, error: salesError, refetch } = useGoogleSheets();
@@ -120,9 +120,7 @@ const DataLabPageContent = () => {
             onExportClick={() => {}}
           />
 
-          <div className="container mx-auto px-6 py-8">
-            <DataLabWorkspace dataSources={dataSources} />
-          </div>
+          <ImprovedDataLab dataSources={dataSources} />
         </div>
 
         <Footer />

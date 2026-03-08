@@ -4,7 +4,7 @@ import { buildOverviewModuleContent } from '../moduleBuilders';
 import { OverviewModuleView } from '../OverviewModuleView';
 
 const LateCancellationsOverviewAdapter: React.FC<OverviewAdapterProps> = ({ data }) => (
-  <OverviewModuleView module={buildOverviewModuleContent('late-cancellations', data)} />
+  <OverviewModuleView moduleId="late-cancellations" module={buildOverviewModuleContent('late-cancellations', data)} />
 );
 
 export default LateCancellationsOverviewAdapter;

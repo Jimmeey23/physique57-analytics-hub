@@ -4,7 +4,7 @@ import { buildOverviewModuleContent } from '../moduleBuilders';
 import { OverviewModuleView } from '../OverviewModuleView';
 
 const ClassAttendanceOverviewAdapter: React.FC<OverviewAdapterProps> = ({ data }) => (
-  <OverviewModuleView module={buildOverviewModuleContent('class-attendance', data)} />
+  <OverviewModuleView moduleId="class-attendance" module={buildOverviewModuleContent('class-attendance', data)} />
 );
 
 export default ClassAttendanceOverviewAdapter;

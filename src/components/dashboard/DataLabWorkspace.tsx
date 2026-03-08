@@ -37,10 +37,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
+import { overviewModules } from '@/components/dashboard/overview/registry';
+import type { OverviewAccent, OverviewModuleId, OverviewValueFormat } from '@/components/dashboard/overview/types';
+import {
+  addDataLabCardToModule,
+  addDataLabChartToModule,
+  addDataLabTableToModule,
+} from '@/services/dataLabDashboardBridge';
 
 const STORAGE_KEY = 'p57-data-lab-views-v2';
 const STORAGE_ACTIVE_KEY = 'p57-data-lab-active-view-v2';
 const STORAGE_FIELD_GROUPS_KEY = 'p57-data-lab-field-groups-v1';
+const STORAGE_TARGET_MODULE_KEY = 'p57-data-lab-dashboard-module-v1';
 
 type RowData = Record<string, any>;
 type DateBucket = 'none' | 'day' | 'week' | 'month' | 'quarter' | 'year';
@@ -257,6 +266,17 @@ const PREVIEW_COLORS = ['#1d4ed8', '#0f766e', '#7c3aed', '#dc2626', '#0f172a', '
 const VALUE_COLOR_OPTIONS = ['#1d4ed8', '#0f766e', '#7c3aed', '#be123c', '#b45309', '#0f172a'];
 
 const makeId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+
+const toOverviewFormat = (valueFormat: ValueFormat): OverviewValueFormat =>
+  valueFormat === 'currency' ? 'currency' : valueFormat === 'percent' ? 'percentage' : 'number';
+
+const themeToAccent = (theme: StyleConfig['theme']): OverviewAccent => {
+  if (theme === 'indigo') return 'indigo';
+  if (theme === 'emerald') return 'emerald';
+  if (theme === 'rose') return 'rose';
+  if (theme === 'mono') return 'slate';
+  return 'blue';
+};
 
 const isEmpty = (value: unknown) => value === null || value === undefined || value === '';
 
@@ -634,6 +654,7 @@ const DatePickerCell: React.FC<{
 };
 
 export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources = {} as Record<string, RowData[]> }) => {
+  const { toast } = useToast();
   const safeDataSources = dataSources && typeof dataSources === 'object' ? dataSources : {};
   const sourceNames = useMemo(
     () =>
@@ -654,6 +675,11 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
   const [collapsedPivotGroupsByView, setCollapsedPivotGroupsByView] = useState<
     Record<string, Record<string, boolean>>
   >({});
+  const [targetModuleId, setTargetModuleId] = useState<OverviewModuleId>(() => {
+    if (typeof window === 'undefined') return 'sales-analytics';
+    const saved = window.localStorage.getItem(STORAGE_TARGET_MODULE_KEY) as OverviewModuleId | null;
+    return overviewModules.some((module) => module.id === saved) ? (saved as OverviewModuleId) : 'sales-analytics';
+  });
   const [dragField, setDragField] = useState<{
     field: string;
     from: 'available' | 'rows' | 'columns' | 'values';
@@ -724,6 +750,11 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     if (!activeViewId) return;
     window.localStorage.setItem(STORAGE_ACTIVE_KEY, activeViewId);
   }, [activeViewId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_TARGET_MODULE_KEY, targetModuleId);
+  }, [targetModuleId]);
 
   useEffect(() => {
     try {
@@ -1513,6 +1544,139 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     }));
   }, [config, metricColumns, pivot.rowsForDisplay]);
 
+  const addCurrentCardToDashboard = () => {
+    const primaryMetric = metricColumns[0];
+    if (!primaryMetric) {
+      toast({
+        title: 'Card not added',
+        description: 'Add at least one value field before sending a card to Dashboard Overview.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    addDataLabCardToModule(targetModuleId, {
+      id: makeId('datalab_card'),
+      title: activeView.name,
+      value: formatMetricForField(smartSummary.total, primaryMetric.valueField, config),
+      description: `${primaryMetric.label} total across ${pivot.rows.length.toLocaleString('en-IN')} grouped rows.`,
+      accent: themeToAccent(config.style.theme),
+      sourceViewId: activeView.id,
+      sourceViewName: activeView.name,
+      createdAt: Date.now(),
+    });
+
+    toast({
+      title: 'Card added to Dashboard Overview',
+      description: `${activeView.name} card was added to ${overviewModules.find((module) => module.id === targetModuleId)?.label || 'selected module'}.`,
+    });
+  };
+
+  const addCurrentChartToDashboard = () => {
+    const primaryMetric = metricColumns[0];
+    if (!primaryMetric || !chartData.length) {
+      toast({
+        title: 'Chart not added',
+        description: 'Generate chart data first, then add it to Dashboard Overview.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    addDataLabChartToModule(targetModuleId, {
+      id: makeId('datalab_chart'),
+      title: `${activeView.name} Chart`,
+      description: `Custom Data Lab chart based on ${primaryMetric.label}.`,
+      data: chartData.slice(0, 20).map((row) => ({
+        name: row.name.length > 36 ? `${row.name.slice(0, 35)}...` : row.name,
+        value: Number(row.value.toFixed(2)),
+      })),
+      xKey: 'name',
+      series: [
+        {
+          key: 'value',
+          label: primaryMetric.label,
+          color: primaryMetricColor,
+        },
+      ],
+      format: toOverviewFormat(primaryMetric.valueField.format),
+      emptyMessage: 'No custom chart data available for this saved Data Lab model.',
+      sourceViewId: activeView.id,
+      sourceViewName: activeView.name,
+      createdAt: Date.now(),
+    });
+
+    toast({
+      title: 'Chart added to Dashboard Overview',
+      description: `${activeView.name} chart was added to ${overviewModules.find((module) => module.id === targetModuleId)?.label || 'selected module'}.`,
+    });
+  };
+
+  const addCurrentTableToDashboard = () => {
+    if (!metricColumns.length || !pivot.rows.length) {
+      toast({
+        title: 'Table not added',
+        description: 'Build a pivot table with at least one value field before adding to Dashboard Overview.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const rowHeaders = config.rowFields.length ? config.rowFields : ['Segment'];
+    const columns = [
+      ...rowHeaders.map((field, index) => ({
+        key: `row_${index}`,
+        label: field,
+        format: 'text' as const,
+        align: 'left' as const,
+      })),
+      ...metricColumns.map((metric) => ({
+        key: `metric_${metric.key}`,
+        label: metric.label,
+        format: 'text' as const,
+        align: 'right' as const,
+      })),
+    ];
+
+    const rows = pivot.rows.slice(0, 20).map((row) => {
+      const nextRow: Record<string, string> = {};
+      const rowLabels = config.rowFields.length
+        ? [...(row.labels || [])]
+        : [buildRowLabel(row)];
+
+      rowHeaders.forEach((_, index) => {
+        nextRow[`row_${index}`] = rowLabels[index] ?? '';
+      });
+
+      metricColumns.forEach((metric) => {
+        nextRow[`metric_${metric.key}`] = formatMetricForField(
+          row.values?.[metric.key] || 0,
+          metric.valueField,
+          config
+        );
+      });
+
+      return nextRow;
+    });
+
+    addDataLabTableToModule(targetModuleId, {
+      id: makeId('datalab_table'),
+      title: `${activeView.name} Table`,
+      description: `Top ${rows.length} rows from the Custom Data Lab pivot model.`,
+      columns,
+      rows,
+      emptyMessage: 'No custom pivot rows available for this Data Lab view.',
+      sourceViewId: activeView.id,
+      sourceViewName: activeView.name,
+      createdAt: Date.now(),
+    });
+
+    toast({
+      title: 'Table added to Dashboard Overview',
+      description: `${activeView.name} table was added to ${overviewModules.find((module) => module.id === targetModuleId)?.label || 'selected module'}.`,
+    });
+  };
+
   const autoMapJoinKeys = () => {
     if (!config?.relationship.source) return;
     const leftFields = primaryFields.map(field => field.name);
@@ -2157,6 +2321,32 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
               <span className="font-medium">Active Table Name</span>
               <Input value={activeView.name} onChange={event => updateViewName(event.target.value)} className="h-9" />
             </label>
+            <label className="text-xs text-slate-700 space-y-1 block">
+              <span className="font-medium">Dashboard Module</span>
+              <select
+                value={targetModuleId}
+                onChange={(event) => setTargetModuleId(event.target.value as OverviewModuleId)}
+                className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-xs"
+              >
+                {overviewModules.map((module) => (
+                  <option key={module.id} value={module.id}>
+                    {module.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" className="gap-1" onClick={addCurrentCardToDashboard}>
+              Add Card to Dashboard
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="gap-1" onClick={addCurrentChartToDashboard}>
+              Add Chart to Dashboard
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="gap-1" onClick={addCurrentTableToDashboard}>
+              Add Table to Dashboard
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -11,16 +11,24 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import {
+  asOverviewCharts,
+  asOverviewTables,
+  DATA_LAB_DASHBOARD_ASSETS_UPDATED_EVENT,
+  getDataLabAssetsForModule,
+} from '@/services/dataLabDashboardBridge';
 import type {
   OverviewAccent,
   OverviewChartDefinition,
   OverviewMetricCard,
   OverviewModuleContent,
+  OverviewModuleId,
   OverviewRankingDefinition,
   OverviewTableColumn,
   OverviewTableDefinition,
@@ -283,39 +291,89 @@ const TableCard: React.FC<{ table: OverviewTableDefinition }> = ({ table }) => (
   </Card>
 );
 
-export const OverviewModuleView: React.FC<{ module: OverviewModuleContent }> = ({ module }) => (
-  <div className="space-y-8">
-    <Card className="border border-slate-200 bg-white/95 shadow-sm">
-      <CardContent className="flex flex-col gap-2 p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Overview Canvas</p>
-        <h2 className="text-2xl font-bold text-slate-900">{module.title}</h2>
-        <p className="max-w-3xl text-sm text-slate-600">{module.subtitle}</p>
-      </CardContent>
-    </Card>
+export const OverviewModuleView: React.FC<{ moduleId: OverviewModuleId; module: OverviewModuleContent }> = ({ moduleId, module }) => {
+  const [customAssets, setCustomAssets] = React.useState(() => getDataLabAssetsForModule(moduleId));
 
-    <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-      {module.cards.map((card) => (
-        <MetricCardItem key={card.id} card={card} />
-      ))}
-    </section>
+  React.useEffect(() => {
+    const reload = () => setCustomAssets(getDataLabAssetsForModule(moduleId));
+    reload();
 
-    <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      {module.charts.map((chart) => (
-        <ChartCard key={chart.id} chart={chart} />
-      ))}
-    </section>
+    window.addEventListener('storage', reload);
+    window.addEventListener(DATA_LAB_DASHBOARD_ASSETS_UPDATED_EVENT, reload as EventListener);
+    return () => {
+      window.removeEventListener('storage', reload);
+      window.removeEventListener(DATA_LAB_DASHBOARD_ASSETS_UPDATED_EVENT, reload as EventListener);
+    };
+  }, [moduleId]);
 
-    <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <RankingCard ranking={module.topRanking} />
-      <RankingCard ranking={module.bottomRanking} />
-    </section>
+  const cards: OverviewMetricCard[] = React.useMemo(
+    () => [
+      ...module.cards,
+      ...customAssets.cards.map((card) => ({
+        id: card.id,
+        title: card.title,
+        value: card.value,
+        description: card.description,
+        icon: Sparkles,
+        accent: card.accent,
+      })),
+    ],
+    [module.cards, customAssets.cards]
+  );
 
-    <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      {module.tables.map((table) => (
-        <TableCard key={table.id} table={table} />
-      ))}
-    </section>
-  </div>
-);
+  const charts = React.useMemo(
+    () => [...module.charts, ...asOverviewCharts(customAssets.charts)],
+    [module.charts, customAssets.charts]
+  );
+
+  const tables = React.useMemo(
+    () => [...module.tables, ...asOverviewTables(customAssets.tables)],
+    [module.tables, customAssets.tables]
+  );
+
+  const hasCustomAssets = customAssets.cards.length || customAssets.charts.length || customAssets.tables.length;
+
+  return (
+    <div className="space-y-8">
+      <Card className="border border-slate-200 bg-white/95 shadow-sm">
+        <CardContent className="flex flex-col gap-2 p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Overview Canvas</p>
+          <h2 className="text-2xl font-bold text-slate-900">{module.title}</h2>
+          <p className="max-w-3xl text-sm text-slate-600">{module.subtitle}</p>
+          {hasCustomAssets ? (
+            <div className="pt-2">
+              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                Custom Data Lab assets included in this module
+              </Badge>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => (
+          <MetricCardItem key={card.id} card={card} />
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {charts.map((chart) => (
+          <ChartCard key={chart.id} chart={chart} />
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <RankingCard ranking={module.topRanking} />
+        <RankingCard ranking={module.bottomRanking} />
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {tables.map((table) => (
+          <TableCard key={table.id} table={table} />
+        ))}
+      </section>
+    </div>
+  );
+};
 
 export default OverviewModuleView;

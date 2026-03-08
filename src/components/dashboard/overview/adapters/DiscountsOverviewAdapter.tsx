@@ -4,7 +4,7 @@ import { buildOverviewModuleContent } from '../moduleBuilders';
 import { OverviewModuleView } from '../OverviewModuleView';
 
 const DiscountsOverviewAdapter: React.FC<OverviewAdapterProps> = ({ data }) => (
-  <OverviewModuleView module={buildOverviewModuleContent('discounts-promotions', data)} />
+  <OverviewModuleView moduleId="discounts-promotions" module={buildOverviewModuleContent('discounts-promotions', data)} />
 );
 
 export default DiscountsOverviewAdapter;

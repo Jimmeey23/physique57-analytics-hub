@@ -4,7 +4,7 @@ import { buildOverviewModuleContent } from '../moduleBuilders';
 import { OverviewModuleView } from '../OverviewModuleView';
 
 const PatternsOverviewAdapter: React.FC<OverviewAdapterProps> = ({ data }) => (
-  <OverviewModuleView module={buildOverviewModuleContent('patterns-trends', data)} />
+  <OverviewModuleView moduleId="patterns-trends" module={buildOverviewModuleContent('patterns-trends', data)} />
 );
 
 export default PatternsOverviewAdapter;

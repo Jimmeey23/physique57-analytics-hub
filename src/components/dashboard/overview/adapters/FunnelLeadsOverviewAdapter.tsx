@@ -4,7 +4,7 @@ import { buildOverviewModuleContent } from '../moduleBuilders';
 import { OverviewModuleView } from '../OverviewModuleView';
 
 const FunnelLeadsOverviewAdapter: React.FC<OverviewAdapterProps> = ({ data }) => (
-  <OverviewModuleView module={buildOverviewModuleContent('funnel-leads', data)} />
+  <OverviewModuleView moduleId="funnel-leads" module={buildOverviewModuleContent('funnel-leads', data)} />
 );
 
 export default FunnelLeadsOverviewAdapter;
