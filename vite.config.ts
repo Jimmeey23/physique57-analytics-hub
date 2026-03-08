@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import notesHandler from "./api/notes.js";
+import payrollHandler from "./api/payroll.js";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -62,6 +63,40 @@ export default defineConfig(({ mode }) => ({
 
           Promise.resolve(notesHandler(req, wrapResponse(res))).catch((err: any) => {
             console.error("Local /api/notes error", err);
+            wrapResponse(res).status(500).json({ error: "Internal server error" });
+          });
+        });
+      },
+    },
+
+    // Local API middleware for /api/payroll
+    mode === "development" && {
+      name: "local-api-payroll",
+      configureServer(server: ViteDevServer) {
+        server.middlewares.use("/api/payroll", (req: any, res: any, next: any) => {
+          if (req.method !== "GET") return next();
+
+          try {
+            const url = new URL(req.url || "", "http://localhost");
+            (req as any).query = Object.fromEntries(url.searchParams.entries());
+          } catch {
+            (req as any).query = {};
+          }
+
+          const wrapResponse = (res: any) =>
+            Object.assign(res, {
+              status(code: number) {
+                res.statusCode = code;
+                return res;
+              },
+              json(obj: any) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(obj));
+              },
+            });
+
+          Promise.resolve(payrollHandler(req, wrapResponse(res))).catch((err: any) => {
+            console.error("Local /api/payroll error", err);
             wrapResponse(res).status(500).json({ error: "Internal server error" });
           });
         });

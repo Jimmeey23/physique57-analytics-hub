@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,10 +25,16 @@ import { ExecutivePDFExportButton } from './ExecutivePDFExportButton';
 
 interface ExecutiveFilterSectionProps {
   availableLocations: string[];
+  showExportButton?: boolean;
+  headerActions?: ReactNode;
+  onClearFilters?: () => void;
 }
 
 export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({ 
-  availableLocations 
+  availableLocations,
+  showExportButton = true,
+  headerActions,
+  onClearFilters,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { filters, updateFilters, clearFilters } = useGlobalFilters();
@@ -85,7 +92,7 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                   <p className="text-sm text-gray-600 font-normal">
                     {filters.dateRange?.start || filters.dateRange?.end 
                       ? `Custom date range${selectedLocation ? ` • ${selectedLocation}` : ''}` 
-                      : `Current month vs previous month${selectedLocation ? ` • ${selectedLocation}` : ''}`
+                      : `All dates${selectedLocation ? ` • ${selectedLocation}` : ''}`
                     }
                   </p>
                 </div>
@@ -102,6 +109,10 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (onClearFilters) {
+                        onClearFilters();
+                        return;
+                      }
                       clearFilters();
                     }}
                     className="text-gray-600 hover:text-red-600"
@@ -110,13 +121,16 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                     Clear
                   </Button>
                 )}
-                <ExecutivePDFExportButton
-                  dateRange={filters.dateRange ? { start: filters.dateRange.start, end: filters.dateRange.end } : undefined}
-                  location={selectedLocation}
-                  size="sm"
-                  variant="outline"
-                  showLabel={false}
-                />
+                {showExportButton && (
+                  <ExecutivePDFExportButton
+                    dateRange={filters.dateRange ? { start: filters.dateRange.start, end: filters.dateRange.end } : undefined}
+                    location={selectedLocation}
+                    size="sm"
+                    variant="outline"
+                    showLabel={false}
+                  />
+                )}
+                {headerActions}
                 {isOpen ? (
                   <ChevronUp className="w-5 h-5 text-gray-500" />
                 ) : (

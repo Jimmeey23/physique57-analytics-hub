@@ -64,6 +64,15 @@ const DASHBOARD_SECTIONS: DashboardSection[] = [
     insight: 'Leadership',
   },
   {
+    id: 'dashboard-overview',
+    title: 'Dashboard Overview',
+    description: 'One summary canvas across the core analytics modules with shared filters',
+    icon: Eye,
+    color: 'from-slate-600 to-slate-800',
+    hoverColor: 'hover:from-slate-700 hover:to-slate-900',
+    insight: 'Overview',
+  },
+  {
     id: 'sales-analytics',
     title: 'Sales Analytics',
     description: 'Revenue trends and sales performance',

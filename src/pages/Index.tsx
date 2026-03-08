@@ -49,7 +49,7 @@ const Index = memo(() => {
 
   const memoizedData = useMemo(() => data, [data]);
   const totalRecords = memoizedData.length;
-  const moduleCount = 12;
+  const moduleCount = 13;
 
   useEffect(() => {
     setLoading(loading, 'Loading dashboard overview...');
