@@ -123,6 +123,18 @@ export const addDataLabTableToModule = (moduleId: OverviewModuleId, table: DataL
   saveDataLabDashboardAssetsStore(store);
 };
 
+export const updateDataLabTableInModule = (
+  moduleId: OverviewModuleId,
+  tableId: string,
+  updater: (table: DataLabDashboardTable) => DataLabDashboardTable
+) => {
+  const store = loadDataLabDashboardAssetsStore();
+  const current = store[moduleId] ?? emptyModuleAssets();
+  const nextTables = current.tables.map((table) => (table.id === tableId ? updater(table) : table));
+  store[moduleId] = { ...current, tables: nextTables };
+  saveDataLabDashboardAssetsStore(store);
+};
+
 export const asOverviewCharts = (charts: DataLabDashboardChart[]): OverviewChartDefinition[] =>
   charts.map((chart) => ({
     id: chart.id,

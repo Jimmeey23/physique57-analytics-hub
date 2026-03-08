@@ -11,7 +11,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Sparkles } from 'lucide-react';
+import { Save, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,7 @@ import {
   asOverviewTables,
   DATA_LAB_DASHBOARD_ASSETS_UPDATED_EVENT,
   getDataLabAssetsForModule,
+  updateDataLabTableInModule,
 } from '@/services/dataLabDashboardBridge';
 import type {
   OverviewAccent,
@@ -236,60 +237,174 @@ const RankingCard: React.FC<{ ranking: OverviewRankingDefinition }> = ({ ranking
 
 const renderCell = (value: string | number, column: OverviewTableColumn) => formatOverviewValue(value, column.format);
 
-const TableCard: React.FC<{ table: OverviewTableDefinition }> = ({ table }) => (
-  <Card className="border border-slate-200 shadow-sm bg-white">
-    <CardHeader>
-      <CardTitle className="text-lg text-slate-900">{table.title}</CardTitle>
-      <CardDescription className="text-slate-600">{table.description}</CardDescription>
-    </CardHeader>
-    <CardContent>
-      {table.rows.length ? (
-        <div className="overflow-x-auto rounded-2xl border border-slate-100">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                {table.columns.map((column) => (
-                  <TableHead
-                    key={`${table.id}-${column.key}`}
-                    className={cn(
-                      'text-xs font-semibold uppercase tracking-[0.15em] text-slate-500',
-                      column.align === 'right' && 'text-right',
-                      column.align === 'center' && 'text-center'
-                    )}
-                  >
-                    {column.label}
-                  </TableHead>
+const TableCard: React.FC<{
+  moduleId: OverviewModuleId;
+  table: OverviewTableDefinition;
+  isCustomTable: boolean;
+}> = ({ moduleId, table, isCustomTable }) => {
+  const [isCustomizing, setIsCustomizing] = React.useState(false);
+  const [tableTitle, setTableTitle] = React.useState(table.title);
+  const [tableDescription, setTableDescription] = React.useState(table.description);
+  const [visibleRows, setVisibleRows] = React.useState(Math.min(Math.max(table.rows.length, 8), 30));
+  const [editableColumns, setEditableColumns] = React.useState(table.columns);
+  const [editableRows, setEditableRows] = React.useState(table.rows);
+
+  React.useEffect(() => {
+    setTableTitle(table.title);
+    setTableDescription(table.description);
+    setEditableColumns(table.columns);
+    setEditableRows(table.rows);
+    setVisibleRows(Math.min(Math.max(table.rows.length, 8), 30));
+  }, [table]);
+
+  const saveCustomTable = () => {
+    if (!isCustomTable) return;
+    updateDataLabTableInModule(moduleId, table.id, (current) => ({
+      ...current,
+      title: tableTitle.trim() || current.title,
+      description: tableDescription.trim() || current.description,
+      columns: editableColumns,
+      rows: editableRows,
+    }));
+    setIsCustomizing(false);
+  };
+
+  const rowsToRender = editableRows.slice(0, visibleRows);
+
+  return (
+    <Card className="border border-slate-200 shadow-sm bg-white">
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg text-slate-900">{tableTitle}</CardTitle>
+            <CardDescription className="text-slate-600">{tableDescription}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500">
+              Rows
+              <select
+                value={String(visibleRows)}
+                onChange={(event) => setVisibleRows(Number(event.target.value))}
+                className="ml-2 h-8 rounded-md border border-slate-200 px-2 text-xs"
+              >
+                {[8, 12, 16, 20, 30, 50].map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
                 ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {table.rows.map((row, rowIndex) => (
-                <TableRow key={`${table.id}-${rowIndex}`}>
-                  {table.columns.map((column) => (
-                    <TableCell
-                      key={`${table.id}-${rowIndex}-${column.key}`}
+              </select>
+            </label>
+            {isCustomTable ? (
+              <>
+                <Button type="button" size="sm" variant="outline" onClick={() => setIsCustomizing((prev) => !prev)}>
+                  {isCustomizing ? 'Close Customize' : 'Customize Table'}
+                </Button>
+                {isCustomizing ? (
+                  <Button type="button" size="sm" className="gap-1" onClick={saveCustomTable}>
+                    <Save className="h-3.5 w-3.5" />
+                    Save
+                  </Button>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isCustomizing ? (
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-2">
+            <label className="text-xs text-slate-700">
+              Title
+              <input
+                value={tableTitle}
+                onChange={(event) => setTableTitle(event.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-slate-700">
+              Description
+              <input
+                value={tableDescription}
+                onChange={(event) => setTableDescription(event.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm"
+              />
+            </label>
+          </div>
+        ) : null}
+        {rowsToRender.length ? (
+          <div className="overflow-x-auto rounded-2xl border border-slate-100">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  {editableColumns.map((column, columnIndex) => (
+                    <TableHead
+                      key={`${table.id}-${column.key}`}
                       className={cn(
-                        'text-sm text-slate-700',
+                        'text-xs font-semibold uppercase tracking-[0.15em] text-slate-500',
                         column.align === 'right' && 'text-right',
                         column.align === 'center' && 'text-center'
                       )}
                     >
-                      {renderCell(row[column.key] ?? '', column)}
-                    </TableCell>
+                      {isCustomizing && isCustomTable ? (
+                        <input
+                          value={column.label}
+                          onChange={(event) =>
+                            setEditableColumns((current) =>
+                              current.map((item, idx) => (idx === columnIndex ? { ...item, label: event.target.value } : item))
+                            )
+                          }
+                          className="h-7 w-full min-w-[120px] rounded-md border border-slate-300 bg-white px-1.5 text-[11px] normal-case tracking-normal text-slate-700"
+                        />
+                      ) : (
+                        column.label
+                      )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-          {table.emptyMessage ?? 'No table data available for the active filters.'}
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
+              </TableHeader>
+              <TableBody>
+                {rowsToRender.map((row, rowIndex) => (
+                  <TableRow key={`${table.id}-${rowIndex}`}>
+                    {editableColumns.map((column) => (
+                      <TableCell
+                        key={`${table.id}-${rowIndex}-${column.key}`}
+                        className={cn(
+                          'text-sm text-slate-700',
+                          column.align === 'right' && 'text-right',
+                          column.align === 'center' && 'text-center'
+                        )}
+                      >
+                        {isCustomizing && isCustomTable ? (
+                          <input
+                            value={String(row[column.key] ?? '')}
+                            onChange={(event) =>
+                              setEditableRows((current) =>
+                                current.map((item, idx) =>
+                                  idx === rowIndex ? { ...item, [column.key]: event.target.value } : item
+                                )
+                              )
+                            }
+                            className="h-8 w-full min-w-[110px] rounded-md border border-slate-300 bg-white px-1.5 text-xs"
+                          />
+                        ) : (
+                          renderCell(row[column.key] ?? '', column)
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+            {table.emptyMessage ?? 'No table data available for the active filters.'}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 export const OverviewModuleView: React.FC<{ moduleId: OverviewModuleId; module: OverviewModuleContent }> = ({ moduleId, module }) => {
   const [customAssets, setCustomAssets] = React.useState(() => getDataLabAssetsForModule(moduleId));
@@ -330,6 +445,7 @@ export const OverviewModuleView: React.FC<{ moduleId: OverviewModuleId; module: 
     () => [...module.tables, ...asOverviewTables(customAssets.tables)],
     [module.tables, customAssets.tables]
   );
+  const customTableIds = React.useMemo(() => new Set(customAssets.tables.map((table) => table.id)), [customAssets.tables]);
 
   const hasCustomAssets = customAssets.cards.length || customAssets.charts.length || customAssets.tables.length;
 
@@ -367,9 +483,9 @@ export const OverviewModuleView: React.FC<{ moduleId: OverviewModuleId; module: 
         <RankingCard ranking={module.bottomRanking} />
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <section className="grid grid-cols-1 gap-6">
         {tables.map((table) => (
-          <TableCard key={table.id} table={table} />
+          <TableCard key={table.id} moduleId={moduleId} table={table} isCustomTable={customTableIds.has(table.id)} />
         ))}
       </section>
     </div>

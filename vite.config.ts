@@ -1,4 +1,4 @@
-import { defineConfig, type ViteDevServer } from "vite";
+import { defineConfig, type ViteDevServer, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -6,7 +6,12 @@ import notesHandler from "./api/notes.js";
 import payrollHandler from "./api/payroll.js";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
   server: {
     host: "::",
     port: 8080,
@@ -75,6 +80,12 @@ export default defineConfig(({ mode }) => ({
       configureServer(server: ViteDevServer) {
         server.middlewares.use("/api/payroll", (req: any, res: any, next: any) => {
           if (req.method !== "GET") return next();
+
+          // Ensure environment variables are available to the API handler from loaded env
+          process.env.GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID;
+          process.env.GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET || env.VITE_GOOGLE_CLIENT_SECRET;
+          process.env.GOOGLE_REFRESH_TOKEN = env.GOOGLE_REFRESH_TOKEN || env.VITE_GOOGLE_REFRESH_TOKEN;
+          process.env.GOOGLE_SHEETS_SPREADSHEET_ID = env.GOOGLE_SHEETS_SPREADSHEET_ID || env.VITE_PAYROLL_SPREADSHEET_ID;
 
           try {
             const url = new URL(req.url || "", "http://localhost");
@@ -155,4 +166,4 @@ export default defineConfig(({ mode }) => ({
     treeShaking: true,
     legalComments: "none",
   },
-}));
+}});

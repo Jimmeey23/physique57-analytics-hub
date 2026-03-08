@@ -149,6 +149,7 @@ interface ProcessingConfig {
   filterLogic: 'and' | 'or';
   sortMetricKey: string;
   sortDirection: 'asc' | 'desc';
+  columnSortDirection: 'asc' | 'desc';
   showTotals: boolean;
   showSubtotals: boolean;
   nullHandling: 'zero' | 'ignore';
@@ -160,6 +161,8 @@ interface PivotConfig {
   rowFields: string[];
   columnFields: string[];
   valueFields: ValueFieldConfig[];
+  headerAliases: Record<string, string>;
+  cellOverrides: Record<string, string>;
   filterRules: FilterRule[];
   dateBucket: DateBucket;
   dateFormat: DateFormat;
@@ -507,6 +510,8 @@ const makeDefaultConfig = (primarySource: string): PivotConfig => ({
   rowFields: [],
   columnFields: [],
   valueFields: [],
+  headerAliases: {},
+  cellOverrides: {},
   filterRules: [],
   dateBucket: 'month',
   dateFormat: 'dd-mmm-yyyy',
@@ -533,6 +538,7 @@ const makeDefaultConfig = (primarySource: string): PivotConfig => ({
     filterLogic: 'and',
     sortMetricKey: '',
     sortDirection: 'desc',
+    columnSortDirection: 'asc',
     showTotals: true,
     showSubtotals: false,
     nullHandling: 'zero',
@@ -564,11 +570,23 @@ const normalizePivotConfig = (rawConfig: any, fallbackSource: string): PivotConf
         raw.processing && ['and', 'or'].includes(raw.processing.filterLogic)
           ? raw.processing.filterLogic
           : base.processing.filterLogic,
+      columnSortDirection:
+        raw.processing && ['asc', 'desc'].includes(raw.processing.columnSortDirection)
+          ? raw.processing.columnSortDirection
+          : base.processing.columnSortDirection,
     },
     valueFields: Array.isArray(raw.valueFields) ? raw.valueFields : [],
     filterRules: Array.isArray(raw.filterRules) ? raw.filterRules : [],
     rowFields: Array.isArray(raw.rowFields) ? raw.rowFields : [],
     columnFields: Array.isArray(raw.columnFields) ? raw.columnFields : [],
+    headerAliases:
+      raw.headerAliases && typeof raw.headerAliases === 'object' && !Array.isArray(raw.headerAliases)
+        ? raw.headerAliases
+        : {},
+    cellOverrides:
+      raw.cellOverrides && typeof raw.cellOverrides === 'object' && !Array.isArray(raw.cellOverrides)
+        ? raw.cellOverrides
+        : {},
     columnWidths:
       raw.columnWidths && typeof raw.columnWidths === 'object' && !Array.isArray(raw.columnWidths)
         ? raw.columnWidths
@@ -669,6 +687,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
   const [fieldSearch, setFieldSearch] = useState('');
   const [workspacePage, setWorkspacePage] = useState<'workspace' | 'settings'>('workspace');
   const [showTopControls, setShowTopControls] = useState(false);
+  const [inlineEditMode, setInlineEditMode] = useState(false);
   const [collapsedFieldGroupsByView, setCollapsedFieldGroupsByView] = useState<
     Record<string, Record<string, boolean>>
   >({});
@@ -683,6 +702,8 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
   const [dragField, setDragField] = useState<{
     field: string;
     from: 'available' | 'rows' | 'columns' | 'values';
+    fromIndex?: number;
+    valueId?: string;
   } | null>(null);
   const stableViews = useMemo(
     () =>
@@ -1308,7 +1329,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
       });
     });
 
-    const sortedColumnKeys = Array.from(columnKeys).sort((a, b) => a.localeCompare(b));
+    const sortedColumnKeys = Array.from(columnKeys).sort((a, b) =>
+      config.processing.columnSortDirection === 'asc' ? a.localeCompare(b) : b.localeCompare(a),
+    );
     const metricKeys = sortedColumnKeys.flatMap(columnKey =>
       config.valueFields.map(valueField => ({
         key: `${columnKey}__${valueField.id}`,
@@ -1626,13 +1649,13 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     const columns = [
       ...rowHeaders.map((field, index) => ({
         key: `row_${index}`,
-        label: field,
+        label: getHeaderAlias(`row:${index}:${field}`, field),
         format: 'text' as const,
         align: 'left' as const,
       })),
       ...metricColumns.map((metric) => ({
         key: `metric_${metric.key}`,
-        label: metric.label,
+        label: getHeaderAlias(`metric:${metric.key}`, metric.label),
         format: 'text' as const,
         align: 'right' as const,
       })),
@@ -1645,15 +1668,17 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
         : [buildRowLabel(row)];
 
       rowHeaders.forEach((_, index) => {
-        nextRow[`row_${index}`] = rowLabels[index] ?? '';
+        const fallbackValue = rowLabels[index] ?? '';
+        nextRow[`row_${index}`] = resolveLabelCellDisplay(row.id, index, fallbackValue);
       });
 
       metricColumns.forEach((metric) => {
-        nextRow[`metric_${metric.key}`] = formatMetricForField(
+        const fallbackValue = formatMetricForField(
           row.values?.[metric.key] || 0,
           metric.valueField,
           config
         );
+        nextRow[`metric_${metric.key}`] = resolveMetricCellDisplay(row.id, metric.key, fallbackValue);
       });
 
       return nextRow;
@@ -1743,60 +1768,264 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
     }));
   };
 
-  const dropFieldToZone = (zone: 'rows' | 'columns' | 'values') => {
+  const applyTopBottomPreset = (mode: 'top' | 'bottom', limit: number) => {
+    if (!metricColumns.length) {
+      toast({
+        title: 'Preset unavailable',
+        description: 'Add at least one value field before applying Top/Bottom presets.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    updateConfig((current) => ({
+      ...current,
+      processing: {
+        ...current.processing,
+        rowMode: mode,
+        rowLimit: limit,
+        sortDirection: mode === 'top' ? 'desc' : 'asc',
+        sortMetricKey: current.processing.sortMetricKey || metricColumns[0].key,
+      },
+    }));
+  };
+
+  const applyTrendPreset = () => {
+    const dateField =
+      mergedFields.find((field) => field.type === 'date' && field.name === config.columnFields[0])?.name ||
+      mergedFields.find((field) => field.type === 'date')?.name ||
+      '';
+    const labelField =
+      mergedFields.find((field) => field.type === 'string' && field.name === config.rowFields[0])?.name ||
+      mergedFields.find((field) => field.type === 'string')?.name ||
+      '';
+
+    if (!dateField) {
+      toast({
+        title: 'Trend preset unavailable',
+        description: 'No date field found in this source model.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    updateConfig((current) => ({
+      ...current,
+      rowFields: labelField ? [labelField] : current.rowFields,
+      columnFields: [dateField],
+      dateBucket: 'month',
+      chartType: 'line',
+      processing: {
+        ...current.processing,
+        rowMode: 'top',
+        rowLimit: 12,
+        columnSortDirection: 'asc',
+      },
+    }));
+  };
+
+  const resetModelCanvas = () => {
+    updateConfig((current) => ({
+      ...current,
+      rowFields: [],
+      columnFields: [],
+      valueFields: [],
+      filterRules: [],
+      headerAliases: {},
+      cellOverrides: {},
+      columnWidths: {},
+      processing: {
+        ...current.processing,
+        sortMetricKey: '',
+      },
+    }));
+  };
+
+  const quickAddFieldToModel = (fieldName: string) => {
+    const fieldMeta = fieldMap.get(fieldName);
+    updateConfig((current) => {
+      if (fieldMeta?.type === 'number') {
+        const nextMetric: ValueFieldConfig = {
+          id: makeId('value'),
+          field: fieldName,
+          label: fieldName,
+          aggregate: 'sum',
+          format: 'currency',
+          postProcess: 'none',
+          decimalsOverride: -1,
+          revenueScaleOverride: 'inherit',
+          accentColor:
+            VALUE_COLOR_OPTIONS[current.valueFields.length % VALUE_COLOR_OPTIONS.length] || VALUE_COLOR_OPTIONS[0],
+        };
+        return {
+          ...current,
+          valueFields: [...current.valueFields, nextMetric],
+        };
+      }
+
+      if (!current.rowFields.includes(fieldName)) {
+        return {
+          ...current,
+          rowFields: [...current.rowFields, fieldName],
+        };
+      }
+
+      if (!current.columnFields.includes(fieldName)) {
+        return {
+          ...current,
+          columnFields: [...current.columnFields, fieldName],
+        };
+      }
+
+      return current;
+    });
+  };
+
+  const removeValueField = (valueFieldId: string) =>
+    updateConfig((current) => ({
+      ...current,
+      valueFields: current.valueFields.filter((item) => item.id !== valueFieldId),
+    }));
+
+  const duplicateValueField = (valueFieldId: string) =>
+    updateConfig((current) => {
+      const sourceMetric = current.valueFields.find((item) => item.id === valueFieldId);
+      if (!sourceMetric) return current;
+      const nextMetric: ValueFieldConfig = {
+        ...sourceMetric,
+        id: makeId('value'),
+        label: `${sourceMetric.label} (Copy)`,
+      };
+      const sourceIndex = current.valueFields.findIndex((item) => item.id === valueFieldId);
+      const nextValueFields = [...current.valueFields];
+      nextValueFields.splice(sourceIndex + 1, 0, nextMetric);
+      return { ...current, valueFields: nextValueFields };
+    });
+
+  const reorderItems = <T,>(items: T[], fromIndex: number, toIndex: number): T[] => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return items;
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    if (typeof moved === 'undefined') return items;
+    next.splice(Math.min(toIndex, next.length), 0, moved);
+    return next;
+  };
+
+  const insertItemAt = <T,>(items: T[], index: number, item: T): T[] => {
+    const next = [...items];
+    next.splice(Math.max(0, Math.min(index, next.length)), 0, item);
+    return next;
+  };
+
+  const dropFieldToZone = (zone: 'rows' | 'columns' | 'values', targetIndex?: number) => {
     if (!dragField || !config) return;
 
     if (zone === 'values') {
       updateConfig(current => {
-        if (current.valueFields.some(valueField => valueField.field === dragField.field)) {
-          return current;
+        const normalizedTargetIndex =
+          typeof targetIndex === 'number' ? Math.max(0, Math.min(targetIndex, current.valueFields.length)) : current.valueFields.length;
+
+        if (dragField.from === 'values') {
+          const fromIndex =
+            typeof dragField.fromIndex === 'number'
+              ? dragField.fromIndex
+              : current.valueFields.findIndex(
+                  (valueField) =>
+                    valueField.id === dragField.valueId || valueField.field === dragField.field
+                );
+          if (fromIndex < 0) return current;
+          return {
+            ...current,
+            valueFields: reorderItems(current.valueFields, fromIndex, normalizedTargetIndex),
+          };
         }
+
         const fieldMeta = fieldMap.get(dragField.field);
+        const nextRows =
+          dragField.from === 'rows'
+            ? current.rowFields.filter((field) => field !== dragField.field)
+            : current.rowFields;
+        const nextColumns =
+          dragField.from === 'columns'
+            ? current.columnFields.filter((field) => field !== dragField.field)
+            : current.columnFields;
+        const nextValues =
+          dragField.from === 'values'
+            ? current.valueFields.filter((valueField) => valueField.id !== dragField.valueId)
+            : current.valueFields;
+        const nextMetric: ValueFieldConfig = {
+          id: makeId('value'),
+          field: dragField.field,
+          label: dragField.field,
+          aggregate: fieldMeta?.type === 'string' ? 'counta' : 'sum',
+          format: fieldMeta?.type === 'number' ? 'currency' : 'number',
+          postProcess: 'none',
+          decimalsOverride: -1,
+          revenueScaleOverride: 'inherit',
+          accentColor:
+            VALUE_COLOR_OPTIONS[nextValues.length % VALUE_COLOR_OPTIONS.length] || VALUE_COLOR_OPTIONS[0],
+        };
+
         return {
           ...current,
-          rowFields: dragField.from === 'rows'
-            ? current.rowFields.filter(field => field !== dragField.field)
-            : current.rowFields,
-          columnFields: dragField.from === 'columns'
-            ? current.columnFields.filter(field => field !== dragField.field)
-            : current.columnFields,
-          valueFields: [
-            ...current.valueFields,
-            {
-              id: makeId('value'),
-              field: dragField.field,
-              label: dragField.field,
-              aggregate: fieldMeta?.type === 'string' ? 'counta' : 'sum',
-              format: fieldMeta?.type === 'number' ? 'currency' : 'number',
-              postProcess: 'none',
-              decimalsOverride: -1,
-              revenueScaleOverride: 'inherit',
-              accentColor:
-                VALUE_COLOR_OPTIONS[current.valueFields.length % VALUE_COLOR_OPTIONS.length] || VALUE_COLOR_OPTIONS[0],
-            },
-          ],
+          rowFields: nextRows,
+          columnFields: nextColumns,
+          valueFields: insertItemAt(nextValues, normalizedTargetIndex, nextMetric),
         };
       });
     } else {
       updateConfig(current => {
-        const target = zone === 'rows' ? current.rowFields : current.columnFields;
-        if (target.includes(dragField.field)) return current;
+        const currentZoneFields = zone === 'rows' ? current.rowFields : current.columnFields;
+        const normalizedTargetIndex =
+          typeof targetIndex === 'number'
+            ? Math.max(0, Math.min(targetIndex, currentZoneFields.length))
+            : currentZoneFields.length;
+
+        if (dragField.from === zone) {
+          const sourceIndex =
+            typeof dragField.fromIndex === 'number'
+              ? dragField.fromIndex
+              : currentZoneFields.findIndex((field) => field === dragField.field);
+          if (sourceIndex < 0) return current;
+          const reordered = reorderItems(currentZoneFields, sourceIndex, normalizedTargetIndex);
+          return zone === 'rows'
+            ? { ...current, rowFields: reordered }
+            : { ...current, columnFields: reordered };
+        }
+
+        if (currentZoneFields.includes(dragField.field)) return current;
+
         const nextRows =
           zone === 'rows'
-            ? [...current.rowFields, dragField.field]
+            ? insertItemAt(
+                dragField.from === 'rows'
+                  ? current.rowFields.filter((field) => field !== dragField.field)
+                  : current.rowFields,
+                normalizedTargetIndex,
+                dragField.field,
+              )
             : dragField.from === 'rows'
               ? current.rowFields.filter(field => field !== dragField.field)
               : current.rowFields;
         const nextColumns =
           zone === 'columns'
-            ? [...current.columnFields, dragField.field]
+            ? insertItemAt(
+                dragField.from === 'columns'
+                  ? current.columnFields.filter((field) => field !== dragField.field)
+                  : current.columnFields,
+                normalizedTargetIndex,
+                dragField.field,
+              )
             : dragField.from === 'columns'
               ? current.columnFields.filter(field => field !== dragField.field)
               : current.columnFields;
         const nextValues =
           dragField.from === 'values'
-            ? current.valueFields.filter(valueField => valueField.field !== dragField.field)
+            ? current.valueFields.filter(
+                (valueField) => valueField.id !== dragField.valueId && valueField.field !== dragField.field
+              )
             : current.valueFields;
+
         return { ...current, rowFields: nextRows, columnFields: nextColumns, valueFields: nextValues };
       });
     }
@@ -1893,6 +2122,35 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
   const savedListsCount = stableViews.filter(
     view => Array.isArray(view.config?.rowFields) && view.config.rowFields.length > 0,
   ).length;
+  const getHeaderAlias = (headerKey: string, fallback: string) =>
+    (config.headerAliases?.[headerKey] || '').trim() || fallback;
+
+  const resolveLabelCellDisplay = (rowId: string, labelIndex: number, fallback: string) =>
+    config.cellOverrides?.[`label:${rowId}:${labelIndex}`] ?? fallback;
+
+  const resolveMetricCellDisplay = (rowId: string, metricKey: string, fallback: string) =>
+    config.cellOverrides?.[`metric:${rowId}:${metricKey}`] ?? fallback;
+
+  const setHeaderAlias = (headerKey: string, value: string) =>
+    updateConfig(current => ({
+      ...current,
+      headerAliases: {
+        ...current.headerAliases,
+        [headerKey]: value,
+      },
+    }));
+
+  const setCellOverride = (cellKey: string, value: string) =>
+    updateConfig(current => {
+      const next = { ...(current.cellOverrides || {}) };
+      if (value.trim()) next[cellKey] = value;
+      else delete next[cellKey];
+      return {
+        ...current,
+        cellOverrides: next,
+      };
+    });
+
   const renderPreviewTable = (withChart: boolean) => (
     <Card className={`border border-slate-200 ${previewShellClass} shadow-sm ${config.style.rounded ? 'rounded-xl' : ''}`}>
       <CardHeader className="pb-3">
@@ -1948,7 +2206,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         left: config.style.freezeFirstColumns ? rowStickyOffsets[index] : undefined,
                       }}
                     >
-                      {field}
+                      {getHeaderAlias(`row:${index}:${field}`, field)}
                     </th>
                   ))}
                   {metricColumns.map(metric => (
@@ -1965,7 +2223,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         width: config.columnWidths[`metric_${metric.key}`] || 150,
                       }}
                     >
-                      {metric.label}
+                      {getHeaderAlias(`metric:${metric.key}`, metric.label)}
                     </th>
                   ))}
                 </tr>
@@ -2071,7 +2329,25 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                                     left: config.style.freezeFirstColumns ? rowStickyOffsets[labelIndex] : undefined,
                                   }}
                                 >
-                                  {row.isSubtotal
+                                  {inlineEditMode ? (
+                                    <Input
+                                      value={resolveLabelCellDisplay(
+                                        row.id,
+                                        labelIndex,
+                                        row.isSubtotal
+                                          ? label
+                                          : labelIndex === 0
+                                            ? ''
+                                            : labelIndex === 1
+                                              ? `↳ ${label}`
+                                              : label
+                                      )}
+                                      onChange={(event) =>
+                                        setCellOverride(`label:${row.id}:${labelIndex}`, event.target.value)
+                                      }
+                                      className="h-8 text-xs bg-white"
+                                    />
+                                  ) : row.isSubtotal
                                     ? label
                                     : labelIndex === 0
                                       ? ''
@@ -2094,7 +2370,25 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                                     width: config.columnWidths[`metric_${metric.key}`] || 150,
                                   }}
                                 >
-                                  {formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)}
+                                  {inlineEditMode ? (
+                                    <Input
+                                      value={resolveMetricCellDisplay(
+                                        row.id,
+                                        metric.key,
+                                        formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)
+                                      )}
+                                      onChange={(event) =>
+                                        setCellOverride(`metric:${row.id}:${metric.key}`, event.target.value)
+                                      }
+                                      className="h-8 text-xs text-right bg-white"
+                                    />
+                                  ) : (
+                                    resolveMetricCellDisplay(
+                                      row.id,
+                                      metric.key,
+                                      formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)
+                                    )
+                                  )}
                                 </td>
                               ))}
                             </tr>
@@ -2128,7 +2422,15 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                             left: config.style.freezeFirstColumns ? rowStickyOffsets[labelIndex] : undefined,
                           }}
                         >
-                          {label}
+                          {inlineEditMode ? (
+                            <Input
+                              value={resolveLabelCellDisplay(row.id, labelIndex, label)}
+                              onChange={(event) => setCellOverride(`label:${row.id}:${labelIndex}`, event.target.value)}
+                              className="h-8 text-xs bg-white"
+                            />
+                          ) : (
+                            resolveLabelCellDisplay(row.id, labelIndex, label)
+                          )}
                         </td>
                       ))}
 
@@ -2145,7 +2447,23 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                             width: config.columnWidths[`metric_${metric.key}`] || 150,
                           }}
                         >
-                          {formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)}
+                          {inlineEditMode ? (
+                            <Input
+                              value={resolveMetricCellDisplay(
+                                row.id,
+                                metric.key,
+                                formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)
+                              )}
+                              onChange={(event) => setCellOverride(`metric:${row.id}:${metric.key}`, event.target.value)}
+                              className="h-8 text-xs text-right bg-white"
+                            />
+                          ) : (
+                            resolveMetricCellDisplay(
+                              row.id,
+                              metric.key,
+                              formatMetricForField(row.values[metric.key] || 0, metric.valueField, config)
+                            )
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -2285,35 +2603,38 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Saved Tables</div>
             <div className="text-xs text-slate-500">{stableViews.length} total</div>
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {stableViews.map(view => (
-              <button
-                key={view.id}
-                type="button"
-                onClick={() => setActiveViewId(view.id)}
-                className={[
-                  'shrink-0 rounded-t-lg px-3 py-2 text-sm border transition',
-                  view.id === activeViewId
-                    ? 'bg-white text-slate-900 border-slate-300 border-b-white shadow-sm'
-                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-50',
-                ].join(' ')}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {stableViews.map((view, index) => (
+                <button
+                  key={view.id}
+                  type="button"
+                  onClick={() => setActiveViewId(view.id)}
+                  className={[
+                    'shrink-0 min-w-[180px] rounded-lg border px-3 py-2 text-left transition',
+                    view.id === activeViewId
+                      ? 'bg-white text-slate-900 border-slate-900 shadow-sm ring-1 ring-slate-900/10'
+                      : 'bg-white/80 text-slate-700 border-slate-200 hover:bg-white',
+                  ].join(' ')}
+                >
+                  <div className="truncate text-sm font-semibold">{view.name}</div>
+                  <div className="text-[11px] text-slate-500">Saved View {index + 1}</div>
+                </button>
+              ))}
+              <Button size="sm" variant="outline" className="shrink-0 gap-1 bg-white" onClick={createView}>
+                <Plus className="w-4 h-4" />
+                New Table
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0 gap-1 bg-white text-rose-700 border-rose-200 hover:bg-rose-50"
+                onClick={() => deleteView(activeViewId)}
               >
-                {view.name}
-              </button>
-            ))}
-            <Button size="sm" variant="outline" className="shrink-0 gap-1" onClick={createView}>
-              <Plus className="w-4 h-4" />
-              New Table
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0 gap-1 text-rose-700 border-rose-200 hover:bg-rose-50"
-              onClick={() => deleteView(activeViewId)}
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </Button>
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2383,7 +2704,39 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                       {showSettingsSections ? 'Back To Workspace' : 'Open Settings'}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant={inlineEditMode ? 'default' : 'outline'}
+                      className="h-8 text-xs"
+                      onClick={() => setInlineEditMode((prev) => !prev)}
+                    >
+                      {inlineEditMode ? 'Stop Edit Values' : 'Edit Headers/Values'}
+                    </Button>
                   </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 px-3 py-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Smart Actions</span>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={autoBuildModel}>
+                    Auto Build Pivot
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={applyTrendPreset}>
+                    Trend View
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => applyTopBottomPreset('top', 10)}>
+                    Top 10
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => applyTopBottomPreset('bottom', 10)}>
+                    Bottom 10
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs text-rose-700 border-rose-200 hover:bg-rose-50"
+                    onClick={resetModelCanvas}
+                  >
+                    Clear Canvas
+                  </Button>
                 </div>
 
                 {showTopControls && (
@@ -2436,12 +2789,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 )}
               </div>
 
-              <div className="overflow-x-auto p-4">
+              <div className="p-4">
               {showSettingsSections ? (
-              <div
-                className="min-w-[1480px] grid gap-4"
-                style={{ gridTemplateColumns: 'minmax(320px, 23%) minmax(860px, 54%) minmax(320px, 23%)' }}
-              >
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
               <aside className="space-y-4 sticky top-4 self-start">
                 <Card className="border border-slate-200 bg-white shadow-sm">
                   <CardHeader className="pb-2">
@@ -2460,6 +2810,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         className="h-8 pl-7 text-xs bg-white"
                       />
                     </div>
+                    <p className="text-[11px] text-slate-500">
+                      Tip: drag fields into zones, or double-click a field for smart auto-placement.
+                    </p>
 
                     {usedFieldsSummary.length > 0 && (
                       <div className="rounded-md border border-slate-200 p-2 bg-slate-50/60 space-y-2">
@@ -2512,7 +2865,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                                           type="button"
                                           draggable
                                           onDragStart={() => setDragField({ field: field.name, from: 'available' })}
+                                          onDoubleClick={() => quickAddFieldToModel(field.name)}
                                           className="w-full text-left px-2 py-1 rounded-md border border-slate-200 bg-white text-xs hover:bg-slate-100 transition flex items-center justify-between gap-2"
+                                          title="Drag to Rows/Columns/Values or double-click for smart add"
                                         >
                                           <span className="truncate font-medium text-slate-800">{resolveFieldLabel(field.name)}</span>
                                           <span className="inline-flex items-center gap-1 shrink-0">
@@ -2554,11 +2909,26 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                         }}
                         className="rounded-md border border-dashed border-slate-300 p-2 bg-white min-h-[64px]"
                       >
-                        <div className="text-xs font-semibold text-slate-700 mb-1">{zone.title}</div>
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <div className="text-xs font-semibold text-slate-700">{zone.title}</div>
+                          <div className="text-[10px] text-slate-500">drag to reorder</div>
+                        </div>
                         <div className="flex flex-wrap gap-1">
-                          {zone.fields.map(field => (
-                            <span key={field} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs">
-                              {field}
+                          {zone.fields.map((field, fieldIndex) => (
+                            <span
+                              key={field}
+                              draggable
+                              onDragStart={() => setDragField({ field, from: zone.key, fromIndex: fieldIndex })}
+                              onDragOver={(event) => event.preventDefault()}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                dropFieldToZone(zone.key, fieldIndex);
+                              }}
+                              className="inline-flex cursor-grab items-center gap-1 rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs active:cursor-grabbing"
+                            >
+                              <span className="text-slate-400">::</span>
+                              <span>{field}</span>
                               <button
                                 type="button"
                                 className="text-slate-500 hover:text-rose-600"
@@ -2587,23 +2957,53 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                       }}
                       className="rounded-md border border-dashed border-slate-300 p-2 bg-white min-h-[64px]"
                     >
-                      <div className="text-xs font-semibold text-slate-700 mb-1">Values</div>
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <div className="text-xs font-semibold text-slate-700">Values</div>
+                        <div className="text-[10px] text-slate-500">drag to reorder</div>
+                      </div>
                       <div className="flex flex-col gap-1">
-                        {config.valueFields.map(valueField => (
-                          <span key={valueField.id} className="inline-flex items-center justify-between gap-2 px-2 py-1 rounded bg-slate-100 border border-slate-200 text-xs">
-                            {valueField.label}
-                            <button
-                              type="button"
-                              className="text-slate-500 hover:text-rose-600"
-                              onClick={() =>
-                                updateConfig(current => ({
-                                  ...current,
-                                  valueFields: current.valueFields.filter(item => item.id !== valueField.id),
-                                }))
-                              }
-                            >
-                              ×
-                            </button>
+                        {config.valueFields.map((valueField, metricIndex) => (
+                          <span
+                            key={valueField.id}
+                            draggable
+                            onDragStart={() =>
+                              setDragField({
+                                field: valueField.field,
+                                from: 'values',
+                                fromIndex: metricIndex,
+                                valueId: valueField.id,
+                              })
+                            }
+                            onDragOver={(event) => event.preventDefault()}
+                            onDrop={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              dropFieldToZone('values', metricIndex);
+                            }}
+                            className="inline-flex cursor-grab items-center justify-between gap-2 rounded border border-slate-200 bg-slate-100 px-2 py-1 text-xs active:cursor-grabbing"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-slate-400">::</span>
+                              <span>{valueField.label}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                className="text-slate-500 hover:text-slate-900"
+                                onClick={() => duplicateValueField(valueField.id)}
+                                title="Duplicate metric"
+                              >
+                                ⧉
+                              </button>
+                              <button
+                                type="button"
+                                className="text-slate-500 hover:text-rose-600"
+                                onClick={() => removeValueField(valueField.id)}
+                                title="Remove metric"
+                              >
+                                ×
+                              </button>
+                            </span>
                           </span>
                         ))}
                       </div>
@@ -2816,7 +3216,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </div>
                 </details>
 
-                <details open className="group">
+                <details className="group">
                 <summary className={settingsSummaryClass}>
                   Filters
                 </summary>
@@ -3049,7 +3449,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </div>
                 </details>
 
-                <details open className="group">
+                <details className="group">
                 <summary className={settingsSummaryClass}>
                   Style & Processing
                 </summary>
@@ -3244,6 +3644,26 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                           </select>
                         </label>
 
+                        <label className={`${settingsLabelClass} text-xs text-slate-700`}>
+                          <span className={settingsLabelTextClass}>Column Member Order</span>
+                          <select
+                            value={config.processing.columnSortDirection}
+                            onChange={event =>
+                              updateConfig(current => ({
+                                ...current,
+                                processing: {
+                                  ...current.processing,
+                                  columnSortDirection: event.target.value as 'asc' | 'desc',
+                                },
+                              }))
+                            }
+                            className={settingsSelectClass}
+                          >
+                            <option value="asc">A-Z</option>
+                            <option value="desc">Z-A</option>
+                          </select>
+                        </label>
+
                         <label className={`${settingsLabelClass} text-xs text-slate-700 sm:col-span-2`}>
                           <span className={settingsLabelTextClass}>Null Handling</span>
                           <select
@@ -3376,7 +3796,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </div>
                 </details>
 
-                <details open className="group">
+                <details className="group">
                 <summary className={settingsSummaryClass}>
                   Value Fields
                 </summary>
@@ -3394,8 +3814,28 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
 
                     {config.valueFields.map((valueField, index) => (
                       <div key={valueField.id} className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-3">
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Metric {index + 1}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Metric {index + 1}
+                          </div>
+                          <div className="inline-flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px]"
+                              onClick={() => duplicateValueField(valueField.id)}
+                            >
+                              Duplicate
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px] text-rose-700 border-rose-200 hover:bg-rose-50"
+                              onClick={() => removeValueField(valueField.id)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </div>
 
                         <label className={`${settingsLabelClass} text-xs text-slate-700`}>
@@ -3602,6 +4042,68 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
 
                 <details open className="group">
                 <summary className={settingsSummaryClass}>
+                  Header & Value Customization
+                </summary>
+                <div className="pt-2">
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-900">Display Overrides</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Header Aliases</div>
+                      {(config.rowFields.length ? config.rowFields : ['Row']).map((field, index) => (
+                        <label key={`header-row-${index}`} className="block text-xs text-slate-700">
+                          Row Header: {field}
+                          <Input
+                            value={config.headerAliases?.[`row:${index}:${field}`] || ''}
+                            onChange={(event) => setHeaderAlias(`row:${index}:${field}`, event.target.value)}
+                            className="mt-1 h-8 bg-white"
+                            placeholder={field}
+                          />
+                        </label>
+                      ))}
+                      {metricColumns.map((metric) => (
+                        <label key={`header-metric-${metric.key}`} className="block text-xs text-slate-700">
+                          Metric Header: {metric.label}
+                          <Input
+                            value={config.headerAliases?.[`metric:${metric.key}`] || ''}
+                            onChange={(event) => setHeaderAlias(`metric:${metric.key}`, event.target.value)}
+                            className="mt-1 h-8 bg-white"
+                            placeholder={metric.label}
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cell Overrides</div>
+                      <p className="text-xs text-slate-600">
+                        Use the <span className="font-semibold">Edit Headers/Values</span> button in the ribbon to directly edit preview table values.
+                        Current overrides: {Object.keys(config.cellOverrides || {}).length}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        onClick={() =>
+                          updateConfig((current) => ({
+                            ...current,
+                            cellOverrides: {},
+                          }))
+                        }
+                      >
+                        Clear Cell Overrides
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                </div>
+                </details>
+
+                <details className="group">
+                <summary className={settingsSummaryClass}>
                   Layout Controls
                 </summary>
                 <div className="pt-2">
@@ -3714,163 +4216,9 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 )}
               </aside>
 
-              <main className="space-y-4">
+              <main className="min-w-0 space-y-4">
                 {renderPreviewTable(true)}
               </main>
-              <aside className="space-y-3 sticky top-4 self-start">
-                <Card className="border border-slate-200 bg-white shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-slate-900">Quick Display Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
-                      <span className={settingsLabelTextClass}>Theme</span>
-                      <select
-                        value={config.style.theme}
-                        onChange={event =>
-                          updateConfig(current => ({
-                            ...current,
-                            style: { ...current.style, theme: event.target.value as PivotConfig['style']['theme'] },
-                          }))
-                        }
-                        className={settingsSelectClass}
-                      >
-                        <option value="slate">Slate</option>
-                        <option value="indigo">Indigo</option>
-                        <option value="emerald">Emerald</option>
-                        <option value="rose">Rose</option>
-                        <option value="mono">Mono</option>
-                      </select>
-                    </label>
-                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
-                      <span className={settingsLabelTextClass}>Chart Type</span>
-                      <select
-                        value={config.chartType}
-                        onChange={event =>
-                          updateConfig(current => ({ ...current, chartType: event.target.value as ChartType }))
-                        }
-                        className={settingsSelectClass}
-                      >
-                        <option value="bar">Bar</option>
-                        <option value="line">Line</option>
-                        <option value="area">Area</option>
-                        <option value="pie">Pie</option>
-                      </select>
-                    </label>
-                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
-                      <span className={settingsLabelTextClass}>Date Bucket</span>
-                      <select
-                        value={config.dateBucket}
-                        onChange={event =>
-                          updateConfig(current => ({ ...current, dateBucket: event.target.value as DateBucket }))
-                        }
-                        className={settingsSelectClass}
-                      >
-                        <option value="none">None</option>
-                        <option value="day">Day</option>
-                        <option value="week">Week</option>
-                        <option value="month">Month</option>
-                        <option value="quarter">Quarter</option>
-                        <option value="year">Year</option>
-                      </select>
-                    </label>
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-slate-200 bg-white shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-slate-900">Freeze + Table Behavior</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {([
-                      { key: 'freezeHeader', label: 'Freeze Header Row' },
-                      { key: 'freezeFirstColumns', label: 'Freeze Row Fields' },
-                      { key: 'wrapCells', label: 'Wrap Cells' },
-                      { key: 'dense', label: 'Dense Rows' },
-                      { key: 'showRowHover', label: 'Row Hover Highlight' },
-                    ] as const).map(toggle => (
-                      <label
-                        key={`right-toggle-${toggle.key}`}
-                        className="inline-flex w-full items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={config.style[toggle.key]}
-                          onChange={event =>
-                            updateConfig(current => ({
-                              ...current,
-                              style: {
-                                ...current.style,
-                                [toggle.key]: event.target.checked,
-                              },
-                            }))
-                          }
-                        />
-                        {toggle.label}
-                      </label>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-slate-200 bg-white shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-slate-900">Metric + Layout Defaults</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
-                      <span className={settingsLabelTextClass}>Revenue Scale</span>
-                      <select
-                        value={config.revenueScale}
-                        onChange={event =>
-                          updateConfig(current => ({ ...current, revenueScale: event.target.value as RevenueScale }))
-                        }
-                        className={settingsSelectClass}
-                      >
-                        <option value="auto">Auto</option>
-                        <option value="full">Full</option>
-                        <option value="K">K</option>
-                        <option value="L">L</option>
-                        <option value="Cr">Cr</option>
-                      </select>
-                    </label>
-                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
-                      <span className={settingsLabelTextClass}>Decimals</span>
-                      <select
-                        value={String(config.decimals)}
-                        onChange={event =>
-                          updateConfig(current => ({ ...current, decimals: Number(event.target.value) }))
-                        }
-                        className={settingsSelectClass}
-                      >
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                      </select>
-                    </label>
-                    <label className={`${settingsLabelClass} text-xs text-slate-700`}>
-                      <span className={settingsLabelTextClass}>Row Limit</span>
-                      <select
-                        value={String(config.processing.rowLimit)}
-                        onChange={event =>
-                          updateConfig(current => ({
-                            ...current,
-                            processing: { ...current.processing, rowLimit: Number(event.target.value) },
-                          }))
-                        }
-                        className={settingsSelectClass}
-                      >
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="250">250</option>
-                        <option value="500">500</option>
-                        <option value="0">No Limit</option>
-                      </select>
-                    </label>
-                  </CardContent>
-                </Card>
-              </aside>
               </div>
               ) : (
               <div className="space-y-4">

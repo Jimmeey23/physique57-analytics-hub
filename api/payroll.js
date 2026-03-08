@@ -5,11 +5,34 @@
 // - GOOGLE_REFRESH_TOKEN
 // - GOOGLE_SHEETS_SPREADSHEET_ID
 
+// Load environment variables from .env file in development
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Load .env file manually
+try {
+  const envFile = readFileSync(join(process.cwd(), '.env'), 'utf8');
+  envFile.split('\n').forEach(line => {
+    if (line && line.includes('=') && !line.startsWith('#')) {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        process.env[key.trim()] = value.trim();
+      }
+    }
+  });
+} catch (e) {
+  console.log('No .env file found or error reading it:', e.message);
+}
+
 async function getAccessToken() {
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN || '';
+  
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID || '',
-    client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN || '',
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
     grant_type: 'refresh_token',
   });
 
@@ -131,6 +154,7 @@ export default async function handler(req, res) {
   }
 
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+  
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REFRESH_TOKEN || !spreadsheetId) {
     res.status(500).json({ error: 'Missing required Google API environment variables' });
     return;
