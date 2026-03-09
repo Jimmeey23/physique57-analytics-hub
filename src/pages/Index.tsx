@@ -4,7 +4,7 @@ import { Footer } from '@/components/ui/footer';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, AlertCircle, BarChart3, LayoutGrid, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
@@ -20,28 +20,7 @@ const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallba
   }
 };
 
-// Memoized stats card component
-const StatsCard = memo(({
-  title,
-  subtitle,
-  icon: IconComponent,
-  accent = 'from-blue-400 to-purple-400'
-}: {
-  title: string;
-  subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent?: string;
-}) => <div className="relative p-6 rounded-2xl bg-white border border-slate-200/60 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 group">
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 to-purple-50/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-    <div className="absolute right-4 top-4 p-1.5 rounded-lg bg-slate-50 border border-slate-100 group-hover:bg-white/90 transition-colors duration-300">
-      <IconComponent className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-800 transition-colors duration-300" />
-    </div>
-    <div className="relative z-10">
-      <div className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-800 bg-clip-text text-transparent">{title}</div>
-      <div className="text-xs text-slate-500 font-medium mt-1">{subtitle}</div>
-    </div>
-    <div className={`absolute top-3 right-3 w-2 h-2 bg-gradient-to-r ${accent} rounded-full opacity-60 animate-pulse`}></div>
-  </div>);
+
 const Index = memo(() => {
   const navigate = useNavigate();
   const { setLoading } = useGlobalLoading();
@@ -49,7 +28,22 @@ const Index = memo(() => {
 
   const memoizedData = useMemo(() => data, [data]);
   const totalRecords = memoizedData.length;
-  const moduleCount = 13;
+
+  const totalRevenue = useMemo(
+    () => memoizedData.reduce((sum, d) => sum + (d.grossRevenue || 0), 0),
+    [memoizedData]
+  );
+  const uniqueMembers = useMemo(
+    () => new Set(memoizedData.map(d => d.memberId).filter(Boolean)).size,
+    [memoizedData]
+  );
+
+  const formatRevenue = (val: number): string => {
+    if (val >= 1e7) return `₹${(val / 1e7).toFixed(1)}Cr`;
+    if (val >= 1e5) return `₹${(val / 1e5).toFixed(1)}L`;
+    if (val > 0) return `₹${val.toLocaleString('en-IN')}`;
+    return '—';
+  };
 
   useEffect(() => {
     setLoading(loading, 'Loading dashboard overview...');
@@ -97,10 +91,17 @@ const Index = memo(() => {
         {/* Subtle Glassmorphism overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-purple-50/20 backdrop-blur-[2px]"></div>
         
-        {/* Premium Floating Elements - Subtle and Sophisticated */}
-        <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-br from-blue-400/8 to-purple-400/6 rounded-full floating-animation stagger-1 backdrop-blur-md border border-slate-200/30 shadow-lg"></div>
-        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-br from-purple-400/6 to-pink-400/8 rounded-full floating-animation stagger-3 backdrop-blur-md border border-slate-200/30 shadow-lg"></div>
-        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-blue-400/5 to-cyan-400/6 rounded-full floating-animation stagger-5 backdrop-blur-md border border-slate-200/30 shadow-lg"></div>
+        {/* Metric Floating Discs */}
+        <div className="absolute top-20 left-10 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-400/8 rounded-full floating-animation stagger-1 backdrop-blur-md border border-blue-200/40 shadow-lg"></div>
+        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-br from-purple-400/8 to-pink-400/10 rounded-full floating-animation stagger-3 backdrop-blur-md border border-purple-200/40 shadow-lg"></div>
+        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-gradient-to-br from-blue-400/8 to-cyan-400/8 rounded-full floating-animation stagger-5 backdrop-blur-md border border-cyan-200/40 shadow-lg"></div>
+        
+        {/* Additional Floating Discs */}
+        <div className="absolute top-1/4 right-1/2 w-64 h-64 bg-gradient-to-br from-emerald-400/8 to-teal-400/10 rounded-full floating-animation stagger-2 backdrop-blur-md border border-emerald-200/40 shadow-lg"></div>
+        <div className="absolute bottom-1/2 right-10 w-56 h-56 bg-gradient-to-br from-rose-400/8 to-pink-400/10 rounded-full floating-animation stagger-4 backdrop-blur-md border border-rose-200/40 shadow-lg"></div>
+        <div className="absolute top-3/4 left-1/4 w-48 h-48 bg-gradient-to-br from-violet-400/8 to-purple-400/10 rounded-full floating-animation stagger-6 backdrop-blur-md border border-violet-200/40 shadow-lg"></div>
+        <div className="absolute bottom-10 right-1/3 w-40 h-40 bg-gradient-to-br from-amber-400/8 to-orange-400/10 rounded-full floating-animation stagger-1 backdrop-blur-md border border-amber-200/40 shadow-lg"></div>
+        <div className="absolute top-1/2 left-16 w-52 h-52 bg-gradient-to-br from-indigo-400/8 to-blue-400/10 rounded-full floating-animation stagger-3 backdrop-blur-md border border-indigo-200/40 shadow-lg"></div>
         
         {/* Premium Floating Orbs - Subtle Accents */}
         <div className="absolute top-32 right-1/4 w-28 h-28 bg-gradient-to-br from-blue-300/12 to-purple-300/10 rounded-full float-gentle stagger-2 backdrop-blur-md border border-slate-200/40 shadow-md"></div>
@@ -119,13 +120,13 @@ const Index = memo(() => {
 
       {/* Content */}
       <div className="relative z-10">
-        <div className="container mx-auto px-6 py-12">
+        <div className="container mx-auto px-6 py-8">
           {/* Premium Header Section */}
           <motion.header
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="dashboard-hero-header mb-12 text-center slide-in-from-left"
+            className="dashboard-hero-header mb-6 text-center slide-in-from-left"
           >
             <div className="dashboard-hero-graphics" aria-hidden="true">
               <span className="dashboard-hero-orb dashboard-hero-orb-left floating-animation stagger-1" />
@@ -136,7 +137,7 @@ const Index = memo(() => {
             </div>
 
             <div className="relative z-10">
-              <div className="dashboard-title-frame mb-12 mx-auto max-w-full">
+              <div className="dashboard-title-frame mb-4 mx-auto max-w-full">
                 <h1 className="dashboard-main-title">
                   BUSINESS INTELLIGENCE DASHBOARD
                 </h1>
@@ -144,21 +145,8 @@ const Index = memo(() => {
                   PHYSIQUE 57 INDIA
                 </p>
               </div>
-              
-              {/* Premium Stats Cards */}
-              <div className="flex flex-wrap justify-center gap-5 mb-10">
-                <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 280, damping: 20 }} className="glass-card modern-card-hover soft-bounce stagger-1">
-                  <StatsCard title={String(moduleCount)} subtitle="No of Modules" icon={LayoutGrid} accent="from-blue-400 to-cyan-400" />
-                </motion.div>
-                <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 280, damping: 20 }} className="glass-card modern-card-hover soft-bounce stagger-2">
-                  <StatsCard title={totalRecords.toLocaleString()} subtitle="Real-Time Data" icon={Activity} accent="from-purple-400 to-pink-400" />
-                </motion.div>
-                <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 280, damping: 20 }} className="glass-card modern-card-hover soft-bounce stagger-3">
-                  <StatsCard title="Advanced" subtitle="Analytics" icon={BarChart3} accent="from-emerald-400 to-teal-400" />
-                </motion.div>
-              </div>
 
-              <div className="w-24 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-6 shimmer-effect rounded-full"></div>
+              <div className="w-32 h-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 mx-auto shimmer-color-effect rounded-full"></div>
             </div>
           </motion.header>
 
@@ -167,13 +155,44 @@ const Index = memo(() => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-7xl mx-auto slide-in-from-right stagger-2"
+            className="max-w-full mx-auto px-4 slide-in-from-right stagger-2"
           >
-            <div className="min-w-full bg-white border border-slate-200/60 glow-pulse rounded-3xl p-8 shadow-lg shadow-slate-200/40">
+            <div className="w-full bg-white border border-slate-200/60 glow-pulse rounded-3xl p-10 shadow-xl shadow-slate-200/40 backdrop-blur-sm">
+              {/* Enhanced Controls Section */}
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-200/40">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-slate-700">Live Data</span>
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    {totalRecords.toLocaleString()} records • {uniqueMembers.toLocaleString()} members
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRetry}
+                    className="gap-2 hover:bg-slate-50 border-slate-300"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Refresh
+                  </Button>
+                  
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs font-medium text-slate-600">Auto-sync enabled</span>
+                  </div>
+                </div>
+              </div>
+              
               <SafeWrapper fallback={
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-slate-600 font-medium">Loading dashboard...</p>
+                <div className="text-center py-16">
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mx-auto mb-6"></div>
+                  <p className="text-slate-700 font-medium text-lg">Loading dashboard...</p>
+                  <p className="text-slate-500 text-sm mt-2">Fetching latest analytics data</p>
                 </div>
               }>
                 <DashboardGrid onButtonClick={handleSectionClick} />
