@@ -5,6 +5,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
+import { cn } from '@/lib/utils';
 interface TrainerYearOnYearTableProps {
   data: ProcessedTrainerData[];
   onRowClick?: (trainer: string, data: any) => void;
@@ -130,9 +131,9 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     className: 'min-w-[240px]',
     sortable: true,
     render: (value: string, row: any) => (
-      <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2 min-h-6 overflow-hidden">
         <TrainerNameCell name={value} className="text-nowrap" />
-        <div className="text-xs text-slate-500 ml-10">{row.location}</div>
+        <span className="truncate text-xs text-slate-500">• {row.location}</span>
       </div>
     )
   }, {
@@ -147,7 +148,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <span className="font-medium text-slate-800 text-sm ">{formatNumber(value)}</span>
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm leading-none">{formatNumber(value)}</span>
   }, {
     key: 'previousSessions' as const,
     header: (
@@ -160,7 +161,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{formatNumber(value)}</span>
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm leading-none">{formatNumber(value)}</span>
   }, {
     key: 'sessionsGrowth' as const,
     header: (
@@ -173,7 +174,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <div className="flex items-center justify-center gap-1">
+    render: (value: number) => <div className="flex items-center justify-center gap-1 leading-none">
           {value > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
       <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-slate-600'}`}>
             {value.toFixed(1)}%
@@ -191,7 +192,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{formatCurrency(value)}</span>
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm leading-none">{formatCurrency(value)}</span>
   }, {
     key: 'previousRevenue' as const,
     header: (
@@ -204,7 +205,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{formatCurrency(value)}</span>
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm leading-none">{formatCurrency(value)}</span>
   }, {
     key: 'revenueGrowth' as const,
     header: (
@@ -217,7 +218,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <div className="flex items-center justify-center gap-1">
+    render: (value: number) => <div className="flex items-center justify-center gap-1 leading-none">
           {value > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
       <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-slate-600'}`}>
             {value.toFixed(1)}%
@@ -235,7 +236,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{value.toFixed(1)}</span>
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm leading-none">{value.toFixed(1)}</span>
   }, {
     key: 'previousAvgClassSize' as const,
     header: (
@@ -248,7 +249,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <span className="font-medium text-slate-800 text-sm">{value.toFixed(1)}</span>
+    render: (value: number) => <span className="font-medium text-slate-800 text-sm leading-none">{value.toFixed(1)}</span>
   }, {
     key: 'classSizeGrowth' as const,
     header: (
@@ -261,7 +262,7 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
     ),
     align: 'center' as const,
     sortable: true,
-    render: (value: number) => <div className="flex items-center justify-center gap-1">
+    render: (value: number) => <div className="flex items-center justify-center gap-1 leading-none">
           {value > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : value < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : null}
       <span className={`font-semibold text-sm ${value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-slate-600'}`}>
             {value.toFixed(1)}%
@@ -299,19 +300,23 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
       icon={<BarChart3 className="w-5 h-5" />}
       totalItems={sortedYoY.length}
     >
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 text-white">
+          <table data-table="trainer-year-on-year" data-table-name="Trainer Year-on-Year Performance Comparison" className="w-full">
+            <thead className="sticky top-0 z-30 text-white">
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
-                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
+                    className={cn(`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors ${
                       column.className || ''
-                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
+                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`,
+                      index === 0
+                        ? 'sticky left-0 z-40 border-r border-white/20 bg-gradient-to-r from-slate-800 to-slate-900 hover:bg-slate-800'
+                        : 'border-l border-white/20 bg-slate-900 hover:bg-slate-800'
+                    )}
                     onClick={() => column.sortable !== false && handleSort(column.key)}
-                    style={{ height: '40px' }}
+                    style={{ height: '35px', maxHeight: '35px' }}
                   >
                     <div className="flex items-center gap-1">
                       {column.header}
@@ -331,16 +336,16 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
               {sortedYoY.map((row, index) => (
                 <tr
                   key={index}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="border-b border-gray-200 bg-white cursor-pointer transition-all duration-200 hover:bg-slate-50"
                   onClick={() => handleRowClick(row)}
-                  style={{ height: '40px' }}
+                  style={{ height: '35px', maxHeight: '35px' }}
                 >
-                  {columns.map((column) => (
+                  {columns.map((column, columnIndex) => (
                     <td
                       key={column.key}
-                      className={`px-4 py-2 text-sm whitespace-nowrap ${
+                      className={cn(`px-4 py-2 text-sm whitespace-nowrap ${
                         column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
-                      }`}
+                      }`, columnIndex === 0 ? 'sticky left-0 z-20 border-r border-gray-200 bg-white hover:bg-slate-50' : 'border-l border-gray-200')}
                     >
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </td>
@@ -349,17 +354,17 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
               ))}
             </tbody>
             <tfoot>
-              <tr className="retention-totals-row">
-                <td className="px-4 py-2 text-sm font-bold">TOTALS</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totals.currentSessions)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totals.previousSessions)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totals.sessionsGrowth.toFixed(1)}%</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totals.currentRevenue)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totals.previousRevenue)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totals.revenueGrowth.toFixed(1)}%</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totals.currentAvgClassSize.toFixed(1)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totals.previousAvgClassSize.toFixed(1)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totals.classSizeGrowth.toFixed(1)}%</td>
+              <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400">
+                <td className="sticky left-0 z-30 border-r border-slate-400 bg-slate-800 px-4 py-2 text-sm font-bold text-white">TOTALS</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatNumber(totals.currentSessions)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatNumber(totals.previousSessions)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totals.sessionsGrowth.toFixed(1)}%</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatCurrency(totals.currentRevenue)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatCurrency(totals.previousRevenue)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totals.revenueGrowth.toFixed(1)}%</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totals.currentAvgClassSize.toFixed(1)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totals.previousAvgClassSize.toFixed(1)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totals.classSizeGrowth.toFixed(1)}%</td>
               </tr>
             </tfoot>
           </table>

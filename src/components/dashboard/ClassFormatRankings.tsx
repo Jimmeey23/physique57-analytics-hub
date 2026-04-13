@@ -105,7 +105,7 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
         case 'fill':
           return b.fillRate - a.fillRate;
         case 'class-avg':
-          return (b.totalSessions / b.nonEmptyClassCount || 0) - (a.totalSessions / a.nonEmptyClassCount || 0);
+          return (b.nonEmptyClassCount > 0 ? b.totalCheckins / b.nonEmptyClassCount : 0) - (a.nonEmptyClassCount > 0 ? a.totalCheckins / a.nonEmptyClassCount : 0);
         case 'rev-per-seat':
           return b.avgRevPerSeat - a.avgRevPerSeat;
         case 'rev-per-session':
@@ -143,7 +143,7 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
       case 'revenue': return formatCurrency(item.totalRevenue);
       case 'sessions': return formatNumber(item.totalSessions);
       case 'fill': return `${item.fillRate.toFixed(1)}%`;
-      case 'class-avg': return (item.totalSessions / item.nonEmptyClassCount || 0).toFixed(1);
+      case 'class-avg': return (item.nonEmptyClassCount > 0 ? item.totalCheckins / item.nonEmptyClassCount : 0).toFixed(1);
       case 'rev-per-seat': return formatCurrency(item.avgRevPerSeat);
       case 'rev-per-session': return formatCurrency(item.avgRevPerSession);
       case 'empty-classes': return formatNumber(item.emptyClassCount);

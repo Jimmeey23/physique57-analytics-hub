@@ -182,7 +182,7 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
       
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="class-attendance-neat-table">
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-10 border-r border-white/20">
@@ -212,8 +212,8 @@ export const ClassAttendancePerformanceTable: React.FC<ClassAttendancePerformanc
               </TableRow>
             </TableHeader>
             <TableBody>
-              {performanceData.map((row, index) => <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-all duration-200 cursor-pointer group" onClick={() => handleDrillDown(row.format, row)}>
-                  <TableCell className="font-medium sticky left-0 bg-white z-10 border-r border-slate-200/60 group-hover:bg-gray-50 whitespace-nowrap">
+              {performanceData.map((row, index) => <TableRow key={index} className="cursor-pointer group transition-colors" onClick={() => handleDrillDown(row.format, row)}>
+                  <TableCell className="attendance-sticky-cell font-medium sticky left-0 z-10 whitespace-nowrap">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-slate-900 font-semibold">{row.format}</span>

@@ -55,8 +55,9 @@ const OverviewMetricsCard: React.FC<OverviewMetricsCardProps> = ({ data }) => {
         }
       });
 
-      // Calculate class average (sessions per class, excluding empty)
-      const classAvgExcludingEmpty = nonEmptyClasses > 0 ? rows.length / nonEmptyClasses : 0;
+      // Calculate average attendance per non-empty class occurrence
+      const totalCheckins = rows.reduce((sum, r) => sum + (r.checkedInCount || 0), 0);
+      const classAvgExcludingEmpty = nonEmptyClasses > 0 ? totalCheckins / nonEmptyClasses : 0;
 
       // Find top trainer by revenue
       const trainerMap = new Map<string, number>();
@@ -105,7 +106,6 @@ const OverviewMetricsCard: React.FC<OverviewMetricsCardProps> = ({ data }) => {
 
       // Revenue lost from cancellations
       const totalBooked = rows.reduce((sum, r) => sum + (r.bookedCount || 0), 0);
-      const totalCheckins = rows.reduce((sum, r) => sum + (r.checkedInCount || 0), 0);
       const revenueLostCancellations = 0; // Will be calculated from cancellation metrics
 
       // Late cancelled count

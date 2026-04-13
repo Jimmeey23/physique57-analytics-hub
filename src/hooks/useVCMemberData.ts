@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { MemberBehaviorData, MonthlyMetrics } from '@/types/memberBehavior';
-import { fetchGoogleSheet } from '@/utils/googleAuth';
+import { fetchGoogleSheet, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useVCMemberData');
 
-const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SESSIONS_SPREADSHEET_ID;
+const SPREADSHEET_ID =
+  import.meta.env.VITE_GOOGLE_SESSIONS_SPREADSHEET_ID ||
+  import.meta.env.VITE_SESSIONS_SPREADSHEET_ID ||
+  SPREADSHEET_IDS.SESSIONS;
 const VC_SHEET_NAME = 'VC';
 
 interface UseVCMemberDataResult {
@@ -62,7 +65,7 @@ export const useVCMemberData = (): UseVCMemberDataResult => {
     setError(null);
 
     if (!SPREADSHEET_ID) {
-      const msg = 'VITE_GOOGLE_SESSIONS_SPREADSHEET_ID not configured';
+      const msg = 'Sessions spreadsheet is not configured for VC member behavior data';
       logger.error(msg);
       setError(msg);
       setLoading(false);

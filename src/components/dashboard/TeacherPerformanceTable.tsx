@@ -576,7 +576,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
   return (
     <div ref={containerRef} className="space-y-6">
       <Card className="shadow-xl border-0 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-slate-800 via-blue-900 to-indigo-900 text-white p-6">
+        <CardHeader className="bg-gradient-to-r from-slate-800 to-gray-900 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -666,7 +666,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
             <ModernDataTable
               data={sortedData}
               columns={columns}
-              headerGradient="from-slate-800 via-blue-900 to-indigo-900"
+              headerGradient="from-slate-800 to-gray-900"
               showFooter={true}
               footerData={totals}
               maxHeight="600px"
@@ -675,6 +675,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
               onSort={handleSort}
               sortField={sortField}
               sortDirection={sortDirection}
+              tableId={tableTitle}
               className="teacher-performance-table"
             />
           </div>

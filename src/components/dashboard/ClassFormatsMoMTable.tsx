@@ -436,7 +436,7 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
       <Card className="bg-white shadow-sm border border-slate-200">
         <CardContent className="p-0">
           <div className="overflow-x-auto" style={{ color: '#000' }}>
-            <Table>
+            <Table data-table="class-formats-mom" data-table-name="Class Formats Month-on-Month Analysis">
               <TableHeader>
                 <TableRow className="bg-slate-100" style={{ borderBottom: '2px solid rgb(220, 38, 38)', animation: 'borderPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                   <TableHead className="font-bold text-black py-3" style={{ color: '#000' }}>{dimensionLabel[dimension]}</TableHead>

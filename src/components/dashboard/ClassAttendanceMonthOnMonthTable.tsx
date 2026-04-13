@@ -191,7 +191,7 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
       
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="class-attendance-neat-table">
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                 <TableHead className="font-semibold text-white sticky left-0 bg-slate-800 z-10">Month</TableHead>
@@ -208,8 +208,8 @@ export const ClassAttendanceMonthOnMonthTable: React.FC<ClassAttendanceMonthOnMo
               {monthOnMonthData.map((row, index) => {
                 const change = row.changes?.[selectedMetric];
                 return (
-                  <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r whitespace-nowrap">
+                  <TableRow key={index}>
+                    <TableCell className="attendance-sticky-cell font-medium sticky left-0 z-10 whitespace-nowrap">
                       <span className="text-gray-900 font-semibold">{row.month}</span>
                       <span className="text-xs text-gray-500 ml-2">({row.formatCount} formats)</span>
                     </TableCell>

@@ -11,9 +11,17 @@ interface SalesHeroSectionProps {
   dateRange?: { start: string | Date; end: string | Date };
   currentLocation: string;
   locationName: string;
+  onExportDateRangeChange?: (range: { start: string; end: string }) => void;
 }
 
-export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, historicalData, dateRange, currentLocation, locationName }) => {
+export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({
+  data,
+  historicalData,
+  dateRange,
+  currentLocation,
+  locationName,
+  onExportDateRangeChange,
+}) => {
   const { metrics } = useSalesMetrics(data, historicalData, { dateRange });
   const [heroColor, setHeroColor] = React.useState<string>('#3b82f6');
   const lastUpdateRef = React.useRef<number>(0);
@@ -88,6 +96,11 @@ export const SalesHeroSection: React.FC<SalesHeroSectionProps> = ({ data, histor
           data={data} 
           currentLocation={currentLocation} 
           locationName={locationName}
+          currentDateRange={{
+            start: String(dateRange?.start ?? ''),
+            end: String(dateRange?.end ?? ''),
+          }}
+          onDateRangeChange={onExportDateRangeChange}
           renderTrigger={false}
           openRef={exportOpenRef}
         />}

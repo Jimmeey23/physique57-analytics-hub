@@ -428,19 +428,20 @@ export const MonthOnMonthTrainerTable = ({
       icon={<BarChart3 className="w-5 h-5" />}
       totalItems={Object.keys(processedData.trainerGroups).length}
     >
-      <div ref={containerRef} className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div ref={containerRef} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Metrics Tabs and Controls Header */}
-        <div className="pb-4 bg-white rounded-t-lg p-4">
+        <div className="border-b border-slate-200 bg-white p-4 pb-4">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                <Badge className="border-blue-200 bg-blue-100 text-blue-800">
                   Individual Monthly Columns
                 </Badge>
                 <CopyTableButton
                   tableRef={containerRef as any}
                   tableName={tableId}
                   size="sm"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
                   onCopyAllTabs={async () => generateAllTabsContent}
                 />
               </div>
@@ -449,7 +450,7 @@ export const MonthOnMonthTrainerTable = ({
           </div>
         </div>
         <div className="overflow-x-auto">
-          <Table>
+          <Table data-table="trainer-month-on-month" data-table-name="Month-on-Month Trainer Analysis">
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="border-none bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800" style={{ height: '35px', maxHeight: '35px' }}>
                 <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-30 min-w-[240px] border-r border-white/20" style={{ height: '35px' }}>
@@ -523,40 +524,13 @@ export const MonthOnMonthTrainerTable = ({
                     tableRef={containerRef as any}
                     tableName={tableId}
                     size="sm"
+                    className="border-white/20 bg-white/10 text-white hover:bg-white/20 [&_svg]:text-white"
                     onCopyAllTabs={async () => generateAllTabsContent}
                   />
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Totals Row */}
-              <TableRow className="retention-totals-row font-bold h-9 max-h-9" style={{ height: '35px', maxHeight: '35px' }}>
-                <TableCell className="font-bold sticky left-0 z-10 whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
-                  TOTALS
-                </TableCell>
-                {processedData.months.map((month) => (
-                  <TableCell key={`total-${month}`} className="text-center font-bold whitespace-nowrap" style={{ height: '35px', maxHeight: '35px' }}>
-                    {formatValue(monthlyTotals[month] || 0, selectedMetric)}
-                  </TableCell>
-                ))}
-                <TableCell className="text-center">
-                  <span className={cn(
-                    "inline-flex items-center gap-1 text-xs font-semibold",
-                    summaryStats.growth >= 0 ? 'text-emerald-100' : 'text-rose-100'
-                  )}>
-                    {summaryStats.growth >= 0 ? (
-                      <TrendingUp className="w-3 h-3" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3" />
-                    )}
-                    {Math.abs(summaryStats.growth).toFixed(1)}%
-                  </span>
-                </TableCell>
-                <TableCell className="text-center font-bold">
-                  {formatValue(summaryStats.total, selectedMetric)}
-                </TableCell>
-              </TableRow>
-
               {/* Trainer Rows */}
               {Object.entries(processedData.trainerGroups).map(([trainer, trainerData]) => {
                 const isExpanded = expandedRows.has(trainer);
@@ -600,11 +574,11 @@ export const MonthOnMonthTrainerTable = ({
                 return (
                   <React.Fragment key={trainer}>
                     <TableRow 
-                      className="hover:bg-slate-50/50 transition-colors border-b cursor-pointer h-9 max-h-9"
+                      className="border-b border-gray-200 bg-white transition-all duration-200 hover:bg-slate-50 cursor-pointer h-9 max-h-9"
                       onClick={() => handleRowClick(trainer)}
                       style={{ height: '35px' }}
                     >
-                      <TableCell className="font-medium text-slate-800 sticky left-0 bg-white z-10 border-r min-w-[240px] whitespace-nowrap overflow-hidden text-ellipsis" style={{ height: '35px' }}>
+                      <TableCell className="sticky left-0 z-20 min-w-[240px] overflow-hidden whitespace-nowrap border-r border-gray-200 bg-white font-medium text-slate-800 text-ellipsis" style={{ height: '35px' }}>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -623,7 +597,7 @@ export const MonthOnMonthTrainerTable = ({
                       {values.map((value, index) => (
                         <TableCell 
                           key={`${trainer}-${index}`} 
-                          className="text-center text-sm font-medium text-slate-800 hover:bg-slate-50 cursor-pointer" 
+                          className="border-l border-gray-200 text-center text-sm font-medium text-slate-800 hover:bg-slate-100 cursor-pointer transition-all duration-200" 
                           style={{ height: '35px', maxHeight: '35px' }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -762,11 +736,11 @@ export const MonthOnMonthTrainerTable = ({
                                  </div>
                                </div>
 
-                               <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border">
-                                 <h4 className="font-semibold text-purple-800 mb-3">Member Engagement</h4>
+                               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                                 <h4 className="font-semibold text-blue-800 mb-3">Member Engagement</h4>
                                  <div className="space-y-2 text-sm">
                                    <div className="flex justify-between">
-                                     <span className="text-purple-600">Retention:</span>
+                                     <span className="text-blue-600">Retention:</span>
                                      <span className="font-bold">{
                                        (() => {
                                          const recs = Object.values(trainerData as any) as any[];
@@ -778,7 +752,7 @@ export const MonthOnMonthTrainerTable = ({
                                      }</span>
                                    </div>
                                    <div className="flex justify-between">
-                                     <span className="text-purple-600">Conversion:</span>
+                                     <span className="text-blue-600">Conversion:</span>
                                      <span className="font-bold">{
                                        (() => {
                                          const recs = Object.values(trainerData as any) as any[];
@@ -790,7 +764,7 @@ export const MonthOnMonthTrainerTable = ({
                                      }</span>
                                    </div>
                                    <div className="flex justify-between">
-                                     <span className="text-purple-600">Revenue/Session:</span>
+                                     <span className="text-blue-600">Revenue/Session:</span>
                                      <span className="font-bold">{
                                        (() => {
                                          const recs = Object.values(trainerData as any) as any[];
@@ -810,6 +784,34 @@ export const MonthOnMonthTrainerTable = ({
                   </React.Fragment>
                 );
               })}
+
+              {/* Totals Row */}
+              <TableRow className="retention-totals-row bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-9 max-h-9 hover:bg-slate-700" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableCell className="sticky left-0 z-20 whitespace-nowrap border-r border-slate-400 bg-slate-800 font-bold text-white" style={{ height: '35px', maxHeight: '35px' }}>
+                  TOTALS
+                </TableCell>
+                {processedData.months.map((month) => (
+                  <TableCell key={`total-${month}`} className="border-l border-slate-400 text-center font-bold whitespace-nowrap text-white" style={{ height: '35px', maxHeight: '35px' }}>
+                    {formatValue(monthlyTotals[month] || 0, selectedMetric)}
+                  </TableCell>
+                ))}
+                <TableCell className="border-l border-slate-400 text-center text-white">
+                  <span className={cn(
+                    "inline-flex items-center gap-1 text-xs font-semibold",
+                    summaryStats.growth >= 0 ? 'text-emerald-200' : 'text-rose-200'
+                  )}>
+                    {summaryStats.growth >= 0 ? (
+                      <TrendingUp className="w-3 h-3" />
+                    ) : (
+                      <TrendingDown className="w-3 h-3" />
+                    )}
+                    {Math.abs(summaryStats.growth).toFixed(1)}%
+                  </span>
+                </TableCell>
+                <TableCell className="border-l border-slate-400 text-center font-bold text-white">
+                  {formatValue(summaryStats.total, selectedMetric)}
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </div>
@@ -837,7 +839,7 @@ export const MonthOnMonthTrainerTable = ({
               <div className="text-sm text-slate-600">Total {selectedMetric}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-blue-700">
                 {formatValue(summaryStats.average, selectedMetric)}
               </div>
               <div className="text-sm text-slate-600">Monthly Average</div>

@@ -9,6 +9,7 @@ interface MetricsTablesRegistryContextValue {
   register: (table: RegisteredTable) => void;
   unregister: (id: string) => void;
   getAllTabsContent: () => string;
+  getAllTables: () => Map<string, RegisteredTable>;
 }
 
 const MetricsTablesRegistryContext = createContext<MetricsTablesRegistryContextValue | null>(null);
@@ -50,8 +51,10 @@ export const MetricsTablesRegistryProvider: React.FC<{ children: React.ReactNode
     return parts.join('\n');
   }, []);
 
+  const getAllTables = useCallback(() => new Map(tablesRef.current), []);
+
   return (
-    <MetricsTablesRegistryContext.Provider value={{ register, unregister, getAllTabsContent }}>
+    <MetricsTablesRegistryContext.Provider value={{ register, unregister, getAllTabsContent, getAllTables }}>
       {children}
     </MetricsTablesRegistryContext.Provider>
   );
@@ -66,7 +69,8 @@ export const useMetricsTablesRegistry = () => {
       unregister: () => {},
       registerTable: () => {},
       unregisterTable: () => {},
-      getAllTabsContent: () => ''
+      getAllTabsContent: () => '',
+      getAllTables: () => new Map()
     };
   }
   // Also expose registerTable/unregisterTable aliases for compatibility

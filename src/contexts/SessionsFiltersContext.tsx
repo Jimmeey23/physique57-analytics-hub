@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { ReactNode } from 'react';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 interface SessionsFilters {
   locations: string[];
@@ -49,16 +50,18 @@ interface SessionsFiltersProviderProps {
 
 export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = ({ children }) => {
   const [filters, setFilters] = React.useState<SessionsFilters>(() => {
+    const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
+    const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     const previousMonth = getPreviousMonthDateRange();
     return {
-      locations: [],
+      locations: preset && preset.studioId !== 'all' ? [studioOption?.locationLabel || 'Kwality House, Kemps Corner'] : [],
       trainers: [],
       classTypes: [],
       dayOfWeek: [],
       timeSlots: [],
       dateRange: { 
-        start: new Date(previousMonth.start), 
-        end: new Date(previousMonth.end) 
+        start: new Date(preset?.startDate || previousMonth.start), 
+        end: new Date(preset?.endDate || previousMonth.end) 
       }
     };
   });
@@ -68,16 +71,18 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
   };
 
   const clearFilters = () => {
+    const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
+    const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     const previousMonth = getPreviousMonthDateRange();
     setFilters({
-      locations: [],
+      locations: preset && preset.studioId !== 'all' ? [studioOption?.locationLabel || 'Kwality House, Kemps Corner'] : [],
       trainers: [],
       classTypes: [],
       dayOfWeek: [],
       timeSlots: [],
       dateRange: { 
-        start: new Date(previousMonth.start), 
-        end: new Date(previousMonth.end) 
+        start: new Date(preset?.startDate || previousMonth.start), 
+        end: new Date(preset?.endDate || previousMonth.end) 
       }
     });
   };

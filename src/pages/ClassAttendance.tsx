@@ -19,6 +19,8 @@ import { DataScienceInsightsPanel } from '@/components/dashboard/DataScienceInsi
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { BarChart3, Users, MapPin, Building2, Calendar, Trophy } from 'lucide-react';
 import { useState } from 'react';
+import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
+import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 
 const locations = [{
   id: 'all',
@@ -91,8 +93,30 @@ const ClassAttendance = () => {
   // Inner component rendered under SessionsFiltersProvider so filtering applies
   const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawData, payrollData }) => {
     const filteredData = useFilteredSessionsData(rawData || []);
-    const [activeLocation, setActiveLocation] = useState('kwality');
+    const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+    const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
     const [activeTab, setActiveTab] = useState('overview');
+
+    const locationLabel = useMemo(() => {
+      return locations.find((location) => location.id === activeLocation)?.name || 'All Locations';
+    }, [activeLocation]);
+
+    const exportButton = useMemo(() => (
+      <DisplayedTablesExportButton
+        analyticsName="Class Attendance Analytics"
+        contextLabel={locationLabel}
+        defaultFileName={`class-attendance-${activeLocation}`}
+        buttonLabel="Export Attendance Tables"
+        buttonVariant="outline"
+        buttonSize="sm"
+        buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
+        tabOptions={[
+          { key: 'overview', label: 'Comprehensive tab', matchers: ['overview', 'comprehensive'] },
+          { key: 'monthlyTrends', label: 'Month on Month tab', matchers: ['monthlytrends', 'month on month', 'month-on-month'] },
+          { key: 'rankings', label: 'Rankings tab', matchers: ['rankings'] },
+        ]}
+      />
+    ), [activeLocation, locationLabel]);
 
     // Filter data by location
     const locationFilteredData = useMemo(() => {
@@ -158,6 +182,7 @@ const ClassAttendance = () => {
             title="Class Attendance Analytics"
             subtitle="Monitor class performance, attendance patterns, capacity utilization, and trainer efficiency across all locations."
             metrics={metrics}
+            extra={exportButton}
           />
 
           <div className="bg-white text-slate-800 slide-in-from-left">

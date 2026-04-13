@@ -5,6 +5,7 @@ import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency } from '@/utils/formatters';
+import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
 
 const TrainerPerformance = () => {
   const { data: payrollData, isLoading } = usePayrollData();
@@ -59,6 +60,23 @@ const TrainerPerformance = () => {
     });
   }, [payrollData]);
 
+  const exportButton = useMemo(() => (
+    <DisplayedTablesExportButton
+      analyticsName="Trainer Performance Analytics"
+      defaultFileName="trainer-performance"
+      buttonLabel="Export Trainer Tables"
+      buttonVariant="default"
+      buttonSize="sm"
+      buttonClassName="rounded-xl border border-blue-800/70 bg-gradient-to-r from-slate-950 via-blue-950 to-blue-900 text-white shadow-lg shadow-blue-950/20 hover:border-blue-700/80 hover:from-slate-900 hover:via-blue-900 hover:to-blue-800"
+      tabOptions={[
+        { key: 'month-on-month', label: 'Month-on-Month tab', matchers: ['month-on-month', 'month on month'] },
+        { key: 'year-on-year', label: 'Year-on-Year tab', matchers: ['year-on-year', 'year on year'] },
+        { key: 'efficiency-analysis', label: 'Efficiency tab', matchers: ['efficiency-analysis', 'efficiency'] },
+        { key: 'performance-detail', label: 'Performance Detail tab', matchers: ['performance-detail', 'performance'] },
+      ]}
+    />
+  ), []);
+
   if (globalLoading) {
     return null; // Global loader will handle this
   }
@@ -78,7 +96,7 @@ const TrainerPerformance = () => {
             title="Trainer Performance Analytics"
             subtitle="Comprehensive trainer performance metrics, insights, and development opportunities"
             metrics={heroMetrics}
-            onExportClick={() => {}}
+            extra={exportButton}
           />
         </div>
 

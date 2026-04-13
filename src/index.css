@@ -368,6 +368,7 @@
   color: #334155 !important;
   font-size: 0.8rem;
   border-right: 1px solid rgba(148, 163, 184, 0.2);
+  vertical-align: middle;
 }
 
 .class-attendance-unified tbody td:last-child,
@@ -473,8 +474,8 @@
 }
 
 /* Remove badge-like styling from trainer/discount table body values for consistent Sales-table readability */
-.trainer-performance-unified tbody td .inline-flex.items-center.rounded-full,
-.trainer-performance-unified tbody td .inline-flex.items-center.rounded-md,
+.trainer-performance-unified tbody tr:not(.retention-totals-row):not([class*="total"]) td .inline-flex.items-center.rounded-full,
+.trainer-performance-unified tbody tr:not(.retention-totals-row):not([class*="total"]) td .inline-flex.items-center.rounded-md,
 .discounts-promotions-unified tbody td .inline-flex.items-center.rounded-full,
 .discounts-promotions-unified tbody td .inline-flex.items-center.rounded-md {
   background: transparent !important;
@@ -486,16 +487,25 @@
   color: #334155 !important;
 }
 
-.trainer-performance-unified tbody td span,
-.trainer-performance-unified tbody td div,
+.trainer-performance-unified tbody tr:not(.retention-totals-row):not([class*="total"]) td span,
+.trainer-performance-unified tbody tr:not(.retention-totals-row):not([class*="total"]) td div,
 .discounts-promotions-unified tbody td span,
 .discounts-promotions-unified tbody td div {
   color: #334155 !important;
 }
 
-.trainer-performance-unified tbody td svg,
+.trainer-performance-unified tbody tr:not(.retention-totals-row):not([class*="total"]) td svg,
 .discounts-promotions-unified tbody td svg {
   color: #64748b !important;
+}
+
+.trainer-performance-unified tbody tr.retention-totals-row td span,
+.trainer-performance-unified tbody tr.retention-totals-row td div,
+.trainer-performance-unified tbody tr.retention-totals-row td svg,
+.trainer-performance-unified tfoot td span,
+.trainer-performance-unified tfoot td div,
+.trainer-performance-unified tfoot td svg {
+  color: #f8fafc !important;
 }
 
 /* Modern glassmorphism and aesthetic animations */
@@ -1786,6 +1796,55 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Shared neat styling for class attendance tables */
+.class-attendance-neat-table {
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.class-attendance-neat-table thead tr,
+.class-attendance-neat-table tbody tr {
+  height: 40px !important;
+  max-height: 40px !important;
+}
+
+.class-attendance-neat-table tbody tr {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+.class-attendance-neat-table tbody tr:hover {
+  background-color: rgba(248, 250, 252, 0.9) !important;
+}
+
+.class-attendance-neat-table thead th,
+.class-attendance-neat-table tbody td {
+  height: 40px !important;
+  max-height: 40px !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  vertical-align: middle !important;
+}
+
+.class-attendance-neat-table tbody td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.class-attendance-neat-table tbody td > div {
+  min-height: 24px;
+}
+
+.class-attendance-neat-table .attendance-sticky-cell {
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.class-attendance-neat-table tbody tr:hover .attendance-sticky-cell {
+  background: rgba(248, 250, 252, 0.98) !important;
 }
 
 .animate-slide-up {

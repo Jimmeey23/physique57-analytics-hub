@@ -5,12 +5,68 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, User, X, Filter, Search, DollarSign, Target, Activity } from 'lucide-react';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Calendar, ChevronDown, MapPin, User, X, Filter, Search, DollarSign, Target, Activity } from 'lucide-react';
 import { PayrollData } from '@/types/dashboard';
+
+const MONTH_LABEL_TO_INDEX: Record<string, number> = {
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
+};
+
+const parseTrainerMonthLabel = (value: string) => {
+  if (!value) return null;
+
+  const normalized = value.replace(/-/g, ' ').trim();
+  const parsed = new Date(`1 ${normalized}`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+};
+
+const canonicalizeTrainerMonthLabel = (value: string) => {
+  const parsed = parseTrainerMonthLabel(value);
+  if (!parsed) return value;
+
+  const monthLabel = parsed.toLocaleDateString('en-US', { month: 'short' });
+  return `${monthLabel}-${parsed.getFullYear()}`;
+};
+
+const sortTrainerMonthsDesc = (months: string[]) =>
+  [...months].sort((a, b) => {
+    const aDate = parseTrainerMonthLabel(a)?.getTime() ?? 0;
+    const bDate = parseTrainerMonthLabel(b)?.getTime() ?? 0;
+    return bDate - aDate;
+  });
+
+const formatMonthSelectionLabel = (months: string[]) => {
+  if (months.length === 0) return 'All Months';
+  if (months.length === 1) return months[0];
+  if (months.length === 2) return `${months[0]}, ${months[1]}`;
+  return `${months.length} months selected`;
+};
 
 interface TrainerFilterSectionProps {
   data: PayrollData[];
   onFiltersChange: (filters: any) => void;
+  activeLocation?: string;
+  activeMonths?: string[];
+  defaultLocation?: string;
+  defaultMonths?: string[];
+  onLocationChange?: (location: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
@@ -18,7 +74,7 @@ interface TrainerFilterSectionProps {
 interface EnhancedFilters {
   location: string;
   trainer: string;
-  month: string;
+  months: string[];
   searchTerm: string;
   minSessions: string;
   maxSessions: string;
@@ -31,13 +87,18 @@ interface EnhancedFilters {
 export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
   data,
   onFiltersChange,
+  activeLocation,
+  activeMonths,
+  defaultLocation,
+  defaultMonths,
+  onLocationChange,
   isCollapsed,
   onToggleCollapse
 }) => {
   const [filters, setFilters] = useState<EnhancedFilters>({
     location: 'all',
     trainer: 'all',
-    month: 'all',
+    months: [],
     searchTerm: '',
     minSessions: '',
     maxSessions: '',
@@ -50,38 +111,21 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
   // Extract unique values from data
   const locations = Array.from(new Set(data.map(item => item.location))).filter(Boolean);
   const trainers = Array.from(new Set(data.map(item => item.teacherName))).filter(Boolean);
-  const months = Array.from(new Set(data.map(item => item.monthYear))).filter(Boolean).sort().reverse();
+  const months = sortTrainerMonthsDesc(Array.from(new Set(data.map(item => canonicalizeTrainerMonthLabel(item.monthYear || '')))).filter(Boolean));
 
-  // Set defaults when data is available
   useEffect(() => {
-    if (months.length > 0 && locations.length > 0) {
-      // Calculate previous month
-      const now = new Date();
-      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const monthShort = prev.toLocaleDateString('en-US', { month: 'short' });
-      const year = prev.getFullYear();
-      const expectedMonth = `${monthShort}-${year}`;
-      
-      // Find matching month in data
-      const matchingMonth = months.find(m => m === expectedMonth) || months[0] || 'all';
-      
-      // Find Kwality House location
-      const kwalityLocation = locations.find(loc => 
-        loc.toLowerCase().includes('kwality')
-      ) || 'all';
-      
-      // Only set defaults if currently set to 'all' (initial state)
-      if (filters.month === 'all' && filters.location === 'all') {
-        const defaultFilters = {
-          ...filters,
-          month: matchingMonth,
-          location: kwalityLocation
-        };
-        setFilters(defaultFilters);
-        updateFilters(defaultFilters);
-      }
-    }
-  }, [months, locations]);
+    const normalizedLocation = !activeLocation || activeLocation === 'All Locations' ? 'all' : activeLocation;
+    setFilters((prev) => prev.location === normalizedLocation ? prev : { ...prev, location: normalizedLocation });
+  }, [activeLocation]);
+
+  useEffect(() => {
+    const normalizedMonths = (activeMonths || []).filter(Boolean);
+    setFilters((prev) => {
+      const prevKey = prev.months.join('|');
+      const nextKey = normalizedMonths.join('|');
+      return prevKey === nextKey ? prev : { ...prev, months: normalizedMonths };
+    });
+  }, [activeMonths]);
 
   // Performance levels for filtering
   const performanceLevels = [
@@ -108,7 +152,8 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
     const parentFilters = {
       location: updatedFilters.location === 'all' ? '' : updatedFilters.location,
       trainer: updatedFilters.trainer === 'all' ? '' : updatedFilters.trainer,
-      month: updatedFilters.month === 'all' ? '' : updatedFilters.month,
+      month: updatedFilters.months.length === 1 ? updatedFilters.months[0] : '',
+      months: updatedFilters.months,
       searchTerm: updatedFilters.searchTerm || '',
       performanceLevel: updatedFilters.performanceLevel === 'all' ? '' : updatedFilters.performanceLevel,
       classType: updatedFilters.classType === 'all' ? '' : updatedFilters.classType,
@@ -123,10 +168,12 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
 
   // Clear all filters
   const clearAllFilters = () => {
+    const resetLocation = defaultLocation && defaultLocation !== 'All Locations' ? defaultLocation : 'all';
+    const resetMonths = defaultMonths || [];
     const clearedFilters: EnhancedFilters = {
-      location: 'all',
+      location: resetLocation,
       trainer: 'all',
-      month: 'all',
+      months: resetMonths,
       searchTerm: '',
       minSessions: '',
       maxSessions: '',
@@ -137,10 +184,14 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
     };
     setFilters(clearedFilters);
     updateFilters(clearedFilters);
+    onLocationChange?.(resetLocation === 'all' ? 'All Locations' : resetLocation);
   };
 
   // Check if any filters are active
   const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+    if (key === 'months') {
+      return Array.isArray(value) && value.length > 0;
+    }
     if (key === 'searchTerm' || key.includes('min') || key.includes('max')) {
       return value !== '';
     }
@@ -149,11 +200,22 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
 
   // Get active filter count
   const activeFilterCount = Object.entries(filters).filter(([key, value]) => {
+    if (key === 'months') {
+      return Array.isArray(value) && value.length > 0;
+    }
     if (key === 'searchTerm' || key.includes('min') || key.includes('max')) {
       return value !== '';
     }
     return value !== '' && value !== 'all';
   }).length;
+
+  const toggleMonth = (month: string) => {
+    const nextMonths = filters.months.includes(month)
+      ? filters.months.filter((item) => item !== month)
+      : sortTrainerMonthsDesc([...filters.months, month]);
+
+    updateFilters({ months: nextMonths });
+  };
 
   if (isCollapsed) {
     return (
@@ -238,7 +300,10 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
               <MapPin className="w-4 h-4 text-blue-600" />
               Location
             </Label>
-            <Select value={filters.location} onValueChange={(value) => updateFilters({ location: value })}>
+            <Select value={filters.location} onValueChange={(value) => {
+              updateFilters({ location: value });
+              onLocationChange?.(value === 'all' ? 'All Locations' : value);
+            }}>
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
@@ -278,21 +343,56 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
               <Calendar className="w-4 h-4 text-blue-600" />
-              Month
+              Period
             </Label>
-            <Select value={filters.month} onValueChange={(value) => updateFilters({ month: value })}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="All Months" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Months</SelectItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-9 w-full justify-between border-slate-200 font-normal text-slate-700 hover:bg-slate-50">
+                  <span className="truncate">{formatMonthSelectionLabel(filters.months)}</span>
+                  <ChevronDown className="h-4 w-4 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-72 max-h-96 overflow-y-auto bg-white">
+                <DropdownMenuLabel>Choose one or more months</DropdownMenuLabel>
+                <div className="flex gap-2 px-2 pb-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => updateFilters({ months: months })}
+                  >
+                    Select all
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => updateFilters({ months: defaultMonths || [] })}
+                  >
+                    Previous month
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => updateFilters({ months: [] })}
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <DropdownMenuSeparator />
                 {months.map((month) => (
-                  <SelectItem key={month} value={month}>
+                  <DropdownMenuCheckboxItem
+                    key={month}
+                    checked={filters.months.includes(month)}
+                    onCheckedChange={() => toggleMonth(month)}
+                    onSelect={(event) => event.preventDefault()}
+                  >
                     {month}
-                  </SelectItem>
+                  </DropdownMenuCheckboxItem>
                 ))}
-              </SelectContent>
-            </Select>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -405,6 +505,21 @@ export const TrainerFilterSection: React.FC<TrainerFilterSectionProps> = ({
               <span className="text-sm font-medium text-slate-600">Active Filters:</span>
               {Object.entries(filters).map(([key, value]) => {
                 // Don't show inactive filters
+                if (key === 'months') {
+                  if (!Array.isArray(value) || value.length === 0) return null;
+                  return (
+                    <Badge key={key} variant="secondary" className="text-xs">
+                      period: {formatMonthSelectionLabel(value)}
+                      <button
+                        onClick={() => updateFilters({ months: [] })}
+                        className="ml-1 hover:text-blue-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  );
+                }
+
                 if (key === 'searchTerm' || key.includes('min') || key.includes('max')) {
                   if (!value) return null;
                 } else {

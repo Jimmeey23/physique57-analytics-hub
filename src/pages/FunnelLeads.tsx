@@ -22,6 +22,7 @@ import { LazyFunnelDrillDownModal } from '@/components/lazy/LazyModals';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { LeadsFilterOptions } from '@/types/leads';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
+import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -33,7 +34,8 @@ export default function FunnelLeads() {
   useEffect(() => {
     setLoading(loading, 'Loading funnel and lead conversion data...');
   }, [loading, setLoading]);
-  const [activeLocation, setActiveLocation] = useState('all');
+  const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{
@@ -51,8 +53,8 @@ export default function FunnelLeads() {
   const [filters, setFilters] = useState<LeadsFilterOptions>(() => {
     return {
       dateRange: {
-        start: '',
-        end: '',
+        start: exportPreset?.startDate || '',
+        end: exportPreset?.endDate || '',
       },
       location: [],
       source: [],

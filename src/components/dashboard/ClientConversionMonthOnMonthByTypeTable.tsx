@@ -281,8 +281,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
         </div>
       </CardHeader>
       <CardContent className="p-0 overflow-hidden">
-        <div className="overflow-x-auto max-h-[600px]">
-          <Table className="w-full">
+        <div className="overflow-x-auto max-h-[600px]" data-table="client-retention-by-client-type" data-table-name={tableId}>
+          <Table className="w-full" data-table="client-retention-by-client-type" data-table-name={tableId}>
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b" style={{ maxHeight: '35px' }}>
                 <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 bg-slate-900" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>Month</TableHead>

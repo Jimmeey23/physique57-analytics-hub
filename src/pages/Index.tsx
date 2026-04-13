@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
 import { motion } from 'framer-motion';
+import { OPEN_CONSOLIDATED_REPORT_EVENT } from '@/components/ui/ConsolidatedReportExporterDialog';
 
 // Error boundary wrapper for critical sections
 const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) => {
@@ -171,6 +172,15 @@ const Index = memo(() => {
                 </div>
                 
                 <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.dispatchEvent(new Event(OPEN_CONSOLIDATED_REPORT_EVENT))}
+                    className="gap-2 hover:bg-slate-50 border-slate-300"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Consolidated Report
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 

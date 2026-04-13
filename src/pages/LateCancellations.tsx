@@ -18,22 +18,24 @@ import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber } from '@/utils/formatters';
 import '@/components/dashboard/trainer-performance-styles.css';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
+import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 
 const LateCancellations = () => {
   const { data: lateCancellationsData, allCheckins, loading } = useLateCancellationsData();
   const { isLoading, setLoading } = useGlobalLoading();
   const navigate = useNavigate();
+  const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   
   // Location tabs state
-  const [activeLocation, setActiveLocation] = useState('kwality');
+  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
   
   // Enhanced filter states - Default to previous month
-  const [selectedTimeframe, setSelectedTimeframe] = useState('prev-month');
+  const [selectedTimeframe, setSelectedTimeframe] = useState(exportPreset ? 'custom' : 'prev-month');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState('all');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('all');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [dateRange, setDateRange] = useState({ start: exportPreset?.startDate || '', end: exportPreset?.endDate || '' });
   
   // Drill down modal state
   const [drillDownData, setDrillDownData] = useState<any>(null);

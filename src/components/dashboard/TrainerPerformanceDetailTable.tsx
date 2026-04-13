@@ -5,6 +5,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Users, Activity, Target, TrendingUp, TrendingDown, UserCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
+import { cn } from '@/lib/utils';
 
 interface TrainerPerformanceDetailTableProps {
   data: ProcessedTrainerData[];
@@ -160,9 +161,9 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       ),
       className: 'min-w-[180px]',
       render: (value: string, row: any) => (
-        <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2 min-h-6 overflow-hidden">
           <TrainerNameCell name={value} className="text-nowrap" />
-          <div className="text-xs text-slate-500 ml-10">{row.location}</div>
+          <span className="truncate text-xs text-slate-500">• {row.location}</span>
         </div>
       )
     },
@@ -178,12 +179,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       ),
       sortable: true,
       align: 'center' as const,
-      render: (value: number) => (
-        <div className="flex flex-col items-center">
-          <span className="font-medium text-slate-800 text-sm">{formatNumber(value)}</span>
-          <Activity className="w-3 h-3 text-slate-400 mt-0.5" />
-        </div>
-      )
+      render: (value: number) => <span className="text-sm font-medium leading-none text-slate-800">{formatNumber(value)}</span>
     },
     {
       key: 'totalCustomers' as const,
@@ -197,12 +193,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       ),
       sortable: true,
       align: 'center' as const,
-      render: (value: number) => (
-        <div className="flex flex-col items-center">
-          <span className="font-medium text-slate-800 text-sm">{formatNumber(value)}</span>
-          <Users className="w-3 h-3 text-slate-400 mt-0.5" />
-        </div>
-      )
+      render: (value: number) => <span className="text-sm font-medium leading-none text-slate-800">{formatNumber(value)}</span>
     },
     {
       key: 'totalRevenue' as const,
@@ -216,12 +207,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       ),
       sortable: true,
       align: 'center' as const,
-      render: (value: number) => (
-        <div className="flex flex-col items-center">
-          <span className="font-medium text-slate-800 text-sm">{formatCurrency(value)}</span>
-          <div className="text-xs text-slate-500 mt-0.5">Total</div>
-        </div>
-      )
+      render: (value: number) => <span className="text-sm font-medium leading-none text-slate-800">{formatCurrency(value)}</span>
     },
     {
       key: 'avgClassSize' as const,
@@ -267,20 +253,20 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       ),
       align: 'center' as const,
       render: (value: string, row: any) => (
-        <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center gap-1 leading-none">
           <span className={`
-            text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-sm
+            rounded-sm px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide
             ${value === 'Cycle' ? 'bg-blue-100 text-blue-800' : 
-              value === 'Barre' ? 'bg-pink-100 text-pink-800' : 
-              'bg-green-100 text-green-800'}
+              value === 'Barre' ? 'bg-slate-100 text-slate-800' : 
+              'bg-emerald-100 text-emerald-800'}
           `}>
             {value}
           </span>
-          <div className="text-xs text-slate-500 mt-1">
+          <span className="text-xs text-slate-500">
             {value === 'Cycle' ? row.cycleSessions : 
              value === 'Barre' ? row.barreSessions : 
              row.strengthSessions} sessions
-          </div>
+          </span>
         </div>
       )
     },
@@ -297,16 +283,13 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       sortable: true,
       align: 'center' as const,
       render: (value: number) => (
-        <div className="flex flex-col items-center">
-          <span className={`font-semibold ${
+          <span className={`text-sm font-semibold leading-none ${
             value >= 85 ? 'text-green-600' : 
             value >= 70 ? 'text-yellow-600' : 
             'text-red-600'
           }`}>
             {value.toFixed(1)}%
           </span>
-          <Target className="w-3 h-3 text-slate-400 mt-1" />
-        </div>
       )
     },
     {
@@ -322,7 +305,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       sortable: true,
       align: 'center' as const,
       render: (value: number) => (
-        <span className={`font-semibold ${
+        <span className={`text-sm font-semibold leading-none ${
           value >= 80 ? 'text-green-600' : 
           value >= 65 ? 'text-yellow-600' : 
           'text-red-600'
@@ -344,9 +327,9 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       sortable: true,
       align: 'center' as const,
       render: (value: string, row: any) => (
-        <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center gap-1 leading-none">
           <span className={`
-            text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-sm
+            rounded-sm px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide
             ${value === 'Excellent' ? 'bg-green-100 text-green-800' :
               value === 'Good' ? 'bg-blue-100 text-blue-800' :
               value === 'Average' ? 'bg-yellow-100 text-yellow-800' :
@@ -354,7 +337,7 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
           `}>
             {value}
           </span>
-          <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+          <div className="flex items-center gap-1 text-xs text-slate-500">
             {row.growthTrend >= 0 ? (
               <TrendingUp className="w-3 h-3 text-green-500" />
             ) : (
@@ -405,17 +388,19 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
       icon={<UserCheck className="w-5 h-5" />}
       totalItems={processedTableData.length}
     >
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-black text-white">
+          <table data-table="trainer-performance-detail" data-table-name="Trainer Performance Detail Analysis" className="w-full">
+            <thead className="sticky top-0 z-30 text-white">
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
-                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors ${
+                    className={cn(`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors ${
                       column.className || ''
-                    } ${index === 0 ? 'bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800' : 'bg-black'}`}
+                    }`, index === 0
+                      ? 'sticky left-0 z-40 border-r border-white/20 bg-gradient-to-r from-slate-800 to-slate-900 hover:bg-slate-800'
+                      : 'border-l border-white/20 bg-slate-900 hover:bg-slate-800')}
                     onClick={() => column.sortable !== false && handleSort(column.key)}
                     style={{ height: '35px', maxHeight: '35px' }}
                   >
@@ -437,16 +422,16 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
               {processedTableData.map((row, index) => (
                 <tr
                   key={index}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="border-b border-gray-200 bg-white cursor-pointer transition-all duration-200 hover:bg-slate-50"
                   onClick={() => handleRowClick(row)}
                   style={{ height: '35px', maxHeight: '35px' }}
                 >
-                  {columns.map((column) => (
+                  {columns.map((column, columnIndex) => (
                     <td
                       key={column.key}
-                      className={`px-4 py-2 text-sm whitespace-nowrap ${
+                      className={cn(`px-4 py-2 text-sm whitespace-nowrap ${
                         column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
-                      }`}
+                      }`, columnIndex === 0 ? 'sticky left-0 z-20 border-r border-gray-200 bg-white hover:bg-slate-50' : 'border-l border-gray-200')}
                     >
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </td>
@@ -455,17 +440,17 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
               ))}
             </tbody>
             <tfoot>
-              <tr className="retention-totals-row">
-                <td className="px-4 py-2 text-sm font-bold">TOTALS</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totalsRow.totalSessions)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatNumber(totalsRow.totalCustomers)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totalsRow.totalRevenue)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.avgClassSize.toFixed(1)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{formatCurrency(totalsRow.revenuePerSession)}</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">-</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.fillRate.toFixed(1)}%</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">{totalsRow.avgConversion.toFixed(1)}%</td>
-                <td className="px-4 py-2 text-sm text-center font-bold">-</td>
+              <tr className="bg-slate-800 text-white font-bold border-t-2 border-slate-400">
+                <td className="sticky left-0 z-30 border-r border-slate-400 bg-slate-800 px-4 py-2 text-sm font-bold text-white">TOTALS</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatNumber(totalsRow.totalSessions)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatNumber(totalsRow.totalCustomers)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatCurrency(totalsRow.totalRevenue)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totalsRow.avgClassSize.toFixed(1)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{formatCurrency(totalsRow.revenuePerSession)}</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">-</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totalsRow.fillRate.toFixed(1)}%</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">{totalsRow.avgConversion.toFixed(1)}%</td>
+                <td className="border-l border-slate-400 px-4 py-2 text-sm text-center font-bold text-white">-</td>
               </tr>
             </tfoot>
           </table>

@@ -106,9 +106,13 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
   const [columnSizing, setColumnSizing] = useState<Record<string, number>>(() => {
     try {
       const saved = localStorage.getItem('classAttendanceColumnSizing');
-      return saved ? JSON.parse(saved) : {};
+      const parsed = saved ? JSON.parse(saved) : {};
+      return {
+        ...parsed,
+        groupValue: Math.max(parsed?.groupValue || 0, 280),
+      };
     } catch {
-      return {};
+      return { groupValue: 280 };
     }
   });
   const [minSessions, setMinSessions] = useState(0);
@@ -373,17 +377,17 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
       {
         id: 'groupValue',
         header: 'Group',
-        size: columnSizing['groupValue'] || 200,
+        size: columnSizing['groupValue'] || 280,
         enableSorting: true,
         enableResizing: true,
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="font-bold text-black text-xs">{data.groupValue.replace(/\|/g, ' • ')}</div>;
+            return <div className="truncate font-semibold text-slate-900 text-xs">{data.groupValue.replace(/\|/g, ' • ')}</div>;
           }
           const session = data as SessionData;
           return (
-            <div className="text-xs text-black">
+            <div className="truncate pl-4 text-xs text-slate-700 font-medium">
               {session.cleanedClass || session.sessionName || session.classType}
             </div>
           );
@@ -850,8 +854,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
     { value: 'consistencyScore', label: 'Consistency Score' },
   ];
 
-  const tdPaddingClass = density === 'compact' ? 'px-3 py-2' : 'px-4 py-3.5';
-  const thPaddingClass = density === 'compact' ? 'px-3 py-2' : 'px-4 py-4';
+  const tdPaddingClass = density === 'compact' ? 'px-3 py-1.5' : 'px-4 py-2';
+  const thPaddingClass = density === 'compact' ? 'px-3 py-1' : 'px-4 py-1.5';
+  const rowHeightClass = density === 'compact' ? 'h-9 max-h-9' : 'h-10 max-h-10';
+  const headerHeightClass = density === 'compact' ? 'h-8 max-h-8' : 'h-9 max-h-9';
 
   return (
     <div className="space-y-4">
@@ -1003,15 +1009,15 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         className="glass-card rounded-2xl overflow-hidden shadow-2xl"
       >
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+          <table data-table="class-attendance-comprehensive" data-table-name="Class Attendance Comprehensive Table" className="class-attendance-neat-table w-full border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800">
+                <tr key={headerGroup.id} className={`${headerHeightClass} border-b border-slate-900/70 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-[inset_0_-1px_0_rgba(255,255,255,0.06)]`}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       style={{ width: `${header.getSize()}px`, position: 'relative' }}
-                      className={`${thPaddingClass} text-left text-xs font-bold text-white uppercase tracking-wider relative group border-r border-blue-700 last:border-r-0`}
+                      className={`${thPaddingClass} ${headerHeightClass} text-left text-[11px] font-semibold text-slate-100 uppercase tracking-[0.08em] relative group whitespace-nowrap`}
                     >
                       <div
                         className="flex items-center gap-1.5 cursor-pointer select-none"
@@ -1044,7 +1050,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                 </tr>
               ))}
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white">
               {table.getRowModel().rows.map((row) => {
                 const isGroupRow = 'isGroupRow' in row.original && row.original.isGroupRow;
                 const groupData = isGroupRow ? (row.original as GroupedRow) : null;
@@ -1054,23 +1060,22 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                   <React.Fragment key={row.id}>
                     {/* Group Row */}
                     <tr
-                      style={{ height: '35px', maxHeight: '35px' }}
                       onClick={() => {
                         if (isGroupRow && groupData) {
                           handleRowClick(groupData);
                         }
                       }}
-                      className={`transition-all ${
+                      className={`${rowHeightClass} border-b border-slate-200/80 transition-colors ${
                         isGroupRow
-                          ? 'bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 cursor-pointer'
+                          ? 'bg-white hover:bg-slate-50/80 cursor-pointer'
                           : 'hover:bg-gray-50'
                       }`}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          style={{ width: `${cell.column.getSize()}px`, height: '35px', maxHeight: '35px' }}
-                          className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
+                          style={{ width: `${cell.column.getSize()}px` }}
+                          className={`${tdPaddingClass} ${rowHeightClass} text-sm overflow-hidden align-middle ${isGroupRow ? 'font-medium' : ''}`}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
@@ -1085,8 +1090,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                         return (
                           <tr
                             key={`${row.id}-child-${idx}`}
-                            style={{ height: '35px', maxHeight: '35px' }}
-                            className="hover:bg-gray-50 bg-blue-50/30"
+                            className={`${rowHeightClass} border-b border-slate-200/70 bg-slate-50/60 hover:bg-slate-100/70`}
                           >
                             {columns.map((col, colIdx) => {
                               const cellValue = col.accessorFn 
@@ -1096,8 +1100,8 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                               return (
                                 <td
                                   key={`${row.id}-child-${idx}-col-${colIdx}`}
-                                  style={{ width: `${col.size}px`, height: '35px', maxHeight: '35px' }}
-                                  className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
+                                  style={{ width: `${col.size}px` }}
+                                  className={`${tdPaddingClass} ${rowHeightClass} text-sm overflow-hidden align-middle text-slate-600`}
                                 >
                                   {col.cell && typeof col.cell === 'function'
                                     ? col.cell({ getValue: () => cellValue, row: { original: childSession } } as any)
@@ -1112,14 +1116,13 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                       return (
                         <tr
                           key={childRow.id}
-                          style={{ height: '35px', maxHeight: '35px' }}
-                          className="hover:bg-gray-50 bg-blue-50/30"
+                          className={`${rowHeightClass} border-b border-slate-200/70 bg-slate-50/60 hover:bg-slate-100/70`}
                         >
                           {childRow.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
-                              style={{ width: `${cell.column.getSize()}px`, height: '35px', maxHeight: '35px' }}
-                              className={`${tdPaddingClass} text-sm border-r border-gray-100 last:border-r-0 overflow-hidden`}
+                              style={{ width: `${cell.column.getSize()}px` }}
+                              className={`${tdPaddingClass} ${rowHeightClass} text-sm overflow-hidden align-middle text-slate-600`}
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>

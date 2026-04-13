@@ -93,6 +93,10 @@ export const LazyPaginatedDrillDownModal = lazy(() =>
   import('@/components/dashboard/PaginatedDrillDownModal').then(m => ({ default: m.PaginatedDrillDownModal }))
 );
 
+export const LazyMemberInsightsDrillDownModal = lazy(() =>
+  import('@/components/dashboard/MemberInsightsDrillDownModal').then(m => ({ default: m.MemberInsightsDrillDownModal }))
+);
+
 // UI modals
 export const LazyAdvancedNotesModal = lazy(() => 
   import('@/components/ui/AdvancedNotesModal').then(m => ({ default: m.AdvancedNotesModal }))

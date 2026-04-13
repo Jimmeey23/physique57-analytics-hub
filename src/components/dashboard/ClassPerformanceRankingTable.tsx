@@ -107,7 +107,7 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
         </CardHeader>
         <CardContent>
           <div className="overflow-auto border rounded-lg">
-            <Table>
+            <Table className="class-attendance-neat-table">
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                   <TableHead className="text-slate-100">Rank</TableHead>
@@ -129,7 +129,7 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                 {paginatedData.map((classData, index) => {
                   const actualRank = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
-                  <TableRow key={classData.uniqueId} className="compact-table-row hover:bg-gray-50">
+                  <TableRow key={classData.uniqueId}>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         {actualRank <= 3 && (
@@ -210,7 +210,7 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                               <div><strong>Unique ID:</strong> {classData.uniqueId}</div>
                             </div>
                             <div className="overflow-auto border rounded-lg">
-                              <Table>
+                              <Table className="class-attendance-neat-table">
                                 <TableHeader>
                                   <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                                     <TableHead className="text-slate-100">Date</TableHead>
@@ -225,7 +225,7 @@ export const ClassPerformanceRankingTable: React.FC<ClassPerformanceRankingTable
                                 </TableHeader>
                                 <TableBody>
                                   {classData.sessions.map((session, idx) => (
-                                    <TableRow key={idx} className="compact-table-row hover:bg-gray-50">
+                                    <TableRow key={idx}>
                                       <TableCell>{session.date}</TableCell>
                                       <TableCell>{session.sessionName}</TableCell>
                                       <TableCell>{session.capacity}</TableCell>

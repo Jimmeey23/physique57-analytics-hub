@@ -26,7 +26,7 @@ export const Footer: React.FC = () => {
 
         {/* Center: condensed descriptor */}
         <div className="hidden md:block text-center">
-          <span className="text-[11px] text-slate-500">Real-time Insights · 12 Analytics Modules · Precision & Data Accuracy</span>
+          <span className="text-[11px] text-slate-500">Real-time Insights · 14 Analytics Modules · Precision & Data Accuracy</span>
         </div>
 
         {/* Right: meta */}

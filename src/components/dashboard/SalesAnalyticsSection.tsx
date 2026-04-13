@@ -740,6 +740,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
           dateRange={filters.dateRange}
           currentLocation={activeLocation}
           locationName={locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations'}
+          onExportDateRangeChange={(dateRange) => {
+            setFilters((prev) => ({
+              ...prev,
+              dateRange,
+            }));
+          }}
         />
       </SectionAnchor>
 

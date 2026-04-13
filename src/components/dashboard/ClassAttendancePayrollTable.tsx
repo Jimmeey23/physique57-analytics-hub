@@ -170,7 +170,7 @@ export const ClassAttendancePayrollTable: React.FC<ClassAttendancePayrollTablePr
         
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="class-attendance-neat-table">
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                   <TableHead onClick={() => handleSort('location')} className="cursor-pointer text-xs font-semibold text-slate-100 h-10 px-4">
@@ -231,7 +231,7 @@ export const ClassAttendancePayrollTable: React.FC<ClassAttendancePayrollTablePr
                 {processedData.map((row, index) => {
                 const trendKey = `${row.location}-${row.monthYear}`;
                 const trends = trendsData[trendKey] || {};
-                return <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors border-b border-slate-100">
+                return <TableRow key={index}>
                       <TableCell className="table-cell-compact text-xs font-medium text-slate-800">
                         <div className="table-cell-nowrap min-w-[140px]">
                           {row.location}

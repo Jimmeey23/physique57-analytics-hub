@@ -47,10 +47,31 @@ type UseSalesMetricsOptions = {
   dateRange?: { start: string | Date; end: string | Date };
 };
 
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+const endOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+const normalizeInputDate = (value?: string | Date, end = false): Date | null => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return end ? endOfDay(date) : startOfDay(date);
+};
+
+const isFullCalendarMonthRange = (start: Date, end: Date) => {
+  const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
+  const monthEnd = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999);
+  return (
+    start.getTime() === monthStart.getTime() &&
+    end.getTime() === monthEnd.getTime() &&
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth()
+  );
+};
+
 export const useSalesMetrics = (
   currentData: SalesData[],
   historicalData?: SalesData[],
-  options: UseSalesMetricsOptions = { compareMode: 'previousMonth' }
+  options: UseSalesMetricsOptions = { compareMode: 'previousPeriod' }
 ) => {
   const { filters } = useGlobalFilters();
   
@@ -63,10 +84,9 @@ export const useSalesMetrics = (
     // Helper: robustly parse a payment date (handles DD/MM/YYYY and more)
     const parseDate = (d: any): Date | null => robustParseDate(typeof d === 'string' ? d : String(d));
 
-    // Determine comparison ranges
-  // Base dataset for both current and previous months: should not be limited by the current date filter,
-  // only by the location context. Caller passes location-only historical data when possible.
-  const base = historicalData && historicalData.length ? historicalData : currentData;
+    // Base dataset for previous-period / YoY comparisons should ignore only the current date filter,
+    // not the other active filters. Caller passes the location/filter aware historical set when possible.
+    const base = historicalData && historicalData.length ? historicalData : currentData;
 
     const getFirstAndLast = (arr: SalesData[]) => {
       const dates = arr
@@ -76,24 +96,21 @@ export const useSalesMetrics = (
       return { first: dates[0], last: dates[dates.length - 1] };
     };
 
-    // Prefer explicit dateRange; otherwise infer anchor date from base data
+    // Prefer explicit dateRange; otherwise infer the period from the already filtered currentData.
     let explicitStart: Date | null = null;
     let explicitEnd: Date | null = null;
     if (options?.dateRange?.start && options?.dateRange?.end) {
-      explicitStart = new Date(options.dateRange.start);
-      explicitEnd = new Date(options.dateRange.end);
-      explicitEnd.setHours(23,59,59,999);
+      explicitStart = normalizeInputDate(options.dateRange.start, false);
+      explicitEnd = normalizeInputDate(options.dateRange.end, true);
     } else if (filters?.dateRange?.start && filters?.dateRange?.end) {
-      explicitStart = new Date(filters.dateRange.start);
-      explicitEnd = new Date(filters.dateRange.end);
-      explicitEnd.setHours(23,59,59,999);
+      explicitStart = normalizeInputDate(filters.dateRange.start, false);
+      explicitEnd = normalizeInputDate(filters.dateRange.end, true);
     }
 
-    // Anchor: for 'previousMonth' we use the selected period's end date month if provided; otherwise today.
-    // For 'previousPeriod' we fall back to explicitEnd or data-derived last date.
-    const anchorDate = compareMode === 'previousMonth'
-      ? (explicitEnd || new Date())
-      : (explicitEnd || getFirstAndLast(base).last || new Date());
+    const currentBounds = getFirstAndLast(currentData);
+    const inferredCurrentStart = currentBounds.first ? startOfDay(currentBounds.first) : null;
+    const inferredCurrentEnd = currentBounds.last ? endOfDay(currentBounds.last) : null;
+    const anchorDate = explicitEnd || inferredCurrentEnd || getFirstAndLast(base).last || new Date();
 
     const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
     const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -106,9 +123,12 @@ export const useSalesMetrics = (
     let currentPeriodLabel: string | undefined;
     let previousPeriodLabel: string | undefined;
 
-  if (compareMode === 'previousMonth') {
-      currentStart = monthStart(anchorDate);
-      currentEnd = monthEnd(anchorDate);
+    const selectedStart = explicitStart || inferredCurrentStart;
+    const selectedEnd = explicitEnd || inferredCurrentEnd;
+
+    if (compareMode === 'previousMonth' && selectedStart && selectedEnd && isFullCalendarMonthRange(selectedStart, selectedEnd)) {
+      currentStart = selectedStart;
+      currentEnd = selectedEnd;
       const prevAnchor = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 15);
       prevStart = monthStart(prevAnchor);
       prevEnd = monthEnd(prevAnchor);
@@ -116,24 +136,20 @@ export const useSalesMetrics = (
       currentPeriodLabel = fmt(currentStart);
       previousPeriodLabel = fmt(prevStart);
     } else {
-      // previousPeriod: same-length window
-      // If explicit range given, respect it; else infer from base data
-      const inferred = getFirstAndLast(currentData);
-      const rangeStart = explicitStart || inferred.first || anchorDate;
-      const rangeEnd = explicitEnd || inferred.last || anchorDate;
+      // Use the actual selected/current period and compare to the immediately preceding same-length period.
+      const rangeStart = selectedStart || startOfDay(anchorDate);
+      const rangeEnd = selectedEnd || endOfDay(anchorDate);
       currentStart = rangeStart;
       currentEnd = rangeEnd;
       const periodMs = Math.max(1, currentEnd.getTime() - currentStart.getTime() + 1);
       prevEnd = new Date(currentStart.getTime() - 1);
       prevStart = new Date(prevEnd.getTime() - periodMs + 1);
+      currentPeriodLabel = `${currentStart.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })} to ${currentEnd.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}`;
+      previousPeriodLabel = `${prevStart.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })} to ${prevEnd.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}`;
     }
 
-    // Build datasets from base (prefer historicalData) so both months are computed consistently
-    // Base records for MoM analysis
-    const currentPeriodData = base.filter((it) => {
-      const d = parseDate((it as any).paymentDate);
-      return d && d >= currentStart && d <= currentEnd;
-    });
+    // Current metrics must always reflect the actually displayed/filtered data for the selected period.
+    const currentPeriodData = currentData;
 
     const previousPeriodData = base.filter((it) => {
       const d = parseDate((it as any).paymentDate);

@@ -20,6 +20,7 @@ import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getPreviousMonthDateRange, parseDate } from '@/utils/dateUtils';
+import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 // Import new components for rebuilt client conversion tab
 import { EnhancedClientConversionFilterSection } from '@/components/dashboard/EnhancedClientConversionFilterSection';
@@ -98,6 +99,546 @@ interface MembershipPurchaseStats {
   convertedClients: number;
 }
 
+type RetentionPivotMetricKey =
+  | 'trials'
+  | 'newMembers'
+  | 'converted'
+  | 'retained'
+  | 'retentionRate'
+  | 'conversionRate'
+  | 'avgLTV'
+  | 'totalLTV'
+  | 'avgConversionDays'
+  | 'avgVisits';
+
+type RetentionDimension = 'clientType' | 'membership' | 'teacher';
+
+interface RetentionMonthDef {
+  key: string;
+  display: string;
+  year: number;
+  month: number;
+}
+
+interface RetentionPivotCell {
+  trials: number;
+  newMembers: number;
+  converted: number;
+  retained: number;
+  totalLTV: number;
+  conversionSpans: number[];
+  visitsPostTrial: number[];
+  avgLTV: number;
+  conversionRate: number;
+  retentionRate: number;
+  avgConversionDays: number;
+  avgVisits: number;
+}
+
+const RETENTION_PIVOT_METRIC_LABELS: Record<RetentionPivotMetricKey, string> = {
+  trials: 'Trials',
+  newMembers: 'New Members',
+  converted: 'Converted',
+  retained: 'Retained',
+  retentionRate: 'Retention %',
+  conversionRate: 'Conversion %',
+  avgLTV: 'Avg LTV',
+  totalLTV: 'Total LTV',
+  avgConversionDays: 'Avg Conv Days',
+  avgVisits: 'Avg Visits',
+};
+
+const createRetentionPivotCell = (): RetentionPivotCell => ({
+  trials: 0,
+  newMembers: 0,
+  converted: 0,
+  retained: 0,
+  totalLTV: 0,
+  conversionSpans: [],
+  visitsPostTrial: [],
+  avgLTV: 0,
+  conversionRate: 0,
+  retentionRate: 0,
+  avgConversionDays: 0,
+  avgVisits: 0,
+});
+
+const isNewClient = (value: string | undefined | null) => String(value || '').toLowerCase().includes('new');
+
+const sortRetentionDimensionValues = (values: string[], dimension: RetentionDimension | 'yoy-clientType' | 'yoy-membership') => {
+  return [...values].sort((a, b) => {
+    if (dimension === 'clientType' || dimension === 'yoy-clientType') {
+      const an = a.toLowerCase();
+      const bn = b.toLowerCase();
+      if (an.includes('new') && !bn.includes('new')) return -1;
+      if (!an.includes('new') && bn.includes('new')) return 1;
+    }
+    return a.localeCompare(b);
+  });
+};
+
+const getRetentionMonthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+const buildMomMonths = (): RetentionMonthDef[] => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const monthsDiff = (currentYear - 2024) * 12 + currentMonth;
+  const months: RetentionMonthDef[] = [];
+
+  for (let i = 0; i <= monthsDiff; i++) {
+    const d = new Date(2024, i, 1);
+    months.push({
+      key: getRetentionMonthKey(d),
+      display: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+    });
+  }
+
+  return months;
+};
+
+const buildYoyMonths = (): RetentionMonthDef[] => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const months: RetentionMonthDef[] = [];
+
+  for (let monthNum = 1; monthNum <= currentMonth; monthNum++) {
+    const monthName = new Date(2024, monthNum - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+    months.push({ key: `2024-${String(monthNum).padStart(2, '0')}`, display: `${monthName} 2024`, year: 2024, month: monthNum });
+    months.push({ key: `${currentYear}-${String(monthNum).padStart(2, '0')}`, display: `${monthName} ${currentYear}`, year: currentYear, month: monthNum });
+  }
+
+  return months;
+};
+
+const finalizeRetentionPivotCell = (cell: RetentionPivotCell) => ({
+  ...cell,
+  avgLTV: cell.trials > 0 ? cell.totalLTV / cell.trials : 0,
+  conversionRate: cell.newMembers > 0 ? (cell.converted / cell.newMembers) * 100 : 0,
+  retentionRate: cell.newMembers > 0 ? (cell.retained / cell.newMembers) * 100 : 0,
+  avgConversionDays: cell.conversionSpans.length > 0 ? cell.conversionSpans.reduce((sum, value) => sum + value, 0) / cell.conversionSpans.length : 0,
+  avgVisits: cell.visitsPostTrial.length > 0 ? cell.visitsPostTrial.reduce((sum, value) => sum + value, 0) / cell.visitsPostTrial.length : 0,
+});
+
+const formatPivotMetricValue = (metric: RetentionPivotMetricKey, cell: RetentionPivotCell) => {
+  switch (metric) {
+    case 'trials':
+    case 'newMembers':
+    case 'converted':
+    case 'retained':
+      return formatNumber(cell[metric]);
+    case 'retentionRate':
+    case 'conversionRate':
+      return formatPercentage(cell[metric]);
+    case 'avgLTV':
+    case 'totalLTV':
+      return formatCurrency(cell[metric]);
+    case 'avgConversionDays':
+      return `${Math.round(cell.avgConversionDays)} days`;
+    case 'avgVisits':
+      return cell.avgVisits.toFixed(1);
+    default:
+      return '';
+  }
+};
+
+const buildRetentionPivotMatrix = (
+  inputData: any[],
+  months: RetentionMonthDef[],
+  dimension: 'clientType' | 'membership'
+) => {
+  const monthKeys = new Set(months.map((month) => month.key));
+  const rowKeys = sortRetentionDimensionValues(
+    Array.from(
+      new Set(
+        inputData.map((client) =>
+          dimension === 'clientType' ? client.isNew || 'Unknown' : client.membershipUsed || 'Unknown'
+        )
+      )
+    ),
+    dimension === 'clientType' ? 'yoy-clientType' : 'yoy-membership'
+  );
+
+  const matrix: Record<string, Record<string, RetentionPivotCell>> = {};
+  rowKeys.forEach((rowKey) => {
+    matrix[rowKey] = {};
+    months.forEach((month) => {
+      matrix[rowKey][month.key] = createRetentionPivotCell();
+    });
+  });
+
+  inputData.forEach((client) => {
+    const date = parseDate(client.firstVisitDate || '');
+    if (!date) return;
+    const monthKey = getRetentionMonthKey(date);
+    if (!monthKeys.has(monthKey)) return;
+
+    const rowKey = dimension === 'clientType' ? client.isNew || 'Unknown' : client.membershipUsed || 'Unknown';
+    const cell = matrix[rowKey]?.[monthKey];
+    if (!cell) return;
+
+    cell.trials += 1;
+    if (isNewClient(client.isNew)) cell.newMembers += 1;
+    if (client.conversionStatus === 'Converted') cell.converted += 1;
+    if (client.retentionStatus === 'Retained') cell.retained += 1;
+    cell.totalLTV += client.ltv || 0;
+    if (client.conversionSpan && client.conversionSpan > 0) cell.conversionSpans.push(client.conversionSpan);
+    if (client.visitsPostTrial && client.visitsPostTrial > 0) cell.visitsPostTrial.push(client.visitsPostTrial);
+  });
+
+  rowKeys.forEach((rowKey) => {
+    months.forEach((month) => {
+      matrix[rowKey][month.key] = finalizeRetentionPivotCell(matrix[rowKey][month.key]);
+    });
+  });
+
+  const totals: Record<string, RetentionPivotCell> = {};
+  months.forEach((month) => {
+    const totalCell = createRetentionPivotCell();
+    rowKeys.forEach((rowKey) => {
+      const cell = matrix[rowKey][month.key];
+      totalCell.trials += cell.trials;
+      totalCell.newMembers += cell.newMembers;
+      totalCell.converted += cell.converted;
+      totalCell.retained += cell.retained;
+      totalCell.totalLTV += cell.totalLTV;
+      totalCell.conversionSpans.push(...cell.conversionSpans);
+      totalCell.visitsPostTrial.push(...cell.visitsPostTrial);
+    });
+    totals[month.key] = finalizeRetentionPivotCell(totalCell);
+  });
+
+  return { rowKeys, matrix, totals };
+};
+
+const buildPivotMetricExportRows = (
+  rowLabel: string,
+  months: RetentionMonthDef[],
+  rowKeys: string[],
+  matrix: Record<string, Record<string, RetentionPivotCell>>,
+  totals: Record<string, RetentionPivotCell>,
+  metric: RetentionPivotMetricKey
+): ExportRow[] => {
+  const rows: ExportRow[] = rowKeys.map((rowKey) => {
+    const row: ExportRow = { [rowLabel]: rowKey };
+    months.forEach((month) => {
+      row[month.display] = formatPivotMetricValue(metric, matrix[rowKey][month.key]);
+    });
+    return row;
+  });
+
+  const totalsRow: ExportRow = { [rowLabel]: 'TOTALS' };
+  months.forEach((month) => {
+    totalsRow[month.display] = formatPivotMetricValue(metric, totals[month.key]);
+  });
+  rows.push(totalsRow);
+
+  return rows;
+};
+
+const buildClientConversionMonthOnMonthRows = (
+  inputData: any[],
+  visitsSummary: Record<string, number>,
+  rowType: RetentionDimension
+): ExportRow[] => {
+  const statsMap = new Map<string, any>();
+
+  inputData.forEach((client) => {
+    const date = parseDate(client.firstVisitDate || '');
+    if (!date) return;
+
+    const monthKey = getRetentionMonthKey(date);
+    const monthDisplay = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const groupValue = rowType === 'clientType'
+      ? client.isNew || 'Unknown'
+      : rowType === 'membership'
+        ? client.membershipUsed || 'Unknown'
+        : client.trainerName || 'Unknown';
+
+    const compositeKey = `${monthKey}__${groupValue}`;
+    if (!statsMap.has(compositeKey)) {
+      statsMap.set(compositeKey, {
+        month: monthDisplay,
+        sortKey: monthKey,
+        type: groupValue,
+        visits: visitsSummary[monthDisplay] || 0,
+        totalTrials: 0,
+        newMembers: 0,
+        converted: 0,
+        retained: 0,
+        totalLTV: 0,
+        conversionSpans: [] as number[],
+        visitsPostTrial: [] as number[],
+      });
+    }
+
+    const row = statsMap.get(compositeKey);
+    row.totalTrials += 1;
+    if (isNewClient(client.isNew)) row.newMembers += 1;
+    if (client.conversionStatus === 'Converted') row.converted += 1;
+    if (client.retentionStatus === 'Retained') row.retained += 1;
+    row.totalLTV += client.ltv || 0;
+    if (client.conversionSpan && client.conversionSpan > 0) row.conversionSpans.push(client.conversionSpan);
+    if (client.visitsPostTrial && client.visitsPostTrial > 0) row.visitsPostTrial.push(client.visitsPostTrial);
+  });
+
+  return Array.from(statsMap.values())
+    .map((row) => {
+      const conversionRate = row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0;
+      const retentionRate = row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0;
+      const avgLTV = row.totalTrials > 0 ? row.totalLTV / row.totalTrials : 0;
+      const avgConversionDays = row.conversionSpans.length > 0 ? row.conversionSpans.reduce((sum: number, value: number) => sum + value, 0) / row.conversionSpans.length : 0;
+      const avgVisits = row.visitsPostTrial.length > 0 ? row.visitsPostTrial.reduce((sum: number, value: number) => sum + value, 0) / row.visitsPostTrial.length : 0;
+
+      return {
+        Month: row.month,
+        [rowType === 'clientType' ? 'Client Type' : rowType === 'membership' ? 'Membership' : 'Teacher']: row.type,
+        Visits: formatNumber(row.visits),
+        Trials: formatNumber(row.totalTrials),
+        'New Members': formatNumber(row.newMembers),
+        Retained: formatNumber(row.retained),
+        'Retention %': formatPercentage(retentionRate),
+        Converted: formatNumber(row.converted),
+        'Conversion %': formatPercentage(conversionRate),
+        'Avg LTV': formatCurrency(avgLTV),
+        'Total LTV': formatCurrency(row.totalLTV),
+        'Avg Conv Days': avgConversionDays > 0 ? `${avgConversionDays.toFixed(1)} days` : 'N/A',
+        'Avg Visits': avgVisits.toFixed(1),
+      };
+    })
+    .sort((a, b) => String(a.Month).localeCompare(String(b.Month)) || String(Object.values(a)[1]).localeCompare(String(Object.values(b)[1])));
+};
+
+const buildHostedClassesExportRows = (inputData: any[]): ExportRow[] => {
+  const tokens = ['host', 'hosted', 'p57', 'birthday', 'rugby', 'lrs'];
+  const map = new Map<string, any>();
+
+  inputData.forEach((client) => {
+    const className = String(client.firstVisitEntityName || '');
+    if (!className) return;
+    if (!tokens.some((token) => className.toLowerCase().includes(token))) return;
+
+    const date = parseDate(client.firstVisitDate || '') || new Date(client.firstVisitDate || '');
+    const month = !isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown';
+    const key = `${month}__${className}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        month,
+        className,
+        totalMembers: 0,
+        newMembers: 0,
+        converted: 0,
+        retained: 0,
+        totalLTV: 0,
+        conversionIntervals: [] as number[],
+      });
+    }
+
+    const row = map.get(key);
+    row.totalMembers += 1;
+    if (isNewClient(client.isNew)) row.newMembers += 1;
+    if (client.conversionStatus === 'Converted') row.converted += 1;
+    if (client.retentionStatus === 'Retained') row.retained += 1;
+    row.totalLTV += client.ltv || 0;
+    if (client.firstPurchase && client.firstVisitDate) {
+      const firstVisitDate = new Date(client.firstVisitDate);
+      const firstPurchaseDate = new Date(client.firstPurchase);
+      if (!isNaN(firstVisitDate.getTime()) && !isNaN(firstPurchaseDate.getTime())) {
+        const interval = Math.ceil((firstPurchaseDate.getTime() - firstVisitDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (interval >= 0) row.conversionIntervals.push(interval);
+      }
+    }
+  });
+
+  return Array.from(map.values())
+    .map((row) => ({
+      Month: row.month,
+      'Class Name': row.className,
+      Trials: formatNumber(row.totalMembers),
+      'New Members': formatNumber(row.newMembers),
+      Retained: formatNumber(row.retained),
+      'Retention %': formatPercentage(row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0),
+      Converted: formatNumber(row.converted),
+      'Conversion %': formatPercentage(row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0),
+      'Avg LTV': formatCurrency(row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0),
+      'Avg Conv Days': row.conversionIntervals.length > 0
+        ? `${(row.conversionIntervals.reduce((sum: number, value: number) => sum + value, 0) / row.conversionIntervals.length).toFixed(1)} days`
+        : 'N/A',
+    }))
+    .sort((a, b) => Number(String(b.Trials).replace(/,/g, '')) - Number(String(a.Trials).replace(/,/g, '')));
+};
+
+const buildMembershipPerformanceRows = (inputData: any[]): ExportRow[] => {
+  const map = new Map<string, any>();
+  inputData.forEach((client) => {
+    const membership = client.membershipUsed || 'No Membership';
+    if (!map.has(membership)) {
+      map.set(membership, {
+        membership,
+        totalMembers: 0,
+        newMembers: 0,
+        converted: 0,
+        retained: 0,
+        totalLTV: 0,
+      });
+    }
+    const row = map.get(membership);
+    row.totalMembers += 1;
+    if (isNewClient(client.isNew)) row.newMembers += 1;
+    if (client.conversionStatus === 'Converted') row.converted += 1;
+    if (client.retentionStatus === 'Retained') row.retained += 1;
+    row.totalLTV += client.ltv || 0;
+  });
+
+  return Array.from(map.values())
+    .map((row) => ({
+      'Membership Type': row.membership,
+      Trials: formatNumber(row.totalMembers),
+      'New Members': formatNumber(row.newMembers),
+      Retained: formatNumber(row.retained),
+      'Retention %': formatPercentage(row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0),
+      Converted: formatNumber(row.converted),
+      'Conversion %': formatPercentage(row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0),
+      'Avg LTV': formatCurrency(row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0),
+      'Total LTV': formatCurrency(row.totalLTV),
+    }))
+    .sort((a, b) => Number(String(b.Trials).replace(/,/g, '')) - Number(String(a.Trials).replace(/,/g, '')));
+};
+
+const buildTeacherPerformanceRows = (inputData: any[]): ExportRow[] => {
+  const stats = new Map<string, { newMembers: Set<string>; sessions: number; converted: Set<string>; retained: Set<string> }>();
+  inputData.forEach((client) => {
+    const trainerName = client.trainerName || 'Unknown Trainer';
+    if (!stats.has(trainerName)) {
+      stats.set(trainerName, { newMembers: new Set(), sessions: 0, converted: new Set(), retained: new Set() });
+    }
+    const row = stats.get(trainerName)!;
+    if (client.memberId) row.newMembers.add(client.memberId);
+    row.sessions += client.classNo || 0;
+    if (client.conversionStatus === 'Converted' && client.memberId) row.converted.add(client.memberId);
+    if (client.retentionStatus === 'Retained' && client.memberId) row.retained.add(client.memberId);
+  });
+
+  return Array.from(stats.entries())
+    .map(([trainerName, row]) => {
+      const newMembers = row.newMembers.size;
+      const converted = row.converted.size;
+      const retained = row.retained.size;
+      return {
+        'Teacher Name': trainerName,
+        'New Members': formatNumber(newMembers),
+        Sessions: formatNumber(row.sessions),
+        Converted: formatNumber(converted),
+        'Conversion Rate': formatPercentage(newMembers > 0 ? (converted / newMembers) * 100 : 0),
+        Retained: formatNumber(retained),
+        'Retention Rate': formatPercentage(newMembers > 0 ? (retained / newMembers) * 100 : 0),
+      };
+    })
+    .sort((a, b) => Number(String(b['New Members']).replace(/,/g, '')) - Number(String(a['New Members']).replace(/,/g, '')));
+};
+
+const buildNewClientPurchaseRows = (inputData: any[], groupBy: 'detailed' | 'membership' | 'clientType'): ExportRow[] => {
+  const newClients = inputData.filter((client) => isNewClient(client.isNew));
+  const baseMap = new Map<string, any>();
+
+  newClients.forEach((client) => {
+    const membershipsBought = String(client.membershipsBoughtPostTrial || 'No Membership Purchase');
+    const memberships = membershipsBought.split(',').map((item) => item.trim()).filter(Boolean);
+    const clientType = client.isNew || 'Unknown';
+    const effectiveMemberships = memberships.length > 0 ? memberships : ['No Membership Purchase'];
+
+    effectiveMemberships.forEach((membership) => {
+      const key = `${membership}__${clientType}`;
+      if (!baseMap.has(key)) {
+        baseMap.set(key, {
+          membershipType: membership,
+          clientType,
+          units: 0,
+          clientIds: new Set<string>(),
+          totalRevenue: 0,
+          conversionSpans: [] as number[],
+          visitsPostTrial: [] as number[],
+        });
+      }
+
+      const row = baseMap.get(key);
+      row.units += memberships.length > 0 ? 1 : 0;
+      if (client.memberId) row.clientIds.add(String(client.memberId));
+      row.totalRevenue += client.ltv || 0;
+      if (client.conversionStatus === 'Converted' && client.conversionSpan && client.conversionSpan > 0) {
+        row.conversionSpans.push(client.conversionSpan);
+      }
+      if (client.visitsPostTrial) row.visitsPostTrial.push(client.visitsPostTrial);
+    });
+  });
+
+  const detailedRows = Array.from(baseMap.values()).map((row) => ({
+    membershipType: row.membershipType,
+    clientType: row.clientType,
+    units: row.units,
+    newClientsCount: row.clientIds.size,
+    totalRevenue: row.totalRevenue,
+    avgRevenue: row.clientIds.size > 0 ? row.totalRevenue / row.clientIds.size : 0,
+    avgDaysTaken: row.conversionSpans.length > 0 ? row.conversionSpans.reduce((sum: number, value: number) => sum + value, 0) / row.conversionSpans.length : 0,
+    avgVisitsPostTrial: row.visitsPostTrial.length > 0 ? row.visitsPostTrial.reduce((sum: number, value: number) => sum + value, 0) / row.visitsPostTrial.length : 0,
+  }));
+
+  const aggregateRows = (dimension: 'membershipType' | 'clientType') => {
+    const aggregateMap = new Map<string, any>();
+    detailedRows.forEach((row) => {
+      const label = row[dimension];
+      if (!aggregateMap.has(label)) {
+        aggregateMap.set(label, {
+          membershipType: dimension === 'membershipType' ? label : 'All Memberships',
+          clientType: dimension === 'clientType' ? label : 'All Types',
+          units: 0,
+          newClientsCount: 0,
+          totalRevenue: 0,
+          weightedDays: 0,
+          weightedVisits: 0,
+        });
+      }
+      const target = aggregateMap.get(label);
+      target.units += row.units;
+      target.newClientsCount += row.newClientsCount;
+      target.totalRevenue += row.totalRevenue;
+      target.weightedDays += row.avgDaysTaken * row.newClientsCount;
+      target.weightedVisits += row.avgVisitsPostTrial * row.newClientsCount;
+    });
+
+    return Array.from(aggregateMap.values()).map((row) => ({
+      membershipType: row.membershipType,
+      clientType: row.clientType,
+      units: row.units,
+      newClientsCount: row.newClientsCount,
+      totalRevenue: row.totalRevenue,
+      avgRevenue: row.newClientsCount > 0 ? row.totalRevenue / row.newClientsCount : 0,
+      avgDaysTaken: row.newClientsCount > 0 ? row.weightedDays / row.newClientsCount : 0,
+      avgVisitsPostTrial: row.newClientsCount > 0 ? row.weightedVisits / row.newClientsCount : 0,
+    }));
+  };
+
+  const sourceRows = groupBy === 'membership'
+    ? aggregateRows('membershipType')
+    : groupBy === 'clientType'
+      ? aggregateRows('clientType')
+      : detailedRows;
+
+  return sourceRows.map((row) => ({
+    ...(groupBy !== 'clientType' ? { 'Membership Type': row.membershipType } : {}),
+    ...(groupBy !== 'membership' ? { 'Client Type': row.clientType } : {}),
+    'Units Sold': formatNumber(row.units),
+    Clients: formatNumber(row.newClientsCount),
+    'Total Value (LTV)': formatCurrency(row.totalRevenue),
+    'Avg Value': formatCurrency(row.avgRevenue),
+    'Avg Days to Convert': row.avgDaysTaken > 0 ? `${row.avgDaysTaken.toFixed(1)} days` : 'N/A',
+    'Avg Visits': row.avgVisitsPostTrial.toFixed(1),
+  }));
+};
+
 const ClientRetention = () => {
   const {
     data,
@@ -114,7 +655,9 @@ const ClientRetention = () => {
   const {
     setLoading
   } = useGlobalLoading();
-  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
+  const exportPreset = React.useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
+  const [selectedLocation, setSelectedLocation] = useState(exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.locationLabel || 'Kwality House, Kemps Corner'));
   const [isPendingTableSwitch, startTableSwitch] = useTransition();
   const [rememberLastTable, setRememberLastTable] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -145,7 +688,7 @@ const ClientRetention = () => {
     // Default to previous month date range
     const prev = getPreviousMonthDateRange();
     return {
-      dateRange: { start: prev.start, end: prev.end },
+      dateRange: { start: exportPreset?.startDate || prev.start, end: exportPreset?.endDate || prev.end },
       location: [],
       homeLocation: [],
       trainer: [],
@@ -591,124 +1134,58 @@ const ClientRetention = () => {
   
   // Build section-wise processed export maps (not raw sheet rows)
   const exportAdditionalData = React.useMemo(() => {
-    // Export visible pivot table data
-    const momByTypeExport: ExportRow[] = [];
-    const yoyExport: ExportRow[] = [];
-    const membershipExport: ExportRow[] = [];
-    const hostedClassesExport: ExportRow[] = [];
-    const newClientPurchasesExport: ExportRow[] = [];
-    
-    // For Month on Month by Type - build from client types
-    const clientTypes = [...new Set(filteredDataNoDateRange.map(c => c.isNew || 'Unknown'))];
-    clientTypes.forEach(type => {
-      const typeData = filteredDataNoDateRange.filter(c => (c.isNew || 'Unknown') === type);
-      momByTypeExport.push({
-        'Client Type': type,
-        'Total Trials': typeData.length,
-        'New Members': typeData.filter(c => String(c.isNew || '').toLowerCase().includes('new')).length,
-        'Converted': typeData.filter(c => c.conversionStatus === 'Converted').length,
-        'Retained': typeData.filter(c => c.retentionStatus === 'Retained').length,
-        'Total LTV': formatCurrency(typeData.reduce((s, c) => s + (c.ltv || 0), 0))
-      });
+    const exportSections: Record<string, ExportRow[]> = {};
+
+    exportSections['Client Retention • By Client Type • Client Type View'] = buildClientConversionMonthOnMonthRows(filteredData, visitsSummary, 'clientType');
+    exportSections['Client Retention • By Client Type • Membership View'] = buildClientConversionMonthOnMonthRows(filteredData, visitsSummary, 'membership');
+    exportSections['Client Retention • By Client Type • Teacher View'] = buildClientConversionMonthOnMonthRows(filteredData, visitsSummary, 'teacher');
+
+    const momMonths = buildMomMonths();
+    const momPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, momMonths, 'clientType');
+    (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
+      exportSections[`Client Retention • MoM Pivot • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
+        'Client Type',
+        momMonths,
+        momPivot.rowKeys,
+        momPivot.matrix,
+        momPivot.totals,
+        metricKey
+      );
     });
 
-    // For Year on Year - build from membership types
-    const membershipTypes = [...new Set(filteredDataNoDateRange.map(c => c.membershipUsed || 'Unknown'))];
-    membershipTypes.forEach(type => {
-      const typeData = filteredDataNoDateRange.filter(c => (c.membershipUsed || 'Unknown') === type);
-      yoyExport.push({
-        'Membership Type': type,
-        'Total Trials': typeData.length,
-        'New Members': typeData.filter(c => String(c.isNew || '').toLowerCase().includes('new')).length,
-        'Converted': typeData.filter(c => c.conversionStatus === 'Converted').length,
-        'Retained': typeData.filter(c => c.retentionStatus === 'Retained').length,
-        'Total LTV': formatCurrency(typeData.reduce((s, c) => s + (c.ltv || 0), 0))
-      });
+    const yoyMonths = buildYoyMonths();
+    const yoyClientTypePivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'clientType');
+    const yoyMembershipPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'membership');
+    (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
+      exportSections[`Client Retention • YoY Pivot • Client Type • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
+        'Client Type',
+        yoyMonths,
+        yoyClientTypePivot.rowKeys,
+        yoyClientTypePivot.matrix,
+        yoyClientTypePivot.totals,
+        metricKey
+      );
+      exportSections[`Client Retention • YoY Pivot • Membership • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
+        'Membership',
+        yoyMonths,
+        yoyMembershipPivot.rowKeys,
+        yoyMembershipPivot.matrix,
+        yoyMembershipPivot.totals,
+        metricKey
+      );
     });
 
-    // For New Client Purchases - build membership purchase stats
-    const newClientsData = filteredDataNoDateRange.filter(c => String(c.isNew || '').toLowerCase().includes('new'));
-    const membershipPurchaseStats: Record<string, MembershipPurchaseStats> = {};
-    const getOrCreateStats = (membershipKey: string): MembershipPurchaseStats => {
-      if (!membershipPurchaseStats[membershipKey]) {
-        membershipPurchaseStats[membershipKey] = {
-          units: 0,
-          clients: new Set<string>(),
-          totalLTV: 0,
-          conversionSpans: [],
-          visitsPostTrial: [],
-          convertedClients: 0
-        };
-      }
-      return membershipPurchaseStats[membershipKey];
-    };
-    
-    newClientsData.forEach(client => {
-      const membership = client.membershipsBoughtPostTrial || 'No Membership Purchase';
-      const memberships = membership.split(',').map(m => m.trim()).filter(m => m);
-      
-      if (memberships.length === 0 || membership === '') {
-        const noMembershipStats = getOrCreateStats('No Membership Purchase');
-        if (client.memberId) {
-          noMembershipStats.clients.add(String(client.memberId));
-        }
-        noMembershipStats.totalLTV += client.ltv || 0;
-        return;
-      }
-      
-      memberships.forEach(mem => {
-        const stats = getOrCreateStats(mem);
-        stats.units++;
-        if (client.memberId) {
-          stats.clients.add(String(client.memberId));
-        }
-        stats.totalLTV += client.ltv || 0;
-        
-        if (client.conversionStatus === 'Converted') {
-          stats.convertedClients++;
-          if (client.conversionSpan && client.conversionSpan > 0) {
-            stats.conversionSpans.push(client.conversionSpan);
-          }
-        }
-        
-        if (client.visitsPostTrial) {
-          stats.visitsPostTrial.push(client.visitsPostTrial);
-        }
-      });
-    });
-    
-    Object.entries(membershipPurchaseStats).forEach(([membershipType, stats]) => {
-      const newClientsCount = stats.clients.size;
-      const avgDaysTaken = stats.conversionSpans.length > 0 
-        ? stats.conversionSpans.reduce((sum: number, span: number) => sum + span, 0) / stats.conversionSpans.length 
-        : 0;
-      const avgVisitsPostTrial = stats.visitsPostTrial.length > 0
-        ? stats.visitsPostTrial.reduce((sum: number, visits: number) => sum + visits, 0) / stats.visitsPostTrial.length
-        : 0;
-      const conversionRate = newClientsCount > 0 ? (stats.convertedClients / newClientsCount) * 100 : 0;
-      
-      newClientPurchasesExport.push({
-        'Membership Type': membershipType,
-        'Units Sold': stats.units,
-        'New Clients': newClientsCount,
-        'Total Value (LTV)': formatCurrency(stats.totalLTV),
-        'Avg Value': formatCurrency(newClientsCount > 0 ? stats.totalLTV / newClientsCount : 0),
-        'Avg Days to Convert': avgDaysTaken > 0 ? `${avgDaysTaken.toFixed(1)} days` : 'N/A',
-        'Avg Visits': avgVisitsPostTrial.toFixed(1),
-        'Conversion %': `${conversionRate.toFixed(1)}%`
-      });
-    });
+    exportSections['Client Retention • Hosted Classes'] = buildHostedClassesExportRows(filteredData);
+    exportSections['Client Retention • Memberships'] = buildMembershipPerformanceRows(filteredData);
+    exportSections['Client Retention • Teacher Performance'] = buildTeacherPerformanceRows(filteredData);
+    exportSections['Client Retention • New Client Purchases • Detailed'] = buildNewClientPurchaseRows(filteredData, 'detailed');
+    exportSections['Client Retention • New Client Purchases • By Membership'] = buildNewClientPurchaseRows(filteredData, 'membership');
+    exportSections['Client Retention • New Client Purchases • By Client Type'] = buildNewClientPurchaseRows(filteredData, 'clientType');
 
-    return {
-      'Client Retention • Month on Month by Type': momByTypeExport,
-      'Client Retention • Year on Year': yoyExport,
-      'Client Retention • Memberships': membershipExport,
-      'Client Retention • Hosted Classes': hostedClassesExport,
-      'Client Retention • New Client Purchases': newClientPurchasesExport
-    };
-  }, [filteredDataNoDateRange]);
+    return exportSections;
+  }, [filteredData, filteredDataNoDateRange, visitsSummary]);
 
-  const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" />;
+  const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" buttonLabel="Export Retention Tables" />;
   const lazySectionFallback = (
     <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
       <p className="text-sm font-medium text-slate-600">Loading section...</p>

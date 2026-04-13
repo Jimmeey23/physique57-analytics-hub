@@ -260,7 +260,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="max-h-96 overflow-auto">
-                      <Table>
+                      <Table className="class-attendance-neat-table">
                         <TableHeader className="sticky top-0 z-10">
                           <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
                             <TableHead className="font-semibold text-slate-100">Date</TableHead>
@@ -275,7 +275,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                         </TableHeader>
                         <TableBody>
                           {filteredSessions.slice(0, 50).map((session, index) => (
-                            <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
+                            <TableRow key={index}>
                               <TableCell className="font-medium">
                                 <div>
                                   <div className="text-slate-900">{session.date}</div>

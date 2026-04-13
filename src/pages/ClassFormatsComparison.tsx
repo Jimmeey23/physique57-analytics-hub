@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { Footer } from '@/components/ui/footer';
-import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
@@ -21,6 +21,7 @@ import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModal';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
+import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 
 
 const locations = [
@@ -35,8 +36,8 @@ const ClassFormatsComparison: React.FC = () => {
   const { data, loading } = useSessionsData();
   const { allCheckins, loading: checkinsLoading } = useLateCancellationsData();
   const { setLoading } = useGlobalLoading();
-  const [activeLocation, setActiveLocation] = useState('kwality');
-  const exportRef = React.useRef<{ open: () => void }>(null);
+  const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
   const [drill, setDrill] = useState<any | null>(null);
 
   useEffect(() => {
@@ -196,12 +197,21 @@ const ClassFormatsComparison: React.FC = () => {
     }, [filteredByLocation]);
 
     const exportButton = (
-      <AdvancedExportButton 
-        sessionsData={filteredByLocation as any}
+      <DisplayedTablesExportButton
+        analyticsName="Class Formats Analytics"
+        contextLabel={locations.find((location) => location.id === activeLocation)?.name || 'All Locations'}
         defaultFileName={`class-formats-${activeLocation}`}
-        size="sm"
-        variant="ghost"
+        buttonLabel="Export Format Tables"
+        buttonVariant="ghost"
+        buttonSize="sm"
         buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
+        tabOptions={[
+          { key: 'overview', label: 'Overview tab', matchers: ['overview'] },
+          { key: 'rankings', label: 'Rankings tab', matchers: ['rankings'] },
+          { key: 'detailed', label: 'Detailed tab', matchers: ['detailed'] },
+          { key: 'compare', label: 'Compare tab', matchers: ['compare'] },
+          { key: 'trends', label: 'Trends tab', matchers: ['trends'] },
+        ]}
       />
     );
 
@@ -461,13 +471,13 @@ const ClassFormatsComparison: React.FC = () => {
                 </TabsContent>
 
                 <TabsContent value="trends" className="space-y-6 mt-4">
-                  {data && data.length > 0 ? (
+                  {locationFilteredData && locationFilteredData.length > 0 ? (
                     <>
                       <div className="bg-gradient-to-r from-blue-50 to-slate-100 rounded-2xl border border-slate-200 p-6">
                         <h3 className="text-lg font-semibold text-slate-900 mb-2">Month-over-Month Performance Trends</h3>
                         <p className="text-sm text-slate-600">Historical class format performance comparison across all months</p>
                       </div>
-                      <ClassFormatsMoMTable sessions={data as any} checkins={allCheckins} />
+                      <ClassFormatsMoMTable sessions={locationFilteredData as any} checkins={locationFilteredCheckins} />
                     </>
                   ) : (
                     <div className="text-center py-8 text-slate-500">No data available</div>

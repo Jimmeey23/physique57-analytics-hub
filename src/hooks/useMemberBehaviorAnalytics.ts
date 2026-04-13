@@ -12,6 +12,41 @@ import {
   SummaryInsights,
 } from '@/types/memberBehavior';
 
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const parseMemberBehaviorMonth = (value: string): Date | null => {
+  if (!value) return null;
+
+  const direct = new Date(value);
+  if (!Number.isNaN(direct.getTime())) return new Date(direct.getFullYear(), direct.getMonth(), 1);
+
+  const normalized = value.replace(/[-/]/g, ' ').replace(/\s+/g, ' ').trim();
+  const match = normalized.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})$/i);
+
+  if (!match) return null;
+
+  const rawMonth = match[1].toLowerCase();
+  const year = Number(match[2]);
+  const monthIndex = MONTH_LABELS.findIndex(
+    (month) => month.toLowerCase() === rawMonth.slice(0, 3).replace('sep', 'sep')
+  );
+
+  if (monthIndex < 0 || Number.isNaN(year)) return null;
+  return new Date(year, monthIndex, 1);
+};
+
+const sortMonthLabelsDesc = (months: string[]) => {
+  return [...months].sort((a, b) => {
+    const dateA = parseMemberBehaviorMonth(a)?.getTime() ?? 0;
+    const dateB = parseMemberBehaviorMonth(b)?.getTime() ?? 0;
+    return dateB - dateA;
+  });
+};
+
+const formatFutureMonth = (date: Date) => `${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`;
+
+const addMonths = (date: Date, count: number) => new Date(date.getFullYear(), date.getMonth() + count, 1);
+
 export const useMemberBehaviorAnalytics = (
   memberData: MemberBehaviorData[]
 ): MemberBehaviorAnalytics => {
@@ -143,19 +178,16 @@ export const useMemberBehaviorAnalytics = (
         showUpRate: data.bookings > 0 ? (data.visits / data.bookings) * 100 : 0,
       }))
       .sort((a, b) => {
-        // Sort by date (newest first)
-        const dateA = new Date(a.month);
-        const dateB = new Date(b.month);
-        return dateB.getTime() - dateA.getTime();
+        const dateA = parseMemberBehaviorMonth(a.month)?.getTime() ?? 0;
+        const dateB = parseMemberBehaviorMonth(b.month)?.getTime() ?? 0;
+        return dateB - dateA;
       });
 
     // 3. Member Segmentation
     const memberSegments: MemberSegment[] = performanceMetrics.map(metric => {
       // Get last activity month
       const member = memberData.find(m => m.memberId === metric.memberId);
-      const monthKeys = member ? Object.keys(member.monthlyData).sort((a, b) => {
-        return new Date(b).getTime() - new Date(a).getTime();
-      }) : [];
+      const monthKeys = member ? sortMonthLabelsDesc(Object.keys(member.monthlyData)) : [];
       
       const lastActivityMonth = monthKeys.find(month => {
         const data = member?.monthlyData[month];
@@ -233,9 +265,7 @@ export const useMemberBehaviorAnalytics = (
     // Churn Risk: members with declining visit patterns
     const churnRiskMembers = memberData
       .map(member => {
-        const months = Object.keys(member.monthlyData).sort((a, b) => 
-          new Date(b).getTime() - new Date(a).getTime()
-        );
+        const months = sortMonthLabelsDesc(Object.keys(member.monthlyData));
         
         const recent3Months = months.slice(0, 3);
         const previous3Months = months.slice(3, 6);
@@ -263,12 +293,38 @@ export const useMemberBehaviorAnalytics = (
 
     // Revenue Forecasts: simple linear projection
     const recentMonths = monthlyTrends.slice(0, 6);
+    const recentMonthsAsc = [...recentMonths].reverse();
     const avgRevenue = recentMonths.reduce((sum, m) => sum + m.totalRevenue, 0) / (recentMonths.length || 1);
-    const revenueForecasts = [
-      { month: 'Dec 2025', forecastedRevenue: avgRevenue * 1.05, confidence: 75 },
-      { month: 'Jan 2026', forecastedRevenue: avgRevenue * 1.08, confidence: 65 },
-      { month: 'Feb 2026', forecastedRevenue: avgRevenue * 1.10, confidence: 55 },
-    ];
+    const latestActualMonth = parseMemberBehaviorMonth(monthlyTrends[0]?.month || '') ?? new Date();
+    const latestRevenue = monthlyTrends[0]?.totalRevenue || avgRevenue;
+    const monthlyGrowthRates = recentMonthsAsc
+      .slice(1)
+      .map((month, index) => {
+        const previousRevenue = recentMonthsAsc[index]?.totalRevenue || 0;
+        if (previousRevenue <= 0) return 0;
+        const rawRate = (month.totalRevenue - previousRevenue) / previousRevenue;
+        return Math.max(-0.2, Math.min(0.2, rawRate));
+      });
+
+    const averageGrowthRate = monthlyGrowthRates.length > 0
+      ? monthlyGrowthRates.reduce((sum, value) => sum + value, 0) / monthlyGrowthRates.length
+      : 0.03;
+
+    const dataDepthPenalty = Math.max(0, 6 - recentMonths.length) * 4;
+    const volatilityPenalty = Math.min(12, monthlyGrowthRates.reduce((sum, value) => sum + Math.abs(value), 0) * 10);
+    const baseConfidence = Math.max(58, Math.round(84 - dataDepthPenalty - volatilityPenalty));
+
+    let projectedRevenue = latestRevenue || avgRevenue;
+    const revenueForecasts = Array.from({ length: 3 }, (_, index) => {
+      const taperedGrowth = averageGrowthRate * Math.max(0.5, 1 - index * 0.18);
+      projectedRevenue = Math.max(0, projectedRevenue * (1 + taperedGrowth));
+
+      return {
+        month: formatFutureMonth(addMonths(latestActualMonth, index + 1)),
+        forecastedRevenue: projectedRevenue,
+        confidence: Math.max(55, baseConfidence - index * 9),
+      };
+    });
 
     // Payment Risk: members with high unpaid amounts
     const paymentRiskMembers = performanceMetrics
@@ -294,9 +350,7 @@ export const useMemberBehaviorAnalytics = (
     const increasing: TrendAnalysis['increasing'] = [];
 
     memberData.forEach(member => {
-      const months = Object.keys(member.monthlyData).sort((a, b) => 
-        new Date(b).getTime() - new Date(a).getTime()
-      );
+      const months = sortMonthLabelsDesc(Object.keys(member.monthlyData));
       
       if (months.length < 6) return; // Need at least 6 months for trend analysis
       

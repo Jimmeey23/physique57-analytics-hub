@@ -15,26 +15,7 @@ interface ClientHostedClassesTableProps {
 export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> = ({ data, onRowClick }) => {
   const [sortField, setSortField] = React.useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
-
-  // Early return if no data
-  if (!data || data.length === 0) {
-    return (
-      <Card className="bg-white shadow-xl border-0 overflow-hidden">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
-          <CardTitle className="flex items-center gap-2">
-            <Dumbbell className="w-5 h-5" />
-            Hosted Classes Performance Analysis
-            <Badge variant="secondary" className="bg-white/20 text-white">
-              0 Classes
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <p className="text-gray-500 text-center">No class data available for analysis.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const safeData = data ?? [];
 
   const hostedClassData = React.useMemo(() => {
     // Filter data to only include hosted classes based on class name
@@ -142,7 +123,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
           : 0
       }))
       .sort((a, b) => b.totalMembers - a.totalMembers);
-  }, [data]);
+  }, [safeData]);
 
   const columns = [
     {
@@ -289,6 +270,25 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     if (bestRet) notes.push(`${bestRet.className} (${bestRet.month}) leads retention ${bestRet.retentionRate.toFixed(1)}% (${bestRet.retained}/${bestRet.newMembers}).`);
     return notes;
   }, [hostedClassData]);
+
+  if (safeData.length === 0) {
+    return (
+      <Card className="bg-white shadow-xl border-0 overflow-hidden">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+          <CardTitle className="flex items-center gap-2">
+            <Dumbbell className="w-5 h-5" />
+            Hosted Classes Performance Analysis
+            <Badge variant="secondary" className="bg-white/20 text-white">
+              0 Classes
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <p className="text-gray-500 text-center">No class data available for analysis.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <motion.div

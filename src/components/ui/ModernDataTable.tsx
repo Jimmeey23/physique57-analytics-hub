@@ -141,8 +141,14 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   }, [registry, tableId, disableRegistry]);
 
   return (
-    <div ref={containerRef} className={cn(TABLE_STYLES.container, className)} style={{ maxHeight }}>
-      <Table className={TABLE_STYLES.table}>
+    <div
+      ref={containerRef}
+      className={cn(TABLE_STYLES.container, className)}
+      style={{ maxHeight }}
+      data-table={tableId}
+      data-table-name={tableId}
+    >
+      <Table className={TABLE_STYLES.table} data-table={tableId} data-table-name={tableId}>
         <TableHeader className={cn(
           stickyHeader && TABLE_STYLES.header.wrapper,
           "border-b border-slate-300"

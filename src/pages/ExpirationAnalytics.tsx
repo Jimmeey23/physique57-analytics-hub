@@ -3,16 +3,13 @@ import { ExpirationAnalyticsSection } from '@/components/dashboard/ExpirationAna
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 
 const ExpirationAnalytics = () => {
   const { data, loading, error } = useExpirationsData();
   const { setLoading } = useGlobalLoading();
-  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(loading, 'Loading expirations and churn data...');
@@ -54,10 +51,6 @@ const ExpirationAnalytics = () => {
         title="Expirations & Churn"
         subtitle="Comprehensive analysis of membership expirations and customer retention insights"
         metrics={[]}
-        onDashboardClick={() => {
-          const main = document.querySelector('main, .container');
-          if (main) (main as HTMLElement).scrollIntoView({ behavior: 'smooth' });
-        }}
       />
 
       <div className="container mx-auto px-6 py-8">

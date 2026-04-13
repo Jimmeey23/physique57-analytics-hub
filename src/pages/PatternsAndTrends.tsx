@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption, getPresetMonthLabels } from '@/utils/consolidatedExportPreset';
 
 type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
@@ -59,7 +60,9 @@ export const PatternsAndTrends = () => {
   const { data: salesData, loading: salesLoading, error: salesError } = useSalesData();
   const { setLoading } = useGlobalLoading();
   const navigate = useNavigate();
-  const [selectedLocation, setSelectedLocation] = useState('Kwality House, Kemps Corner');
+  const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
+  const [selectedLocation, setSelectedLocation] = useState(exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.patternsLocationLabel || 'Kwality House, Kemps Corner'));
   const [heroColor, setHeroColor] = useState<string>('#3b82f6');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -99,7 +102,7 @@ export const PatternsAndTrends = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
   const [selectedMemberStatus, setSelectedMemberStatus] = useState<string[]>([]);
-  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>(() => exportPreset ? getPresetMonthLabels(exportPreset, 'space') : []);
   
   // Frequency table states
   const [frequencyBreakdownBy, setFrequencyBreakdownBy] = useState<'product' | 'category' | 'teacher' | 'class'>('class');

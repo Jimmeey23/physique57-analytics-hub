@@ -14,7 +14,6 @@ import { ComprehensiveTrainerDrillDown } from './ComprehensiveTrainerDrillDown';
 import { TrainerFilterSection } from './TrainerFilterSection';
 import { EnhancedTrainerMetricCards } from './EnhancedTrainerMetricCards';
 import { DataScienceInsightsPanel } from './DataScienceInsightsPanel';
-import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { processTrainerData } from './TrainerDataProcessor';
 import { formatCurrency, formatNumber, formatRevenue } from '@/utils/formatters';
 import { Users, Calendar, TrendingUp, TrendingDown, AlertCircle, Award, Target, DollarSign, Activity, FileDown, Crown, Trophy, Medal, Maximize2, Download, RotateCcw } from 'lucide-react';
@@ -24,8 +23,54 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
+
+const MONTH_LABEL_TO_INDEX: Record<string, number> = {
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
+};
+
+const parseTrainerMonthLabel = (value: string) => {
+  if (!value) return null;
+
+  const normalized = value.replace(/-/g, ' ').trim();
+  const parsed = new Date(`1 ${normalized}`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+};
+
+const canonicalizeTrainerMonthLabel = (value: string) => {
+  const parsed = parseTrainerMonthLabel(value);
+  if (!parsed) return value;
+
+  const monthLabel = parsed.toLocaleDateString('en-US', { month: 'short' });
+  return `${monthLabel}-${parsed.getFullYear()}`;
+};
+
+const sortTrainerMonthsDesc = (months: string[]) =>
+  [...months].sort((a, b) => {
+    const aDate = parseTrainerMonthLabel(a)?.getTime() ?? 0;
+    const bDate = parseTrainerMonthLabel(b)?.getTime() ?? 0;
+    return bDate - aDate;
+  });
 
 export const EnhancedTrainerPerformanceSection = () => {
+  const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
   const { data: payrollData, isLoading, error } = usePayrollData();
   const { data: sessionsData } = useSessionsData();
   const { data: checkinsData } = useCheckinsData();
@@ -34,12 +79,14 @@ export const EnhancedTrainerPerformanceSection = () => {
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [clickedMetric, setClickedMetric] = useState<string | null>(null);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const DEFAULT_LOCATION = exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.trainerLocationLabel || 'Kwality House, Kemps Corner');
+  const [selectedLocation, setSelectedLocation] = useState(DEFAULT_LOCATION);
   const [isRendering, setIsRendering] = useState(true);
   const [filters, setFilters] = useState({
     location: '',
     trainer: '',
     month: '',
+    months: [] as string[],
     searchTerm: '',
     performanceLevel: '',
     classType: '',
@@ -52,8 +99,51 @@ export const EnhancedTrainerPerformanceSection = () => {
   // Base processed data
   const baseProcessed = useMemo(() => {
     if (!payrollData || payrollData.length === 0) return [];
-    return processTrainerData(payrollData);
+    return processTrainerData(payrollData).map((item) => ({
+      ...item,
+      monthYear: canonicalizeTrainerMonthLabel(item.monthYear || ''),
+    }));
   }, [payrollData]);
+
+  const availableMonths = useMemo(() => {
+    const scopedData = selectedLocation === 'All Locations'
+      ? baseProcessed
+      : baseProcessed.filter((item) => (item.location || '') === selectedLocation);
+
+    const months = sortTrainerMonthsDesc(Array.from(new Set(scopedData.map(item => item.monthYear).filter(Boolean))));
+
+    return months;
+  }, [baseProcessed, selectedLocation]);
+
+  const defaultMonth = useMemo(() => {
+    const months = availableMonths;
+    if (months.length === 0) return '';
+
+    const now = new Date();
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthShort = prev.toLocaleDateString('en-US', { month: 'short' });
+    const expectedMonth = `${monthShort}-${prev.getFullYear()}`;
+
+    return months.find((month) => month === expectedMonth) || months[0] || '';
+  }, [availableMonths]);
+
+  useEffect(() => {
+    if (!defaultMonth) return;
+
+    setFilters((prev) => {
+      const validSelectedMonths = (prev.months || []).filter((month) => availableMonths.includes(month));
+
+      if (validSelectedMonths.length > 0) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        month: defaultMonth,
+        months: [defaultMonth],
+      };
+    });
+  }, [availableMonths, defaultMonth]);
 
   // Data with all filters applied (including month) for cards, charts, efficiency, and detail tables
   const processedData = useMemo(() => {
@@ -80,7 +170,9 @@ export const EnhancedTrainerPerformanceSection = () => {
     }
     
     // Apply month filter
-    if (filters.month) {
+    if (filters.months.length > 0) {
+      data = data.filter(d => filters.months.includes(d.monthYear));
+    } else if (filters.month) {
       data = data.filter(d => d.monthYear === filters.month);
     }
     
@@ -220,7 +312,7 @@ export const EnhancedTrainerPerformanceSection = () => {
     
     // Intentionally DO NOT apply filters.month here
     return data;
-  }, [baseProcessed, filters.location, filters.trainer, filters.searchTerm, filters.minSessions, filters.maxSessions, filters.minRevenue, filters.maxRevenue, filters.performanceLevel, filters.classType, selectedLocation]);
+  }, [baseProcessed, filters.trainer, filters.searchTerm, filters.minSessions, filters.maxSessions, filters.minRevenue, filters.maxRevenue, filters.performanceLevel, filters.classType, selectedLocation]);
 
   const handleRowClick = (trainer: string, data: any) => {
     // Simply pass the data directly - the modal will handle processing
@@ -231,13 +323,13 @@ export const EnhancedTrainerPerformanceSection = () => {
     let effectiveMonth = '';
     if (clickType === 'trainer-month-cell') {
       // Only month-table cell clicks enforce a month context
-      effectiveMonth = data.monthYear || filters.month || '';
+      effectiveMonth = data.monthYear || filters.months[0] || filters.month || '';
     } else if (clickType === 'trainer-efficiency') {
       // Efficiency table should show the most recent month data, not filtered month
       effectiveMonth = data.monthYear || '';
     } else {
       // Other sources only use the globally selected month if explicitly set
-      effectiveMonth = filters.month || '';
+      effectiveMonth = filters.months.length === 1 ? filters.months[0] : (filters.month || '');
     }
     
     setSelectedTrainer(trainer);
@@ -249,7 +341,7 @@ export const EnhancedTrainerPerformanceSection = () => {
       trainerName: trainer,
       location: effectiveLocation,
       monthYear: data.monthYear || effectiveMonth,
-      contextFilters: { location: effectiveLocation, month: effectiveMonth },
+      contextFilters: { location: effectiveLocation, month: effectiveMonth, months: filters.months },
       // Add raw payroll data for this trainer
       rawPayrollRecords: (payrollData || []).filter(r => r.teacherName === trainer),
     });
@@ -374,17 +466,17 @@ export const EnhancedTrainerPerformanceSection = () => {
 
   // Handle rendering state - wait for data to be processed before showing content
   useEffect(() => {
-    if (!isLoading && payrollData && payrollData.length > 0 && processedData.length > 0) {
-      // Give a small delay to ensure all heavy computations are done
-      const timer = setTimeout(() => {
-        setIsRendering(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    } else if (!isLoading && (!payrollData || payrollData.length === 0)) {
-      // If there's no data, stop rendering immediately
-      setIsRendering(false);
+    if (isLoading) {
+      setIsRendering(true);
+      return;
     }
-  }, [isLoading, payrollData, processedData]);
+
+    const timer = setTimeout(() => {
+      setIsRendering(false);
+    }, payrollData && payrollData.length > 0 ? 100 : 0);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, payrollData]);
 
   if (isLoading || isRendering) {
     return null; // Global loader handles this
@@ -432,12 +524,6 @@ export const EnhancedTrainerPerformanceSection = () => {
           };
           const newLocation = locationMap[locationId] || 'All Locations';
           setSelectedLocation(newLocation);
-          
-          // Clear the location filter in the filter section to avoid conflicts
-          setFilters(prevFilters => ({
-            ...prevFilters,
-            location: ''  // Reset location filter when tab changes
-          }));
         }}
         showInfoPopover={true}
         infoPopoverContext="trainer-performance-overview"
@@ -455,6 +541,11 @@ export const EnhancedTrainerPerformanceSection = () => {
             totalPaid: p.totalPaid
           })) || []}
           onFiltersChange={setFilters}
+          activeLocation={selectedLocation}
+          activeMonths={filters.months.length ? filters.months : (defaultMonth ? [defaultMonth] : [])}
+          defaultLocation={DEFAULT_LOCATION}
+          defaultMonths={defaultMonth ? [defaultMonth] : []}
+          onLocationChange={setSelectedLocation}
           isCollapsed={isFiltersCollapsed}
           onToggleCollapse={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
         />
@@ -468,10 +559,10 @@ export const EnhancedTrainerPerformanceSection = () => {
             // Open drill-down modal with trainer data and remember clicked metric
             const trainerName = title;
             const effectiveLocation = data.location || (filters.location || selectedLocation);
-            const effectiveMonth = filters.month || '';
+            const effectiveMonth = filters.months.length === 1 ? filters.months[0] : (filters.month || '');
             setSelectedTrainer(trainerName);
             setClickedMetric(title);
-            setDrillDownData({ ...data, trainerName, location: effectiveLocation, monthYear: effectiveMonth, type: 'metric-card', contextFilters: { location: effectiveLocation, month: effectiveMonth } });
+            setDrillDownData({ ...data, trainerName, location: effectiveLocation, monthYear: effectiveMonth, type: 'metric-card', contextFilters: { location: effectiveLocation, month: effectiveMonth, months: filters.months } });
           }}
         />
       </div>
@@ -999,21 +1090,6 @@ export const EnhancedTrainerPerformanceSection = () => {
         </TabsList>
 
   <TabsContent value="month-on-month" className="space-y-6">
-          <div className="flex justify-end mb-4">
-            <AdvancedExportButton 
-              payrollData={processedDataNoMonth.map(p => ({
-                teacherName: p.trainerName,
-                location: p.location,
-                monthYear: p.monthYear,
-                totalSessions: p.totalSessions,
-                totalPaid: p.totalPaid,
-                totalCustomers: p.totalCustomers
-              })) || []}
-              defaultFileName="month-on-month-trainer-analysis"
-              size="sm"
-              variant="outline"
-            />
-          </div>
           <div className="flex items-center gap-2 -mt-2 flex-wrap">
             <Badge variant="outline" className="text-xs text-amber-700 border-amber-200 bg-amber-50">Ignoring Month Filter</Badge>
             <button onClick={() => setFilters(prev => ({...prev, location: ''}))} className="rounded">
@@ -1031,21 +1107,6 @@ export const EnhancedTrainerPerformanceSection = () => {
         </TabsContent>
 
   <TabsContent value="year-on-year" className="space-y-6">
-          <div className="flex justify-end mb-4">
-            <AdvancedExportButton 
-              payrollData={processedDataNoMonth.map(p => ({
-                teacherName: p.trainerName,
-                location: p.location,
-                monthYear: p.monthYear,
-                totalSessions: p.totalSessions,
-                totalPaid: p.totalPaid,
-                totalCustomers: p.totalCustomers
-              })) || []}
-              defaultFileName="year-on-year-trainer-analysis"
-              size="sm"
-              variant="outline"
-            />
-          </div>
           <div className="flex items-center gap-2 -mt-2 flex-wrap">
             <Badge variant="outline" className="text-xs text-amber-700 border-amber-200 bg-amber-50">Ignoring Month Filter</Badge>
             <button onClick={() => setFilters(prev => ({...prev, location: ''}))} className="rounded">
@@ -1063,45 +1124,13 @@ export const EnhancedTrainerPerformanceSection = () => {
         </TabsContent>
 
         <TabsContent value="efficiency-analysis" className="space-y-6">
-          <div className="flex justify-end mb-4">
-            <AdvancedExportButton 
-              payrollData={processedDataNoMonth.map(p => ({
-                teacherName: p.trainerName,
-                location: p.location,
-                monthYear: p.monthYear,
-                totalSessions: p.totalSessions,
-                totalPaid: p.totalPaid,
-                totalCustomers: p.totalCustomers
-              })) || []}
-              defaultFileName="trainer-efficiency-analysis"
-              size="sm"
-              variant="outline"
-            />
-          </div>
-          
           <TrainerEfficiencyAnalysisTable
-            data={processedDataNoMonth}
+            data={processedData}
             onRowClick={handleRowClick}
           />
         </TabsContent>
 
         <TabsContent value="performance-detail" className="space-y-6">
-          <div className="flex justify-end mb-4">
-            <AdvancedExportButton 
-              payrollData={processedData.map(p => ({
-                teacherName: p.trainerName,
-                location: p.location,
-                monthYear: p.monthYear,
-                totalSessions: p.totalSessions,
-                totalPaid: p.totalPaid,
-                totalCustomers: p.totalCustomers
-              })) || []}
-              defaultFileName="trainer-performance-detail"
-              size="sm"
-              variant="outline"
-            />
-          </div>
-          
           <TrainerPerformanceDetailTable
             data={processedData}
             onRowClick={handleRowClick}
@@ -1125,7 +1154,7 @@ export const EnhancedTrainerPerformanceSection = () => {
             totalCustomers: p.totalCustomers
           })) || []}
           allSessionsData={sessionsData || []}
-          filters={drillDownData.contextFilters || { location: selectedLocation, month: filters.month || '' }}
+          filters={drillDownData.contextFilters || { location: selectedLocation, month: filters.months[0] || filters.month || '', months: filters.months }}
         />
       )}
     </div>

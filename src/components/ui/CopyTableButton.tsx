@@ -3,6 +3,7 @@ import { Copy, Check, FileText } from 'lucide-react';
 import { Button } from './button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown-menu';
 import { toast } from './use-toast';
+import { buildAllTablesText, extractTableTextFromContainer } from '@/utils/tableCopy';
 
 interface CopyTableButtonProps {
   tableRef: React.RefObject<HTMLTableElement | HTMLDivElement>;
@@ -31,6 +32,34 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
   contextInfo
 }) => {
   const [copied, setCopied] = useState(false);
+
+  React.useEffect(() => {
+    const container = tableRef.current;
+    if (!container) return;
+
+    const tables = container instanceof HTMLTableElement
+      ? [container]
+      : Array.from(container.querySelectorAll('table'));
+
+    if (tables.length === 0 && container instanceof HTMLElement) {
+      container.setAttribute('data-has-copy-button', 'true');
+      return () => {
+        container.removeAttribute('data-has-copy-button');
+      };
+    }
+
+    tables.forEach((table) => table.setAttribute('data-has-copy-button', 'true'));
+    return () => {
+      tables.forEach((table) => table.removeAttribute('data-has-copy-button'));
+    };
+  }, [tableRef]);
+
+  const handleCopyAllTabs = React.useCallback(async () => {
+    if (onCopyAllTabs) {
+      return onCopyAllTabs();
+    }
+    return buildAllTablesText(document);
+  }, [onCopyAllTabs]);
 
   const copyTableAsHTML = async () => {
     if (!tableRef.current) {
@@ -341,227 +370,8 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
     }
 
     try {
-      // Extract text content from the table
-      const tableElement = tableRef.current;
-      
-      // Find the actual table or extract data from the component
-      const table = tableElement.querySelector('table') || tableElement;
-      
-      // Build comprehensive header with context information
-      let textContent = `${tableName}\n`;
-      textContent += `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
-      
-      // Add context information if provided
-      if (contextInfo) {
-        textContent += `\n--- Export Context ---\n`;
-        
-        // Add selected metric
-        if (contextInfo.selectedMetric) {
-          textContent += `Metric: ${contextInfo.selectedMetric}\n`;
-        }
-        
-        // Add location information
-        if (contextInfo.location) {
-          textContent += `Location: ${contextInfo.location}\n`;
-        } else if (contextInfo.filters?.location) {
-          // Handle location from filters
-          const locationValue = Array.isArray(contextInfo.filters.location) 
-            ? contextInfo.filters.location.join(', ') 
-            : contextInfo.filters.location;
-          if (locationValue && locationValue !== 'all') {
-            textContent += `Location: ${locationValue}\n`;
-          } else {
-            textContent += `Location: All Locations\n`;
-          }
-        } else {
-          textContent += `Location: All Locations\n`;
-        }
-        
-        // Add date range
-        if (contextInfo.dateRange) {
-          const { start, end } = contextInfo.dateRange;
-          if (start && end) {
-            textContent += `Date Range: ${start} to ${end}\n`;
-          }
-        }
-        
-        // Add active filters
-        if (contextInfo.filters) {
-          const activeFilters: string[] = [];
-          Object.entries(contextInfo.filters).forEach(([key, value]) => {
-            if (value && Array.isArray(value) && value.length > 0) {
-              activeFilters.push(`${key.charAt(0).toUpperCase() + key.slice(1)}: ${value.join(', ')}`);
-            } else if (value && typeof value === 'string' && value !== 'All' && value !== '') {
-              activeFilters.push(`${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`);
-            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-              // Handle nested objects like dateRange
-              const subFilters = Object.entries(value)
-                .filter(([_, v]) => v && v !== '')
-                .map(([k, v]) => `${k}: ${v}`)
-                .join(', ');
-              if (subFilters) {
-                activeFilters.push(`${key.charAt(0).toUpperCase() + key.slice(1)}: ${subFilters}`);
-              }
-            }
-          });
-          
-          if (activeFilters.length > 0) {
-            textContent += `Active Filters: ${activeFilters.join('; ')}\n`;
-          } else {
-            textContent += `Active Filters: None\n`;
-          }
-        }
-        
-        // Add any additional info
-        if (contextInfo.additionalInfo) {
-          Object.entries(contextInfo.additionalInfo).forEach(([key, value]) => {
-            if (value) {
-              textContent += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}\n`;
-            }
-          });
-        }
-        
-        textContent += `\n--- Table Data (Headers + Data Rows + Totals) ---\n`;
-        textContent += `Note: Grouped/Category rows have been excluded\n`;
-      } else {
-        textContent += `\n`;
-      }
-      
-      // Extract headers
-      const headers: string[] = [];
-      const headerCells = table.querySelectorAll('thead th, thead td, tr:first-child th, tr:first-child td');
-      headerCells.forEach(cell => {
-        const text = cell.textContent?.trim() || '';
-        if (text) headers.push(text);
-      });
-      
-      if (headers.length > 0) {
-        textContent += headers.join('\t') + '\n';
-        textContent += headers.map(() => '---').join('\t') + '\n';
-      }
-      
-      // Extract data rows with enhanced grouped row detection
-      const dataRows = table.querySelectorAll('tbody tr, tr:not(:first-child)');
-      dataRows.forEach(row => {
-        // Enhanced detection for grouped/category rows
-        const isGroupRow = (
-          // Common group row styling classes
-          row.classList.contains('bg-slate-100') || 
-          row.classList.contains('bg-gray-100') ||
-          row.classList.contains('bg-slate-50') ||
-          row.classList.contains('bg-gray-50') ||
-          row.classList.contains('group-row') ||
-          row.classList.contains('category-row') ||
-          row.classList.contains('section-header') ||
-          row.classList.contains('group-header') ||
-          row.classList.contains('category-header') ||
-          
-          // Detect expand/collapse buttons (chevron icons)
-          row.querySelector('button[class*="ChevronRight"], button[class*="ChevronDown"]') !== null ||
-          row.querySelector('svg.lucide-chevron-right, svg.lucide-chevron-down') !== null ||
-          row.querySelector('[data-lucide="chevron-right"], [data-lucide="chevron-down"]') !== null ||
-          row.querySelector('.fa-chevron-right, .fa-chevron-down') !== null ||
-          
-          // Detect if row has data attributes indicating it's a group
-          row.hasAttribute('data-group') ||
-          row.hasAttribute('data-category') ||
-          row.hasAttribute('data-section') ||
-          row.hasAttribute('data-grouped') ||
-          
-          // Detect if first cell spans multiple columns (common in group headers)
-          (() => {
-            const firstCell = row.querySelector('td:first-child, th:first-child');
-            return firstCell && (
-              firstCell.getAttribute('colspan') && parseInt(firstCell.getAttribute('colspan') || '1') > 1
-            );
-          })() ||
-          
-          // Detect common group row text patterns
-          (() => {
-            const rowText = row.textContent?.trim().toLowerCase() || '';
-            return (
-              rowText.includes('expand') ||
-              rowText.includes('collapse') ||
-              rowText.includes('show more') ||
-              rowText.includes('show less') ||
-              (rowText.includes('items') && !rowText.match(/\d+\s+items/)) || // Avoid matching actual data like "5 items sold"
-              rowText.includes('category:') ||
-              rowText.includes('group:') ||
-              rowText.includes('section:') ||
-              // Detect rows that are just category names without data
-              (rowText.length > 0 && rowText.length < 50 && 
-               !rowText.match(/\d/) && // No numbers (likely data)
-               !rowText.includes('₹') && // No currency
-               !rowText.includes('%') && // No percentages
-               !rowText.includes(':') && // No time or ratios
-               row.querySelectorAll('td, th').length <= 2) // Few cells (likely category header)
-            );
-          })()
-        );
-        
-        // Enhanced detection for totals/summary rows (these should be included)
-        const isTotalsRow = (
-          row.classList.contains('bg-slate-800') || 
-          row.classList.contains('bg-gray-800') ||
-          row.classList.contains('bg-slate-900') ||
-          row.classList.contains('totals-row') ||
-          row.classList.contains('summary-row') ||
-          row.classList.contains('footer-row') ||
-          (() => {
-            const rowText = row.textContent?.trim() || '';
-            return (
-              rowText.includes('TOTALS') ||
-              rowText.includes('TOTAL') ||
-              rowText.includes('Total') ||
-              rowText.includes('Sum') ||
-              rowText.includes('Summary') ||
-              rowText.includes('Grand Total') ||
-              rowText.includes('Subtotal') ||
-              // Check if first cell indicates a total
-              (() => {
-                const firstCell = row.querySelector('td:first-child, th:first-child');
-                const firstCellText = firstCell?.textContent?.trim().toLowerCase() || '';
-                return (
-                  firstCellText === 'total' ||
-                  firstCellText === 'totals' ||
-                  firstCellText === 'grand total' ||
-                  firstCellText === 'summary' ||
-                  firstCellText.startsWith('total ')
-                );
-              })()
-            );
-          })()
-        );
-        
-        // Skip group rows but always include totals rows and regular data rows
-        if (isGroupRow && !isTotalsRow) {
-          return;
-        }
-        
-        // Extract cell data
-        const cells = row.querySelectorAll('td, th');
-        const rowData: string[] = [];
-        cells.forEach(cell => {
-          // Skip cells that are just expand/collapse buttons
-          const hasOnlyButton = cell.querySelector('button') && !cell.textContent?.trim().replace(/[\s\n\r]+/g, '').length;
-          if (hasOnlyButton) {
-            rowData.push(''); // Add empty cell for button columns
-          } else {
-            const text = cell.textContent?.trim() || '';
-            rowData.push(text);
-          }
-        });
-        
-        // Only add row if it has meaningful content
-        if (rowData.length > 0 && rowData.some(cell => cell !== '')) {
-          textContent += rowData.join('\t') + '\n';
-        }
-      });
-      
-      // If no structured table found, get all text content
-      if (headers.length === 0 && dataRows.length === 0) {
-        textContent += table.textContent?.trim() || 'No data available';
-      }
+      const tableElement = tableRef.current as HTMLElement;
+      const textContent = extractTableTextFromContainer(tableElement, tableName, contextInfo);
       // Copy to clipboard as plain text
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(textContent);
@@ -597,17 +407,8 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
   };
 
   const copyAllTabsAsText = async () => {
-    if (!onCopyAllTabs) {
-      toast({
-        title: "Error",
-        description: "Copy all tabs function not provided",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
-      const allTabsContent = await onCopyAllTabs();
+      const allTabsContent = await handleCopyAllTabs();
       
       // Copy to clipboard
       await navigator.clipboard.writeText(allTabsContent);
@@ -648,15 +449,16 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
+            data-copy-table-button="true"
             variant="outline"
             size="icon"
-            className={`${buttonSize} bg-white/90 hover:bg-gray-50 border-gray-200 shadow-sm transition-all duration-200 ${className}`}
+            className={`${buttonSize} border-slate-300 bg-transparent text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-100 ${className}`}
             title={`Copy ${tableName} to clipboard`}
           >
             {copied ? (
               <Check className={`${iconSize} text-green-600`} />
             ) : (
-              <Copy className={`${iconSize} text-gray-600`} />
+              <Copy className={iconSize} />
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -669,12 +471,10 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
             <FileText className="h-4 w-4" />
             <span>Copy as text</span>
           </DropdownMenuItem>
-          {onCopyAllTabs && (
-            <DropdownMenuItem onClick={copyAllTabsAsText} className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span>Copy all tabs</span>
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={copyAllTabsAsText} className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>Copy all tabs</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -686,13 +486,14 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       variant="outline"
       size="icon"
       onClick={copyTableAsHTML}
-      className={`${buttonSize} bg-white/90 hover:bg-gray-50 border-gray-200 shadow-sm transition-all duration-200 ${className}`}
+      data-copy-table-button="true"
+      className={`${buttonSize} border-slate-300 bg-transparent text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-100 ${className}`}
       title={`Copy ${tableName} with styling to clipboard`}
     >
       {copied ? (
         <Check className={`${iconSize} text-green-600`} />
       ) : (
-        <Copy className={`${iconSize} text-gray-600`} />
+        <Copy className={iconSize} />
       )}
     </Button>
   );

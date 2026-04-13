@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { ReactNode } from 'react';
 import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 interface GlobalFilters {
   dateRange: {
@@ -84,10 +85,12 @@ interface GlobalFiltersProviderProps {
 
 export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ children }) => {
   const [filters, setFilters] = React.useState<GlobalFilters>(() => {
+    const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     const previousMonth = getPreviousMonthDateRange();
+    const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     return {
-      dateRange: previousMonth,
-      location: ['Kwality House'], // Default location set to Kwality House
+      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : previousMonth,
+      location: preset ? (preset.studioId === 'all' ? [] : [studioOption?.locationLabel || 'Kwality House, Kemps Corner']) : ['Kwality House'],
       category: [],
       product: [],
       soldBy: [],
@@ -110,10 +113,12 @@ export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ ch
   };
 
   const clearFilters = () => {
+    const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     const previousMonth = getPreviousMonthDateRange();
+    const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     setFilters({
-      dateRange: previousMonth,
-      location: ['Kwality House'], // Reset to Kwality House as default
+      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : previousMonth,
+      location: preset ? (preset.studioId === 'all' ? [] : [studioOption?.locationLabel || 'Kwality House, Kemps Corner']) : ['Kwality House'],
       category: [],
       product: [],
       soldBy: [],

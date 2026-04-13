@@ -2,6 +2,14 @@ import React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
 
+const normalizeTrainerName = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 // Mapping of trainer names to their image files
 const TRAINER_IMAGE_MAP: Record<string, string> = {
   // Exact mappings based on available images
@@ -42,30 +50,75 @@ const NAME_VARIATIONS: Record<string, string> = {
   'shruti kulkarni': 'Shruti Kulkarni',
   'kajol kanchan': 'Kajol Kanchan',
   'karan bhatia': 'Karan Bhatia',
-  'pushyank nahar': 'Pushyank Nahar'
+  'karanvir bhatia': 'Karan Bhatia',
+  'karanveer bhatia': 'Karan Bhatia',
+  'pushyank nahar': 'Pushyank Nahar',
+  'upasna paranjpe': 'Upasna',
+  'upasana paranjpe': 'Upasna',
+  'richard dcosta': 'Richard',
+  'richard d costa': 'Richard',
+  'mrigakshi jaiswal': 'Mrigakshi',
+  'simonelle de vitre': 'Simonelle',
+  'sovena shetty': 'Sovena',
+  'cauveri vikrant': 'Cauveri',
+  'nishanth raj': 'Nishanth',
+  'reshma sharma': 'Reshma',
+  'pranjali jain': 'Pranjali',
+  'anisha shah': 'Anisha',
+  'atulan purohit': 'Atulan',
+  'janhavi jain': 'Janhavi',
+  'rohan dahima': 'Rohan',
+  'vivaran dhasmana': 'Vivaran',
+  'saniya jaiswal': 'Saniya',
+  'anmol sharma': 'Anmol',
+  'bret saldanha': 'Bret',
+  'kabir varma': 'Kabir',
+  'raunak khemuka': 'Raunak',
+  'simran dutt': 'Simran'
 };
+
+const NORMALIZED_IMAGE_MAP: Record<string, string> = Object.entries(TRAINER_IMAGE_MAP).reduce(
+  (acc, [key, fileName]) => {
+    acc[normalizeTrainerName(key)] = fileName;
+    return acc;
+  },
+  {} as Record<string, string>
+);
 
 /**
  * Get the image path for a trainer
  */
 export const getTrainerImage = (trainerName: string): string => {
   if (!trainerName) return '';
-  
+
+  const normalizedName = normalizeTrainerName(trainerName);
+
   // Try exact match first
   if (TRAINER_IMAGE_MAP[trainerName]) {
     return `/images/${TRAINER_IMAGE_MAP[trainerName]}`;
   }
-  
-  // Try lowercase match with variations
-  const lowerName = trainerName.toLowerCase();
-  if (NAME_VARIATIONS[lowerName] && TRAINER_IMAGE_MAP[NAME_VARIATIONS[lowerName]]) {
-    return `/images/${TRAINER_IMAGE_MAP[NAME_VARIATIONS[lowerName]]}`;
+
+  // Try normalized full-name match
+  if (NORMALIZED_IMAGE_MAP[normalizedName]) {
+    return `/images/${NORMALIZED_IMAGE_MAP[normalizedName]}`;
   }
-  
+
+  // Try normalized alias match
+  const canonicalVariation = NAME_VARIATIONS[normalizedName];
+  if (canonicalVariation) {
+    const normalizedCanonical = normalizeTrainerName(canonicalVariation);
+    if (TRAINER_IMAGE_MAP[canonicalVariation]) {
+      return `/images/${TRAINER_IMAGE_MAP[canonicalVariation]}`;
+    }
+    if (NORMALIZED_IMAGE_MAP[normalizedCanonical]) {
+      return `/images/${NORMALIZED_IMAGE_MAP[normalizedCanonical]}`;
+    }
+  }
+
   // Try first name match
-  const firstName = trainerName.split(' ')[0];
-  if (TRAINER_IMAGE_MAP[firstName]) {
-    return `/images/${TRAINER_IMAGE_MAP[firstName]}`;
+  const firstName = normalizedName.split(' ')[0];
+  if (firstName && NORMALIZED_IMAGE_MAP[firstName]) {
+    return `/images/${NORMALIZED_IMAGE_MAP[firstName]}`;
   }
   
   return '';

@@ -2,19 +2,15 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import type { DateRange } from 'react-day-picker';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { CalendarRange, Download, FileJson, FileSpreadsheet, FileText, LayoutTemplate, Printer, RefreshCw, Table2 } from 'lucide-react';
+import { Download, FileJson, FileSpreadsheet, FileText, LayoutTemplate, Printer, RefreshCw, Table2 } from 'lucide-react';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
-import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useToast } from '@/hooks/use-toast';
-import type { SalesData } from '@/types/dashboard';
 
 interface TableExportData {
   id: string;
@@ -34,79 +30,31 @@ interface ExportSection {
 interface ExportBundle {
   title: string;
   generatedAt: string;
-  locationName: string;
-  locationSuffix: string;
-  dateRange: {
-    start: string;
-    end: string;
-    label: string;
-  };
+  contextLabel?: string;
   sections: ExportSection[];
 }
 
-interface ComprehensiveSalesExportButtonProps {
-  data: SalesData[];
-  currentLocation: string;
-  locationName: string;
-  currentDateRange?: {
-    start: string;
-    end: string;
-  };
-  onDateRangeChange?: (range: { start: string; end: string }) => void;
+export interface DisplayedTableExportTabOption {
+  key: string;
+  label: string;
+  matchers: string[];
+}
+
+interface DisplayedTablesExportButtonProps {
+  analyticsName: string;
+  tabOptions: DisplayedTableExportTabOption[];
+  defaultFileName?: string;
   buttonVariant?: ButtonProps['variant'];
   buttonSize?: ButtonProps['size'];
   buttonClassName?: string;
   buttonLabel?: string;
   openRef?: React.RefObject<{ open: () => void }>;
   renderTrigger?: boolean;
+  contextLabel?: string;
+  dialogDescription?: string;
 }
 
 type ExportFormat = 'csv' | 'xlsx' | 'txt' | 'json' | 'pdf';
-type DateRangeMode = 'current' | 'custom';
-
-interface ExportConfig {
-  currentView: boolean;
-  monthOnMonth: boolean;
-  yearOnYear: boolean;
-  productPerformance: boolean;
-  categoryPerformance: boolean;
-  soldByAnalysis: boolean;
-  paymentMethodAnalysis: boolean;
-  customerBehavior: boolean;
-  allTabs: boolean;
-}
-
-const LOCATION_MAPPING: Record<string, string> = {
-  all: 'All Locations',
-  kwality: 'Kwality House, Kemps Corner',
-  supreme: 'Supreme HQ, Bandra',
-  kenkere: 'Kenkere House, Bengaluru',
-  popup: 'Pop-up',
-};
-
-const TAB_EXPORT_LABELS: Record<keyof ExportConfig, string> = {
-  currentView: 'Current active tab',
-  monthOnMonth: 'Month-on-Month tab',
-  yearOnYear: 'Year-on-Year tab',
-  productPerformance: 'Products tab',
-  categoryPerformance: 'Categories tab',
-  soldByAnalysis: 'Sales Team tab',
-  paymentMethodAnalysis: 'Payments tab',
-  customerBehavior: 'Behavior tab',
-  allTabs: 'All tabs',
-};
-
-const TAB_VALUE_MATCHERS: Record<Exclude<keyof ExportConfig, 'currentView' | 'allTabs'>, string[]> = {
-  monthOnMonth: ['monthonmonth', 'month-on-month'],
-  yearOnYear: ['yearonyear', 'year-on-year'],
-  productPerformance: ['productperformance', 'product-performance'],
-  categoryPerformance: ['categoryperformance', 'category-performance'],
-  soldByAnalysis: ['soldbyanalysis', 'sold-by', 'soldby'],
-  paymentMethodAnalysis: ['paymentmethodanalysis', 'payment-method', 'paymentmethod'],
-  customerBehavior: ['customerbehavior', 'customer-behavior', 'behavior'],
-};
-
-const ALL_SALES_TAB_MATCHERS = Object.values(TAB_VALUE_MATCHERS).flat().map((value) => value.replace(/\s+/g, '').toLowerCase());
 
 const FORMAT_LABELS: Record<ExportFormat, string> = {
   csv: 'CSV bundle',
@@ -116,7 +64,7 @@ const FORMAT_LABELS: Record<ExportFormat, string> = {
   pdf: 'Print-ready PDF',
 };
 
-const waitForUiSettling = (ms = 900) => new Promise((resolve) => setTimeout(resolve, ms));
+const waitForUiSettling = (ms = 750) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const sanitizeFileSegment = (value: string) =>
   value
@@ -138,8 +86,10 @@ const escapeHtml = (value: string) =>
 
 const normalizeCellText = (value: string) => value.replace(/[↑↓▲▼]/g, '').replace(/\s+/g, ' ').trim();
 
+const normalizeTabValue = (value: string) => value.replace(/\s+/g, '').toLowerCase();
+
 const SUMMARY_ROW_LABEL_PATTERN = /^(grand\s+total|totals?|subtotals?)$/i;
-const METRIC_SELECTOR_LABEL_PATTERN = /metrics:/i;
+const NON_METRIC_BUTTON_LABEL_PATTERN = /^(copy|refresh|download|reset|cancel|export|analytics|previous|next|all\s+tabs?)$/i;
 
 const downloadBlob = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
@@ -152,7 +102,17 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url);
 };
 
-const normalizeTabValue = (value: string) => value.replace(/\s+/g, '').toLowerCase();
+const isElementVisible = (element: HTMLElement) => {
+  const style = window.getComputedStyle(element);
+  return element.offsetParent !== null && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+};
+
+const isInsideExportDialog = (element: Element) => Boolean(element.closest('[role="dialog"]'));
+
+const getPanelForTabTrigger = (trigger: Element | null) => {
+  const panelId = trigger?.getAttribute('aria-controls');
+  return panelId ? document.getElementById(panelId) : null;
+};
 
 const getTabTriggerValue = (trigger: Element | null) => {
   if (!trigger) return 'current-view';
@@ -170,43 +130,6 @@ const getTabTriggerValue = (trigger: Element | null) => {
 };
 
 const getTabTriggerLabel = (trigger: Element | null) => trigger?.textContent?.trim() || getTabTriggerValue(trigger);
-
-const matchesSalesTabMatcher = (candidate: string, matcher: string) => candidate === matcher || candidate.includes(matcher);
-
-const isSalesAnalyticsTabTrigger = (trigger: Element | null) => {
-  if (!trigger) return false;
-
-  const normalizedValue = normalizeTabValue(getTabTriggerValue(trigger));
-  const normalizedLabel = normalizeTabValue(getTabTriggerLabel(trigger));
-
-  return ALL_SALES_TAB_MATCHERS.some((matcher) =>
-    matchesSalesTabMatcher(normalizedValue, matcher) ||
-    matchesSalesTabMatcher(normalizedLabel, matcher)
-  );
-};
-
-const formatDateLabel = (value: string) => {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : format(date, 'MMM d, yyyy');
-};
-
-const buildDateRangeLabel = (range: { start: string; end: string }) => {
-  if (!range.start && !range.end) return 'All available dates';
-  return `${formatDateLabel(range.start)} → ${formatDateLabel(range.end)}`;
-};
-
-const isElementVisible = (element: HTMLElement) => {
-  const style = window.getComputedStyle(element);
-  return element.offsetParent !== null && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-};
-
-const isInsideExportDialog = (element: Element) => Boolean(element.closest('[role="dialog"]'));
-
-const getPanelForTabTrigger = (trigger: Element | null) => {
-  const panelId = trigger?.getAttribute('aria-controls');
-  return panelId ? document.getElementById(panelId) : null;
-};
 
 const findPreviousHeading = (element: Element | null): string | null => {
   let current: Element | null = element;
@@ -229,9 +152,9 @@ const detectTableName = (tableElement: HTMLTableElement, index: number) => {
   const directCandidates = [
     tableElement.getAttribute('aria-label'),
     tableElement.getAttribute('data-table-name'),
+    tableElement.closest('[data-table-name]')?.getAttribute('data-table-name'),
     tableElement.closest('[data-table]')?.getAttribute('data-table'),
     tableElement.querySelector('caption')?.textContent,
-    tableElement.closest('[data-table-name]')?.getAttribute('data-table-name'),
     tableElement.closest('[aria-label]')?.getAttribute('aria-label'),
     tableElement.closest('[data-slot="card"]')?.querySelector('[data-slot="card-title"]')?.textContent,
     tableElement.closest('.rounded-xl, .rounded-2xl, .rounded-lg, .card')?.querySelector('h1, h2, h3, h4, h5, h6')?.textContent,
@@ -257,50 +180,78 @@ interface ExpandedGroupState {
 
 const isMetricButtonActive = (button: HTMLButtonElement) => {
   const className = button.className || '';
-  return className.includes('from-slate-800') || (className.includes('text-white') && !className.includes('bg-slate-100'));
+  const dataState = button.getAttribute('data-state');
+  return (
+    dataState === 'active' ||
+    className.includes('from-slate-800') ||
+    className.includes('bg-black') ||
+    className.includes('bg-blue-600') ||
+    className.includes('bg-purple-800') ||
+    (className.includes('text-white') && !className.includes('bg-white'))
+  );
+};
+
+const getCandidateMetricContainers = (tableElement: HTMLTableElement): HTMLElement[] => {
+  const containers: HTMLElement[] = [];
+  let current: HTMLElement | null = tableElement.parentElement;
+  let depth = 0;
+
+  while (current && depth < 4) {
+    let sibling = current.previousElementSibling as HTMLElement | null;
+    while (sibling) {
+      containers.push(sibling);
+      sibling = sibling.previousElementSibling as HTMLElement | null;
+    }
+    current = current.parentElement;
+    depth += 1;
+  }
+
+  return containers;
+};
+
+const extractMetricButtonsFromContainer = (container: HTMLElement): MetricButtonDescriptor[] => {
+  const buttonGroups = [container, ...Array.from(container.querySelectorAll<HTMLElement>('div'))];
+
+  for (const group of buttonGroups) {
+    const buttons = Array.from(group.querySelectorAll<HTMLButtonElement>('button'))
+      .filter((button) => button.getAttribute('role') !== 'tab')
+      .map((button) => {
+        const label = normalizeCellText(button.textContent || '');
+        if (!label || label.length > 28 || NON_METRIC_BUTTON_LABEL_PATTERN.test(label)) {
+          return null;
+        }
+
+        return {
+          key: normalizeTabValue(label),
+          label,
+          button,
+        };
+      })
+      .filter((button): button is MetricButtonDescriptor => Boolean(button));
+
+    if (buttons.length >= 2 && buttons.length <= 12) {
+      const unique = new Map<string, MetricButtonDescriptor>();
+      buttons.forEach((button) => {
+        if (!unique.has(button.key)) unique.set(button.key, button);
+      });
+      const normalizedButtons = Array.from(unique.values());
+      if (normalizedButtons.length >= 2) {
+        return normalizedButtons;
+      }
+    }
+  }
+
+  return [];
 };
 
 const findMetricButtonsForTable = (tableElement: HTMLTableElement): MetricButtonDescriptor[] => {
-  let current: HTMLElement | null = tableElement;
-
-  while (current) {
-    let sibling = current.previousElementSibling as HTMLElement | null;
-
-    while (sibling) {
-      const candidates = [sibling, ...Array.from(sibling.querySelectorAll<HTMLElement>('div'))];
-
-      for (const candidate of candidates) {
-        if (!METRIC_SELECTOR_LABEL_PATTERN.test(candidate.textContent || '')) continue;
-
-        const buttons = Array.from(candidate.querySelectorAll('button'))
-          .map((button) => {
-            const label = normalizeCellText(button.textContent || '');
-            if (!label || label === 'Metrics:') return null;
-
-            return {
-              key: normalizeTabValue(label),
-              label,
-              button,
-            };
-          })
-          .filter((button): button is MetricButtonDescriptor => Boolean(button));
-
-        if (buttons.length > 1) {
-          const seen = new Set<string>();
-          return buttons.filter((button) => {
-            if (seen.has(button.key)) return false;
-            seen.add(button.key);
-            return true;
-          });
-        }
-      }
-
-      sibling = sibling.previousElementSibling as HTMLElement | null;
+  const containers = getCandidateMetricContainers(tableElement);
+  for (const container of containers) {
+    const result = extractMetricButtonsFromContainer(container);
+    if (result.length >= 2) {
+      return result;
     }
-
-    current = current.parentElement;
   }
-
   return [];
 };
 
@@ -314,7 +265,7 @@ const expandGroupedRowsForTable = async (tableElement: HTMLTableElement): Promis
   }
 
   if (buttonsToRestore.length > 0) {
-    await waitForUiSettling(180);
+    await waitForUiSettling(160);
   }
 
   return { buttonsToRestore };
@@ -328,6 +279,28 @@ const restoreGroupedRowsForTable = async (state: ExpandedGroupState) => {
   if (state.buttonsToRestore.length > 0) {
     await waitForUiSettling(120);
   }
+};
+
+const shouldExcludeExportRow = (
+  row: HTMLTableRowElement,
+  cells: HTMLTableCellElement[],
+  tableHasGroupedRows: boolean
+) => {
+  const normalizedCells = cells.map((cell) => normalizeCellText(cell.textContent || ''));
+  const firstNonEmptyCell = normalizedCells.find(Boolean) || '';
+  const hasToggleButton = Boolean(row.querySelector('button'));
+  const hasSummaryLabel = SUMMARY_ROW_LABEL_PATTERN.test(firstNonEmptyCell);
+  const hasWideGroupingCell = cells.some((cell) => cell.colSpan > 1);
+
+  if (hasSummaryLabel || hasWideGroupingCell) {
+    return true;
+  }
+
+  if (tableHasGroupedRows && hasToggleButton) {
+    return true;
+  }
+
+  return false;
 };
 
 const extractTableRows = (tableElement: HTMLTableElement, tableHasGroupedRows: boolean, headerTableRow: HTMLTableRowElement | null) => {
@@ -369,38 +342,15 @@ const buildTableExportData = (tableElement: HTMLTableElement, index: number, met
   };
 };
 
-const shouldExcludeExportRow = (
-  row: HTMLTableRowElement,
-  cells: HTMLTableCellElement[],
-  tableHasGroupedRows: boolean
-) => {
-  const normalizedCells = cells.map((cell) => normalizeCellText(cell.textContent || ''));
-  const firstNonEmptyCell = normalizedCells.find(Boolean) || '';
-  const hasToggleButton = Boolean(row.querySelector('button'));
-  const hasSummaryLabel = SUMMARY_ROW_LABEL_PATTERN.test(firstNonEmptyCell);
-  const hasWideGroupingCell = cells.some((cell) => cell.colSpan > 1);
-
-  if (hasSummaryLabel || hasWideGroupingCell) {
-    return true;
-  }
-
-  if (tableHasGroupedRows && hasToggleButton) {
-    return true;
-  }
-
-  return false;
-};
-
 const buildCsvContent = (bundle: ExportBundle, section: ExportSection, table: TableExportData) => {
   const lines: string[] = [
     `# ${bundle.title}`,
     `# Generated: ${new Date(bundle.generatedAt).toLocaleString()}`,
-    `# Location: ${bundle.locationName}`,
-    `# Date Range: ${bundle.dateRange.label}`,
+    bundle.contextLabel ? `# Context: ${bundle.contextLabel}` : undefined,
     `# Section: ${section.heading}`,
     `# Table: ${table.name}`,
     '',
-  ];
+  ].filter(Boolean) as string[];
 
   if (table.headers.length > 0) {
     lines.push(table.headers.map(escapeCsvCell).join(','));
@@ -420,11 +370,10 @@ const buildTextReport = (bundle: ExportBundle) => {
     '════════════════════════════════════════════════════════════',
     '',
     `Generated: ${new Date(bundle.generatedAt).toLocaleString()}`,
-    `Location: ${bundle.locationName}`,
-    `Date Range: ${bundle.dateRange.label}`,
+    bundle.contextLabel ? `Context: ${bundle.contextLabel}` : undefined,
     `Sections: ${bundle.sections.length}`,
     '',
-  ];
+  ].filter(Boolean) as string[];
 
   bundle.sections.forEach((section, sectionIndex) => {
     lines.push(`## ${sectionIndex + 1}. ${section.heading}`);
@@ -463,8 +412,9 @@ const buildPrintableHtml = (bundle: ExportBundle) => {
   let html = `<!doctype html><html><head><meta charset="utf-8" />${styles}<title>${escapeHtml(bundle.title)}</title></head><body>`;
   html += `<h1>${escapeHtml(bundle.title)}</h1>`;
   html += `<div class="meta">Generated: ${escapeHtml(new Date(bundle.generatedAt).toLocaleString())}</div>`;
-  html += `<div class="meta">Location: ${escapeHtml(bundle.locationName)}</div>`;
-  html += `<div class="meta">Date Range: ${escapeHtml(bundle.dateRange.label)}</div>`;
+  if (bundle.contextLabel) {
+    html += `<div class="meta">Context: ${escapeHtml(bundle.contextLabel)}</div>`;
+  }
 
   bundle.sections.forEach((section, sectionIndex) => {
     html += `<h2>${escapeHtml(section.heading)}</h2>`;
@@ -493,40 +443,38 @@ const buildPrintableHtml = (bundle: ExportBundle) => {
   return html;
 };
 
-export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportButtonProps> = (props) => {
-  const {
-    currentLocation,
-    locationName,
-    currentDateRange = { start: '', end: '' },
-    onDateRangeChange,
-    buttonVariant = 'outline',
-    buttonSize = 'sm',
-    buttonClassName,
-    buttonLabel,
-    openRef,
-    renderTrigger = true,
-  } = props;
-
+export const DisplayedTablesExportButton: React.FC<DisplayedTablesExportButtonProps> = ({
+  analyticsName,
+  tabOptions,
+  defaultFileName,
+  buttonVariant = 'outline',
+  buttonSize = 'sm',
+  buttonClassName,
+  buttonLabel,
+  openRef,
+  renderTrigger = true,
+  contextLabel,
+  dialogDescription,
+}) => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('xlsx');
-  const [fileName, setFileName] = useState(`sales-displayed-tables-${format(new Date(), 'yyyy-MM-dd')}`);
-  const [dateRangeMode, setDateRangeMode] = useState<DateRangeMode>('current');
-  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [fileName, setFileName] = useState(defaultFileName || `${sanitizeFileSegment(analyticsName).toLowerCase()}-displayed-tables-${format(new Date(), 'yyyy-MM-dd')}`);
+  const [currentViewEnabled, setCurrentViewEnabled] = useState(true);
+  const [allTabsEnabled, setAllTabsEnabled] = useState(false);
+  const [selectedTabs, setSelectedTabs] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(tabOptions.map((tab) => [tab.key, false]))
+  );
   const [visibleTables, setVisibleTables] = useState<TableExportData[]>([]);
   const [selectedVisibleTableIds, setSelectedVisibleTableIds] = useState<string[]>([]);
-  const [exportConfig, setExportConfig] = useState<ExportConfig>({
-    currentView: true,
-    monthOnMonth: false,
-    yearOnYear: false,
-    productPerformance: false,
-    categoryPerformance: false,
-    soldByAnalysis: false,
-    paymentMethodAnalysis: false,
-    customerBehavior: false,
-    allTabs: false,
-  });
+
+  useEffect(() => {
+    setSelectedTabs((previous) => {
+      const next = Object.fromEntries(tabOptions.map((tab) => [tab.key, previous[tab.key] ?? false]));
+      return next;
+    });
+  }, [tabOptions]);
 
   useEffect(() => {
     if (openRef) {
@@ -536,91 +484,120 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     }
   }, [openRef]);
 
+  const findMatchingTabOption = useCallback(
+    (trigger: Element | null) => {
+      const normalizedValue = normalizeTabValue(getTabTriggerValue(trigger));
+      const normalizedLabel = normalizeTabValue(getTabTriggerLabel(trigger));
+
+      return tabOptions.find((option) =>
+        option.matchers.some((matcher) => {
+          const normalizedMatcher = normalizeTabValue(matcher);
+          return (
+            normalizedValue === normalizedMatcher ||
+            normalizedLabel === normalizedMatcher ||
+            normalizedValue.includes(normalizedMatcher) ||
+            normalizedLabel.includes(normalizedMatcher)
+          );
+        })
+      );
+    },
+    [tabOptions]
+  );
+
+  const isRelevantTabTrigger = useCallback((trigger: Element | null) => Boolean(findMatchingTabOption(trigger)), [findMatchingTabOption]);
+
   const getCurrentTabInfo = useCallback(() => {
-    const activeTab = Array.from(document.querySelectorAll('[role="tab"][data-state="active"]')).find((tab) => isSalesAnalyticsTabTrigger(tab)) || null;
+    const activeTab = Array.from(document.querySelectorAll('[role="tab"][data-state="active"]')).find((tab) => isRelevantTabTrigger(tab)) || null;
+    const matchingOption = findMatchingTabOption(activeTab);
     return {
       tabValue: getTabTriggerValue(activeTab),
-      tabText: getTabTriggerLabel(activeTab),
+      tabText: matchingOption?.label || getTabTriggerLabel(activeTab) || 'Current View',
     };
-  }, []);
+  }, [findMatchingTabOption, isRelevantTabTrigger]);
 
   const getVisibleTableElements = useCallback((root?: ParentNode | null, requireVisibility = true) => {
     const scopedRoot = root ?? document;
     const visibleTableElements: HTMLTableElement[] = [];
 
     scopedRoot.querySelectorAll('table').forEach((table) => {
-        const tableElement = table as HTMLTableElement;
-        if (isInsideExportDialog(tableElement)) {
-          return;
-        }
-        if (!requireVisibility || isElementVisible(tableElement)) {
-          visibleTableElements.push(tableElement);
-        }
+      const tableElement = table as HTMLTableElement;
+      if (isInsideExportDialog(tableElement)) {
+        return;
+      }
+      if (!requireVisibility || isElementVisible(tableElement)) {
+        visibleTableElements.push(tableElement);
+      }
     });
 
     return visibleTableElements;
   }, []);
 
-  const extractAllTableData = useCallback(async (options?: { allowedIds?: Set<string>; expandMetricTables?: boolean; root?: ParentNode | null; requireVisibility?: boolean }) => {
-    const allowedIds = options?.allowedIds;
-    const expandMetricTables = options?.expandMetricTables ?? true;
-    const visibleTableElements = getVisibleTableElements(options?.root, options?.requireVisibility ?? true);
-    const collectedTables: TableExportData[] = [];
+  const extractAllTableData = useCallback(
+    async (options?: { allowedIds?: Set<string>; expandMetricTables?: boolean; root?: ParentNode | null; requireVisibility?: boolean }) => {
+      const allowedIds = options?.allowedIds;
+      const expandMetricTables = options?.expandMetricTables ?? true;
+      const visibleTableElements = getVisibleTableElements(options?.root, options?.requireVisibility ?? true);
+      const collectedTables: TableExportData[] = [];
 
-    for (const [index, tableElement] of visibleTableElements.entries()) {
-      const expandedState = await expandGroupedRowsForTable(tableElement);
-      const baseTable = buildTableExportData(tableElement, index);
-      if (allowedIds && !allowedIds.has(baseTable.id)) {
-        await restoreGroupedRowsForTable(expandedState);
-        continue;
-      }
-
-      if (!expandMetricTables) {
-        if (baseTable.rows.length > 0) {
-          collectedTables.push(baseTable);
+      for (const [index, tableElement] of visibleTableElements.entries()) {
+        const expandedState = await expandGroupedRowsForTable(tableElement);
+        const baseTable = buildTableExportData(tableElement, index);
+        if (allowedIds && !allowedIds.has(baseTable.id)) {
+          await restoreGroupedRowsForTable(expandedState);
+          continue;
         }
-        await restoreGroupedRowsForTable(expandedState);
-        continue;
-      }
 
-      const metricButtons = findMetricButtonsForTable(tableElement);
-      if (metricButtons.length <= 1) {
-        if (baseTable.rows.length > 0) {
-          collectedTables.push(baseTable);
+        if (!expandMetricTables) {
+          if (baseTable.rows.length > 0) {
+            collectedTables.push(baseTable);
+          }
+          await restoreGroupedRowsForTable(expandedState);
+          continue;
         }
-        await restoreGroupedRowsForTable(expandedState);
-        continue;
-      }
 
-      const originalMetric = metricButtons.find(({ button }) => isMetricButtonActive(button)) || metricButtons[0];
-
-      for (const metricButton of metricButtons) {
-        const liveMetricButton = findMetricButtonsForTable(tableElement).find((button) => button.key === metricButton.key);
-        liveMetricButton?.button.click();
-        await waitForUiSettling(220);
-
-        const metricVariantTable = buildTableExportData(tableElement, index, metricButton.label);
-        if (metricVariantTable.rows.length > 0) {
-          collectedTables.push(metricVariantTable);
+        const metricButtons = findMetricButtonsForTable(tableElement);
+        if (metricButtons.length <= 1) {
+          if (baseTable.rows.length > 0) {
+            collectedTables.push(baseTable);
+          }
+          await restoreGroupedRowsForTable(expandedState);
+          continue;
         }
+
+        const originalMetric = metricButtons.find(({ button }) => isMetricButtonActive(button)) || metricButtons[0];
+        const seenMetricTables = new Set<string>();
+
+        for (const metricButton of metricButtons) {
+          const liveMetricButton = findMetricButtonsForTable(tableElement).find((button) => button.key === metricButton.key);
+          liveMetricButton?.button.click();
+          await waitForUiSettling(220);
+
+          const metricVariantTable = buildTableExportData(tableElement, index, metricButton.label);
+          const metricTableKey = `${metricVariantTable.name}-${metricVariantTable.rows.length}`;
+          if (metricVariantTable.rows.length > 0 && !seenMetricTables.has(metricTableKey)) {
+            collectedTables.push(metricVariantTable);
+            seenMetricTables.add(metricTableKey);
+          }
+        }
+
+        const liveOriginalMetricButton = findMetricButtonsForTable(tableElement).find((button) => button.key === originalMetric.key);
+        liveOriginalMetricButton?.button.click();
+        await waitForUiSettling(180);
+        await restoreGroupedRowsForTable(expandedState);
       }
 
-      const liveOriginalMetricButton = findMetricButtonsForTable(tableElement).find((button) => button.key === originalMetric.key);
-      liveOriginalMetricButton?.button.click();
-      await waitForUiSettling(180);
-      await restoreGroupedRowsForTable(expandedState);
-    }
-
-    return collectedTables;
-  }, [getVisibleTableElements]);
+      return collectedTables;
+    },
+    [getVisibleTableElements]
+  );
 
   const refreshVisibleTables = useCallback(async () => {
-    const activeTab = Array.from(document.querySelectorAll('[role="tab"][data-state="active"]')).find((tab) => isSalesAnalyticsTabTrigger(tab)) || null;
+    const activeTab = Array.from(document.querySelectorAll('[role="tab"][data-state="active"]')).find((tab) => isRelevantTabTrigger(tab)) || null;
     const activePanel = getPanelForTabTrigger(activeTab);
-    let tables = await extractAllTableData({ expandMetricTables: false, root: activePanel, requireVisibility: false });
+    let tables = await extractAllTableData({ expandMetricTables: false, root: activePanel, requireVisibility: true });
 
     if (tables.length === 0 && activePanel) {
-      tables = await extractAllTableData({ expandMetricTables: false, root: activePanel, requireVisibility: true });
+      tables = await extractAllTableData({ expandMetricTables: false, root: activePanel, requireVisibility: false });
     }
 
     if (tables.length === 0) {
@@ -634,84 +611,58 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
       return preserved.length > 0 ? preserved : tables.map((table) => table.id);
     });
     return tables;
-  }, [extractAllTableData]);
+  }, [extractAllTableData, isRelevantTabTrigger]);
 
   useEffect(() => {
     if (!isDialogOpen) return;
-    setCustomDateRange(
-      currentDateRange.start && currentDateRange.end
-        ? { from: new Date(currentDateRange.start), to: new Date(currentDateRange.end) }
-        : undefined
-    );
     void refreshVisibleTables();
-  }, [currentDateRange.end, currentDateRange.start, isDialogOpen, refreshVisibleTables]);
+  }, [isDialogOpen, refreshVisibleTables]);
 
-  const currentDateRangeLabel = useMemo(() => buildDateRangeLabel(currentDateRange), [currentDateRange]);
-
-  const toggleExportSection = (section: keyof ExportConfig) => {
-    setExportConfig((previous) => {
-      if (section === 'allTabs') {
-        return {
-          ...previous,
-          allTabs: !previous.allTabs,
-        };
-      }
-      return {
-        ...previous,
-        [section]: !previous[section],
-        allTabs: false,
-      };
-    });
+  const toggleTabOption = (key: string) => {
+    setSelectedTabs((previous) => ({
+      ...previous,
+      [key]: !previous[key],
+    }));
+    setAllTabsEnabled(false);
   };
 
   const shouldExportTab = useCallback(
-    (tabValue: string, tabLabel: string) => {
-      if (exportConfig.allTabs) return true;
-
-      const normalizedValue = normalizeTabValue(tabValue);
-      const normalizedLabel = normalizeTabValue(tabLabel);
-
-      return (Object.entries(TAB_VALUE_MATCHERS) as Array<[Exclude<keyof ExportConfig, 'currentView' | 'allTabs'>, string[]]>).some(
-        ([key, matchers]) =>
-          exportConfig[key] &&
-          matchers.some((matcher) => {
-            const normalizedMatcher = normalizeTabValue(matcher);
-            return (
-              matchesSalesTabMatcher(normalizedValue, normalizedMatcher) ||
-              matchesSalesTabMatcher(normalizedLabel, normalizedMatcher)
-            );
-          })
-      );
+    (trigger: Element | null) => {
+      const option = findMatchingTabOption(trigger);
+      if (!option) return false;
+      return allTabsEnabled || Boolean(selectedTabs[option.key]);
     },
-    [exportConfig]
+    [allTabsEnabled, findMatchingTabOption, selectedTabs]
   );
 
   const collectExportSections = useCallback(async () => {
     const sections: ExportSection[] = [];
     const seenTabs = new Set<string>();
-    const originalActiveTab = (Array.from(document.querySelectorAll('[role="tab"][data-state="active"]')).find((tab) => isSalesAnalyticsTabTrigger(tab)) || null) as HTMLElement | null;
+    const originalActiveTab = (Array.from(document.querySelectorAll('[role="tab"][data-state="active"]')).find((tab) => isRelevantTabTrigger(tab)) || null) as HTMLElement | null;
     const { tabValue: activeTabValue, tabText: activeTabText } = getCurrentTabInfo();
     const selectedCurrentTableIds = new Set(selectedVisibleTableIds);
 
-    if (exportConfig.currentView) {
+    if (currentViewEnabled) {
       const currentPanel = getPanelForTabTrigger(originalActiveTab);
       let tables = await extractAllTableData({
         allowedIds: selectedCurrentTableIds.size > 0 ? selectedCurrentTableIds : undefined,
         expandMetricTables: true,
         root: currentPanel,
-        requireVisibility: false,
+        requireVisibility: true,
       });
+
       if (tables.length === 0) {
         tables = await extractAllTableData({
           allowedIds: selectedCurrentTableIds.size > 0 ? selectedCurrentTableIds : undefined,
           expandMetricTables: true,
           root: currentPanel,
-          requireVisibility: true,
+          requireVisibility: false,
         });
       }
+
       if (tables.length > 0) {
         sections.push({
-          key: 'currentView',
+          key: 'current-view',
           heading: `Current View – ${activeTabText}`,
           tabValue: activeTabValue,
           tabLabel: activeTabText,
@@ -721,20 +672,21 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
       }
     }
 
-    const tabTriggers = Array.from(document.querySelectorAll('[role="tab"]')).filter((trigger) => isSalesAnalyticsTabTrigger(trigger)) as HTMLElement[];
+    const tabTriggers = Array.from(document.querySelectorAll('[role="tab"]')).filter((trigger) => isRelevantTabTrigger(trigger)) as HTMLElement[];
     for (const trigger of tabTriggers) {
       const tabValue = getTabTriggerValue(trigger);
-      const tabLabel = getTabTriggerLabel(trigger);
+      const option = findMatchingTabOption(trigger);
+      const tabLabel = option?.label || getTabTriggerLabel(trigger);
       if (seenTabs.has(tabValue)) continue;
-      if (!shouldExportTab(tabValue, tabLabel)) continue;
+      if (!shouldExportTab(trigger)) continue;
 
       trigger.click();
       await waitForUiSettling();
 
       const triggerPanel = getPanelForTabTrigger(trigger);
-      let tables = await extractAllTableData({ expandMetricTables: true, root: triggerPanel, requireVisibility: false });
+      let tables = await extractAllTableData({ expandMetricTables: true, root: triggerPanel, requireVisibility: true });
       if (tables.length === 0) {
-        tables = await extractAllTableData({ expandMetricTables: true, root: triggerPanel, requireVisibility: true });
+        tables = await extractAllTableData({ expandMetricTables: true, root: triggerPanel, requireVisibility: false });
       }
       if (tables.length > 0) {
         sections.push({
@@ -749,12 +701,12 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
 
     if (originalActiveTab) {
       originalActiveTab.click();
-      await waitForUiSettling(350);
+      await waitForUiSettling(300);
       await refreshVisibleTables();
     }
 
     return sections;
-  }, [exportConfig.currentView, extractAllTableData, getCurrentTabInfo, refreshVisibleTables, selectedVisibleTableIds, shouldExportTab]);
+  }, [currentViewEnabled, extractAllTableData, findMatchingTabOption, getCurrentTabInfo, isRelevantTabTrigger, refreshVisibleTables, selectedVisibleTableIds, shouldExportTab]);
 
   const exportCsvBundle = useCallback(async (bundle: ExportBundle, baseFileName: string) => {
     const allTables = bundle.sections.flatMap((section) => section.tables.map((table) => ({ section, table })));
@@ -770,10 +722,9 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
       [
         bundle.title,
         `Generated: ${new Date(bundle.generatedAt).toLocaleString()}`,
-        `Location: ${bundle.locationName}`,
-        `Date Range: ${bundle.dateRange.label}`,
+        bundle.contextLabel ? `Context: ${bundle.contextLabel}` : undefined,
         `Sections: ${bundle.sections.length}`,
-      ].join('\n')
+      ].filter(Boolean).join('\n')
     );
 
     bundle.sections.forEach((section, sectionIndex) => {
@@ -820,8 +771,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     const summarySheet = XLSX.utils.aoa_to_sheet([
       ['Report', bundle.title],
       ['Generated', new Date(bundle.generatedAt).toLocaleString()],
-      ['Location', bundle.locationName],
-      ['Date Range', bundle.dateRange.label],
+      ['Context', bundle.contextLabel || 'Current workspace view'],
       ['Sections', bundle.sections.length],
     ]);
     XLSX.utils.book_append_sheet(workbook, summarySheet, createUniqueSheetName('Summary'));
@@ -854,16 +804,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
   }, []);
 
   const handleExport = useCallback(async () => {
-    if (dateRangeMode === 'custom' && (!customDateRange?.from || !customDateRange?.to)) {
-      toast({
-        title: 'Pick a full date range',
-        description: 'Choose both a start and end date for the custom export range.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (exportConfig.currentView && visibleTables.length > 0 && selectedVisibleTableIds.length === 0) {
+    if (currentViewEnabled && visibleTables.length > 0 && selectedVisibleTableIds.length === 0) {
       toast({
         title: 'No tables selected',
         description: 'Pick at least one visible table from the current tab, or disable current-view export.',
@@ -874,27 +815,9 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
 
     setIsExporting(true);
 
-    const originalDateRange = { ...currentDateRange };
-    const overrideDateRange =
-      dateRangeMode === 'custom' && customDateRange?.from && customDateRange?.to
-        ? {
-            start: format(customDateRange.from, 'yyyy-MM-dd'),
-            end: format(customDateRange.to, 'yyyy-MM-dd'),
-          }
-        : null;
-    const wasDialogOpen = isDialogOpen;
-
     try {
-      if (wasDialogOpen) {
-        setIsDialogOpen(false);
-        await waitForUiSettling(150);
-      }
-
-      if (overrideDateRange && onDateRangeChange) {
-        onDateRangeChange(overrideDateRange);
-        await waitForUiSettling(950);
-        await refreshVisibleTables();
-      }
+      setIsDialogOpen(false);
+      await waitForUiSettling(120);
 
       const sections = await collectExportSections();
       if (sections.length === 0) {
@@ -906,24 +829,16 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
         return;
       }
 
-      const appliedDateRange = overrideDateRange || currentDateRange;
-      const dateRangeLabel = buildDateRangeLabel(appliedDateRange);
-      const locationSuffix = currentLocation === 'all' ? 'all-locations' : sanitizeFileSegment(LOCATION_MAPPING[currentLocation] || currentLocation).toLowerCase();
-      const safeBaseFileName = sanitizeFileSegment(fileName || `sales-displayed-tables-${format(new Date(), 'yyyy-MM-dd')}`);
+      const safeBaseFileName = sanitizeFileSegment(fileName || defaultFileName || `${analyticsName}-displayed-tables`);
+      const suffix = contextLabel ? sanitizeFileSegment(contextLabel).toLowerCase() : 'current-view';
+      const fullFileName = `${safeBaseFileName}-${suffix}-${format(new Date(), 'yyyyMMdd-HHmm')}`;
 
       const bundle: ExportBundle = {
-        title: `Sales Analytics Display Export – ${locationName}`,
+        title: `${analyticsName} Display Export`,
         generatedAt: new Date().toISOString(),
-        locationName,
-        locationSuffix,
-        dateRange: {
-          ...appliedDateRange,
-          label: dateRangeLabel,
-        },
+        contextLabel,
         sections,
       };
-
-      const fullFileName = `${safeBaseFileName}-${locationSuffix}-${format(new Date(), 'yyyyMMdd-HHmm')}`;
 
       if (exportFormat === 'csv') {
         await exportCsvBundle(bundle, fullFileName);
@@ -938,73 +853,30 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
       }
 
       toast({
-        title: 'Sales export ready',
-        description: `${FORMAT_LABELS[exportFormat]} created from displayed table output${overrideDateRange ? ` for ${dateRangeLabel}` : ''}.`,
+        title: `${analyticsName} export ready`,
+        description: `${FORMAT_LABELS[exportFormat]} created from displayed table output.`,
       });
     } catch (error) {
       toast({
         title: 'Export failed',
-        description: error instanceof Error ? error.message : 'Something went sideways while exporting the sales tables.',
+        description: error instanceof Error ? error.message : 'Something went sideways while exporting the displayed tables.',
         variant: 'destructive',
       });
-
-      if (wasDialogOpen) {
-        setIsDialogOpen(true);
-      }
+      setIsDialogOpen(true);
     } finally {
-      if (overrideDateRange && onDateRangeChange) {
-        onDateRangeChange(originalDateRange);
-        await waitForUiSettling(450);
-        await refreshVisibleTables();
-      }
       setIsExporting(false);
     }
-  }, [
-    collectExportSections,
-    currentDateRange,
-    currentLocation,
-    customDateRange?.from,
-    customDateRange?.to,
-    dateRangeMode,
-    exportConfig.currentView,
-    exportCsvBundle,
-    exportFormat,
-    exportJsonBundle,
-    exportPdfBundle,
-    exportTextBundle,
-    exportWorkbookBundle,
-    fileName,
-    locationName,
-    onDateRangeChange,
-    refreshVisibleTables,
-    selectedVisibleTableIds.length,
-    toast,
-    visibleTables.length,
-  ]);
+  }, [analyticsName, collectExportSections, contextLabel, currentViewEnabled, defaultFileName, exportCsvBundle, exportFormat, exportJsonBundle, exportPdfBundle, exportTextBundle, exportWorkbookBundle, fileName, selectedVisibleTableIds.length, toast, visibleTables.length]);
 
-  const selectedScopeCount =
-    Number(exportConfig.currentView) +
-    Number(exportConfig.monthOnMonth) +
-    Number(exportConfig.yearOnYear) +
-    Number(exportConfig.productPerformance) +
-    Number(exportConfig.categoryPerformance) +
-    Number(exportConfig.soldByAnalysis) +
-    Number(exportConfig.paymentMethodAnalysis) +
-    Number(exportConfig.customerBehavior) +
-    Number(exportConfig.allTabs);
+  const selectedScopeCount = Number(currentViewEnabled) + Number(allTabsEnabled) + Object.values(selectedTabs).filter(Boolean).length;
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       {renderTrigger !== false && (
         <DialogTrigger asChild>
-          <Button
-            variant={buttonVariant}
-            size={buttonSize}
-            className={cn('gap-2', buttonClassName)}
-            style={{ borderColor: 'var(--hero-accent, rgba(255,255,255,0.3))' }}
-          >
+          <Button variant={buttonVariant} size={buttonSize} className={cn('gap-2', buttonClassName)}>
             <Download className="h-4 w-4" />
-            {buttonLabel ?? 'Export Sales Tables'}
+            {buttonLabel ?? `Export ${analyticsName} Tables`}
           </Button>
         </DialogTrigger>
       )}
@@ -1013,92 +885,65 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <LayoutTemplate className="h-5 w-5" />
-            Better Sales Export
+            Better {analyticsName} Export
           </DialogTitle>
           <DialogDescription>
-            Export the rendered sales tables exactly as they appear in the chosen tab scope — with optional custom export dates, and without dumping raw source rows into the mix.
+            {dialogDescription ?? `Export the rendered ${analyticsName.toLowerCase()} tables exactly as they appear in the selected tab scope — no raw-row spaghetti, just what’s on screen.`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="sales-export-format">Format</Label>
-              <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as ExportFormat)}>
-                <SelectTrigger id="sales-export-format">
-                  <SelectValue placeholder="Select export format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="xlsx">Excel workbook (.xlsx)</SelectItem>
-                  <SelectItem value="csv">CSV bundle (.csv/.zip)</SelectItem>
-                  <SelectItem value="txt">Text report (.txt)</SelectItem>
-                  <SelectItem value="json">JSON bundle (.json)</SelectItem>
-                  <SelectItem value="pdf">Print-ready PDF</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor={`${sanitizeFileSegment(analyticsName).toLowerCase()}-export-format`}>Format</Label>
+              <select
+                id={`${sanitizeFileSegment(analyticsName).toLowerCase()}-export-format`}
+                value={exportFormat}
+                onChange={(event) => setExportFormat(event.target.value as ExportFormat)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="xlsx">Excel workbook (.xlsx)</option>
+                <option value="csv">CSV bundle (.csv/.zip)</option>
+                <option value="txt">Text report (.txt)</option>
+                <option value="json">JSON bundle (.json)</option>
+                <option value="pdf">Print-ready PDF</option>
+              </select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sales-export-file-name">File name prefix</Label>
+              <Label htmlFor={`${sanitizeFileSegment(analyticsName).toLowerCase()}-file-name`}>File name prefix</Label>
               <Input
-                id="sales-export-file-name"
+                id={`${sanitizeFileSegment(analyticsName).toLowerCase()}-file-name`}
                 value={fileName}
                 onChange={(event) => setFileName(event.target.value)}
-                placeholder="sales-displayed-tables"
+                placeholder={`${sanitizeFileSegment(analyticsName).toLowerCase()}-displayed-tables`}
               />
             </div>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-              <CalendarRange className="h-4 w-4 text-blue-600" />
-              Export date range
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="flex items-start gap-3 rounded-lg border bg-white p-3 cursor-pointer">
-                <input
-                  type="radio"
-                  className="mt-1"
-                  checked={dateRangeMode === 'current'}
-                  onChange={() => setDateRangeMode('current')}
-                />
-                <div>
-                  <div className="font-medium text-slate-900">Use current displayed range</div>
-                  <div className="text-sm text-slate-600">{currentDateRangeLabel}</div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 rounded-lg border bg-white p-3 cursor-pointer">
-                <input
-                  type="radio"
-                  className="mt-1"
-                  checked={dateRangeMode === 'custom'}
-                  onChange={() => setDateRangeMode('custom')}
-                />
-                <div>
-                  <div className="font-medium text-slate-900">Use custom export range</div>
-                  <div className="text-sm text-slate-600">Temporarily applies the range, exports displayed tables, then restores the UI.</div>
-                </div>
-              </label>
-            </div>
-
-            {dateRangeMode === 'custom' && <DatePickerWithRange value={customDateRange} onChange={setCustomDateRange} />}
           </div>
 
           <div className="space-y-3">
             <Label className="text-sm font-medium">Tab scope</Label>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {(Object.keys(TAB_EXPORT_LABELS) as Array<keyof ExportConfig>).map((key) => (
-                <label key={key} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:bg-slate-50">
-                  <Checkbox checked={exportConfig[key]} onCheckedChange={() => toggleExportSection(key)} />
-                  <span className="text-sm text-slate-800">{TAB_EXPORT_LABELS[key]}</span>
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:bg-slate-50">
+                <Checkbox checked={currentViewEnabled} onCheckedChange={() => setCurrentViewEnabled((previous) => !previous)} />
+                <span className="text-sm text-slate-800">Current active tab</span>
+              </label>
+
+              {tabOptions.map((option) => (
+                <label key={option.key} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:bg-slate-50">
+                  <Checkbox checked={allTabsEnabled ? true : Boolean(selectedTabs[option.key])} onCheckedChange={() => toggleTabOption(option.key)} />
+                  <span className="text-sm text-slate-800">{option.label}</span>
                 </label>
               ))}
+
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:bg-slate-50 md:col-span-2">
+                <Checkbox checked={allTabsEnabled} onCheckedChange={() => setAllTabsEnabled((previous) => !previous)} />
+                <span className="text-sm text-slate-800">All mapped tabs</span>
+              </label>
             </div>
           </div>
 
-          {exportConfig.currentView && (
+          {currentViewEnabled && (
             <div className="space-y-3 rounded-lg border border-slate-200 p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -1154,9 +999,9 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
             <div className="font-medium mb-2">Export summary</div>
             <ul className="space-y-1 text-blue-800">
               <li>Format: <span className="font-medium">{FORMAT_LABELS[exportFormat]}</span></li>
-              <li>Date range: <span className="font-medium">{dateRangeMode === 'custom' && customDateRange?.from && customDateRange?.to ? `${format(customDateRange.from, 'MMM d, yyyy')} → ${format(customDateRange.to, 'MMM d, yyyy')}` : currentDateRangeLabel}</span></li>
-              <li>Tab scope selected: <span className="font-medium">{selectedScopeCount}</span></li>
+              <li>Scope selected: <span className="font-medium">{selectedScopeCount}</span></li>
               <li>Current-view tables selected: <span className="font-medium">{selectedVisibleTableIds.length || visibleTables.length || 0}</span></li>
+              <li>Context: <span className="font-medium">{contextLabel || 'Current workspace view'}</span></li>
               <li>Source: <span className="font-medium">displayed table cells only</span></li>
             </ul>
           </div>

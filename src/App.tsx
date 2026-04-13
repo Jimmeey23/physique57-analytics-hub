@@ -1,5 +1,6 @@
 
 import * as React from "react";
+import Intercom from '@intercom/messenger-js-sdk';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,8 @@ import { SectionNavigationProvider } from "@/contexts/SectionNavigationContext";
 import { SessionsFiltersProvider } from "@/contexts/SessionsFiltersContext";
 import { RouteLoadingWrapper } from "@/components/RouteLoadingWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { UniversalTableCopyAssist } from "@/components/ui/UniversalTableCopyAssist";
+import { ConsolidatedReportExporterDialog } from "@/components/ui/ConsolidatedReportExporterDialog";
 
 // Optimized lazy loading with preloading for critical pages
 const Index = React.lazy(() => 
@@ -66,6 +69,12 @@ const PatternsAndTrends = React.lazy(() =>
 const DashboardOverview = React.lazy(() =>
   import("./pages/DashboardOverview").then(module => ({ default: module.default }))
 );
+const ForecastingActionCenter = React.lazy(() =>
+  import("./pages/ForecastingActionCenter").then(module => ({ default: module.default }))
+);
+const MemberLifecycle = React.lazy(() =>
+  import("./pages/MemberLifecycle").then(module => ({ default: module.default }))
+);
 const LocationReport = React.lazy(() => 
   import("./pages/LocationReport").then(module => ({ default: module.default }))
 );
@@ -100,6 +109,8 @@ const AppRoutes = () => {
     <>
       <GlobalLoader />
       <GlobalCommandPalette />
+      <UniversalTableCopyAssist />
+      <ConsolidatedReportExporterDialog />
       <RouteLoadingWrapper>
         <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}>
           <PageTransition>
@@ -121,6 +132,8 @@ const AppRoutes = () => {
               <Route path="/late-cancellations" element={<LateCancellations />} />
               <Route path="/patterns-trends" element={<PatternsAndTrends />} />
               <Route path="/dashboard-overview" element={<DashboardOverview />} />
+              <Route path="/forecasting-action-center" element={<ForecastingActionCenter />} />
+              <Route path="/member-lifecycle" element={<MemberLifecycle />} />
               <Route path="/location-report" element={<LocationReport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
@@ -134,6 +147,12 @@ const AppRoutes = () => {
 
 const App = () => {
   usePerformanceOptimization();
+
+  React.useEffect(() => {
+    Intercom({
+      app_id: 'hzmswx1k',
+    });
+  }, []);
   
   return (
     <ErrorBoundary>

@@ -561,8 +561,8 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
               </div>
             </div>
 
-            <div className="overflow-auto" style={{ maxHeight: '600px' }}>
-              <table className="w-full border-collapse">
+            <div className="overflow-auto" style={{ maxHeight: '600px' }} data-table="client-retention-new-client-purchases" data-table-name="New Client Membership Purchases">
+              <table className="w-full border-collapse" data-table="client-retention-new-client-purchases" data-table-name="New Client Membership Purchases">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
                     {groupBy !== 'clientType' && (
