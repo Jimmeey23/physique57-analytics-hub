@@ -1,339 +1,580 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supreme HQ Studio Performance Analysis - Dec 2025</title>
-    <style>
-        :root {
-            --primary: #2C3E50;
-            --secondary: #34495E;
-            --accent: #E67E22;
-            --success: #27AE60;
-            --warning: #F39C12;
-            --danger: #C0392B;
-            --light: #ECF0F1;
-            --dark: #2C3E50;
-            --insight-bg: #F8F9FA;
-            --border: #BDC3C7;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        
-        header {
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        
-        h1 {
-            color: var(--primary);
-            margin: 0;
-            font-size: 28px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .meta-data {
-            text-align: right;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        
-        h2 {
-            color: var(--secondary);
-            border-left: 5px solid var(--accent);
-            padding-left: 15px;
-            margin-top: 40px;
-            font-size: 22px;
-        }
-        
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        
-        .metric-card {
-            background: var(--insight-bg);
-            padding: 20px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-        }
-        
-        .metric-title {
-            font-size: 14px;
-            text-transform: uppercase;
-            color: #7f8c8d;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .metric-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--dark);
-        }
-        
-        .metric-sub {
-            font-size: 13px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        .insight-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-        }
-        
-        .insight-card {
-            background: white;
-            padding: 20px;
-            border-radius: 6px;
-            border-left: 4px solid var(--primary);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-        
-        .insight-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .type-win { border-left-color: var(--success); }
-        .type-alert { border-left-color: var(--danger); }
-        .type-hidden { border-left-color: var(--accent); }
-        .type-opportunity { border-left-color: #8E44AD; }
-        
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-        
-        .bg-win { background: #d5f5e3; color: #1e8449; }
-        .bg-alert { background: #fadbd8; color: #c0392b; }
-        .bg-hidden { background: #fdebd0; color: #d35400; }
-        .bg-opp { background: #e8daef; color: #8e44ad; }
-        
-        .insight-title {
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--primary);
-        }
-        
-        .data-point {
-            font-family: 'Courier New', monospace;
-            background: #eee;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 0.9em;
-        }
-        
-        footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            font-size: 12px;
-            color: #95a5a6;
-            text-align: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supreme HQ, Bandra — Class Attendance Performance Report</title>
+<style>
+:root {
+  --bg-primary: #FAFAF8;
+  --bg-secondary: #F4F3EF;
+  --bg-card: #FFFFFF;
+  --text-primary: #1A1A18;
+  --text-secondary: #4A4A46;
+  --text-muted: #8A8A85;
+  --accent: #1B4F8A;
+  --accent-light: #E8EFF7;
+  --positive: #1A6B47; --positive-bg: #EBF5F0;
+  --negative: #8B2020; --negative-bg: #F8ECEC;
+  --warning: #7A5500; --warning-bg: #FDF5E6;
+  --neutral: #2B5F7A; --neutral-bg: #EBF3F8;
+  --border: #E4E3DF;
+  --border-strong: #C8C7C2;
+  --shadow: rgba(26,26,24,0.06);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Georgia, 'Times New Roman', serif; font-size: 14px; line-height: 1.7; color: var(--text-primary); background: var(--bg-primary); }
+.report-container { max-width: 1200px; margin: 0 auto; padding: 40px 48px; }
+h1 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; margin: 0 0 4px; }
+h2 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 18px; font-weight: 600; margin: 0 0 16px; }
+h3 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+h4 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin: 0 0 8px; }
+.section { margin-bottom: 48px; }
+.section-divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 2px 12px var(--shadow); }
+.metric-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 20px; }
+.metric-value { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 30px; font-weight: 700; line-height: 1; }
+.metric-label { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.badge { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.badge-pos { background: var(--positive-bg); color: var(--positive); }
+.badge-neg { background: var(--negative-bg); color: var(--negative); }
+.insight-box { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 14px 18px; margin: 12px 0; }
+.insight-blue { border-left: 4px solid var(--neutral); background: var(--neutral-bg); }
+.insight-green { border-left: 4px solid var(--positive); background: var(--positive-bg); }
+.insight-red { border-left: 4px solid var(--negative); background: var(--negative-bg); }
+.insight-amber { border-left: 4px solid #BA7517; background: var(--warning-bg); }
+.insight-label { font-size: 11px; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); border-bottom: 2px solid var(--border-strong); }
+th.right { text-align: right; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+td.right { text-align: right; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
+tr:nth-child(even) td { background: var(--bg-secondary); }
+.rec-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 2px 12px var(--shadow); }
+.rec-card table td { background: none !important; }
+@media (max-width: 768px) { .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } .grid-2 { grid-template-columns: 1fr; } .report-container { padding: 24px 20px; } }
+@media print { body { background: white; font-size: 12px; } .report-container { padding: 20px; max-width: 100%; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } .section { break-inside: avoid; } canvas { max-height: 200px !important; } @page { margin: 15mm; size: A4; } }
+</style>
 </head>
 <body>
+<div class="report-container">
 
-<div class="container">
-    <header>
-        <div>
-            <h1>Performance Analysis Report</h1>
-            <div style="font-size: 16px; color: var(--accent); margin-top: 5px;">Supreme HQ Location</div>
-        </div>
-        <div class="meta-data">
-            <strong>Analysis Period:</strong> 01 Dec 2025 - 31 Dec 2025<br>
-            <strong>Generated:</strong> 06 Jan 2026<br>
-            <strong>Status:</strong> Final Data Set
-        </div>
-    </header>
-
-    <!-- Executive Summary -->
-    <div style="background-color: var(--primary); color: white; padding: 25px; border-radius: 6px; margin-bottom: 30px;">
-        <h3 style="margin-top: 0; color: white;">Executive Summary</h3>
-        <p style="margin-bottom: 0;">
-            Supreme HQ is experiencing a sharp bifurcation in performance. <strong>Studio FIT</strong> and <strong>Mat 57</strong> are the unheralded efficiency engines, delivering 70-88% fill rates at the top of the funnel. Conversely, <strong>Cardio Barre</strong> is in a state of operational failure with six separate class slots performing below 13% capacity. <strong>PowerCycle</strong> is heavily reliant on a single outlier (Vivaran Dhasmana), masking a format-wide struggle where the average fill rate sits at a concerning 30.6%. Immediate rationalization of the Cardio Barre schedule is required to stop margin erosion.
-        </p>
+<header style="border-bottom: 3px solid var(--accent); padding-bottom: 24px; margin-bottom: 32px;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+      <p style="font-size:11px;font-family:'Helvetica Neue',sans-serif;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:6px;">Kwality Fitness · Performance Intelligence Report</p>
+      <h1>Supreme HQ, Bandra</h1>
+      <p style="color:var(--text-secondary);margin:4px 0 0;font-size:15px;">Jan 2026 → Mar 2026 &nbsp;|&nbsp; 3-Month Analysis</p>
     </div>
-
-    <!-- Metrics Dashboard -->
-    <div class="dashboard-grid">
-        <div class="metric-card" style="border-bottom: 4px solid var(--accent);">
-            <div class="metric-title">Volume Leader</div>
-            <div class="metric-value">₹6.6 Lakhs</div>
-            <div class="metric-sub">Studio Barre 57</div>
-            <div style="margin-top:10px; font-size: 12px; color: #7f8c8d;">Driven by frequency (186 sessions)</div>
-        </div>
-        <div class="metric-card" style="border-bottom: 4px solid var(--success);">
-            <div class="metric-title">Efficiency Champion</div>
-            <div class="metric-value">84.0%</div>
-            <div class="metric-sub">Studio FIT (Top Avg)</div>
-            <div style="margin-top:10px; font-size: 12px; color: green;">▲ Consistent Top 10 Presence</div>
-        </div>
-        <div class="metric-card" style="border-bottom: 4px solid var(--danger);">
-            <div class="metric-title">Critical Alert</div>
-            <div class="metric-value">7.1%</div>
-            <div class="metric-sub">Cardio Barre Lows</div>
-            <div style="margin-top:10px; font-size: 12px; color: #c0392b;">▼ Multiple sessions < 10% fill</div>
-        </div>
+    <div style="text-align:right;font-size:12px;color:var(--text-muted);font-family:'Helvetica Neue',sans-serif;">
+      <div>Generated: 14 Apr 2026</div>
+      <div>Location: Supreme HQ, Bandra</div>
+      <div>Currency: INR (₹)</div>
     </div>
+  </div>
+  <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px;">
+    <span style="background:var(--accent-light);color:var(--accent);font-size:11px;font-family:'Helvetica Neue',sans-serif;font-weight:600;padding:3px 10px;border-radius:20px;">CLASS OPERATIONS</span>
+    <span style="background:var(--accent-light);color:var(--accent);font-size:11px;font-family:'Helvetica Neue',sans-serif;font-weight:600;padding:3px 10px;border-radius:20px;">ENGAGEMENT</span>
+    <span style="background:var(--accent-light);color:var(--accent);font-size:11px;font-family:'Helvetica Neue',sans-serif;font-weight:600;padding:3px 10px;border-radius:20px;">TEMPORAL SERIES</span>
+    <span style="background:var(--accent-light);color:var(--accent);font-size:11px;font-family:'Helvetica Neue',sans-serif;font-weight:600;padding:3px 10px;border-radius:20px;">PRODUCT MIX</span>
+    <span style="background:var(--accent-light);color:var(--accent);font-size:11px;font-family:'Helvetica Neue',sans-serif;font-weight:600;padding:3px 10px;border-radius:20px;">CANCELLATION RISK</span>
+  </div>
+</header>
 
-    <h2>Strategic Performance Insights</h2>
-    <div class="insight-section">
+<!-- SECTION I -->
+<section class="section">
+  <h2>I. Executive Summary</h2>
+  <div class="card">
+    <p style="margin-bottom:16px;">Supreme HQ, Bandra is Kwality's highest-revenue single location, generating ₹25.99L in Q1 2026 across 675 class sessions — making it 60% more productive than Kenkere House by revenue despite only 26% more sessions. The location posted its strongest month in March 2026 with ₹10.21L, representing 41.9% growth over February and a 42% increase from January. The headline insight is that Studio FIT is the most efficient format at this location — 65.6% fill rate with the highest class average (6.6) — yet it runs only 96 sessions versus PowerCycle's 200. PowerCycle dominates by volume (200 sessions, ₹7.95L revenue) but operates at only 38.2% fill, making it the biggest single opportunity for yield improvement in the network. Top trainer Atulan Purohit averages 7.6 members per class — almost twice the location's 5.3 average — signalling exceptional member pull that is under-leveraged by current scheduling. Late cancellations are significant (628 total) but remained relatively stable across the quarter, suggesting this location has a structural late-cancel rate rather than an accelerating one. Saturday and Thursday are peak days, with Sunday showing standout average performance (5.6 class avg) against relatively few sessions.</p>
+    <ol style="padding-left:20px;margin-top:16px;">
+      <li style="border-left:3px solid var(--accent);padding-left:14px;margin-bottom:14px;"><strong>Supreme HQ is the network's revenue flagship.</strong> ₹25.99L in Q1 at an average of ₹8.66L/month — more than double Kenkere House and 73% of Kwality House's output despite similar session counts. Revenue per session of ₹3,851 (March) is 5% higher than Kenkere House.</li>
+      <li style="border-left:3px solid var(--accent);padding-left:14px;margin-bottom:14px;"><strong>PowerCycle is a high-volume, low-efficiency anchor.</strong> With 200 sessions and only 38.2% fill, PowerCycle occupies prime slots at below-optimal utilisation. At 65.6% fill (FIT's rate), PowerCycle alone would generate an additional ₹3.5L in quarterly revenue.</li>
+      <li style="border-left:3px solid var(--accent);padding-left:14px;margin-bottom:14px;"><strong>Atulan Purohit is the location's most valuable trainer asset.</strong> At 7.6 class average across 87 sessions, he generates ₹4.23L — second highest by revenue — but with the highest per-session efficiency. A targeted schedule increase of 20 sessions/month for Purohit could yield ₹35–50K incremental revenue.</li>
+      <li style="border-left:3px solid var(--accent);padding-left:14px;margin-bottom:14px;"><strong>Barre 57 punches above its session count.</strong> With 183 sessions generating ₹6.85L (5.5 class avg, 39.5% fill), Barre 57 is the second format by revenue. Its 152 late cancels are high but stable — an enforcement opportunity, not an acceleration risk.</li>
+      <li style="border-left:3px solid var(--accent);padding-left:14px;margin-bottom:14px;"><strong>Sunday sessions massively under-supply demonstrated demand.</strong> Sunday posts a 5.6 class average on only 69 sessions — matching Thursday (5.9) with 35% fewer slots. An additional 20 Sunday sessions would represent ~₹70K in untapped quarterly revenue.</li>
+    </ol>
+  </div>
+</section>
 
-        <!-- INSIGHT 1 -->
-        <div class="insight-card type-win">
-            <span class="badge bg-win">Strategic Win</span>
-            <div class="insight-title">Studio FIT: The Silent Powerhouse</div>
-            <p>While Barre gets the volume, <strong>Studio FIT</strong> is the true performance leader. Occupying ranks #2, #4, #5, and #6 with fill rates between <span class="data-point">72.5% - 84.0%</span>, this format has the strongest product-market fit at Supreme HQ. Mrigakshi Jaiswal and Atulan Purohit have effectively cornered this high-demand vertical.</p>
-        </div>
+<hr class="section-divider">
 
-        <!-- INSIGHT 2 -->
-        <div class="insight-card type-alert">
-            <span class="badge bg-alert">Performance Alert</span>
-            <div class="insight-title">The Cardio Barre Crisis</div>
-            <p>Cardio Barre is currently unviable. The bottom 10 rankings are dominated by this format, with six specific classes (Rank 58-65) delivering fill rates between <span class="data-point">7.1% and 12.5%</span>. This is not a trainer issue; it is a format rejection by the Supreme HQ client base. These slots are burning operational cash.</p>
-        </div>
-
-        <!-- INSIGHT 3 -->
-        <div class="insight-card type-win">
-            <span class="badge bg-win">Star Performance</span>
-            <div class="insight-title">Vivaran's PowerCycle Monopoly</div>
-            <p>PowerCycle at Supreme HQ is essentially "The Vivaran Show." His class (Rank 3) hits <span class="data-point">81.5% fill</span> and generates nearly ₹50k/month for that single slot. The format average without him drops precipitously. He is the only trainer validating the capital investment in the cycle studio at this location.</p>
-        </div>
-
-        <!-- INSIGHT 4 -->
-        <div class="insight-card type-hidden">
-            <span class="badge bg-hidden">Talent Optimization</span>
-            <div class="insight-title">Anisha Shah's Extreme Duality</div>
-            <p>Anisha Shah holds the #1 Rank overall with Studio Mat 57 (<span class="data-point">88.6% fill</span>) but also holds the #64 Rank with Cardio Barre (<span class="data-point">7.1% fill</span>). This massive performance delta proves she is an elite Mat instructor being misallocated to a Cardio Barre format that dilutes her brand and studio efficiency.</p>
-        </div>
-
-        <!-- INSIGHT 5 -->
-        <div class="insight-card type-alert">
-            <span class="badge bg-alert">Performance Alert</span>
-            <div class="insight-title">PowerCycle's "Long Tail" Problem</div>
-            <p>While Vivaran succeeds, the depth of the Cycle roster is concerning. Bret Saldanha and Anmol Sharma consistently appear in the bottom quartile, with fill rates dropping to <span class="data-point">5.1% - 9.2%</span> (Ranks 61, 63, 66). The studio is currently over-screened for PowerCycle relative to the depth of effective talent available.</p>
-        </div>
-
-        <!-- INSIGHT 6 -->
-        <div class="insight-card type-opportunity">
-            <span class="badge bg-opp">Revenue Optimization</span>
-            <div class="insight-title">Atulan Purohit's Consistency</div>
-            <p>Atulan is the "Safe Pair of Hands" for Supreme HQ. He delivers top-tier results in FIT (#4, 80.0%) and solid upper-tier results in Barre (#8, 64.3%). Unlike trainers who excel in one format and fail in another, Atulan transfers authority across disciplines. Strategy: Use him to stabilize the volatile Barre schedule.</p>
-        </div>
-
-        <!-- INSIGHT 7 -->
-        <div class="insight-card type-hidden">
-            <span class="badge bg-hidden">Hidden Pattern</span>
-            <div class="insight-title">Format Saturation in Barre</div>
-            <p>Barre 57 has the highest volume (186 sessions) but a mediocre 36.7% fill rate. This suggests the schedule is oversaturated. We are cannibalizing our own attendance by offering too many Barre slots, spreading the demand too thin across 186 sessions rather than condensing it into higher-yield classes.</p>
-        </div>
-
-        <!-- INSIGHT 8 -->
-        <div class="insight-card type-opportunity">
-            <span class="badge bg-opp">Forecast & Prediction</span>
-            <div class="insight-title">Mat 57 Growth Potential</div>
-            <p>With Anisha Shah hitting 88.6% fill (Rank 1), Mat 57 shows signs of being under-scheduled. High fill rates usually indicate turned-away demand. Converting low-performing Cardio Barre slots into Mat 57 sessions—specifically led by Anisha or Simonelle—would likely result in immediate utilization gains.</p>
-        </div>
-
-        <!-- INSIGHT 9 -->
-        <div class="insight-card type-alert">
-            <span class="badge bg-alert">Talent Alert</span>
-            <div class="insight-title">Karan Bhatia's Format Struggle</div>
-            <p>Karan Bhatia is struggling significantly across the board at this location. His Barre classes hover at 35% (Rank 27), and his Cardio Barre classes have collapsed to <span class="data-point">8.9% - 12.5%</span>. There is an urgent need to review his programming or time slot allocation, as his current metrics are dragging down the location's averages.</p>
-        </div>
-
-        <!-- INSIGHT 10 -->
-        <div class="insight-card type-hidden">
-            <span class="badge bg-hidden">Client Behavior</span>
-            <div class="insight-title">The "Express" Format Preference</div>
-            <p>Interestingly, Cauveri Vikrant performs significantly better in <em>PowerCycle Express</em> (Rank 16, 48.1%) than in standard <em>PowerCycle</em> (Rank 37, 27.7% & Rank 47, 21.2%). Her high-intensity style may be better suited for the shorter, punchier format. Scheduling her exclusively for Express could optimize her output.</p>
-        </div>
-
-        <!-- INSIGHT 11 -->
-        <div class="insight-card type-opportunity">
-            <span class="badge bg-opp">Operational Excellence</span>
-            <div class="insight-title">Late Cancellation Impact</div>
-            <p>Barre 57 recorded <span class="data-point">129 late cancellations</span>. With a 36.7% fill rate, these cancellations aren't just blocking waitlists; they indicate a lack of commitment from the member base, possibly due to the sheer availability of alternative slots. Reducing schedule frequency often increases commitment (scarcity mindset).</p>
-        </div>
-
-        <!-- INSIGHT 12 -->
-        <div class="insight-card type-win">
-            <span class="badge bg-win">Strategic Win</span>
-            <div class="insight-title">Mrigakshi Jaiswal's FIT Dominance</div>
-            <p>Mrigakshi owns two of the top 5 spots (Rank 2 & 5) with FIT. Her aggregate fill rate for this format exceeds 80%. She has effectively built a "sub-community" within the studio. Management should explore creating a "Signature FIT" series branded around her to drive premium tier pricing or retention.</p>
-        </div>
-
-        <!-- INSIGHT 13 -->
-        <div class="insight-card type-alert">
-            <span class="badge bg-alert">Performance Alert</span>
-            <div class="insight-title">Simonelle's Location Variance</div>
-            <p>Unlike her dominant performance at other locations, Simonelle's Barre classes at Supreme HQ are averaging <span class="data-point">21.4% - 37.5%</span> (Ranks 26, 30, 36, 46). This location-specific drop suggests either a time-slot mismatch or a client demographic misalignment that needs investigation.</p>
-        </div>
-
-        <!-- INSIGHT 14 -->
-        <div class="insight-card type-hidden">
-            <span class="badge bg-hidden">Operational Efficiency</span>
-            <div class="insight-title">Unit Economics of Cycle vs. Mat</div>
-            <p>Despite lower overhead, Anisha's Mat class (#1) generated ₹26k, while Vivaran's Cycle class (#3) generated nearly ₹50k. This highlights that while Cycle is risky (high variance), the revenue ceiling is significantly higher. We must fix the Cycle trainer roster to replicate Vivaran's revenue density.</p>
-        </div>
-
-        <!-- INSIGHT 15 -->
-        <div class="insight-card type-opportunity">
-            <span class="badge bg-opp">Strategic Pivot</span>
-            <div class="insight-title">Consolidating "Back Body Blaze"</div>
-            <p>Back Body Blaze and its Express variant are middling performers (Rank 14 at 48%, down to Rank 53 at 16%). This format lacks the dedicated following of FIT or the recognizable brand of Barre 57. It serves as "schedule filler" and should be the first candidate for removal to make space for expanded Mat 57 or FIT offerings.</p>
-        </div>
-
+<!-- SECTION II -->
+<section class="section">
+  <h2>II. KPI Command Center</h2>
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="metric-card">
+      <div class="metric-label">Total Revenue (Q)</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 6px;">
+        <span class="metric-value">₹25.99L</span>
+        <span class="badge badge-pos">▲ Mar +41.9%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: ₹7.19L | Feb: ₹8.60L | Mar: ₹10.21L</div>
     </div>
-
-    <h2>Strategic Recommendations</h2>
-    <div style="background: white; border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-top: 20px;">
-        <ol style="margin: 0; padding-left: 20px;">
-            <li style="margin-bottom: 15px;"><strong>Eliminate Cardio Barre:</strong> The data is conclusive. With multiple classes under 10% fill, this format is detrimental to brand perception and profitability at Supreme HQ. Replace these slots immediately with Mat 57 or FIT.</li>
-            <li style="margin-bottom: 15px;"><strong>Promote Studio FIT:</strong> Increase the frequency of FIT classes, specifically for Mrigakshi and Atulan. The demand (80%+ fill) far outstrips the current supply. This is the location's strongest asset.</li>
-            <li style="margin-bottom: 15px;"><strong>Restructure PowerCycle Roster:</strong> Reduce scheduling for Bret Saldanha and Anmol Sharma. Consolidate demand into fewer, higher-quality slots led by Vivaran, and shift Cauveri entirely to "Express" formats where she statistically outperforms.</li>
-            <li style="margin-bottom: 0;"><strong>Optimization for Anisha Shah:</strong> Remove Anisha from all Cardio Barre responsibilities immediately. Her time is too valuable; reallocate her solely to Mat 57 and potentially trial her in PowerCycle (where she has a decent 67% fill at Rank 7) to maximize her utility.</li>
-        </ol>
+    <div class="metric-card">
+      <div class="metric-label">Total Check-Ins (Q)</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 6px;">
+        <span class="metric-value">3,567</span>
+        <span class="badge badge-pos">▲ Mar +16.6%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: 1,020 | Feb: 1,176 | Mar: 1,371</div>
     </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Sessions (Q)</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 6px;">
+        <span class="metric-value">675</span>
+        <span class="badge badge-pos">▲ +13 MoM</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: 216 | Feb: 223 | Mar: 236</div>
+    </div>
+  </div>
+  <div class="grid-4">
+    <div class="metric-card">
+      <div class="metric-label">Mar Fill Rate</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 4px;">
+        <span style="font-family:'Helvetica Neue',sans-serif;font-size:24px;font-weight:700;">45.9%</span>
+        <span class="badge badge-pos">▲ +4.5pp</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: 36.9% | Feb: 41.4%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Mar Class Avg</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 4px;">
+        <span style="font-family:'Helvetica Neue',sans-serif;font-size:24px;font-weight:700;">5.8</span>
+        <span class="badge badge-pos">▲ +0.5</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: 4.7 | Feb: 5.3</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Q Total Late Cancels</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 4px;">
+        <span style="font-family:'Helvetica Neue',sans-serif;font-size:24px;font-weight:700;">628</span>
+        <span class="badge" style="background:var(--warning-bg);color:var(--warning);">Stable</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: 215 | Feb: 191 | Mar: 222</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Rev/Session (Mar)</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 4px;">
+        <span style="font-family:'Helvetica Neue',sans-serif;font-size:24px;font-weight:700;">₹4,326</span>
+        <span class="badge badge-pos">▲ +25.8%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">Jan: ₹3,329 | Feb: ₹3,855</div>
+    </div>
+  </div>
 
-    <footer>
-        <p>CONFIDENTIAL ANALYSIS | Supreme HQ Data | Generated for Executive Review</p>
-    </footer>
+  <div style="margin-top:16px;">
+    <div class="insight-box insight-green">
+      <div class="insight-label" style="color:var(--positive);">🟢 Opportunity — PowerCycle Fill Rate Uplift</div>
+      <div style="font-size:13px;">PowerCycle runs 200 sessions at 38.2% fill — the format with the most sessions but the second-lowest fill rate. If fill rate improved to 55% (still below FIT's 65.6%), the revenue uplift would be approximately ₹2.8L per quarter — without adding a single session. Targeted promotion campaigns at off-peak PowerCycle slots would drive this.</div>
+    </div>
+    <div class="insight-box insight-blue">
+      <div class="insight-label" style="color:var(--neutral);">🔵 Insight — Atulan Purohit's Multiplier Effect</div>
+      <div style="font-size:13px;">Purohit and Rohan Dahima share the 7.6 class average crown, but Purohit has 87 sessions (vs Dahima's 32) — demonstrating that his performance is not a small-sample artefact. Members clearly prefer his classes: scheduling him for an additional 2 sessions/week across peak days would unlock significant demand.</div>
+    </div>
+    <div class="insight-box insight-amber">
+      <div class="insight-label" style="color:var(--warning);">🟡 Warning — Studio Recovery Underperforming</div>
+      <div style="font-size:13px;">Recovery at Supreme HQ posts only a 34% fill rate and 4.1 class average — well below its Kenkere House counterpart (66.4% fill). With only 25 sessions and ₹82K in revenue, this format may be poorly positioned (wrong time slot or insufficient promotion) at this location.</div>
+    </div>
+    <div class="insight-box insight-red">
+      <div class="insight-label" style="color:var(--negative);">🔴 Risk — Structural Late Cancel Load (628 in Q)</div>
+      <div style="font-size:13px;">628 late cancellations across the quarter represent a structural, location-wide pattern. At ₹600 estimated avg class value (higher per-class price point at this location), this is ₹3.77L in quarterly leakage — a 14.5% tax on total revenue. Unlike Kenkere House, the pattern is stable rather than accelerating, suggesting entrenched member behaviour without a fee deterrent.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- SECTION III: VISUAL ANALYTICS -->
+<section class="section">
+  <h2>III. Visual Analytics</h2>
+  <div class="card" style="margin-bottom:24px;">
+    <h3>Revenue & Attendance Trend — Jan to Mar 2026</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);font-family:'Helvetica Neue',sans-serif;">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:2px;background:#1B4F8A;display:inline-block;"></span>Revenue (₹L)</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:3px;background:#1A6B47;display:inline-block;border-radius:2px;"></span>Check-Ins</span>
+    </div>
+    <div style="position:relative;width:100%;height:300px;">
+      <canvas id="revChart" role="img" aria-label="Monthly revenue and check-in trend for Supreme HQ Jan-Mar 2026">Revenue and attendance trend data.</canvas>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Revenue by Class Format</h3>
+      <div style="position:relative;width:100%;height:300px;">
+        <canvas id="formatChart" role="img" aria-label="Revenue by class format at Supreme HQ">Revenue by format.</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Fill Rate by Format</h3>
+      <div style="position:relative;width:100%;height:300px;">
+        <canvas id="fillFormatChart" role="img" aria-label="Fill rate by format at Supreme HQ">Fill rate by format.</canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:24px;">
+    <h3>Check-Ins & Revenue by Day of Week</h3>
+    <div style="position:relative;width:100%;height:260px;">
+      <canvas id="dayChart" role="img" aria-label="Check-ins and revenue by day at Supreme HQ">Day of week performance.</canvas>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- SECTION IV -->
+<section class="section">
+  <h2>IV. Format & Trainer Intelligence</h2>
+  <div style="overflow-x:auto;margin-bottom:24px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Format</th>
+          <th class="right">Revenue</th>
+          <th class="right">Rev Share</th>
+          <th class="right">Sessions</th>
+          <th class="right">Check-Ins</th>
+          <th class="right">Class Avg</th>
+          <th class="right">Fill Rate</th>
+          <th class="right">Late Cancels</th>
+          <th>Signal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Studio PowerCycle</td><td class="right">₹7.95L</td><td class="right">30.6%</td><td class="right">200</td><td class="right">983</td><td class="right">4.9</td><td class="right">38.2%</td><td class="right">204</td><td><span class="badge" style="background:var(--warning-bg);color:var(--warning);">Yield Gap</span></td></tr>
+        <tr><td>Studio Barre 57</td><td class="right">₹6.85L</td><td class="right">26.4%</td><td class="right">183</td><td class="right">1,011</td><td class="right">5.5</td><td class="right">39.5%</td><td class="right">152</td><td><span class="badge badge-pos">Strong</span></td></tr>
+        <tr><td>Studio FIT</td><td class="right">₹4.41L</td><td class="right">16.9%</td><td class="right">96</td><td class="right">630</td><td class="right">6.6</td><td class="right">65.6%</td><td class="right">110</td><td><span class="badge badge-pos">Expand</span></td></tr>
+        <tr><td>Studio Mat 57</td><td class="right">₹2.40L</td><td class="right">9.2%</td><td class="right">62</td><td class="right">338</td><td class="right">5.5</td><td class="right">50.4%</td><td class="right">55</td><td><span class="badge badge-pos">Solid</span></td></tr>
+        <tr><td>Studio Cardio Barre</td><td class="right">₹2.37L</td><td class="right">9.1%</td><td class="right">73</td><td class="right">347</td><td class="right">4.8</td><td class="right">34.0%</td><td class="right">65</td><td><span class="badge" style="background:var(--warning-bg);color:var(--warning);">Monitor</span></td></tr>
+        <tr><td>Studio Back Body Blaze</td><td class="right">₹1.18L</td><td class="right">4.6%</td><td class="right">36</td><td class="right">156</td><td class="right">4.3</td><td class="right">30.8%</td><td class="right">35</td><td><span class="badge badge-neg">Underperform</span></td></tr>
+        <tr><td>Studio Recovery</td><td class="right">₹0.82L</td><td class="right">3.2%</td><td class="right">25</td><td class="right">102</td><td class="right">4.1</td><td class="right">34.0%</td><td class="right">7</td><td><span class="badge badge-neg">Reposit.</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Trainer Performance Leaderboard</h3>
+      <table>
+        <thead>
+          <tr><th>Trainer</th><th class="right">Check-Ins</th><th class="right">Revenue</th><th class="right">Class Avg</th><th class="right">Late Cancels</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Atulan Purohit</strong></td><td class="right">661</td><td class="right">₹4.23L</td><td class="right" style="color:var(--positive);font-weight:700;">7.6</td><td class="right">100</td></tr>
+          <tr><td>Vivaran Dhasmana</td><td class="right">477</td><td class="right">₹3.46L</td><td class="right">6.0</td><td class="right">74</td></tr>
+          <tr><td>Reshma Sharma</td><td class="right">438</td><td class="right">₹2.83L</td><td class="right">5.9</td><td class="right">66</td></tr>
+          <tr><td>Mrigakshi Jaiswal</td><td class="right">218</td><td class="right">₹1.60L</td><td class="right">5.9</td><td class="right">39</td></tr>
+          <tr><td>Richard D'Costa</td><td class="right">216</td><td class="right">₹1.61L</td><td class="right">4.4</td><td class="right">55</td></tr>
+          <tr><td>Rohan Dahima</td><td class="right">243</td><td class="right">₹1.97L</td><td class="right" style="color:var(--positive);font-weight:700;">7.6</td><td class="right">26</td></tr>
+          <tr><td>Anisha Shah</td><td class="right">225</td><td class="right">₹1.47L</td><td class="right">7.8</td><td class="right">43</td></tr>
+          <tr><td>Pranjali Jain</td><td class="right">265</td><td class="right">₹2.04L</td><td class="right">4.5</td><td class="right">33</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Day of Week Performance</h3>
+      <table>
+        <thead>
+          <tr><th>Day</th><th class="right">Sessions</th><th class="right">Check-Ins</th><th class="right">Revenue</th><th class="right">Class Avg</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Saturday</strong></td><td class="right">101</td><td class="right">632</td><td class="right">₹4.71L</td><td class="right"><strong>6.3</strong></td></tr>
+          <tr><td><strong>Thursday</strong></td><td class="right">104</td><td class="right">618</td><td class="right">₹4.45L</td><td class="right">5.9</td></tr>
+          <tr><td>Tuesday</td><td class="right">110</td><td class="right">592</td><td class="right">₹4.37L</td><td class="right">5.4</td></tr>
+          <tr><td>Monday</td><td class="right">111</td><td class="right">532</td><td class="right">₹3.81L</td><td class="right">4.8</td></tr>
+          <tr><td>Sunday</td><td class="right">69</td><td class="right">383</td><td class="right">₹3.13L</td><td class="right">5.6</td></tr>
+          <tr><td>Friday</td><td class="right">96</td><td class="right">425</td><td class="right">₹2.77L</td><td class="right">4.4</td></tr>
+          <tr><td>Wednesday</td><td class="right">84</td><td class="right">385</td><td class="right">₹2.74L</td><td class="right">4.6</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- SECTION V: OPERATIONAL -->
+<section class="section">
+  <h2>V. Operational Signals</h2>
+  <div class="card">
+    <h3>Late Cancellation Pattern Analysis</h3>
+    <div class="grid-3" style="margin-bottom:16px;">
+      <div class="metric-card">
+        <div class="metric-label">Q Total Late Cancels</div>
+        <div class="metric-value" style="font-size:24px;margin:8px 0 4px;color:var(--warning);">628</div>
+        <div style="font-size:11px;color:var(--text-muted);">Jan: 215 → Feb: 191 → Mar: 222</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Est. Q Revenue Leakage</div>
+        <div class="metric-value" style="font-size:24px;margin:8px 0 4px;color:var(--negative);">~₹3.77L</div>
+        <div style="font-size:11px;color:var(--text-muted);">628 cancels × ₹600 est. avg value</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Leakage as % of Q Revenue</div>
+        <div class="metric-value" style="font-size:24px;margin:8px 0 4px;color:var(--negative);">14.5%</div>
+        <div style="font-size:11px;color:var(--text-muted);">Critical threshold: &gt;5%</div>
+      </div>
+    </div>
+    <p>Unlike Kenkere House (escalating spike), Supreme HQ's late cancels have been structural — steady around 200 per month across all three months. This means the problem is baked into member booking behaviour without a fee-based deterrent. PowerCycle and Barre 57 — the two most-run formats — account for the majority of cancellation volume (204 and 152 respectively). The good news: structural problems respond well to consistent policy; a fee implementation would create predictable and rapid behaviour change across a large base.</p>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- SECTION VI: STRATEGIC RECOMMENDATIONS -->
+<section class="section">
+  <h2>VI. Strategic Recommendations</h2>
+
+  <div class="rec-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <h3 style="color:var(--accent);">Recommendation #1 — PowerCycle Yield Optimisation Campaign</h3>
+      <div style="display:flex;gap:8px;">
+        <span class="badge" style="background:#FDF5E6;color:#7A5500;">Medium Effort</span>
+        <span class="badge badge-neg">Now (0–30d)</span>
+      </div>
+    </div>
+    <table><tbody>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);width:160px;">Insight</td><td style="padding:8px 0;">PowerCycle runs 200 sessions (the most of any format) at only 38.2% fill — 27 percentage points below FIT. It is the network's largest revenue gap relative to capacity.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Impact</td><td style="padding:8px 0;">Closing the fill gap from 38% to 55% across 200 sessions would generate an additional ₹2.8–3.2L per quarter without adding a single new session slot.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Action</td><td style="padding:8px 0;">Launch a 4-week PowerCycle promotion: (1) "First Cycle Free" for Barre 57 regulars who haven't tried PowerCycle, (2) Double loyalty points for PowerCycle off-peak bookings (Monday, Wednesday), (3) Assign Atulan Purohit to anchor 2 prime PowerCycle slots/week.</td></tr>
+      <tr><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--positive);">Expected Outcome</td><td style="padding:8px 0;color:var(--positive);">Fill rate increase to 48–52% within 60 days; ₹1.5–2.0L quarterly revenue uplift. Confidence: Medium.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="rec-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <h3 style="color:var(--accent);">Recommendation #2 — Implement Late Cancel Fee Policy (Network Priority)</h3>
+      <div style="display:flex;gap:8px;">
+        <span class="badge" style="background:#FDF5E6;color:#7A5500;">Low Effort</span>
+        <span class="badge badge-neg">Now (0–30d)</span>
+      </div>
+    </div>
+    <table><tbody>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);width:160px;">Insight</td><td style="padding:8px 0;">628 quarterly late cancels at ₹600 average class value = ₹3.77L in leakage — 14.5% of total Q1 revenue. This is a structural habit, not a spike, meaning it will persist indefinitely without policy intervention.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Impact</td><td style="padding:8px 0;">Annual leakage at current rates = ₹15.1L. Even recovering 40% through fee deterrence or direct charge = ₹6L annual recovery — the equivalent of hiring a part-time trainer.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Action</td><td style="padding:8px 0;">Introduce ₹250 late cancel fee for bookings cancelled within 3 hours of class. Apply network-wide, starting with Supreme HQ (highest absolute leakage). Use app push notifications to communicate the change 2 weeks before go-live. Waive first offence per member.</td></tr>
+      <tr><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--positive);">Expected Outcome</td><td style="padding:8px 0;color:var(--positive);">30–50% reduction in late cancels within 30 days; ₹80–120K direct monthly impact. Confidence: High.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="rec-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <h3 style="color:var(--accent);">Recommendation #3 — Expand Studio FIT Scheduling</h3>
+      <div style="display:flex;gap:8px;">
+        <span class="badge" style="background:var(--positive-bg);color:var(--positive);">Low Effort</span>
+        <span class="badge badge-neg">Now (0–30d)</span>
+      </div>
+    </div>
+    <table><tbody>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);width:160px;">Insight</td><td style="padding:8px 0;">FIT is Supreme HQ's highest-performing format by fill rate (65.6%) and class average (6.6) but runs only 96 sessions vs PowerCycle's 200. It generates ₹4,593/session vs PowerCycle's ₹3,974/session.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Impact</td><td style="padding:8px 0;">Adding 20 FIT sessions/month at current fill rate would generate approximately ₹90K incremental monthly revenue — the highest ROI scheduling decision available.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Action</td><td style="padding:8px 0;">Add 5 FIT sessions per week in prime slots (Tuesday 7pm, Thursday 8am, Saturday 9am, Sunday 10am). Assign Atulan Purohit and Anisha Shah (7.8 class avg) to anchor. Replace underperforming Back Body Blaze and Recovery slots.</td></tr>
+      <tr><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--positive);">Expected Outcome</td><td style="padding:8px 0;color:var(--positive);">₹80–100K incremental monthly revenue within 45 days. Confidence: High.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="rec-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <h3 style="color:var(--accent);">Recommendation #4 — Reposition Studio Recovery</h3>
+      <div style="display:flex;gap:8px;">
+        <span class="badge" style="background:#FDF5E6;color:#7A5500;">Medium Effort</span>
+        <span class="badge" style="background:var(--warning-bg);color:var(--warning);">Soon (30–60d)</span>
+      </div>
+    </div>
+    <table><tbody>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);width:160px;">Insight</td><td style="padding:8px 0;">Recovery at Supreme HQ performs at 34% fill and 4.1 class average — exactly half its Kenkere House equivalent. This is a positioning or timing problem: the format clearly works elsewhere in the network.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Impact</td><td style="padding:8px 0;">Kenkere House's Recovery generates ₹3,720/session vs Supreme HQ's ₹3,296/session. The gap is recoverable with better slot placement.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Action</td><td style="padding:8px 0;">Move Recovery sessions to post-PowerCycle slots (Sunday evening, Saturday 12pm) when members are physically primed for recovery content. A/B test 8 sessions at new times vs. current. Market explicitly to PowerCycle regulars.</td></tr>
+      <tr><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--positive);">Expected Outcome</td><td style="padding:8px 0;color:var(--positive);">Fill rate improvement to 45–55% within 60 days; ₹15–20K monthly revenue uplift. Confidence: Medium.</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="rec-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <h3 style="color:var(--accent);">Recommendation #5 — Maximise Atulan Purohit Schedule Presence</h3>
+      <div style="display:flex;gap:8px;">
+        <span class="badge" style="background:var(--positive-bg);color:var(--positive);">Low Effort</span>
+        <span class="badge badge-neg">Now (0–30d)</span>
+      </div>
+    </div>
+    <table><tbody>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);width:160px;">Insight</td><td style="padding:8px 0;">Purohit delivers a 7.6 class average across 87 sessions — 44% above the location average of 5.3. He is the most consistently high-performing trainer at this location by volume and quality.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Impact</td><td style="padding:8px 0;">If Purohit's 87 sessions were increased to 110 (23 additional) at his current 7.6 class avg, the incremental revenue would be ₹50–65K per quarter.</td></tr>
+      <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--text-muted);">Action</td><td style="padding:8px 0;">Add 2 additional sessions/week to Purohit's roster at peak demand times (Tue/Thu evening, Sat morning). Prioritise FIT and PowerCycle slots where his impact on fill rate will be most visible. Ensure compensation structure rewards session volume growth.</td></tr>
+      <tr><td style="padding:8px 12px 8px 0;font-family:'Helvetica Neue',sans-serif;font-weight:600;color:var(--positive);">Expected Outcome</td><td style="padding:8px 0;color:var(--positive);">₹50–65K quarterly revenue uplift; class average improvement across targeted slots. Confidence: High.</td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- SECTION VIII: FORECAST -->
+<section class="section">
+  <h2>VII. Forecast & Outlook</h2>
+  <div class="card" style="margin-bottom:16px;">
+    <h4>Revenue Forecast — Apr to Jun 2026</h4>
+    <div style="display:flex;gap:24px;margin-bottom:12px;font-size:12px;color:var(--text-muted);font-family:'Helvetica Neue',sans-serif;">
+      <span>Current (Mar 2026): <strong style="color:var(--text-primary);">₹10.21L</strong></span>
+      <span>3M Slope: <strong style="color:var(--positive);">+₹1.51L/month</strong></span>
+      <span>Confidence: <strong>Low-Medium</strong> (n=3)</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th class="right">Apr 2026</th>
+            <th class="right">May 2026</th>
+            <th class="right">Jun 2026</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:var(--positive-bg);">
+            <td style="color:var(--positive);font-weight:600;">▲ Optimistic</td>
+            <td class="right">₹12.5L</td><td class="right">₹14.0L</td><td class="right">₹15.5L</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">— Baseline</td>
+            <td class="right">₹11.2L</td><td class="right">₹12.2L</td><td class="right">₹13.2L</td>
+          </tr>
+          <tr style="background:var(--negative-bg);">
+            <td style="color:var(--negative);font-weight:600;">▼ Pessimistic</td>
+            <td class="right">₹9.5L</td><td class="right">₹9.8L</td><td class="right">₹10.0L</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
+      <strong>Assumptions:</strong>
+      <ul style="margin:4px 0 0;padding-left:18px;">
+        <li>PowerCycle fill rate improvement to 48–52% via targeted campaign</li>
+        <li>FIT expansion adds 15–20 sessions per month at current fill rate</li>
+        <li>Late cancel fee implemented, reducing leakage by 35%</li>
+      </ul>
+    </div>
+  </div>
+  <p>Supreme HQ is tracking toward ₹11–13L monthly by Q2 2026 if the current growth slope holds. The location's premium per-session revenue (₹4,326 in March vs the network average) reflects the Bandra member demographic and the PowerCycle premium price point — a competitive moat that should be protected. The most critical variable is whether FIT's exceptional fill rate (65.6%) can be replicated at greater volume. If FIT scales and PowerCycle fills, Supreme HQ has a realistic path to ₹15L/month by June 2026 — making it Kwality's first location to reach that milestone.</p>
+</section>
+
+<hr class="section-divider">
+
+<section class="section">
+  <h2>VIII. Closing Statement</h2>
+  <div class="card">
+    <h3 style="color:var(--positive);margin-bottom:12px;">🏆 Wins to Celebrate</h3>
+    <ul style="padding-left:20px;margin-bottom:20px;">
+      <li style="margin-bottom:8px;"><strong>₹10.21L in March 2026</strong> — Supreme HQ crossed the double-digit lakh milestone for the first time, driven by consistent fill rate gains across all formats.</li>
+      <li style="margin-bottom:8px;"><strong>Atulan Purohit's 7.6 class average across 87 sessions</strong> is a genuine network-level achievement — a trainer delivering power-user class sizes consistently and at volume.</li>
+      <li style="margin-bottom:8px;"><strong>FIT at 65.6% fill rate</strong> is the highest utilisation of any format across the entire Kwality network — a best-in-class operational benchmark worth publicising internally.</li>
+    </ul>
+    <h3 style="color:var(--negative);margin-bottom:12px;">⚠️ Honest Acknowledgements</h3>
+    <ul style="padding-left:20px;margin-bottom:20px;">
+      <li style="margin-bottom:8px;"><strong>PowerCycle at 38.2% fill</strong> is the network's biggest capacity gap — 200 prime-time sessions running at less than 40% is a structural yield problem that management attention hasn't yet corrected.</li>
+      <li style="margin-bottom:8px;"><strong>₹3.77L in late cancel leakage</strong> in a single quarter represents a policy failure more than a member failure — the absence of a deterrent fee is an active revenue decision with known costs.</li>
+    </ul>
+    <h3 style="color:var(--accent);margin-bottom:12px;">🎯 The 30-Day Priority</h3>
+    <p style="margin-bottom:16px;"><strong>Expand Studio FIT and activate the PowerCycle fill campaign simultaneously.</strong> These two actions, executed in parallel, address the location's biggest efficiency gap (PowerCycle underutilisation) and its highest-growth format (FIT demand exceeding supply). Combined, they represent ₹1.5–2.0L in recoverable monthly revenue without capital investment.</p>
+    <h3 style="color:var(--neutral);margin-bottom:12px;">🔭 90-Day Vision</h3>
+    <p>Supreme HQ at ₹14–15L/month by June 2026 — powered by FIT at 120 sessions/month, PowerCycle at 52% fill, late cancel leakage below 8% of revenue, and Atulan Purohit anchoring 110 sessions per quarter. This would make Supreme HQ the highest-revenue boutique fitness location in Kwality's portfolio by a wide margin.</p>
+  </div>
+</section>
+
+<details style="margin-top:48px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+  <summary style="padding:16px 24px;background:var(--bg-secondary);cursor:pointer;font-family:'Helvetica Neue',sans-serif;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between;align-items:center;">
+    Appendix — Data Health, Metric Definitions & Statistical Notes
+    <span style="font-size:18px;color:var(--text-muted);">+</span>
+  </summary>
+  <div style="padding:24px;background:var(--bg-card);">
+    <h3 style="margin-bottom:12px;">Data Health</h3>
+    <p style="margin-bottom:8px;"><strong>Tags:</strong> CLASS_OPERATIONS, ENGAGEMENT, TEMPORAL_SERIES, PRODUCT_MIX, CANCELLATION_RISK</p>
+    <p style="margin-bottom:8px;"><strong>Anomalies:</strong> Revenue MoM +18.7% (Feb) and +18.7% (Mar) — steady not spiking. Late cancel pattern stable (215, 191, 222) — structural, not accelerating.</p>
+    <p style="margin-bottom:8px;"><strong>Missing:</strong> Member-level cohort data; earned vs. sales revenue split. ARPM not computable. Leakage estimates use ₹600 avg class value (premium location assumption).</p>
+    <p style="margin-bottom:12px;"><strong>Assumptions:</strong> (1) ₹600 avg class value for leakage estimate (higher than Kenkere House given Bandra pricing premium). (2) PowerCycle capacity = 13 per session (consistent in data). (3) Forecast assumes partial execution of recommendations.</p>
+    <h3 style="margin-bottom:12px;">Metric Definitions</h3>
+    <table>
+      <thead><tr><th>Metric</th><th>Formula</th></tr></thead>
+      <tbody>
+        <tr><td>Fill Rate %</td><td>Check-ins / Capacity × 100</td></tr>
+        <tr><td>Class Average</td><td>Total Check-ins / Sessions</td></tr>
+        <tr><td>Rev/Session</td><td>Total Revenue / Sessions</td></tr>
+        <tr><td>Late Cancel Leakage</td><td>Late Cancels × ₹600 (est.)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+new Chart(document.getElementById('revChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Jan 2026', 'Feb 2026', 'Mar 2026'],
+    datasets: [
+      { label: 'Revenue', data: [7.19, 8.60, 10.21], backgroundColor: ['#7CA5D0','#7CA5D0','#1B4F8A'], borderRadius: 4, yAxisID: 'y' },
+      { label: 'Check-Ins', data: [1020, 1176, 1371], type: 'line', borderColor: '#1A6B47', backgroundColor: 'transparent', borderWidth: 2.5, pointBackgroundColor: '#1A6B47', pointRadius: 5, yAxisID: 'y2', tension: 0.3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.datasetIndex === 0 ? '₹' + ctx.parsed.y + 'L' : ctx.parsed.y + ' check-ins' } } },
+    scales: {
+      y: { type: 'linear', position: 'left', ticks: { callback: v => '₹' + v + 'L', font: { size: 11 } }, grid: { color: 'rgba(26,26,24,0.06)' } },
+      y2: { type: 'linear', position: 'right', ticks: { font: { size: 11 } }, grid: { display: false } },
+      x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+    }
+  }
+});
 
+new Chart(document.getElementById('formatChart'), {
+  type: 'bar',
+  data: {
+    labels: ['PowerCycle', 'Barre 57', 'FIT', 'Mat 57', 'Cardio Barre', 'Back Body', 'Recovery'],
+    datasets: [{ data: [7.95, 6.85, 4.41, 2.40, 2.37, 1.18, 0.82], backgroundColor: ['#1B4F8A','#5B8EC4','#5B8EC4','#7EA8D0','#7EA8D0','#A8C4E0','#C4D8EE'], borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '₹' + ctx.parsed.x + 'L' } } },
+    scales: { x: { ticks: { callback: v => '₹' + v + 'L', font: { size: 10 } }, grid: { color: 'rgba(26,26,24,0.06)' } }, y: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+  }
+});
+
+new Chart(document.getElementById('fillFormatChart'), {
+  type: 'bar',
+  data: {
+    labels: ['FIT', 'Mat 57', 'Barre 57', 'PowerCycle', 'Cardio Barre', 'Recovery', 'Back Body'],
+    datasets: [{ data: [65.6, 50.4, 39.5, 38.2, 34.0, 34.0, 30.8], backgroundColor: ['#1A6B47','#3A8B67','#5B8EC4','#BA7517','#BA7517','#8B2020','#8B2020'], borderRadius: 4 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '%' } } },
+    scales: { x: { min: 0, max: 80, ticks: { callback: v => v + '%', font: { size: 10 } }, grid: { color: 'rgba(26,26,24,0.06)' } }, y: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+  }
+});
+
+new Chart(document.getElementById('dayChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Saturday', 'Thursday', 'Tuesday', 'Monday', 'Sunday', 'Friday', 'Wednesday'],
+    datasets: [
+      { label: 'Check-Ins', data: [632, 618, 592, 532, 383, 425, 385], backgroundColor: '#1B4F8A', borderRadius: 4, yAxisID: 'y' },
+      { label: 'Revenue (₹L)', data: [4.71, 4.45, 4.37, 3.81, 3.13, 2.77, 2.74], type: 'line', borderColor: '#1A6B47', backgroundColor: 'transparent', borderWidth: 2.5, pointBackgroundColor: '#1A6B47', pointRadius: 5, yAxisID: 'y2' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { type: 'linear', position: 'left', ticks: { font: { size: 10 } }, grid: { color: 'rgba(26,26,24,0.06)' } },
+      y2: { type: 'linear', position: 'right', ticks: { callback: v => '₹' + v + 'L', font: { size: 10 } }, grid: { display: false } },
+      x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+</script>
 </body>
 </html>

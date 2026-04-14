@@ -377,17 +377,17 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
       {
         id: 'groupValue',
         header: 'Group',
-        size: columnSizing['groupValue'] || 280,
+        size: columnSizing['groupValue'] || 420,
         enableSorting: true,
         enableResizing: true,
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="truncate font-semibold text-slate-900 text-xs">{data.groupValue.replace(/\|/g, ' • ')}</div>;
+            return <div className="font-semibold text-slate-900 text-xs whitespace-normal break-words leading-5">{data.groupValue.replace(/\|/g, ' • ')}</div>;
           }
           const session = data as SessionData;
           return (
-            <div className="truncate pl-4 text-xs text-slate-700 font-medium">
+            <div className="pl-4 text-xs text-slate-700 font-medium whitespace-normal break-words leading-5">
               {session.cleanedClass || session.sessionName || session.classType}
             </div>
           );
@@ -856,8 +856,8 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
 
   const tdPaddingClass = density === 'compact' ? 'px-3 py-1.5' : 'px-4 py-2';
   const thPaddingClass = density === 'compact' ? 'px-3 py-1' : 'px-4 py-1.5';
-  const rowHeightClass = density === 'compact' ? 'h-9 max-h-9' : 'h-10 max-h-10';
-  const headerHeightClass = density === 'compact' ? 'h-8 max-h-8' : 'h-9 max-h-9';
+  const rowHeightClass = density === 'compact' ? 'min-h-9' : 'min-h-10';
+  const headerHeightClass = density === 'compact' ? 'min-h-8' : 'min-h-9';
 
   return (
     <div className="space-y-4">
@@ -1009,7 +1009,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         className="glass-card rounded-2xl overflow-hidden shadow-2xl"
       >
         <div className="overflow-x-auto">
-          <table data-table="class-attendance-comprehensive" data-table-name="Class Attendance Comprehensive Table" className="class-attendance-neat-table w-full border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+          <table data-table="class-attendance-comprehensive" data-table-name="Class Attendance Comprehensive Table" className="class-attendance-neat-table min-w-full border-collapse" style={{ tableLayout: 'auto', width: 'max-content', minWidth: '100%' }}>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className={`${headerHeightClass} border-b border-slate-900/70 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-[inset_0_-1px_0_rgba(255,255,255,0.06)]`}>
@@ -1017,7 +1017,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                     <th
                       key={header.id}
                       style={{ width: `${header.getSize()}px`, position: 'relative' }}
-                      className={`${thPaddingClass} ${headerHeightClass} text-left text-[11px] font-semibold text-slate-100 uppercase tracking-[0.08em] relative group whitespace-nowrap`}
+                      className={`${thPaddingClass} ${headerHeightClass} text-left text-[11px] font-semibold text-slate-100 uppercase tracking-[0.08em] relative group whitespace-nowrap align-top`}
                     >
                       <div
                         className="flex items-center gap-1.5 cursor-pointer select-none"
@@ -1075,7 +1075,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                         <td
                           key={cell.id}
                           style={{ width: `${cell.column.getSize()}px` }}
-                          className={`${tdPaddingClass} ${rowHeightClass} text-sm overflow-hidden align-middle ${isGroupRow ? 'font-medium' : ''}`}
+                          className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words ${isGroupRow ? 'font-medium' : ''}`}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
@@ -1101,7 +1101,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                                 <td
                                   key={`${row.id}-child-${idx}-col-${colIdx}`}
                                   style={{ width: `${col.size}px` }}
-                                  className={`${tdPaddingClass} ${rowHeightClass} text-sm overflow-hidden align-middle text-slate-600`}
+                                  className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words text-slate-600`}
                                 >
                                   {col.cell && typeof col.cell === 'function'
                                     ? col.cell({ getValue: () => cellValue, row: { original: childSession } } as any)
@@ -1122,7 +1122,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                             <td
                               key={cell.id}
                               style={{ width: `${cell.column.getSize()}px` }}
-                              className={`${tdPaddingClass} ${rowHeightClass} text-sm overflow-hidden align-middle text-slate-600`}
+                              className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words text-slate-600`}
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>

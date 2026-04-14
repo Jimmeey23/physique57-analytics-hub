@@ -130,6 +130,8 @@ export const useGoogleSheets = () => {
               rawItem['discount_percentage'] || rawItem['discountPercentage'] || rawItem['DiscountPercentage'] ||
               rawItem['Discount_Percentage'] || rawItem['Discount %'] || rawItem['Discount_Percent'] || 0
             ),
+            discountSource: 'none',
+            discountIsEstimated: false,
             hostId: rawItem['Host Id'] || rawItem['Host ID'] || rawItem['hostId'] || '',
             // Secondary (Sec.) fields for behavior analytics
             secMembershipStartDate: rawItem['Sec. Membership Start Date'] || rawItem['Sec Membership Start Date'] || '',
@@ -148,19 +150,28 @@ export const useGoogleSheets = () => {
             ? transformedItem.mrpPostTax
             : (transformedItem.mrpPreTax || 0);
 
+          if ((transformedItem.discountAmount || 0) > 0 || (transformedItem.discountPercentage || 0) > 0) {
+            transformedItem.discountSource = 'sheet';
+          }
+
           // If discountAmount is still 0 but item-level discount exists, use it
           if ((transformedItem.discountAmount || 0) <= 0 && itemUnitDiscount > 0) {
             transformedItem.discountAmount = itemUnitDiscount;
+            transformedItem.discountSource = 'item_unit';
           }
 
           // Fallback: derive discountAmount from MRP vs payment when column is missing/0
           if ((transformedItem.discountAmount || 0) <= 0 && mrp > 0 && (transformedItem.paymentValue || 0) > 0 && mrp > (transformedItem.paymentValue || 0)) {
             transformedItem.discountAmount = mrp - (transformedItem.paymentValue || 0);
+            transformedItem.discountSource = 'mrp_gap';
+            transformedItem.discountIsEstimated = true;
           }
 
           // Additional fallback: if still 0 but explicit percentage exists, compute amount
           if ((transformedItem.discountAmount || 0) <= 0 && (transformedItem.discountPercentage || 0) > 0 && mrp > 0) {
             transformedItem.discountAmount = (mrp * (transformedItem.discountPercentage || 0)) / 100;
+            transformedItem.discountSource = 'percentage_derived';
+            transformedItem.discountIsEstimated = true;
           }
 
           // Fallback: derive discountPercentage if missing/0
@@ -173,7 +184,13 @@ export const useGoogleSheets = () => {
               // Assume effective MRP = payment + discount when MRP is not available
               const effectiveMrp = (transformedItem.paymentValue || 0) + (transformedItem.discountAmount || 0);
               transformedItem.discountPercentage = effectiveMrp > 0 ? ((transformedItem.discountAmount || 0) / effectiveMrp) * 100 : 0;
+              transformedItem.discountSource = transformedItem.discountSource === 'none' ? 'effective_mrp' : transformedItem.discountSource;
+              transformedItem.discountIsEstimated = true;
             }
+          }
+
+          if ((transformedItem.discountAmount || 0) > 0 && transformedItem.discountSource === 'none') {
+            transformedItem.discountSource = 'sheet';
           }
 
           // Normalize rounding

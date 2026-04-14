@@ -53,8 +53,8 @@ export default function FunnelLeads() {
   const [filters, setFilters] = useState<LeadsFilterOptions>(() => {
     return {
       dateRange: {
-        start: exportPreset?.startDate || '',
-        end: exportPreset?.endDate || '',
+        start: exportPreset?.startDate || '2026-01-01',
+        end: exportPreset?.endDate || '2026-03-31',
       },
       location: [],
       source: [],

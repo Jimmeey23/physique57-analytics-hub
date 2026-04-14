@@ -33,8 +33,10 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
+  const tableElement = tableRef.current;
+
   React.useEffect(() => {
-    const container = tableRef.current;
+    const container = tableElement;
     if (!container) return;
 
     const tables = container instanceof HTMLTableElement
@@ -52,7 +54,7 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
     return () => {
       tables.forEach((table) => table.removeAttribute('data-has-copy-button'));
     };
-  }, [tableRef]);
+  }, [tableElement]);
 
   const handleCopyAllTabs = React.useCallback(async () => {
     if (onCopyAllTabs) {

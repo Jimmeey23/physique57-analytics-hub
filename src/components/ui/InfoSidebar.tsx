@@ -267,6 +267,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
     
     // Use the new directory structure for all contexts including sales-overview
     const contextMappings: Record<string, string> = {
+      'class-attendance': 'class-attendance-overview',
       'sales-overview': 'sales-overview',
       'executive-overview': 'executive-overview',
       'class-attendance-overview': 'class-attendance-overview',
@@ -494,7 +495,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                         referrerPolicy="no-referrer-when-downgrade"
                         style={{
                           border: 'none',
-                          overflow: 'hidden',
+                          overflow: 'auto',
                           width: '100%',
                           height: '100%',
                           display: 'block'
@@ -720,6 +721,13 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                       sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-downloads"
                       allow="clipboard-read; clipboard-write; geolocation; microphone; camera; encrypted-media"
                       referrerPolicy="no-referrer-when-downgrade"
+                      style={{
+                        border: 'none',
+                        overflow: 'auto',
+                        width: '100%',
+                        height: '100%',
+                        display: 'block'
+                      }}
                       onLoad={() => {
                         setIframeError(false);
                       }}

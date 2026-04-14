@@ -36,38 +36,92 @@ export const UniversalTableCopyAssist: React.FC = () => {
 
   React.useEffect(() => {
     let cancelled = false;
+    const targetsRef = new Map<string, OverlayTableTarget>();
+    let timeoutId: number | undefined;
 
     const cleanup = () => {
-      setTargets((prev) => {
-        prev.forEach((target) => target.host.remove());
-        return [];
+      targetsRef.forEach((target) => {
+        target.host.remove();
+        target.table.removeAttribute('data-auto-copy-managed');
       });
+      targetsRef.clear();
+      setTargets([]);
     };
 
-    const scan = () => {
+    const syncTargets = () => {
       if (cancelled) return;
 
-      cleanup();
-
-      const nextTargets = discoverPageTables(document)
-        .filter(({ element }) => !element.hasAttribute('data-has-copy-button'))
+      const discoveredTables = discoverPageTables(document)
+        .filter(({ element }) => element.hasAttribute('data-auto-copy-managed') || !element.hasAttribute('data-has-copy-button'))
         .filter(({ element }) => element.offsetParent !== null)
-        .map(({ id, name, element }) => {
-          const host = createOverlayHost(element);
-          if (!host) return null;
-          return { id, name, table: element, host };
-        })
-        .filter((target): target is OverlayTableTarget => target !== null);
+        .map(({ id, name, element }) => ({ id, name, element }));
+
+      const nextIds = new Set(discoveredTables.map((table) => table.id));
+
+      Array.from(targetsRef.entries()).forEach(([id, target]) => {
+        if (!nextIds.has(id) || !target.table.isConnected || target.table.offsetParent === null) {
+          target.host.remove();
+          target.table.removeAttribute('data-auto-copy-managed');
+          targetsRef.delete(id);
+        }
+      });
+
+      discoveredTables.forEach(({ id, name, element }) => {
+        const existing = targetsRef.get(id);
+        if (existing) {
+          if (existing.table === element && existing.name === name) {
+            return;
+          }
+
+          existing.host.remove();
+          existing.table.removeAttribute('data-auto-copy-managed');
+          targetsRef.delete(id);
+        }
+
+        const host = createOverlayHost(element);
+        if (!host) return;
+
+        element.setAttribute('data-auto-copy-managed', 'true');
+        targetsRef.set(id, { id, name, table: element, host });
+      });
 
       if (!cancelled) {
-        setTargets(nextTargets);
+        setTargets(Array.from(targetsRef.values()));
       }
     };
 
-    const timeoutId = window.setTimeout(scan, 450);
-    const observer = new MutationObserver(() => {
-      window.clearTimeout(timeoutId);
-      window.setTimeout(scan, 150);
+    const scheduleSync = (delay = 150) => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      timeoutId = window.setTimeout(syncTargets, delay);
+    };
+
+    scheduleSync(450);
+
+    const observer = new MutationObserver((mutations) => {
+      const onlyOverlayMutations = mutations.every((mutation) => {
+        const mutationTarget = mutation.target instanceof Element ? mutation.target : null;
+        if (mutationTarget?.closest('[data-auto-copy-overlay="true"]')) {
+          return true;
+        }
+
+        const addedAreOverlayOnly = Array.from(mutation.addedNodes).every((node) => {
+          if (!(node instanceof Element)) return true;
+          return node.matches('[data-auto-copy-overlay="true"]') || Boolean(node.closest('[data-auto-copy-overlay="true"]'));
+        });
+
+        const removedAreOverlayOnly = Array.from(mutation.removedNodes).every((node) => {
+          if (!(node instanceof Element)) return true;
+          return node.matches('[data-auto-copy-overlay="true"]') || Boolean(node.closest('[data-auto-copy-overlay="true"]'));
+        });
+
+        return addedAreOverlayOnly && removedAreOverlayOnly;
+      });
+
+      if (!onlyOverlayMutations) {
+        scheduleSync();
+      }
     });
 
     observer.observe(document.body, {
@@ -80,7 +134,9 @@ export const UniversalTableCopyAssist: React.FC = () => {
     return () => {
       cancelled = true;
       observer.disconnect();
-      window.clearTimeout(timeoutId);
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
       cleanup();
     };
   }, [location.pathname]);

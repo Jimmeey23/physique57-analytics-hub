@@ -86,10 +86,12 @@ interface GlobalFiltersProviderProps {
 export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ children }) => {
   const [filters, setFilters] = React.useState<GlobalFilters>(() => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
-    const previousMonth = getPreviousMonthDateRange();
+    // Set default date range to Q1 2026
+    const defaultStart = '2026-01-01';
+    const defaultEnd = '2026-03-31';
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     return {
-      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : previousMonth,
+      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : { start: defaultStart, end: defaultEnd },
       location: preset ? (preset.studioId === 'all' ? [] : [studioOption?.locationLabel || 'Kwality House, Kemps Corner']) : ['Kwality House'],
       category: [],
       product: [],

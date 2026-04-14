@@ -76,8 +76,10 @@ const downloadBlob = (blob: Blob, fileName: string) => {
 };
 
 const isVisibleElement = (element: HTMLElement) => {
-  const style = window.getComputedStyle(element);
-  return element.offsetParent !== null && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+  const view = element.ownerDocument.defaultView || window;
+  const style = view.getComputedStyle(element);
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
 };
 
 const createHiddenIframe = (url: string) => {
@@ -213,10 +215,59 @@ const collectVisibleTables = (doc: Document) => {
     .filter((table): table is ConsolidatedCollectedTable => Boolean(table));
 };
 
+const collectTablesFromRoot = (root: ParentNode) => {
+  return discoverPageTables(root)
+    .map(({ element }, index) => extractTableFromElement(element, index))
+    .filter((table): table is ConsolidatedCollectedTable => Boolean(table));
+};
+
 const getVisibleTabTriggers = (doc: Document) => {
   return Array.from(doc.querySelectorAll('[role="tab"]'))
     .filter((element): element is HTMLElement => element instanceof HTMLElement)
     .filter((element) => isVisibleElement(element));
+};
+
+const activateTabTrigger = async (trigger: HTMLElement) => {
+  trigger.focus();
+  ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach((eventName) => {
+    trigger.dispatchEvent(new MouseEvent(eventName, { bubbles: true, cancelable: true, view: trigger.ownerDocument.defaultView || window }));
+  });
+  trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await sleep(450);
+};
+
+const collectTablesForTrigger = (doc: Document, trigger: HTMLElement) => {
+  const panelId = trigger.getAttribute('aria-controls');
+  if (panelId) {
+    const panel = doc.getElementById(panelId);
+    if (panel) {
+      const visibleTables = collectTablesFromRoot(panel).filter((table) => {
+        const candidate = panel.querySelector(`[data-table="${table.id}"]`) as HTMLElement | null;
+        return candidate ? isVisibleElement(candidate) : true;
+      });
+      if (visibleTables.length > 0) {
+        return visibleTables;
+      }
+
+      const fallbackPanelTables = collectTablesFromRoot(panel);
+      if (fallbackPanelTables.length > 0) {
+        return fallbackPanelTables;
+      }
+    }
+  }
+
+  const activePanels = Array.from(doc.querySelectorAll('[role="tabpanel"]'))
+    .filter((element): element is HTMLElement => element instanceof HTMLElement)
+    .filter((element) => element.getAttribute('data-state') === 'active' || isVisibleElement(element));
+
+  for (const panel of activePanels) {
+    const tables = collectTablesFromRoot(panel);
+    if (tables.length > 0) {
+      return tables;
+    }
+  }
+
+  return collectVisibleTables(doc);
 };
 
 const collectRouteTabs = async (doc: Document) => {
@@ -227,17 +278,17 @@ const collectRouteTabs = async (doc: Document) => {
   const triggers = getVisibleTabTriggers(doc);
   const visited = new Set<string>();
 
-  for (const trigger of triggers) {
+  for (const [index, trigger] of triggers.entries()) {
     const label = normalizeCellText(trigger.textContent || '') || trigger.getAttribute('value') || 'Tab';
-    if (visited.has(label) || label.toLowerCase() === 'current view') continue;
-    visited.add(label);
+    const visitKey = `${index}:${label}`;
+    if (visited.has(visitKey) || label.toLowerCase() === 'current view') continue;
+    visited.add(visitKey);
 
     if (trigger.getAttribute('data-state') !== 'active') {
-      trigger.click();
-      await sleep(350);
+      await activateTabTrigger(trigger);
     }
 
-    const tables = collectVisibleTables(doc);
+    const tables = collectTablesForTrigger(doc, trigger);
     if (tables.length > 0) {
       tabs.push({ label, tables });
     }

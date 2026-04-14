@@ -9,6 +9,7 @@ import { EnhancedDiscountBreakdownTables } from './EnhancedDiscountBreakdownTabl
 import { DiscountDrillDownModal } from './DiscountDrillDownModal';
 import { MonthOnMonthDiscountTable } from './MonthOnMonthDiscountTable';
 import { DataScienceInsightsPanel } from './DataScienceInsightsPanel';
+import { DiscountForecastingToolkit } from './DiscountForecastingToolkit';
 import { getActiveTabClasses } from '@/utils/colorThemes';
 import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
@@ -268,12 +269,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   }, [filteredData]);
 
   // Separate data for components that specifically need only discounted transactions
-  const onlyDiscountedData = useMemo(() => {
-    const discounted = filteredData.filter(item => (item.discountAmount || 0) > 0);
-    logger.debug('Only Discounted Data:', discounted.length, 'discounted transactions');
-    return discounted;
-  }, [filteredData]);
-
   const handleMetricClick = (metricData: any) => {
     setDrillDownData({
       isOpen: true,
@@ -374,6 +369,11 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           historicalData={allHistoricData}
           dateRange={filters.dateRange}
           onMetricClick={handleMetricClick}
+        />
+
+        <DiscountForecastingToolkit
+          currentData={discountAnalysisData}
+          historicalData={allHistoricData}
         />
 
         <DataScienceInsightsPanel

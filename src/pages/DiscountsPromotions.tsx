@@ -3,88 +3,27 @@ import { useSalesData } from '@/hooks/useSalesData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedDiscountsDashboardV2 } from '@/components/dashboard/EnhancedDiscountsDashboardV2';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { formatNumber, formatCurrency } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
+import { parseDate } from '@/utils/dateUtils';
 
 const DiscountsPromotions: React.FC = () => {
   const navigate = useNavigate();
   const { setLoading } = useGlobalLoading();
   const { data: salesData, loading, error } = useSalesData();
-  
-  // Transform sales data for discount analysis
-  const discountData = useMemo(() => {
-    if (!salesData) {
-      return [];
-    }
-    
-    return salesData.map((item: any) => {
-      // Parse numeric values safely
-      const parseNumber = (value: any): number => {
-        if (value === null || value === undefined || value === '') return 0;
-        const cleanValue = value.toString().replace(/[₹,\s]/g, '');
-        const num = parseFloat(cleanValue);
-        return isNaN(num) ? 0 : num;
-      };
 
-      const discountAmount = parseNumber(item.discountAmount || item['Discount Amount -Mrp- Payment Value'] || 0);
-      const discountPercentage = parseNumber(item.discountPercentage || item['Discount Percentage - discount amount/mrp*100'] || 0);
-      const paymentValue = parseNumber(item.paymentValue || item['Payment Value'] || 0);
-      const mrpPreTax = parseNumber(item.mrpPreTax || item['Mrp - Pre Tax'] || 0);
-      const mrpPostTax = parseNumber(item.mrpPostTax || item['Mrp - Post Tax'] || 0);
-
-      return {
-        ...item,
-        memberId: item.memberId || item['Member ID']?.toString() || '',
-        customerName: item.customerName || item['Customer Name'] || '',
-        customerEmail: item.customerEmail || item['Customer Email'] || '',
-        paymentDate: item.paymentDate || item['Payment Date'] || '',
-        paymentValue,
-        paymentMethod: item.paymentMethod || item['Payment Method'] || '',
-        calculatedLocation: item.calculatedLocation || item['Calculated Location'] || '',
-        cleanedProduct: item.cleanedProduct || item['Cleaned Product'] || '',
-        cleanedCategory: item.cleanedCategory || item['Cleaned Category'] || '',
-        soldBy: item.soldBy === '-' ? 'Online/System' : (item.soldBy || item['Sold By'] || 'Unknown'),
-        discountAmount,
-        discountPercentage,
-        mrpPreTax,
-        mrpPostTax,
-        hasDiscount: discountAmount > 0 || discountPercentage > 0,
-      };
-    });
-  }, [salesData]);
+  const discountData = useMemo(
+    () => (salesData || []).map((item) => ({
+      ...item,
+      soldBy: item.soldBy === '-' ? 'Online/System' : (item.soldBy || 'Unknown'),
+    })),
+    [salesData],
+  );
 
   const heroMetrics = useMemo(() => {
     if (!discountData || discountData.length === 0) return [];
-
-    // Import parseDate for consistent date handling
-    const parseDateStr = (dateStr: string): Date | null => {
-      if (!dateStr || dateStr.trim() === '') return null;
-      try {
-        // Handle DD/MM/YYYY format with optional time
-        if (dateStr.includes('/')) {
-          const datePart = dateStr.split(' ')[0].trim();
-          const parts = datePart.split('/');
-          if (parts.length === 3) {
-            const day = parseInt(parts[0]);
-            const month = parseInt(parts[1]);
-            const year = parseInt(parts[2]);
-            if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-              return new Date(year, month - 1, day);
-            }
-          }
-        }
-        // Handle YYYY-MM-DD format
-        if (dateStr.includes('-')) {
-          const date = new Date(dateStr);
-          if (!isNaN(date.getTime())) return date;
-        }
-        return null;
-      } catch (e) {
-        return null;
-      }
-    };
 
     // Always use previous month
     const now = new Date();
@@ -94,7 +33,7 @@ const DiscountsPromotions: React.FC = () => {
     // Filter data for that month
     const monthData = discountData.filter(item => {
       if (!item.paymentDate) return false;
-      const itemDate = parseDateStr(item.paymentDate);
+      const itemDate = parseDate(item.paymentDate);
       return itemDate && itemDate >= firstDayOfMonth && itemDate <= lastDayOfMonth;
     });
 

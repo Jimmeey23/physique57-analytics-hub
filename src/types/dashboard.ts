@@ -31,6 +31,8 @@ export interface SalesData {
   mrpPostTax?: number;
   discountAmount?: number;
   discountPercentage?: number;
+  discountSource?: 'sheet' | 'item_unit' | 'mrp_gap' | 'percentage_derived' | 'effective_mrp' | 'none';
+  discountIsEstimated?: boolean;
   discountType?: string;
   isPromotional?: boolean;
   hostId?: string;

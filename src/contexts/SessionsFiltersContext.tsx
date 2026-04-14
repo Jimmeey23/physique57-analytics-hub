@@ -52,7 +52,9 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
   const [filters, setFilters] = React.useState<SessionsFilters>(() => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
-    const previousMonth = getPreviousMonthDateRange();
+    // Set default date range to Q1 2026
+    const defaultStart = new Date('2026-01-01');
+    const defaultEnd = new Date('2026-03-31');
     return {
       locations: preset && preset.studioId !== 'all' ? [studioOption?.locationLabel || 'Kwality House, Kemps Corner'] : [],
       trainers: [],
@@ -60,8 +62,8 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
       dayOfWeek: [],
       timeSlots: [],
       dateRange: { 
-        start: new Date(preset?.startDate || previousMonth.start), 
-        end: new Date(preset?.endDate || previousMonth.end) 
+        start: new Date(preset?.startDate || defaultStart), 
+        end: new Date(preset?.endDate || defaultEnd) 
       }
     };
   });
