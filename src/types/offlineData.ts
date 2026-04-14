@@ -13,7 +13,7 @@ export interface OfflineDatasetRecord {
   key: OfflineDatasetKey;
   rows: any[][];
   updatedAt: string;
-  source: 'remote' | 'upload';
+  source: 'remote' | 'upload' | 'bundle';
   fileName?: string;
 }
 
@@ -23,7 +23,7 @@ export interface OfflineDatasetSummary {
   available: boolean;
   rowCount: number;
   updatedAt?: string;
-  source?: 'remote' | 'upload';
+  source?: 'remote' | 'upload' | 'bundle';
   fileName?: string;
 }
 
@@ -46,3 +46,13 @@ export const OFFLINE_DATASET_KEYS: OfflineDatasetKey[] = [
   'checkins',
   'expirations',
 ];
+
+export const BUNDLED_OFFLINE_DATASET_FILES: Record<OfflineDatasetKey, string> = {
+  sales: 'Sales-Data.csv',
+  sessions: 'Sessions-Data.csv',
+  payroll: 'Payroll.csv',
+  'new-clients': 'New.csv',
+  leads: 'Leads-Data.csv',
+  checkins: 'Checkins-Data.csv',
+  expirations: 'Expirations.csv',
+};

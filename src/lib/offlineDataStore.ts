@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import {
+  BUNDLED_OFFLINE_DATASET_FILES,
   OFFLINE_DATASET_KEYS,
   OFFLINE_DATASET_LABELS,
   type OfflineDatasetKey,
@@ -70,7 +71,7 @@ export const getOfflineDatasetRows = async (key: OfflineDatasetKey): Promise<any
 export const saveOfflineDatasetRows = async (
   key: OfflineDatasetKey,
   rows: any[][],
-  source: 'remote' | 'upload',
+  source: 'remote' | 'upload' | 'bundle',
   fileName?: string,
 ) => {
   const payload: OfflineDatasetRecord = {
@@ -116,6 +117,10 @@ export const listOfflineDatasets = async (): Promise<OfflineDatasetSummary[]> =>
 
 export const parseSpreadsheetFileToRows = async (file: File): Promise<any[][]> => {
   const buffer = await file.arrayBuffer();
+  return parseSpreadsheetBufferToRows(buffer);
+};
+
+export const parseSpreadsheetBufferToRows = (buffer: ArrayBuffer): any[][] => {
   const workbook = XLSX.read(buffer, { type: 'array' });
   const firstSheetName = workbook.SheetNames[0];
   if (!firstSheetName) {
@@ -135,4 +140,29 @@ export const parseSpreadsheetFileToRows = async (file: File): Promise<any[][]> =
   }
 
   return rows;
+};
+
+export const seedBundledOfflineDatasets = async () => {
+  const existingRecords = await Promise.all(
+    OFFLINE_DATASET_KEYS.map(async (key) => [key, await getOfflineDataset(key)] as const)
+  );
+
+  await Promise.all(
+    OFFLINE_DATASET_KEYS.map(async (key) => {
+      const existing = existingRecords.find(([recordKey]) => recordKey === key)?.[1] ?? null;
+      if (existing?.source === 'upload') {
+        return;
+      }
+
+      const fileName = BUNDLED_OFFLINE_DATASET_FILES[key];
+      const response = await fetch(`/offline-files/${encodeURIComponent(fileName)}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load bundled offline dataset: ${fileName}`);
+      }
+
+      const buffer = await response.arrayBuffer();
+      const rows = parseSpreadsheetBufferToRows(buffer);
+      await saveOfflineDatasetRows(key, rows, 'bundle', fileName);
+    })
+  );
 };

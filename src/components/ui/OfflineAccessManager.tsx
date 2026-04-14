@@ -112,7 +112,7 @@ export const OfflineAccessManager: React.FC = () => {
                         <div className="font-medium text-slate-900">{OFFLINE_DATASET_LABELS[key]}</div>
                         <div className="text-xs text-slate-500">
                           {dataset?.available
-                            ? `${dataset.rowCount.toLocaleString()} rows • ${dataset.source === 'upload' ? dataset.fileName || 'uploaded file' : 'cached from live source'}`
+                            ? `${dataset.rowCount.toLocaleString()} rows • ${dataset.source === 'upload' ? dataset.fileName || 'uploaded file' : dataset.source === 'bundle' ? dataset.fileName || 'bundled offline file' : 'cached from live source'}`
                             : 'No offline data stored yet'}
                         </div>
                         {dataset?.updatedAt && (

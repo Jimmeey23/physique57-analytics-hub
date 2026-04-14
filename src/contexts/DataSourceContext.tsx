@@ -4,6 +4,7 @@ import {
   listOfflineDatasets,
   parseSpreadsheetFileToRows,
   saveOfflineDatasetRows,
+  seedBundledOfflineDatasets,
 } from '@/lib/offlineDataStore';
 import type { DataSourceMode, OfflineDatasetKey, OfflineDatasetSummary } from '@/types/offlineData';
 
@@ -29,6 +30,7 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
   const [isOnline, setIsOnline] = React.useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [datasets, setDatasets] = React.useState<OfflineDatasetSummary[]>([]);
+  const [bundleSeeded, setBundleSeeded] = React.useState(false);
 
   const refreshDatasets = React.useCallback(async () => {
     const next = await listOfflineDatasets();
@@ -36,7 +38,26 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   React.useEffect(() => {
-    void refreshDatasets();
+    let cancelled = false;
+
+    const bootstrapBundledDatasets = async () => {
+      try {
+        await seedBundledOfflineDatasets();
+      } catch (error) {
+        console.error('Failed to seed bundled offline datasets:', error);
+      } finally {
+        if (!cancelled) {
+          setBundleSeeded(true);
+          await refreshDatasets();
+        }
+      }
+    };
+
+    void bootstrapBundledDatasets();
+
+    return () => {
+      cancelled = true;
+    };
   }, [refreshDatasets]);
 
   React.useEffect(() => {
