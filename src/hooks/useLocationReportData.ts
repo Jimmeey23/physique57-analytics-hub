@@ -11,7 +11,7 @@ import { useClientConversionMetrics } from '@/hooks/useClientConversionMetrics';
 import { useSalesMetrics } from '@/hooks/useSalesMetrics';
 import { useGeminiAnalysis } from '@/hooks/useGeminiAnalysis';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
-import { parseDate } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { logger } from '@/utils/logger';
 
@@ -90,16 +90,11 @@ export const useLocationReportData = () => {
   const { activeLocations } = useGlobalFilters(); // Only get location, ignore date filters
   const { generateQuickInsights } = useGeminiAnalysis();
   
-  // Calculate previous month date range (independent of global filters)
   const previousMonthRange = useMemo(() => {
-    const now = new Date();
-    // Use last 3 months instead of just previous month to ensure data availability
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-    const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    
+    const defaultDateRange = getDashboardDefaultDateRange();
     return {
-      startDate: threeMonthsAgo.toISOString().split('T')[0],
-      endDate: lastDayPreviousMonth.toISOString().split('T')[0]
+      startDate: defaultDateRange.start,
+      endDate: defaultDateRange.end,
     };
   }, []);
   
@@ -174,7 +169,7 @@ export const useLocationReportData = () => {
     };
 
     const filterByDateRange = (item: any) => {
-      // Always use previous month range, ignore global date filters
+      // Always use the shared dashboard default range, ignore global date filters
       if (!item.date && !item.timestamp && !item.createdAt) return true;
       
       const itemDate = parseDate(item.date || item.timestamp || item.createdAt);
@@ -218,7 +213,7 @@ export const useLocationReportData = () => {
       }))
     });
     
-    logger.debug('Filtered Data Counts (Last 3 Months):', {
+    logger.debug('Filtered Data Counts (Dashboard Default Range):', {
       sales: filteredSales.length,
       sessions: filteredSessions.length,
       payroll: filteredPayroll.length,

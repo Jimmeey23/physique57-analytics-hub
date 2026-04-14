@@ -11,7 +11,7 @@ import { ExpirationAdditionalAnalytics } from './ExpirationAdditionalAnalytics';
 import { ChurnedMembersDetailedTable } from './ChurnedMembersDetailedTable';
 import { ExpirationData, ExpirationFilterOptions, MetricCardData } from '@/types/dashboard';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { Calendar, Users, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
@@ -50,12 +50,11 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [drillDownType, setDrillDownType] = useState<'expiration' | 'member' | 'status'>('expiration');
 
-  // Initialize filters with previous month as default
   const [filters, setFilters] = useState<ExpirationFilterOptions>(() => {
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     
     return {
-      dateRange: previousMonth,
+      dateRange: defaultDateRange,
       location: [],
       status: [],
       membershipType: [],
@@ -189,9 +188,9 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
   };
 
   const resetFilters = () => {
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     setFilters({
-      dateRange: previousMonth,
+      dateRange: defaultDateRange,
       location: [],
       status: [],
       membershipType: [],

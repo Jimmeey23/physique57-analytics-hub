@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { ExpirationData } from '@/types/dashboard';
 import { fetchGoogleSheet, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
+import { useDataSource } from '@/contexts/DataSourceContext';
+import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
 
 const logger = createLogger('useExpirationsData');
 const SHEET_NAME = "Expirations";
@@ -10,6 +12,7 @@ export const useExpirationsData = () => {
   const [data, setData] = useState<ExpirationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { mode } = useDataSource();
 
   const fetchExpirationsData = async () => {
     try {
@@ -18,8 +21,10 @@ export const useExpirationsData = () => {
 
       logger.info('Fetching expirations data...');
       
-      const rows = await fetchGoogleSheet(SPREADSHEET_IDS.EXPIRATIONS, `${SHEET_NAME}!A:Z`, {
-        valueRenderOption: 'FORMATTED_VALUE'
+      const { rows } = await loadDatasetRowsForMode('expirations', mode, async () => {
+        return fetchGoogleSheet(SPREADSHEET_IDS.EXPIRATIONS, `${SHEET_NAME}!A:Z`, {
+          valueRenderOption: 'FORMATTED_VALUE'
+        });
       });
       
       logger.info(`Total rows received: ${rows.length}`);
@@ -64,7 +69,7 @@ export const useExpirationsData = () => {
 
   useEffect(() => {
     fetchExpirationsData();
-  }, []);
+  }, [mode]);
 
   return {
     data,

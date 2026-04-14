@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
-import { getPreviousMonthDisplay } from '@/utils/dateUtils';
 import { ExecutivePDFExportButton } from './ExecutivePDFExportButton';
 
 interface ExecutiveFilterSectionProps {
@@ -261,7 +260,7 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
               {!(filters.dateRange?.start || filters.dateRange?.end) && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-700">
-                    <strong>Default:</strong> Showing current month vs previous month comparison
+                    <strong>Default:</strong> Showing Jan 1, 2026 to Mar 31, 2026
                   </p>
                 </div>
               )}
@@ -327,7 +326,7 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                     <span>
                       Period: {(filters.dateRange?.start || filters.dateRange?.end) 
                         ? 'Custom date range' 
-                        : 'Current month vs Previous month'}
+                        : 'Jan-Mar 2026 default range'}
                     </span>
                   </div>
                   {(filters.dateRange?.start || filters.dateRange?.end) && (

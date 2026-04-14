@@ -1,7 +1,7 @@
 
 import * as React from 'react';
 import { ReactNode } from 'react';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 interface GlobalFilters {
@@ -41,7 +41,7 @@ export const useGlobalFilters = () => {
     // Instead of throwing, log the error and return a fallback
     console.error('useGlobalFilters must be used within a GlobalFiltersProvider. Returning fallback values.');
     
-    const fallbackDateRange = getPreviousMonthDateRange();
+    const fallbackDateRange = getDashboardDefaultDateRange();
     // Return a fallback context with default values
     return {
       filters: {
@@ -87,11 +87,10 @@ export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ ch
   const [filters, setFilters] = React.useState<GlobalFilters>(() => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     // Set default date range to Q1 2026
-    const defaultStart = '2026-01-01';
-    const defaultEnd = '2026-03-31';
+    const defaultDateRange = getDashboardDefaultDateRange();
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     return {
-      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : { start: defaultStart, end: defaultEnd },
+      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : defaultDateRange,
       location: preset ? (preset.studioId === 'all' ? [] : [studioOption?.locationLabel || 'Kwality House, Kemps Corner']) : ['Kwality House'],
       category: [],
       product: [],
@@ -116,10 +115,10 @@ export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ ch
 
   const clearFilters = () => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     setFilters({
-      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : previousMonth,
+      dateRange: preset ? { start: preset.startDate, end: preset.endDate } : defaultDateRange,
       location: preset ? (preset.studioId === 'all' ? [] : [studioOption?.locationLabel || 'Kwality House, Kemps Corner']) : ['Kwality House'],
       category: [],
       product: [],
@@ -139,8 +138,7 @@ export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ ch
   };
 
   const resetToDefaultDates = () => {
-    const previousMonth = getPreviousMonthDateRange();
-    updateFilters({ dateRange: previousMonth });
+    updateFilters({ dateRange: getDashboardDefaultDateRange() });
   };
 
   return (

@@ -29,7 +29,7 @@ import {
 import { DatePickerWithRange } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { LeadsFilterOptions } from '@/types/leads';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 
 interface FunnelLeadsFilterSectionProps {
   filters: LeadsFilterOptions;
@@ -74,43 +74,9 @@ export const FunnelLeadsFilterSection: React.FC<FunnelLeadsFilterSectionProps> =
     });
   };
 
-  const getPreviousMonthRange = () => {
-    const now = new Date();
-    const firstDayPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    
-    return {
-      start: formatDate(firstDayPreviousMonth),
-      end: formatDate(lastDayPreviousMonth)
-    };
-  };
-
   const clearAllFilters = () => {
-    const now = new Date();
-    const firstDayPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    
-    const previousMonth = {
-      start: formatDate(firstDayPreviousMonth),
-      end: formatDate(lastDayPreviousMonth)
-    };
-    
     onFiltersChange({
-      dateRange: previousMonth,
+      dateRange: getDashboardDefaultDateRange(),
       location: [],
       source: [],
       stage: [],

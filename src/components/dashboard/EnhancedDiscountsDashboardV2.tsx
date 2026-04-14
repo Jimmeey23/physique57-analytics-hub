@@ -15,7 +15,7 @@ import { SalesData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
-import { parseDate } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { logger } from '@/utils/logger';
 
 interface EnhancedDiscountsDashboardV2Props {
@@ -30,39 +30,10 @@ const locations = [
   { id: 'popup', name: 'Pop-up' }
 ];
 
-const getPreviousMonthDateRange = () => {
-  const now = new Date();
-  
-  // Use UTC to avoid timezone issues
-  const year = now.getFullYear();
-  const month = now.getMonth(); // Current month (0-indexed)
-  
-  // Get first day of previous month (in local time, formatted as YYYY-MM-DD)
-  const firstDayPreviousMonth = new Date(year, month - 1, 1);
-  const firstFormatted = `${firstDayPreviousMonth.getFullYear()}-${String(firstDayPreviousMonth.getMonth() + 1).padStart(2, '0')}-01`;
-  
-  // Get last day of previous month (in local time, formatted as YYYY-MM-DD)
-  const lastDayPreviousMonth = new Date(year, month, 0);
-  const lastFormatted = `${lastDayPreviousMonth.getFullYear()}-${String(lastDayPreviousMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayPreviousMonth.getDate()).padStart(2, '0')}`;
-  
-  logger.debug('Date range calculation:', {
-    today: now.toLocaleDateString(),
-    currentMonth: month,
-    previousMonth: month - 1,
-    firstDay: firstFormatted,
-    lastDay: lastFormatted
-  });
-  
-  return {
-    start: firstFormatted,
-    end: lastFormatted
-  };
-};
-
 export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2Props> = ({ data }) => {
   const [activeLocation, setActiveLocation] = useState('kwality');  // Changed default to 'kwality' for better visibility
   const [filters, setFilters] = useState<any>({
-    dateRange: { start: null, end: null },
+    dateRange: getDashboardDefaultDateRange(),
     category: [],
     product: [],
     soldBy: [],
@@ -128,47 +99,12 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
     };
   };
 
-  // Set default date range - prefer previous month, but fall back to latest month with data
   useEffect(() => {
-    if (data && data.length > 0) {
-      const previousMonth = getPreviousMonthDateRange();
-      
-      // Check if previous month has data
-      const prevStart = new Date(previousMonth.start);
-      const prevEnd = new Date(previousMonth.end);
-      prevEnd.setHours(23, 59, 59, 999);
-      
-      const hasDataInPreviousMonth = data.some(d => {
-        if (!d.paymentDate) return false;
-        const parsed = parseDate(d.paymentDate);
-        return parsed && parsed >= prevStart && parsed <= prevEnd;
-      });
-      
-      if (hasDataInPreviousMonth) {
-        logger.debug('Using previous month (has data):', previousMonth);
-        setFilters(prev => ({
-          ...prev,
-          dateRange: {
-            start: previousMonth.start,
-            end: previousMonth.end
-          }
-        }));
-      } else {
-        // Fall back to latest month with data
-        const latestMonth = getLatestMonthWithData();
-        if (latestMonth) {
-          logger.debug('Previous month has no data. Using latest month with data:', latestMonth);
-          setFilters(prev => ({
-            ...prev,
-            dateRange: {
-              start: latestMonth.start,
-              end: latestMonth.end
-            }
-          }));
-        }
-      }
-    }
-  }, [data]);
+    setFilters((prev: any) => ({
+      ...prev,
+      dateRange: getDashboardDefaultDateRange()
+    }));
+  }, []);
 
   // Apply filters similar to sales section
   const applyFilters = (rawData: SalesData[], includeHistoric: boolean = false) => {
@@ -288,29 +224,8 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   };
 
   const resetFilters = () => {
-    // Check if previous month has data, otherwise use latest month with data
-    const previousMonth = getPreviousMonthDateRange();
-    const prevStart = new Date(previousMonth.start);
-    const prevEnd = new Date(previousMonth.end);
-    prevEnd.setHours(23, 59, 59, 999);
-    
-    const hasDataInPreviousMonth = data.some(d => {
-      if (!d.paymentDate) return false;
-      const parsed = parseDate(d.paymentDate);
-      return parsed && parsed >= prevStart && parsed <= prevEnd;
-    });
-    
-    let dateRange = { start: previousMonth.start, end: previousMonth.end };
-    
-    if (!hasDataInPreviousMonth) {
-      const latestMonth = getLatestMonthWithData();
-      if (latestMonth) {
-        dateRange = latestMonth;
-      }
-    }
-    
     setFilters({
-      dateRange,
+      dateRange: getDashboardDefaultDateRange(),
       category: [],
       product: [],
       soldBy: [],

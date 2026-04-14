@@ -16,6 +16,7 @@ import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber } from '@/utils/formatters';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import '@/components/dashboard/trainer-performance-styles.css';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
@@ -29,13 +30,14 @@ const LateCancellations = () => {
   // Location tabs state
   const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
   
-  // Enhanced filter states - Default to previous month
-  const [selectedTimeframe, setSelectedTimeframe] = useState(exportPreset ? 'custom' : 'prev-month');
+  const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
+
+  const [selectedTimeframe, setSelectedTimeframe] = useState('custom');
   const [selectedTrainer, setSelectedTrainer] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState('all');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('all');
-  const [dateRange, setDateRange] = useState({ start: exportPreset?.startDate || '', end: exportPreset?.endDate || '' });
+  const [dateRange, setDateRange] = useState({ start: exportPreset?.startDate || defaultDateRange.start, end: exportPreset?.endDate || defaultDateRange.end });
   
   // Drill down modal state
   const [drillDownData, setDrillDownData] = useState<any>(null);
@@ -234,12 +236,12 @@ const LateCancellations = () => {
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setSelectedTimeframe('prev-month');
+    setSelectedTimeframe('custom');
     setSelectedTrainer('all');
     setSelectedClass('all');
     setSelectedProduct('all');
     setSelectedTimeSlot('all');
-    setDateRange({ start: '', end: '' });
+    setDateRange({ start: defaultDateRange.start, end: defaultDateRange.end });
   };
 
   // Handle drill down click

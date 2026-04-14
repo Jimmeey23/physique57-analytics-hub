@@ -15,14 +15,14 @@ import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useCheckinsData } from '@/hooks/useCheckinsData';
 import { cn } from '@/lib/utils';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { filterByOverviewFilters, getOverviewLocationLabel, OVERVIEW_LOCATION_OPTIONS } from '@/components/dashboard/overview/filtering';
 import { OverviewPDFExportButton } from '@/components/dashboard/overview/OverviewPDFExportButton';
 import { overviewModules, overviewModulesById } from '@/components/dashboard/overview/registry';
 import type { OverviewDataBundle, OverviewFiltersShape, OverviewModuleId } from '@/components/dashboard/overview/types';
 
 const OVERVIEW_DEFAULT_FILTERS: OverviewFiltersShape = {
-  dateRange: getPreviousMonthDateRange(),
+  dateRange: getDashboardDefaultDateRange(),
   location: ['Kwality House'],
 };
 

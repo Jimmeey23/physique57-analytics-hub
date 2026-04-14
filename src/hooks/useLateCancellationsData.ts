@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { LateCancellationsData } from '@/types/dashboard';
 import { fetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
+import { useDataSource } from '@/contexts/DataSourceContext';
+import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
 
 const logger = createLogger('useLateCancellationsData');
 
@@ -13,6 +15,7 @@ export const useLateCancellationsData = () => {
   const [allCheckins, setAllCheckins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { mode } = useDataSource();
 
   const fetchLateCancellationsData = async () => {
     if (!SPREADSHEET_ID) {
@@ -26,7 +29,9 @@ export const useLateCancellationsData = () => {
       setError(null);
       logger.info('Fetching late cancellations data from Google Sheets...');
       
-      const rows = await fetchGoogleSheet(SPREADSHEET_ID, 'Checkins');
+      const { rows } = await loadDatasetRowsForMode('checkins', mode, async () => {
+        return fetchGoogleSheet(SPREADSHEET_ID, 'Checkins');
+      });
       
       logger.info('Late cancellations fetch result:', {
         status: 'success',
@@ -199,7 +204,7 @@ export const useLateCancellationsData = () => {
 
   useEffect(() => {
     fetchLateCancellationsData();
-  }, []);
+  }, [mode]);
 
   return { data, allCheckins, loading, error, refetch: fetchLateCancellationsData };
 };

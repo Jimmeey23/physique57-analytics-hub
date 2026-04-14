@@ -7,7 +7,7 @@ import { useLeadsData } from '@/hooks/useLeadsData';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
-import { getPreviousMonthDateRange, parseDate } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import type { LocationReportData, LocationReportMetrics } from '@/hooks/useLocationReportData';
 
 type CanonicalLocation = 'All Locations' | 'Kwality House, Kemps Corner' | 'Supreme HQ, Bandra' | 'Kenkere House, Bengaluru';
@@ -247,12 +247,12 @@ export const useLocationReportsData = () => {
     expirationsLoading;
 
   const reports = useMemo((): LocationReportData[] => {
-    const previousMonth = getPreviousMonthDateRange();
-    const start = parseDate(previousMonth.start);
-    const end = parseDate(previousMonth.end);
+    const defaultDateRange = getDashboardDefaultDateRange();
+    const start = parseDate(defaultDateRange.start);
+    const end = parseDate(defaultDateRange.end);
     if (!start || !end) return [];
 
-    const monthName = monthNameFromRange(previousMonth.start);
+    const monthName = 'Jan–Mar 2026';
 
     const buildOne = (location: CanonicalLocation): LocationReportData => {
       const filter = (arr: any[]) =>
@@ -273,8 +273,8 @@ export const useLocationReportsData = () => {
 
       return {
         reportPeriod: {
-          startDate: previousMonth.start,
-          endDate: previousMonth.end,
+          startDate: defaultDateRange.start,
+          endDate: defaultDateRange.end,
           monthName,
         },
         location,

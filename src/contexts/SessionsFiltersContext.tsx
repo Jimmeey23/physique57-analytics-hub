@@ -1,7 +1,7 @@
 
 import * as React from 'react';
 import { ReactNode } from 'react';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 interface SessionsFilters {
@@ -53,8 +53,7 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     // Set default date range to Q1 2026
-    const defaultStart = new Date('2026-01-01');
-    const defaultEnd = new Date('2026-03-31');
+    const defaultDateRange = getDashboardDefaultDateRange();
     return {
       locations: preset && preset.studioId !== 'all' ? [studioOption?.locationLabel || 'Kwality House, Kemps Corner'] : [],
       trainers: [],
@@ -62,8 +61,8 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
       dayOfWeek: [],
       timeSlots: [],
       dateRange: { 
-        start: new Date(preset?.startDate || defaultStart), 
-        end: new Date(preset?.endDate || defaultEnd) 
+        start: new Date(preset?.startDate || defaultDateRange.start), 
+        end: new Date(preset?.endDate || defaultDateRange.end) 
       }
     };
   });
@@ -75,7 +74,7 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
   const clearFilters = () => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     setFilters({
       locations: preset && preset.studioId !== 'all' ? [studioOption?.locationLabel || 'Kwality House, Kemps Corner'] : [],
       trainers: [],
@@ -83,8 +82,8 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
       dayOfWeek: [],
       timeSlots: [],
       dateRange: { 
-        start: new Date(preset?.startDate || previousMonth.start), 
-        end: new Date(preset?.endDate || previousMonth.end) 
+        start: new Date(preset?.startDate || defaultDateRange.start), 
+        end: new Date(preset?.endDate || defaultDateRange.end) 
       }
     });
   };

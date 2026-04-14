@@ -19,6 +19,8 @@ import { RouteLoadingWrapper } from "@/components/RouteLoadingWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { UniversalTableCopyAssist } from "@/components/ui/UniversalTableCopyAssist";
 import { ConsolidatedReportExporterDialog } from "@/components/ui/ConsolidatedReportExporterDialog";
+import { DataSourceProvider, useDataSource } from '@/contexts/DataSourceContext';
+import { OfflineAccessManager } from '@/components/ui/OfflineAccessManager';
 
 // Optimized lazy loading with preloading for critical pages
 const Index = React.lazy(() => 
@@ -145,32 +147,75 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => {
+const AppContent = () => {
   usePerformanceOptimization();
+  const { mode, isOnline } = useDataSource();
 
   React.useEffect(() => {
+    if (mode === 'offline' || !isOnline) {
+      return;
+    }
+
     Intercom({
       app_id: 'hzmswx1k',
     });
-  }, []);
+  }, [mode, isOnline]);
+
+  React.useEffect(() => {
+    if (mode === 'offline' || !isOnline) {
+      return;
+    }
+
+    void Promise.all([
+      import('./pages/MainDashboard'),
+      import('./pages/ExecutiveSummary'),
+      import('./pages/SalesAnalytics'),
+      import('./pages/FunnelLeads'),
+      import('./pages/ClientRetention'),
+      import('./pages/TrainerPerformance'),
+      import('./pages/ClassAttendance'),
+      import('./pages/ClassFormatsComparison'),
+      import('./pages/DiscountsPromotions'),
+      import('./pages/Sessions'),
+      import('./pages/OutlierAnalysis'),
+      import('./pages/ExpirationAnalytics'),
+      import('./pages/LateCancellations'),
+      import('./pages/PatternsAndTrends'),
+      import('./pages/DashboardOverview'),
+      import('./pages/ForecastingActionCenter'),
+      import('./pages/MemberLifecycle'),
+      import('./pages/LocationReport'),
+    ]);
+  }, [mode, isOnline]);
   
+  return (
+    <>
+      <BrowserRouter>
+        <GlobalFiltersProvider>
+          <SessionsFiltersProvider>
+            <MetricsTablesRegistryProvider>
+              <SectionNavigationProvider>
+                <AppRoutes />
+                <OfflineAccessManager />
+              </SectionNavigationProvider>
+            </MetricsTablesRegistryProvider>
+          </SessionsFiltersProvider>
+        </GlobalFiltersProvider>
+      </BrowserRouter>
+    </>
+  );
+};
+
+const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <GlobalFiltersProvider>
-              <SessionsFiltersProvider>
-                <MetricsTablesRegistryProvider>
-                  <SectionNavigationProvider>
-                    <AppRoutes />
-                  </SectionNavigationProvider>
-                </MetricsTablesRegistryProvider>
-              </SessionsFiltersProvider>
-            </GlobalFiltersProvider>
-          </BrowserRouter>
+          <DataSourceProvider>
+            <AppContent />
+          </DataSourceProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

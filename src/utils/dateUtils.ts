@@ -2,6 +2,16 @@
 // Date utility functions for the dashboard
 import { logger } from './logger';
 
+export const getDashboardDefaultDateRange = () => ({
+  start: '2026-01-01',
+  end: '2026-03-31',
+});
+
+export const getDashboardDefaultDateRangeAsDates = () => ({
+  start: new Date('2026-01-01'),
+  end: new Date('2026-03-31'),
+});
+
 export const getPreviousMonthDateRange = () => {
   const now = new Date();
   // Get the first day of the previous month

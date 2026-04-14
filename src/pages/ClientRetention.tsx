@@ -19,7 +19,7 @@ import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
-import { getPreviousMonthDateRange, parseDate } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 // Import new components for rebuilt client conversion tab
@@ -753,10 +753,9 @@ const ClientRetention = () => {
 
   // Filters state
   const [filters, setFilters] = useState<NewClientFilterOptions>(() => {
-    // Default to previous month date range
-    const prev = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     return {
-      dateRange: { start: exportPreset?.startDate || prev.start, end: exportPreset?.endDate || prev.end },
+      dateRange: { start: exportPreset?.startDate || defaultDateRange.start, end: exportPreset?.endDate || defaultDateRange.end },
       location: [],
       homeLocation: [],
       trainer: [],

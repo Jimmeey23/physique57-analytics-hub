@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { PayrollData } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
+import { getDashboardDefaultDateRangeAsDates } from '@/utils/dateUtils';
 
 interface EnhancedFilterSectionProps {
   data: PayrollData[];
@@ -70,16 +71,13 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>(dateRange.start || undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(dateRange.end || undefined);
 
-  // Initialize with previous month dates
   React.useEffect(() => {
     if (!dateRange.start && !dateRange.end) {
-      const now = new Date();
-      const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      const defaultDateRange = getDashboardDefaultDateRangeAsDates();
       
-      setStartDate(firstDayPrevMonth);
-      setEndDate(lastDayPrevMonth);
-      onDateRangeChange({ start: firstDayPrevMonth, end: lastDayPrevMonth });
+      setStartDate(defaultDateRange.start);
+      setEndDate(defaultDateRange.end);
+      onDateRangeChange(defaultDateRange);
     }
   }, []);
 
@@ -96,8 +94,8 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
     { value: '3m', label: 'Last 3 Months' },
     { value: '6m', label: 'Last 6 Months' },
     { value: '1y', label: 'Last 12 Months' },
-    { value: 'prev-month', label: 'Previous Month (Default)' },
-    { value: 'custom', label: 'Custom Date Range' }
+    { value: 'prev-month', label: 'Previous Month' },
+    { value: 'custom', label: 'Custom Date Range (Default Jan-Mar 2026)' },
   ];
 
   const classTypes = [
@@ -122,7 +120,7 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
   ];
 
   const hasActiveFilters = selectedLocation !== 'all' || 
-    selectedTimeframe !== 'prev-month' || 
+    selectedTimeframe !== 'custom' || 
     selectedTrainer !== 'all' ||
     selectedClassType !== 'all' ||
     selectedPerformanceRange !== 'all' ||
@@ -133,7 +131,7 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
 
   const activeFilterCount = [
     selectedLocation !== 'all' ? 1 : 0,
-    selectedTimeframe !== 'prev-month' ? 1 : 0,
+    selectedTimeframe !== 'custom' ? 1 : 0,
     selectedTrainer !== 'all' ? 1 : 0,
     selectedClassType !== 'all' ? 1 : 0,
     selectedPerformanceRange !== 'all' ? 1 : 0,
@@ -145,20 +143,17 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
 
   const clearAllFilters = () => {
     onLocationChange('all');
-    onTimeframeChange('prev-month');
+    onTimeframeChange('custom');
     onTrainerChange('all');
     onClassTypeChange('all');
     onPerformanceRangeChange('all');
     onUtilizationRangeChange('all');
     onSearchChange('');
     
-    // Reset to previous month
-    const now = new Date();
-    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    setStartDate(firstDayPrevMonth);
-    setEndDate(lastDayPrevMonth);
-    onDateRangeChange({ start: firstDayPrevMonth, end: lastDayPrevMonth });
+    const defaultDateRange = getDashboardDefaultDateRangeAsDates();
+    setStartDate(defaultDateRange.start);
+    setEndDate(defaultDateRange.end);
+    onDateRangeChange(defaultDateRange);
   };
 
   const handleDateChange = (type: 'start' | 'end', date: Date | undefined) => {
@@ -438,7 +433,7 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
                       {selectedLocation}
                     </Badge>
                   )}
-                  {selectedTimeframe !== 'prev-month' && (
+                  {selectedTimeframe !== 'custom' && (
                     <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                       <CalendarIcon className="w-3 h-3 mr-1" />
                       {timeframes.find(t => t.value === selectedTimeframe)?.label}

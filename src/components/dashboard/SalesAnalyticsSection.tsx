@@ -28,7 +28,7 @@ import { useSectionNavigation } from '@/contexts/SectionNavigationContext';
 import { ModernSalesTable } from './ModernSalesTable';
 import { SalesData, FilterOptions, MetricCardData, YearOnYearMetricType } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage, formatDiscount } from '@/utils/formatters';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import { createLogger } from '@/utils/logger';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -97,12 +97,11 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     }
   }, [isReady, onReady]);
 
-  // Initialize filters with previous month as default
   const [filters, setFilters] = useState<FilterOptions>(() => {
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     
     return {
-      dateRange: previousMonth,
+      dateRange: defaultDateRange,
       location: [],
       category: [],
       product: [],
@@ -698,10 +697,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
   }, [collapsedGroups]);
 
   const resetFilters = useCallback(() => {
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     
     setFilters({
-      dateRange: previousMonth,
+      dateRange: defaultDateRange,
       location: [],
       category: [],
       product: [],

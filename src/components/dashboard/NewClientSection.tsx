@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, BarChart3, Users, Target, TrendingUp } from 'lucide-react';
 import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
-import { getPreviousMonthDateRange } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { logger } from '@/utils/logger';
 
 interface NewClientSectionProps {
@@ -33,11 +33,10 @@ export const NewClientSection: React.FC<NewClientSectionProps> = ({
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Initialize filters with previous month dates
   const [filters, setFilters] = useState<NewClientFilterOptions>(() => {
-    const previousMonth = getPreviousMonthDateRange();
+    const defaultDateRange = getDashboardDefaultDateRange();
     return {
-      dateRange: previousMonth,
+      dateRange: defaultDateRange,
       location: [],
       homeLocation: [],
       trainer: [],

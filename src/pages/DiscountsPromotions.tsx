@@ -7,7 +7,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { parseDate } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 
 const DiscountsPromotions: React.FC = () => {
   const navigate = useNavigate();
@@ -25,10 +25,9 @@ const DiscountsPromotions: React.FC = () => {
   const heroMetrics = useMemo(() => {
     if (!discountData || discountData.length === 0) return [];
 
-    // Always use previous month
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    const defaultDateRange = getDashboardDefaultDateRange();
+    const firstDayOfMonth = new Date(defaultDateRange.start);
+    const lastDayOfMonth = new Date(`${defaultDateRange.end}T23:59:59.999`);
 
     // Filter data for that month
     const monthData = discountData.filter(item => {
@@ -54,7 +53,7 @@ const DiscountsPromotions: React.FC = () => {
       
       return {
         location: location.name,
-        label: 'Previous Month Discounts',
+        label: 'Jan-Mar 2026 Discounts',
         value: formatCurrency(totalDiscounts)
       };
     });
