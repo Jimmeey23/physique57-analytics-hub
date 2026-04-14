@@ -24,6 +24,7 @@ import { SummaryDisplay } from './SummaryDisplay';
 import { summaryManager } from '@/services/summaryManager';
 import { useDataContext } from '@/hooks/useDataContext';
 import { useToast } from '@/hooks/use-toast';
+import { useDataSource } from '@/contexts/DataSourceContext';
 
 interface InfoPopoverProps {
   context: string;
@@ -34,6 +35,36 @@ interface InfoPopoverProps {
 
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 800;
+
+const normalizePopoverLocationCandidates = (locationId: string): string[] => {
+  const normalized = (locationId || '').trim().toLowerCase();
+
+  if (!normalized || normalized === 'all' || normalized.includes('all locations')) {
+    return ['all'];
+  }
+
+  const candidates = new Set<string>();
+
+  if (normalized === 'kwality' || normalized.includes('kwality') || normalized.includes('kemps')) {
+    candidates.add('kwality');
+  }
+  if (normalized === 'supreme' || normalized.includes('supreme') || normalized.includes('bandra')) {
+    candidates.add('supreme');
+  }
+  if (normalized === 'kenkere' || normalized.includes('kenkere') || normalized.includes('bengaluru') || normalized.includes('bangalore')) {
+    candidates.add('kenkere');
+  }
+  if (normalized === 'popup' || normalized === 'pop-up' || normalized.includes('pop up') || normalized.includes('pop-up')) {
+    candidates.add('popup');
+  }
+
+  candidates.add(encodeURIComponent(locationId));
+  candidates.add('all');
+
+  return Array.from(candidates);
+};
+
+const getPopoverCacheKey = (src: string) => `popover-html-cache:${src}`;
 
 const InfoPopover: React.FC<InfoPopoverProps> = ({
   context,
@@ -73,6 +104,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   const [iframeKey, setIframeKey] = useState(0); // Force iframe refresh
   const [iframeOk, setIframeOk] = useState<boolean | null>(null); // null = unknown, true = ok, false = not ok
   const [iframeHtmlFallback, setIframeHtmlFallback] = useState<string | null>(null);
+  const [resolvedIframeSrc, setResolvedIframeSrc] = useState<string | null>(null);
   
   // AI Summary states
   const [activeTab, setActiveTab] = useState<'content' | 'summary'>('content');
@@ -83,6 +115,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   // Get contextual data for AI analysis
   const { data: contextData, activeFilters, dateRange } = useDataContext(context, locationId);
   const { toast } = useToast();
+  const { mode } = useDataSource();
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -290,49 +323,83 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
   };
 
   const src = getIframeSrc();
+  const srcCandidates = React.useMemo(() => {
+    if (iframeSrc) {
+      return [iframeSrc, '/popovers/default-template.html'];
+    }
+
+    const contextMappings: Record<string, string> = {
+      'class-attendance': 'class-attendance-overview',
+      'sales-overview': 'sales-overview',
+      'executive-overview': 'executive-overview',
+      'class-attendance-overview': 'class-attendance-overview',
+      'class-formats-overview': 'class-formats-overview',
+      'funnel-leads-overview': 'funnel-leads-overview',
+      'client-retention-overview': 'client-retention-overview',
+      'trainer-performance-overview': 'trainer-performance-overview',
+      'discounts-promotions-overview': 'discounts-promotions-overview',
+      'sessions-overview': 'sessions-overview',
+      'patterns-trends-overview': 'patterns-trends-overview',
+      'outlier-analysis-overview': 'outlier-analysis-overview',
+      'expiration-analytics-overview': 'expiration-analytics-overview',
+      'late-cancellations-overview': 'late-cancellations-overview'
+    };
+
+    const mappedContext = contextMappings[context] || context;
+    const locationCandidates = normalizePopoverLocationCandidates(locationId);
+    return [
+      ...locationCandidates.map((candidate) => `/popovers/${mappedContext}/${candidate}.html`),
+      src,
+      '/popovers/default-template.html'
+    ].filter(Boolean);
+  }, [context, iframeSrc, locationId, src]);
 
   // Pre-flight check: try to fetch the HTML for the iframe source so we can render
   // a fallback (inline HTML) if the iframe cannot load (or the file is missing).
   useEffect(() => {
-    if (!src) return;
+    if (!srcCandidates.length) return;
     let cancelled = false;
     setIframeOk(null);
     setIframeHtmlFallback(null);
+    setResolvedIframeSrc(null);
 
-    // Try to fetch the resource from the same origin/public folder
-    fetch(src, { method: 'GET', cache: 'no-store' })
-      .then(async (res) => {
-        if (cancelled) return;
-        if (res.ok) {
-          setIframeOk(true);
-        } else {
-          setIframeOk(false);
-          try {
-            const text = await res.text();
-            setIframeHtmlFallback(text);
-          } catch (e) {
-            setIframeHtmlFallback(null);
-          }
-        }
-      })
-      .catch(async () => {
-        if (cancelled) return;
-        setIframeOk(false);
+    const resolveContent = async () => {
+      for (const candidate of srcCandidates) {
         try {
-          const res = await fetch(src, { method: 'GET' });
-          if (res.ok) {
+          const response = await fetch(candidate, { method: 'GET', cache: 'no-store' });
+          if (!response.ok) continue;
+
+          const html = await response.text();
+          if (cancelled) return;
+
+          localStorage.setItem(getPopoverCacheKey(candidate), html);
+          setResolvedIframeSrc(candidate);
+          setIframeHtmlFallback(html);
+          setIframeOk(true);
+          return;
+        } catch {
+          const cached = localStorage.getItem(getPopoverCacheKey(candidate));
+          if (cached) {
+            if (cancelled) return;
+            setResolvedIframeSrc(candidate);
+            setIframeHtmlFallback(cached);
             setIframeOk(true);
             return;
           }
-          const text = await res.text();
-          setIframeHtmlFallback(text);
-        } catch (e) {
-          setIframeHtmlFallback(null);
         }
-      });
+      }
+
+      if (!cancelled) {
+        setResolvedIframeSrc(srcCandidates[0] || src);
+        setIframeOk(false);
+        setIframeHtmlFallback(null);
+      }
+    };
+
+    void resolveContent();
 
     return () => { cancelled = true; };
-  }, [src, iframeKey]);
+  }, [src, srcCandidates, iframeKey]);
 
   const renderSidebar = () => (
     <div
@@ -483,10 +550,10 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                       <div className="flex items-center justify-center h-full">
                         <div className="text-sm text-slate-500">Checking content...</div>
                       </div>
-                    ) : iframeOk === true ? (
+                    ) : iframeOk === true && mode !== 'offline' && resolvedIframeSrc ? (
                       <iframe
                         key={`iframe-sidebar-${iframeKey}`}
-                        src={src}
+                        src={resolvedIframeSrc}
                         className="w-full h-full border-0"
                         title={`Info for ${context} - ${locationId}`}
                         loading="eager"
@@ -504,7 +571,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                           setIframeError(false);
                         }}
                         onError={() => {
-                          console.error(`Iframe failed to load: ${src}`);
+                          console.error(`Iframe failed to load: ${resolvedIframeSrc}`);
                           setIframeError(true);
                           setIframeOk(false);
                         }}
@@ -517,9 +584,9 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                         <div className="flex items-center justify-center h-full p-4">
                           <div className="text-center">
                             <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
-                            <div className="text-gray-600 text-sm mb-4">Unable to load: {src.split('?')[0]}</div>
+                            <div className="text-gray-600 text-sm mb-4">Unable to load: {(resolvedIframeSrc || src).split('?')[0]}</div>
                             <div className="flex gap-2 justify-center">
-                              <a href={src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
+                              <a href={resolvedIframeSrc || src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
                               <button
                                 onClick={() => setIsEditing(true)}
                                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
@@ -711,10 +778,10 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                     <div className="flex items-center justify-center h-full">
                       <div className="text-sm text-slate-500">Checking content...</div>
                     </div>
-                  ) : iframeOk === true ? (
+                  ) : iframeOk === true && mode !== 'offline' && resolvedIframeSrc ? (
                     <iframe
                       key={`iframe-modal-${iframeKey}`}
-                      src={src}
+                      src={resolvedIframeSrc}
                       className="w-full h-full border-0"
                       title={`Info for ${context} - ${locationId}`}
                       loading="eager"
@@ -732,7 +799,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                         setIframeError(false);
                       }}
                       onError={() => {
-                        console.error(`Iframe failed to load: ${src}`);
+                        console.error(`Iframe failed to load: ${resolvedIframeSrc}`);
                         setIframeError(true);
                         setIframeOk(false);
                       }}
@@ -744,9 +811,9 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                       <div className="absolute inset-0 bg-white flex items-center justify-center p-4">
                         <div className="text-center">
                           <div className="text-red-500 text-lg mb-2">⚠️ Content Not Available</div>
-                          <div className="text-gray-600 text-sm mb-4">Unable to load: {src.split('?')[0]}</div>
+                          <div className="text-gray-600 text-sm mb-4">Unable to load: {(resolvedIframeSrc || src).split('?')[0]}</div>
                           <div className="flex gap-2 justify-center">
-                            <a href={src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
+                            <a href={resolvedIframeSrc || src} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open in new tab</a>
                             <button 
                               onClick={() => {
                                 setIsEditing(true);

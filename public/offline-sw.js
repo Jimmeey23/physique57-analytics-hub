@@ -1,8 +1,46 @@
 const CACHE_NAME = 'p57-app-shell-v1';
 const APP_SHELL_KEY = '/__p57_app_shell__';
+const POPOVER_CONTEXTS = [
+  'class-attendance-overview',
+  'class-formats-overview',
+  'client-retention-overview',
+  'discounts-promotions-overview',
+  'executive-overview',
+  'expiration-analytics-overview',
+  'funnel-leads-overview',
+  'late-cancellations-overview',
+  'outlier-analysis-overview',
+  'patterns-trends-overview',
+  'sales-overview',
+  'sessions-overview',
+  'trainer-performance-overview',
+];
+const POPOVER_LOCATIONS = ['all', 'kwality', 'supreme', 'kenkere'];
+const PRECACHE_URLS = [
+  '/popovers/default-template.html',
+  '/popovers/0/0.html',
+  ...POPOVER_CONTEXTS.flatMap((context) =>
+    POPOVER_LOCATIONS.map((location) => `/popovers/${context}/${location}.html`)
+  ),
+];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.all(
+      PRECACHE_URLS.map(async (url) => {
+        try {
+          const response = await fetch(url, { cache: 'reload' });
+          if (response.ok) {
+            await cache.put(url, response.clone());
+          }
+        } catch (error) {
+          // Ignore individual precache failures so installation can still complete.
+        }
+      })
+    );
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
