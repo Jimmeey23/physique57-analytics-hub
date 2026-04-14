@@ -179,39 +179,118 @@ const sortRetentionDimensionValues = (values: string[], dimension: RetentionDime
 
 const getRetentionMonthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-const buildMomMonths = (): RetentionMonthDef[] => {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  const monthsDiff = (currentYear - 2024) * 12 + currentMonth;
-  const months: RetentionMonthDef[] = [];
-
-  for (let i = 0; i <= monthsDiff; i++) {
-    const d = new Date(2024, i, 1);
-    months.push({
-      key: getRetentionMonthKey(d),
-      display: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-      year: d.getFullYear(),
-      month: d.getMonth() + 1,
-    });
-  }
-
-  return months;
+const getMonthStart = (value?: string | null) => {
+  const parsed = parseDate(value || '');
+  return parsed ? new Date(parsed.getFullYear(), parsed.getMonth(), 1) : null;
 };
 
-const buildYoyMonths = (): RetentionMonthDef[] => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  const months: RetentionMonthDef[] = [];
+const buildMonthSequence = (start: Date, end: Date) => {
+  const startMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+  const sequence: Date[] = [];
 
-  for (let monthNum = 1; monthNum <= currentMonth; monthNum++) {
-    const monthName = new Date(2024, monthNum - 1, 1).toLocaleDateString('en-US', { month: 'short' });
-    months.push({ key: `2024-${String(monthNum).padStart(2, '0')}`, display: `${monthName} 2024`, year: 2024, month: monthNum });
-    months.push({ key: `${currentYear}-${String(monthNum).padStart(2, '0')}`, display: `${monthName} ${currentYear}`, year: currentYear, month: monthNum });
+  for (let cursor = new Date(startMonth); cursor <= endMonth; cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)) {
+    sequence.push(new Date(cursor));
   }
 
-  return months;
+  return sequence;
+};
+
+const getOrderedRangeMonths = (dateRange?: { start?: string; end?: string }) => {
+  const startMonth = getMonthStart(dateRange?.start);
+  const endMonth = getMonthStart(dateRange?.end);
+  if (!startMonth || !endMonth) return [] as Date[];
+
+  return startMonth <= endMonth
+    ? buildMonthSequence(startMonth, endMonth)
+    : buildMonthSequence(endMonth, startMonth);
+};
+
+const getFallbackMonthBounds = (inputData: any[]) => {
+  const parsedMonths = inputData
+    .map((client) => parseDate(client.firstVisitDate || ''))
+    .filter((date): date is Date => Boolean(date))
+    .map((date) => new Date(date.getFullYear(), date.getMonth(), 1))
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  if (parsedMonths.length === 0) {
+    const now = new Date();
+    return {
+      start: new Date(now.getFullYear(), now.getMonth(), 1),
+      end: new Date(now.getFullYear(), now.getMonth(), 1),
+    };
+  }
+
+  return {
+    start: parsedMonths[0],
+    end: parsedMonths[parsedMonths.length - 1],
+  };
+};
+
+const buildMomMonths = (inputData: any[], dateRange?: { start?: string; end?: string }): RetentionMonthDef[] => {
+  const selectedMonths = getOrderedRangeMonths(dateRange);
+  const months = selectedMonths.length > 0
+    ? selectedMonths
+    : (() => {
+        const bounds = getFallbackMonthBounds(inputData);
+        return buildMonthSequence(bounds.start, bounds.end);
+      })();
+
+  return months.map((date) => ({
+    key: getRetentionMonthKey(date),
+    display: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+  }));
+};
+
+const buildYoyMonths = (inputData: any[], dateRange?: { start?: string; end?: string }): RetentionMonthDef[] => {
+  const availableYears = Array.from(
+    new Set(
+      inputData
+        .map((client) => parseDate(client.firstVisitDate || ''))
+        .filter((date): date is Date => Boolean(date))
+        .map((date) => date.getFullYear())
+    )
+  ).sort((a, b) => a - b);
+
+  const comparisonYear = availableYears[availableYears.length - 1] ?? new Date().getFullYear();
+  const baselineYear = availableYears.length > 1
+    ? availableYears[availableYears.length - 2]
+    : comparisonYear - 1;
+
+  const selectedRangeMonths = getOrderedRangeMonths(dateRange);
+  const selectedMonthNumbers = Array.from(new Set(selectedRangeMonths.map((date) => date.getMonth() + 1)));
+
+  const monthNumbers = selectedMonthNumbers.length > 0
+    ? selectedMonthNumbers
+    : Array.from(
+        new Set(
+          inputData
+            .map((client) => parseDate(client.firstVisitDate || ''))
+            .filter((date): date is Date => Boolean(date))
+            .filter((date) => date.getFullYear() === baselineYear || date.getFullYear() === comparisonYear)
+            .map((date) => date.getMonth() + 1)
+        )
+      ).sort((a, b) => a - b);
+
+  return monthNumbers.flatMap((monthNum) => {
+    const monthName = new Date(comparisonYear, monthNum - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+    return [
+      {
+        key: `${baselineYear}-${String(monthNum).padStart(2, '0')}`,
+        display: `${monthName} ${baselineYear}`,
+        year: baselineYear,
+        month: monthNum,
+      },
+      {
+        key: `${comparisonYear}-${String(monthNum).padStart(2, '0')}`,
+        display: `${monthName} ${comparisonYear}`,
+        year: comparisonYear,
+        month: monthNum,
+      },
+    ];
+  });
 };
 
 const finalizeRetentionPivotCell = (cell: RetentionPivotCell) => ({
@@ -347,24 +426,15 @@ const buildClientConversionMonthOnMonthRows = (
   const statsMap = new Map<string, any>();
 
   inputData.forEach((client) => {
-    const date = parseDate(client.firstVisitDate || '');
-    if (!date) return;
-
-    const monthKey = getRetentionMonthKey(date);
-    const monthDisplay = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     const groupValue = rowType === 'clientType'
       ? client.isNew || 'Unknown'
       : rowType === 'membership'
         ? client.membershipUsed || 'Unknown'
         : client.trainerName || 'Unknown';
 
-    const compositeKey = `${monthKey}__${groupValue}`;
-    if (!statsMap.has(compositeKey)) {
-      statsMap.set(compositeKey, {
-        month: monthDisplay,
-        sortKey: monthKey,
+    if (!statsMap.has(groupValue)) {
+      statsMap.set(groupValue, {
         type: groupValue,
-        visits: visitsSummary[monthDisplay] || 0,
         totalTrials: 0,
         newMembers: 0,
         converted: 0,
@@ -375,7 +445,7 @@ const buildClientConversionMonthOnMonthRows = (
       });
     }
 
-    const row = statsMap.get(compositeKey);
+    const row = statsMap.get(groupValue);
     row.totalTrials += 1;
     if (isNewClient(client.isNew)) row.newMembers += 1;
     if (client.conversionStatus === 'Converted') row.converted += 1;
@@ -394,9 +464,7 @@ const buildClientConversionMonthOnMonthRows = (
       const avgVisits = row.visitsPostTrial.length > 0 ? row.visitsPostTrial.reduce((sum: number, value: number) => sum + value, 0) / row.visitsPostTrial.length : 0;
 
       return {
-        Month: row.month,
         [rowType === 'clientType' ? 'Client Type' : rowType === 'membership' ? 'Membership' : 'Teacher']: row.type,
-        Visits: formatNumber(row.visits),
         Trials: formatNumber(row.totalTrials),
         'New Members': formatNumber(row.newMembers),
         Retained: formatNumber(row.retained),
@@ -409,7 +477,7 @@ const buildClientConversionMonthOnMonthRows = (
         'Avg Visits': avgVisits.toFixed(1),
       };
     })
-    .sort((a, b) => String(a.Month).localeCompare(String(b.Month)) || String(Object.values(a)[1]).localeCompare(String(Object.values(b)[1])));
+    .sort((a, b) => String(Object.values(a)[0]).localeCompare(String(Object.values(b)[0])));
 };
 
 const buildHostedClassesExportRows = (inputData: any[]): ExportRow[] => {
@@ -1031,6 +1099,16 @@ const ClientRetention = () => {
   const deferredFilteredDataNoDateRange = useDeferredValue(filteredDataNoDateRange);
   const deferredFilteredPayrollData = useDeferredValue(filteredPayrollData);
 
+  const selectedMomMonths = useMemo(
+    () => buildMomMonths(filteredDataNoDateRange, filters.dateRange),
+    [filteredDataNoDateRange, filters.dateRange]
+  );
+
+  const selectedYoyMonths = useMemo(
+    () => buildYoyMonths(filteredDataNoDateRange, filters.dateRange),
+    [filteredDataNoDateRange, filters.dateRange]
+  );
+
   const handleTableChange = useCallback((table: string) => {
     startTableSwitch(() => setActiveTable(table));
   }, [startTableSwitch]);
@@ -1140,8 +1218,8 @@ const ClientRetention = () => {
     exportSections['Client Retention • By Client Type • Membership View'] = buildClientConversionMonthOnMonthRows(filteredData, visitsSummary, 'membership');
     exportSections['Client Retention • By Client Type • Teacher View'] = buildClientConversionMonthOnMonthRows(filteredData, visitsSummary, 'teacher');
 
-    const momMonths = buildMomMonths();
-    const momPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, momMonths, 'clientType');
+    const momMonths = selectedMomMonths;
+    const momPivot = buildRetentionPivotMatrix(filteredData, momMonths, 'clientType');
     (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
       exportSections[`Client Retention • MoM Pivot • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
         'Client Type',
@@ -1153,7 +1231,7 @@ const ClientRetention = () => {
       );
     });
 
-    const yoyMonths = buildYoyMonths();
+    const yoyMonths = selectedYoyMonths;
     const yoyClientTypePivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'clientType');
     const yoyMembershipPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'membership');
     (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
@@ -1183,7 +1261,7 @@ const ClientRetention = () => {
     exportSections['Client Retention • New Client Purchases • By Client Type'] = buildNewClientPurchaseRows(filteredData, 'clientType');
 
     return exportSections;
-  }, [filteredData, filteredDataNoDateRange, visitsSummary]);
+  }, [filteredData, filteredDataNoDateRange, selectedMomMonths, selectedYoyMonths, visitsSummary]);
 
   const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" buttonLabel="Export Retention Tables" />;
   const lazySectionFallback = (
@@ -1429,7 +1507,7 @@ const ClientRetention = () => {
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
                       client: null,
-                      title: `${rowData.month} - ${rowData.type} Analysis`,
+                      title: `${rowData.type} Analysis`,
                       data: rowData,
                       type: 'month'
                     })}
@@ -1443,8 +1521,9 @@ const ClientRetention = () => {
                   className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientRetentionMonthByTypePivot
-                    data={deferredFilteredDataNoDateRange}
-                    visitsSummary={visitsSummaryNoDateRange}
+                    data={deferredFilteredData}
+                    months={selectedMomMonths}
+                    visitsSummary={visitsSummary}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
                       client: null,
@@ -1463,6 +1542,7 @@ const ClientRetention = () => {
                 >
                   <ClientRetentionYearOnYearPivot
                     data={deferredFilteredDataNoDateRange}
+                    months={selectedYoyMonths}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
                       client: null,

@@ -97,6 +97,33 @@ const ClassAttendance = () => {
     const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
     const [activeTab, setActiveTab] = useState('overview');
 
+    const filterByLocation = useMemo(() => {
+      return (sessions: any[]) => {
+        if (!sessions || activeLocation === 'all') {
+          return sessions || [];
+        }
+
+        const selectedLocation = locations.find(loc => loc.id === activeLocation);
+        if (!selectedLocation) {
+          return sessions || [];
+        }
+
+        return sessions.filter(session => {
+          if (session.location === selectedLocation.fullName) return true;
+
+          const sessionLoc = session.location?.toLowerCase() || '';
+          const targetLoc = selectedLocation.fullName.toLowerCase();
+
+          if (sessionLoc.includes(targetLoc) || targetLoc.includes(sessionLoc)) return true;
+          if (selectedLocation.id === 'kwality' && sessionLoc.includes('kwality')) return true;
+          if (selectedLocation.id === 'supreme' && sessionLoc.includes('supreme')) return true;
+          if (selectedLocation.id === 'kenkere' && sessionLoc.includes('kenkere')) return true;
+
+          return false;
+        });
+      };
+    }, [activeLocation]);
+
     const locationLabel = useMemo(() => {
       return locations.find((location) => location.id === activeLocation)?.name || 'All Locations';
     }, [activeLocation]);
@@ -120,31 +147,12 @@ const ClassAttendance = () => {
 
     // Filter data by location
     const locationFilteredData = useMemo(() => {
-      if (!filteredData || activeLocation === 'all') {
-        return filteredData || [];
-      }
-      
-      const selectedLocation = locations.find(loc => loc.id === activeLocation);
-      if (!selectedLocation) {
-        console.warn('⚠️ Location not found:', activeLocation);
-        return filteredData || [];
-      }
+      return filterByLocation(filteredData || []);
+    }, [filterByLocation, filteredData]);
 
-      const filtered = filteredData.filter(session => {
-        if (session.location === selectedLocation.fullName) return true;
-        
-        const sessionLoc = session.location?.toLowerCase() || '';
-        const targetLoc = selectedLocation.fullName.toLowerCase();
-        
-        if (selectedLocation.id === 'kwality' && sessionLoc.includes('kwality')) return true;
-        if (selectedLocation.id === 'supreme' && sessionLoc.includes('supreme')) return true;
-        if (selectedLocation.id === 'kenkere' && sessionLoc.includes('kenkere')) return true;
-        
-        return false;
-      });
-
-      return filtered;
-    }, [filteredData, activeLocation]);
+    const locationScopedRawData = useMemo(() => {
+      return filterByLocation(rawData || []);
+    }, [filterByLocation, rawData]);
 
     // Calculate hero metrics - should use locationFilteredData to match metric cards
     const metrics = useMemo(() => {
@@ -204,7 +212,7 @@ const ClassAttendance = () => {
 
             {/* Metric Cards */}
             <div>
-              <EnhancedClassAttendanceMetricCards data={locationFilteredData} />
+              <EnhancedClassAttendanceMetricCards data={locationFilteredData} comparisonData={locationScopedRawData} />
             </div>
 
             <DataScienceInsightsPanel

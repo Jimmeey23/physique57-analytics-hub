@@ -38,10 +38,11 @@ type RowType = 'clientType' | 'membership';
 
 interface Props {
   data: NewClientData[];
+  months?: Array<{ key: string; display?: string; year: number; month: number }>;
   onRowClick?: (data: any) => void;
 }
 
-export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowClick }) => {
+export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: providedMonths, onRowClick }) => {
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [rowType, setRowType] = useState<RowType>('clientType');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
@@ -51,11 +52,19 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
   const registry = useMetricsTablesRegistry();
   const tableId = 'Client Retention YoY Pivot';
   
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const previousYear = currentYear - 1;
-
   const months = useMemo(() => {
+    if (providedMonths && providedMonths.length > 0) {
+      return providedMonths.map((month) => ({
+        key: month.key,
+        display: month.display || new Date(month.year, month.month - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        year: month.year,
+        month: month.month,
+        monthName: new Date(month.year, month.month - 1, 1).toLocaleDateString('en-US', { month: 'short' })
+      }));
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const monthsArr: { key: string; display: string; year: number; month: number; monthName: string }[] = [];
     
@@ -82,7 +91,14 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
       });
     }
     return monthsArr;
-  }, [currentYear, now]);
+  }, [providedMonths]);
+
+  const comparisonYears = useMemo(() => {
+    const years = Array.from(new Set(months.map((month) => month.year))).sort((a, b) => a - b);
+    const latestYear = years[years.length - 1] ?? new Date().getFullYear();
+    const baselineYear = years.length > 1 ? years[years.length - 2] : latestYear - 1;
+    return { baselineYear, latestYear };
+  }, [months]);
 
   const rowKeys = useMemo(() => {
     const set = new Set<string>();
@@ -167,7 +183,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
     });
     
     return map;
-  }, [data, rowKeys, months, currentYear, previousYear, rowType]);
+  }, [data, rowKeys, months, rowType]);
 
   const renderValue = (current: any, previous: any) => {
     let currVal = 0, prevVal = 0;
@@ -354,8 +370,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
       const bData = pivot[b];
       if (!aData || !bData) return 0;
       
-      const aCurr = aData.current[sortColumn];
-      const bCurr = bData.current[sortColumn];
+      const aCurr = aData[sortColumn];
+      const bCurr = bData[sortColumn];
       if (!aCurr || !bCurr) return 0;
       
       let aVal = 0, bVal = 0;
@@ -519,7 +535,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, onRowCli
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
               Year-on-Year Analysis
-              <Badge variant="secondary" className="bg-white/20 text-white">{previousYear} vs {currentYear}</Badge>
+              <Badge variant="secondary" className="bg-white/20 text-white">
+                {comparisonYears.baselineYear} vs {comparisonYears.latestYear}
+              </Badge>
               <div className="ml-4">
                 <CopyTableButton
                   tableRef={containerRef as any}

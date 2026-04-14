@@ -5,11 +5,14 @@ import {
   ArrowUpRight, ArrowDownRight, Minus, TrendingUp, BarChart3
 } from 'lucide-react';
 import { SessionData } from '@/hooks/useSessionsData';
+import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
+import { parseDate } from '@/utils/dateUtils';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 interface EnhancedClassAttendanceMetricCardsProps {
   data: SessionData[];
+  comparisonData?: SessionData[];
 }
 
 const iconMap = {
@@ -21,26 +24,84 @@ const iconMap = {
   TrendingUp
 };
 
-export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanceMetricCardsProps> = ({ data }) => {
+export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanceMetricCardsProps> = ({ data, comparisonData }) => {
+  const { filters } = useSessionsFilters();
 
   const metrics = useMemo(() => {
     if (!data || data.length === 0) return null;
 
-    // Get current date and calculate periods
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    // Use ALL data passed in (already filtered by location and date range)
-    // instead of filtering to last 30 days
+    const baseComparisonData = comparisonData && comparisonData.length > 0 ? comparisonData : data;
+
+    const normalizeDate = (value?: string) => {
+      const parsed = value ? parseDate(value) : null;
+      return parsed ? new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()) : null;
+    };
+
+    const currentDates = data
+      .map((session) => normalizeDate(session.date))
+      .filter((value): value is Date => value instanceof Date);
+
+    const inferredStart = currentDates.length > 0
+      ? new Date(Math.min(...currentDates.map((date) => date.getTime())))
+      : null;
+    const inferredEnd = currentDates.length > 0
+      ? new Date(Math.max(...currentDates.map((date) => date.getTime())))
+      : null;
+
+    const currentStart = filters.dateRange.start
+      ? new Date(filters.dateRange.start.getFullYear(), filters.dateRange.start.getMonth(), filters.dateRange.start.getDate())
+      : inferredStart;
+    const currentEnd = filters.dateRange.end
+      ? new Date(filters.dateRange.end.getFullYear(), filters.dateRange.end.getMonth(), filters.dateRange.end.getDate())
+      : inferredEnd;
+
+    const lastYearStart = currentStart
+      ? new Date(currentStart.getFullYear() - 1, currentStart.getMonth(), currentStart.getDate())
+      : null;
+    const lastYearEnd = currentEnd
+      ? new Date(currentEnd.getFullYear() - 1, currentEnd.getMonth(), currentEnd.getDate())
+      : null;
+
+    const matchesNonDateFilters = (session: SessionData) => {
+      if (filters.trainers.length > 0 && !filters.trainers.includes(session.trainerName)) {
+        return false;
+      }
+
+      if (filters.classTypes.length > 0 && !filters.classTypes.includes(session.cleanedClass)) {
+        return false;
+      }
+
+      if (filters.dayOfWeek.length > 0 && !filters.dayOfWeek.includes(session.dayOfWeek)) {
+        return false;
+      }
+
+      if (filters.timeSlots.length > 0 && !filters.timeSlots.includes(session.time)) {
+        return false;
+      }
+
+      return true;
+    };
+
     const currentPeriodData = data;
-    
-    // Last year same period
-    const lastYearStart = new Date(currentYear - 1, currentMonth, now.getDate() - 30);
-    const lastYearEnd = new Date(currentYear - 1, currentMonth, now.getDate());
-    const lastYearData = data.filter(s => {
-      const sessionDate = new Date(s.date);
-      return sessionDate >= lastYearStart && sessionDate <= lastYearEnd;
+    const lastYearData = baseComparisonData.filter((session) => {
+      if (!matchesNonDateFilters(session)) {
+        return false;
+      }
+
+      const sessionDate = normalizeDate(session.date);
+      if (!sessionDate) {
+        return false;
+      }
+
+      if (lastYearStart && sessionDate < lastYearStart) {
+        return false;
+      }
+
+      if (lastYearEnd && sessionDate > lastYearEnd) {
+        return false;
+      }
+
+      return true;
     });
 
     const totalSessions = currentPeriodData.length;
@@ -74,7 +135,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
     
     // Calculate YoY changes
     const calculateYoYChange = (current: number, lastYear: number) => {
-      if (lastYear === 0) return 0;
+      if (lastYear === 0) return current > 0 ? 100 : 0;
       return Number((((current - lastYear) / lastYear) * 100).toFixed(1));
     };
     
@@ -149,6 +210,10 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
       }))
       .sort((a, b) => b.avgAttendance - a.avgAttendance)[0];
 
+    const periodLabel = currentStart && currentEnd
+      ? `${currentStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${currentEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      : 'Selected Period';
+
     return {
       totalSessions,
       totalAttendance,
@@ -179,9 +244,10 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
       lastYearRevenue,
       lastYearAvgAttendance,
       lastYearFillRate,
-      lastYearAvgRevenue
+      lastYearAvgRevenue,
+      periodLabel
     };
-  }, [data]);
+  }, [comparisonData, data, filters]);
 
   if (!metrics) return null;
 
@@ -202,7 +268,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
         isSignificant: Math.abs(metrics.sessionsYoY) > 5
       },
       yoyChangeDetails: {
-        trend: metrics.sessionsYoY > 5 ? 'Strong YoY Growth' : metrics.sessionsYoY > 0 ? 'YoY Growth' : 'YoY Decline'
+        trend: metrics.sessionsYoY > 5 ? 'Strong YoY Growth' : metrics.sessionsYoY > 0 ? 'YoY Growth' : metrics.sessionsYoY < 0 ? 'YoY Decline' : 'YoY Stable'
       }
     },
     {
@@ -220,7 +286,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
         isSignificant: Math.abs(metrics.attendanceYoY) > 5
       },
       yoyChangeDetails: {
-        trend: metrics.attendanceYoY > 5 ? 'Strong YoY Growth' : metrics.attendanceYoY > 0 ? 'YoY Growth' : 'YoY Decline'
+        trend: metrics.attendanceYoY > 5 ? 'Strong YoY Growth' : metrics.attendanceYoY > 0 ? 'YoY Growth' : metrics.attendanceYoY < 0 ? 'YoY Decline' : 'YoY Stable'
       }
     },
     {
@@ -238,7 +304,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
         isSignificant: Math.abs(metrics.avgAttendanceYoY) > 5
       },
       yoyChangeDetails: {
-        trend: metrics.avgAttendanceYoY > 5 ? 'Strong YoY Growth' : metrics.avgAttendanceYoY > 0 ? 'YoY Growth' : 'YoY Decline'
+        trend: metrics.avgAttendanceYoY > 5 ? 'Strong YoY Growth' : metrics.avgAttendanceYoY > 0 ? 'YoY Growth' : metrics.avgAttendanceYoY < 0 ? 'YoY Decline' : 'YoY Stable'
       }
     },
     {
@@ -256,7 +322,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
         isSignificant: Math.abs(metrics.fillRateYoY) > 5
       },
       yoyChangeDetails: {
-        trend: metrics.fillRateYoY > 5 ? 'Strong YoY Growth' : metrics.fillRateYoY > 0 ? 'YoY Growth' : 'YoY Decline'
+        trend: metrics.fillRateYoY > 5 ? 'Strong YoY Growth' : metrics.fillRateYoY > 0 ? 'YoY Growth' : metrics.fillRateYoY < 0 ? 'YoY Decline' : 'YoY Stable'
       }
     },
     {
@@ -274,7 +340,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
         isSignificant: Math.abs(metrics.revenueYoY) > 5
       },
       yoyChangeDetails: {
-        trend: metrics.revenueYoY > 5 ? 'Strong YoY Growth' : metrics.revenueYoY > 0 ? 'YoY Growth' : 'YoY Decline'
+        trend: metrics.revenueYoY > 5 ? 'Strong YoY Growth' : metrics.revenueYoY > 0 ? 'YoY Growth' : metrics.revenueYoY < 0 ? 'YoY Decline' : 'YoY Stable'
       }
     },
     {
@@ -292,7 +358,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
         isSignificant: Math.abs(metrics.avgRevenueYoY) > 5
       },
       yoyChangeDetails: {
-        trend: metrics.avgRevenueYoY > 5 ? 'Strong YoY Growth' : metrics.avgRevenueYoY > 0 ? 'YoY Growth' : 'YoY Decline'
+        trend: metrics.avgRevenueYoY > 5 ? 'Strong YoY Growth' : metrics.avgRevenueYoY > 0 ? 'YoY Growth' : metrics.avgRevenueYoY < 0 ? 'YoY Decline' : 'YoY Stable'
       }
     },
     {
@@ -390,7 +456,7 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
                         {metric.title}
                       </h3>
                       <p className="text-[9px] text-slate-500 group-hover:text-slate-400 transition-colors duration-500 mt-0.5 uppercase tracking-wide font-semibold">
-                        Last 30 Days
+                        {metrics.periodLabel}
                       </p>
                     </div>
                   </div>

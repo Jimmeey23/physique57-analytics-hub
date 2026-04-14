@@ -28,11 +28,8 @@ interface ClientConversionMonthOnMonthByTypeTableProps {
   onRowClick?: (row: any) => void;
 }
 
-interface MonthlyStats {
-  month: string;
-  sortKey: string;
+interface GroupStats {
   type: string;
-  visits: number;
   totalTrials: number;
   newMembers: number;
   converted: number;
@@ -57,16 +54,11 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [rowType, setRowType] = useState<'clientType' | 'membership' | 'teacher'>('clientType');
 
-  const monthlyDataByType = useMemo(() => {
-    if (!data || data.length === 0) return [] as MonthlyStats[];
+  const groupedDataByType = useMemo(() => {
+    if (!data || data.length === 0) return [] as GroupStats[];
 
-    const monthlyStats: Record<string, MonthlyStats> = {};
+    const groupedStats: Record<string, GroupStats> = {};
     data.forEach(client => {
-      const date = parseDate(client.firstVisitDate || '');
-      if (!date) return;
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      
       let groupBy: string;
       if (rowType === 'clientType') {
         groupBy = client.isNew || 'Unknown';
@@ -76,17 +68,9 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
         groupBy = client.trainerName || 'Unknown';
       }
 
-      const key = `${monthKey}-${groupBy}`;
-      if (!monthlyStats[key]) {
-        const [y, m] = monthKey.split('-');
-        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const summaryKey = `${monthNames[parseInt(m)-1]} ${y}`;
-        const visits = visitsSummary?.[summaryKey] || 0;
-        monthlyStats[key] = {
-          month: monthName,
-          sortKey: monthKey,
+      if (!groupedStats[groupBy]) {
+        groupedStats[groupBy] = {
           type: groupBy,
-          visits,
           totalTrials: 0,
           newMembers: 0,
           converted: 0,
@@ -97,7 +81,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
           clients: []
         };
       }
-      const stat = monthlyStats[key];
+      const stat = groupedStats[groupBy];
       stat.totalTrials++;
       stat.clients.push(client);
 
@@ -120,9 +104,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       }
     });
 
-    return Object.values(monthlyStats).sort((a, b) => {
-      const monthCompare = a.sortKey.localeCompare(b.sortKey);
-      if (monthCompare !== 0) return monthCompare;
+    return Object.values(groupedStats).sort((a, b) => {
       if (rowType === 'clientType') {
         if (a.type.toLowerCase().includes('new') && !b.type.toLowerCase().includes('new')) return -1;
         if (!a.type.toLowerCase().includes('new') && b.type.toLowerCase().includes('new')) return 1;
@@ -132,7 +114,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
   }, [data, checkins, visitsSummary, rowType]);
 
   const tableData = useMemo(() => {
-    return monthlyDataByType.map(stat => {
+    return groupedDataByType.map(stat => {
       const conversionRate = stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0;
       const retentionRate = stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0;
       const avgLTV = stat.totalTrials > 0 ? stat.totalLTV / stat.totalTrials : 0;
@@ -140,7 +122,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       const avgVisits = stat.visitsPostTrial.length > 0 ? stat.visitsPostTrial.reduce((sum, visits) => sum + visits, 0) / stat.visitsPostTrial.length : 0;
       return { ...stat, conversionRate, retentionRate, avgLTV, avgConversionDays, avgVisits };
     });
-  }, [monthlyDataByType]);
+  }, [groupedDataByType]);
 
   const displayedData = useMemo(() => {
     if (!sortField) return tableData;
@@ -161,7 +143,6 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
 
   const totals = useMemo(() => {
     return tableData.reduce((acc, row) => ({
-      visits: acc.visits + (row.visits || 0),
       totalTrials: acc.totalTrials + row.totalTrials,
       newMembers: acc.newMembers + row.newMembers,
       converted: acc.converted + row.converted,
@@ -170,7 +151,6 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       conversionIntervals: [...acc.conversionIntervals, ...row.conversionIntervals],
       visitsPostTrial: [...acc.visitsPostTrial, ...row.visitsPostTrial]
     }), {
-      visits: 0,
       totalTrials: 0,
       newMembers: 0,
       converted: 0,
@@ -188,9 +168,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
     const avgConversionDays = totals.conversionIntervals.length > 0 ? totals.conversionIntervals.reduce((sum, interval) => sum + interval, 0) / totals.conversionIntervals.length : 0;
     const avgVisits = totals.visitsPostTrial.length > 0 ? totals.visitsPostTrial.reduce((sum, visits) => sum + visits, 0) / totals.visitsPostTrial.length : 0;
     return {
-      month: 'TOTALS',
       type: 'All Types',
-      visits: totals.visits,
       totalTrials: totals.totalTrials,
       newMembers: totals.newMembers,
       converted: totals.converted,
@@ -241,7 +219,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
             <Calendar className="w-5 h-5" />
             {tableId}
             <Badge variant="secondary" className="ml-2 bg-white/20 text-white border-white/30">
-              {monthlyDataByType.length} Entries
+              {groupedDataByType.length} Entries
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-3">
@@ -285,8 +263,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
           <Table className="w-full" data-table="client-retention-by-client-type" data-table-name={tableId}>
             <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b" style={{ maxHeight: '35px' }}>
-                <TableHead onClick={() => handleSort('month')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 bg-slate-900" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>Month</TableHead>
-                <TableHead onClick={() => handleSort('type')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[200px]" style={{ maxHeight: '35px' }}>{rowType === 'clientType' ? 'Type' : rowType === 'membership' ? 'Membership' : 'Teacher'}</TableHead>
+                <TableHead onClick={() => handleSort('type')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-4 sticky left-0 z-10 bg-slate-900" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>{rowType === 'clientType' ? 'Type' : rowType === 'membership' ? 'Membership' : 'Teacher'}</TableHead>
                 <TableHead onClick={() => handleSort('totalTrials')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Trials</TableHead>
                 <TableHead onClick={() => handleSort('newMembers')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[90px]">New Members</TableHead>
                 <TableHead onClick={() => handleSort('retained')} className="cursor-pointer hover:bg-white/10 transition-colors font-bold text-white text-xs px-3 text-center min-w-[80px]">Retained</TableHead>
@@ -302,15 +279,12 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
             <TableBody>
               {displayedData.map((row) => (
                 <TableRow
-                  key={`${row.month}-${row.type}`}
+                  key={row.type}
                   className="hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100"
                   style={{ maxHeight: '35px' }}
                   onClick={() => onRowClick?.(row)}
                 >
                   <TableCell className="text-xs px-4 sticky left-0 bg-white z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>
-                    <span className="text-sm font-medium text-slate-900">{row.month}</span>
-                  </TableCell>
-                  <TableCell className="text-xs px-3 text-left">
                     <span className="text-sm font-medium text-slate-900">{row.type}</span>
                   </TableCell>
                   <TableCell className="text-xs px-3 text-center font-medium text-slate-900">{formatNumber(row.totalTrials)}</TableCell>
@@ -330,8 +304,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
                 </TableRow>
               ))}
               <TableRow className="retention-totals-row border-t-4 border-slate-700">
-                <TableCell className="border-t-4 border-slate-700 font-bold text-white">{totalsRow.month}</TableCell>
-                <TableCell className="text-xs px-3 text-center">
+                <TableCell className="border-t-4 border-slate-700 text-xs px-3 text-center">
                   <Badge variant="outline" className="text-xs font-bold border-white/40 text-white">
                     {totalsRow.type}
                   </Badge>

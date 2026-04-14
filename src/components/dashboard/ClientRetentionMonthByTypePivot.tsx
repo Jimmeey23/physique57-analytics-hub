@@ -36,11 +36,12 @@ const METRIC_LABELS: Record<MetricKey, string> = {
 
 interface ClientRetentionMonthByTypePivotProps {
   data: NewClientData[];
+  months?: Array<{ key: string; label?: string; display?: string; year: number; month: number }>;
   visitsSummary?: Record<string, number>;
   onRowClick?: (data: any) => void;
 }
 
-export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTypePivotProps> = ({ data, visitsSummary, onRowClick }) => {
+export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTypePivotProps> = ({ data, months: providedMonths, visitsSummary, onRowClick }) => {
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -50,6 +51,15 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   const tableId = 'Client Retention MoM by Type Pivot';
 
   const months = useMemo(() => {
+    if (providedMonths && providedMonths.length > 0) {
+      return providedMonths.map((month) => ({
+        key: month.key,
+        label: month.label || month.display || new Date(month.year, month.month - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        year: month.year,
+        month: month.month,
+      }));
+    }
+
     const arr: { key: string; label: string; year: number; month: number }[] = [];
     const startDate = new Date(2024, 0, 1); // Jan 2024
     const now = new Date();
@@ -66,7 +76,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       arr.push({ key, label, year: d.getFullYear(), month: d.getMonth() + 1 });
     }
     return arr; // Jan 2024 first, current month last
-  }, []);
+  }, [providedMonths]);
 
   const clientTypes = useMemo(() => {
     const set = new Set<string>();
@@ -138,8 +148,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         const conversionRate = cell.newMembers > 0 ? (cell.converted / cell.newMembers) * 100 : 0;
         const retentionRate = cell.newMembers > 0 ? (cell.retained / cell.newMembers) * 100 : 0;
         
-        // Link to previous month (next in array since newest first)
-        const prevMonthKey = months[idx + 1]?.key;
+        // Link to the actual previous month in chronological order
+        const prevMonthKey = months[idx - 1]?.key;
         const previous = prevMonthKey ? map[t][prevMonthKey] : null;
         
         map[t][m.key] = {
@@ -173,7 +183,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       default: value = '0';
     }
 
-    if (displayMode === 'growth' && monthIdx < months.length - 1) {
+    if (displayMode === 'growth' && monthIdx > 0) {
       const prevCell = cell.previous;
       if (!prevCell) return <span className="text-slate-400 text-xs">—</span>;
       
@@ -221,7 +231,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       default: value = '0';
     }
 
-    if (displayMode === 'growth' && monthIdx < months.length - 1) {
+    if (displayMode === 'growth' && monthIdx > 0) {
       const prevCell = cell.previous;
       if (!prevCell) return <span className="text-white/60 text-xs">—</span>;
       
@@ -431,7 +441,9 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               Month-on-Month by Client Type
-              <Badge variant="secondary" className="bg-white/20 text-white">Last 22 months</Badge>
+              <Badge variant="secondary" className="bg-white/20 text-white">
+                {months.length} {months.length === 1 ? 'month' : 'months'}
+              </Badge>
               <div className="ml-4">
                 <CopyTableButton
                   tableRef={containerRef as any}
