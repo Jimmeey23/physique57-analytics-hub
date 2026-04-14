@@ -70,10 +70,10 @@ export const OfflineAccessManager: React.FC = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <p className="font-medium text-slate-800">How it works</p>
               <p className="mt-1">
-                Online mode remains the default and keeps fetching live sources. Offline mode uses cached or uploaded datasets only.
+                Offline mode now loads by default and uses bundled, cached, or uploaded datasets. You can switch back to live data any time.
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Upload CSV/XLSX files for any missing datasets, then switch to offline mode when needed.
+                Live mode still stays available for fresh source data, while offline mode keeps the dashboard usable without re-uploading files each session.
               </p>
             </div>
 

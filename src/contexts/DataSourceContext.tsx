@@ -24,9 +24,12 @@ const DataSourceContext = React.createContext<DataSourceContextValue | undefined
 
 export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setModeState] = React.useState<DataSourceMode>(() => {
-    if (typeof window === 'undefined') return 'online';
+    if (typeof window === 'undefined') return 'offline';
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === 'offline' ? 'offline' : 'online';
+    if (stored === 'online' || stored === 'offline') {
+      return stored;
+    }
+    return 'offline';
   });
   const [isOnline, setIsOnline] = React.useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [datasets, setDatasets] = React.useState<OfflineDatasetSummary[]>([]);
