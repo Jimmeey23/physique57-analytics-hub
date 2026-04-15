@@ -45,7 +45,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t-2 border-slate-600 bg-slate-800 font-bold text-white shadow-lg [&>tr]:last:border-b-0 [&_td]:py-3 [&_td]:px-4 [&_td]:font-bold [&_td]:text-white [&_span]:text-white",
+      "border-t-2 border-slate-600 font-bold text-white shadow-lg [&>tr]:last:border-b-0 [&_td]:bg-inherit [&_td]:py-3 [&_td]:px-4 [&_td]:font-bold [&_td]:text-inherit [&_span]:text-inherit",
       className
     )}
     {...props}
@@ -75,7 +75,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-[35px] max-h-[35px] px-4 py-2 text-left align-middle text-white font-bold [&:has([role=checkbox])]:pr-0",
+      "h-[35px] max-h-[35px] whitespace-nowrap px-4 py-2 text-left align-middle text-white font-bold [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}

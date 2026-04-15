@@ -29,6 +29,14 @@ interface ModernDataTableProps {
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
   onRowClick?: (row: any) => void;
+  onFooterClick?: (row: any) => void;
+  footerRowClassName?: string;
+  footerStickyCellClassName?: string;
+  footerCellClassName?: string;
+  footerSectionStyle?: React.CSSProperties;
+  footerRowStyle?: React.CSSProperties;
+  footerStickyCellStyle?: React.CSSProperties;
+  footerCellStyle?: React.CSSProperties;
   tableId?: string;
   disableRegistry?: boolean;
   striped?: boolean;
@@ -52,6 +60,14 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   sortField,
   sortDirection,
   onRowClick,
+  onFooterClick,
+  footerRowClassName,
+  footerStickyCellClassName,
+  footerCellClassName,
+  footerSectionStyle,
+  footerRowStyle,
+  footerStickyCellStyle,
+  footerCellStyle,
   tableId,
   disableRegistry = false,
   striped = true,
@@ -267,12 +283,18 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
           ))}
         </TableBody>
         {showFooter && footerData && (
-          <TableFooter className="sticky bottom-0 z-10">
-            <TableRow className={cn(
-              TABLE_STYLES.footer.row,
-              compact ? "h-10" : "h-12",
-              "hover:bg-slate-800" // Prevent hover color change
-            )}>
+          <TableFooter className="sticky bottom-0 z-10" style={footerSectionStyle}>
+            <TableRow
+              className={cn(
+                TABLE_STYLES.footer.row,
+                compact ? "h-10" : "h-12",
+                "hover:bg-slate-800",
+                onFooterClick && TABLE_STYLES.body.rowClickable,
+                footerRowClassName
+              )}
+              style={footerRowStyle}
+              onClick={() => onFooterClick?.(footerData)}
+            >
               {columns.map((column, colIndex) => {
                 const isSticky = column.sticky || colIndex === 0;
                 return (
@@ -283,9 +305,15 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                       compact ? "py-1.5" : "py-2",
                       column.align === 'center' && TABLE_STYLES.footer.cellCenter,
                       column.align === 'right' && 'text-right',
-                      isSticky && TABLE_STYLES.footer.cellSticky
+                      footerCellClassName,
+                      isSticky && TABLE_STYLES.footer.cellSticky,
+                      isSticky && footerStickyCellClassName
                     )}
-                    style={{ minWidth: '80px' }}
+                    style={{
+                      minWidth: '80px',
+                      ...footerCellStyle,
+                      ...(isSticky ? footerStickyCellStyle : {}),
+                    }}
                   >
                     <div className={cn(
                       "flex items-center h-full",

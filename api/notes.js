@@ -65,6 +65,11 @@ async function ensureHeaderAndSheet(accessToken) {
 
 function nowISO() { return new Date().toISOString(); }
 
+function serializeError(err) {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 async function getSheetId(accessToken) {
   // Fetch spreadsheet metadata to find sheetId for NOTES_SHEET_NAME
   const metaResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId%2Ctitle))`, {
@@ -79,25 +84,33 @@ async function getSheetId(accessToken) {
 
 export default async function handler(req, res) {
   try {
-    const accessToken = await getAccessToken();
-    await ensureHeaderAndSheet(accessToken);
-
     if (req.method === 'GET') {
       const { tableKey, location, period, sectionId } = req.query;
-      const range = `${NOTES_SHEET_NAME}!A2:I10000`;
-      const getResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      if (!getResp.ok) throw new Error(await getResp.text());
-      const json = await getResp.json();
-      const rows = json.values || [];
-      const items = rows.map((r, idx) => ({
-        // A2 corresponds to sheet row 2 (1-based). So rowNumber is idx + 2
-        rowNumber: idx + 2,
-        timestamp: r[0], tableKey: r[1], location: r[2], period: r[3], sectionId: r[4], author: r[5], note: r[6], summary: r[7], version: r[8]
-      })).filter(x => (!tableKey || x.tableKey === tableKey) && (!location || x.location === location) && (!period || x.period === period) && (!sectionId || x.sectionId === sectionId));
-      return res.status(200).json({ notes: items });
+      try {
+        const accessToken = await getAccessToken();
+        await ensureHeaderAndSheet(accessToken);
+
+        const range = `${NOTES_SHEET_NAME}!A2:I10000`;
+        const getResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (!getResp.ok) throw new Error(await getResp.text());
+        const json = await getResp.json();
+        const rows = json.values || [];
+        const items = rows.map((r, idx) => ({
+          // A2 corresponds to sheet row 2 (1-based). So rowNumber is idx + 2
+          rowNumber: idx + 2,
+          timestamp: r[0], tableKey: r[1], location: r[2], period: r[3], sectionId: r[4], author: r[5], note: r[6], summary: r[7], version: r[8]
+        })).filter(x => (!tableKey || x.tableKey === tableKey) && (!location || x.location === location) && (!period || x.period === period) && (!sectionId || x.sectionId === sectionId));
+        return res.status(200).json({ notes: items });
+      } catch (readError) {
+        console.warn('Notes API read unavailable, returning empty notes:', serializeError(readError));
+        return res.status(200).json({ notes: [], unavailable: true });
+      }
     }
+
+    const accessToken = await getAccessToken();
+    await ensureHeaderAndSheet(accessToken);
 
     if (req.method === 'POST') {
       const { tableKey, location, period, sectionId, author, note, summary, row } = req.body || {};

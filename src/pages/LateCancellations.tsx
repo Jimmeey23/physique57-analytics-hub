@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { LateCancellationsMetricCards } from '@/components/dashboard/LateCancellationsMetricCards';
@@ -8,11 +7,8 @@ import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/
 import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/EnhancedLateCancellationsDataTables';
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
 import { LateCancellationsMonthOnMonthTable } from '@/components/dashboard/LateCancellationsMonthOnMonthTable';
-import { Button } from '@/components/ui/button';
-import { Home, XCircle } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber } from '@/utils/formatters';
@@ -20,11 +16,12 @@ import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import '@/components/dashboard/trainer-performance-styles.css';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles } from 'lucide-react';
 
 const LateCancellations = () => {
   const { data: lateCancellationsData, allCheckins, loading } = useLateCancellationsData();
   const { isLoading, setLoading } = useGlobalLoading();
-  const navigate = useNavigate();
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   
   // Location tabs state
@@ -38,8 +35,6 @@ const LateCancellations = () => {
   const [selectedProduct, setSelectedProduct] = useState('all');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('all');
   const [dateRange, setDateRange] = useState({ start: exportPreset?.startDate || defaultDateRange.start, end: exportPreset?.endDate || defaultDateRange.end });
-  
-  // Drill down modal state
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
   
@@ -127,7 +122,7 @@ const LateCancellations = () => {
     
     // Trainer filter
     if (selectedTrainer !== 'all') {
-      filtered = filtered.filter(item => item?.teacherName === selectedTrainer);
+      filtered = filtered.filter(item => item?.paymentMethodName === selectedTrainer);
     }
     
     // Class filter
@@ -244,9 +239,9 @@ const LateCancellations = () => {
     setDateRange({ start: defaultDateRange.start, end: defaultDateRange.end });
   };
 
-  // Handle drill down click
-  const handleDrillDownClick = (data: any) => {
-    setDrillDownData(data);
+  const handleDrillDownOpen = (payload: any) => {
+    if (!payload) return;
+    setDrillDownData(payload);
     setIsDrillDownOpen(true);
   };
 
@@ -269,7 +264,7 @@ const LateCancellations = () => {
     }
     
     if (selectedTrainer !== 'all') {
-      filtered = filtered.filter(item => item?.teacherName === selectedTrainer);
+      filtered = filtered.filter(item => item?.paymentMethodName === selectedTrainer);
     }
     
     if (selectedClass !== 'all') {
@@ -319,7 +314,7 @@ const LateCancellations = () => {
 
     // Trainer filter
     if (selectedTrainer !== 'all') {
-      filtered = filtered.filter(item => item?.teacherName === selectedTrainer);
+      filtered = filtered.filter(item => item?.paymentMethodName === selectedTrainer);
     }
 
     // Class filter
@@ -426,7 +421,7 @@ const LateCancellations = () => {
   }, [allCheckins, activeLocation, selectedTrainer, selectedClass, selectedProduct, selectedTimeSlot, selectedTimeframe, dateRange]);
 
   const heroMetrics = useMemo(() => {
-    // If no late cancellations, show total checkins across locations
+    // If no late cancellations, show available cancellation records across locations
     if (!filteredData || filteredData.length === 0) {
       if (!filteredCheckins || filteredCheckins.length === 0) {
         return [{ location: 'No Data', label: 'Available', value: '—' }];
@@ -445,7 +440,7 @@ const LateCancellations = () => {
         
         return {
           location: location.name,
-          label: 'Total Checkins',
+          label: 'Cancellation Records',
           value: formatNumber(locationData.length)
         };
       });
@@ -492,7 +487,7 @@ const LateCancellations = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
       <DashboardMotionHero 
         title="Late Cancellations"
-        subtitle="Comprehensive analysis of late cancellation patterns across locations, classes, trainers, and products"
+        subtitle="Deeper cancellation intelligence from the Late Cancellations report, including event trends, lead-time behavior, membership patterns, penalties, and location insights"
         metrics={heroMetrics}
         extra={exportButton}
       />
@@ -509,6 +504,17 @@ const LateCancellations = () => {
 
           {/* Content for Selected Location */}
           <div className="space-y-8">
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-red-100 bg-white/85 px-5 py-4 shadow-sm backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-600 to-orange-500 text-white shadow-md">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-900">Interactive drill-down is enabled</p>
+                <p className="text-sm text-slate-600">Click cards, ranking tiles, and table rows to open detailed cancellation records with lead-time and penalty context.</p>
+              </div>
+              <Badge className="border border-red-200 bg-red-50 text-red-700 hover:bg-red-50">Click to explore</Badge>
+            </div>
+
             {/* No Data Message */}
             {lateCancellationsData.length === 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
@@ -516,7 +522,7 @@ const LateCancellations = () => {
                   No late cancellations recorded in the selected period.
                 </p>
                 <p className="text-blue-700 text-sm mt-2">
-                  Showing all checkins for reference. Adjust filters to view different date ranges.
+                  Adjust filters to view different date ranges or locations from the Late Cancellations report.
                 </p>
               </div>
             )}
@@ -542,27 +548,23 @@ const LateCancellations = () => {
             />
             
             {/* Metric Cards */}
-            <LateCancellationsMetricCards data={filteredData} onMetricClick={handleDrillDownClick} />
+            <LateCancellationsMetricCards data={filteredData} onMetricClick={handleDrillDownOpen} />
             
             {/* Interactive Charts */}
             <LateCancellationsInteractiveCharts data={chartData} />
             
             {/* Enhanced Top/Bottom Lists */}
-            <EnhancedLateCancellationsTopBottomLists data={filteredData} />
+            <EnhancedLateCancellationsTopBottomLists data={filteredData} onItemClick={handleDrillDownOpen} />
             
             {/* Month on Month Analysis Table */}
-            <LateCancellationsMonthOnMonthTable 
-              data={chartData} 
-              onRowClick={handleDrillDownClick} 
-            />
+            <LateCancellationsMonthOnMonthTable data={chartData} onRowClick={handleDrillDownOpen} />
             
             {/* Enhanced Detailed Data Tables with Pagination */}
-            <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownClick} />
+            <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownOpen} />
           </div>
         </div>
       </div>
-      
-      {/* Drill Down Modal */}
+
       <LateCancellationsDrillDownModal
         isOpen={isDrillDownOpen}
         onClose={() => setIsDrillDownOpen(false)}

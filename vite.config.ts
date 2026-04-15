@@ -28,7 +28,15 @@ export default defineConfig(({ mode }) => {
       name: "local-api-notes",
       configureServer(server: ViteDevServer) {
         server.middlewares.use("/api/notes", (req: any, res: any, next: any) => {
-          if (!["GET", "POST"].includes(req.method)) return next();
+          if (!["GET", "POST", "DELETE"].includes(req.method)) return next();
+
+          // Ensure environment variables are available to the notes API handler from loaded env
+          process.env.GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+          process.env.GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET || env.VITE_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+          process.env.GOOGLE_REFRESH_TOKEN = env.GOOGLE_REFRESH_TOKEN || env.VITE_GOOGLE_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN;
+          process.env.GOOGLE_TOKEN_URL = env.GOOGLE_TOKEN_URL || env.VITE_GOOGLE_TOKEN_URL || process.env.GOOGLE_TOKEN_URL;
+          process.env.NOTES_SHEET_ID = env.NOTES_SHEET_ID || env.VITE_NOTES_SHEET_ID || process.env.NOTES_SHEET_ID;
+          process.env.NOTES_SHEET_NAME = env.NOTES_SHEET_NAME || env.VITE_NOTES_SHEET_NAME || process.env.NOTES_SHEET_NAME;
 
           try {
             const url = new URL(req.url || "", "http://localhost");

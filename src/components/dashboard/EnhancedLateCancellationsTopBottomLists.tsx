@@ -1,306 +1,176 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { LateCancellationsData } from '@/types/dashboard';
-import { formatNumber } from '@/utils/formatters';
-import { TrendingUp, TrendingDown, Award, Users, MapPin, Calendar, User, Package, Crown, Trophy, Medal, Star, ArrowDownCircle, ThumbsDown, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { AlertTriangle, Clock3, MapPin, Package, Sparkles, Users } from 'lucide-react';
 
 interface EnhancedLateCancellationsTopBottomListsProps {
   data: LateCancellationsData[];
+  onItemClick?: (payload: any) => void;
 }
 
-export const EnhancedLateCancellationsTopBottomLists: React.FC<EnhancedLateCancellationsTopBottomListsProps> = ({ data }) => {
-  const [activeType, setActiveType] = useState<'members' | 'locations' | 'classes' | 'trainers' | 'memberships'>('members');
+type GroupType = 'members' | 'locations' | 'events' | 'memberships' | 'windows';
+
+export const EnhancedLateCancellationsTopBottomLists: React.FC<EnhancedLateCancellationsTopBottomListsProps> = ({ data, onItemClick }) => {
+  const [activeType, setActiveType] = useState<GroupType>('members');
   const [showMore, setShowMore] = useState(false);
 
-  const getGroupedData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+  const groupedData = useMemo(() => {
+    const groups = data.reduce((acc, item) => {
+      let key = 'Unknown';
+      let label = 'Unknown';
 
-    const grouped = data.reduce((acc, item) => {
-      let key = '';
-      let name = '';
-      
       switch (activeType) {
         case 'members':
-          key = item.memberId;
-          name = `${item.firstName || ''} ${item.lastName || ''}`.trim() || 'Unknown';
+          key = item.memberId || item.email || item.customerName || 'Unknown';
+          label = item.customerName || `${item.firstName || ''} ${item.lastName || ''}`.trim() || 'Unknown';
           break;
         case 'locations':
           key = item.location || 'Unknown';
-          name = item.location || 'Unknown';
+          label = item.location || 'Unknown';
           break;
-        case 'classes':
-          key = item.cleanedClass || 'Unknown';
-          name = item.cleanedClass || 'Unknown';
-          break;
-        case 'trainers':
-          key = item.teacherName || 'Unknown';
-          name = item.teacherName || 'Unknown';
+        case 'events':
+          key = item.cleanedClass || item.cancelledEvent || 'Unknown';
+          label = item.cleanedClass || item.cancelledEvent || 'Unknown';
           break;
         case 'memberships':
           key = item.cleanedProduct || 'Unknown';
-          name = item.cleanedProduct || 'Unknown';
+          label = item.cleanedProduct || 'Unknown';
+          break;
+        case 'windows':
+          key = item.cancellationWindow || 'Unknown';
+          label = item.cancellationWindow || 'Unknown';
           break;
       }
-      
+
       if (!acc[key]) {
         acc[key] = {
-          name,
-          totalCancellations: 0,
-          uniqueMembers: new Set(),
-          uniqueLocations: new Set(),
-          uniqueClasses: new Set(),
-          uniqueTrainers: new Set(),
+          label,
+          count: 0,
+          penalties: 0,
+          uniqueMembers: new Set<string>(),
+          uniqueLocations: new Set<string>(),
+          records: [] as LateCancellationsData[],
         };
       }
-      
-      acc[key].totalCancellations += 1;
-      acc[key].uniqueMembers.add(item.memberId);
-      acc[key].uniqueLocations.add(item.location);
-      acc[key].uniqueClasses.add(item.cleanedClass);
-      acc[key].uniqueTrainers.add(item.teacherName);
-      
+
+      acc[key].count += 1;
+      acc[key].penalties += item.chargedPenaltyAmount || 0;
+      if (item.memberId || item.email) acc[key].uniqueMembers.add(item.memberId || item.email || '');
+      if (item.location) acc[key].uniqueLocations.add(item.location);
+      acc[key].records.push(item);
       return acc;
     }, {} as Record<string, any>);
-    
-    Object.values(grouped).forEach((item: any) => {
-      item.uniqueMembersCount = item.uniqueMembers.size;
-      item.uniqueLocationsCount = item.uniqueLocations.size;
-      item.uniqueClassesCount = item.uniqueClasses.size;
-      item.uniqueTrainersCount = item.uniqueTrainers.size;
-      delete item.uniqueMembers;
-      delete item.uniqueLocations;
-      delete item.uniqueClasses;
-      delete item.uniqueTrainers;
-    });
-    
-    return Object.values(grouped).sort((a: any, b: any) => b.totalCancellations - a.totalCancellations);
-  }, [data, activeType]);
 
-  const getTypeConfig = (type: string) => {
-    switch (type) {
-      case 'members':
-        return { icon: Users, label: 'Members', description: 'Individual member cancellation patterns' };
-      case 'locations':
-        return { icon: MapPin, label: 'Locations', description: 'Studio location cancellation rates' };
-      case 'classes':
-        return { icon: Calendar, label: 'Classes', description: 'Class type cancellation trends' };
-      case 'trainers':
-        return { icon: User, label: 'Trainers', description: 'Trainer-specific cancellation data' };
-      case 'memberships':
-        return { icon: Package, label: 'Memberships', description: 'Membership type cancellation rates' };
-      default:
-        return { icon: Users, label: 'Members', description: 'Cancellation data' };
-    }
-  };
+    return Object.values(groups)
+      .map((group: any) => ({
+        ...group,
+        memberCount: group.uniqueMembers.size,
+        locationCount: group.uniqueLocations.size,
+      }))
+      .sort((a: any, b: any) => b.count - a.count);
+  }, [activeType, data]);
 
-  const renderRankingCard = () => {
-    const config = getTypeConfig(activeType);
-    const displayCount = showMore ? 10 : 5;
-    const topItems = getGroupedData.slice(0, displayCount);
-    const bottomItems = getGroupedData.slice(-displayCount).reverse();
+  const topItems = groupedData.slice(0, showMore ? 10 : 5);
+  const bottomItems = [...groupedData].reverse().slice(0, showMore ? 10 : 5);
 
-    const getRankIcon = (index: number, isTop: boolean) => {
-      if (isTop) {
-        if (index === 0) return <Crown className="w-5 h-5 text-white" />;
-        if (index === 1) return <Trophy className="w-5 h-5 text-white" />;
-        if (index === 2) return <Medal className="w-5 h-5 text-white" />;
-        if (index === 3) return <Star className="w-5 h-5 text-white" />;
-        return <span className="text-white font-bold text-sm">{index + 1}</span>;
-      } else {
-        if (index === 0) return <ArrowDownCircle className="w-5 h-5 text-white" />;
-        if (index === 1) return <TrendingDown className="w-5 h-5 text-white" />;
-        if (index === 2) return <ThumbsDown className="w-5 h-5 text-white" />;
-        return <AlertCircle className="w-5 h-5 text-white" />;
-      }
-    };
+  const labels = {
+    members: { title: 'Members', icon: Users },
+    locations: { title: 'Locations', icon: MapPin },
+    events: { title: 'Events', icon: Sparkles },
+    memberships: { title: 'Memberships', icon: Package },
+    windows: { title: 'Lead-Time Windows', icon: Clock3 },
+  } as const;
 
+  if (!data.length) {
     return (
-      <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
-              <div className="p-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                {React.createElement(config.icon, { className: "w-5 h-5 text-white" })}
-              </div>
-              <div>
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {config.label} Cancellation Analysis
-                </span>
-                <p className="text-sm text-slate-600 font-normal mt-1">{config.description}</p>
-              </div>
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Most Cancellations (Top) */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-full bg-gradient-to-r from-red-500 to-rose-600">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                    Most Cancellations
-                  </h3>
-                  <p className="text-xs text-slate-500">High cancellation rate - needs attention</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                {topItems.map((item, index) => (
-                  <div 
-                    key={item.name} 
-                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-red-200/70"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shrink-0">
-                        {getRankIcon(index, true)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900 truncate" title={item.name}>
-                          {item.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <Badge variant="secondary" className="bg-blue-50 text-blue-700 text-xs">
-                            <Users className="w-3 h-3 mr-1" />
-                            {formatNumber(item.uniqueMembersCount)} members
-                          </Badge>
-                          {activeType !== 'locations' && (
-                            <Badge variant="secondary" className="bg-purple-50 text-purple-700 text-xs">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {formatNumber(item.uniqueLocationsCount)} locations
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ml-3 text-right shrink-0">
-                      <p className="text-2xl font-bold text-red-600">
-                        {formatNumber(item.totalCancellations)}
-                      </p>
-                      <p className="text-xs text-slate-500">cancellations</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Least Cancellations (Bottom) */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600">
-                  <TrendingDown className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                    Least Cancellations
-                  </h3>
-                  <p className="text-xs text-slate-500">Low cancellation rate - performing well</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                {bottomItems.map((item, index) => (
-                  <div 
-                    key={item.name} 
-                    className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer hover:border-emerald-200/70"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shrink-0">
-                        {getRankIcon(index, false)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900 truncate" title={item.name}>
-                          {item.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <Badge variant="secondary" className="bg-blue-50 text-blue-700 text-xs">
-                            <Users className="w-3 h-3 mr-1" />
-                            {formatNumber(item.uniqueMembersCount)} members
-                          </Badge>
-                          {activeType !== 'locations' && (
-                            <Badge variant="secondary" className="bg-purple-50 text-purple-700 text-xs">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {formatNumber(item.uniqueLocationsCount)} locations
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ml-3 text-right shrink-0">
-                      <p className="text-2xl font-bold text-emerald-600">
-                        {formatNumber(item.totalCancellations)}
-                      </p>
-                      <p className="text-xs text-slate-500">cancellations</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {getGroupedData.length > 5 && (
-            <div className="flex justify-center pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowMore(!showMore)}
-                className="text-slate-700 hover:bg-slate-50"
-              >
-                {showMore ? 'Show Less' : 'Show More'}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
-  if (!data || data.length === 0) {
-    return (
-      <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border-0 shadow-xl">
-        <CardContent className="flex items-center justify-center h-64">
-          <p className="text-slate-600">No cancellation data available</p>
+      <Card className="border border-slate-200 bg-white shadow-sm">
+        <CardContent className="flex h-48 items-center justify-center text-slate-500">
+          No cancellation rankings available.
         </CardContent>
       </Card>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeType} onValueChange={(value) => setActiveType(value as typeof activeType)} className="w-full">
-        <TabsList className="bg-white/90 backdrop-blur-sm p-2 rounded-2xl shadow-xl border-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 w-full max-w-5xl mx-auto">
-          <TabsTrigger value="members" className="relative rounded-xl px-4 py-3 font-semibold text-sm w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-            <Users className="w-4 h-4 mr-2" />
-            Members
-          </TabsTrigger>
-          <TabsTrigger value="locations" className="relative rounded-xl px-4 py-3 font-semibold text-sm w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-            <MapPin className="w-4 h-4 mr-2" />
-            Locations
-          </TabsTrigger>
-          <TabsTrigger value="classes" className="relative rounded-xl px-4 py-3 font-semibold text-sm w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-            <Calendar className="w-4 h-4 mr-2" />
-            Classes
-          </TabsTrigger>
-          <TabsTrigger value="trainers" className="relative rounded-xl px-4 py-3 font-semibold text-sm w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-            <User className="w-4 h-4 mr-2" />
-            Trainers
-          </TabsTrigger>
-          <TabsTrigger value="memberships" className="relative rounded-xl px-4 py-3 font-semibold text-sm w-full justify-center min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50">
-            <Package className="w-4 h-4 mr-2" />
-            Memberships
-          </TabsTrigger>
-        </TabsList>
+  const ActiveIcon = labels[activeType].icon;
 
-        <TabsContent value={activeType} className="mt-6">
-          {renderRankingCard()}
-        </TabsContent>
-      </Tabs>
-    </div>
+  return (
+    <Card className="border border-slate-200 bg-white shadow-sm">
+      <CardHeader className="space-y-4">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            Late Cancellation Rankings
+          </CardTitle>
+          <p className="mt-2 text-sm text-slate-600">Spot the members, locations, events, and timing windows driving the most cancellations.</p>
+        </div>
+        <Tabs value={activeType} onValueChange={(value) => setActiveType(value as GroupType)}>
+          <TabsList className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-2 lg:grid-cols-5">
+            {Object.entries(labels).map(([key, value]) => {
+              const Icon = value.icon;
+              return (
+                <TabsTrigger key={key} value={key} className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Icon className="mr-2 h-4 w-4" />
+                  {value.title}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[
+            { title: `Highest ${labels[activeType].title}`, items: topItems, tone: 'text-red-700 border-red-200 bg-red-50' },
+            { title: `Lowest ${labels[activeType].title}`, items: bottomItems, tone: 'text-emerald-700 border-emerald-200 bg-emerald-50' },
+          ].map((section) => (
+            <div key={section.title} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <ActiveIcon className="h-4 w-4 text-slate-600" />
+                <h3 className="font-semibold text-slate-900">{section.title}</h3>
+              </div>
+              {section.items.map((item: any, index) => (
+                <button
+                  key={`${section.title}-${item.label}-${index}`}
+                  type="button"
+                  onClick={() => onItemClick?.({
+                    title: `${section.title}: ${item.label}`,
+                    records: item.records,
+                    summary: {
+                      cancellations: item.count,
+                      members: item.memberCount,
+                      penalties: item.penalties,
+                    }
+                  })}
+                  className="w-full rounded-2xl border border-slate-200 p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:bg-red-50/30 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900" title={item.label}>{item.label}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Badge variant="outline" className={section.tone}>{formatNumber(item.count)} cancellations</Badge>
+                        <Badge variant="outline">{formatNumber(item.memberCount)} members</Badge>
+                        <Badge variant="outline">{formatCurrency(item.penalties || 0)} penalties</Badge>
+                        <Badge variant="outline" className="border-dashed border-slate-300 text-slate-600">Click for details</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+        {groupedData.length > 5 && (
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={() => setShowMore((current) => !current)}>
+              {showMore ? 'Show Top 5' : 'Show Top 10'}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

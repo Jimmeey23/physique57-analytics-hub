@@ -92,6 +92,7 @@ export interface NewClientData {
   retentionStatus: string;
   conversionStatus: string;
   firstPurchase: string;
+  firstPurchaseItem?: string;
   monthYear?: string;
   conversionSpan: number;
   // Optional fields from sheet when present
@@ -272,7 +273,10 @@ export interface LateCancellationsData {
   firstName?: string;
   lastName?: string;
   email?: string;
+  customerName?: string;
+  orderAt?: string;
   location?: string;
+  sessionId?: string;
   sessionName?: string;
   teacherName?: string;
   cleanedProduct?: string;
@@ -284,12 +288,38 @@ export interface LateCancellationsData {
   time?: string;
   duration?: number;
   capacity?: number;
+  checkedIn?: boolean;
+  complementary?: boolean;
   month?: string;
   year?: number;
+  classNo?: number;
   paidAmount?: number;
+  chargedPenaltyAmount?: number;
   isNew?: string;
+  hostId?: string;
+  reportRunId?: string;
+  reportGeneratedAtIST?: string;
+  uniqueId1?: string;
+  uniqueId2?: string;
+  isLateCancelled?: boolean;
+  isCancelled?: boolean;
+  cancellationType?: string;
+  cancelledEvent?: string;
+  cancelledDateIST?: string;
+  cancelledDay?: string;
+  cancelledTime?: string;
+  sessionDateIST?: string;
+  sessionDay?: string;
+  sessionTime?: string;
+  cancelledDateTimeISO?: string;
+  sessionDateTimeISO?: string;
+  timeBeforeClassMinutes?: number;
+  timeBeforeClassHours?: number;
+  cancellationWindow?: string;
+  isSameDayCancellation?: boolean;
+  hasPenalty?: boolean;
   tableType?: string;
-  [key: string]: string | number | undefined;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface DiscountAnalysisData {

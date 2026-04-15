@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { LateCancellationsData } from '@/types/dashboard';
-import { formatNumber, formatCurrency } from '@/utils/formatters';
-import { X, BarChart3, TrendingDown, Users, Calendar, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertTriangle, CalendarClock, Clock3, IndianRupee, MapPin, Users } from 'lucide-react';
+import { LateCancellationsData } from '@/types/dashboard';
+import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface LateCancellationsDrillDownModalProps {
   isOpen: boolean;
@@ -18,434 +18,235 @@ interface LateCancellationsDrillDownModalProps {
 export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDownModalProps> = ({
   isOpen,
   onClose,
-  data
+  data,
 }) => {
-  if (!data) return null;
+  const records: LateCancellationsData[] = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.records)) return data.records;
+    if (Array.isArray(data.rawData)) return data.rawData;
+    if (data.raw) return [data.raw];
+    return [];
+  }, [data]);
 
-  // Handle different data structures that might be passed
-  let rawData: any[] = [];
-  
-  if (Array.isArray(data)) {
-    rawData = data;
-  } else if (data.rawData && Array.isArray(data.rawData)) {
-    rawData = data.rawData;
-  } else if (data.data && Array.isArray(data.data)) {
-    rawData = data.data;
-  } else if (Array.isArray(data.records)) {
-    rawData = data.records;
-  }
+  const title = data?.title || 'Late Cancellation Drill-Down';
 
-  const safeRawData = rawData;
-  const title = data?.title || data?.name || 'Late Cancellations Detail';
-  
-  // Calculate metrics from raw data
   const metrics = useMemo(() => {
-    
-    if (safeRawData.length === 0) {
-      return {
-        total: 0,
-        uniqueMembers: 0,
-        uniqueLocations: 0,
-        uniqueTrainers: 0,
-        uniqueClasses: 0,
-        totalRevenue: 0,
-        avgPerMember: '0',
-        avgRevenue: '0',
-        timeDistribution: {},
-        dayDistribution: {},
-        locationBreakdown: {},
-        trainerBreakdown: {},
-        classBreakdown: {}
-      };
-    }
+    const total = records.length;
+    const uniqueMembers = new Set(records.map((item) => item.memberId || item.email || item.customerName).filter(Boolean)).size;
+    const uniqueLocations = new Set(records.map((item) => item.location).filter(Boolean)).size;
+    const penalties = records.reduce((sum, item) => sum + (item.chargedPenaltyAmount || 0), 0);
+    const sameDay = records.filter((item) => item.isSameDayCancellation).length;
+    const leadHours = records
+      .map((item) => item.timeBeforeClassHours)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+    const avgLeadHours = leadHours.length ? leadHours.reduce((sum, value) => sum + value, 0) / leadHours.length : 0;
 
-    const total = safeRawData.length;
-    const uniqueMembers = new Set(safeRawData.map((r: any) => r.memberId || r.memberName || r.member)).size;
-    const uniqueLocations = new Set(safeRawData.map((r: any) => r.location)).size;
-    const uniqueTrainers = new Set(safeRawData.map((r: any) => r.teacherName || r.trainer)).size;
-    const uniqueClasses = new Set(safeRawData.map((r: any) => r.cleanedClass || r.class)).size;
-    const totalRevenue = safeRawData.reduce((sum: number, r: any) => sum + (parseFloat(r.paidAmount) || parseFloat(r.amount) || 0), 0);
-
-    // Time distribution
-    const timeDistribution = safeRawData.reduce((acc: Record<string, number>, r: any) => {
-      const hour = r.time ? parseInt(r.time.split(':')[0]) : 0;
-      const slot = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
-      acc[slot] = (acc[slot] || 0) + 1;
+    const locationBreakdown = records.reduce((acc, item) => {
+      const key = item.location || 'Unknown';
+      acc[key] = (acc[key] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
-    // Day distribution
-    const dayDistribution = safeRawData.reduce((acc: Record<string, number>, r: any) => {
-      const day = r.dayOfWeek || 'Unknown';
-      acc[day] = (acc[day] || 0) + 1;
+    const windowBreakdown = records.reduce((acc, item) => {
+      const key = item.cancellationWindow || 'Unknown';
+      acc[key] = (acc[key] || 0) + 1;
       return acc;
-    }, {});
-
-    // Location breakdown
-    const locationBreakdown = safeRawData.reduce((acc: Record<string, number>, r: any) => {
-      const loc = r.location || 'Unknown';
-      acc[loc] = (acc[loc] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Trainer breakdown
-    const trainerBreakdown = safeRawData.reduce((acc: Record<string, number>, r: any) => {
-      const trainer = r.teacherName || 'Unknown';
-      acc[trainer] = (acc[trainer] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Class breakdown
-    const classBreakdown = safeRawData.reduce((acc: Record<string, number>, r: any) => {
-      const cls = r.cleanedClass || 'Unknown';
-      acc[cls] = (acc[cls] || 0) + 1;
-      return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     return {
       total,
       uniqueMembers,
       uniqueLocations,
-      uniqueTrainers,
-      uniqueClasses,
-      totalRevenue,
-      avgPerMember: uniqueMembers > 0 ? (total / uniqueMembers).toFixed(1) : '0',
-      avgRevenue: total > 0 ? (totalRevenue / total).toFixed(0) : '0',
-      timeDistribution,
-      dayDistribution,
+      penalties,
+      sameDay,
+      avgLeadHours,
       locationBreakdown,
-      trainerBreakdown,
-      classBreakdown
+      windowBreakdown,
     };
-  }, [safeRawData]);
+  }, [records]);
 
-  // Show a message if no data is available
-  if (safeRawData.length === 0) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="w-5 h-5" />
-              No Data Available
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center py-8">
-            <p className="text-slate-600 mb-4">No late cancellation records found for the selected criteria.</p>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const summaryCards = [
+    { label: 'Late Cancellations', value: formatNumber(metrics.total), icon: AlertTriangle, tone: 'from-red-600 to-red-500' },
+    { label: 'Members', value: formatNumber(metrics.uniqueMembers), icon: Users, tone: 'from-blue-600 to-blue-500' },
+    { label: 'Avg Lead Time', value: `${metrics.avgLeadHours.toFixed(1)} hrs`, icon: Clock3, tone: 'from-violet-600 to-fuchsia-500' },
+    { label: 'Penalties', value: formatCurrency(metrics.penalties), icon: IndianRupee, tone: 'from-emerald-600 to-emerald-500' },
+  ];
+
+  const topLocations = Object.entries(metrics.locationBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const topWindows = Object.entries(metrics.windowBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col bg-white border-0 shadow-2xl rounded-2xl">
-        <DialogHeader className="bg-gradient-to-r from-red-600 via-red-700 to-orange-600 text-white px-8 py-6 -mx-6 -mt-6 mb-6 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-3 text-white text-2xl">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <BarChart3 className="w-7 h-7" />
-              </div>
-              <div>
-                <p className="font-bold text-xl">{title}</p>
-                <p className="text-red-100 text-base font-normal mt-1">
-                  Detailed analysis of {formatNumber(metrics.total)} late cancellation records
-                </p>
-              </div>
-            </DialogTitle>
-            <button
-              onClick={onClose}
-              className="p-3 hover:bg-white/20 rounded-full transition-colors duration-200 backdrop-blur-sm"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+      <DialogContent className="max-h-[92vh] max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white p-0 shadow-2xl">
+        <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-red-950 to-orange-900 px-8 py-6 text-white">
+          <DialogTitle className="flex flex-col gap-2 text-left">
+            <span className="text-2xl font-bold tracking-tight">{title}</span>
+            <span className="text-sm font-normal text-red-100">Detailed record view with event, location, lead-time, and penalty context.</span>
+          </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-100 mx-6 mb-6 p-1 rounded-xl border border-slate-200">
-            <TabsTrigger 
-              value="overview" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-orange-600 data-[state=active]:text-white font-semibold rounded-lg"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="distribution" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-orange-600 data-[state=active]:text-white font-semibold rounded-lg"
-            >
-              Distribution
-            </TabsTrigger>
-            <TabsTrigger 
-              value="records" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-orange-600 data-[state=active]:text-white font-semibold rounded-lg"
-            >
-              Records
-            </TabsTrigger>
-          </TabsList>
+        <div className="px-8 py-6">
+          {records.length === 0 ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center text-amber-900">
+              No drill-down records are available for this selection.
+            </div>
+          ) : (
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-slate-100 p-2">
+                <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+                <TabsTrigger value="breakdowns" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Breakdowns</TabsTrigger>
+                <TabsTrigger value="records" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Records</TabsTrigger>
+              </TabsList>
 
-          <ScrollArea className="flex-1">
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6 px-6 pb-6">
-              {/* Key Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="border-l-4 border-l-red-600 shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs text-gray-600 mb-2 font-semibold uppercase">Total Records</p>
-                        <p className="text-3xl font-bold text-red-600">{formatNumber(metrics.total)}</p>
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {summaryCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                      <Card key={card.label} className="overflow-hidden border border-slate-200 shadow-sm">
+                        <CardContent className="p-0">
+                          <div className={`h-2 bg-gradient-to-r ${card.tone}`} />
+                          <div className="flex items-start justify-between gap-4 p-5">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
+                              <p className="mt-3 text-3xl font-bold text-slate-900">{card.value}</p>
+                            </div>
+                            <div className={`rounded-2xl bg-gradient-to-br p-3 text-white ${card.tone}`}>
+                              <Icon className="h-5 w-5" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <Card className="border border-slate-200 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex items-center gap-2 text-slate-900">
+                        <MapPin className="h-4 w-4 text-red-600" />
+                        <h3 className="font-semibold">Top locations in this selection</h3>
                       </div>
-                      <TrendingDown className="w-8 h-8 text-red-200" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-l-4 border-l-orange-600 shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs text-gray-600 mb-2 font-semibold uppercase">Unique Members</p>
-                        <p className="text-3xl font-bold text-orange-600">{formatNumber(metrics.uniqueMembers)}</p>
+                      <div className="space-y-3">
+                        {topLocations.map(([label, count]) => (
+                          <div key={label} className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-medium text-slate-700">{label}</span>
+                              <Badge variant="outline">{formatNumber(count)}</Badge>
+                            </div>
+                            <div className="h-2 rounded-full bg-slate-100">
+                              <div className="h-2 rounded-full bg-gradient-to-r from-red-600 to-orange-500" style={{ width: `${(count / Math.max(metrics.total, 1)) * 100}%` }} />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <Users className="w-8 h-8 text-orange-200" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card className="border-l-4 border-l-blue-600 shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs text-gray-600 mb-2 font-semibold uppercase">Locations</p>
-                        <p className="text-3xl font-bold text-blue-600">{formatNumber(metrics.uniqueLocations)}</p>
+                  <Card className="border border-slate-200 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex items-center gap-2 text-slate-900">
+                        <CalendarClock className="h-4 w-4 text-red-600" />
+                        <h3 className="font-semibold">Lead-time windows</h3>
                       </div>
-                      <MapPin className="w-8 h-8 text-blue-200" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-l-4 border-l-green-600 shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs text-gray-600 mb-2 font-semibold uppercase">Revenue Lost</p>
-                        <p className="text-2xl font-bold text-green-600">₹{formatNumber(Math.round(metrics.totalRevenue))}</p>
+                      <div className="space-y-3">
+                        {topWindows.map(([label, count]) => (
+                          <div key={label} className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-medium text-slate-700">{label}</span>
+                              <Badge variant="outline">{formatNumber(count)}</Badge>
+                            </div>
+                            <div className="h-2 rounded-full bg-slate-100">
+                              <div className="h-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500" style={{ width: `${(count / Math.max(metrics.total, 1)) * 100}%` }} />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <Clock className="w-8 h-8 text-green-200" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Secondary Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-gray-600 mb-1 font-semibold uppercase">Avg per Member</p>
-                    <p className="text-2xl font-bold text-slate-700">{metrics.avgPerMember}</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-gray-600 mb-1 font-semibold uppercase">Avg Revenue</p>
-                    <p className="text-2xl font-bold text-slate-700">₹{metrics.avgRevenue}</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-gray-600 mb-1 font-semibold uppercase">Trainers</p>
-                    <p className="text-2xl font-bold text-slate-700">{formatNumber(metrics.uniqueTrainers)}</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-gray-600 mb-1 font-semibold uppercase">Classes</p>
-                    <p className="text-2xl font-bold text-slate-700">{formatNumber(metrics.uniqueClasses)}</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Distribution Tab */}
-            <TabsContent value="distribution" className="space-y-6 px-6 pb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Time Distribution */}
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200">
-                    <CardTitle className="text-base flex items-center gap-2 text-red-700">
-                      <Clock className="w-4 h-4" />
-                      Time Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-3">
-                    {Object.entries(metrics.timeDistribution).map(([time, count]) => (
-                      <div key={time} className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-medium text-gray-700">{time}</span>
-                          <Badge className="bg-red-100 text-red-700">{count}</Badge>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-red-600 to-orange-600 h-2 rounded-full"
-                            style={{
-                              width: `${(count as number / metrics.total) * 100}%`
-                            }}
-                          ></div>
-                        </div>
+                      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                        <span className="font-semibold">Same-day share:</span> {formatPercentage((metrics.sameDay / Math.max(metrics.total, 1)) * 100)}
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
 
-                {/* Day Distribution */}
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200">
-                    <CardTitle className="text-base flex items-center gap-2 text-red-700">
-                      <Calendar className="w-4 h-4" />
-                      Day Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-3">
-                    {Object.entries(metrics.dayDistribution)
-                      .sort((a, b) => (b[1] as number) - (a[1] as number))
-                      .map(([day, count]) => (
-                      <div key={day} className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-medium text-gray-700">{day}</span>
-                          <Badge className="bg-orange-100 text-orange-700">{count}</Badge>
+              <TabsContent value="breakdowns" className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {records.slice(0, 12).map((record, index) => (
+                    <Card key={`${record.memberId || record.email || record.cancelledDateIST}-${index}`} className="border border-slate-200 shadow-sm">
+                      <CardContent className="space-y-3 p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-slate-900">{record.customerName || `${record.firstName || ''} ${record.lastName || ''}`.trim() || 'Unknown member'}</p>
+                            <p className="text-sm text-slate-500">{record.cleanedClass || record.cancelledEvent || 'Unknown event'}</p>
+                          </div>
+                          <Badge variant="outline">{record.cancellationWindow || 'Unknown'}</Badge>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-orange-600 to-red-600 h-2 rounded-full"
-                            style={{
-                              width: `${(count as number / metrics.total) * 100}%`
-                            }}
-                          ></div>
+                        <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">Location</p>
+                            <p>{record.location || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">Membership</p>
+                            <p>{record.cleanedProduct || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">Cancelled At</p>
+                            <p>{record.cancelledDateIST || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">Session At</p>
+                            <p>{record.sessionDateIST || record.dateIST || '—'}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className="bg-red-50 text-red-700 hover:bg-red-50">{typeof record.timeBeforeClassHours === 'number' ? `${record.timeBeforeClassHours.toFixed(1)} hrs before class` : 'Lead time unavailable'}</Badge>
+                          <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50">Penalty {formatCurrency(record.chargedPenaltyAmount || 0)}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
 
-                {/* Location Breakdown */}
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-blue-200">
-                    <CardTitle className="text-base flex items-center gap-2 text-blue-700">
-                      <MapPin className="w-4 h-4" />
-                      By Location
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-3">
-                    {Object.entries(metrics.locationBreakdown)
-                      .sort((a, b) => (b[1] as number) - (a[1] as number))
-                      .map(([location, count]) => (
-                      <div key={location} className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-medium text-gray-700 truncate">{location}</span>
-                          <Badge className="bg-blue-100 text-blue-700">{count}</Badge>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-blue-600 to-cyan-600 h-2 rounded-full"
-                            style={{
-                              width: `${(count as number / metrics.total) * 100}%`
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {/* Class Breakdown */}
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-200">
-                    <CardTitle className="text-base flex items-center gap-2 text-purple-700">
-                      <Calendar className="w-4 h-4" />
-                      By Class
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-3">
-                    {Object.entries(metrics.classBreakdown)
-                      .sort((a, b) => (b[1] as number) - (a[1] as number))
-                      .map(([cls, count]) => (
-                      <div key={cls} className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-medium text-gray-700 truncate">{cls || 'Unknown'}</span>
-                          <Badge className="bg-purple-100 text-purple-700">{count}</Badge>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full"
-                            style={{
-                              width: `${(count as number / metrics.total) * 100}%`
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Records Tab */}
-            <TabsContent value="records" className="space-y-4 px-6 pb-6">
-              <Card className="shadow-md">
-                <CardHeader className="bg-gradient-to-r from-red-600 to-orange-600 text-white border-b">
-                  <CardTitle className="text-base">All Records ({formatNumber(safeRawData.length)})</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader className="bg-gray-50 border-b border-gray-200">
-                        <TableRow>
-                          <TableHead className="font-bold text-gray-700">Member</TableHead>
-                          <TableHead className="font-bold text-gray-700">Date</TableHead>
-                          <TableHead className="font-bold text-gray-700">Class</TableHead>
-                          <TableHead className="font-bold text-gray-700">Location</TableHead>
-                          <TableHead className="font-bold text-gray-700">Trainer</TableHead>
-                          <TableHead className="font-bold text-gray-700 text-right">Amount</TableHead>
+              <TabsContent value="records">
+                <ScrollArea className="h-[52vh] rounded-2xl border border-slate-200">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-slate-50">
+                      <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Cancelled Event</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Cancelled At</TableHead>
+                        <TableHead>Session At</TableHead>
+                        <TableHead>Lead Time</TableHead>
+                        <TableHead>Penalty</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {records.map((record, index) => (
+                        <TableRow key={`${record.memberId || record.email || record.cancelledDateIST}-${index}`} className="hover:bg-red-50/30">
+                          <TableCell className="font-medium text-slate-900">{record.customerName || `${record.firstName || ''} ${record.lastName || ''}`.trim() || 'Unknown member'}</TableCell>
+                          <TableCell>{record.cleanedClass || record.cancelledEvent || '—'}</TableCell>
+                          <TableCell>{record.location || '—'}</TableCell>
+                          <TableCell>{record.cleanedProduct || '—'}</TableCell>
+                          <TableCell>{record.cancelledDateIST || '—'}</TableCell>
+                          <TableCell>{record.sessionDateIST || record.dateIST || '—'}</TableCell>
+                          <TableCell>{typeof record.timeBeforeClassHours === 'number' ? `${record.timeBeforeClassHours.toFixed(1)} hrs` : '—'}</TableCell>
+                          <TableCell>{formatCurrency(record.chargedPenaltyAmount || 0)}</TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {safeRawData.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                              No records available
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          safeRawData.map((item: any, idx: number) => (
-                            <TableRow key={idx} className="hover:bg-red-50/30 transition-colors border-b border-gray-100">
-                              <TableCell className="font-medium">{`${item?.firstName || ''} ${item?.lastName || ''}`.trim()}</TableCell>
-                              <TableCell className="text-sm">{item?.dateIST ? new Date(item.dateIST).toLocaleDateString() : 'N/A'}</TableCell>
-                              <TableCell className="text-sm">{item?.cleanedClass || 'N/A'}</TableCell>
-                              <TableCell className="text-sm">{item?.location || 'N/A'}</TableCell>
-                              <TableCell className="text-sm">{item?.teacherName || 'N/A'}</TableCell>
-                              <TableCell className="text-right font-semibold text-red-700">₹{formatNumber(item?.paidAmount || 0)}</TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

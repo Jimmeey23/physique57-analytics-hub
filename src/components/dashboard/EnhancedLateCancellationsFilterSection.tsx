@@ -52,8 +52,8 @@ export function EnhancedLateCancellationsFilterSection({
     Array.from(new Set(data.map(item => item.location).filter(Boolean))), [data]
   );
 
-  const trainers = React.useMemo(() => 
-    Array.from(new Set(data.map(item => item.teacherName).filter(Boolean))), [data]
+  const paymentMethods = React.useMemo(() => 
+    Array.from(new Set(data.map(item => item.paymentMethodName).filter(Boolean))), [data]
   );
 
   const classes = React.useMemo(() => 
@@ -105,7 +105,7 @@ export function EnhancedLateCancellationsFilterSection({
               </div>
               <div>
                 <h3 className="font-bold text-slate-800">Advanced Filters</h3>
-                <p className="text-sm text-slate-600">Refine your late cancellations analysis</p>
+                <p className="text-sm text-slate-600">Refine your late cancellation report analysis</p>
               </div>
               {activeFiltersCount > 0 && (
                 <Badge className="bg-gradient-to-r from-red-600 to-orange-600 text-white">
@@ -134,7 +134,7 @@ export function EnhancedLateCancellationsFilterSection({
             <Filter className="w-6 h-6" />
             <div>
               <h3 className="text-xl font-bold">Advanced Filters</h3>
-              <p className="text-red-100 text-sm">Customize your late cancellations analysis</p>
+              <p className="text-red-100 text-sm">Customize your late cancellation report analysis</p>
             </div>
             <Badge className="bg-white/20 text-white border-white/30">
               {activeFiltersCount} Active
@@ -214,17 +214,17 @@ export function EnhancedLateCancellationsFilterSection({
           <div className="space-y-2">
             <Label htmlFor="trainer-select" className="text-slate-700 flex items-center gap-2">
               <User className="w-4 h-4" />
-              Trainer
+              Payment Method
             </Label>
             <Select value={selectedTrainer} onValueChange={onTrainerChange}>
               <SelectTrigger id="trainer-select" className="bg-white border-slate-200">
-                <SelectValue placeholder="Select trainer" />
+                <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent className="bg-white border-slate-200">
-                <SelectItem value="all">All Trainers</SelectItem>
-                {trainers.map(trainer => (
-                  <SelectItem key={trainer} value={trainer}>
-                    {trainer}
+                <SelectItem value="all">All Payment Methods</SelectItem>
+                {paymentMethods.map(method => (
+                  <SelectItem key={method} value={method}>
+                    {method}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -235,14 +235,14 @@ export function EnhancedLateCancellationsFilterSection({
           <div className="space-y-2">
             <Label htmlFor="class-select" className="text-slate-700 flex items-center gap-2">
               <Package className="w-4 h-4" />
-              Class Type
+              Cancelled Event
             </Label>
             <Select value={selectedClass} onValueChange={onClassChange}>
               <SelectTrigger id="class-select" className="bg-white border-slate-200">
                 <SelectValue placeholder="Select class" />
               </SelectTrigger>
               <SelectContent className="bg-white border-slate-200">
-                <SelectItem value="all">All Classes</SelectItem>
+                <SelectItem value="all">All Events</SelectItem>
                 {classes.map(classType => (
                   <SelectItem key={classType} value={classType}>
                     {classType}
@@ -254,18 +254,18 @@ export function EnhancedLateCancellationsFilterSection({
 
           {/* Product Filter */}
           <div className="space-y-2">
-            <Label htmlFor="product-select" className="text-slate-300 flex items-center gap-2">
+            <Label htmlFor="product-select" className="text-slate-700 flex items-center gap-2">
               <Package className="w-4 h-4" />
-              Product Type
+              Membership
             </Label>
             <Select value={selectedProduct} onValueChange={onProductChange}>
-              <SelectTrigger id="product-select" className="bg-slate-800 border-slate-600 text-white">
+              <SelectTrigger id="product-select" className="bg-white border-slate-200">
                 <SelectValue placeholder="Select product" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="all" className="text-white hover:bg-slate-700">All Products</SelectItem>
+              <SelectContent className="bg-white border-slate-200">
+                <SelectItem value="all">All Memberships</SelectItem>
                 {products.map(product => (
-                  <SelectItem key={product} value={product} className="text-white hover:bg-slate-700">
+                  <SelectItem key={product} value={product}>
                     {product}
                   </SelectItem>
                 ))}
@@ -275,17 +275,17 @@ export function EnhancedLateCancellationsFilterSection({
 
           {/* Time Slot Filter */}
           <div className="space-y-2">
-            <Label htmlFor="timeslot-select" className="text-slate-300 flex items-center gap-2">
+            <Label htmlFor="timeslot-select" className="text-slate-700 flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              Time Slot
+              Session Time Slot
             </Label>
             <Select value={selectedTimeSlot} onValueChange={onTimeSlotChange}>
-              <SelectTrigger id="timeslot-select" className="bg-slate-800 border-slate-600 text-white">
+              <SelectTrigger id="timeslot-select" className="bg-white border-slate-200">
                 <SelectValue placeholder="Select time slot" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
+              <SelectContent className="bg-white border-slate-200">
                 {timeSlots.map(timeSlot => (
-                  <SelectItem key={timeSlot.value} value={timeSlot.value} className="text-white hover:bg-slate-700">
+                  <SelectItem key={timeSlot.value} value={timeSlot.value}>
                     {timeSlot.label}
                   </SelectItem>
                 ))}

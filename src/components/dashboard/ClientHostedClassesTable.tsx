@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dumbbell, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { parseDate } from '@/utils/dateUtils';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { NewClientData } from '@/types/dashboard';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { motion } from 'framer-motion';
@@ -19,7 +21,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
 
   const hostedClassData = React.useMemo(() => {
     // Filter data to only include hosted classes based on class name
-    const filteredData = data.filter(client => {
+    const filteredData = safeData.filter(client => {
       if (!client || !client.firstVisitEntityName) return false;
       
       const className = client.firstVisitEntityName.toLowerCase();
@@ -35,25 +37,10 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       const className = client.firstVisitEntityName || 'Unknown Class';
       
       // Parse date properly from "01/01/2020, 17:30:00" format
-      let month = 'Unknown';
-      if (client.firstVisitDate) {
-        try {
-          let date: Date;
-          if (client.firstVisitDate.includes('/')) {
-            const datePart = client.firstVisitDate.split(',')[0].trim();
-            const [day, monthNum, year] = datePart.split('/');
-            date = new Date(parseInt(year), parseInt(monthNum) - 1, parseInt(day));
-          } else {
-            date = new Date(client.firstVisitDate);
-          }
-          
-          if (!isNaN(date.getTime())) {
-            month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          }
-        } catch (error) {
-          // Silently fail on date parsing errors
-        }
-      }
+      const visitDate = parseDate(client.firstVisitDate || '');
+      const month = visitDate
+        ? visitDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : 'Unknown';
       
       const key = `${month}-${className}`;
       
@@ -75,17 +62,17 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       acc[key].clients.push(client);
       
       // Count new members - when isNew contains "new" (case insensitive)
-      if ((client.isNew || '').toLowerCase().includes('new')) {
+      if (isInNewClientCohort(client)) {
         acc[key].newMembers++;
       }
       
-      // Count converted - when conversionStatus is exactly "Converted"
-      if (client.conversionStatus === 'Converted') {
+      // Count converted within the new-client cohort
+      if (isConvertedInCohort(client)) {
         acc[key].converted++;
       }
       
-      // Count retained - when retentionStatus is exactly "Retained"
-      if (client.retentionStatus === 'Retained') {
+      // Count retained within the converted new-client cohort
+      if (isRetainedInCohort(client)) {
         acc[key].retained++;
       }
       
@@ -93,18 +80,14 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       
       // Calculate conversion interval with safety checks
       if (client.firstPurchase && client.firstVisitDate) {
-        try {
-          const firstVisitDate = new Date(client.firstVisitDate);
-          const firstPurchaseDate = new Date(client.firstPurchase);
-          
-          if (!isNaN(firstVisitDate.getTime()) && !isNaN(firstPurchaseDate.getTime())) {
-            const intervalDays = Math.ceil((firstPurchaseDate.getTime() - firstVisitDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (intervalDays >= 0) {
-              acc[key].conversionIntervals.push(intervalDays);
-            }
+        const firstVisitDate = parseDate(client.firstVisitDate || '');
+        const firstPurchaseDate = parseDate(client.firstPurchase || '');
+
+        if (firstVisitDate && firstPurchaseDate) {
+          const intervalDays = Math.ceil((firstPurchaseDate.getTime() - firstVisitDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (intervalDays >= 0) {
+            acc[key].conversionIntervals.push(intervalDays);
           }
-        } catch (error) {
-          // Silently fail on conversion interval calculation errors
         }
       }
       
@@ -236,6 +219,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
   };
   totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
   totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+  const allHostedClients = hostedClassData.flatMap(row => row.clients || []);
 
   // Sorting logic
   const displayedData = React.useMemo(() => {
@@ -310,14 +294,27 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
           <ModernDataTable
             data={displayedData}
             columns={columns}
-            headerGradient="from-slate-800 via-slate-900 to-slate-800"
+            headerGradient="from-slate-950 via-slate-900 to-slate-800"
             showFooter={true}
             footerData={totals}
+            footerRowClassName="border-t-4 border-indigo-950 bg-indigo-950 text-slate-50 hover:bg-indigo-900"
+            footerStickyCellClassName="bg-indigo-950 border-indigo-900"
+            footerCellClassName="bg-indigo-950 border-indigo-900 text-slate-50"
+            footerSectionStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderTopColor: '#4338ca' }}
+            footerRowStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderTopColor: '#4338ca' }}
+            footerStickyCellStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#4338ca' }}
+            footerCellStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#4338ca' }}
             maxHeight="600px"
             onRowClick={onRowClick}
             onSort={handleSort}
             sortField={sortField}
             sortDirection={sortDirection}
+            onFooterClick={() => onRowClick?.({
+              month: 'All Months',
+              className: 'All Hosted Classes',
+              clients: allHostedClients,
+              ...totals
+            })}
             tableId="Hosted Classes Performance Analysis"
             />
           <div className="border-t border-slate-200 p-4 bg-slate-50">

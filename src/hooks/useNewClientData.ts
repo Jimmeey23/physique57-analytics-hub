@@ -55,48 +55,67 @@ export const useNewClientData = () => {
         return;
       }
 
-      const newClientData: NewClientData[] = rows.slice(1).map((row: any[]) => {
-        // Column mapping aligned to provided sample:
-        // 0 Member Id, 1 First Name, 2 Last Name, 3 Email, 4 Phone Number,
-        // 5 First Visit Date, 6 First Visit Entity Name, 7 First Visit Type, 8 First Visit Location,
-        // 9 Payment Method, 10 Membership Used, 11 Home Location, 12 Class No, 13 Trainer Name,
-        // 14 Is New, 15 Visits Post Trial, 16 Memberships Bought Post Trial, 17 Purchase Count Post Trial,
-        // 18 Ltv, 19 Retention Status, 20 Conversion Status, 21 First Purchase Date,
-        // 22 No of Visits, 23 Conversion Span (Days), 24 Month Year (if present)
+      const headers = (rows[0] || []).map((header: unknown) => String(header || '').trim());
+      const headerIndexMap = new Map<string, number>();
+      headers.forEach((header, index) => {
+        if (header) {
+          headerIndexMap.set(header, index);
+        }
+      });
 
-        const firstVisitDate: string = row[5] || '';
-        const firstPurchaseDate: string = row[21] || '';
-        const sheetConversionSpan = typeof row[23] !== 'undefined' ? Number(row[23]) : undefined;
-        const monthYearSheet: string = row[24] || '';
-        const noOfVisits = typeof row[22] !== 'undefined' ? Number(row[22]) : undefined;
+      const getCellValue = (row: any[], ...headerNames: string[]) => {
+        for (const headerName of headerNames) {
+          const index = headerIndexMap.get(headerName);
+          if (typeof index === 'number') {
+            return row[index] ?? '';
+          }
+        }
+        return '';
+      };
+
+      const newClientData: NewClientData[] = rows.slice(1).map((row: any[]) => {
+        const firstVisitDate = String(getCellValue(row, 'First Visit Date'));
+        const firstPurchasePostTrial = String(getCellValue(row, 'First Purchase Post Trial', 'First Purchase Made'));
+        const firstPurchaseDate = String(getCellValue(row, 'First Purchase Date'));
+        const parsedFirstPurchasePostTrial = parseDate(firstPurchasePostTrial);
+        const canonicalFirstPurchaseDate = firstPurchaseDate || (parsedFirstPurchasePostTrial ? firstPurchasePostTrial : '');
+        const firstPurchaseItem = parsedFirstPurchasePostTrial ? '' : firstPurchasePostTrial;
+        const firstVisitLocation = String(getCellValue(row, 'First Visit Location'));
+        const homeLocation = String(getCellValue(row, 'Home Location'));
+        const sheetConversionSpanValue = getCellValue(row, 'Conversion Span (Days)');
+        const sheetConversionSpan = sheetConversionSpanValue !== '' ? Number(sheetConversionSpanValue) : undefined;
+        const monthYearSheet = String(getCellValue(row, 'Month Year'));
+        const noOfVisitsValue = getCellValue(row, 'No of Visits');
+        const noOfVisits = noOfVisitsValue !== '' ? Number(noOfVisitsValue) : undefined;
 
         const conversionSpan = (sheetConversionSpan && !isNaN(sheetConversionSpan))
           ? sheetConversionSpan
-          : calculateConversionSpan(firstVisitDate, firstPurchaseDate);
+          : calculateConversionSpan(firstVisitDate, canonicalFirstPurchaseDate);
 
         return {
-          memberId: row[0] || '',
-          firstName: row[1] || '',
-          lastName: row[2] || '',
-          email: row[3] || '',
-          phoneNumber: row[4] || '',
+          memberId: String(getCellValue(row, 'Member Id')),
+          firstName: String(getCellValue(row, 'First Name')),
+          lastName: String(getCellValue(row, 'Last Name')),
+          email: String(getCellValue(row, 'Email')),
+          phoneNumber: String(getCellValue(row, 'Phone Number')),
           firstVisitDate,
-          firstVisitEntityName: row[6] || '',
-          firstVisitType: row[7] || '',
-          firstVisitLocation: row[8] || '',
-          paymentMethod: row[9] || '',
-          membershipUsed: row[10] || '',
-          homeLocation: row[11] || '',
-          classNo: parseFloat(row[12]) || 0,
-          trainerName: row[13] || '',
-          isNew: row[14] || '',
-          visitsPostTrial: parseFloat(row[15]) || 0,
-          membershipsBoughtPostTrial: row[16] || '',
-          purchaseCountPostTrial: parseFloat(row[17]) || 0,
-          ltv: parseFloat(row[18]) || 0,
-          retentionStatus: row[19] || '',
-          conversionStatus: row[20] || '',
-          firstPurchase: firstPurchaseDate,
+          firstVisitEntityName: String(getCellValue(row, 'First Visit Entity Name')),
+          firstVisitType: String(getCellValue(row, 'First Visit Type')),
+          firstVisitLocation: firstVisitLocation || homeLocation,
+          paymentMethod: String(getCellValue(row, 'Payment Method')),
+          membershipUsed: String(getCellValue(row, 'Membership Used')),
+          homeLocation,
+          classNo: Number(getCellValue(row, 'Class No')) || 0,
+          trainerName: String(getCellValue(row, 'Trainer Name')),
+          isNew: String(getCellValue(row, 'Is New')),
+          visitsPostTrial: Number(getCellValue(row, 'Visits Post Trial')) || 0,
+          membershipsBoughtPostTrial: String(getCellValue(row, 'Memberships Bought Post Trial')),
+          purchaseCountPostTrial: Number(getCellValue(row, 'Purchase Count Post Trial')) || 0,
+          ltv: Number(getCellValue(row, 'Ltv', 'LTV')) || 0,
+          retentionStatus: String(getCellValue(row, 'Retention Status')),
+          conversionStatus: String(getCellValue(row, 'Conversion Status')),
+          firstPurchase: canonicalFirstPurchaseDate,
+          firstPurchaseItem,
           // Canonical month key from sheet if provided else derived
           monthYear: monthYearSheet || getMonthYear(firstVisitDate),
           conversionSpan,

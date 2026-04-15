@@ -7,6 +7,7 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 type MetricKey =
@@ -42,6 +43,25 @@ interface ClientRetentionMonthByTypePivotProps {
 }
 
 export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTypePivotProps> = ({ data, months: providedMonths, visitsSummary, onRowClick }) => {
+  const totalsRowStyle: React.CSSProperties = {
+    ['--retention-totals-bg' as string]: '#065f46',
+    ['--retention-totals-text' as string]: '#ffffff',
+    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#065f46',
+    color: '#ffffff',
+    borderTopColor: '#047857',
+  };
+
+  const totalsCellStyle: React.CSSProperties = {
+    ['--retention-totals-bg' as string]: '#065f46',
+    ['--retention-totals-text' as string]: '#ffffff',
+    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#065f46',
+    color: '#ffffff',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderTopColor: '#047857',
+  };
+
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -125,9 +145,9 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       if (!cell) return;
 
       cell.trials += 1;
-      if ((c.isNew || '').toLowerCase().includes('new')) cell.newMembers += 1;
-      if (c.conversionStatus === 'Converted') cell.converted += 1;
-      if (c.retentionStatus === 'Retained') cell.retained += 1;
+      if (isInNewClientCohort(c)) cell.newMembers += 1;
+      if (isConvertedInCohort(c)) cell.converted += 1;
+      if (isRetainedInCohort(c)) cell.retained += 1;
       cell.totalLTV += c.ltv || 0;
       if (c.conversionSpan && c.conversionSpan > 0) cell.conversionIntervals.push(c.conversionSpan);
       if (c.visitsPostTrial && c.visitsPostTrial > 0) cell.visitsPostTrial.push(c.visitsPostTrial);
@@ -434,31 +454,36 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   }, [registry, metric, displayMode, pivot, sortedTypes]);
 
   return (
-    <Card ref={containerRef} className="bg-white border-0 shadow-none overflow-hidden">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white pt-4">
+    <Card ref={containerRef} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.10)]">
+      <CardHeader className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pt-4 text-white">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Month-on-Month by Client Type
-              <Badge variant="secondary" className="bg-white/20 text-white">
-                {months.length} {months.length === 1 ? 'month' : 'months'}
-              </Badge>
-              <div className="ml-4">
-                <CopyTableButton
-                  tableRef={containerRef as any}
-                  tableName={tableId}
-                  size="sm"
-                  onCopyAllTabs={async () => generateAllTabsContent()}
-                />
-              </div>
-            </CardTitle>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Month-on-Month by Client Type
+                <Badge variant="secondary" className="bg-white/20 text-white">
+                  {months.length} {months.length === 1 ? 'month' : 'months'}
+                </Badge>
+                <div className="ml-4">
+                  <CopyTableButton
+                    tableRef={containerRef as any}
+                    tableName={tableId}
+                    size="sm"
+                    onCopyAllTabs={async () => generateAllTabsContent()}
+                  />
+                </div>
+              </CardTitle>
+              <p className="mt-2 text-sm text-slate-300">
+                Click any row or totals cell to open detailed drill-down evidence for that slice.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant={displayMode === 'values' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('values')}
-                className={displayMode === 'values' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:from-slate-600 hover:to-slate-700' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'values' ? 'rounded-xl border border-emerald-400/30 bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl border border-white/20 bg-white/10 text-emerald-100 hover:bg-emerald-500/20 hover:text-white'}
               >
                 Values
               </Button>
@@ -466,7 +491,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 size="sm"
                 variant={displayMode === 'growth' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('growth')}
-                className={displayMode === 'growth' ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white hover:from-slate-600 hover:to-slate-700' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'growth' ? 'rounded-xl border border-emerald-400/30 bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl border border-white/20 bg-white/10 text-emerald-100 hover:bg-emerald-500/20 hover:text-white'}
               >
                 Growth %
               </Button>
@@ -477,7 +502,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               <button
                 key={k}
                 onClick={() => setMetric(k)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'bg-white text-slate-900 shadow-md' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'border border-emerald-400/30 bg-emerald-500 text-white shadow-md' : 'border border-white/10 bg-white/10 text-emerald-100 hover:bg-emerald-500/20 hover:text-white'}`}
                 title={METRIC_LABELS[k]}
               >
                 {METRIC_LABELS[k]}
@@ -486,13 +511,27 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
           </div>
         </div>
       </CardHeader>
-        <CardContent className="p-0">
-      <div className="overflow-x-auto max-h-[900px] relative" data-table="client-retention-mom-pivot" data-table-name={tableId}>
+      <CardContent className="p-0">
+        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/90 px-5 py-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Months shown</div>
+            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatNumber(months.length)}</div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Client types</div>
+            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatNumber(clientTypes.length)}</div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Current metric</div>
+            <div className="mt-1 text-xl font-semibold text-slate-950">{METRIC_LABELS[metric]}</div>
+          </div>
+        </div>
+        <div className="overflow-x-auto max-h-[900px] relative" data-table="client-retention-mom-pivot" data-table-name={tableId}>
           <table className="min-w-full relative" data-table="client-retention-mom-pivot" data-table-name={tableId}>
             <thead>
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white sticky top-0 z-10" style={{ maxHeight: '35px' }}>
+              <tr className="sticky top-0 z-10 bg-slate-950 text-white" style={{ maxHeight: '35px' }}>
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-30 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-slate-900"
+                  className="sticky left-0 z-30 border-r border-white/20 bg-slate-950 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide cursor-pointer select-none"
                   onClick={() => handleSort('type')}
                   style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}
                 >
@@ -523,7 +562,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               {sortedTypes.map((t) => (
                 <tr 
                   key={t} 
-                  className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-indigo-50/60"
                   style={{ maxHeight: '35px' }}
                   onClick={() => {
                     // Aggregate all clients for this type across all months
@@ -532,13 +571,15 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                     onRowClick?.({ type: t, data: pivot[t], metric, clients: allClients });
                   }}
                 >
-                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white z-20 border-r" style={{ maxHeight: '35px' }}>{t}</td>
+                  <td className="sticky left-0 z-20 border-r bg-white px-4 py-2" style={{ maxHeight: '35px' }}>
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm">{t}</span>
+                  </td>
                   {months.map((m, idx) => {
                     const cell = pivot[t]?.[m.key] || {};
                     return (
                       <td 
                         key={m.key} 
-                        className="px-2 py-2 text-center border-l"
+                        className="border-l px-2 py-2 text-center transition-colors hover:bg-indigo-50/80"
                         style={{ maxHeight: '35px' }}
                         onClick={(e) => {
                           // Allow clicking individual cells for month-specific drill-down
@@ -559,15 +600,15 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="retention-totals-row font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
-                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-20 border-r" style={{ maxHeight: '35px' }}>TOTALS</td>
+              <tr className="retention-totals-row border-t-4 border-emerald-700 font-bold" style={{ ...totalsRowStyle, maxHeight: '35px' }}>
+                <td className="sticky left-0 z-20 border-r px-4 py-2 text-sm" style={{ ...totalsCellStyle, maxHeight: '35px' }}>TOTALS</td>
                 {months.map((m, idx) => {
                   const cell = totalsRow[m.key] || {};
                   return (
                     <td 
                       key={m.key}
-                      style={{ maxHeight: '35px' }} 
-                      className="px-2 py-2 text-center border-l cursor-pointer hover:bg-slate-700"
+                      style={{ ...totalsCellStyle, maxHeight: '35px' }} 
+                      className="cursor-pointer border-l px-2 py-2 text-center"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRowClick?.({ 

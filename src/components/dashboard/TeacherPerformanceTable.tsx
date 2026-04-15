@@ -8,6 +8,7 @@ import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -59,7 +60,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       const trainerStats = stats.get(trainerName)!;
       
       // Track unique new members
-      if (client.memberId) {
+      if (isInNewClientCohort(client) && client.memberId) {
         trainerStats.newMembers.add(client.memberId);
       }
       
@@ -67,12 +68,12 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       trainerStats.sessions += client.classNo || 0;
       
       // Track conversions
-      if (client.conversionStatus === 'Converted' && client.memberId) {
+      if (isConvertedInCohort(client) && client.memberId) {
         trainerStats.converted.add(client.memberId);
       }
       
       // Track retention
-      if (client.retentionStatus === 'Retained' && client.memberId) {
+      if (isRetainedInCohort(client) && client.memberId) {
         trainerStats.retained.add(client.memberId);
       }
     });
@@ -602,7 +603,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
                   size="sm"
                   variant={displayMode === 'values' ? 'default' : 'outline'}
                   onClick={() => setDisplayMode('values')}
-                  className="h-8 bg-white/20 text-white border-white/30 hover:bg-white/30"
+                  className={displayMode === 'values' ? 'h-8 border-teal-300/40 bg-teal-500 text-white hover:bg-teal-400' : 'h-8 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white'}
                 >
                   Values
                 </Button>
@@ -610,7 +611,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
                   size="sm"
                   variant={displayMode === 'growth' ? 'default' : 'outline'}
                   onClick={() => setDisplayMode('growth')}
-                  className="h-8 bg-white/20 text-white border-white/30 hover:bg-white/30"
+                  className={displayMode === 'growth' ? 'h-8 border-teal-300/40 bg-teal-500 text-white hover:bg-teal-400' : 'h-8 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white'}
                 >
                   Growth
                 </Button>
@@ -621,7 +622,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
                 <Button
                   size="sm"
                   onClick={exportToCSV}
-                  className="h-8 bg-white/20 text-white border-white/30 hover:bg-white/30 gap-1"
+                  className="h-8 gap-1 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white"
                   variant="outline"
                 >
                   <FileText className="w-3 h-3" />
@@ -630,7 +631,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
                 <Button
                   size="sm"
                   onClick={exportToPNG}
-                  className="h-8 bg-white/20 text-white border-white/30 hover:bg-white/30 gap-1"
+                  className="h-8 gap-1 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white"
                   variant="outline"
                 >
                   <Image className="w-3 h-3" />
@@ -639,7 +640,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
                 <Button
                   size="sm"
                   onClick={exportToPDF}
-                  className="h-8 bg-white/20 text-white border-white/30 hover:bg-white/30 gap-1"
+                  className="h-8 gap-1 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white"
                   variant="outline"
                 >
                   <Download className="w-3 h-3" />
@@ -666,9 +667,16 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
             <ModernDataTable
               data={sortedData}
               columns={columns}
-              headerGradient="from-slate-800 to-gray-900"
+              headerGradient="from-slate-950 via-slate-900 to-slate-800"
               showFooter={true}
               footerData={totals}
+              footerRowClassName="border-t-4 border-teal-950 bg-teal-950 text-slate-50 hover:bg-teal-900"
+              footerStickyCellClassName="bg-teal-950 border-teal-900"
+              footerCellClassName="bg-teal-950 border-teal-900 text-slate-50"
+              footerSectionStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderTopColor: '#0f766e' }}
+              footerRowStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderTopColor: '#0f766e' }}
+              footerStickyCellStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#0f766e' }}
+              footerCellStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#0f766e' }}
               maxHeight="600px"
               stickyHeader={true}
               onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}

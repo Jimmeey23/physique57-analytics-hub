@@ -20,6 +20,7 @@ import { NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 // Import new components for rebuilt client conversion tab
@@ -42,7 +43,7 @@ const ClientConversionEnhancedCharts = lazy(() =>
   }))
 );
 const ClientConversionMonthOnMonthByTypeTable = lazy(() =>
-  import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTable').then((module) => ({
+  import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTableEnhanced').then((module) => ({
     default: module.ClientConversionMonthOnMonthByTypeTable,
   }))
 );
@@ -57,7 +58,7 @@ const ClientRetentionYearOnYearPivot = lazy(() =>
   }))
 );
 const ClientConversionMembershipTable = lazy(() =>
-  import('@/components/dashboard/ClientConversionMembershipTable').then((module) => ({
+  import('@/components/dashboard/ClientConversionMembershipTableEnhanced').then((module) => ({
     default: module.ClientConversionMembershipTable,
   }))
 );
@@ -162,8 +163,6 @@ const createRetentionPivotCell = (): RetentionPivotCell => ({
   avgConversionDays: 0,
   avgVisits: 0,
 });
-
-const isNewClient = (value: string | undefined | null) => String(value || '').toLowerCase().includes('new');
 
 const sortRetentionDimensionValues = (values: string[], dimension: RetentionDimension | 'yoy-clientType' | 'yoy-membership') => {
   return [...values].sort((a, b) => {
@@ -360,9 +359,9 @@ const buildRetentionPivotMatrix = (
     if (!cell) return;
 
     cell.trials += 1;
-    if (isNewClient(client.isNew)) cell.newMembers += 1;
-    if (client.conversionStatus === 'Converted') cell.converted += 1;
-    if (client.retentionStatus === 'Retained') cell.retained += 1;
+    if (isInNewClientCohort(client)) cell.newMembers += 1;
+    if (isConvertedInCohort(client)) cell.converted += 1;
+    if (isRetainedInCohort(client)) cell.retained += 1;
     cell.totalLTV += client.ltv || 0;
     if (client.conversionSpan && client.conversionSpan > 0) cell.conversionSpans.push(client.conversionSpan);
     if (client.visitsPostTrial && client.visitsPostTrial > 0) cell.visitsPostTrial.push(client.visitsPostTrial);
@@ -447,9 +446,9 @@ const buildClientConversionMonthOnMonthRows = (
 
     const row = statsMap.get(groupValue);
     row.totalTrials += 1;
-    if (isNewClient(client.isNew)) row.newMembers += 1;
-    if (client.conversionStatus === 'Converted') row.converted += 1;
-    if (client.retentionStatus === 'Retained') row.retained += 1;
+    if (isInNewClientCohort(client)) row.newMembers += 1;
+    if (isConvertedInCohort(client)) row.converted += 1;
+    if (isRetainedInCohort(client)) row.retained += 1;
     row.totalLTV += client.ltv || 0;
     if (client.conversionSpan && client.conversionSpan > 0) row.conversionSpans.push(client.conversionSpan);
     if (client.visitsPostTrial && client.visitsPostTrial > 0) row.visitsPostTrial.push(client.visitsPostTrial);
@@ -507,14 +506,14 @@ const buildHostedClassesExportRows = (inputData: any[]): ExportRow[] => {
 
     const row = map.get(key);
     row.totalMembers += 1;
-    if (isNewClient(client.isNew)) row.newMembers += 1;
-    if (client.conversionStatus === 'Converted') row.converted += 1;
-    if (client.retentionStatus === 'Retained') row.retained += 1;
+    if (isInNewClientCohort(client)) row.newMembers += 1;
+    if (isConvertedInCohort(client)) row.converted += 1;
+    if (isRetainedInCohort(client)) row.retained += 1;
     row.totalLTV += client.ltv || 0;
     if (client.firstPurchase && client.firstVisitDate) {
-      const firstVisitDate = new Date(client.firstVisitDate);
-      const firstPurchaseDate = new Date(client.firstPurchase);
-      if (!isNaN(firstVisitDate.getTime()) && !isNaN(firstPurchaseDate.getTime())) {
+      const firstVisitDate = parseDate(client.firstVisitDate || '');
+      const firstPurchaseDate = parseDate(client.firstPurchase || '');
+      if (firstVisitDate && firstPurchaseDate) {
         const interval = Math.ceil((firstPurchaseDate.getTime() - firstVisitDate.getTime()) / (1000 * 60 * 60 * 24));
         if (interval >= 0) row.conversionIntervals.push(interval);
       }
@@ -555,9 +554,9 @@ const buildMembershipPerformanceRows = (inputData: any[]): ExportRow[] => {
     }
     const row = map.get(membership);
     row.totalMembers += 1;
-    if (isNewClient(client.isNew)) row.newMembers += 1;
-    if (client.conversionStatus === 'Converted') row.converted += 1;
-    if (client.retentionStatus === 'Retained') row.retained += 1;
+    if (isInNewClientCohort(client)) row.newMembers += 1;
+    if (isConvertedInCohort(client)) row.converted += 1;
+    if (isRetainedInCohort(client)) row.retained += 1;
     row.totalLTV += client.ltv || 0;
   });
 
@@ -584,10 +583,10 @@ const buildTeacherPerformanceRows = (inputData: any[]): ExportRow[] => {
       stats.set(trainerName, { newMembers: new Set(), sessions: 0, converted: new Set(), retained: new Set() });
     }
     const row = stats.get(trainerName)!;
-    if (client.memberId) row.newMembers.add(client.memberId);
+    if (isInNewClientCohort(client) && client.memberId) row.newMembers.add(client.memberId);
     row.sessions += client.classNo || 0;
-    if (client.conversionStatus === 'Converted' && client.memberId) row.converted.add(client.memberId);
-    if (client.retentionStatus === 'Retained' && client.memberId) row.retained.add(client.memberId);
+    if (isConvertedInCohort(client) && client.memberId) row.converted.add(client.memberId);
+    if (isRetainedInCohort(client) && client.memberId) row.retained.add(client.memberId);
   });
 
   return Array.from(stats.entries())
@@ -609,7 +608,7 @@ const buildTeacherPerformanceRows = (inputData: any[]): ExportRow[] => {
 };
 
 const buildNewClientPurchaseRows = (inputData: any[], groupBy: 'detailed' | 'membership' | 'clientType'): ExportRow[] => {
-  const newClients = inputData.filter((client) => isNewClient(client.isNew));
+  const newClients = inputData.filter((client) => isInNewClientCohort(client));
   const baseMap = new Map<string, any>();
 
   newClients.forEach((client) => {
@@ -636,7 +635,7 @@ const buildNewClientPurchaseRows = (inputData: any[], groupBy: 'detailed' | 'mem
       row.units += memberships.length > 0 ? 1 : 0;
       if (client.memberId) row.clientIds.add(String(client.memberId));
       row.totalRevenue += client.ltv || 0;
-      if (client.conversionStatus === 'Converted' && client.conversionSpan && client.conversionSpan > 0) {
+      if (isConvertedInCohort(client) && client.conversionSpan && client.conversionSpan > 0) {
         row.conversionSpans.push(client.conversionSpan);
       }
       if (client.visitsPostTrial) row.visitsPostTrial.push(client.visitsPostTrial);
@@ -1126,11 +1125,11 @@ const ClientRetention = () => {
   }, [startTableSwitch]);
 
   const preloadHeavyRetentionViews = useCallback(() => {
-    void import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTable');
+    void import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTableEnhanced');
     void import('@/components/dashboard/ClientRetentionMonthByTypePivot');
     void import('@/components/dashboard/ClientRetentionYearOnYearPivotNew');
     void import('@/components/dashboard/ClientHostedClassesTable');
-    void import('@/components/dashboard/ClientConversionMembershipTable');
+    void import('@/components/dashboard/ClientConversionMembershipTableEnhanced');
     void import('@/components/dashboard/TeacherPerformanceTable');
     void import('@/components/dashboard/NewClientMembershipPurchaseTable');
     void import('@/components/dashboard/ClientConversionEnhancedCharts');
@@ -1181,9 +1180,9 @@ const ClientRetention = () => {
     if (!filteredData || filteredData.length === 0) return [];
     
     const totalTrials = filteredData.length;
-    const newMembers = filteredData.filter(c => String(c.isNew || '').toLowerCase().includes('new')).length;
-    const converted = filteredData.filter(c => c.conversionStatus === 'Converted').length;
-    const retained = filteredData.filter(c => c.retentionStatus === 'Retained').length;
+    const newMembers = filteredData.filter(c => isInNewClientCohort(c)).length;
+    const converted = filteredData.filter(c => isConvertedInCohort(c)).length;
+    const retained = filteredData.filter(c => isRetainedInCohort(c)).length;
     const conversionRate = newMembers > 0 ? (converted / newMembers) * 100 : 0;
     const retentionRate = newMembers > 0 ? (retained / newMembers) * 100 : 0;
     const totalLTV = filteredData.reduce((sum, c) => sum + (c.ltv || 0), 0);
@@ -1218,7 +1217,7 @@ const ClientRetention = () => {
     exportSections['Client Retention • By Client Type • Teacher View'] = buildClientConversionMonthOnMonthRows(filteredData, visitsSummary, 'teacher');
 
     const momMonths = selectedMomMonths;
-    const momPivot = buildRetentionPivotMatrix(filteredData, momMonths, 'clientType');
+    const momPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, momMonths, 'clientType');
     (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
       exportSections[`Client Retention • MoM Pivot • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
         'Client Type',
@@ -1520,9 +1519,9 @@ const ClientRetention = () => {
                   className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientRetentionMonthByTypePivot
-                    data={deferredFilteredData}
+                    data={deferredFilteredDataNoDateRange}
                     months={selectedMomMonths}
-                    visitsSummary={visitsSummary}
+                    visitsSummary={visitsSummaryNoDateRange}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
                       client: null,
@@ -1576,7 +1575,16 @@ const ClientRetention = () => {
                   id="memberships-table"
                   className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
-                  <ClientConversionMembershipTable data={deferredFilteredData} />
+                  <ClientConversionMembershipTable
+                    data={deferredFilteredData}
+                    onRowClick={rowData => setDrillDownModal({
+                      isOpen: true,
+                      client: null,
+                      title: `${rowData.membershipType} - Membership Analysis`,
+                      data: rowData,
+                      type: 'membership'
+                    })}
+                  />
                 </div>
               )}
 

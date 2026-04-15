@@ -76,7 +76,7 @@ export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTab
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-gray-900">Data Analysis Tables</h3>
-            <p className="text-sm text-gray-600">Consistent Sales-style table navigation</p>
+            <p className="text-sm text-gray-600">Choose a retention view with cleaner, accent-coded navigation</p>
           </div>
           <div className="flex items-center gap-2">
             {isPending && (
@@ -87,17 +87,26 @@ export const ClientConversionDataTableSelector: React.FC<ClientConversionDataTab
         </div>
 
         <Tabs value={activeTable} onValueChange={onTableChange} className="w-full">
-          <TabsList className="bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl shadow-2xl border-2 border-slate-200 flex w-full max-w-7xl mx-auto overflow-visible relative">
+          <TabsList className="grid w-full grid-cols-2 gap-2 rounded-[22px] border border-slate-200 bg-slate-50/90 p-2 shadow-[0_14px_34px_rgba(15,23,42,0.08)] lg:grid-cols-4 xl:grid-cols-7">
             {TABLE_OPTIONS.map((option) => {
               const Icon = option.icon;
+              const isActive = activeTable === option.key;
               return (
                 <TabsTrigger
                   key={option.key}
                   value={option.key}
-                  className={`relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br ${option.activeClass} data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1`}
+                  className={`relative min-h-[68px] rounded-2xl border border-transparent px-3 py-3 text-left font-semibold text-xs text-slate-700 transition-all duration-200 hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-sm data-[state=active]:bg-gradient-to-br ${option.activeClass} data-[state=active]:border-white/25 data-[state=active]:text-white data-[state=active]:shadow-[0_14px_30px_rgba(15,23,42,0.18)]`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="whitespace-nowrap">{option.label}</span>
+                  <div className="flex w-full items-start gap-3">
+                    <div className={`mt-0.5 rounded-xl p-2 transition-colors ${isActive ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="max-w-full whitespace-normal break-words text-sm font-semibold leading-5">
+                        {option.label}
+                      </div>
+                    </div>
+                  </div>
                 </TabsTrigger>
               );
             })}

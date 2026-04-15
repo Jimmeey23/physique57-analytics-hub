@@ -11,6 +11,8 @@ import type { DataSourceMode, OfflineDatasetKey, OfflineDatasetSummary } from '@
 interface DataSourceContextValue {
   mode: DataSourceMode;
   setMode: (mode: DataSourceMode) => void;
+  offlineAccessEnabled: boolean;
+  enableOfflineAccess: () => void;
   isOnline: boolean;
   datasets: OfflineDatasetSummary[];
   refreshDatasets: () => Promise<void>;
@@ -19,18 +21,35 @@ interface DataSourceContextValue {
 }
 
 const STORAGE_KEY = 'p57-data-source-mode';
+const OFFLINE_ACCESS_KEY = 'p57-offline-access-enabled';
+
+const shouldEnableOfflineAccess = () => {
+  if (typeof window === 'undefined') return false;
+
+  const stored = window.localStorage.getItem(OFFLINE_ACCESS_KEY);
+  if (stored === 'true') {
+    return true;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return ['1', 'true', 'yes'].includes((params.get('offline') || '').toLowerCase());
+};
 
 const DataSourceContext = React.createContext<DataSourceContextValue | undefined>(undefined);
 
 export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setModeState] = React.useState<DataSourceMode>(() => {
-    if (typeof window === 'undefined') return 'offline';
+    if (typeof window === 'undefined') return 'online';
+
+    const offlineAccessEnabled = shouldEnableOfflineAccess();
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === 'online' || stored === 'offline') {
+    if (offlineAccessEnabled && (stored === 'online' || stored === 'offline')) {
       return stored;
     }
-    return 'offline';
+
+    return 'online';
   });
+  const [offlineAccessEnabled, setOfflineAccessEnabled] = React.useState<boolean>(() => shouldEnableOfflineAccess());
   const [isOnline, setIsOnline] = React.useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [datasets, setDatasets] = React.useState<OfflineDatasetSummary[]>([]);
   const [bundleSeeded, setBundleSeeded] = React.useState(false);
@@ -64,6 +83,12 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [refreshDatasets]);
 
   React.useEffect(() => {
+    if (!offlineAccessEnabled && shouldEnableOfflineAccess()) {
+      setOfflineAccessEnabled(true);
+    }
+  }, [offlineAccessEnabled]);
+
+  React.useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -75,7 +100,16 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
+  const enableOfflineAccess = React.useCallback(() => {
+    setOfflineAccessEnabled(true);
+    window.localStorage.setItem(OFFLINE_ACCESS_KEY, 'true');
+  }, []);
+
   const setMode = React.useCallback((nextMode: DataSourceMode) => {
+    if (nextMode === 'offline') {
+      window.localStorage.setItem(OFFLINE_ACCESS_KEY, 'true');
+      setOfflineAccessEnabled(true);
+    }
     setModeState(nextMode);
     window.localStorage.setItem(STORAGE_KEY, nextMode);
   }, []);
@@ -94,12 +128,14 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const value = React.useMemo(() => ({
     mode,
     setMode,
+    offlineAccessEnabled,
+    enableOfflineAccess,
     isOnline,
     datasets,
     refreshDatasets,
     uploadDatasetFile,
     clearDataset,
-  }), [mode, setMode, isOnline, datasets, refreshDatasets, uploadDatasetFile, clearDataset]);
+  }), [mode, setMode, offlineAccessEnabled, enableOfflineAccess, isOnline, datasets, refreshDatasets, uploadDatasetFile, clearDataset]);
 
   return <DataSourceContext.Provider value={value}>{children}</DataSourceContext.Provider>;
 };

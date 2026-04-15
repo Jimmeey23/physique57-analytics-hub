@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 
 type Trend = 'strong' | 'moderate' | 'weak';
@@ -106,9 +107,9 @@ export function useClientConversionMetrics(
 
     const periodLabel = `${formatPeriodDate(currentStart)} to ${formatPeriodDate(currentEnd)} vs previous period`;
 
-    const isNew = (c: NewClientData) => String(c.isNew || '').toLowerCase().includes('new');
-    const isConverted = (c: NewClientData) => c.conversionStatus === 'Converted';
-    const isRetained = (c: NewClientData) => c.retentionStatus === 'Retained';
+    const isNew = (c: NewClientData) => isInNewClientCohort(c);
+    const isConverted = (c: NewClientData) => isConvertedInCohort(c);
+    const isRetained = (c: NewClientData) => isRetainedInCohort(c);
 
     // Calculate current period metrics
     const curNew = current.filter(isNew).length;
@@ -199,11 +200,11 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(overallConvCur, overallConvPrev),
         previousValue: formatPercentage(overallConvPrev),
         previousRawValue: overallConvPrev,
-        yoyPreviousValue: formatPercentage(previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0),
-        yoyPreviousRawValue: previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0,
-        yoyChange: calcGrowth(overallConvCur, previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).rate,
-        yoyChangeDetails: { trend: calcGrowth(overallConvCur, previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).trend },
-        comparison: { current: overallConvCur, previous: previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0, difference: overallConvCur - (previousYear.length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0) },
+        yoyPreviousValue: formatPercentage(previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0),
+        yoyPreviousRawValue: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0,
+        yoyChange: calcGrowth(overallConvCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).rate,
+        yoyChangeDetails: { trend: calcGrowth(overallConvCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).trend },
+        comparison: { current: overallConvCur, previous: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0, difference: overallConvCur - (previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0) },
         periodLabel,
         icon: 'TrendingUp',
         description: 'New to converted rate',
@@ -216,11 +217,11 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(retentionCur, retentionPrev),
         previousValue: formatPercentage(retentionPrev),
         previousRawValue: retentionPrev,
-        yoyPreviousValue: formatPercentage(previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0),
-        yoyPreviousRawValue: previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0,
-        yoyChange: calcGrowth(retentionCur, previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).rate,
-        yoyChangeDetails: { trend: calcGrowth(retentionCur, previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).trend },
-        comparison: { current: retentionCur, previous: previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0, difference: retentionCur - (previousYear.length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0) },
+        yoyPreviousValue: formatPercentage(previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0),
+        yoyPreviousRawValue: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0,
+        yoyChange: calcGrowth(retentionCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).rate,
+        yoyChangeDetails: { trend: calcGrowth(retentionCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).trend },
+        comparison: { current: retentionCur, previous: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0, difference: retentionCur - (previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0) },
         periodLabel,
         icon: 'Target',
         description: 'Member retention rate',

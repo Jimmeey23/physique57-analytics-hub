@@ -150,16 +150,17 @@ const AppRoutes = () => {
 const AppContent = () => {
   usePerformanceOptimization();
   const { mode, isOnline } = useDataSource();
+  const intercomAppId = import.meta.env.VITE_INTERCOM_APP_ID || 'hzmswx1k';
 
   React.useEffect(() => {
-    if (mode === 'offline' || !isOnline) {
+    if (!import.meta.env.PROD || mode === 'offline' || !isOnline || !intercomAppId) {
       return;
     }
 
     Intercom({
-      app_id: 'hzmswx1k',
+      app_id: intercomAppId,
     });
-  }, [mode, isOnline]);
+  }, [intercomAppId, mode, isOnline]);
 
   React.useEffect(() => {
     if (mode === 'offline' || !isOnline) {
@@ -190,7 +191,12 @@ const AppContent = () => {
   
   return (
     <>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <GlobalFiltersProvider>
           <SessionsFiltersProvider>
             <MetricsTablesRegistryProvider>

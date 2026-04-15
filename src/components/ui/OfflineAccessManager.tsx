@@ -7,7 +7,7 @@ import { useDataSource } from '@/contexts/DataSourceContext';
 import { OFFLINE_DATASET_KEYS, OFFLINE_DATASET_LABELS, type OfflineDatasetKey } from '@/types/offlineData';
 
 export const OfflineAccessManager: React.FC = () => {
-  const { mode, setMode, isOnline, datasets, uploadDatasetFile, clearDataset, refreshDatasets } = useDataSource();
+  const { mode, setMode, isOnline, datasets, uploadDatasetFile, clearDataset, refreshDatasets, offlineAccessEnabled } = useDataSource();
   const [isOpen, setIsOpen] = React.useState(false);
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const fileInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
@@ -46,6 +46,10 @@ export const OfflineAccessManager: React.FC = () => {
 
   const availableCount = datasets.filter((dataset) => dataset.available).length;
 
+  if (!offlineAccessEnabled && mode !== 'offline') {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-[120]">
       {isOpen && (
@@ -70,10 +74,10 @@ export const OfflineAccessManager: React.FC = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <p className="font-medium text-slate-800">How it works</p>
               <p className="mt-1">
-                Offline mode now loads by default and uses bundled, cached, or uploaded datasets. You can switch back to live data any time.
+                The dashboard loads live data by default. Offline mode stays available only after it has been explicitly enabled.
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Live mode still stays available for fresh source data, while offline mode keeps the dashboard usable without re-uploading files each session.
+                Once enabled, offline mode can use bundled, cached, or uploaded datasets so the dashboard still works without re-uploading files every session.
               </p>
             </div>
 

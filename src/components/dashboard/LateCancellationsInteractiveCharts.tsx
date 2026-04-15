@@ -1,384 +1,206 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LateCancellationsData } from '@/types/dashboard';
-import { formatNumber } from '@/utils/formatters';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Calendar } from 'lucide-react';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { BarChart3, CalendarRange, Clock3, MapPin, Sparkles } from 'lucide-react';
 
 interface LateCancellationsInteractiveChartsProps {
   data: LateCancellationsData[];
 }
 
+const COLORS = ['#dc2626', '#ea580c', '#2563eb', '#7c3aed', '#0891b2', '#16a34a', '#db2777', '#475569'];
+
 export const LateCancellationsInteractiveCharts: React.FC<LateCancellationsInteractiveChartsProps> = ({ data }) => {
-  const [timeRange, setTimeRange] = useState('6m');
-  const [activeChart, setActiveChart] = useState('monthly');
-  const [chartMetric, setChartMetric] = useState('count');
+  const [activeChart, setActiveChart] = useState<'monthly' | 'lead-time' | 'events' | 'locations'>('monthly');
 
-  // Filter data based on time range
-  const filteredData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    
-    const now = new Date();
-    let startDate = new Date();
-    
-    switch (timeRange) {
-      case '1m':
-        startDate.setMonth(now.getMonth() - 1);
-        break;
-      case '3m':
-        startDate.setMonth(now.getMonth() - 3);
-        break;
-      case '6m':
-        startDate.setMonth(now.getMonth() - 6);
-        break;
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        return data;
-    }
-    
-    return data.filter(item => {
-      if (!item.dateIST) return false;
-      const itemDate = new Date(item.dateIST);
-      return itemDate >= startDate && itemDate <= now;
-    });
-  }, [data, timeRange]);
-
-  // Monthly cancellations trend data
   const monthlyData = useMemo(() => {
-    if (!filteredData.length) return [];
-    
-    const monthlyGroups = filteredData.reduce((acc, item) => {
+    const groups = data.reduce((acc, item) => {
       if (!item.dateIST) return acc;
       const date = new Date(item.dateIST);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!acc[monthKey]) {
-        acc[monthKey] = {
-          monthKey,
-          month: date.toLocaleDateString('en', { month: 'short', year: 'numeric' }),
+      if (Number.isNaN(date.getTime())) return acc;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!acc[key]) {
+        acc[key] = {
+          key,
+          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
           count: 0,
-          members: new Set(),
-          locations: new Set()
+          penalty: 0,
+          totalLeadHours: 0,
+          leadEntries: 0,
         };
       }
-      
-      acc[monthKey].count += 1;
-      acc[monthKey].members.add(item.memberId);
-      acc[monthKey].locations.add(item.location);
-      
+
+      acc[key].count += 1;
+      acc[key].penalty += item.chargedPenaltyAmount || 0;
+      if (typeof item.timeBeforeClassHours === 'number') {
+        acc[key].totalLeadHours += item.timeBeforeClassHours;
+        acc[key].leadEntries += 1;
+      }
       return acc;
     }, {} as Record<string, any>);
-    
-    return Object.values(monthlyGroups).map((group: any) => ({
-      ...group,
-      members: group.members.size,
-      locations: group.locations.size
-    })).sort((a: any, b: any) => a.monthKey.localeCompare(b.monthKey));
-  }, [filteredData]);
 
-  // Top locations data
-  const topLocationsData = useMemo(() => {
-    if (!filteredData.length) return [];
-    
-    const locationGroups = filteredData.reduce((acc, item) => {
-      const location = item.location || 'Unknown Location';
-      
-      if (!acc[location]) {
-        acc[location] = {
-          name: location,
-          count: 0,
-          members: new Set(),
-          classes: new Set()
-        };
+    return Object.values(groups)
+      .map((group: any) => ({
+        ...group,
+        avgLeadHours: group.leadEntries ? Math.round((group.totalLeadHours / group.leadEntries) * 10) / 10 : 0,
+      }))
+      .sort((a: any, b: any) => a.key.localeCompare(b.key));
+  }, [data]);
+
+  const leadTimeData = useMemo(() => {
+    const groups = data.reduce((acc, item) => {
+      const bucket = item.cancellationWindow || 'Unknown';
+      if (!acc[bucket]) {
+        acc[bucket] = { name: bucket, count: 0, penalty: 0 };
       }
-      
-      acc[location].count += 1;
-      acc[location].members.add(item.memberId);
-      acc[location].classes.add(item.cleanedClass);
-      
+      acc[bucket].count += 1;
+      acc[bucket].penalty += item.chargedPenaltyAmount || 0;
+      return acc;
+    }, {} as Record<string, { name: string; count: number; penalty: number }>);
+
+    const order = ['<1 hour', '1-3 hours', '3-6 hours', '6-12 hours', '12-24 hours', '24+ hours', 'Unknown'];
+    return order.map((name) => groups[name]).filter(Boolean);
+  }, [data]);
+
+  const topEvents = useMemo(() => {
+    const groups = data.reduce((acc, item) => {
+      const key = item.cleanedClass || item.cancelledEvent || 'Unknown Event';
+      if (!acc[key]) {
+        acc[key] = { name: key, count: 0, penalties: 0 };
+      }
+      acc[key].count += 1;
+      acc[key].penalties += item.chargedPenaltyAmount || 0;
       return acc;
     }, {} as Record<string, any>);
-    
-    const locations = Object.values(locationGroups).map((location: any) => ({
-      ...location,
-      members: location.members.size,
-      classes: location.classes.size
-    }));
-    
-    return locations.sort((a: any, b: any) => b.count - a.count).slice(0, 10);
-  }, [filteredData]);
 
-  // Class type distribution data
-  const classTypeData = useMemo(() => {
-    if (!filteredData.length) return [];
-    
-    const classGroups = filteredData.reduce((acc, item) => {
-      const classType = item.cleanedClass || 'Unknown Class';
-      
-      if (!acc[classType]) {
-        acc[classType] = 0;
+    return Object.values(groups).sort((a: any, b: any) => b.count - a.count).slice(0, 8);
+  }, [data]);
+
+  const locationData = useMemo(() => {
+    const groups = data.reduce((acc, item) => {
+      const key = item.location || 'Unknown';
+      if (!acc[key]) {
+        acc[key] = { name: key, count: 0, penalties: 0 };
       }
-      
-      acc[classType] += 1;
-      
+      acc[key].count += 1;
+      acc[key].penalties += item.chargedPenaltyAmount || 0;
       return acc;
-    }, {} as Record<string, number>);
-    
-    return Object.entries(classGroups)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-  }, [filteredData]);
+    }, {} as Record<string, any>);
 
-  // Day of week data
-  const dayOfWeekData = useMemo(() => {
-    if (!filteredData.length) return [];
-    
-    const dayGroups = filteredData.reduce((acc, item) => {
-      const day = item.dayOfWeek || 'Unknown';
-      
-      if (!acc[day]) {
-        acc[day] = 0;
-      }
-      
-      acc[day] += 1;
-      
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    
-    return dayOrder.map(day => ({
-      day,
-      count: dayGroups[day] || 0
-    }));
-  }, [filteredData]);
+    return Object.values(groups).sort((a: any, b: any) => b.count - a.count);
+  }, [data]);
 
-  const COLORS = ['#dc2626', '#ea580c', '#d97706', '#ca8a04', '#65a30d', '#16a34a', '#059669', '#0891b2'];
+  const summaryLabel = useMemo(() => {
+    if (!data.length) return 'No cancellation data available';
+    const feeTotal = data.reduce((sum, item) => sum + (item.chargedPenaltyAmount || 0), 0);
+    return `${formatNumber(data.length)} late cancellations analysed · ${formatCurrency(feeTotal)} in penalties tracked`;
+  }, [data]);
 
-  const formatTooltipValue = (value: any, name: string) => {
-    return formatNumber(Number(value));
-  };
-
-  const handleTimeRangeChange = useCallback((newRange: string) => {
-    setTimeRange(newRange);
-  }, []);
-
-  const handleChartChange = useCallback((newChart: string) => {
-    setActiveChart(newChart);
-  }, []);
-
-  const handleMetricChange = useCallback((newMetric: string) => {
-    setChartMetric(newMetric);
-  }, []);
-
-  if (!data || data.length === 0) {
+  if (!data.length) {
     return (
-      <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
+      <Card className="border border-slate-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-red-600" />
-            Interactive Late Cancellations Charts
+          <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <BarChart3 className="h-5 w-5 text-red-600" />
+            Late Cancellation Trends
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-64">
-          <p className="text-slate-600">No data available for charts</p>
+        <CardContent className="flex h-64 items-center justify-center text-slate-500">
+          No data available for charts.
         </CardContent>
       </Card>
     );
   }
 
-  const renderChart = () => {
-    switch (activeChart) {
-      case 'monthly':
-        return (
-          <div className="space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={chartMetric === 'count' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleMetricChange('count')}
-              >
-                Cancellations
-              </Button>
-              <Button
-                variant={chartMetric === 'members' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleMetricChange('members')}
-              >
-                Unique Members
-              </Button>
-              <Button
-                variant={chartMetric === 'locations' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleMetricChange('locations')}
-              >
-                Locations
-              </Button>
-            </div>
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis tickFormatter={formatNumber} />
-                <Tooltip formatter={formatTooltipValue} />
-                <Line 
-                  type="monotone" 
-                  dataKey={chartMetric} 
-                  stroke="#dc2626" 
-                  strokeWidth={3}
-                  dot={{ fill: '#dc2626', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      
-      case 'locations':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={topLocationsData} margin={{ left: 20, right: 20, top: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                interval={0}
-              />
-              <YAxis tickFormatter={formatNumber} />
-              <Tooltip formatter={formatTooltipValue} />
-              <Bar dataKey="count" fill="#dc2626" />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-      
-      case 'classes':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={classTypeData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={120}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {classTypeData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={formatTooltipValue} />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      case 'dayofweek':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={dayOfWeekData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis tickFormatter={formatNumber} />
-              <Tooltip formatter={formatTooltipValue} />
-              <Bar dataKey="count" fill="#ea580c" />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-      
-      default:
-        return null;
-    }
-  };
-
   return (
-    <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-xl">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-red-600" />
-              Interactive Late Cancellations Charts
+    <Card className="border border-slate-200 bg-white shadow-sm">
+      <CardHeader className="space-y-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              <BarChart3 className="h-5 w-5 text-red-600" />
+              Late Cancellation Trends
             </CardTitle>
+            <p className="mt-2 text-sm text-slate-600">{summaryLabel}</p>
           </div>
-          
-          {/* Time Range Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              Time Range:
-            </span>
+          <div className="flex flex-wrap gap-2">
             {[
-              { key: '1m', label: 'Last Month' },
-              { key: '3m', label: 'Last 3 Months' },
-              { key: '6m', label: 'Last 6 Months' },
-              { key: '1y', label: 'Last Year' }
-            ].map(({ key, label }) => (
+              { key: 'monthly', label: 'Monthly', icon: CalendarRange },
+              { key: 'lead-time', label: 'Lead Time', icon: Clock3 },
+              { key: 'events', label: 'Top Events', icon: Sparkles },
+              { key: 'locations', label: 'Locations', icon: MapPin },
+            ].map(({ key, label, icon: Icon }) => (
               <Button
                 key={key}
-                variant={timeRange === key ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => handleTimeRangeChange(key)}
+                variant={activeChart === key ? 'default' : 'outline'}
+                onClick={() => setActiveChart(key as typeof activeChart)}
+                className={activeChart === key ? 'bg-red-700 hover:bg-red-800' : ''}
               >
+                <Icon className="mr-2 h-4 w-4" />
                 {label}
               </Button>
             ))}
           </div>
-          
-          {/* Chart Type Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              <TrendingUp className="w-4 h-4" />
-              Chart Type:
-            </span>
-            <Button
-              variant={activeChart === 'monthly' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChartChange('monthly')}
-              className="flex items-center gap-1"
-            >
-              <LineChartIcon className="w-4 h-4" />
-              Monthly Trend
-            </Button>
-            <Button
-              variant={activeChart === 'locations' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChartChange('locations')}
-              className="flex items-center gap-1"
-            >
-              <BarChart3 className="w-4 h-4" />
-              By Location
-            </Button>
-            <Button
-              variant={activeChart === 'classes' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChartChange('classes')}
-              className="flex items-center gap-1"
-            >
-              <PieChartIcon className="w-4 h-4" />
-              By Class Type
-            </Button>
-            <Button
-              variant={activeChart === 'dayofweek' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChartChange('dayofweek')}
-              className="flex items-center gap-1"
-            >
-              <BarChart3 className="w-4 h-4" />
-              By Day of Week
-            </Button>
-          </div>
         </div>
       </CardHeader>
-
       <CardContent>
-        {renderChart()}
+        {activeChart === 'monthly' && (
+          <ResponsiveContainer width="100%" height={360}>
+            <LineChart data={monthlyData} margin={{ top: 10, right: 16, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis yAxisId="left" tickFormatter={formatNumber} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}h`} />
+              <Tooltip formatter={(value: number, name: string) => name === 'penalty' ? formatCurrency(value) : formatNumber(Number(value))} />
+              <Bar yAxisId="left" dataKey="count" fill="#dc2626" radius={[6, 6, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="avgLeadHours" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+
+        {activeChart === 'lead-time' && (
+          <ResponsiveContainer width="100%" height={360}>
+            <BarChart data={leadTimeData} margin={{ top: 10, right: 16, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={formatNumber} />
+              <Tooltip formatter={(value: number, name: string) => name === 'penalty' ? formatCurrency(value) : formatNumber(Number(value))} />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                {leadTimeData.map((_, index) => (
+                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+
+        {activeChart === 'events' && (
+          <ResponsiveContainer width="100%" height={360}>
+            <PieChart>
+              <Pie data={topEvents} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={120} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                {topEvents.map((_, index) => (
+                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value: number) => formatNumber(Number(value))} />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
+
+        {activeChart === 'locations' && (
+          <ResponsiveContainer width="100%" height={360}>
+            <BarChart data={locationData} margin={{ top: 10, right: 16, left: 4, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-20} textAnchor="end" height={60} interval={0} />
+              <YAxis tickFormatter={formatNumber} />
+              <Tooltip formatter={(value: number) => formatNumber(Number(value))} />
+              <Bar dataKey="count" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );

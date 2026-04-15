@@ -6,7 +6,8 @@ import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatte
 import { NewClientData } from '@/types/dashboard';
 import { useClientConversionMetrics, ClientMetricWithYoY } from '@/hooks/useClientConversionMetrics';
 import { cn } from '@/lib/utils';
-import { parseDate } from '@/hooks/useLeadsData';
+import { parseDate } from '@/utils/dateUtils';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 
 interface ClientConversionMetricCardsProps {
   data: NewClientData[];
@@ -110,11 +111,11 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
       filterData: () => {
         switch (m.title) {
           case 'New Members':
-            return data.filter(client => String(client.isNew || '').toLowerCase().includes('new'));
+            return data.filter(client => isInNewClientCohort(client));
           case 'Converted Members':
-            return data.filter(client => client.conversionStatus === 'Converted');
+            return data.filter(client => isConvertedInCohort(client));
           case 'Retained Members':
-            return data.filter(client => client.retentionStatus === 'Retained');
+            return data.filter(client => isRetainedInCohort(client));
           default:
             return data;
         }

@@ -35,6 +35,25 @@ interface MembershipPurchaseStats {
 }
 
 export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurchaseTableProps> = ({ data }) => {
+  const totalsRowStyle: React.CSSProperties = {
+    ['--retention-totals-bg' as string]: '#9d174d',
+    ['--retention-totals-text' as string]: '#ffffff',
+    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#9d174d',
+    color: '#ffffff',
+    borderTopColor: '#be185d',
+  };
+
+  const totalsCellStyle: React.CSSProperties = {
+    ['--retention-totals-bg' as string]: '#9d174d',
+    ['--retention-totals-text' as string]: '#ffffff',
+    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#9d174d',
+    color: '#ffffff',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderTopColor: '#be185d',
+  };
+
   const [sortField, setSortField] = React.useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const [drillDownData, setDrillDownData] = React.useState<DrillDownData | null>(null);
@@ -532,7 +551,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     size="sm"
                     variant={groupBy === 'detailed' ? 'default' : 'outline'}
                     onClick={() => setGroupBy('detailed')}
-                    className={groupBy === 'detailed' ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
+                    className={groupBy === 'detailed' ? 'bg-pink-600 hover:bg-pink-500 text-white border-pink-500' : 'border-pink-200 text-pink-700 hover:bg-pink-50'}
                   >
                     Detailed View
                   </Button>
@@ -540,7 +559,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     size="sm"
                     variant={groupBy === 'membership' ? 'default' : 'outline'}
                     onClick={() => setGroupBy('membership')}
-                    className={groupBy === 'membership' ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
+                    className={groupBy === 'membership' ? 'bg-pink-600 hover:bg-pink-500 text-white border-pink-500' : 'border-pink-200 text-pink-700 hover:bg-pink-50'}
                   >
                     By Membership
                   </Button>
@@ -548,7 +567,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     size="sm"
                     variant={groupBy === 'clientType' ? 'default' : 'outline'}
                     onClick={() => setGroupBy('clientType')}
-                    className={groupBy === 'clientType' ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
+                    className={groupBy === 'clientType' ? 'bg-pink-600 hover:bg-pink-500 text-white border-pink-500' : 'border-pink-200 text-pink-700 hover:bg-pink-50'}
                   >
                     By Client Type
                   </Button>
@@ -564,7 +583,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
             <div className="overflow-auto" style={{ maxHeight: '600px' }} data-table="client-retention-new-client-purchases" data-table-name="New Client Membership Purchases">
               <table className="w-full border-collapse" data-table="client-retention-new-client-purchases" data-table-name="New Client Membership Purchases">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+                  <tr className="bg-slate-950 text-white">
                     {groupBy !== 'clientType' && (
                       <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>
                         Membership Type
@@ -645,33 +664,33 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                     </tr>
                   ))}
                   {/* Totals Row */}
-                  <tr className="retention-totals-row font-bold border-t-2 border-slate-600" style={{ maxHeight: '35px' }}>
+                  <tr className="retention-totals-row border-t-4 border-pink-700 font-bold" style={{ ...totalsRowStyle, maxHeight: '35px' }}>
                     {groupBy !== 'clientType' && (
-                      <td className="py-2 px-3 text-sm border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                      <td className="border-r py-2 px-3 text-sm" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                         {totals.membershipType}
                       </td>
                     )}
                     {groupBy !== 'membership' && (
-                      <td className="py-2 px-3 text-sm border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                      <td className="border-r py-2 px-3 text-sm" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                         {totals.clientType}
                       </td>
                     )}
-                    <td className="py-2 px-3 text-sm text-center border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="border-r py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                       {formatNumber(totals.units)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="border-r py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                       {formatNumber(totals.newClientsCount)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-right font-semibold border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="border-r py-2 px-3 text-sm text-right font-semibold" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                       {formatCurrency(totals.totalRevenue)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-right border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="border-r py-2 px-3 text-sm text-right" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                       {formatCurrency(totals.avgRevenue)}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center border-r border-slate-300" style={{ maxHeight: '35px' }}>
+                    <td className="border-r py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                       {totals.avgDaysTaken > 0 ? totals.avgDaysTaken.toFixed(1) : 'N/A'}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center" style={{ maxHeight: '35px' }}>
+                    <td className="py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
                       {totals.avgVisitsPostTrial.toFixed(1)}
                     </td>
                   </tr>

@@ -97,7 +97,7 @@ const createHiddenIframe = (url: string) => {
   return iframe;
 };
 
-const waitForIframeLoad = async (iframe: HTMLIFrameElement, timeoutMs = 20000) => {
+const waitForIframeLoad = async (iframe: HTMLIFrameElement, timeoutMs = 45000) => {
   const isRouteReady = () => {
     try {
       const doc = iframe.contentDocument;
@@ -116,6 +116,7 @@ const waitForIframeLoad = async (iframe: HTMLIFrameElement, timeoutMs = 20000) =
     const cleanup = () => {
       iframe.removeEventListener('load', handleLoad);
       iframe.removeEventListener('error', handleError);
+      window.clearInterval(poller);
       window.clearTimeout(timer);
     };
 
@@ -143,6 +144,13 @@ const waitForIframeLoad = async (iframe: HTMLIFrameElement, timeoutMs = 20000) =
     iframe.addEventListener('load', handleLoad, { once: true });
     iframe.addEventListener('error', handleError, { once: true });
 
+    const poller = window.setInterval(() => {
+      if (isRouteReady()) {
+        cleanup();
+        resolve();
+      }
+    }, 250);
+
     if (isRouteReady()) {
       cleanup();
       resolve();
@@ -150,7 +158,8 @@ const waitForIframeLoad = async (iframe: HTMLIFrameElement, timeoutMs = 20000) =
   });
 };
 
-const waitForIframeStability = async (iframe: HTMLIFrameElement, timeoutMs = 20000) => {
+const waitForIframeStability = async (iframe: HTMLIFrameElement, timeoutMs = 45000) => {
+  let stablePolls = 0;
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const doc = iframe.contentDocument;
@@ -162,10 +171,22 @@ const waitForIframeStability = async (iframe: HTMLIFrameElement, timeoutMs = 200
     const bodyText = doc.body.innerText || '';
     const visibleTables = discoverPageTables(doc).filter(({ element }) => isVisibleElement(element));
     const loaderVisible = /Loading analytics dashboard|Loading page|Analyzing trainer performance|Loading member lifecycle analytics|Loading funnel and lead conversion data/i.test(bodyText);
+    const hasMeaningfulContent = bodyText.replace(/\s+/g, ' ').trim().length > 120;
+    const hasEmptyState = /No data|No records|No late cancellations|No discounts|No visible tables/i.test(bodyText);
 
-    if (!loaderVisible && (visibleTables.length > 0 || doc.readyState === 'complete')) {
-      await sleep(250);
+    if (!loaderVisible && visibleTables.length > 0) {
+      await sleep(500);
       return;
+    }
+
+    if (!loaderVisible && (hasMeaningfulContent || hasEmptyState) && doc.readyState === 'complete') {
+      stablePolls += 1;
+      if (stablePolls >= 4) {
+        await sleep(350);
+        return;
+      }
+    } else {
+      stablePolls = 0;
     }
 
     await sleep(250);
@@ -273,7 +294,9 @@ const collectTablesForTrigger = (doc: Document, trigger: HTMLElement) => {
 const collectRouteTabs = async (doc: Document) => {
   const tabs: ConsolidatedCollectedTab[] = [];
   const currentTables = collectVisibleTables(doc);
-  tabs.push({ label: 'Current View', tables: currentTables });
+  if (currentTables.length > 0) {
+    tabs.push({ label: 'Current View', tables: currentTables });
+  }
 
   const triggers = getVisibleTabTriggers(doc);
   const visited = new Set<string>();
@@ -295,6 +318,7 @@ const collectRouteTabs = async (doc: Document) => {
   }
 
   return tabs.filter((tab, index, allTabs) => {
+    if (tab.tables.length === 0) return false;
     if (index === 0) return true;
     const sameAsCurrent = JSON.stringify(tab.tables) === JSON.stringify(allTabs[0].tables);
     return !sameAsCurrent;
@@ -445,7 +469,13 @@ export const generateConsolidatedReport = async ({
           continue;
         }
 
-        const tabs = await collectRouteTabs(doc);
+        let tabs = await collectRouteTabs(doc);
+
+        if (tabs.length === 0) {
+          await sleep(1000);
+          tabs = await collectRouteTabs(doc);
+        }
+
         collectedRoutes.push({
           id: route.id,
           label: route.label,

@@ -259,36 +259,38 @@
 
 .client-retention-sales-table tbody tr.retention-totals-row,
 .client-retention-sales-table tbody tr.retention-totals-row:hover {
-  background: #1e293b !important;
+  background: var(--retention-totals-bg, #1e293b) !important;
+  color: var(--retention-totals-text, #f8fafc) !important;
 }
 
 .client-retention-sales-table tbody tr.retention-totals-row td,
 .client-retention-sales-table tbody tr.retention-totals-row td:hover {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--retention-totals-bg, #1e293b) !important;
+  color: var(--retention-totals-text, #f8fafc) !important;
+  border-right: 1px solid var(--retention-totals-border, rgba(255, 255, 255, 0.14));
 }
 
 .client-retention-sales-table tbody tr.retention-totals-row td *,
 .client-retention-sales-table tbody tr.retention-totals-row td span {
-  color: #f8fafc !important;
+  color: var(--retention-totals-text, #f8fafc) !important;
 }
 
 .client-retention-sales-table tfoot tr,
 .client-retention-sales-table tfoot tr:hover {
-  background: #1e293b !important;
+  background: var(--retention-totals-bg, #1e293b) !important;
+  color: var(--retention-totals-text, #f8fafc) !important;
 }
 
 .client-retention-sales-table tfoot td,
 .client-retention-sales-table tfoot td:hover {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--retention-totals-bg, #1e293b) !important;
+  color: var(--retention-totals-text, #f8fafc) !important;
+  border-right: 1px solid var(--retention-totals-border, rgba(255, 255, 255, 0.14));
 }
 
 .client-retention-sales-table tfoot td *,
 .client-retention-sales-table tfoot td span {
-  color: #f8fafc !important;
+  color: var(--retention-totals-text, #f8fafc) !important;
 }
 
 .client-retention-sales-table.client-retention-compact thead th,
@@ -398,7 +400,8 @@
 .trainer-performance-unified tbody tr[class*="total"],
 .funnel-leads-unified tbody tr[class*="total"],
 .discounts-promotions-unified tbody tr[class*="total"] {
-  background: #1e293b !important;
+  background: var(--unified-totals-bg, #1e293b) !important;
+  color: var(--unified-totals-text, #f8fafc) !important;
 }
 
 .class-attendance-unified tfoot td,
@@ -441,9 +444,9 @@
 .funnel-leads-unified tbody tr[class*="total"] th,
 .discounts-promotions-unified tbody tr[class*="total"] td,
 .discounts-promotions-unified tbody tr[class*="total"] th {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--unified-totals-bg, #1e293b) !important;
+  color: var(--unified-totals-text, #f8fafc) !important;
+  border-right: 1px solid var(--unified-totals-border, rgba(255, 255, 255, 0.14));
 }
 
 .class-attendance-unified tfoot td *,
@@ -470,7 +473,7 @@
 .funnel-leads-unified tbody tr[class*="total"] th *,
 .discounts-promotions-unified tbody tr[class*="total"] td *,
 .discounts-promotions-unified tbody tr[class*="total"] th * {
-  color: #f8fafc !important;
+  color: var(--unified-totals-text, #f8fafc) !important;
 }
 
 /* Remove badge-like styling from trainer/discount table body values for consistent Sales-table readability */

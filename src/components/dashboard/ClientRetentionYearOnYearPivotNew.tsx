@@ -7,6 +7,7 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
+import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 type MetricKey =
@@ -43,6 +44,25 @@ interface Props {
 }
 
 export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: providedMonths, onRowClick }) => {
+  const totalsRowStyle: React.CSSProperties = {
+    ['--retention-totals-bg' as string]: '#6b21a8',
+    ['--retention-totals-text' as string]: '#ffffff',
+    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#6b21a8',
+    color: '#ffffff',
+    borderTopColor: '#7e22ce',
+  };
+
+  const totalsCellStyle: React.CSSProperties = {
+    ['--retention-totals-bg' as string]: '#6b21a8',
+    ['--retention-totals-text' as string]: '#ffffff',
+    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#6b21a8',
+    color: '#ffffff',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderTopColor: '#7e22ce',
+  };
+
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [rowType, setRowType] = useState<RowType>('clientType');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
@@ -150,9 +170,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       if (!bucket) return;
       
       bucket.trials += 1;
-      if ((c.isNew || '').toLowerCase().includes('new')) bucket.newMembers += 1;
-      if (c.conversionStatus === 'Converted') bucket.converted += 1;
-      if (c.retentionStatus === 'Retained') bucket.retained += 1;
+      if (isInNewClientCohort(c)) bucket.newMembers += 1;
+      if (isConvertedInCohort(c)) bucket.converted += 1;
+      if (isRetainedInCohort(c)) bucket.retained += 1;
       bucket.totalLTV += c.ltv || 0;
       bucket.clients.push(c); // Add client to bucket
       
@@ -528,31 +548,36 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
   }, [registry, metric, displayMode, rowType, pivot, sortedRowKeys]);
 
   return (
-    <Card ref={containerRef} className="bg-white shadow-none border-0 overflow-hidden">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white pt-4">
+    <Card ref={containerRef} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.10)]">
+      <CardHeader className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pt-4 text-white">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Year-on-Year Analysis
-              <Badge variant="secondary" className="bg-white/20 text-white">
-                {comparisonYears.baselineYear} vs {comparisonYears.latestYear}
-              </Badge>
-              <div className="ml-4">
-                <CopyTableButton
-                  tableRef={containerRef as any}
-                  tableName={tableId}
-                  size="sm"
-                  onCopyAllTabs={async () => generateAllTabsContent()}
-                />
-              </div>
-            </CardTitle>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Year-on-Year Analysis
+                <Badge variant="secondary" className="bg-white/20 text-white">
+                  {comparisonYears.baselineYear} vs {comparisonYears.latestYear}
+                </Badge>
+                <div className="ml-4">
+                  <CopyTableButton
+                    tableRef={containerRef as any}
+                    tableName={tableId}
+                    size="sm"
+                    onCopyAllTabs={async () => generateAllTabsContent()}
+                  />
+                </div>
+              </CardTitle>
+              <p className="mt-2 text-sm text-slate-300">
+                Compare the same month across years, then open any row or month cell for supporting client evidence.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant={displayMode === 'values' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('values')}
-                className={displayMode === 'values' ? 'bg-white text-slate-900 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'values' ? 'rounded-xl border border-purple-400/30 bg-purple-500 text-white hover:bg-purple-400' : 'rounded-xl border border-white/20 bg-white/10 text-purple-100 hover:bg-purple-500/20 hover:text-white'}
               >
                 Values
               </Button>
@@ -560,19 +585,19 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                 size="sm"
                 variant={displayMode === 'growth' ? 'default' : 'outline'}
                 onClick={() => setDisplayMode('growth')}
-                className={displayMode === 'growth' ? 'bg-white text-slate-900 hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20 border-white/30'}
+                className={displayMode === 'growth' ? 'rounded-xl border border-purple-400/30 bg-purple-500 text-white hover:bg-purple-400' : 'rounded-xl border border-white/20 bg-white/10 text-purple-100 hover:bg-purple-500/20 hover:text-white'}
               >
                 Growth %
               </Button>
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1">
+            <div className="flex items-center gap-2 rounded-xl bg-white/10 p-1">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setRowType('clientType')}
-                className={`min-w-[110px] ${rowType === 'clientType' ? 'bg-white text-slate-900' : 'text-white hover:bg-white/20'}`}
+                className={`min-w-[110px] rounded-lg ${rowType === 'clientType' ? 'border border-purple-400/30 bg-purple-500 text-white' : 'text-purple-100 hover:bg-purple-500/20 hover:text-white'}`}
               >
                 Client Type
               </Button>
@@ -580,7 +605,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                 size="sm"
                 variant="ghost"
                 onClick={() => setRowType('membership')}
-                className={`min-w-[110px] ${rowType === 'membership' ? 'bg-white text-slate-900' : 'text-white hover:bg-white/20'}`}
+                className={`min-w-[110px] rounded-lg ${rowType === 'membership' ? 'border border-purple-400/30 bg-purple-500 text-white' : 'text-purple-100 hover:bg-purple-500/20 hover:text-white'}`}
               >
                 Membership
               </Button>
@@ -590,7 +615,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                 <button
                   key={k}
                   onClick={() => setMetric(k)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'bg-white text-slate-900 shadow-md' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                  className={`min-w-[90px] rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${metric === k ? 'border border-purple-400/30 bg-purple-500 text-white shadow-md' : 'border border-white/10 bg-white/10 text-purple-100 hover:bg-purple-500/20 hover:text-white'}`}
                   title={METRIC_LABELS[k]}
                 >
                   {METRIC_LABELS[k]}
@@ -600,13 +625,27 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
           </div>
         </div>
       </CardHeader>
-        <CardContent className="p-0">
-      <div className="overflow-x-auto max-h-[900px] relative" data-table="client-retention-yoy-pivot" data-table-name={tableId}>
+      <CardContent className="p-0">
+        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/90 px-5 py-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Years compared</div>
+            <div className="mt-1 text-2xl font-semibold text-slate-950">2</div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Row grouping</div>
+            <div className="mt-1 text-xl font-semibold text-slate-950">{rowType === 'clientType' ? 'Client Type' : 'Membership'}</div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Current metric</div>
+            <div className="mt-1 text-xl font-semibold text-slate-950">{METRIC_LABELS[metric]}</div>
+          </div>
+        </div>
+        <div className="overflow-x-auto max-h-[900px] relative" data-table="client-retention-yoy-pivot" data-table-name={tableId}>
           <table className="min-w-full relative" data-table="client-retention-yoy-pivot" data-table-name={tableId}>
             <thead>
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white sticky top-0 z-10">
+              <tr className="sticky top-0 z-10 bg-slate-950 text-white">
                 <th 
-                  className="px-4 py-3 text-left sticky left-0 z-20 font-bold text-xs uppercase tracking-wide cursor-pointer select-none border-r border-white/20 bg-slate-900"
+                  className="sticky left-0 z-20 border-r border-white/20 bg-slate-950 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide cursor-pointer select-none"
                   style={{ width: '300px', minWidth: '300px' }}
                   onClick={() => handleSort('row')}
                 >
@@ -645,7 +684,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
               {sortedRowKeys.map((rk) => (
                 <tr 
                   key={rk} 
-                  className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-indigo-50/60"
                   style={{ maxHeight: '35px' }}
                   onClick={() => {
                     // Aggregate clients from all months for this row
@@ -659,7 +698,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                     });
                   }}
                 >
-                  <td className="px-4 py-2 text-sm font-semibold text-slate-800 sticky left-0 bg-white hover:bg-slate-50 z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>{rk}</td>
+                  <td className="sticky left-0 z-10 border-r bg-white px-4 py-2 hover:bg-indigo-50/60" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm">{rk}</span>
+                  </td>
                   {months.map((m, index) => {
                     const prevMonth = index > 0 ? months[index - 1] : null;
                     const nextMonth = index < months.length - 1 ? months[index + 1] : null;
@@ -672,7 +713,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                     return (
                       <td 
                         key={m.key} 
-                        className={`px-2 py-2 text-center text-sm font-mono text-slate-800 ${
+                        className={`px-2 py-2 text-center text-sm font-mono text-slate-800 transition-colors hover:bg-indigo-50/80 ${
                           isFirstOfGroup ? 'border-l-2 border-slate-300' : 'border-l'
                         } ${
                           isLastOfGroup ? 'border-r-2 border-slate-300' : ''
@@ -714,8 +755,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="retention-totals-row font-bold border-t-4 border-slate-600" style={{ maxHeight: '35px' }}>
-                <td className="px-4 py-2 text-sm text-white sticky left-0 bg-slate-800 z-10 border-r" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>TOTALS</td>
+              <tr className="retention-totals-row border-t-4 border-purple-700 font-bold" style={{ ...totalsRowStyle, maxHeight: '35px' }}>
+                <td className="sticky left-0 z-10 border-r px-4 py-2 text-sm" style={{ ...totalsCellStyle, width: '300px', minWidth: '300px', maxHeight: '35px' }}>TOTALS</td>
                 {months.map((m, index) => {
                   const prevMonth = index > 0 ? months[index - 1] : null;
                   const nextMonth = index < months.length - 1 ? months[index + 1] : null;
@@ -728,12 +769,12 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                   return (
                     <td 
                       key={m.key} 
-                      className={`px-2 py-2 text-center text-sm font-mono text-white cursor-pointer hover:bg-slate-700 ${
-                        isFirstOfGroup ? 'border-l-2 border-slate-500' : 'border-l'
+                      className={`cursor-pointer px-2 py-2 text-center text-sm font-mono ${
+                        isFirstOfGroup ? 'border-l-2' : 'border-l'
                       } ${
-                        isLastOfGroup ? 'border-r-2 border-slate-500' : ''
+                        isLastOfGroup ? 'border-r-2' : ''
                       }`}
-                      style={{ maxHeight: '35px' }}
+                      style={{ ...totalsCellStyle, maxHeight: '35px' }}
                       onClick={(e) => {
                         e.stopPropagation();
                         const clients = cellData?.clients || [];

@@ -30,7 +30,7 @@ export const LazyDiscountDrillDownModal = lazy(() =>
 
 // Client conversion modals
 export const LazyClientConversionDrillDownModalV3 = lazy(() => 
-  import('@/components/dashboard/ClientConversionDrillDownModalV3').then(m => ({ default: m.ClientConversionDrillDownModalV3 }))
+  import('@/components/dashboard/ClientConversionRetentionDrillDownModal').then(m => ({ default: m.ClientConversionDrillDownModalV3 }))
 );
 
 export const LazyClientConversionDrillDownModalV2 = lazy(() => 
