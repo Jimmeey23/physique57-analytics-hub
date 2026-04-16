@@ -332,7 +332,7 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
                           retentionRate: child.retentionRate,
                           avgLTV: child.avgLTV,
                           totalLTV: child.totalLTV,
-                          clients: child.clients,
+                          clients: child.clients, 
                         })}
                       >
                         <TableCell className="sticky left-0 z-10 bg-orange-50/70 py-2.5 pl-14">
