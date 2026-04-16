@@ -95,7 +95,7 @@ export const EnhancedFilterSection: React.FC<EnhancedFilterSectionProps> = ({
     { value: '6m', label: 'Last 6 Months' },
     { value: '1y', label: 'Last 12 Months' },
     { value: 'prev-month', label: 'Previous Month' },
-    { value: 'custom', label: 'Custom Date Range (Default Jan-Mar 2026)' },
+    { value: 'custom', label: 'Custom Date Range (Default Previous Month)' },
   ];
 
   const classTypes = [

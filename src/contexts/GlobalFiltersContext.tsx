@@ -86,7 +86,7 @@ interface GlobalFiltersProviderProps {
 export const GlobalFiltersProvider: React.FC<GlobalFiltersProviderProps> = ({ children }) => {
   const [filters, setFilters] = React.useState<GlobalFilters>(() => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
-    // Set default date range to Q1 2026
+    // Set default date range to the previous complete month
     const defaultDateRange = getDashboardDefaultDateRange();
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
     return {

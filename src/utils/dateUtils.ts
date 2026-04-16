@@ -2,15 +2,15 @@
 // Date utility functions for the dashboard
 import { logger } from './logger';
 
-export const getDashboardDefaultDateRange = () => ({
-  start: '2026-01-01',
-  end: '2026-03-31',
-});
+export const getDashboardDefaultDateRange = () => getPreviousMonthDateRange();
 
-export const getDashboardDefaultDateRangeAsDates = () => ({
-  start: new Date('2026-01-01'),
-  end: new Date('2026-03-31'),
-});
+export const getDashboardDefaultDateRangeAsDates = () => {
+  const defaultRange = getDashboardDefaultDateRange();
+  return {
+    start: new Date(`${defaultRange.start}T00:00:00`),
+    end: new Date(`${defaultRange.end}T00:00:00`),
+  };
+};
 
 export const getPreviousMonthDateRange = () => {
   const now = new Date();

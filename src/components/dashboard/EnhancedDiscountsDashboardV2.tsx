@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
-import { logger } from '@/utils/logger';
 
 interface EnhancedDiscountsDashboardV2Props {
   data: SalesData[];
@@ -64,12 +63,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       
       const sortedMonths = Object.entries(monthCounts).sort((a, b) => b[0].localeCompare(a[0]));
       
-      logger.debug('EnhancedDiscountsDashboardV2 received data:', {
-        totalRecords: data?.length || 0,
-        samplePaymentDates: data?.slice(0, 5).map(d => d.paymentDate),
-        availableMonths: sortedMonths.slice(0, 10), // Top 10 most recent months
-        latestMonth: sortedMonths[0]?.[0]
-      });
     }
   }, [data]);
 
@@ -109,8 +102,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
   // Apply filters similar to sales section
   const applyFilters = (rawData: SalesData[], includeHistoric: boolean = false) => {
     let filtered = rawData.slice();
-    
-    logger.debug('Starting filter with:', filtered.length, 'records');
 
     // Apply location filter
     if (activeLocation !== 'all') {
@@ -124,8 +115,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       });
     }
 
-    logger.debug('After location filter:', filtered.length, 'records');
-
     // Apply date range filter (skip if includeHistoric is true)
     if (!includeHistoric && (filters.dateRange.start || filters.dateRange.end)) {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
@@ -134,11 +123,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
         date.setHours(23, 59, 59, 999);
         return date;
       })() : null;
-
-      logger.debug('Date filtering with range:', { 
-        start: startDate?.toISOString(), 
-        end: endDate?.toISOString() 
-      });
 
       if (startDate || endDate) {
         filtered = filtered.filter(item => {
@@ -156,8 +140,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
           
           return itemInRange;
         });
-        
-        logger.debug('After date filter:', filtered.length, 'records');
       }
     }
 
@@ -189,7 +171,6 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
       );
     }
 
-    logger.debug('Final filtered data:', filtered.length, 'records');
     return filtered;
   };
 
@@ -198,11 +179,7 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
 
   // For discount analysis, we need ALL sales data to calculate discount opportunities and performance
   // Show all filtered data (both discounted and non-discounted transactions)
-  const discountAnalysisData = useMemo(() => {
-    logger.debug('Discount Analysis Data:', filteredData.length, 'total transactions');
-    logger.debug('Sample data:', filteredData.slice(0, 3));
-    return filteredData;
-  }, [filteredData]);
+  const discountAnalysisData = useMemo(() => filteredData, [filteredData]);
 
   // Separate data for components that specifically need only discounted transactions
   const handleMetricClick = (metricData: any) => {

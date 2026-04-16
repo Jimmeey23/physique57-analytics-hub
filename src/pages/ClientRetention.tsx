@@ -226,14 +226,9 @@ const getFallbackMonthBounds = (inputData: any[]) => {
   };
 };
 
-const buildMomMonths = (inputData: any[], dateRange?: { start?: string; end?: string }): RetentionMonthDef[] => {
-  const selectedMonths = getOrderedRangeMonths(dateRange);
-  const months = selectedMonths.length > 0
-    ? selectedMonths
-    : (() => {
-        const bounds = getFallbackMonthBounds(inputData);
-        return buildMonthSequence(bounds.start, bounds.end);
-      })();
+const buildMomMonths = (inputData: any[]): RetentionMonthDef[] => {
+  const bounds = getFallbackMonthBounds(inputData);
+  const months = buildMonthSequence(bounds.start, bounds.end);
 
   return months.map((date) => ({
     key: getRetentionMonthKey(date),
@@ -1098,8 +1093,8 @@ const ClientRetention = () => {
   const deferredFilteredPayrollData = useDeferredValue(filteredPayrollData);
 
   const selectedMomMonths = useMemo(
-    () => buildMomMonths(filteredDataNoDateRange, filters.dateRange),
-    [filteredDataNoDateRange, filters.dateRange]
+    () => buildMomMonths(filteredDataNoDateRange),
+    [filteredDataNoDateRange]
   );
 
   const selectedYoyMonths = useMemo(
@@ -1500,8 +1495,8 @@ const ClientRetention = () => {
                   className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientConversionMonthOnMonthByTypeTable
-                    data={deferredFilteredData}
-                    visitsSummary={visitsSummary}
+                    data={deferredFilteredDataNoDateRange}
+                    visitsSummary={visitsSummaryNoDateRange}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
                       client: null,

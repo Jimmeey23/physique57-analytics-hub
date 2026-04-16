@@ -25,11 +25,7 @@ export const LeadMonthOnMonthAnalytics: React.FC<LeadMonthOnMonthAnalyticsProps>
     let filteredData = data;
     if (filters) {
       filteredData = data.filter(lead => {
-        if (filters.dateRange?.start || filters.dateRange?.end) {
-          const leadDate = new Date(lead.createdAt);
-          if (filters.dateRange.start && leadDate < new Date(filters.dateRange.start)) return false;
-          if (filters.dateRange.end && leadDate > new Date(filters.dateRange.end)) return false;
-        }
+        // Month-on-month analytics intentionally ignore date range filters so historical columns remain visible.
         if (filters.location?.length > 0 && !filters.location.includes(lead.center)) return false;
         if (filters.source?.length > 0 && !filters.source.includes(lead.source)) return false;
         if (filters.stage?.length > 0 && !filters.stage.includes(lead.stage)) return false;

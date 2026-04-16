@@ -326,7 +326,7 @@ export const ExecutiveFilterSection: React.FC<ExecutiveFilterSectionProps> = ({
                     <span>
                       Period: {(filters.dateRange?.start || filters.dateRange?.end) 
                         ? 'Custom date range' 
-                        : 'Jan-Mar 2026 default range'}
+                        : 'Previous month default range'}
                     </span>
                   </div>
                   {(filters.dateRange?.start || filters.dateRange?.end) && (

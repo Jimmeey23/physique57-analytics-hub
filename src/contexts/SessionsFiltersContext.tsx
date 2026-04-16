@@ -52,7 +52,7 @@ export const SessionsFiltersProvider: React.FC<SessionsFiltersProviderProps> = (
   const [filters, setFilters] = React.useState<SessionsFilters>(() => {
     const preset = typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null;
     const studioOption = preset ? getConsolidatedStudioOption(preset.studioId) : null;
-    // Set default date range to Q1 2026
+    // Set default date range to the previous complete month
     const defaultDateRange = getDashboardDefaultDateRange();
     return {
       locations: preset && preset.studioId !== 'all' ? [studioOption?.locationLabel || 'Kwality House, Kemps Corner'] : [],

@@ -7,7 +7,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
+import { getDashboardDefaultDateRange, getPreviousMonthDisplay, parseDate } from '@/utils/dateUtils';
 
 const DiscountsPromotions: React.FC = () => {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ const DiscountsPromotions: React.FC = () => {
       
       return {
         location: location.name,
-        label: 'Jan-Mar 2026 Discounts',
+        label: `${getPreviousMonthDisplay()} Discounts`,
         value: formatCurrency(totalDiscounts)
       };
     });

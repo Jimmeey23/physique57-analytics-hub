@@ -33,10 +33,6 @@ export const LazyClientConversionDrillDownModalV3 = lazy(() =>
   import('@/components/dashboard/ClientConversionRetentionDrillDownModal').then(m => ({ default: m.ClientConversionDrillDownModalV3 }))
 );
 
-export const LazyClientConversionDrillDownModalV2 = lazy(() => 
-  import('@/components/dashboard/ClientConversionDrillDownModalV2').then(m => ({ default: m.ClientConversionDrillDownModalV2 }))
-);
-
 export const LazyClientConversionDrillDownModal = lazy(() => 
   import('@/components/dashboard/ClientConversionDrillDownModal').then(m => ({ default: m.ClientConversionDrillDownModal }))
 );
@@ -63,10 +59,6 @@ export const LazyEnhancedTrainerDrillDownModal = lazy(() =>
   import('@/components/dashboard/EnhancedTrainerDrillDownModal').then(m => ({ default: m.EnhancedTrainerDrillDownModal }))
 );
 
-export const LazyDynamicTrainerDrillDownModal = lazy(() => 
-  import('@/components/dashboard/DynamicTrainerDrillDownModal').then(m => ({ default: m.DynamicTrainerDrillDownModal }))
-);
-
 // Class and attendance modals
 export const LazyClassAttendanceDrillDownModal = lazy(() => 
   import('@/components/dashboard/ClassAttendanceDrillDownModal').then(m => ({ default: m.ClassAttendanceDrillDownModal }))
@@ -87,10 +79,6 @@ export const LazyLateCancellationsDrillDownModal = lazy(() =>
 
 export const LazyFunnelDrillDownModal = lazy(() => 
   import('@/components/dashboard/FunnelDrillDownModal').then(m => ({ default: m.FunnelDrillDownModal }))
-);
-
-export const LazyPaginatedDrillDownModal = lazy(() => 
-  import('@/components/dashboard/PaginatedDrillDownModal').then(m => ({ default: m.PaginatedDrillDownModal }))
 );
 
 export const LazyMemberInsightsDrillDownModal = lazy(() =>

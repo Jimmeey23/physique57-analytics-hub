@@ -218,14 +218,48 @@ export const PatternsAndTrends = () => {
     });
   }, [checkinsData, selectedLocation]);
 
+  // Location + categorical filters for month-on-month analysis, intentionally ignoring month filters.
+  const filteredDataNoMonth = useMemo(() => {
+    let data = checkinsData;
+
+    if (selectedLocation !== 'All Locations') {
+      data = data.filter(item => {
+        const location = item.location || '';
+        if (selectedLocation === 'Kenkere House') {
+          return location.toLowerCase().includes('kenkere') || location === 'Kenkere House';
+        }
+        return location === selectedLocation;
+      });
+    }
+
+    if (selectedProducts.length > 0) {
+      data = data.filter(item => selectedProducts.includes(item.cleanedProduct || ''));
+    }
+
+    if (selectedCategories.length > 0) {
+      data = data.filter(item => selectedCategories.includes(item.cleanedCategory || ''));
+    }
+
+    if (selectedTeachers.length > 0) {
+      data = data.filter(item => selectedTeachers.includes(item.teacherName || ''));
+    }
+
+    if (selectedMemberStatus.length > 0) {
+      data = data.filter(item => selectedMemberStatus.includes(item.isNew || ''));
+    }
+
+    return data;
+  }, [checkinsData, selectedLocation, selectedProducts, selectedCategories, selectedTeachers, selectedMemberStatus]);
+
   // Defer heavy computations so UI stays responsive while filters change
   const deferredFilteredData = useDeferredValue(filteredData);
+  const deferredFilteredDataNoMonth = useDeferredValue(filteredDataNoMonth);
   const deferredSalesData = useDeferredValue(salesData);
   const [isPending, startTransition] = useTransition();
 
   // Process data: month-on-month breakdown by product/category/teacher with ALL METRICS
   const monthlyProductData = useMemo(() => {
-    const fd = deferredFilteredData;
+    const fd = deferredFilteredDataNoMonth;
     const sd = deferredSalesData;
     
     // Early return check
@@ -635,7 +669,7 @@ export const PatternsAndTrends = () => {
         
         // Empty sessions for totals
         const sessionsWithCheckins = new Set<string>();
-        filteredData.forEach(item => {
+        fd.forEach(item => {
           if (item.checkedIn && item.sessionId && `${item.month} ${item.year}` === month) {
             sessionsWithCheckins.add(item.sessionId);
           }
@@ -672,7 +706,7 @@ export const PatternsAndTrends = () => {
     };
 
     return { products, months, totalsRow };
-  }, [deferredFilteredData, groupBy, deferredSalesData]);
+  }, [deferredFilteredDataNoMonth, groupBy, deferredSalesData]);
 
   // Get enhanced copy context with filters and metrics (after monthlyProductData is available)
   const { contextInfo } = useTableCopyContext({
@@ -1509,7 +1543,7 @@ export const PatternsAndTrends = () => {
                 <Badge className="bg-white/20 text-white border-white/30">
                   {monthlyProductData.products.length} {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}s
                   {monthlyProductData.products.length === 0 && (
-                    <span className="ml-2 text-red-200">(Debug: {deferredFilteredData.length} raw records)</span>
+                    <span className="ml-2 text-red-200">(Debug: {deferredFilteredDataNoMonth.length} raw records)</span>
                   )}
                 </Badge>
                 <CopyTableButton 
@@ -1568,7 +1602,7 @@ export const PatternsAndTrends = () => {
                           <AlertCircle className="w-8 h-8 text-slate-400" />
                           <div className="text-lg font-medium">No Data Available</div>
                           <div className="text-sm">
-                            Raw records: {deferredFilteredData.length} | 
+                            Raw records: {deferredFilteredDataNoMonth.length} | 
                             Selected location: {selectedLocation} | 
                             Group by: {groupBy}
                           </div>

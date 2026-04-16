@@ -23,6 +23,7 @@ import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 import { LeadsFilterOptions } from '@/types/leads';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
+import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -35,6 +36,7 @@ export default function FunnelLeads() {
     setLoading(loading, 'Loading funnel and lead conversion data...');
   }, [loading, setLoading]);
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
   const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
@@ -53,8 +55,8 @@ export default function FunnelLeads() {
   const [filters, setFilters] = useState<LeadsFilterOptions>(() => {
     return {
       dateRange: {
-        start: exportPreset?.startDate || '2026-01-01',
-        end: exportPreset?.endDate || '2026-03-31',
+        start: exportPreset?.startDate || defaultDateRange.start,
+        end: exportPreset?.endDate || defaultDateRange.end,
       },
       location: [],
       source: [],
@@ -152,7 +154,7 @@ export default function FunnelLeads() {
   const resetAllFilters = () => {
     setActiveLocation('all');
     setFilters({
-      dateRange: { start: '', end: '' },
+      dateRange: { start: defaultDateRange.start, end: defaultDateRange.end },
       location: [],
       source: [],
       stage: [],
