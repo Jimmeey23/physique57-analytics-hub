@@ -12,5 +12,5 @@ export const isConvertedInCohort = (record: RetentionLikeRecord) => {
 };
 
 export const isRetainedInCohort = (record: RetentionLikeRecord) => {
-  return isConvertedInCohort(record) && record.retentionStatus === 'Retained';
+  return isInNewClientCohort(record) && record.retentionStatus === 'Retained';
 };

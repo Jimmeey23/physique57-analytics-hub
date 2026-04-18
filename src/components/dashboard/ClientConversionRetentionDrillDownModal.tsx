@@ -1162,7 +1162,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div className="font-semibold text-slate-900">Retention numerator</div>
-                        <p className="mt-1">A client is counted as retained only when <code className="rounded bg-white px-1 py-0.5 text-xs">retentionStatus</code> is exactly “Retained”. Converted-but-not-retained clients are still shown with reasons.</p>
+                        <p className="mt-1">A client is counted as retained when they are part of the new-client cohort and <code className="rounded bg-white px-1 py-0.5 text-xs">retentionStatus</code> is exactly “Retained”. A matching <code className="rounded bg-white px-1 py-0.5 text-xs">conversionStatus</code> is not required for retention.</p>
                       </div>
                     </CardContent>
                   </Card>

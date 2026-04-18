@@ -1098,8 +1098,8 @@ const ClientRetention = () => {
   );
 
   const selectedYoyMonths = useMemo(
-    () => buildYoyMonths(filteredDataNoDateRange, filters.dateRange),
-    [filteredDataNoDateRange, filters.dateRange]
+    () => buildYoyMonths(filteredData, filters.dateRange),
+    [filteredData, filters.dateRange]
   );
 
   const handleTableChange = useCallback((table: string) => {
@@ -1225,8 +1225,8 @@ const ClientRetention = () => {
     });
 
     const yoyMonths = selectedYoyMonths;
-    const yoyClientTypePivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'clientType');
-    const yoyMembershipPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'membership');
+    const yoyClientTypePivot = buildRetentionPivotMatrix(filteredData, yoyMonths, 'clientType');
+    const yoyMembershipPivot = buildRetentionPivotMatrix(filteredData, yoyMonths, 'membership');
     (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
       exportSections[`Client Retention • YoY Pivot • Client Type • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
         'Client Type',
@@ -1495,8 +1495,8 @@ const ClientRetention = () => {
                   className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientConversionMonthOnMonthByTypeTable
-                    data={deferredFilteredDataNoDateRange}
-                    visitsSummary={visitsSummaryNoDateRange}
+                    data={deferredFilteredData}
+                    visitsSummary={visitsSummary}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
                       client: null,
@@ -1534,7 +1534,7 @@ const ClientRetention = () => {
                   className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientRetentionYearOnYearPivot
-                    data={deferredFilteredDataNoDateRange}
+                    data={deferredFilteredData}
                     months={selectedYoyMonths}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
