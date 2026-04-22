@@ -150,7 +150,7 @@ const AppRoutes = () => {
 const AppContent = () => {
   usePerformanceOptimization();
   const { mode, isOnline } = useDataSource();
-  const intercomAppId = import.meta.env.VITE_INTERCOM_APP_ID || 'hzmswx1k';
+  const intercomAppId = import.meta.env.VITE_INTERCOM_APP_ID || 'm7p28m4u';
 
   React.useEffect(() => {
     if (!import.meta.env.PROD || mode === 'offline' || !isOnline || !intercomAppId) {
