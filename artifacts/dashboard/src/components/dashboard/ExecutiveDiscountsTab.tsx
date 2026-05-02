@@ -324,11 +324,11 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
     },
     {
       title: 'Discount Rate',
-      value: formatPercentage(() => {
-        // Calculate correctly: discounts as % of gross revenue (before discount)
-        const grossRevenue = discountAnalysis.totalRevenue + discountAnalysis.totalDiscounts;
-        return grossRevenue > 0 ? (discountAnalysis.totalDiscounts / grossRevenue) * 100 : 0;
-      }()),
+      value: formatPercentage(
+        (discountAnalysis.totalRevenue + discountAnalysis.totalDiscounts) > 0
+          ? (discountAnalysis.totalDiscounts / (discountAnalysis.totalRevenue + discountAnalysis.totalDiscounts)) * 100
+          : 0
+      ),
       icon: Percent,
       gradient: 'from-blue-500 to-indigo-600',
       description: 'Discount as % of gross revenue',

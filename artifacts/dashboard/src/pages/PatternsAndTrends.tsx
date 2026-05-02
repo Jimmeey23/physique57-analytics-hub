@@ -288,68 +288,8 @@ export const PatternsAndTrends = () => {
           } 
         };
       }
-      // No data at all - provide sample data for testing
-      return { 
-        products: [{
-          product: 'Sample Product',
-          monthlyBreakdown: [{
-            month: 'December 2024',
-            visits: 150,
-            bookings: 180,
-            checkins: 150,
-            sessions: 25,
-            emptySessions: 2,
-            uniqueMembers: 85,
-            newMembers: 15,
-            returningMembers: 70,
-            revenue: 12500,
-            earnedRevenue: 11800,
-            unitsSold: 45,
-            classAvg: 6.0,
-            fillRate: 75.5,
-            capacity: 200,
-            lateCancellations: 8,
-            complementary: 5,
-            avgRevenuePerMember: 147.06,
-            avgRevenuePerSession: 500.00
-          }],
-          totalVisits: 150,
-          totalBookings: 180,
-          totalUniqueMembers: 85,
-          totalSessions: 25,
-          totalRevenue: 12500,
-          totalCapacity: 200,
-          avgFillRate: 75.5,
-          avgClassAvg: 6.0
-        }], 
-        months: ['December 2024'], 
-        totalsRow: { 
-          product: 'TOTAL', 
-          monthlyBreakdown: [{
-            month: 'December 2024',
-            visits: 150,
-            bookings: 180,
-            checkins: 150,
-            sessions: 25,
-            emptySessions: 2,
-            uniqueMembers: 85,
-            newMembers: 15,
-            returningMembers: 70,
-            revenue: 12500,
-            earnedRevenue: 11800,
-            unitsSold: 45,
-            classAvg: 6.0,
-            fillRate: 75.5,
-            capacity: 200,
-            lateCancellations: 8,
-            complementary: 5,
-            avgRevenuePerMember: 147.06,
-            avgRevenuePerSession: 500.00
-          }], 
-          totalVisits: 150, 
-          totalUniqueMembers: 85 
-        } 
-      };
+      // No data at all
+      return { products: [], months: [], totalsRow: { product: 'TOTAL', monthlyBreakdown: [], totalVisits: 0, totalUniqueMembers: 0 } };
     }
     const grouped: Record<string, Record<string, {
       visits: number;

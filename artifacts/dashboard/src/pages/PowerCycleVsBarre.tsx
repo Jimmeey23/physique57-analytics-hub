@@ -37,8 +37,6 @@ const PowerCycleVsBarre = () => {
         </p>
       </div>
     </div>
-      </div>
-    </div>
   );
 };
 

@@ -25,7 +25,7 @@ import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPre
 
 
 const locations = [
-  { id: 'all', name: 'All Locations, ', fullName: 'All Locations' },
+  { id: 'all', name: 'All Locations', fullName: 'All Locations' },
   { id: 'kwality', name: 'Kwality House, Kemps Corner', fullName: 'Kwality House, Kemps Corner' },
   { id: 'supreme', name: 'Supreme HQ, Bandra', fullName: 'Supreme HQ, Bandra' },
   { id: 'kenkere', name: 'Kenkere House, Bengaluru', fullName: 'Kenkere House' },
@@ -151,12 +151,6 @@ const ClassFormatsComparison: React.FC = () => {
     const { filters } = useSessionsFilters();
     const filteredAll = useFilteredSessionsData(sessions || []);
     
-    React.useEffect(() => {
-      if (sessions && sessions.length > 0) {
-        const uniqueClasses = new Set(sessions.map(s => s?.cleanedClass || s?.classType));
-
-      }
-    }, [sessions, filteredAll, allCheckins, activeLocation, filters]);
     
     // Filter checkins globally with SessionsFilters
     const filteredAllCheckins = useMemo(() => {

@@ -16,6 +16,12 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Known Issues / Architecture Notes
+
+- Google API credentials not configured in this dev environment — all data hooks return 503 errors and fall back to offline cache if available
+- `useRecurringSessionsData` does not use `loadDatasetRowsForMode` — has no offline/demo mode support (no `recurring` key in `OfflineDatasetKey`)
+- Trainer filter in `LateCancellations.tsx` uses `paymentMethodName` (the Late Cancellations sheet has no `teacherName` column)
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages

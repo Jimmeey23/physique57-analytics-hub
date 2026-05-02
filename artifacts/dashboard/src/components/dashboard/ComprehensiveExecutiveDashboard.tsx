@@ -172,17 +172,6 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
     setLoading(isLoading, 'Loading executive dashboard overview...');
   }, [isLoading, setLoading]);
 
-  // Ensure Executive Summary defaults to November 2025 when this component mounts
-  useEffect(() => {
-    try {
-      // Force the Executive Summary to November 2025 on mount
-      updateFilters({ dateRange: { start: '2025-11-01', end: '2025-11-30' } });
-    } catch (e) {
-      console.warn('Failed to set default Executive Summary date range:', e);
-    }
-    // Intentionally only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Get unique locations for the selector
   const availableLocations = useMemo(() => {
