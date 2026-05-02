@@ -67,19 +67,20 @@ export const useFilteredSessionsData = (data: SessionData[]) => {
         
         // Handle different date formats from the sheets
         if (session.date.includes('/')) {
-          // Handle DD/MM/YYYY format
+          // XLSX formats dates as M/D/YY (e.g. "2/29/24") or M/D/YYYY
           const parts = session.date.split('/');
           if (parts.length === 3) {
-            const day = parseInt(parts[0]);
-            const month = parseInt(parts[1]);
-            const year = parseInt(parts[2]);
+            const month = parseInt(parts[0]);
+            const day = parseInt(parts[1]);
+            let year = parseInt(parts[2]);
+            if (year < 100) year += 2000;
             sessionDate = new Date(year, month - 1, day);
           } else {
             sessionDate = new Date(session.date);
           }
         } else {
-          // Handle YYYY-MM-DD format
-          sessionDate = new Date(session.date);
+          // Handle YYYY-MM-DD format (output of cellDates: true + dateNF)
+          sessionDate = new Date(session.date + 'T00:00:00');
         }
         
         // Ensure we have a valid date

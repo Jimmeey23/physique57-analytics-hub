@@ -2,6 +2,7 @@ import * as React from 'react';
 import {
   deleteOfflineDataset,
   listOfflineDatasets,
+  notifySeedingComplete,
   parseSpreadsheetFileToRows,
   saveOfflineDatasetRows,
   seedBundledOfflineDatasets,
@@ -67,6 +68,8 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await seedBundledOfflineDatasets();
       } catch (error) {
         console.error('Failed to seed bundled offline datasets:', error);
+        // Even on error, unblock any hooks that are waiting for seeding.
+        notifySeedingComplete();
       } finally {
         if (!cancelled) {
           setBundleSeeded(true);

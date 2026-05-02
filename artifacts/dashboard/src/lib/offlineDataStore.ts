@@ -10,9 +10,27 @@ import {
 
 const DB_NAME = 'p57-offline-data';
 const STORE_NAME = 'datasets';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
+
+// ---------------------------------------------------------------------------
+// Seeding-complete promise
+// loadDatasetRowsForMode (remote-first) awaits this before falling back to
+// cache so that, even if the remote 503s before seeding finishes, the hook
+// will still find the bundled rows in IndexedDB.
+// ---------------------------------------------------------------------------
+let _seedingResolve: (() => void) | null = null;
+let _seedingDone = false;
+export const seedingCompletePromise: Promise<void> = new Promise((resolve) => {
+  _seedingResolve = resolve;
+  if (_seedingDone) resolve();
+});
+export const notifySeedingComplete = () => {
+  if (_seedingDone) return;
+  _seedingDone = true;
+  _seedingResolve?.();
+};
 
 const openDatabase = (): Promise<IDBDatabase> => {
   if (dbPromise) return dbPromise;
@@ -20,11 +38,13 @@ const openDatabase = (): Promise<IDBDatabase> => {
   dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+      // Recreate the store on version upgrade to clear stale/misformatted data
+      if (db.objectStoreNames.contains(STORE_NAME)) {
+        db.deleteObjectStore(STORE_NAME);
       }
+      db.createObjectStore(STORE_NAME, { keyPath: 'key' });
     };
 
     request.onsuccess = () => resolve(request.result);
@@ -121,7 +141,7 @@ export const parseSpreadsheetFileToRows = async (file: File): Promise<any[][]> =
 };
 
 export const parseSpreadsheetBufferToRows = (buffer: ArrayBuffer): any[][] => {
-  const workbook = XLSX.read(buffer, { type: 'array' });
+  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
   if (!firstSheetName) {
     throw new Error('The uploaded file does not contain any readable sheets');
@@ -133,6 +153,7 @@ export const parseSpreadsheetBufferToRows = (buffer: ArrayBuffer): any[][] => {
     raw: false,
     defval: '',
     blankrows: false,
+    dateNF: 'yyyy-mm-dd',
   }) as any[][];
 
   if (!rows.length) {
@@ -150,7 +171,8 @@ export const seedBundledOfflineDatasets = async () => {
   await Promise.all(
     OFFLINE_DATASET_KEYS.map(async (key) => {
       const existing = existingRecords.find(([recordKey]) => recordKey === key)?.[1] ?? null;
-      if (existing?.source === 'upload') {
+      // Skip if the user uploaded their own file, or if we already seeded the bundle
+      if (existing?.source === 'upload' || existing?.source === 'bundle') {
         return;
       }
 
@@ -165,4 +187,8 @@ export const seedBundledOfflineDatasets = async () => {
       await saveOfflineDatasetRows(key, rows, 'bundle', fileName);
     })
   );
+
+  // Signal that all bundled datasets are now in IndexedDB. loadDatasetRowsForMode
+  // awaits this before reading the cache fallback (remote-first flow).
+  notifySeedingComplete();
 };

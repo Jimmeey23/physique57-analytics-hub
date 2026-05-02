@@ -369,7 +369,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center font-bold text-black text-xs">#{data.rank}</div>;
+            return <div className="text-center text-slate-400 text-xs tabular-nums">#{data.rank}</div>;
           }
           return null;
         },
@@ -383,11 +383,11 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="font-semibold text-slate-900 text-xs whitespace-normal break-words leading-5">{data.groupValue.replace(/\|/g, ' • ')}</div>;
+            return <div className="font-semibold text-slate-800 text-[13px] whitespace-normal break-words leading-5">{data.groupValue.replace(/\|/g, ' · ')}</div>;
           }
           const session = data as SessionData;
           return (
-            <div className="pl-4 text-xs text-slate-700 font-medium whitespace-normal break-words leading-5">
+            <div className="pl-6 text-xs text-slate-400 font-normal whitespace-normal break-words leading-5 italic">
               {session.cleanedClass || session.sessionName || session.classType}
             </div>
           );
@@ -404,10 +404,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => s.trainerName !== firstSession?.trainerName);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.trainerName || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.trainerName || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.trainerName || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.trainerName || ''}</div>;
         },
       },
       {
@@ -421,10 +421,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => s.location !== firstSession?.location);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.location || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.location || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.location || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.location || ''}</div>;
         },
       },
       {
@@ -438,10 +438,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => (s.cleanedClass || s.sessionName) !== (firstSession?.cleanedClass || firstSession?.sessionName));
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.cleanedClass || firstSession?.sessionName || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.cleanedClass || firstSession?.sessionName || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.cleanedClass || session.sessionName || session.classType || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.cleanedClass || session.sessionName || session.classType || ''}</div>;
         },
       },
       {
@@ -455,10 +455,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => (s as any).format !== (firstSession as any)?.format);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : (firstSession as any)?.format || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : (firstSession as any)?.format || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{(session as any).format || ''}</div>;
+          return <div className="text-xs text-slate-600">{(session as any).format || ''}</div>;
         },
       },
       {
@@ -472,10 +472,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => s.classType !== firstSession?.classType);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.classType || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.classType || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.classType || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.classType || ''}</div>;
         },
       },
       {
@@ -489,10 +489,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => s.date !== firstSession?.date);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.date || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.date || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.date || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.date || ''}</div>;
         },
       },
       {
@@ -506,10 +506,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => s.dayOfWeek !== firstSession?.dayOfWeek);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.dayOfWeek || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.dayOfWeek || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.dayOfWeek || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.dayOfWeek || ''}</div>;
         },
       },
       {
@@ -523,10 +523,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           if ('isGroupRow' in data && data.isGroupRow) {
             const firstSession = data.children?.[0];
             const hasMultiple = data.children?.some(s => s.time !== firstSession?.time);
-            return <div className="text-xs text-black">{hasMultiple ? 'Multiple' : firstSession?.time || ''}</div>;
+            return <div className="text-xs text-slate-600">{hasMultiple ? 'Multiple' : firstSession?.time || ''}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-xs text-black">{session.time || ''}</div>;
+          return <div className="text-xs text-slate-600">{session.time || ''}</div>;
         },
       },
       {
@@ -538,7 +538,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{data.classes}</div>;
+            return <div className="text-center text-slate-600 text-xs tabular-nums">{data.classes}</div>;
           }
           return null;
         },
@@ -552,10 +552,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatNumber(data.totalCheckIns)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums font-medium">{formatNumber(data.totalCheckIns)}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-center text-black text-xs">{session.checkedInCount || 0}</div>;
+          return <div className="text-center text-slate-700 text-xs tabular-nums">{session.checkedInCount || 0}</div>;
         },
       },
       {
@@ -567,7 +567,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{data.classAvg.toFixed(1)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums font-medium">{data.classAvg.toFixed(1)}</div>;
           }
           return null;
         },
@@ -581,11 +581,11 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatPercentage(data.fillRate)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatPercentage(data.fillRate)}</div>;
           }
           const session = data as SessionData;
           const rate = session.capacity > 0 ? (session.checkedInCount || 0) / session.capacity * 100 : 0;
-          return <div className="text-center text-black text-xs">{formatPercentage(rate)}</div>;
+          return <div className="text-center text-slate-700 text-xs tabular-nums">{formatPercentage(rate)}</div>;
         },
       },
       {
@@ -597,10 +597,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-right text-black text-xs">{formatCurrency(data.totalRevenue)}</div>;
+            return <div className="text-right text-slate-700 text-xs tabular-nums">{formatCurrency(data.totalRevenue)}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-right text-black text-xs">{formatCurrency(session.totalPaid || session.revenue || 0)}</div>;
+          return <div className="text-right text-slate-700 text-xs tabular-nums">{formatCurrency(session.totalPaid || session.revenue || 0)}</div>;
         },
       },
       {
@@ -612,7 +612,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatPercentage(data.consistencyScore)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatPercentage(data.consistencyScore)}</div>;
           }
           return null;
         },
@@ -626,7 +626,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{data.emptyClasses}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{data.emptyClasses}</div>;
           }
           return null;
         },
@@ -640,10 +640,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatNumber(data.totalCapacity)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatNumber(data.totalCapacity)}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-center text-black text-xs">{session.capacity || 0}</div>;
+          return <div className="text-center text-slate-700 text-xs tabular-nums">{session.capacity || 0}</div>;
         },
       },
       {
@@ -655,10 +655,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatNumber(data.totalBooked)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatNumber(data.totalBooked)}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-center text-black text-xs">{session.bookedCount || 0}</div>;
+          return <div className="text-center text-slate-700 text-xs tabular-nums">{session.bookedCount || 0}</div>;
         },
       },
       {
@@ -670,10 +670,10 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatNumber(data.totalCancellations)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatNumber(data.totalCancellations)}</div>;
           }
           const session = data as SessionData;
-          return <div className="text-center text-black text-xs">{session.lateCancelledCount || 0}</div>;
+          return <div className="text-center text-slate-700 text-xs tabular-nums">{session.lateCancelledCount || 0}</div>;
         },
       },
       {
@@ -685,7 +685,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatPercentage(data.cancellationRate)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatPercentage(data.cancellationRate)}</div>;
           }
           return null;
         },
@@ -699,7 +699,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-right text-black text-xs">{formatCurrency(data.revPerCheckin)}</div>;
+            return <div className="text-right text-slate-700 text-xs tabular-nums">{formatCurrency(data.revPerCheckin)}</div>;
           }
           return null;
         },
@@ -713,7 +713,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-right text-black text-xs">{formatCurrency(data.revPerBooking)}</div>;
+            return <div className="text-right text-slate-700 text-xs tabular-nums">{formatCurrency(data.revPerBooking)}</div>;
           }
           return null;
         },
@@ -727,7 +727,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-right text-black text-xs">{formatCurrency(data.revLostPerCancellation)}</div>;
+            return <div className="text-right text-slate-700 text-xs tabular-nums">{formatCurrency(data.revLostPerCancellation)}</div>;
           }
           return null;
         },
@@ -741,7 +741,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{data.classAvgNonEmpty.toFixed(1)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{data.classAvgNonEmpty.toFixed(1)}</div>;
           }
           return null;
         },
@@ -755,7 +755,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatPercentage(data.waitlistRate)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatPercentage(data.waitlistRate)}</div>;
           }
           return null;
         },
@@ -769,7 +769,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
         cell: ({ row }) => {
           const data = row.original;
           if ('isGroupRow' in data && data.isGroupRow) {
-            return <div className="text-center text-black text-xs">{formatPercentage(data.weightedAverage)}</div>;
+            return <div className="text-center text-slate-700 text-xs tabular-nums">{formatPercentage(data.weightedAverage)}</div>;
           }
           return null;
         },
@@ -869,24 +869,24 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
       >
         <div className="flex flex-wrap items-center gap-4">
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 border-2 border-gray-300 shadow-sm">
+          <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
             <button
               onClick={() => setViewMode('grouped')}
-              className={`px-5 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 ${
                 viewMode === 'grouped'
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg scale-105'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              <List className="w-5 h-5" />
+              <List className="w-4 h-4" />
               Grouped
             </button>
             <button
               onClick={() => setViewMode('flat')}
-              className={`px-5 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 ${
                 viewMode === 'flat'
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg scale-105'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <TableIcon className="w-5 h-5" />
@@ -899,7 +899,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
             <select
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-              className="px-5 py-3 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 outline-none font-semibold transition-all bg-white shadow-sm"
+              className="px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none font-medium text-sm transition-all bg-white shadow-sm text-gray-700"
             >
               {groupByOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -916,7 +916,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
               <select
                 value={rankingMetric}
                 onChange={(e) => setRankingMetric(e.target.value as RankingMetric)}
-                className="px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-200 outline-none font-semibold transition-all bg-white shadow-sm"
+                className="px-4 py-2 rounded-lg border border-gray-200 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 outline-none font-medium text-sm transition-all bg-white shadow-sm text-gray-700"
               >
                 {rankingOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -928,7 +928,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           )}
 
           {/* Density Toggle */}
-          <div className="flex items-center gap-1 bg-white rounded-xl p-1 border-2 border-gray-200">
+          <div className="flex items-center gap-1 bg-white rounded-lg p-1 border border-gray-200">
             <button
               onClick={() => setDensity('comfortable')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -950,7 +950,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           {/* Min Sessions */}
           {viewMode === 'grouped' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">
                 Min Sessions:
               </label>
               <input
@@ -958,7 +958,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                 min="0"
                 value={minSessions}
                 onChange={(e) => setMinSessions(parseInt(e.target.value) || 0)}
-                className="w-20 px-3 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 outline-none font-semibold transition-all bg-white shadow-sm text-sm"
+                className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 focus:border-blue-400 outline-none font-medium transition-all bg-white text-sm text-gray-700"
               />
             </div>
           )}
@@ -966,7 +966,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           {/* Min Check-ins */}
           {viewMode === 'grouped' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">
                 Min Check-ins:
               </label>
               <input
@@ -974,21 +974,21 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                 min="0"
                 value={minCheckins}
                 onChange={(e) => setMinCheckins(parseInt(e.target.value) || 0)}
-                className="w-20 px-3 py-2 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 outline-none font-semibold transition-all bg-white shadow-sm text-sm"
+                className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 focus:border-blue-400 outline-none font-medium transition-all bg-white text-sm text-gray-700"
               />
             </div>
           )}
 
           {/* Exclude Hosted Classes */}
           {viewMode === 'grouped' && (
-            <label className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-200 bg-white shadow-sm cursor-pointer hover:border-blue-400 transition-all">
+            <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white shadow-sm cursor-pointer hover:border-blue-400 transition-all">
               <input
                 type="checkbox"
                 checked={excludeHostedClasses}
                 onChange={(e) => setExcludeHostedClasses(e.target.checked)}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-sm font-semibold text-gray-800">
+              <span className="text-xs font-medium text-gray-600">
                 Exclude Hosted
               </span>
             </label>
@@ -1017,7 +1017,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                     <th
                       key={header.id}
                       style={{ width: `${header.getSize()}px`, position: 'relative' }}
-                      className={`${thPaddingClass} ${headerHeightClass} text-left text-[11px] font-semibold text-slate-100 uppercase tracking-[0.08em] relative group whitespace-nowrap align-top`}
+                      className={`${thPaddingClass} ${headerHeightClass} text-left text-[10px] font-medium text-slate-300 uppercase tracking-[0.1em] relative group whitespace-nowrap align-top`}
                     >
                       <div
                         className="flex items-center gap-1.5 cursor-pointer select-none"
@@ -1065,17 +1065,17 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                           handleRowClick(groupData);
                         }
                       }}
-                      className={`${rowHeightClass} border-b border-slate-200/80 transition-colors ${
+                      className={`${rowHeightClass} transition-colors ${
                         isGroupRow
-                          ? 'bg-white hover:bg-slate-50/80 cursor-pointer'
-                          : 'hover:bg-gray-50'
+                          ? 'bg-white hover:bg-blue-50/30 cursor-pointer border-b border-slate-100'
+                          : 'hover:bg-gray-50/60 border-b border-slate-100/50'
                       }`}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
                           style={{ width: `${cell.column.getSize()}px` }}
-                          className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words ${isGroupRow ? 'font-medium' : ''}`}
+                          className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words`}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
@@ -1090,7 +1090,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                         return (
                           <tr
                             key={`${row.id}-child-${idx}`}
-                            className={`${rowHeightClass} border-b border-slate-200/70 bg-slate-50/60 hover:bg-slate-100/70`}
+                            className={`${rowHeightClass} border-b border-slate-100/50 bg-slate-50/40 hover:bg-blue-50/20`}
                           >
                             {columns.map((col, colIdx) => {
                               const cellValue = col.accessorFn 
@@ -1101,7 +1101,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                                 <td
                                   key={`${row.id}-child-${idx}-col-${colIdx}`}
                                   style={{ width: `${col.size}px` }}
-                                  className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words text-slate-600`}
+                                  className={`${tdPaddingClass} ${rowHeightClass} text-xs align-top whitespace-normal break-words text-slate-400`}
                                 >
                                   {col.cell && typeof col.cell === 'function'
                                     ? col.cell({ getValue: () => cellValue, row: { original: childSession } } as any)
@@ -1116,13 +1116,13 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                       return (
                         <tr
                           key={childRow.id}
-                          className={`${rowHeightClass} border-b border-slate-200/70 bg-slate-50/60 hover:bg-slate-100/70`}
+                          className={`${rowHeightClass} border-b border-slate-100/50 bg-slate-50/40 hover:bg-blue-50/20`}
                         >
                           {childRow.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
                               style={{ width: `${cell.column.getSize()}px` }}
-                              className={`${tdPaddingClass} ${rowHeightClass} text-sm align-top whitespace-normal break-words text-slate-600`}
+                              className={`${tdPaddingClass} ${rowHeightClass} text-xs align-top whitespace-normal break-words text-slate-400`}
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
@@ -1151,14 +1151,14 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="px-4 py-2 rounded-lg border-2 border-gray-300 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               Previous
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="px-4 py-2 rounded-lg border-2 border-gray-300 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               Next
             </button>
@@ -1259,14 +1259,14 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
 
                     {/* Sessions List */}
                     <div className="glass-card rounded-2xl p-6">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">Individual Sessions</h3>
+                      <h3 className="text-base font-semibold text-slate-700 mb-3">Individual Sessions</h3>
                       <div className="space-y-3 max-h-96 overflow-y-auto">
                         {drilldownSessions.map((session, idx) => {
                           const fillRate = session.capacity > 0 ? ((session.checkedInCount || 0) / session.capacity) * 100 : 0;
                           return (
                             <div
                               key={idx}
-                              className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+                              className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200/80 hover:border-blue-300 hover:shadow-sm transition-all"
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
@@ -1274,7 +1274,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                                     {session.cleanedClass}
                                   </span>
                                   <span className="text-xs text-gray-500">•</span>
-                                  <p className="font-bold text-gray-900">{session.date}</p>
+                                  <p className="font-medium text-slate-700 text-sm">{session.date}</p>
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-semibold">

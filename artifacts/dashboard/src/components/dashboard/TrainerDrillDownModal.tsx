@@ -20,7 +20,8 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { TrendingUp, TrendingDown, Users, DollarSign, Target, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, DollarSign, Target, Calendar, X, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 interface TrainerDrillDownModalProps {
@@ -69,22 +70,36 @@ export const TrainerDrillDownModal: React.FC<TrainerDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={getTrainerAvatar(trainerName)} />
-              <AvatarFallback>{trainerName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-2xl font-bold">{trainerName}</h2>
-              <p className="text-gray-600">Performance Analytics Dashboard</p>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200/50 shadow-2xl rounded-2xl">
+        <DialogHeader className="flex-shrink-0 border-b border-white/10 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 -mx-6 -mt-6 px-8 pt-8 pb-6 mb-0 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-blue-600/5 to-slate-900/20 pointer-events-none" />
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-12 h-12 border-2 border-white/20 shadow-lg">
+                <AvatarImage src={getTrainerAvatar(trainerName)} />
+                <AvatarFallback className="bg-white/20 text-white font-bold">{trainerName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              </Avatar>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
+                  {trainerName}
+                </DialogTitle>
+                <p className="text-slate-400 text-sm mt-0.5">Performance Analytics Dashboard</p>
+              </div>
             </div>
-          </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="rounded-xl border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto p-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-5 bg-white/60 backdrop-blur-sm border border-slate-200/60 mb-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="comparison">YoY Comparison</TabsTrigger>
@@ -297,24 +312,25 @@ export const TrainerDrillDownModal: React.FC<TrainerDrillDownModalProps> = ({
                     Recommendations
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-sm font-medium">Focus on Trial Conversions</p>
-                    <p className="text-xs text-gray-600">Implement follow-up protocols for trial members</p>
+                <CardContent className="space-y-3">
+                  <div className="p-3 rounded-xl border border-blue-100 bg-blue-50/60">
+                    <p className="text-sm font-semibold text-blue-900">Focus on Trial Conversions</p>
+                    <p className="text-xs text-blue-700 mt-0.5">Implement follow-up protocols for trial members</p>
                   </div>
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-sm font-medium">Leverage Retention Success</p>
-                    <p className="text-xs text-gray-600">Share retention strategies with other trainers</p>
+                  <div className="p-3 rounded-xl border border-green-100 bg-green-50/60">
+                    <p className="text-sm font-semibold text-green-900">Leverage Retention Success</p>
+                    <p className="text-xs text-green-700 mt-0.5">Share retention strategies with other trainers</p>
                   </div>
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-sm font-medium">Expand Member Base</p>
-                    <p className="text-xs text-gray-600">Consider increasing class capacity or schedule</p>
+                  <div className="p-3 rounded-xl border border-purple-100 bg-purple-50/60">
+                    <p className="text-sm font-semibold text-purple-900">Expand Member Base</p>
+                    <p className="text-xs text-purple-700 mt-0.5">Consider increasing class capacity or schedule</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

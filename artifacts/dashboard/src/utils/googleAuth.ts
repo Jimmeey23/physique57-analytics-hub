@@ -13,52 +13,9 @@ export const SPREADSHEET_IDS = {
   SALES: import.meta.env.VITE_SALES_SPREADSHEET_ID || '1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0',
 };
 
-// Request queue for rate limiting
-interface QueuedRequest {
-  resolve: (value: any) => void;
-  reject: (error: any) => void;
-  request: () => Promise<any>;
-}
-
-const requestQueue: QueuedRequest[] = [];
-let isProcessingQueue = false;
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 500;
-
-const processQueue = async () => {
-  if (isProcessingQueue || requestQueue.length === 0) return;
-
-  isProcessingQueue = true;
-
-  while (requestQueue.length > 0) {
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
-    }
-
-    const item = requestQueue.shift();
-    if (!item) continue;
-
-    try {
-      lastRequestTime = Date.now();
-      const result = await item.request();
-      item.resolve(result);
-    } catch (error) {
-      item.reject(error);
-    }
-  }
-
-  isProcessingQueue = false;
-};
-
-const queueRequest = <T>(request: () => Promise<T>): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    requestQueue.push({ resolve, reject, request });
-    processQueue();
-  });
-};
+// Fire API requests concurrently — no serialization delay.
+// All hooks run in parallel; each handles its own 503 fallback independently.
+const queueRequest = <T>(request: () => Promise<T>): Promise<T> => request();
 
 /**
  * Fetch data from a Google Sheet via the backend proxy.

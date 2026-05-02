@@ -137,18 +137,19 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-gradient-to-br from-white to-slate-50/50">
-        <DialogHeader className="border-b border-slate-200/60 pb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200/50 shadow-2xl backdrop-blur-xl rounded-2xl">
+        <DialogHeader className="flex-shrink-0 border-b border-white/10 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 -mx-6 -mt-6 px-8 pt-8 pb-6 mb-0 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-blue-600/5 to-slate-900/20 pointer-events-none" />
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
                 <Activity className="w-6 h-6 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold text-slate-800">
-                  {classFormat} - Deep Dive Analysis
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
+                  {classFormat} — Deep Dive
                 </DialogTitle>
-                <p className="text-slate-600 mt-1">
+                <p className="text-slate-400 text-sm mt-0.5">
                   Detailed performance insights and session breakdown
                 </p>
               </div>
@@ -157,7 +158,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="rounded-full p-2 hover:bg-slate-100"
+              className="rounded-xl border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
             >
               <X className="w-4 h-4" />
             </Button>
