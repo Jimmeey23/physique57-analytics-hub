@@ -2,6 +2,21 @@ import { Router } from "express";
 
 const router = Router();
 
+// Allowlist of spreadsheet IDs the proxy is permitted to access.
+// Populated from env vars; if the env var is set to "*" all IDs are allowed (dev only).
+function getAllowedSpreadsheetIds(): Set<string> | null {
+  const raw = process.env.ALLOWED_SPREADSHEET_IDS;
+  if (!raw) return null; // no restriction — backwards-compatible default
+  if (raw.trim() === "*") return null; // explicit wildcard
+  return new Set(raw.split(",").map((s) => s.trim()).filter(Boolean));
+}
+
+function isSpreadsheetAllowed(id: string): boolean {
+  const allowed = getAllowedSpreadsheetIds();
+  if (allowed === null) return true; // no allowlist configured
+  return allowed.has(id);
+}
+
 async function getAccessToken(): Promise<string> {
   const clientId = process.env.GOOGLE_CLIENT_ID || "";
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
@@ -36,6 +51,10 @@ async function getAccessToken(): Promise<string> {
 router.get("/sheets/:spreadsheetId/:range", async (req, res) => {
   const { spreadsheetId, range } = req.params;
   const { valueRenderOption = "UNFORMATTED_VALUE", dateTimeRenderOption = "FORMATTED_STRING", alt } = req.query as Record<string, string>;
+
+  if (!isSpreadsheetAllowed(spreadsheetId)) {
+    return res.status(403).json({ error: "Spreadsheet ID not permitted" });
+  }
 
   try {
     const accessToken = await getAccessToken();
@@ -73,6 +92,10 @@ router.post("/sheets/:spreadsheetId/batchGet", async (req, res) => {
 
   if (!Array.isArray(ranges) || ranges.length === 0) {
     return res.status(400).json({ error: "ranges must be a non-empty array" });
+  }
+
+  if (!isSpreadsheetAllowed(spreadsheetId)) {
+    return res.status(403).json({ error: "Spreadsheet ID not permitted" });
   }
 
   try {
