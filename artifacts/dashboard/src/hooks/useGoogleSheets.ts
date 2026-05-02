@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { requestCache } from '@/utils/performanceOptimizations';
-import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
+import { fetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 import { useDataSource } from '@/contexts/DataSourceContext';
 import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
@@ -32,28 +32,10 @@ export const useGoogleSheets = () => {
       setError(null);
       
       const { rows } = await loadDatasetRowsForMode('sales', mode, async () => {
-        const result = await requestCache.fetch('google-sheets-sales', async () => {
+        return requestCache.fetch('google-sheets-sales', async () => {
           logger.info('Fetching sales data from Google Sheets...');
-          const accessToken = await getGoogleAccessToken();
-          
-          const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-              },
-              signal: abortControllerRef.current?.signal,
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch data');
-          }
-
-          return response.json();
+          return fetchGoogleSheet(SPREADSHEET_ID, 'Sales');
         });
-
-        return result.values || [];
       });
       
       // Raw data from Google Sheets received

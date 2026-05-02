@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { SalesData } from '@/types/dashboard';
-import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
+import { fetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useGoogleSheetsOptimized');
@@ -9,23 +9,7 @@ const SPREADSHEET_ID = "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
 
 const fetchSalesData = async (): Promise<SalesData[]> => {
   logger.info('Fetching sales data from Google Sheets...');
-  const accessToken = await getGoogleAccessToken();
-  
-  const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
-    {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch sales data');
-  }
-
-  const result = await response.json();
-  const rows = result.values || [];
+  const rows = await fetchGoogleSheet(SPREADSHEET_ID, 'Sales');
   
   if (rows.length < 2) {
     return [];
