@@ -12,6 +12,8 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSectionNavigation } from "@/contexts/SectionNavigationContext";
 import { OPEN_CONSOLIDATED_REPORT_EVENT } from "@/components/ui/ConsolidatedReportExporterDialog";
+import { dispatchDateSync } from "@/hooks/useGlobalDateSync";
+import { useGlobalFilters } from "@/contexts/GlobalFiltersContext";
 
 type QuickLink = {
   label: string;
@@ -31,6 +33,7 @@ const pages: { group: string; items: QuickLink[] }[] = [
       { label: "Sales Analytics", to: "/sales-analytics", keywords: ["revenue", "sales", "kpi"] },
       { label: "Funnel & Leads", to: "/funnel-leads", keywords: ["leads", "funnel", "mql"] },
       { label: "Client Retention", to: "/client-retention", keywords: ["retention", "churn"] },
+      { label: "Churn Risk Center", to: "/churn-risk", keywords: ["risk", "churn", "at-risk"] },
       { label: "Forecasting & Action Center", to: "/forecasting-action-center", keywords: ["forecast", "prediction", "actions", "renewals", "risk"] },
       { label: "Member 360 & Lifecycle", to: "/member-lifecycle", keywords: ["lifecycle", "member 360", "segments", "behavior", "engagement"] },
       { label: "Trainer Performance", to: "/trainer-performance", keywords: ["trainer", "coach", "instructor"] },
@@ -41,9 +44,21 @@ const pages: { group: string; items: QuickLink[] }[] = [
       { label: "PowerCycle vs Barre", to: "/powercycle-vs-barre", keywords: ["cycle", "barre", "compare"] },
       { label: "Expiration Analytics", to: "/expiration-analytics", keywords: ["expirations", "passes"] },
       { label: "Late Cancellations", to: "/late-cancellations", keywords: ["late", "cxl", "cancellations"] },
+      { label: "Data Management", to: "/data-management", keywords: ["upload", "csv", "management", "bulk"] },
       { label: "Consolidated Table Report", action: "open-consolidated-report", keywords: ["report", "consolidated", "document", "export", "all tabs"] },
     ],
   },
+  {
+    group: "Quick Actions",
+    items: [
+      { label: "Export Current View", action: "export-view", keywords: ["export", "download", "csv"] },
+      { label: "Sync All Tabs Date", action: "sync-dates", keywords: ["sync", "date", "global"] },
+      { label: "Open Data Management", to: "/data-management", keywords: ["upload", "csv"] },
+      { label: "Open Churn Risk Center", to: "/churn-risk", keywords: ["risk", "at-risk"] },
+      { label: "View Audit Log", action: "open-audit-log", keywords: ["audit", "log", "history"] },
+      { label: "Manage Goals", action: "manage-goals", keywords: ["goals", "targets", "kpi"] },
+    ]
+  }
 ];
 
 export function GlobalCommandPalette() {
@@ -51,6 +66,7 @@ export function GlobalCommandPalette() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sections, jumpTo } = useSectionNavigation();
+  const { filters } = useGlobalFilters();
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -75,10 +91,17 @@ export function GlobalCommandPalette() {
 
   const go = (item: QuickLink) => {
     setOpen(false);
+    
     if (item.action === 'open-consolidated-report') {
       window.dispatchEvent(new Event(OPEN_CONSOLIDATED_REPORT_EVENT));
       return;
     }
+
+    if (item.action === 'sync-dates') {
+      dispatchDateSync(filters.dateRange);
+      return;
+    }
+
     if (item.to) {
       navigate(item.to);
     }

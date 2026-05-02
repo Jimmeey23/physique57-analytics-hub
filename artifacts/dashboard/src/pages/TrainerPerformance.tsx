@@ -4,11 +4,16 @@ import { EnhancedTrainerPerformanceSection } from '@/components/dashboard/Enhanc
 import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { usePayrollData } from '@/hooks/usePayrollData';
+import { useSessionsData } from '@/hooks/useSessionsData';
+import { useSalesData } from '@/hooks/useSalesData';
 import { formatCurrency } from '@/utils/formatters';
 import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
+import { TrainerRevenueAttribution } from '@/components/dashboard/TrainerRevenueAttribution';
 
 const TrainerPerformance = () => {
   const { data: payrollData, isLoading } = usePayrollData();
+  const { data: sessionsData = [], loading: sessionsLoading } = useSessionsData();
+  const { data: salesData = [], loading: salesLoading } = useSalesData();
   const { isLoading: globalLoading, setLoading } = useGlobalLoading();
   const [isContentReady, setIsContentReady] = useState(false);
 
@@ -28,6 +33,7 @@ const TrainerPerformance = () => {
     } else if (!isLoading && (!payrollData || payrollData.length === 0)) {
       setIsContentReady(true);
     }
+    return undefined;
   }, [isLoading, payrollData]);
 
   const heroMetrics = useMemo(() => {
@@ -103,6 +109,11 @@ const TrainerPerformance = () => {
         <div className="container mx-auto px-6 py-8 bg-white min-h-screen">
           <main className="space-y-8 slide-in-from-right stagger-1">
             <EnhancedTrainerPerformanceSection />
+            <TrainerRevenueAttribution
+              sessions={sessionsData}
+              sales={salesData}
+              loading={sessionsLoading || salesLoading}
+            />
           </main>
         </div>
         

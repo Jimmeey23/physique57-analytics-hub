@@ -21,6 +21,7 @@ import { UniversalTableCopyAssist } from "@/components/ui/UniversalTableCopyAssi
 import { ConsolidatedReportExporterDialog } from "@/components/ui/ConsolidatedReportExporterDialog";
 import { DataSourceProvider, useDataSource } from '@/contexts/DataSourceContext';
 import { OfflineAccessManager } from '@/components/ui/OfflineAccessManager';
+import { DataFreshnessBar } from '@/components/ui/DataFreshnessBar';
 
 // Optimized lazy loading with preloading for critical pages
 const Index = React.lazy(() => 
@@ -80,6 +81,12 @@ const MemberLifecycle = React.lazy(() =>
 const LocationReport = React.lazy(() => 
   import("./pages/LocationReport").then(module => ({ default: module.default }))
 );
+const ChurnRisk = React.lazy(() =>
+  import("./pages/ChurnRisk").then(module => ({ default: module.default }))
+);
+const DataManagement = React.lazy(() =>
+  import("./pages/DataManagement").then(module => ({ default: module.default }))
+);
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
 );
@@ -111,6 +118,7 @@ const AppRoutes = () => {
     <>
       <GlobalLoader />
       <GlobalCommandPalette />
+      <DataFreshnessBar />
       <UniversalTableCopyAssist />
       <ConsolidatedReportExporterDialog />
       <RouteLoadingWrapper>
@@ -137,6 +145,8 @@ const AppRoutes = () => {
               <Route path="/forecasting-action-center" element={<ForecastingActionCenter />} />
               <Route path="/member-lifecycle" element={<MemberLifecycle />} />
               <Route path="/location-report" element={<LocationReport />} />
+              <Route path="/churn-risk" element={<ChurnRisk />} />
+              <Route path="/data-management" element={<DataManagement />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -16,7 +16,8 @@ import ClassDeepDive from '@/components/dashboard/ClassDeepDive';
 import Rankings from '@/components/dashboard/Rankings';
 import { DataScienceInsightsPanel } from '@/components/dashboard/DataScienceInsightsPanel';
 import { usePayrollData } from '@/hooks/usePayrollData';
-import { BarChart3, Users, MapPin, Building2, Calendar, Trophy } from 'lucide-react';
+import { BarChart3, Users, MapPin, Building2, Calendar, Trophy, Flame } from 'lucide-react';
+import { ClassDemandHeatmap } from '@/components/dashboard/ClassDemandHeatmap';
 import { useState } from 'react';
 import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
@@ -216,6 +217,10 @@ const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawDat
                     <Trophy className="w-4 h-4" />
                     <span className="whitespace-nowrap">Rankings</span>
                   </TabsTrigger>
+                  <TabsTrigger value="heatmap" className="relative flex-1 flex items-center justify-center gap-2 px-3 py-3 font-semibold text-xs md:text-sm min-h-[52px] transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-orange-500 data-[state=active]:via-orange-600 data-[state=active]:to-red-600 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:border-2 data-[state=active]:border-white data-[state=active]:z-50 hover:bg-gray-50 border-r border-slate-200 last:border-r-0 data-[state=active]:scale-[1.02] data-[state=active]:rounded-xl data-[state=active]:-translate-y-1">
+                    <Flame className="w-4 h-4" />
+                    <span className="whitespace-nowrap">Demand Heatmap</span>
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-8">
@@ -233,6 +238,16 @@ const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawDat
 
                 <TabsContent value="rankings" className="mt-8">
                   <Rankings data={locationFilteredData} />
+                </TabsContent>
+
+                <TabsContent value="heatmap" className="mt-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-gray-900">Demand Heatmap</h2>
+                      <p className="text-sm text-slate-500">Average fill rate by day and time</p>
+                    </div>
+                    <ClassDemandHeatmap sessions={locationFilteredData} />
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>

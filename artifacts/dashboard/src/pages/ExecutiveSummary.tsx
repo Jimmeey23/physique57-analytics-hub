@@ -16,6 +16,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { useDynamicHeroMetrics } from '@/hooks/useDynamicHeroMetrics';
 import InfoPopover from '@/components/ui/InfoSidebar';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
+import { RevenueReconciliationWidget } from '@/components/dashboard/RevenueReconciliationWidget';
 
 // Inner component that has access to GlobalFilters context
 const ExecutiveSummaryContent = () => {
@@ -95,6 +96,15 @@ const ExecutiveSummaryContent = () => {
       
       <div className="container mx-auto px-6 py-8">
         <ExecutiveSummarySection />
+      </div>
+
+      {/* Revenue Reconciliation */}
+      <div className="container mx-auto px-6 pb-8">
+        <RevenueReconciliationWidget
+          salesRevenue={salesData.reduce((sum, s) => sum + (s.paymentValue || 0), 0)}
+          sessionRevenue={sessionsData.reduce((sum, s) => sum + (s.totalPaid || 0), 0)}
+          period="Current Period"
+        />
       </div>
 
       {/* Hidden export dialog wired for programmatic open */}

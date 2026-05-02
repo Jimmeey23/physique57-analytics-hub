@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
-interface GlobalFilters {
+export interface GlobalFilters {
   dateRange: {
     start: string;
     end: string;

@@ -10,6 +10,7 @@ import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
 import { motion } from 'framer-motion';
 import { OPEN_CONSOLIDATED_REPORT_EVENT } from '@/components/ui/ConsolidatedReportExporterDialog';
+import { GoalTracker } from '@/components/dashboard/GoalTracker';
 
 // Error boundary wrapper for critical sections
 const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) => {
@@ -207,6 +208,10 @@ const Index = memo(() => {
               }>
                 <DashboardGrid onButtonClick={handleSectionClick} />
               </SafeWrapper>
+
+              <div className="mt-8">
+                <GoalTracker currentValues={{}} />
+              </div>
             </div>
           </motion.main>
         </div>

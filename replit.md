@@ -21,6 +21,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - Google API credentials not configured in this dev environment — all data hooks return 503 errors and fall back to offline cache if available
 - `useRecurringSessionsData` does not use `loadDatasetRowsForMode` — has no offline/demo mode support (no `recurring` key in `OfflineDatasetKey`)
 - Trainer filter in `LateCancellations.tsx` uses `paymentMethodName` (the Late Cancellations sheet has no `teacherName` column)
+- Pre-existing TypeScript errors in `EnhancedTrainerPerformanceSection.tsx`, `TrainerPerformanceSection.tsx`, `MainDashboard.tsx`, `exportService.ts`, etc. — not introduced by current session
 
 ## Key Commands
 
@@ -37,7 +38,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 ### Physique 57 India Analytics Dashboard (`artifacts/dashboard/`)
 - React + Vite + Tailwind v3 + shadcn/ui frontend
 - Multi-page analytics dashboard for Physique 57 India fitness studios
-- Pages: Sales Analytics, Executive Summary, Trainer Performance, Class Attendance, Payroll, Client Retention, and more
+- Pages: Sales Analytics, Executive Summary, Trainer Performance, Class Attendance, Payroll, Client Retention, Churn Risk (`/churn-risk`), Data Management (`/data-management`), and more
 - Data from Google Sheets via API server routes (requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, GOOGLE_SHEETS_SPREADSHEET_ID env vars)
 - AI summaries via OpenAI (VITE_OPENAI_API_KEY) and Gemini (VITE_GEMINI_API_KEY)
 - Intercom support chat (VITE_INTERCOM_APP_ID)
@@ -80,6 +81,44 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - `InnerContent` extracted to **module level** (not inside parent component) to prevent React from recreating the component type on every parent render.
 - No early `if (loading) return` guard — renders immediately with 0 metrics, populates as data loads.
 - `OutlierAnalysis` (CustomDataLab page): same guard removed.
+
+## 18 Enhancement Features (implemented)
+
+### Analytics Components
+1. **`CohortRetentionMatrix`** (`components/dashboard/CohortRetentionMatrix.tsx`) — Triangle heatmap showing retention % by cohort month × months-since-entry. Integrated into Client Retention page.
+2. **`ClassDemandHeatmap`** (`components/dashboard/ClassDemandHeatmap.tsx`) — 7×N grid of avg fill rate by day-of-week × time slot. Integrated as "Demand Heatmap" tab in Class Attendance.
+3. **`TrainerRevenueAttribution`** (`components/dashboard/TrainerRevenueAttribution.tsx`) — Bar chart + sortable table: sessions, unique members, revenue, avg revenue/member, fill rate per trainer. Integrated into Trainer Performance page.
+4. **Churn Risk Center** (`pages/ChurnRisk.tsx`, `hooks/useChurnRiskScore.ts`) — Route `/churn-risk`. Risk scoring (0–100) from checkins + expirations + sales. Critical/High/Medium/Low tabs, search, CSV export.
+
+### Data Infrastructure
+5. **`DataFreshnessBar`** (`components/ui/DataFreshnessBar.tsx`, `hooks/useDataFreshness.ts`) — Fixed bottom bar showing all 7 dataset freshness timestamps + source badges. Rendered in App.tsx globally.
+6. **`DataValidationPanel`** (`components/dashboard/DataValidationPanel.tsx`) — Real-time sanity checks on sessions, sales, and new-client data. Error vs warning severity.
+7. **`DataManagement` page** (`pages/DataManagement.tsx`) — Route `/data-management`. Drag-and-drop upload for all 7 datasets with auto-detect + per-dataset clear. Uses `parseSpreadsheetFileToRows` + `saveOfflineDatasetRows`.
+8. **Audit Log** (`hooks/useAuditLog.ts`, `components/ui/AuditLogModal.tsx`) — localStorage-based (max 200 entries). Actions: navigate, export, filter_change, upload, view_drilldown. `logAuditEvent()` exported for use anywhere.
+
+### UX & Filtering
+9. **Saved Filter Presets** (`hooks/useFilterPresets.ts`, `components/ui/FilterPresetsPanel.tsx`) — localStorage presets with name, date, location summary. Popover UI to save/apply/delete presets.
+10. **Goal & Target Tracking** (`hooks/useGoalTracking.ts`, `components/dashboard/GoalTracker.tsx`, `components/dashboard/GoalManagementModal.tsx`) — 6 metric types, localStorage persistence, color-coded progress bars. Integrated into Index page.
+11. **Global Date Sync** (`hooks/useGlobalDateSync.ts`, `components/ui/GlobalDateSyncBanner.tsx`) — Custom event `p57-sync-date-range` to broadcast date range across all tabs. Auto-dismiss banner with 5s timeout.
+12. **Enhanced Command Palette** (`components/ui/GlobalCommandPalette.tsx`) — New "Quick Actions" group (Sync Dates, Data Management, Churn Risk, Audit Log, Goals). New routes added to navigation list.
+
+### Charts, Comparison & Export
+13. **Period-over-Period Comparison** (`hooks/useComparisonDateRange.ts`, `components/ui/ComparisonToggle.tsx`, `components/dashboard/MetricComparisonCard.tsx`) — Prior month / prior year comparison with delta badges.
+14. **Chart Annotations** (`hooks/useAnnotations.ts`, `components/dashboard/ChartAnnotationLayer.tsx`, `components/ui/AnnotationsPanel.tsx`) — localStorage annotations with Recharts `ReferenceLine` integration.
+15. **Revenue Reconciliation Widget** (`components/dashboard/RevenueReconciliationWidget.tsx`) — Side-by-side sales vs session revenue with variance status (Balanced/Minor/Significant). Integrated into Executive Summary.
+16. **Trainer Scorecard (Printable)** (`components/dashboard/TrainerScorecardPrint.tsx`) — A4 print-optimized layout with `@media print` CSS. `PrintScorecardButton` uses React Portal for isolated print.
+17. **Member At-Risk Export** — Integrated in `pages/ChurnRisk.tsx` — CSV download of members with risk score ≥ 50.
+18. **Scheduled Reports** (`hooks/useScheduledReports.ts`, `components/ui/ScheduledReportsModal.tsx`) — localStorage-backed weekly/monthly report schedules with section selection.
+
+## localStorage Keys Used
+- `p57-audit-log` — audit log entries (max 200)
+- `p57-filter-presets` — saved filter presets
+- `p57-goals` — goal tracking configurations
+- `p57-chart-annotations` — chart annotations
+- `p57-scheduled-reports` — scheduled report configs
+- `p57-retention-active-table` — last active table in client retention
+- `p57-retention-remember-table` — whether to remember last table
+- `p57-retention-compact-mode` — compact table mode
 
 ## Environment Variables Needed
 - `GOOGLE_CLIENT_ID` — Google OAuth client ID

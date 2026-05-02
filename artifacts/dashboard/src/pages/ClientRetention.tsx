@@ -28,6 +28,7 @@ import { EnhancedClientConversionFilterSection } from '@/components/dashboard/En
 import { ClientConversionMetricCards } from '@/components/dashboard/ClientConversionMetricCards';
 import { ClientConversionDataTableSelector } from '@/components/dashboard/ClientConversionDataTableSelector';
 import { LazyClientConversionDrillDownModalV3 } from '@/components/lazy/LazyModals';
+import { CohortRetentionMatrix } from '@/components/dashboard/CohortRetentionMatrix';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
@@ -1618,6 +1619,11 @@ const ClientRetention = () => {
             </Suspense>
           </div>
         </main>
+
+        {/* Cohort Retention Matrix */}
+        <div className="container mx-auto px-6 pb-8">
+          <CohortRetentionMatrix data={filteredData || []} loading={loading} />
+        </div>
 
         {/* Enhanced Drill Down Modal - Lazy loaded */}
         <ModalSuspense>
