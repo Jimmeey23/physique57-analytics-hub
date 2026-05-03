@@ -5,6 +5,7 @@ import React, {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from 'react';
@@ -16,12 +17,12 @@ import { BarChart3, Clock3, Gauge, Rocket, RotateCcw, SlidersHorizontal } from '
 import { Footer } from '@/components/ui/footer';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
-import { NewClientFilterOptions } from '@/types/dashboard';
+import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
-import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
+import { getConsolidatedExportPresetFromSearch, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 // Import new components for rebuilt client conversion tab
 import { EnhancedClientConversionFilterSection } from '@/components/dashboard/EnhancedClientConversionFilterSection';
@@ -121,6 +122,9 @@ interface RetentionMonthDef {
   month: number;
 }
 
+const DEFAULT_RETENTION_LOCATION = 'Kwality House, Kemps Corner';
+const RETENTION_REPORTING_START = new Date(2024, 0, 1);
+
 interface RetentionPivotCell {
   trials: number;
   newMembers: number;
@@ -178,11 +182,6 @@ const sortRetentionDimensionValues = (values: string[], dimension: RetentionDime
 
 const getRetentionMonthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-const getMonthStart = (value?: string | null) => {
-  const parsed = parseDate(value || '');
-  return parsed ? new Date(parsed.getFullYear(), parsed.getMonth(), 1) : null;
-};
-
 const buildMonthSequence = (start: Date, end: Date) => {
   const startMonth = new Date(start.getFullYear(), start.getMonth(), 1);
   const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -195,40 +194,10 @@ const buildMonthSequence = (start: Date, end: Date) => {
   return sequence;
 };
 
-const getOrderedRangeMonths = (dateRange?: { start?: string; end?: string }) => {
-  const startMonth = getMonthStart(dateRange?.start);
-  const endMonth = getMonthStart(dateRange?.end);
-  if (!startMonth || !endMonth) return [] as Date[];
-
-  return startMonth <= endMonth
-    ? buildMonthSequence(startMonth, endMonth)
-    : buildMonthSequence(endMonth, startMonth);
-};
-
-const getFallbackMonthBounds = (inputData: any[]) => {
-  const parsedMonths = inputData
-    .map((client) => parseDate(client.firstVisitDate || ''))
-    .filter((date): date is Date => Boolean(date))
-    .map((date) => new Date(date.getFullYear(), date.getMonth(), 1))
-    .sort((a, b) => a.getTime() - b.getTime());
-
-  if (parsedMonths.length === 0) {
-    const now = new Date();
-    return {
-      start: new Date(now.getFullYear(), now.getMonth(), 1),
-      end: new Date(now.getFullYear(), now.getMonth(), 1),
-    };
-  }
-
-  return {
-    start: parsedMonths[0],
-    end: parsedMonths[parsedMonths.length - 1],
-  };
-};
-
-const buildMomMonths = (inputData: any[]): RetentionMonthDef[] => {
-  const bounds = getFallbackMonthBounds(inputData);
-  const months = buildMonthSequence(bounds.start, bounds.end);
+const buildRetentionReportingMonths = (): RetentionMonthDef[] => {
+  const now = new Date();
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const months = buildMonthSequence(RETENTION_REPORTING_START, currentMonth);
 
   return months.map((date) => ({
     key: getRetentionMonthKey(date),
@@ -238,53 +207,72 @@ const buildMomMonths = (inputData: any[]): RetentionMonthDef[] => {
   }));
 };
 
-const buildYoyMonths = (inputData: any[], dateRange?: { start?: string; end?: string }): RetentionMonthDef[] => {
-  const availableYears = Array.from(
-    new Set(
-      inputData
-        .map((client) => parseDate(client.firstVisitDate || ''))
-        .filter((date): date is Date => Boolean(date))
-        .map((date) => date.getFullYear())
-    )
-  ).sort((a, b) => a - b);
+const buildMomMonths = (_inputData: NewClientData[]): RetentionMonthDef[] => buildRetentionReportingMonths();
 
-  const comparisonYear = availableYears[availableYears.length - 1] ?? new Date().getFullYear();
-  const baselineYear = availableYears.length > 1
-    ? availableYears[availableYears.length - 2]
-    : comparisonYear - 1;
+const buildYoyMonths = (_inputData: NewClientData[], _dateRange?: { start?: string; end?: string }): RetentionMonthDef[] => buildRetentionReportingMonths();
 
-  const selectedRangeMonths = getOrderedRangeMonths(dateRange);
-  const selectedMonthNumbers = Array.from(new Set(selectedRangeMonths.map((date) => date.getMonth() + 1)));
+const parseRetentionMonthYear = (value?: string | null): Date | null => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
 
-  const monthNumbers = selectedMonthNumbers.length > 0
-    ? selectedMonthNumbers
-    : Array.from(
-        new Set(
-          inputData
-            .map((client) => parseDate(client.firstVisitDate || ''))
-            .filter((date): date is Date => Boolean(date))
-            .filter((date) => date.getFullYear() === baselineYear || date.getFullYear() === comparisonYear)
-            .map((date) => date.getMonth() + 1)
-        )
-      ).sort((a, b) => a - b);
+  const isoMatch = raw.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (isoMatch) {
+    return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, 1);
+  }
 
-  return monthNumbers.flatMap((monthNum) => {
-    const monthName = new Date(comparisonYear, monthNum - 1, 1).toLocaleDateString('en-US', { month: 'short' });
-    return [
-      {
-        key: `${baselineYear}-${String(monthNum).padStart(2, '0')}`,
-        display: `${monthName} ${baselineYear}`,
-        year: baselineYear,
-        month: monthNum,
-      },
-      {
-        key: `${comparisonYear}-${String(monthNum).padStart(2, '0')}`,
-        display: `${monthName} ${comparisonYear}`,
-        year: comparisonYear,
-        month: monthNum,
-      },
-    ];
-  });
+  const nameMatch = raw.match(/^([A-Za-z]+)[\s-]+(\d{4})$/);
+  if (!nameMatch) return null;
+
+  const monthLookup: Record<string, number> = {
+    jan: 0, january: 0,
+    feb: 1, february: 1,
+    mar: 2, march: 2,
+    apr: 3, april: 3,
+    may: 4,
+    jun: 5, june: 5,
+    jul: 6, july: 6,
+    aug: 7, august: 7,
+    sep: 8, sept: 8, september: 8,
+    oct: 9, october: 9,
+    nov: 10, november: 10,
+    dec: 11, december: 11,
+  };
+
+  const month = monthLookup[nameMatch[1].toLowerCase()];
+  return typeof month === 'number' ? new Date(Number(nameMatch[2]), month, 1) : null;
+};
+
+const isFullCalendarMonthRange = (start: Date, end: Date) => {
+  const firstDay = new Date(start.getFullYear(), start.getMonth(), 1);
+  const lastDay = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+
+  return (
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getTime() === firstDay.getTime() &&
+    end.getFullYear() === lastDay.getFullYear() &&
+    end.getMonth() === lastDay.getMonth() &&
+    end.getDate() === lastDay.getDate()
+  );
+};
+
+const isClientInRetentionDateRange = (client: NewClientData, startDate: Date | null, endDate: Date | null) => {
+  if (!startDate || !endDate) return true;
+
+  const normalizedStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const normalizedEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+
+  if (isFullCalendarMonthRange(normalizedStart, normalizedEnd)) {
+    const monthDate = parseRetentionMonthYear(client.monthYear);
+    if (monthDate) {
+      return monthDate.getFullYear() === normalizedStart.getFullYear() && monthDate.getMonth() === normalizedStart.getMonth();
+    }
+  }
+
+  const clientDate = parseDate(client.firstVisitDate || '');
+  if (!clientDate) return false;
+  clientDate.setHours(0, 0, 0, 0);
+  return clientDate >= normalizedStart && clientDate <= normalizedEnd;
 };
 
 const finalizeRetentionPivotCell = (cell: RetentionPivotCell) => ({
@@ -717,9 +705,9 @@ const ClientRetention = () => {
   const {
     setLoading
   } = useGlobalLoading();
-  const exportPreset = React.useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
+  const exportPreset = React.useMemo(() => (typeof window !== 'undefined' ? getConsolidatedExportPresetFromSearch(window.location.search) : null), []);
   const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
-  const [selectedLocation, setSelectedLocation] = useState(exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.locationLabel || 'Kwality House, Kemps Corner'));
+  const [selectedLocation, setSelectedLocation] = useState(exportPreset ? (exportPreset.studioId === 'all' ? 'All Locations' : (exportStudio?.locationLabel || DEFAULT_RETENTION_LOCATION)) : DEFAULT_RETENTION_LOCATION);
   const [isPendingTableSwitch, startTableSwitch] = useTransition();
   const [rememberLastTable, setRememberLastTable] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -761,6 +749,24 @@ const ClientRetention = () => {
       maxLTV: undefined
     };
   });
+  const defaultFiltersNormalizedRef = useRef(false);
+
+  useEffect(() => {
+    if (exportPreset || defaultFiltersNormalizedRef.current) return;
+
+    defaultFiltersNormalizedRef.current = true;
+    const defaultDateRange = getDashboardDefaultDateRange();
+    setFilters((current) => {
+      if (current.dateRange.start === defaultDateRange.start && current.dateRange.end === defaultDateRange.end) {
+        return current;
+      }
+
+      return {
+        ...current,
+        dateRange: defaultDateRange,
+      };
+    });
+  }, [exportPreset]);
   useEffect(() => {
     setLoading(loading || sessionsLoading || payrollLoading, 'Analyzing client conversion and retention patterns...');
   }, [loading, sessionsLoading, payrollLoading, setLoading]);
@@ -910,16 +916,7 @@ const ClientRetention = () => {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start + 'T00:00:00') : null;
       const endDate = filters.dateRange.end ? new Date(filters.dateRange.end + 'T23:59:59') : null;
       
-      filtered = filtered.filter(client => {
-        if (!client.firstVisitDate) return false;
-        
-        const clientDate = parseDate(client.firstVisitDate);
-        if (!clientDate) return false;
-
-        // Set client date to start of day for comparison
-        clientDate.setHours(0, 0, 0, 0);
-        return (!startDate || clientDate >= startDate) && (!endDate || clientDate <= endDate);
-      });
+      filtered = filtered.filter(client => isClientInRetentionDateRange(client, startDate, endDate));
     }
 
     // Apply location filter - check ONLY firstVisitLocation (where the trial/first visit occurred)
@@ -982,13 +979,7 @@ const ClientRetention = () => {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start + 'T00:00:00') : null;
       const endDate = filters.dateRange.end ? new Date(filters.dateRange.end + 'T23:59:59') : null;
 
-      filtered = filtered.filter(client => {
-        if (!client.firstVisitDate) return false;
-        const clientDate = parseDate(client.firstVisitDate);
-        if (!clientDate) return false;
-        clientDate.setHours(0, 0, 0, 0);
-        return (!startDate || clientDate >= startDate) && (!endDate || clientDate <= endDate);
-      });
+      filtered = filtered.filter(client => isClientInRetentionDateRange(client, startDate, endDate));
     }
 
     // Apply additional filters (but NOT the selectedLocation tab filter)
@@ -1152,24 +1143,6 @@ const ClientRetention = () => {
     window.localStorage.setItem('p57-retention-compact-mode', compactTableMode ? '1' : '0');
   }, [compactTableMode]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const preload = () => preloadHeavyRetentionViews();
-    const idleWindow = window as Window & {
-      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-
-    if (idleWindow.requestIdleCallback) {
-      const idleId = idleWindow.requestIdleCallback(preload, { timeout: 3000 });
-      return () => idleWindow.cancelIdleCallback?.(idleId);
-    }
-
-    const timer = window.setTimeout(preload, 1200);
-    return () => window.clearTimeout(timer);
-  }, [preloadHeavyRetentionViews]);
-
 
   const heroMetrics = useMemo(() => {
     if (!filteredData || filteredData.length === 0) return [];
@@ -1263,7 +1236,7 @@ const ClientRetention = () => {
     </div>
   );
 
-  return <div className="min-h-screen bg-white relative overflow-hidden">
+  return <div className="client-retention-page min-h-screen bg-white relative overflow-hidden">
       {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>

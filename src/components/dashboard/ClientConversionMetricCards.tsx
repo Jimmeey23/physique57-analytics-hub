@@ -43,7 +43,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
   };
 
   const getRangeAnchors = () => {
-    const compareEnd = dateRange?.end ? (typeof dateRange.end === 'string' ? new Date(dateRange.end) : dateRange.end as Date) : new Date();
+    const compareEnd = dateRange?.end ? (typeof dateRange.end === 'string' ? parseDate(dateRange.end) : dateRange.end as Date) || new Date() : new Date();
     const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
     const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
     const currentStart = monthStart(compareEnd);

@@ -42,6 +42,13 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const parseFilterDate = (value?: string): Date | undefined => {
+    if (!value) return undefined;
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) return undefined;
+    return new Date(year, month - 1, day);
+  };
+
   const handleArrayFilterChange = (filterKey: keyof NewClientFilterOptions, value: string) => {
     const currentValues = [...(filters[filterKey] as string[])];
     const newValues = currentValues.includes(value)
@@ -237,8 +244,8 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
             </label>
             <DatePickerWithRange
               value={{
-                from: filters.dateRange.start ? new Date(filters.dateRange.start) : undefined,
-                to: filters.dateRange.end ? new Date(filters.dateRange.end) : undefined
+                from: parseFilterDate(filters.dateRange.start),
+                to: parseFilterDate(filters.dateRange.end)
               }}
               onChange={handleDateRangeChange}
             />

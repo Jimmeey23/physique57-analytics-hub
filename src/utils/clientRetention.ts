@@ -4,7 +4,11 @@ type RetentionLikeRecord = Pick<NewClientData, 'isNew' | 'conversionStatus' | 'r
 
 export const isInNewClientCohort = (record: Pick<RetentionLikeRecord, 'isNew'> | string | null | undefined) => {
   const value = typeof record === 'string' || record == null ? record : record.isNew;
-  return String(value || '').toLowerCase().includes('new');
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized || normalized === 'not new' || normalized.startsWith('not new')) {
+    return false;
+  }
+  return normalized === 'new' || normalized.startsWith('new ');
 };
 
 export const isConvertedInCohort = (record: RetentionLikeRecord) => {

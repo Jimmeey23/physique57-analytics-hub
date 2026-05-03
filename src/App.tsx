@@ -162,33 +162,6 @@ const AppContent = () => {
     });
   }, [intercomAppId, mode, isOnline]);
 
-  React.useEffect(() => {
-    if (mode === 'offline' || !isOnline) {
-      return;
-    }
-
-    void Promise.all([
-      import('./pages/MainDashboard'),
-      import('./pages/ExecutiveSummary'),
-      import('./pages/SalesAnalytics'),
-      import('./pages/FunnelLeads'),
-      import('./pages/ClientRetention'),
-      import('./pages/TrainerPerformance'),
-      import('./pages/ClassAttendance'),
-      import('./pages/ClassFormatsComparison'),
-      import('./pages/DiscountsPromotions'),
-      import('./pages/Sessions'),
-      import('./pages/OutlierAnalysis'),
-      import('./pages/ExpirationAnalytics'),
-      import('./pages/LateCancellations'),
-      import('./pages/PatternsAndTrends'),
-      import('./pages/DashboardOverview'),
-      import('./pages/ForecastingActionCenter'),
-      import('./pages/MemberLifecycle'),
-      import('./pages/LocationReport'),
-    ]);
-  }, [mode, isOnline]);
-  
   return (
     <>
       <BrowserRouter

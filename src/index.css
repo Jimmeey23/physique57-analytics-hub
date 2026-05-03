@@ -1801,6 +1801,24 @@
   text-overflow: ellipsis;
 }
 
+/* Client Retention tables use many specialized components. Keep their visible
+   table headers consistent and readable across all tab variants. */
+.client-retention-page .client-retention-sales-table table thead,
+.client-retention-page .client-retention-sales-table table thead tr {
+  background: linear-gradient(90deg, #0f172a, #1e293b, #334155) !important;
+}
+
+.client-retention-page .client-retention-sales-table table thead th,
+.client-retention-page .client-retention-sales-table table thead th * {
+  color: #ffffff !important;
+}
+
+.client-retention-page .client-retention-sales-table table thead th {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
 /* Shared neat styling for class attendance tables */
 .class-attendance-neat-table {
   border-collapse: collapse;

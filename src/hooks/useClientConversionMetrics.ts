@@ -68,7 +68,7 @@ export function useClientConversionMetrics(
     const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
     const normalizeInputDate = (value?: string | Date, end = false): Date | null => {
       if (!value) return null;
-      const date = typeof value === 'string' ? new Date(value) : value;
+      const date = typeof value === 'string' ? parseDate(value) : value;
       if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
       return end ? endOfDay(date) : startOfDay(date);
     };
@@ -95,7 +95,7 @@ export function useClientConversionMetrics(
 
     const current =
       explicitStart && explicitEnd
-        ? datedCurrent
+        ? (data || [])
         : (data || []).filter(item => within(parseDate((item as any).firstVisitDate), currentStart, currentEnd));
 
     // Use the same window length for previous period comparison.
