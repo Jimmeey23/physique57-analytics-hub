@@ -80,29 +80,30 @@ export const useNewClientData = () => {
       headers.forEach((header, index) => {
         if (header) {
           headerIndexMap.set(header, index);
+          headerIndexMap.set(header.toLowerCase(), index);
         }
       });
 
       const newClientData: NewClientData[] = rows.slice(1).map((row: any[]) => {
-        const firstVisitDate = getStringValue(row, headerIndexMap, 'First Visit Date', 'First Visit');
-        const firstPurchasePostTrial = getStringValue(row, headerIndexMap, 'First Purchase Post Trial', 'First Purchase Made');
+        const firstVisitDate = getStringValue(row, headerIndexMap, 'First Visit Date', 'First Visit', 'Visit Date');
+        const firstPurchasePostTrial = getStringValue(row, headerIndexMap, 'First Purchase Post Trial', 'First Purchase Made', 'Purchase Date');
         const firstPurchaseDate = getStringValue(row, headerIndexMap, 'First Purchase Date');
         const parsedFirstPurchasePostTrial = parseDate(firstPurchasePostTrial);
         const canonicalFirstPurchaseDate = firstPurchaseDate || (parsedFirstPurchasePostTrial ? firstPurchasePostTrial : '');
         const firstPurchaseItem = parsedFirstPurchasePostTrial ? '' : firstPurchasePostTrial;
-        const firstVisitLocation = getStringValue(row, headerIndexMap, 'First Visit Location', 'Location');
-        const homeLocation = getStringValue(row, headerIndexMap, 'Home Location', 'Home');
+        const firstVisitLocation = getStringValue(row, headerIndexMap, 'First Visit Location', 'Location', 'Studio Location');
+        const homeLocation = getStringValue(row, headerIndexMap, 'Home Location', 'Home', 'Studio');
         const sheetConversionSpan = getNumberValue(row, headerIndexMap, 'Conversion Span (Days)', 'Conversion Span');
         const monthYearSheet = getStringValue(row, headerIndexMap, 'Month Year', 'MonthYear');
         const noOfVisits = getNumberValue(row, headerIndexMap, 'No of Visits', 'Visits');
-        const isNew = getStringValue(row, headerIndexMap, 'Is New', 'New');
-        const retentionStatus = getStringValue(row, headerIndexMap, 'Retention Status', 'Retained');
-        const conversionStatus = getStringValue(row, headerIndexMap, 'Conversion Status', 'Converted');
-        const membershipUsed = getStringValue(row, headerIndexMap, 'Membership Used', 'Membership');
-        const trainerName = getStringValue(row, headerIndexMap, 'Trainer Name', 'Teacher');
-        const ltv = getNumberValue(row, headerIndexMap, 'Ltv', 'LTV', 'Lifetime Value');
-        const visitsPostTrial = getNumberValue(row, headerIndexMap, 'Visits Post Trial', 'Post Trial Visits');
-        const purchaseCountPostTrial = getNumberValue(row, headerIndexMap, 'Purchase Count Post Trial', 'Post Trial Purchase Count');
+        const isNew = getStringValue(row, headerIndexMap, 'Is New', 'New', 'Client Type');
+        const retentionStatus = getStringValue(row, headerIndexMap, 'Retention Status', 'Retained', 'Retention');
+        const conversionStatus = getStringValue(row, headerIndexMap, 'Conversion Status', 'Converted', 'Conversion');
+        const membershipUsed = getStringValue(row, headerIndexMap, 'Membership Used', 'Membership', 'Plan');
+        const trainerName = getStringValue(row, headerIndexMap, 'Trainer Name', 'Teacher', 'Trainer');
+        const ltv = getNumberValue(row, headerIndexMap, 'Ltv', 'LTV', 'Lifetime Value', 'Total LTV');
+        const visitsPostTrial = getNumberValue(row, headerIndexMap, 'Visits Post Trial', 'Post Trial Visits', 'Visits After Trial');
+        const purchaseCountPostTrial = getNumberValue(row, headerIndexMap, 'Purchase Count Post Trial', 'Post Trial Purchase Count', 'Purchases After Trial');
 
         const conversionSpan = (sheetConversionSpan && !isNaN(sheetConversionSpan))
           ? sheetConversionSpan
