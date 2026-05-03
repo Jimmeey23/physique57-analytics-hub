@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
 import { ExecutiveDrillDownModal } from './ExecutiveDrillDownModal';
@@ -17,6 +17,8 @@ export const ExecutiveClientsSection: React.FC<ExecutiveClientsSectionProps> = (
 }) => {
   const { data: clientData, loading: clientLoading } = useNewClientData();
   const [drillDownOpen, setDrillDownOpen] = useState(false);
+  const safeClientData = useMemo(() => clientData || [], [clientData]);
+  const hasClientData = safeClientData.length > 0;
 
   if (clientLoading) {
     return (
@@ -48,14 +50,14 @@ export const ExecutiveClientsSection: React.FC<ExecutiveClientsSectionProps> = (
           onClick={() => setDrillDownOpen(true)}
         >
           <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
-          <ClientConversionMetricCards data={clientData || []} />
+          <ClientConversionMetricCards data={safeClientData} />
         </div>
 
         {/* Retention Table */}
-        {clientData && clientData.length > 0 && (
+        {hasClientData && (
           <div className="pt-4 border-t border-slate-100">
             <h4 className="text-sm font-semibold text-slate-700 mb-4">Retention by Client Type</h4>
-            <ClientRetentionMonthByTypePivot data={clientData} />
+            <ClientRetentionMonthByTypePivot data={safeClientData} />
           </div>
         )}
       </ExecutiveSectionCard>
@@ -66,20 +68,20 @@ export const ExecutiveClientsSection: React.FC<ExecutiveClientsSectionProps> = (
         onOpenChange={setDrillDownOpen}
         title="Client Acquisition & Retention Analysis"
         metric="Total Clients"
-        currentValue={formatNumber(clientData?.length || 0)}
+        currentValue={formatNumber(safeClientData.length)}
         description="Detailed breakdown of client acquisition, retention, and lifetime value metrics"
         borderColor="purple"
         breakdownData={
-          clientData
+          safeClientData
             ?.slice(0, 5)
             .map((client: any, idx: number) => ({
               label: client.membershipType || `Client ${idx + 1}`,
               value: formatNumber(
-                clientData.filter((c: any) => c.membershipType === client.membershipType).length
+                safeClientData.filter((c: any) => c.membershipType === client.membershipType).length
               ),
               percentage: (
-                (clientData.filter((c: any) => c.membershipType === client.membershipType).length /
-                  (clientData?.length || 1)) *
+                (safeClientData.filter((c: any) => c.membershipType === client.membershipType).length /
+                  (safeClientData.length || 1)) *
                 100
               ),
               color: 'bg-purple-500',
@@ -87,7 +89,7 @@ export const ExecutiveClientsSection: React.FC<ExecutiveClientsSectionProps> = (
             .slice(0, 3) || []
         }
         analyticsText="Client metrics track new acquisitions, retention rates, and lifetime value to optimize marketing spend and predict revenue."
-        rawData={clientData?.slice(0, 20) || []}
+        rawData={safeClientData.slice(0, 20)}
         rawDataColumns={[
           { key: 'memberName', label: 'Name', format: 'text' },
           { key: 'membershipType', label: 'Type', format: 'text' },
