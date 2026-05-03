@@ -720,7 +720,7 @@ const ClientRetention = () => {
   } = useGlobalLoading();
   const exportPreset = React.useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState(exportStudio?.locationLabel || 'Kwality House, Kemps Corner');
   const [isPendingTableSwitch, startTableSwitch] = useTransition();
   const [rememberLastTable, setRememberLastTable] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -749,8 +749,8 @@ const ClientRetention = () => {
   // Filters state
   const [filters, setFilters] = useState<NewClientFilterOptions>(() => {
     return {
-      dateRange: { start: '', end: '' },
-      location: [],
+      dateRange: getDashboardDefaultDateRange(),
+      location: exportStudio?.locationLabel ? [exportStudio.locationLabel] : ['Kwality House, Kemps Corner'],
       homeLocation: [],
       trainer: [],
       paymentMethod: [],
