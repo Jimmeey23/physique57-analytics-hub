@@ -720,7 +720,7 @@ const ClientRetention = () => {
   } = useGlobalLoading();
   const exportPreset = React.useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
-  const [selectedLocation, setSelectedLocation] = useState(exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.locationLabel || 'Kwality House, Kemps Corner'));
+  const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [isPendingTableSwitch, startTableSwitch] = useTransition();
   const [rememberLastTable, setRememberLastTable] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -748,9 +748,8 @@ const ClientRetention = () => {
 
   // Filters state
   const [filters, setFilters] = useState<NewClientFilterOptions>(() => {
-    const defaultDateRange = { start: '2020-01-01', end: new Date().toISOString().split('T')[0] };
     return {
-      dateRange: { start: exportPreset?.startDate || defaultDateRange.start, end: exportPreset?.endDate || defaultDateRange.end },
+      dateRange: { start: '', end: '' },
       location: [],
       homeLocation: [],
       trainer: [],
@@ -1638,7 +1637,7 @@ const ClientRetention = () => {
                 type: 'month'
               })} 
               title={drillDownModal.title} 
-              data={drillDownModal.data} 
+              data={drillDownModal.data as any} 
               type={drillDownModal.type} 
             />
           )}
