@@ -27,22 +27,28 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
     if (!leadsData) return [];
 
     return leadsData.filter(lead => {
-      // Apply date range filter
+      // Apply date range filter — only exclude when date is known AND outside range
       if (filters.dateRange?.start && filters.dateRange?.end) {
         const leadDate = parseDate(lead.createdAt);
-        const filterStart = new Date(filters.dateRange.start);
-        const filterEnd = new Date(filters.dateRange.end);
-        filterEnd.setHours(23, 59, 59, 999);
-
-        if (!leadDate || leadDate < filterStart || leadDate > filterEnd) {
-          return false;
+        if (leadDate) {
+          const filterStart = new Date(filters.dateRange.start);
+          const filterEnd = new Date(filters.dateRange.end);
+          filterEnd.setHours(23, 59, 59, 999);
+          if (leadDate < filterStart || leadDate > filterEnd) return false;
         }
       }
 
-      // Apply location filter
+      // Apply location filter — normalise IDs to display names (case-insensitive)
       if (filters.location && filters.location.length > 0) {
         const locations = Array.isArray(filters.location) ? filters.location : [filters.location];
-        if (!locations.includes('all') && !locations.some(loc => lead.center?.includes(loc))) {
+        const locStr = (lead.center || '').toLowerCase();
+        if (!locations.includes('all') && !locations.some(loc => {
+          const l = loc.toLowerCase();
+          if (l === 'kwality') return locStr.includes('kwality') || locStr.includes('kemps');
+          if (l === 'supreme') return locStr.includes('supreme') || locStr.includes('bandra');
+          if (l === 'kenkere') return locStr.includes('kenkere') || locStr.includes('bengaluru') || locStr.includes('bangalore');
+          return locStr.includes(l) || l.includes(locStr);
+        })) {
           return false;
         }
       }

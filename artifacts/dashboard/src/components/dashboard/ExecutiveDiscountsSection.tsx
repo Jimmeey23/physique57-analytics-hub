@@ -24,22 +24,28 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
     if (!discountData) return [];
 
     return discountData.filter(discount => {
-      // Apply date range filter
+      // Apply date range filter — only exclude when date is known AND outside range
       if (filters.dateRange?.start && filters.dateRange?.end) {
         const discountDate = parseDate(discount.paymentDate);
-        const filterStart = new Date(filters.dateRange.start);
-        const filterEnd = new Date(filters.dateRange.end);
-        filterEnd.setHours(23, 59, 59, 999);
-
-        if (!discountDate || discountDate < filterStart || discountDate > filterEnd) {
-          return false;
+        if (discountDate) {
+          const filterStart = new Date(filters.dateRange.start);
+          const filterEnd = new Date(filters.dateRange.end);
+          filterEnd.setHours(23, 59, 59, 999);
+          if (discountDate < filterStart || discountDate > filterEnd) return false;
         }
       }
 
-      // Apply location filter
+      // Apply location filter — normalise IDs to display names (case-insensitive)
       if (filters.location && filters.location.length > 0) {
         const locations = Array.isArray(filters.location) ? filters.location : [filters.location];
-        if (!locations.includes('all') && !locations.some(loc => discount.location?.includes(loc))) {
+        const locStr = (discount.location || '').toLowerCase();
+        if (!locations.includes('all') && !locations.some(loc => {
+          const l = loc.toLowerCase();
+          if (l === 'kwality') return locStr.includes('kwality') || locStr.includes('kemps');
+          if (l === 'supreme') return locStr.includes('supreme') || locStr.includes('bandra');
+          if (l === 'kenkere') return locStr.includes('kenkere') || locStr.includes('bengaluru') || locStr.includes('bangalore');
+          return locStr.includes(l) || l.includes(locStr);
+        })) {
           return false;
         }
       }

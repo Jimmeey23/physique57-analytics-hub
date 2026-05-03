@@ -35,10 +35,17 @@ export const ExecutiveTrainersSection: React.FC<ExecutiveTrainersSectionProps> =
     if (!payrollData) return [];
 
     return payrollData.filter(trainer => {
-      // Apply location filter
+      // Apply location filter — normalise IDs to display names (case-insensitive)
       if (filters.location && filters.location.length > 0) {
         const locations = Array.isArray(filters.location) ? filters.location : [filters.location];
-        if (!locations.includes('all') && !locations.some(loc => trainer.location?.includes(loc))) {
+        const locStr = (trainer.location || '').toLowerCase();
+        if (!locations.includes('all') && !locations.some(loc => {
+          const l = loc.toLowerCase();
+          if (l === 'kwality') return locStr.includes('kwality') || locStr.includes('kemps');
+          if (l === 'supreme') return locStr.includes('supreme') || locStr.includes('bandra');
+          if (l === 'kenkere') return locStr.includes('kenkere') || locStr.includes('bengaluru') || locStr.includes('bangalore');
+          return locStr.includes(l) || l.includes(locStr);
+        })) {
           return false;
         }
       }

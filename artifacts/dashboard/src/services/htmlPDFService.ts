@@ -3,1158 +3,460 @@ import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { LocationReportData, LocationReportMetrics } from '@/hooks/useLocationReportData';
 
-// Extend jsPDF with autoTable
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
-    lastAutoTable?: {
-      finalY: number;
-    };
+    lastAutoTable?: { finalY: number };
   }
 }
 
 interface ReportData {
   location: string;
   dateRange: string;
-  sales: {
-    totalRevenue: number;
-    transactions: number;
-    avgTransaction: number;
-    uniqueCustomers: number;
-  };
-  clients: {
-    newMembers: number;
-    convertedMembers: number;
-    retentionRate: number;
-    avgLTV: number;
-  };
-  sessions: {
-    totalSessions: number;
-    avgClassSize: number;
-    avgFillRate: number;
-    totalAttendance: number;
-  };
-  trainers: {
-    totalTrainers: number;
-    totalSessions: number;
-    totalPaid: number;
-    avgPerSession: number;
-  };
-  discounts: {
-    discountedSales: number;
-    totalDiscount: number;
-    avgDiscountPercent: number;
-    revenueImpact: number;
-  };
-  leads: {
-    totalLeads: number;
-    converted: number;
-    conversionRate: number;
-    avgResponseTime: number;
-  };
-  expirations: {
-    total: number;
-    value: number;
-    avgDaysToExpiry: number;
-  };
-  cancellations: {
-    total: number;
-    rate: number;
-    pattern: string;
+  sales: { totalRevenue: number; transactions: number; avgTransaction: number; uniqueCustomers: number };
+  clients: { newMembers: number; convertedMembers: number; retentionRate: number; avgLTV: number };
+  sessions: { totalSessions: number; avgClassSize: number; avgFillRate: number; totalAttendance: number };
+  trainers: { totalTrainers: number; totalSessions: number; totalPaid: number; avgPerSession: number };
+  discounts: { discountedSales: number; totalDiscount: number; avgDiscountPercent: number; revenueImpact: number };
+  leads: { totalLeads: number; converted: number; conversionRate: number; avgResponseTime: number };
+  expirations: { total: number; value: number; avgDaysToExpiry: number };
+  cancellations: { total: number; rate: number; pattern: string };
+  summaries?: {
+    executive?: string; sales?: string; clients?: string; sessions?: string;
+    trainers?: string; discounts?: string; leads?: string; expirations?: string;
+    cancellations?: string; recommendations?: string;
   };
 }
 
+// ─── constants ────────────────────────────────────────────────────────────────
+const M = 13;           // page margin (mm)
+const PW = 210;         // A4 width
+const PH = 297;         // A4 height
+const CW = PW - M * 2; // content width
+
+// brand palette (RGB)
+const BRAND   : [number,number,number] = [99,  102, 241]; // indigo-500
+const BRAND2  : [number,number,number] = [139, 92,  246]; // violet-500
+const EMERALD : [number,number,number] = [16,  185, 129];
+const BLUE    : [number,number,number] = [37,  99,  235];
+const PURPLE  : [number,number,number] = [147, 51,  234];
+const ROSE    : [number,number,number] = [225, 29,  72];
+const AMBER   : [number,number,number] = [217, 119, 6];
+const TEAL    : [number,number,number] = [13,  148, 136];
+const SLATE   : [number,number,number] = [51,  65,  85];
+const GRAY    : [number,number,number] = [100, 116, 139];
+const LIGHT   : [number,number,number] = [248, 250, 252];
+const WHITE   : [number,number,number] = [255, 255, 255];
+const DARK    : [number,number,number] = [15,  23,  42];
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+const rgb = (pdf: jsPDF, r: number, g: number, b: number) =>
+  pdf.setTextColor(r, g, b);
+const fill = (pdf: jsPDF, r: number, g: number, b: number) =>
+  pdf.setFillColor(r, g, b);
+const draw = (pdf: jsPDF, r: number, g: number, b: number) =>
+  pdf.setDrawColor(r, g, b);
+
+const addPageFooter = (pdf: jsPDF, page: number, total: number) => {
+  const y = PH - 7;
+  fill(pdf, ...LIGHT); pdf.rect(0, PH - 12, PW, 12, 'F');
+  draw(pdf, 203, 213, 225); pdf.setLineWidth(0.3);
+  pdf.line(M, PH - 12, PW - M, PH - 12);
+  rgb(pdf, ...GRAY); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal');
+  pdf.text('Physique 57 India  •  Confidential & Proprietary', M, y);
+  pdf.text(`Page ${page} of ${total}`, PW - M, y, { align: 'right' });
+  pdf.text(new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }), PW / 2, y, { align: 'center' });
+};
+
+const sectionHeader = (
+  pdf: jsPDF, y: number, label: string, accent: [number,number,number]
+): number => {
+  fill(pdf, ...accent); pdf.rect(M, y, 3, 7, 'F');
+  fill(pdf, ...LIGHT); pdf.rect(M + 3, y, CW - 3, 7, 'F');
+  rgb(pdf, ...DARK); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold');
+  pdf.text(label.toUpperCase(), M + 6, y + 5);
+  return y + 11;
+};
+
+const kpiCard = (
+  pdf: jsPDF, x: number, y: number, w: number, h: number,
+  label: string, value: string, accent: [number,number,number], sub?: string
+) => {
+  fill(pdf, ...WHITE); draw(pdf, 226, 232, 240); pdf.setLineWidth(0.3);
+  pdf.roundedRect(x, y, w, h, 1.5, 1.5, 'FD');
+  fill(pdf, ...accent); pdf.rect(x, y, 2.5, h, 'F');
+  rgb(pdf, ...GRAY); pdf.setFontSize(7); pdf.setFont('helvetica', 'normal');
+  pdf.text(label, x + 5, y + 5.5);
+  rgb(pdf, ...DARK); pdf.setFontSize(13); pdf.setFont('helvetica', 'bold');
+  pdf.text(value, x + 5, y + 13);
+  if (sub) {
+    rgb(pdf, ...GRAY); pdf.setFontSize(7); pdf.setFont('helvetica', 'normal');
+    pdf.text(sub, x + 5, y + 18);
+  }
+};
+
+const styledTable = (
+  pdf: jsPDF, y: number,
+  head: string[], rows: string[][],
+  accent: [number,number,number],
+  colWidths?: number[]
+): number => {
+  const cols = head.length;
+  const defaultW = CW / cols;
+  const widths = colWidths || Array(cols).fill(defaultW);
+  autoTable(pdf, {
+    startY: y,
+    head: [head],
+    body: rows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: accent, textColor: [255, 255, 255],
+      fontStyle: 'bold', fontSize: 8.5, cellPadding: 3,
+    },
+    bodyStyles: { fontSize: 8, textColor: [30, 41, 59], cellPadding: 2.8 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: Object.fromEntries(widths.map((w, i) => [i, { cellWidth: w }])),
+    margin: { left: M, right: M },
+    tableWidth: CW,
+    styles: { lineColor: [226, 232, 240], lineWidth: 0.2 },
+  });
+  return (pdf.lastAutoTable?.finalY ?? y + rows.length * 6 + 12) + 6;
+};
+
+const narrative = (pdf: jsPDF, y: number, text: string): number => {
+  if (!text) return y;
+  const lines = pdf.splitTextToSize(text, CW - 6);
+  if (!lines.length) return y;
+  const bh = lines.length * 3.8 + 6;
+  fill(pdf, ...LIGHT); draw(pdf, 203, 213, 225); pdf.setLineWidth(0.2);
+  pdf.roundedRect(M, y, CW, bh, 1.5, 1.5, 'FD');
+  rgb(pdf, ...SLATE); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+  pdf.text(lines, M + 3, y + 4.5);
+  return y + bh + 4;
+};
+
+const checkPage = (pdf: jsPDF, y: number, need: number): number => {
+  if (y + need > PH - 18) { pdf.addPage(); return M; }
+  return y;
+};
+
+// ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 export const generateHTMLPDFReport = async (data: ReportData): Promise<void> => {
-  // Create PDF with A4 dimensions
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 15;
-  let yPosition = margin;
+  // ── PAGE 1: COVER ──────────────────────────────────────────────────────────
+  // Header bar
+  fill(pdf, ...BRAND); pdf.rect(0, 0, PW, 38, 'F');
+  fill(pdf, ...BRAND2); pdf.rect(0, 30, PW, 8, 'F');
 
-  // Colors
-  const primaryColor = '#6366f1'; // Indigo
-  const secondaryColor = '#8b5cf6'; // Purple
-  const accentColor = '#ec4899'; // Pink
-  const textDark = '#1e293b';
-  const textLight = '#64748b';
+  // Logo area
+  pdf.setFillColor(255, 255, 255);
+  pdf.circle(18, 19, 8, 'F');
+  rgb(pdf, ...BRAND); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold');
+  pdf.text('P57', 18, 21, { align: 'center' });
 
-  // Helper function to add new page if needed
-  const checkAndAddPage = (requiredHeight: number) => {
-    if (yPosition + requiredHeight > pageHeight - margin) {
-      pdf.addPage();
-      yPosition = margin;
-      return true;
-    }
-    return false;
-  };
+  // Report title
+  rgb(pdf, ...WHITE); pdf.setFontSize(20); pdf.setFont('helvetica', 'bold');
+  pdf.text('Executive Analytics Report', 32, 16);
+  pdf.setFontSize(11); pdf.setFont('helvetica', 'normal');
+  pdf.text('Physique 57 India  |  Confidential', 32, 23);
+  pdf.setFontSize(9);
+  pdf.text(`${data.location}  ·  ${data.dateRange}`, 32, 30);
 
-  // Helper function to draw gradient background (simulated with rectangles)
-  const drawGradientHeader = () => {
-    pdf.setFillColor(99, 102, 241); // Primary color
-    pdf.rect(0, 0, pageWidth, 50, 'F');
-    pdf.setFillColor(139, 92, 246, 50); // Semi-transparent secondary
-    pdf.rect(0, 25, pageWidth, 25, 'F');
-  };
+  // Generated stamp
+  fill(pdf, ...BRAND2); pdf.roundedRect(PW - M - 42, 6, 42, 10, 2, 2, 'F');
+  rgb(pdf, ...WHITE); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal');
+  pdf.text(`Generated ${new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}`, PW - M - 21, 12, { align: 'center' });
 
-  // ============================================
-  // PAGE 1: COVER PAGE & EXECUTIVE SUMMARY
-  // ============================================
-  
-  drawGradientHeader();
+  let y = 46;
 
-  // Title
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(24);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Executive Analytics Report', pageWidth / 2, 25, { align: 'center' });
-
-  // Subtitle
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(data.location, pageWidth / 2, 35, { align: 'center' });
-
-  pdf.setFontSize(12);
-  pdf.text(data.dateRange, pageWidth / 2, 42, { align: 'center' });
-
-  yPosition = 60;
-
-  // Executive Summary Section
-  pdf.setTextColor(textDark);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Executive Summary', margin, yPosition);
-  yPosition += 10;
-
-  // Summary box with key highlights
-  pdf.setFillColor(245, 247, 250);
-  pdf.roundedRect(margin, yPosition, pageWidth - 2 * margin, 40, 3, 3, 'F');
-
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(textLight);
-  
-  const summaryText = `This comprehensive report provides insights into business performance across all key metrics including revenue, client retention, class attendance, and operational efficiency for ${data.location}.`;
-  const splitText = pdf.splitTextToSize(summaryText, pageWidth - 2 * margin - 10);
-  pdf.text(splitText, margin + 5, yPosition + 8);
-  
-  yPosition += 50;
-
-  // Narrative executive summary
-  if ((data as any).summaries?.executive) {
-    checkAndAddPage(40);
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Narrative Overview', margin, yPosition);
-    yPosition += 7;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const execSummary = (data as any).summaries.executive as string;
-    const execLines = pdf.splitTextToSize(execSummary, pageWidth - 2 * margin);
-    pdf.text(execLines, margin, yPosition);
-    yPosition += execLines.length * 4 + 6;
-  }
-
-  // ============================================
-  // TABLE OF CONTENTS
-  // ============================================
-
-  pdf.addPage();
-  yPosition = margin;
-
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Table of Contents', margin, yPosition);
-  yPosition += 10;
-
-  const tocSections = [
-    'Executive Summary',
-    'Sales Performance',
-    'Client Conversion & Retention',
-    'Sessions & Attendance',
-    'Trainer Performance',
-    'Discounts & Promotions',
-    'Leads & Funnel',
-    'Expirations',
-    'Late Cancellations',
-    'Strategic Recommendations',
+  // ── 8-card KPI grid ─────────────────────────────────────────────────────────
+  const kpis = [
+    { label: 'Total Revenue',      value: formatCurrency(data.sales.totalRevenue),         accent: EMERALD, sub: `${formatNumber(data.sales.transactions)} transactions` },
+    { label: 'Avg Transaction',    value: formatCurrency(data.sales.avgTransaction),        accent: BLUE,    sub: `${formatNumber(data.sales.uniqueCustomers)} customers` },
+    { label: 'New Members',        value: formatNumber(data.clients.newMembers),            accent: PURPLE,  sub: `${formatNumber(data.clients.convertedMembers)} converted` },
+    { label: 'Retention Rate',     value: formatPercentage(data.clients.retentionRate),     accent: TEAL,    sub: `Avg LTV ${formatCurrency(data.clients.avgLTV)}` },
+    { label: 'Total Sessions',     value: formatNumber(data.sessions.totalSessions),        accent: BLUE,    sub: `${formatNumber(data.sessions.totalAttendance)} check-ins` },
+    { label: 'Avg Fill Rate',      value: formatPercentage(data.sessions.avgFillRate),      accent: AMBER,   sub: `Avg class ${data.sessions.avgClassSize.toFixed(1)} pax` },
+    { label: 'Late Cancellations', value: formatNumber(data.cancellations.total),           accent: ROSE,    sub: `Rate ${formatPercentage(data.cancellations.rate)}` },
+    { label: 'Total Discounts',    value: formatCurrency(data.discounts.totalDiscount),     accent: AMBER,   sub: `${formatPercentage(data.discounts.avgDiscountPercent)} avg off` },
   ];
+  const cw4 = (CW - 3 * 3) / 4;
+  const rh  = 22;
+  for (let i = 0; i < kpis.length; i++) {
+    const col = i % 4;
+    const row = Math.floor(i / 4);
+    kpiCard(pdf, M + col * (cw4 + 3), y + row * (rh + 3), cw4, rh, kpis[i].label, kpis[i].value, kpis[i].accent, kpis[i].sub);
+  }
+  y += 2 * (rh + 3) + 6;
 
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(textLight);
+  // Executive narrative
+  if (data.summaries?.executive) {
+    y = checkPage(pdf, y, 28);
+    fill(pdf, ...LIGHT); pdf.roundedRect(M, y, CW, 22, 2, 2, 'F');
+    fill(pdf, ...BRAND); pdf.rect(M, y, 2.5, 22, 'F');
+    rgb(pdf, ...BRAND); pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
+    pdf.text('EXECUTIVE OVERVIEW', M + 6, y + 5);
+    rgb(pdf, ...SLATE); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal');
+    const execLines = pdf.splitTextToSize(data.summaries.executive, CW - 10);
+    pdf.text(execLines.slice(0, 4), M + 6, y + 10);
+    y += 26;
+  }
 
-  tocSections.forEach((title, index) => {
-    if (yPosition > pageHeight - margin) {
-      pdf.addPage();
-      yPosition = margin;
-    }
-    pdf.text(`${index + 1}. ${title}`, margin, yPosition);
-    yPosition += 6;
-  });
-
-  // Start main content on a new page
+  // ── PAGE 2: SALES + CLIENTS ─────────────────────────────────────────────────
   pdf.addPage();
-  yPosition = margin;
+  y = M;
 
-  // Key Metrics Grid
-  const metricsData = [
-    { label: 'Total Revenue', value: formatCurrency(data.sales.totalRevenue), color: [34, 197, 94] },
-    { label: 'Total Transactions', value: formatNumber(data.sales.transactions), color: [59, 130, 246] },
-    { label: 'New Members', value: formatNumber(data.clients.newMembers), color: [168, 85, 247] },
-    { label: 'Total Sessions', value: formatNumber(data.sessions.totalSessions), color: [236, 72, 153] },
-  ];
-
-  const boxWidth = (pageWidth - 2 * margin - 15) / 2;
-  const boxHeight = 28;
-  const boxGap = 5;
-
-  metricsData.forEach((metric, index) => {
-    const col = index % 2;
-    const row = Math.floor(index / 2);
-    const x = margin + col * (boxWidth + boxGap);
-    const y = yPosition + row * (boxHeight + boxGap);
-
-    // Box background
-    pdf.setFillColor(metric.color[0], metric.color[1], metric.color[2], 20);
-    pdf.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'F');
-
-    // Border
-    pdf.setDrawColor(metric.color[0], metric.color[1], metric.color[2]);
-    pdf.setLineWidth(0.5);
-    pdf.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'S');
-
-    // Label
-    pdf.setFontSize(9);
-    pdf.setTextColor(textLight);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(metric.label, x + 5, y + 8);
-
-    // Value
-    pdf.setFontSize(18);
-    pdf.setTextColor(textDark);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(metric.value, x + 5, y + 20);
-  });
-
-  yPosition += 2 * (boxHeight + boxGap) + 15;
-
-  // ============================================
-  // SALES ANALYTICS SECTION
-  // ============================================
-  
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Sales Performance', margin, yPosition);
-  yPosition += 8;
-
-  // Sales metrics table
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Revenue', formatCurrency(data.sales.totalRevenue)],
-      ['Total Transactions', formatNumber(data.sales.transactions)],
-      ['Average Transaction', formatCurrency(data.sales.avgTransaction)],
-      ['Unique Customers', formatNumber(data.sales.uniqueCustomers)],
+  y = sectionHeader(pdf, y, 'Sales Performance', EMERALD);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Total Revenue (Net)',    formatCurrency(data.sales.totalRevenue),    'Excl. VAT'],
+      ['Total Transactions',    formatNumber(data.sales.transactions),       'Unique payment events'],
+      ['Average Transaction',   formatCurrency(data.sales.avgTransaction),  'Net revenue / transaction'],
+      ['Unique Customers',      formatNumber(data.sales.uniqueCustomers),   'Distinct paying members'],
     ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [99, 102, 241],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
+    EMERALD, [70, 55, 55]
+  );
+  if (data.summaries?.sales) y = narrative(pdf, y, data.summaries.sales);
 
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Sales insights
-  if ((data as any).summaries?.sales) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const salesSummary = (data as any).summaries.sales as string;
-    const salesLines = pdf.splitTextToSize(salesSummary, pageWidth - 2 * margin);
-    pdf.text(salesLines, margin, yPosition);
-    yPosition += salesLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // CLIENT RETENTION SECTION
-  // ============================================
-
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Client Conversion & Retention', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['New Members', formatNumber(data.clients.newMembers)],
-      ['Converted Members', formatNumber(data.clients.convertedMembers)],
-      ['Retention Rate', formatPercentage(data.clients.retentionRate)],
-      ['Average LTV', formatCurrency(data.clients.avgLTV)],
+  y = checkPage(pdf, y, 50);
+  y = sectionHeader(pdf, y, 'Client Acquisition & Retention', PURPLE);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['New Members',       formatNumber(data.clients.newMembers),          'First-visit clients'],
+      ['Converted Members', formatNumber(data.clients.convertedMembers),    'Signed membership / pack'],
+      ['Conversion Rate',   formatPercentage(data.clients.convertedMembers / Math.max(1, data.clients.newMembers) * 100), 'Converted / new'],
+      ['Retention Rate',    formatPercentage(data.clients.retentionRate),   'Returned within period'],
+      ['Average LTV',       formatCurrency(data.clients.avgLTV),            'Lifetime value per client'],
     ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [139, 92, 246],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
+    PURPLE, [70, 55, 55]
+  );
+  if (data.summaries?.clients) y = narrative(pdf, y, data.summaries.clients);
 
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Clients insights
-  if ((data as any).summaries?.clients) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const clientSummary = (data as any).summaries.clients as string;
-    const clientLines = pdf.splitTextToSize(clientSummary, pageWidth - 2 * margin);
-    pdf.text(clientLines, margin, yPosition);
-    yPosition += clientLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // SESSIONS & ATTENDANCE SECTION
-  // ============================================
-
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Sessions & Attendance', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Sessions', formatNumber(data.sessions.totalSessions)],
-      ['Average Class Size', formatNumber(data.sessions.avgClassSize)],
-      ['Average Fill Rate', formatPercentage(data.sessions.avgFillRate)],
-      ['Total Attendance', formatNumber(data.sessions.totalAttendance)],
-    ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [59, 130, 246],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
-
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Sessions insights
-  if ((data as any).summaries?.sessions) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const sessionsSummary = (data as any).summaries.sessions as string;
-    const sessionsLines = pdf.splitTextToSize(sessionsSummary, pageWidth - 2 * margin);
-    pdf.text(sessionsLines, margin, yPosition);
-    yPosition += sessionsLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // TRAINER PERFORMANCE SECTION
-  // ============================================
-
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Trainer Performance', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Trainers', formatNumber(data.trainers.totalTrainers)],
-      ['Total Sessions', formatNumber(data.trainers.totalSessions)],
-      ['Total Compensation', formatCurrency(data.trainers.totalPaid)],
-      ['Avg Per Session', formatCurrency(data.trainers.avgPerSession)],
-    ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [168, 85, 247],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
-
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Trainer insights
-  if ((data as any).summaries?.trainers) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const trainerSummary = (data as any).summaries.trainers as string;
-    const trainerLines = pdf.splitTextToSize(trainerSummary, pageWidth - 2 * margin);
-    pdf.text(trainerLines, margin, yPosition);
-    yPosition += trainerLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // NEW PAGE FOR ADDITIONAL METRICS
-  // ============================================
-
+  // ── PAGE 3: SESSIONS + TRAINERS ─────────────────────────────────────────────
   pdf.addPage();
-  yPosition = margin;
+  y = M;
 
-  // ============================================
-  // DISCOUNTS & PROMOTIONS SECTION
-  // ============================================
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Discounts & Promotions', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Discounted Sales', formatNumber(data.discounts.discountedSales)],
-      ['Total Discount Amount', formatCurrency(data.discounts.totalDiscount)],
-      ['Average Discount %', formatPercentage(data.discounts.avgDiscountPercent)],
-      ['Revenue Impact', formatCurrency(data.discounts.revenueImpact)],
+  y = sectionHeader(pdf, y, 'Sessions & Attendance', BLUE);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Total Sessions',      formatNumber(data.sessions.totalSessions),         'Classes conducted'],
+      ['Total Attendance',    formatNumber(data.sessions.totalAttendance),        'Total check-ins'],
+      ['Average Class Size',  data.sessions.avgClassSize.toFixed(1) + ' pax',    'Check-ins per session'],
+      ['Average Fill Rate',   formatPercentage(data.sessions.avgFillRate),        '% capacity filled'],
     ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [236, 72, 153],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
+    BLUE, [70, 55, 55]
+  );
+  if (data.summaries?.sessions) y = narrative(pdf, y, data.summaries.sessions);
 
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
+  y = checkPage(pdf, y, 50);
+  y = sectionHeader(pdf, y, 'Trainer Performance & Payroll', TEAL);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Active Trainers',       formatNumber(data.trainers.totalTrainers),    'Distinct trainers'],
+      ['Sessions Delivered',    formatNumber(data.trainers.totalSessions),    'Classes taken by trainers'],
+      ['Total Compensation',    formatCurrency(data.trainers.totalPaid),      'Gross payroll disbursed'],
+      ['Avg Pay per Session',   formatCurrency(data.trainers.avgPerSession),  'Payroll / sessions'],
+    ],
+    TEAL, [70, 55, 55]
+  );
+  if (data.summaries?.trainers) y = narrative(pdf, y, data.summaries.trainers);
 
-  // Discounts insights
-  if ((data as any).summaries?.discounts) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
+  // ── PAGE 4: DISCOUNTS + LEADS ───────────────────────────────────────────────
+  pdf.addPage();
+  y = M;
 
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const discountsSummary = (data as any).summaries.discounts as string;
-    const discountsLines = pdf.splitTextToSize(discountsSummary, pageWidth - 2 * margin);
-    pdf.text(discountsLines, margin, yPosition);
-    yPosition += discountsLines.length * 4 + 8;
+  y = sectionHeader(pdf, y, 'Discounts & Promotions', AMBER);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Discounted Sales',      formatNumber(data.discounts.discountedSales),          'Transactions with discount'],
+      ['Total Discount Amount', formatCurrency(data.discounts.totalDiscount),          'Gross discount given'],
+      ['Average Discount',      formatPercentage(data.discounts.avgDiscountPercent),   '% off per transaction'],
+      ['Revenue After Disc.',   formatCurrency(data.discounts.revenueImpact),          'Net revenue post-discount'],
+    ],
+    AMBER, [75, 55, 50]
+  );
+  if (data.summaries?.discounts) y = narrative(pdf, y, data.summaries.discounts);
+
+  y = checkPage(pdf, y, 50);
+  y = sectionHeader(pdf, y, 'Leads & Conversion Funnel', EMERALD);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Total Leads',           formatNumber(data.leads.totalLeads),              'Enquiries received'],
+      ['Converted Leads',       formatNumber(data.leads.converted),               'Became paying members'],
+      ['Conversion Rate',       formatPercentage(data.leads.conversionRate),      '% leads converted'],
+      ['Avg Response Time',     `${data.leads.avgResponseTime.toFixed(1)} hrs`,   'Lead contacted within'],
+    ],
+    EMERALD, [70, 55, 55]
+  );
+  if (data.summaries?.leads) y = narrative(pdf, y, data.summaries.leads);
+
+  // ── PAGE 5: EXPIRATIONS + CANCELLATIONS + RECOMMENDATIONS ──────────────────
+  pdf.addPage();
+  y = M;
+
+  y = sectionHeader(pdf, y, 'Package Expirations', ROSE);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Total Expirations',   formatNumber(data.expirations.total),                     'Packs expiring in period'],
+      ['Expiration Value',    formatCurrency(data.expirations.value),                   'Gross value at risk'],
+      ['Avg Days to Expiry',  `${data.expirations.avgDaysToExpiry.toFixed(0)} days`,    'Average runway left'],
+    ],
+    ROSE, [75, 55, 50]
+  );
+  if (data.summaries?.expirations) y = narrative(pdf, y, data.summaries.expirations);
+
+  y = checkPage(pdf, y, 50);
+  y = sectionHeader(pdf, y, 'Late Cancellations', SLATE);
+  y = styledTable(pdf, y,
+    ['Metric', 'Value', 'Context'],
+    [
+      ['Total Cancellations',  formatNumber(data.cancellations.total),           'Late cancel events'],
+      ['Cancellation Rate',    formatPercentage(data.cancellations.rate),        '% of total sessions'],
+      ['Primary Pattern',      data.cancellations.pattern,                       'Peak risk window'],
+    ],
+    SLATE, [75, 55, 50]
+  );
+  if (data.summaries?.cancellations) y = narrative(pdf, y, data.summaries.cancellations);
+
+  if (data.summaries?.recommendations) {
+    y = checkPage(pdf, y, 40);
+    y = sectionHeader(pdf, y, 'Strategic Recommendations', BRAND);
+    y = narrative(pdf, y, data.summaries.recommendations);
   }
 
-  // ============================================
-  // LEADS & FUNNEL SECTION
-  // ============================================
-
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Leads & Conversion Funnel', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Leads', formatNumber(data.leads.totalLeads)],
-      ['Converted Leads', formatNumber(data.leads.converted)],
-      ['Conversion Rate', formatPercentage(data.leads.conversionRate)],
-      ['Avg Response Time', `${data.leads.avgResponseTime} hours`],
-    ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [34, 197, 94],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
-
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Leads insights
-  if ((data as any).summaries?.leads) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const leadsSummary = (data as any).summaries.leads as string;
-    const leadsLines = pdf.splitTextToSize(leadsSummary, pageWidth - 2 * margin);
-    pdf.text(leadsLines, margin, yPosition);
-    yPosition += leadsLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // EXPIRATIONS SECTION
-  // ============================================
-
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Package Expirations', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Expirations', formatNumber(data.expirations.total)],
-      ['Expiration Value', formatCurrency(data.expirations.value)],
-      ['Avg Days to Expiry', `${data.expirations.avgDaysToExpiry} days`],
-    ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [251, 146, 60],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
-
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Expirations insights
-  if ((data as any).summaries?.expirations) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const expSummary = (data as any).summaries.expirations as string;
-    const expLines = pdf.splitTextToSize(expSummary, pageWidth - 2 * margin);
-    pdf.text(expLines, margin, yPosition);
-    yPosition += expLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // LATE CANCELLATIONS SECTION
-  // ============================================
-
-  checkAndAddPage(60);
-
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(textDark);
-  pdf.text('Late Cancellations', margin, yPosition);
-  yPosition += 8;
-
-  autoTable(pdf, {
-    startY: yPosition,
-    head: [['Metric', 'Value']],
-    body: [
-      ['Total Cancellations', formatNumber(data.cancellations.total)],
-      ['Cancellation Rate', formatPercentage(data.cancellations.rate)],
-      ['Primary Pattern', data.cancellations.pattern],
-    ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [239, 68, 68],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 11,
-    },
-    bodyStyles: {
-      fontSize: 9,
-      textColor: [30, 41, 59],
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth - 2 * margin,
-  });
-
-  yPosition = pdf.lastAutoTable?.finalY || yPosition + 50;
-  yPosition += 8;
-
-  // Late cancellations insights
-  if ((data as any).summaries?.cancellations) {
-    checkAndAddPage(30);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(textDark);
-    pdf.text('Insights & Recommendations', margin, yPosition);
-    yPosition += 6;
-
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(textLight);
-    const cancelSummary = (data as any).summaries.cancellations as string;
-    const cancelLines = pdf.splitTextToSize(cancelSummary, pageWidth - 2 * margin);
-    pdf.text(cancelLines, margin, yPosition);
-    yPosition += cancelLines.length * 4 + 8;
-  }
-
-  // ============================================
-  // FOOTER WITH TIMESTAMP
-  // ============================================
-
-  checkAndAddPage(30);
-
-  pdf.setFillColor(248, 250, 252);
-  pdf.rect(margin, yPosition, pageWidth - 2 * margin, 18, 'F');
-
-  pdf.setFontSize(8);
-  pdf.setTextColor(textLight);
-  pdf.setFont('helvetica', 'italic');
-  const timestamp = new Date().toLocaleString();
-  pdf.text(`Report generated on ${timestamp}`, margin + 5, yPosition + 7);
-  pdf.text('Physique 57 Analytics Hub', margin + 5, yPosition + 13);
-
-  // ============================================
-  // FOOTERS WITH PAGE NUMBERS
-  // ============================================
-
-  const totalPages = pdf.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
+  // ── FOOTERS ─────────────────────────────────────────────────────────────────
+  const total = pdf.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
     pdf.setPage(i);
-    pdf.setFontSize(8);
-    pdf.setTextColor(148, 163, 184);
-    pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-    pdf.text('© 2025 Physique 57', pageWidth - margin, pageHeight - 8, { align: 'right' });
+    addPageFooter(pdf, i, total);
   }
 
-  // ============================================
-  // SAVE PDF
-  // ============================================
-
-  const fileName = `${data.location.replace(/[^a-z0-9]/gi, '_')}_Executive_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+  const fileName = `${data.location.replace(/[^a-z0-9]/gi, '_')}_P57_Report_${new Date().toISOString().split('T')[0]}.pdf`;
   pdf.save(fileName);
 };
 
-// Generate report for multiple locations
 export const generateMultiLocationHTMLPDFReports = async (
   locationsData: ReportData[],
   onProgress?: (message: string) => void
 ): Promise<void> => {
   for (const locationData of locationsData) {
-    if (onProgress) {
-      onProgress(`Generating report for ${locationData.location}...`);
-    }
+    if (onProgress) onProgress(`Generating report for ${locationData.location}…`);
     await generateHTMLPDFReport(locationData);
-    // Small delay between reports
     await new Promise(resolve => setTimeout(resolve, 500));
   }
-  
-  if (onProgress) {
-    onProgress('All reports generated successfully!');
-  }
+  if (onProgress) onProgress('All reports generated successfully!');
 };
 
+// ─── Location-report renderer (used by AdvancedExportButton) ─────────────────
 const renderLocationReportIntoPDF = (pdf: jsPDF, reportData: LocationReportData): void => {
-  const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 20;
-  let yPos = margin;
+  let y = M;
 
-  // ============================================
-  // HEADER SECTION
-  // ============================================
-  
-  // Title
-  pdf.setFontSize(24);
-  pdf.setTextColor(59, 130, 246); // Blue color
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Location Performance Report', margin, yPos);
-  yPos += 15;
+  // Header
+  fill(pdf, ...BRAND); pdf.rect(0, 0, PW, 28, 'F');
+  rgb(pdf, ...WHITE); pdf.setFontSize(15); pdf.setFont('helvetica', 'bold');
+  pdf.text('Location Performance Report', M, 13);
+  pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
+  pdf.text(`${reportData.location}  ·  ${reportData.reportPeriod.monthName}`, M, 21);
 
-  // Location and Period
-  pdf.setFontSize(16);
-  pdf.setTextColor(55, 65, 81); // Dark gray
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(reportData.location, margin, yPos);
-  yPos += 8;
-  
+  // Score pill
+  fill(pdf, ...WHITE); pdf.roundedRect(PW - M - 30, 6, 30, 14, 2, 2, 'F');
+  rgb(pdf, ...BRAND); pdf.setFontSize(7); pdf.setFont('helvetica', 'bold');
+  pdf.text('SCORE', PW - M - 15, 12, { align: 'center' });
   pdf.setFontSize(12);
-  pdf.setTextColor(107, 114, 128); // Gray
-  pdf.text(`Report Period: ${reportData.reportPeriod.monthName}`, margin, yPos);
-  yPos += 5;
-  
-  pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, margin, yPos);
-  yPos += 15;
+  pdf.text(`${reportData.metrics.overallScore}/100`, PW - M - 15, 19, { align: 'center' });
 
-  // Performance Score Box
-  const scoreBoxWidth = 60;
-  const scoreBoxHeight = 20;
-  const scoreX = pageWidth - margin - scoreBoxWidth;
-  
-  pdf.setFillColor(59, 130, 246);
-  pdf.roundedRect(scoreX, yPos - 15, scoreBoxWidth, scoreBoxHeight, 3, 3, 'F');
-  
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Performance Score', scoreX + 30, yPos - 8, { align: 'center' });
-  pdf.setFontSize(16);
-  pdf.text(`${reportData.metrics.overallScore}/100`, scoreX + 30, yPos - 2, { align: 'center' });
+  y = 36;
 
-  yPos += 15;
+  const checkY = (need: number) => {
+    if (y + need > pageHeight - 16) { pdf.addPage(); y = M; }
+  };
 
-  // ============================================
-  // EXECUTIVE SUMMARY
-  // ============================================
-  
-  pdf.setFontSize(16);
-  pdf.setTextColor(55, 65, 81);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Executive Summary', margin, yPos);
-  yPos += 10;
-
-  // Key metrics in a grid
-  const metrics = [
-    { label: 'Total Revenue', value: formatCurrency(reportData.metrics.totalRevenue) },
-    { label: 'Fill Rate', value: formatPercentage(reportData.metrics.fillRate) },
-    { label: 'Retention Rate', value: formatPercentage(reportData.metrics.retentionRate) },
-    { label: 'Conversion Rate', value: formatPercentage(reportData.metrics.conversionRate) },
-    { label: 'New Clients', value: formatNumber(reportData.metrics.newClientsAcquired) },
-    { label: 'Total Sessions', value: formatNumber(reportData.metrics.totalSessions) }
-  ];
-
-  const cols = 3;
-  const rows = Math.ceil(metrics.length / cols);
-  const cellWidth = (pageWidth - 2 * margin) / cols;
-  const cellHeight = 15;
-
-  for (let i = 0; i < metrics.length; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = margin + col * cellWidth;
-    const y = yPos + row * cellHeight;
-
-    // Background for alternating rows
-    if (row % 2 === 0) {
-      pdf.setFillColor(249, 250, 251);
-      pdf.rect(x, y - 5, cellWidth, cellHeight, 'F');
-    }
-
-    pdf.setFontSize(10);
-    pdf.setTextColor(107, 114, 128);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(metrics[i].label, x + 2, y);
-    
-    pdf.setFontSize(12);
-    pdf.setTextColor(17, 24, 39);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(metrics[i].value, x + 2, y + 7);
-  }
-
-  yPos += rows * cellHeight + 15;
-
-  // ============================================
-  // REVENUE PERFORMANCE SECTION
-  // ============================================
-  
-  if (yPos > pageHeight - 60) {
-    pdf.addPage();
-    yPos = margin;
-  }
-
-  pdf.setFontSize(14);
-  pdf.setTextColor(59, 130, 246);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Revenue Performance', margin, yPos);
-  yPos += 10;
-
-  const revenueData = [
-    ['Metric', 'Value'],
-    ['Gross Revenue', formatCurrency(reportData.metrics.totalRevenue)],
-    ['Net Revenue', formatCurrency(reportData.metrics.netRevenue)],
-    ['VAT Amount', formatCurrency(reportData.metrics.vatAmount)],
-    ['Total Transactions', formatNumber(reportData.metrics.totalTransactions)],
-    ['Unique Members', formatNumber(reportData.metrics.uniqueMembers)],
-    ['Avg Transaction Value', formatCurrency(reportData.metrics.avgTransactionValue)],
-    ['Avg Spend per Member', formatCurrency(reportData.metrics.avgSpendPerMember)],
-    ['Total Discounts', formatCurrency(reportData.metrics.totalDiscounts)],
-    ['Discount Rate', formatPercentage(reportData.metrics.discountRate)]
-  ];
-
-  pdf.autoTable({
-    startY: yPos,
-    head: [revenueData[0]],
-    body: revenueData.slice(1),
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-    alternateRowStyles: { fillColor: [249, 250, 251] }
-  });
-
-  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
-  yPos += 15;
-
-  // ============================================
-  // SESSION PERFORMANCE SECTION
-  // ============================================
-  
-  if (yPos > pageHeight - 60) {
-    pdf.addPage();
-    yPos = margin;
-  }
-
-  pdf.setFontSize(14);
-  pdf.setTextColor(16, 185, 129);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Session Performance', margin, yPos);
-  yPos += 10;
-
-  const sessionData = [
-    ['Metric', 'Value'],
-    ['Total Sessions', formatNumber(reportData.metrics.totalSessions)],
-    ['Total Check-ins', formatNumber(reportData.metrics.totalCheckIns)],
-    ['Fill Rate', formatPercentage(reportData.metrics.fillRate)],
-    ['Average Class Size', formatNumber(reportData.metrics.avgClassSize)],
-    ['PowerCycle Sessions', formatNumber(reportData.metrics.powerCycleSessions)],
-    ['Barre Sessions', formatNumber(reportData.metrics.barreSessions)],
-    ['Strength Sessions', formatNumber(reportData.metrics.strengthSessions)],
-    ['Late Cancellations', formatNumber(reportData.metrics.lateCancellations)]
-  ];
-
-  pdf.autoTable({
-    startY: yPos,
-    head: [sessionData[0]],
-    body: sessionData.slice(1),
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [16, 185, 129], textColor: 255 },
-    alternateRowStyles: { fillColor: [249, 250, 251] }
-  });
-
-  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
-  yPos += 15;
-
-  // ============================================
-  // CLIENT RETENTION SECTION
-  // ============================================
-  
-  if (yPos > pageHeight - 60) {
-    pdf.addPage();
-    yPos = margin;
-  }
-
-  pdf.setFontSize(14);
-  pdf.setTextColor(139, 92, 246);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Client Acquisition & Retention', margin, yPos);
-  yPos += 10;
-
-  const clientData = [
-    ['Metric', 'Value'],
-    ['New Clients Acquired', formatNumber(reportData.metrics.newClientsAcquired)],
-    ['Conversion Rate', formatPercentage(reportData.metrics.conversionRate)],
-    ['Retention Rate', formatPercentage(reportData.metrics.retentionRate)],
-    ['Average LTV', formatCurrency(reportData.metrics.averageLTV)],
-    ['Churn Rate', formatPercentage(reportData.metrics.churnRate)],
-    ['Churned Members', formatNumber(reportData.metrics.churnedMembers)]
-  ];
-
-  pdf.autoTable({
-    startY: yPos,
-    head: [clientData[0]],
-    body: clientData.slice(1),
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [139, 92, 246], textColor: 255 },
-    alternateRowStyles: { fillColor: [249, 250, 251] }
-  });
-
-  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
-  yPos += 15;
-
-  // ============================================
-  // TRAINER PERFORMANCE SECTION
-  // ============================================
-  
-  if (yPos > pageHeight - 60) {
-    pdf.addPage();
-    yPos = margin;
-  }
-
-  pdf.setFontSize(14);
-  pdf.setTextColor(245, 158, 11);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Trainer Performance', margin, yPos);
-  yPos += 10;
-
-  const trainerData = [
-    ['Metric', 'Value'],
-    ['Total Trainers', formatNumber(reportData.metrics.totalTrainers)],
-    ['Sessions per Trainer', formatNumber(reportData.metrics.sessionsPerTrainer)],
-    ['Revenue per Trainer', formatCurrency(reportData.metrics.revenuePerTrainer)],
-    ['Top Trainer', reportData.metrics.topTrainerName],
-    ['Top Trainer Revenue', formatCurrency(reportData.metrics.topTrainerRevenue)]
-  ];
-
-  pdf.autoTable({
-    startY: yPos,
-    head: [trainerData[0]],
-    body: trainerData.slice(1),
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [245, 158, 11], textColor: 255 },
-    alternateRowStyles: { fillColor: [249, 250, 251] }
-  });
-
-  yPos = pdf.lastAutoTable?.finalY || yPos + 60;
-  yPos += 15;
-
-  // ============================================
-  // INSIGHTS SECTION
-  // ============================================
-  
-  if (yPos > pageHeight - 80) {
-    pdf.addPage();
-    yPos = margin;
-  }
-
-  pdf.setFontSize(14);
-  pdf.setTextColor(220, 38, 127);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Key Insights & Recommendations', margin, yPos);
-  yPos += 15;
-
-  // Highlights
-  if (reportData.insights.highlights.length > 0) {
-    pdf.setFontSize(12);
-    pdf.setTextColor(16, 185, 129);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Performance Highlights:', margin, yPos);
-    yPos += 8;
-
-    pdf.setFontSize(10);
-    pdf.setTextColor(55, 65, 81);
-    pdf.setFont('helvetica', 'normal');
-    
-    reportData.insights.highlights.forEach(highlight => {
-      pdf.text(`• ${highlight}`, margin + 5, yPos);
-      yPos += 6;
+  const table = (head: string[], rows: string[][], accent: [number,number,number], colW?: number[]) => {
+    checkY(rows.length * 6 + 14);
+    autoTable(pdf, {
+      startY: y, head: [head], body: rows, theme: 'grid',
+      headStyles: { fillColor: accent, textColor: [255,255,255], fontStyle: 'bold', fontSize: 8, cellPadding: 2.5 },
+      bodyStyles: { fontSize: 7.5, textColor: [30,41,59], cellPadding: 2.2 },
+      alternateRowStyles: { fillColor: [248,250,252] },
+      columnStyles: colW ? Object.fromEntries(colW.map((w,i)=>[i,{cellWidth:w}])) : {},
+      margin: { left: M, right: M }, tableWidth: CW,
+      styles: { lineColor: [226,232,240], lineWidth: 0.2 },
     });
-    yPos += 5;
-  }
+    y = (pdf.lastAutoTable?.finalY ?? y + rows.length * 6 + 14) + 5;
+  };
 
-  // Concerns
-  if (reportData.insights.concerns.length > 0) {
-    pdf.setFontSize(12);
-    pdf.setTextColor(239, 68, 68);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Areas of Concern:', margin, yPos);
-    yPos += 8;
+  const sh = (label: string, accent: [number,number,number]) => {
+    checkY(12);
+    fill(pdf, ...accent); pdf.rect(M, y, 2.5, 7, 'F');
+    fill(pdf, accent[0], accent[1], accent[2]);
+    pdf.setFillColor(accent[0], accent[1], accent[2]);
+    fill(pdf, ...LIGHT); pdf.rect(M + 2.5, y, CW - 2.5, 7, 'F');
+    rgb(pdf, ...DARK); pdf.setFontSize(9); pdf.setFont('helvetica', 'bold');
+    pdf.text(label, M + 7, y + 5);
+    y += 11;
+  };
 
-    pdf.setFontSize(10);
-    pdf.setTextColor(55, 65, 81);
-    pdf.setFont('helvetica', 'normal');
-    
-    reportData.insights.concerns.forEach(concern => {
-      pdf.text(`• ${concern}`, margin + 5, yPos);
-      yPos += 6;
-    });
-    yPos += 5;
-  }
+  // Revenue
+  sh('Revenue Performance', EMERALD);
+  table(
+    ['Metric', 'Value'],
+    [
+      ['Gross Revenue', formatCurrency(reportData.metrics.totalRevenue)],
+      ['Net Revenue', formatCurrency(reportData.metrics.netRevenue)],
+      ['VAT Amount', formatCurrency(reportData.metrics.vatAmount)],
+      ['Total Transactions', formatNumber(reportData.metrics.totalTransactions)],
+      ['Unique Members', formatNumber(reportData.metrics.uniqueMembers)],
+      ['Avg Transaction', formatCurrency(reportData.metrics.avgTransactionValue)],
+      ['Avg Spend / Member', formatCurrency(reportData.metrics.avgSpendPerMember)],
+      ['Total Discounts', formatCurrency(reportData.metrics.totalDiscounts)],
+      ['Discount Rate', formatPercentage(reportData.metrics.discountRate)],
+    ],
+    EMERALD, [90, 90]
+  );
 
-  // Recommendations
-  if (reportData.insights.recommendations.length > 0) {
-    pdf.setFontSize(12);
-    pdf.setTextColor(59, 130, 246);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Recommendations:', margin, yPos);
-    yPos += 8;
+  // Sessions
+  sh('Session Performance', BLUE);
+  table(
+    ['Metric', 'Value'],
+    [
+      ['Total Sessions', formatNumber(reportData.metrics.totalSessions)],
+      ['Total Check-ins', formatNumber(reportData.metrics.totalCheckIns)],
+      ['Avg Class Size', reportData.metrics.avgClassSize?.toFixed(1) ?? '—'],
+      ['Fill Rate', formatPercentage(reportData.metrics.fillRate)],
+      ['Late Cancellations', formatNumber(reportData.metrics.lateCancellations)],
+    ],
+    BLUE, [90, 90]
+  );
 
-    pdf.setFontSize(10);
-    pdf.setTextColor(55, 65, 81);
-    pdf.setFont('helvetica', 'normal');
-    
-    reportData.insights.recommendations.forEach(recommendation => {
-      pdf.text(`• ${recommendation}`, margin + 5, yPos);
-      yPos += 6;
-    });
-  }
-
-  // Do not add page numbers or save here; handled by outer generator.
+  // Clients
+  sh('Client Acquisition', PURPLE);
+  table(
+    ['Metric', 'Value'],
+    [
+      ['New Clients', formatNumber(reportData.metrics.newClientsAcquired)],
+      ['Conversion Rate', formatPercentage(reportData.metrics.conversionRate)],
+      ['Retention Rate', formatPercentage(reportData.metrics.retentionRate)],
+    ],
+    PURPLE, [90, 90]
+  );
 };
 
-// Generate Location Performance Report PDF (single or multi-report)
-export const generateLocationReportPDF = async (
-  reportData: LocationReportData | LocationReportData[]
-): Promise<void> => {
-  const reports = Array.isArray(reportData) ? reportData : [reportData];
-  if (reports.length === 0) return;
-
-  const pdf = new jsPDF('p', 'mm', 'a4');
-
-  reports.forEach((r, idx) => {
-    if (idx > 0) pdf.addPage();
-    renderLocationReportIntoPDF(pdf, r);
-  });
-
-  // ============================================
-  // FOOTER WITH PAGE NUMBERS (across whole PDF)
-  // ============================================
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 20;
-
-  const totalPages = pdf.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
+export const generateLocationPDFReport = async (reportData: LocationReportData): Promise<void> => {
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  renderLocationReportIntoPDF(pdf, reportData);
+  const total = pdf.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
     pdf.setPage(i);
-    pdf.setFontSize(8);
-    pdf.setTextColor(148, 163, 184);
-    pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-    pdf.text('© 2025 Physique 57 - Location Performance Report', pageWidth - margin, pageHeight - 8, { align: 'right' });
+    addPageFooter(pdf, i, total);
   }
-
-  // ============================================
-  // SAVE PDF
-  // ============================================
-  const dateStamp = new Date().toISOString().split('T')[0];
-  const fileName =
-    reports.length === 1
-      ? `${reports[0].location.replace(/[^a-z0-9]/gi, '_')}_Location_Report_${dateStamp}.pdf`
-      : `All_Locations_Location_Reports_${dateStamp}.pdf`;
-
-  pdf.save(fileName);
+  pdf.save(`${reportData.location}_Performance_Report_${new Date().toISOString().split('T')[0]}.pdf`);
 };
