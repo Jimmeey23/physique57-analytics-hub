@@ -177,7 +177,8 @@ export const useLocationReportData = () => {
       
       const start = parseDate(previousMonthRange.startDate);
       const end = parseDate(previousMonthRange.endDate);
-      
+
+      if (!start || !end) return true;
       return itemDate >= start && itemDate <= end;
     };
 
@@ -694,12 +695,12 @@ export const useLocationReportData = () => {
         calculatedMetrics.churnRate > 20 ? `High churn rate of ${formatPercentage(calculatedMetrics.churnRate)}%` : null,
         calculatedMetrics.fillRate < 60 ? `Low class utilization at ${formatPercentage(calculatedMetrics.fillRate)}%` : null,
         calculatedMetrics.conversionRate < 15 ? `Low conversion rate of ${formatPercentage(calculatedMetrics.conversionRate)}%` : null
-      ].filter(Boolean),
+      ].filter((value): value is string => Boolean(value)),
       recommendations: [
         calculatedMetrics.fillRate < 70 ? 'Consider optimizing class schedules and capacity' : null,
         calculatedMetrics.churnRate > 15 ? 'Implement retention strategies and member engagement programs' : null,
         calculatedMetrics.discountRate > 15 ? 'Review discount strategy to optimize profitability' : null
-      ].filter(Boolean)
+      ].filter((value): value is string => Boolean(value))
     };
 
     return {

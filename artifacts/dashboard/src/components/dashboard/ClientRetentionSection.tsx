@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -37,29 +37,26 @@ interface ClientRetentionSectionProps {
 export const ClientRetentionSection: React.FC<ClientRetentionSectionProps> = ({
   metrics
 }) => {
-  // Client lifecycle data
-  const clientLifecycleData = [
-    { name: 'Active', value: metrics.uniqueMembers - metrics.churnedMembers, color: '#10B981' },
+  const clientLifecycleData = useMemo(() => [
+    { name: 'Active', value: Math.max(metrics.uniqueMembers - metrics.churnedMembers, 0), color: '#10B981' },
     { name: 'Churned', value: metrics.churnedMembers, color: '#EF4444' },
     { name: 'New', value: metrics.newClientsAcquired, color: '#3B82F6' }
-  ];
+  ], [metrics.uniqueMembers, metrics.churnedMembers, metrics.newClientsAcquired]);
 
-  // Sample retention trend data
-  const retentionTrend = [
+  const retentionTrend = useMemo(() => [
     { month: 'Sep', retention: 82, newClients: 45, churn: 12 },
     { month: 'Oct', retention: 85, newClients: 52, churn: 8 },
-    { month: 'Nov', retention: metrics.retentionRate * 0.95, newClients: metrics.newClientsAcquired * 0.9, churn: metrics.churnedMembers * 1.2 },
+    { month: 'Nov', retention: Math.max(metrics.retentionRate * 0.95, 0), newClients: Math.max(metrics.newClientsAcquired * 0.9, 0), churn: Math.max(metrics.churnedMembers * 1.2, 0) },
     { month: 'Dec', retention: metrics.retentionRate, newClients: metrics.newClientsAcquired, churn: metrics.churnedMembers }
-  ];
+  ], [metrics.retentionRate, metrics.newClientsAcquired, metrics.churnedMembers]);
 
-  // LTV breakdown data
-  const ltvBreakdown = [
+  const ltvBreakdown = useMemo(() => [
     { segment: 'High Value', clients: Math.round(metrics.uniqueMembers * 0.2), avgLTV: metrics.averageLTV * 1.8, color: '#10B981' },
     { segment: 'Medium Value', clients: Math.round(metrics.uniqueMembers * 0.5), avgLTV: metrics.averageLTV * 1.1, color: '#3B82F6' },
     { segment: 'Low Value', clients: Math.round(metrics.uniqueMembers * 0.3), avgLTV: metrics.averageLTV * 0.6, color: '#F59E0B' }
-  ];
+  ], [metrics.uniqueMembers, metrics.averageLTV]);
 
-  const clientMetrics = [
+  const clientMetrics = useMemo(() => [
     {
       title: 'Retention Rate',
       value: formatPercentage(metrics.retentionRate),
@@ -96,7 +93,7 @@ export const ClientRetentionSection: React.FC<ClientRetentionSectionProps> = ({
       bgColor: 'bg-purple-50',
       isPositive: true
     }
-  ];
+  ], [metrics.retentionRate, metrics.churnRate, metrics.newClientsAcquired, metrics.averageLTV]);
 
   const getRetentionStatus = (retentionRate: number) => {
     if (retentionRate >= 85) return { status: 'Excellent', color: 'text-green-600', bgColor: 'bg-green-50', icon: CheckCircle };

@@ -242,16 +242,16 @@ export const ClassAttendanceUtilizationTable: React.FC<ClassAttendanceUtilizatio
                 
                 return (
                   <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium sticky left-0 bg-white z-10 border-r whitespace-nowrap">
-                      <span className="text-gray-900 font-semibold">{row[currentKey]}</span>
+                    <TableCell className="font-normal sticky left-0 bg-white z-10 border-r whitespace-nowrap">
+                      <span className="text-gray-900">{row[currentKey]}</span>
                       <span className="text-xs text-gray-500 ml-2">({row.formatCount} formats)</span>
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <span className="font-medium">{formatNumber(row.totalSessions)}</span>
+                      <span>{formatNumber(row.totalSessions)}</span>
                       <span className="text-xs text-gray-500 ml-1">/ {formatNumber(row.totalCapacity)}</span>
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <span className="font-medium">{formatNumber(row.avgAttendance)}</span>
+                      <span>{formatNumber(row.avgAttendance)}</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge 
@@ -286,7 +286,7 @@ export const ClassAttendanceUtilizationTable: React.FC<ClassAttendanceUtilizatio
                       </div>
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <span className="font-medium">{row.formatCount}</span>
+                      <span>{row.formatCount}</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <StatusIcon className="w-4 h-4 mx-auto" />
