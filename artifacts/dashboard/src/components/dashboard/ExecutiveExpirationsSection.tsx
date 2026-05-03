@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
 import { ExpirationMetricCards } from './ExpirationMetricCards';
 import { ExpirationDataTables } from './ExpirationDataTables';
+import { ExpirationChartsGrid } from './ExpirationChartsGrid';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
@@ -74,21 +75,22 @@ export const ExecutiveExpirationsSection: React.FC<ExecutiveExpirationsSectionPr
       icon={AlertCircle}
       borderColor="sky"
       description="Upcoming expirations and retention opportunities"
-      contentClassName="space-y-6"
+      contentClassName="space-y-8"
     >
-      {/* Metric Cards */}
-      <div>
-          <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
+      <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-sky-50 via-white to-indigo-50 p-4 shadow-sm">
+        <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
         <ExpirationMetricCards data={filteredExpirations} />
       </div>
 
-      {/* Expirations Table */}
-      {filteredExpirations && filteredExpirations.length > 0 && (
-        <div className="pt-4 border-t border-slate-100">
-          <h4 className="text-sm font-semibold text-slate-700 mb-4">Expiration Details</h4>
-          <ExpirationDataTables data={filteredExpirations} />
-        </div>
-      )}
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm">
+        <h4 className="text-sm font-semibold text-slate-700 mb-4">Expiration Trends</h4>
+        <ExpirationChartsGrid data={filteredExpirations} />
+      </div>
+
+      <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm">
+        <h4 className="text-sm font-semibold text-slate-700 mb-4">Expiration Details</h4>
+        <ExpirationDataTables data={filteredExpirations} />
+      </div>
     </ExecutiveSectionCard>
   );
 };
