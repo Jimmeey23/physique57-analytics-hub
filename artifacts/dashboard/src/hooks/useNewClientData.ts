@@ -4,8 +4,6 @@ import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
 import { fetchGoogleSheet, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
-import { useDataSource } from '@/contexts/DataSourceContext';
-import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
 
 const logger = createLogger('useNewClientData');
 
@@ -13,7 +11,6 @@ export const useNewClientData = () => {
   const [data, setData] = useState<NewClientData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
 
   // Helper to calculate conversion span in days
   const calculateConversionSpan = (firstVisitDate: string, firstPurchaseDate: string): number => {
@@ -63,11 +60,8 @@ export const useNewClientData = () => {
     try {
       setLoading(true);
       logger.info('Fetching new client data...');
-
-      const { rows } = await loadDatasetRowsForMode('new-clients', mode, async () => {
-        return fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'New', {
-          valueRenderOption: 'FORMATTED_VALUE'
-        });
+      const rows = await fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'New', {
+        valueRenderOption: 'FORMATTED_VALUE'
       });
 
       if (rows.length < 2) {
@@ -155,7 +149,7 @@ export const useNewClientData = () => {
 
   useEffect(() => {
     fetchNewClientData();
-  }, [mode]);
+  }, []);
 
   return { data, loading, error, refetch: fetchNewClientData };
 };

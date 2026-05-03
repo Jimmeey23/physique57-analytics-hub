@@ -748,7 +748,7 @@ const ClientRetention = () => {
 
   // Filters state
   const [filters, setFilters] = useState<NewClientFilterOptions>(() => {
-    const defaultDateRange = getDashboardDefaultDateRange();
+    const defaultDateRange = { start: '2020-01-01', end: new Date().toISOString().split('T')[0] };
     return {
       dateRange: { start: exportPreset?.startDate || defaultDateRange.start, end: exportPreset?.endDate || defaultDateRange.end },
       location: [],
