@@ -4,9 +4,9 @@
 // Returns: { ok: true } or { notes: [...] }
 
 const GOOGLE_CONFIG = {
-  CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID_1.apps.googleusercontent.com",
-  CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "GOCSPX-REDACTED_SECRET_1",
-  REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN || "REDACTED_REFRESH_TOKEN_1B",
+  CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+  CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
+  REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN || "",
   TOKEN_URL: process.env.GOOGLE_TOKEN_URL || "https://oauth2.googleapis.com/token"
 };
 
