@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase as sharedClient } from '@/lib/supabaseClient';
 import { SummaryResult } from './openaiService';
 
 // Database types
@@ -33,15 +34,15 @@ class SupabaseService {
   private supabaseKey: string;
 
   constructor() {
-    this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    this.supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
+    this.supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 
-    if (!this.supabaseUrl || !this.supabaseKey) {
+    if (!sharedClient) {
       console.warn('Supabase credentials not configured. Summary persistence will be unavailable.');
       return;
     }
 
-    this.client = createClient(this.supabaseUrl, this.supabaseKey);
+    this.client = sharedClient as SupabaseClient;
   }
 
   /**

@@ -9,15 +9,20 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { CONSOLIDATED_ROUTE_OPTIONS, type ConsolidatedReportFormat, generateConsolidatedReport } from '@/services/consolidatedReportService';
 import { CONSOLIDATED_STUDIO_OPTIONS, type ConsolidatedStudioId } from '@/utils/consolidatedExportPreset';
 import { Download, FileJson, FileText, FileType2, LayoutTemplate, ScrollText } from 'lucide-react';
-
-export const OPEN_CONSOLIDATED_REPORT_EVENT = 'p57-open-consolidated-report-exporter';
+import { OPEN_CONSOLIDATED_REPORT_EVENT } from '@/components/ui/consolidatedReportEvents';
 
 const today = new Date();
 const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
 const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
 
-export const ConsolidatedReportExporterDialog: React.FC = () => {
-  const [open, setOpen] = React.useState(false);
+interface ConsolidatedReportExporterDialogProps {
+  initialOpen?: boolean;
+}
+
+export const ConsolidatedReportExporterDialog: React.FC<ConsolidatedReportExporterDialogProps> = ({
+  initialOpen = false,
+}) => {
+  const [open, setOpen] = React.useState(initialOpen);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [studioId, setStudioId] = React.useState<ConsolidatedStudioId>('kwality');
   const [startDate, setStartDate] = React.useState(currentMonthStart);

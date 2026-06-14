@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { designTokens } from '@/utils/designTokens';
 import { motion } from 'framer-motion';
-import { OPEN_CONSOLIDATED_REPORT_EVENT } from '@/components/ui/ConsolidatedReportExporterDialog';
+import { OPEN_CONSOLIDATED_REPORT_EVENT } from '@/components/ui/consolidatedReportEvents';
 
 // Error boundary wrapper for critical sections
 const SafeWrapper = ({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) => {

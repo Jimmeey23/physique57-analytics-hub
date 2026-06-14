@@ -3,25 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { 
-  X, 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Package, 
-  ShoppingCart, 
-  DollarSign,
-  Calendar,
-  BarChart3,
-  PieChart,
-  Target,
-  Award,
-  MapPin
-} from 'lucide-react';
-import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { BarChart3, DollarSign, ShoppingCart, Users, Target, X, Calendar, Trophy } from 'lucide-react';
 
 interface SalesDrillDownModalProps {
   isOpen: boolean;
@@ -29,78 +14,79 @@ interface SalesDrillDownModalProps {
   data: any;
 }
 
+const humanizeKey = (key: string) =>
+  key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, (str) => str.toUpperCase());
+
+const summarizeValue = (key: string, value: unknown) => {
+  if (value == null || value === '') return 'N/A';
+  if (typeof value === 'number') {
+    return /revenue|value|amount|atv|auv|asv/i.test(key) ? formatCurrency(value) : formatNumber(value);
+  }
+  if (Array.isArray(value)) return `${formatNumber(value.length)} records`;
+  if (typeof value === 'object') return 'Available in detailed data';
+  return String(value);
+};
+
 export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
   isOpen,
   onClose,
-  data
+  data,
 }) => {
   if (!data) return null;
 
   const rawData = data.rawData || data.filteredTransactionData || [];
-  
-  // Calculate analytics metrics
+
   const analytics = React.useMemo(() => {
-    const totalRevenue = rawData.reduce((sum: number, item: SalesData) => sum + item.paymentValue, 0);
+    const totalRevenue = rawData.reduce((sum: number, item: SalesData) => sum + (Number(item.paymentValue) || 0), 0);
     const totalTransactions = rawData.length;
-    const uniqueCustomers = new Set(rawData.map((item: SalesData) => item.memberId)).size;
+    const uniqueCustomers = new Set(rawData.map((item: SalesData) => item.memberId).filter(Boolean)).size;
+    const totalDiscount = rawData.reduce((sum: number, item: SalesData) => sum + (Number(item.discountAmount) || 0), 0);
     const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
     const avgRevenuePerCustomer = uniqueCustomers > 0 ? totalRevenue / uniqueCustomers : 0;
-    
-    // Monthly breakdown
-    const monthlyData = rawData.reduce((acc: any, item: SalesData) => {
+    const discountRate = totalRevenue > 0 ? (totalDiscount / totalRevenue) * 100 : 0;
+
+    const monthlyData = rawData.reduce((acc: Record<string, { revenue: number; transactions: number; customers: Set<string> }>, item: SalesData) => {
       const month = new Date(item.paymentDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       if (!acc[month]) {
         acc[month] = { revenue: 0, transactions: 0, customers: new Set() };
       }
-      acc[month].revenue += item.paymentValue;
+      acc[month].revenue += Number(item.paymentValue) || 0;
       acc[month].transactions += 1;
-      acc[month].customers.add(item.memberId);
+      if (item.memberId) acc[month].customers.add(item.memberId);
       return acc;
     }, {});
 
-    // Convert sets to counts
-    Object.keys(monthlyData).forEach(month => {
-      monthlyData[month].uniqueCustomers = monthlyData[month].customers.size;
-      delete monthlyData[month].customers;
-    });
-
-    // Top customers
-    const customerData = rawData.reduce((acc: any, item: SalesData) => {
-      const key = `${item.customerName}`;
-      if (!acc[key]) {
-        acc[key] = { 
-          name: item.customerName, 
-          revenue: 0, 
-          transactions: 0,
-          email: item.customerEmail || 'N/A',
-          memberId: item.memberId
-        };
-      }
-      acc[key].revenue += item.paymentValue;
-      acc[key].transactions += 1;
-      return acc;
-    }, {});
-
-    const topCustomers = Object.values(customerData)
-      .sort((a: any, b: any) => b.revenue - a.revenue)
-      .slice(0, 10);
-
-    // Payment methods
-    const paymentMethods = rawData.reduce((acc: any, item: SalesData) => {
-      const method = item.paymentMethod || 'Unknown';
-      acc[method] = (acc[method] || 0) + item.paymentValue;
-      return acc;
-    }, {});
+    const topCustomers = Object.values(
+      rawData.reduce((acc: Record<string, { name: string; revenue: number; transactions: number; email: string }>, item: SalesData) => {
+        const key = item.customerName || 'Unknown';
+        if (!acc[key]) {
+          acc[key] = { name: key, revenue: 0, transactions: 0, email: item.customerEmail || 'N/A' };
+        }
+        acc[key].revenue += Number(item.paymentValue) || 0;
+        acc[key].transactions += 1;
+        return acc;
+      }, {})
+    )
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 8);
 
     return {
       totalRevenue,
       totalTransactions,
       uniqueCustomers,
+      totalDiscount,
       avgTransactionValue,
       avgRevenuePerCustomer,
-      monthlyData,
+      discountRate,
+      monthlyData: Object.entries(monthlyData)
+        .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+        .map(([month, entry]) => ({
+          month,
+          revenue: entry.revenue,
+          transactions: entry.transactions,
+          uniqueCustomers: entry.customers.size,
+        })),
       topCustomers,
-      paymentMethods
     };
   }, [rawData]);
 
@@ -111,295 +97,178 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
       className: 'min-w-[150px]',
       render: (value: string, row: SalesData) => (
         <div>
-          <div className="font-semibold text-slate-900">{value}</div>
-          <div className="text-xs text-slate-500">{row.customerEmail}</div>
+          <div className="font-semibold text-slate-900">{value || 'N/A'}</div>
+          <div className="text-xs text-slate-500">{row.customerEmail || 'N/A'}</div>
         </div>
-      )
+      ),
     },
     {
       key: 'cleanedProduct',
       header: 'Product',
-      className: 'min-w-[120px]',
+      className: 'min-w-[140px]',
       render: (value: string, row: SalesData) => (
         <div>
-          <div className="font-medium text-slate-800">{value}</div>
-          <Badge variant="outline" className="text-xs mt-1 bg-slate-100 text-slate-700 border-slate-300">
-            {row.cleanedCategory}
+          <div className="font-medium text-slate-800">{value || row.paymentItem || 'N/A'}</div>
+          <Badge variant="outline" className="mt-1 border-slate-200 bg-slate-50 text-slate-600">
+            {row.cleanedCategory || 'Uncategorized'}
           </Badge>
         </div>
-      )
+      ),
     },
     {
       key: 'paymentValue',
       header: 'Amount',
       align: 'right' as const,
-      render: (value: number) => (
-        <span className="font-bold bg-gradient-to-r from-slate-900 to-blue-950 bg-clip-text text-transparent">
-          {formatCurrency(value)}
-        </span>
-      )
+      render: (value: number) => <span className="font-semibold text-slate-950">{formatCurrency(value || 0)}</span>,
+    },
+    {
+      key: 'discountAmount',
+      header: 'Discount',
+      align: 'right' as const,
+      render: (value: number) => <span className="text-slate-700">{formatCurrency(value || 0)}</span>,
     },
     {
       key: 'paymentDate',
       header: 'Date',
       align: 'center' as const,
-      render: (value: string) => (
-        <div className="text-sm text-slate-700 font-medium">
-          {new Date(value).toLocaleDateString()}
-        </div>
-      )
-    },
-    {
-      key: 'paymentMethod',
-      header: 'Payment',
-      align: 'center' as const,
-      render: (value: string) => (
-        <Badge className="bg-slate-100 text-slate-700 border-slate-300">
-          {value || 'N/A'}
-        </Badge>
-      )
+      render: (value: string) => <span className="text-sm text-slate-700">{value ? new Date(value).toLocaleDateString() : 'N/A'}</span>,
     },
     {
       key: 'soldBy',
       header: 'Sold By',
-      className: 'min-w-[100px]',
-      render: (value: string) => (
-        <div className="text-sm text-slate-600 flex items-center gap-1 font-medium">
-          <Users className="w-3 h-3" />
-          {value}
-        </div>
-      )
-    }
+      className: 'min-w-[110px]',
+      render: (value: string) => <span className="text-sm text-slate-700">{value || 'N/A'}</span>,
+    },
+  ];
+
+  const summaryEntries = Object.entries(data).filter(([key]) => !['rawData', 'filteredTransactionData', 'months', 'monthlyValues'].includes(key));
+
+  const statCards = [
+    { label: 'Revenue', value: formatCurrency(analytics.totalRevenue), icon: DollarSign, tone: 'bg-blue-100 text-blue-700' },
+    { label: 'Transactions', value: formatNumber(analytics.totalTransactions), icon: ShoppingCart, tone: 'bg-slate-100 text-slate-700' },
+    { label: 'Unique Members', value: formatNumber(analytics.uniqueCustomers), icon: Users, tone: 'bg-cyan-100 text-cyan-700' },
+    { label: 'Avg Transaction', value: formatCurrency(analytics.avgTransactionValue), icon: Target, tone: 'bg-amber-100 text-amber-700' },
+    { label: 'Discount Value', value: formatCurrency(analytics.totalDiscount), icon: BarChart3, tone: 'bg-rose-100 text-rose-700' },
+    { label: 'Discount %', value: `${analytics.discountRate.toFixed(1)}%`, icon: Trophy, tone: 'bg-emerald-100 text-emerald-700' },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200/50 shadow-2xl backdrop-blur-xl rounded-2xl overflow-hidden">
-        <DialogHeader className="flex-shrink-0 pb-6 border-b border-slate-200/30 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 -m-6 p-8 mb-0 relative overflow-hidden">
-          {/* Premium background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-blue-600/5 to-slate-900/20" />
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)' }} />
-          
-          <div className="flex items-center justify-between relative z-10">
-            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-lg">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent">
-                  {data.title || data.name}
+      <DialogContent className="max-h-[95vh] max-w-7xl overflow-hidden border border-slate-200 bg-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
+        <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-6 py-5 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3">
+              <Badge variant="secondary" className="w-fit border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-50">
+                Sales Drill Down
+              </Badge>
+              <DialogTitle className="flex items-center gap-3 text-2xl font-bold">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                  <BarChart3 className="h-5 w-5" />
                 </span>
-                <Badge className="self-start bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 backdrop-blur-md font-medium px-3 py-1 rounded-full text-xs">
-                  {data.type}
-                </Badge>
-              </div>
-            </DialogTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClose}
-              className="text-white hover:bg-white/10 backdrop-blur-sm rounded-xl p-2 transition-all duration-200 hover:scale-105"
-            >
-              <X className="w-5 h-5" />
+                <span>{data.title || data.name}</span>
+              </DialogTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose} className="rounded-full border border-white/10 text-white hover:bg-white/10">
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </DialogHeader>
 
-        {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 lg:space-y-8">
-          {/* Metric Cards Grid - Improved Responsive Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
-            {/* Revenue Card */}
-            <Card className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group min-h-[120px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-3 text-slate-300 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-white/10 to-white/5 rounded-lg shrink-0">
-                    <DollarSign className="w-4 h-4 lg:w-5 lg:h-5" />
-                  </div>
-                  <span className="text-xs lg:text-sm font-medium tracking-wide">Total Revenue</span>
-                </div>
-                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent leading-tight">
-                  {formatCurrency(analytics.totalRevenue)}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Transactions Card */}
-            <Card className="bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group backdrop-blur-sm min-h-[120px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-3 text-slate-600 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg shrink-0">
-                    <ShoppingCart className="w-4 h-4 lg:w-5 lg:h-5" />
-                  </div>
-                  <span className="text-xs lg:text-sm font-medium tracking-wide">Transactions</span>
-                </div>
-                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent leading-tight">
-                  {formatNumber(analytics.totalTransactions)}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Customers Card */}
-            <Card className="bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group backdrop-blur-sm min-h-[120px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-3 text-slate-600 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg shrink-0">
-                    <Users className="w-4 h-4 lg:w-5 lg:h-5" />
-                  </div>
-                  <span className="text-xs lg:text-sm font-medium tracking-wide">Customers</span>
-                </div>
-                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent leading-tight">
-                  {formatNumber(analytics.uniqueCustomers)}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Avg Transaction Card */}
-            <Card className="bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group backdrop-blur-sm min-h-[120px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-3 text-slate-600 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg shrink-0">
-                    <Target className="w-4 h-4 lg:w-5 lg:h-5" />
-                  </div>
-                  <span className="text-xs lg:text-sm font-medium tracking-wide">Avg Transaction</span>
-                </div>
-                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent leading-tight">
-                  {formatCurrency(analytics.avgTransactionValue)}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Avg per Customer Card */}
-            <Card className="bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-50 border border-emerald-200/70 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1 relative overflow-hidden group md:col-span-2 lg:col-span-1 min-h-[120px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="p-5 lg:p-6 relative z-10 h-full flex flex-col justify-between">
-                <div className="flex items-center gap-3 text-emerald-700 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-emerald-200 to-emerald-300 rounded-lg shrink-0">
-                    <Award className="w-4 h-4 lg:w-5 lg:h-5" />
-                  </div>
-                  <span className="text-xs lg:text-sm font-medium tracking-wide">Avg per Customer</span>
-                </div>
-                <div className="text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 bg-clip-text text-transparent leading-tight">
-                  {formatCurrency(analytics.avgRevenuePerCustomer)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Analytics Sections - Improved Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Monthly Performance */}
-            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border border-slate-200/50 shadow-xl backdrop-blur-sm rounded-2xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/30 relative overflow-hidden p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent" />
-                <CardTitle className="text-lg lg:text-xl flex items-center gap-3 text-white relative z-10">
-                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
-                    <Calendar className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent font-bold tracking-wide">
-                    Monthly Performance
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-                  {Object.entries(analytics.monthlyData).map(([month, data]: [string, any]) => (
-                    <div key={month} className="flex items-center justify-between p-4 lg:p-5 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/80 rounded-xl border border-slate-200/50 hover:border-slate-300/70 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm group">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-900 text-base lg:text-lg group-hover:text-indigo-900 transition-colors truncate">{month}</div>
-                        <div className="text-xs lg:text-sm text-slate-600 mt-1 lg:mt-2 font-medium">
-                          {formatNumber(data.transactions)} transactions • {formatNumber(data.uniqueCustomers)} customers
-                        </div>
-                      </div>
-                      <div className="text-right ml-4 shrink-0">
-                        <div className="font-bold text-lg lg:text-xl xl:text-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
-                          {formatCurrency(data.revenue)}
-                        </div>
-                      </div>
+        <div className="max-h-[calc(95vh-108px)] space-y-6 overflow-y-auto bg-slate-50/70 p-6">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            {statCards.map(({ label, value, icon: Icon, tone }) => (
+              <Card key={label} className="border border-slate-200 bg-white shadow-sm">
+                <CardContent className="p-4">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${tone}`}>
+                      <Icon className="h-4 w-4" />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top Customers */}
-            <Card className="bg-gradient-to-br from-white via-slate-50/50 to-white border border-slate-200/50 shadow-xl backdrop-blur-sm rounded-2xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/30 relative overflow-hidden p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent" />
-                <CardTitle className="text-lg lg:text-xl flex items-center gap-3 text-white relative z-10">
-                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
-                    <Users className="w-5 h-5 text-white" />
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
                   </div>
-                  <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent font-bold tracking-wide">
-                    Top Customers
-                  </span>
+                  <p className="text-xl font-bold text-slate-950">{value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-200 bg-slate-100/80">
+                <CardTitle className="flex items-center gap-2 text-slate-900">
+                  <Calendar className="h-4 w-4" />
+                  Monthly performance
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-                  {analytics.topCustomers.map((customer: any, index: number) => (
-                    <div key={customer.memberId} className="flex items-center gap-4 p-4 lg:p-5 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/80 rounded-xl border border-slate-200/50 hover:border-slate-300/70 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm group">
-                      <div className="shrink-0">
-                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl flex items-center justify-center text-sm lg:text-lg font-bold shadow-lg group-hover:scale-105 transition-transform duration-300">
-                          {index + 1}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-900 text-base lg:text-lg group-hover:text-indigo-900 transition-colors truncate">{customer.name}</div>
-                        <div className="text-xs lg:text-sm text-slate-600 font-medium truncate">{customer.email}</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-bold text-lg lg:text-xl xl:text-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
-                          {formatCurrency(customer.revenue)}
-                        </div>
-                        <div className="text-xs lg:text-sm text-slate-600 mt-1 font-medium">
-                          {formatNumber(customer.transactions)} orders
-                        </div>
-                      </div>
+              <CardContent className="space-y-3 p-4">
+                {analytics.monthlyData.length ? analytics.monthlyData.map((item) => (
+                  <div key={item.month} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{item.month}</p>
+                      <p className="text-xs text-slate-500">{formatNumber(item.transactions)} txns · {formatNumber(item.uniqueCustomers)} members</p>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-sm font-semibold text-slate-950">{formatCurrency(item.revenue)}</p>
+                  </div>
+                )) : (
+                  <p className="text-sm text-slate-500">No monthly performance available.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-200 bg-slate-100/80">
+                <CardTitle className="flex items-center gap-2 text-slate-900">
+                  <Users className="h-4 w-4" />
+                  Top members in this slice
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-4">
+                {analytics.topCustomers.length ? analytics.topCustomers.map((customer, index) => (
+                  <div key={`${customer.name}-${index}`} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">{customer.name}</p>
+                      <p className="truncate text-xs text-slate-500">{customer.email}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-slate-950">{formatCurrency(customer.revenue)}</p>
+                      <p className="text-xs text-slate-500">{formatNumber(customer.transactions)} txns</p>
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-sm text-slate-500">No customer distribution available.</p>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Transaction Details - Enhanced Layout */}
-          <div className="w-full">
-            <Card className="bg-gradient-to-br from-white via-slate-50/30 to-white border border-slate-200/50 shadow-xl backdrop-blur-sm rounded-2xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/30 relative overflow-hidden p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent" />
-                <CardTitle className="text-lg lg:text-xl flex items-center gap-3 text-white relative z-10">
-                  <div className="p-2 bg-gradient-to-br from-white/20 to-white/10 rounded-xl backdrop-blur-md border border-white/20 shrink-0">
-                    <Package className="w-5 h-5" />
+          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 bg-slate-100/80">
+              <CardTitle className="flex items-center justify-between text-slate-900">
+                <span>Detailed transactions</span>
+                <Badge variant="secondary" className="border border-slate-200 bg-white text-slate-700">
+                  {formatNumber(rawData.length)} records
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ModernDataTable data={rawData} columns={tableColumns} headerGradient="from-slate-900 via-blue-950 to-slate-900" maxHeight="420px" />
+            </CardContent>
+          </Card>
+
+          <Card className="border border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 bg-slate-100/80">
+              <CardTitle className="text-slate-900">Item summary</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {summaryEntries.map(([key, value]) => (
+                  <div key={key} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{humanizeKey(key)}</p>
+                    <p className="mt-2 break-words text-sm font-semibold text-slate-900">{summarizeValue(key, value)}</p>
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent font-bold tracking-wide">
-                      Transaction Details
-                    </span>
-                    <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-white/20 backdrop-blur-md font-medium px-3 py-1 rounded-full text-xs">
-                      {formatNumber(rawData.length)} records
-                    </Badge>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="border-t border-slate-200/30 bg-white/50 backdrop-blur-sm">
-                  <div className="max-h-96 overflow-auto">
-                    <ModernDataTable
-                      data={rawData}
-                      columns={tableColumns}
-                      headerGradient="from-slate-900 via-indigo-950 to-slate-900"
-                      maxHeight="none"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>

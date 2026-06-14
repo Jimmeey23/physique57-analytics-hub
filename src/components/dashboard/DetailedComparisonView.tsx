@@ -13,6 +13,7 @@ import {
   User,
   Users,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DetailedComparisonViewProps {
   data: SessionData[];
@@ -85,34 +86,22 @@ const toMetricRow = (name: string, stats: AggregateStats): MetricRow => {
 
 const getMetricSortValue = (row: MetricRow, metric: MetricType) => {
   switch (metric) {
-    case 'revenue':
-      return row.revenue;
-    case 'sessions':
-      return row.sessions;
-    case 'attendance':
-      return row.checkins;
-    case 'booked':
-      return row.booked;
-    case 'fill':
-      return row.fillRate;
-    case 'booking-rate':
-      return row.bookingRate;
-    case 'show-up':
-      return row.showUpRate;
-    case 'no-show':
-      return row.noShowRate;
-    case 'late-cancel':
-      return row.lateCancelRate;
-    case 'rev-per-session':
-      return row.revPerSession;
-    case 'rev-per-attendee':
-      return row.revPerAttendee;
+    case 'revenue': return row.revenue;
+    case 'sessions': return row.sessions;
+    case 'attendance': return row.checkins;
+    case 'booked': return row.booked;
+    case 'fill': return row.fillRate;
+    case 'booking-rate': return row.bookingRate;
+    case 'show-up': return row.showUpRate;
+    case 'no-show': return row.noShowRate;
+    case 'late-cancel': return row.lateCancelRate;
+    case 'rev-per-session': return row.revPerSession;
+    case 'rev-per-attendee': return row.revPerAttendee;
   }
 };
 
-const sortRows = (rows: MetricRow[], metric: MetricType) => {
-  return [...rows].sort((a, b) => getMetricSortValue(b, metric) - getMetricSortValue(a, metric));
-};
+const sortRows = (rows: MetricRow[], metric: MetricType) =>
+  [...rows].sort((a, b) => getMetricSortValue(b, metric) - getMetricSortValue(a, metric));
 
 const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data }) => {
   const sessions = Array.isArray(data) ? data : [];
@@ -146,7 +135,6 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
       acc.emptyClasses += (session.checkedInCount || 0) === 0 ? 1 : 0;
       return acc;
     }, createEmptyStats());
-
     return toMetricRow(selectedFormat || 'Selected Format', stats);
   }, [formatSessions, selectedFormat]);
 
@@ -184,103 +172,90 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
     const trainerLeader = formatData.byTrainer[0];
     const timeLeader = formatData.byTime[0];
     const dayLeader = formatData.byDay[0];
-
     return [
-      {
-        label: 'Top Trainer',
-        value: trainerLeader?.name || '—',
-        subvalue: trainerLeader ? `${formatNumber(trainerLeader.checkins)} attendance` : '—',
-        icon: User,
-      },
-      {
-        label: 'Best Time Slot',
-        value: timeLeader?.name || '—',
-        subvalue: timeLeader ? formatPercentage(timeLeader.fillRate) : '—',
-        icon: Clock,
-      },
-      {
-        label: 'Strongest Day',
-        value: dayLeader?.name || '—',
-        subvalue: dayLeader ? formatCurrency(dayLeader.revenue) : '—',
-        icon: CalendarDays,
-      },
+      { label: 'Top Trainer', value: trainerLeader?.name || '—', subvalue: trainerLeader ? `${formatNumber(trainerLeader.checkins)} attendance` : '—', icon: User },
+      { label: 'Best Time Slot', value: timeLeader?.name || '—', subvalue: timeLeader ? formatPercentage(timeLeader.fillRate) : '—', icon: Clock },
+      { label: 'Strongest Day', value: dayLeader?.name || '—', subvalue: dayLeader ? formatCurrency(dayLeader.revenue) : '—', icon: CalendarDays },
     ];
   }, [formatData]);
 
   const summaryCards = useMemo(() => {
     const noShows = Math.max(formatOverview.booked - formatOverview.checkins - formatOverview.lateCancelled, 0);
-
     return [
-      { label: 'Total Sessions', value: formatNumber(formatOverview.sessions), accent: 'from-blue-500 to-blue-600', icon: BarChart3 },
-      { label: 'Attendance', value: formatNumber(formatOverview.checkins), accent: 'from-sky-500 to-cyan-600', icon: Users },
-      { label: 'Booked', value: formatNumber(formatOverview.booked), accent: 'from-indigo-500 to-indigo-600', icon: Activity },
-      { label: 'Fill Rate', value: formatPercentage(formatOverview.fillRate), accent: 'from-purple-500 to-purple-600', icon: Percent },
-      { label: 'Booking Rate', value: formatPercentage(formatOverview.bookingRate), accent: 'from-violet-500 to-fuchsia-600', icon: TrendingUp },
-      { label: 'Show-up Rate', value: formatPercentage(formatOverview.showUpRate), accent: 'from-emerald-500 to-emerald-600', icon: Users },
-      { label: 'No-shows', value: formatNumber(noShows), accent: 'from-amber-500 to-orange-600', icon: Activity },
-      { label: 'Late Cancels', value: formatNumber(formatOverview.lateCancelled), accent: 'from-rose-500 to-rose-600', icon: Activity },
-      { label: 'Revenue', value: formatCurrency(formatOverview.revenue), accent: 'from-green-500 to-green-600', icon: DollarSign },
-      { label: 'Rev / Session', value: formatCurrency(formatOverview.revPerSession), accent: 'from-teal-500 to-teal-600', icon: DollarSign },
-      { label: 'Rev / Attendee', value: formatCurrency(formatOverview.revPerAttendee), accent: 'from-cyan-500 to-blue-600', icon: DollarSign },
-      { label: 'Empty Classes', value: formatNumber(formatOverview.emptyClasses), accent: 'from-slate-500 to-slate-600', icon: BarChart3 },
+      { label: 'Sessions', value: formatNumber(formatOverview.sessions), icon: BarChart3, accent: 'from-blue-600 to-blue-800' },
+      { label: 'Attendance', value: formatNumber(formatOverview.checkins), icon: Users, accent: 'from-cyan-600 to-blue-800' },
+      { label: 'Booked', value: formatNumber(formatOverview.booked), icon: Activity, accent: 'from-indigo-600 to-indigo-800' },
+      { label: 'Fill Rate', value: formatPercentage(formatOverview.fillRate), icon: Percent, accent: 'from-violet-600 to-purple-800' },
+      { label: 'Booking Rate', value: formatPercentage(formatOverview.bookingRate), icon: TrendingUp, accent: 'from-purple-600 to-fuchsia-800' },
+      { label: 'Show-up Rate', value: formatPercentage(formatOverview.showUpRate), icon: Users, accent: 'from-emerald-600 to-teal-800' },
+      { label: 'No-shows', value: formatNumber(noShows), icon: Activity, accent: 'from-amber-600 to-orange-800' },
+      { label: 'Late Cancels', value: formatNumber(formatOverview.lateCancelled), icon: Activity, accent: 'from-rose-600 to-red-800' },
+      { label: 'Revenue', value: formatCurrency(formatOverview.revenue), icon: DollarSign, accent: 'from-emerald-600 to-green-800' },
+      { label: 'Rev / Session', value: formatCurrency(formatOverview.revPerSession), icon: DollarSign, accent: 'from-teal-600 to-cyan-800' },
+      { label: 'Rev / Attendee', value: formatCurrency(formatOverview.revPerAttendee), icon: DollarSign, accent: 'from-sky-600 to-blue-800' },
+      { label: 'Empty Classes', value: formatNumber(formatOverview.emptyClasses), icon: BarChart3, accent: 'from-slate-600 to-slate-800' },
     ];
   }, [formatOverview]);
 
   const getTableIcon = (type: 'trainer' | 'time' | 'day') => {
-    if (type === 'trainer') return <User className="w-4 h-4" />;
-    if (type === 'time') return <Clock className="w-4 h-4" />;
-    return <CalendarDays className="w-4 h-4" />;
+    if (type === 'trainer') return <User className="w-5 h-5" />;
+    if (type === 'time') return <Clock className="w-5 h-5" />;
+    return <CalendarDays className="w-5 h-5" />;
   };
 
   const renderTable = (rows: MetricRow[], title: string, type: 'trainer' | 'time' | 'day') => {
     if (rows.length === 0) return null;
-
     return (
-      <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white hover:shadow-md transition-all duration-200">
-        <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
-            {getTableIcon(type)}
-            {title}
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">Sorted by {metric.replace(/-/g, ' ')} for {selectedFormat}</p>
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        {/* Dark gradient header — matches StudioPulse table headers */}
+        <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+              {getTableIcon(type)}
+            </div>
+            <div>
+              <h4 className="text-base font-bold">{title}</h4>
+              <p className="text-xs text-white/60">Sorted by {metric.replace(/-/g, ' ')} · {selectedFormat}</p>
+            </div>
+          </div>
         </div>
-        <div className="overflow-auto">
-          <table data-table="class-formats-detailed-comparison" data-table-name="Class Formats Detailed Comparison" className="w-full text-sm min-w-[1180px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left font-bold text-slate-700 sticky left-0 bg-slate-50">Name</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Sessions</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Attendance</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Booked</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Fill %</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Booking %</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Show-up %</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">No-show %</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Late Cancel %</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Avg/Class</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Revenue</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Rev/Class</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Rev/Attendee</th>
-                <th className="px-4 py-3 text-right font-bold text-slate-700">Empty</th>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                <th className="border-b border-slate-200 px-4 py-3 text-left sticky left-0 bg-slate-50">Name</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Sessions</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Attendance</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Booked</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Fill %</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Booking %</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Show-up %</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">No-show %</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">LC %</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Avg/Class</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-right">Revenue</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-right">Rev/Class</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-right">Rev/Att</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-center">Empty</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
-              {rows.map((row) => (
-                <tr key={row.name} className="hover:bg-slate-50 transition-colors duration-150 group">
-                  <td className="px-4 py-3 font-semibold text-slate-900 group-hover:text-blue-600 sticky left-0 bg-white group-hover:bg-slate-50">{row.name}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatNumber(row.sessions)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatNumber(row.checkins)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatNumber(row.booked)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatPercentage(row.fillRate)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatPercentage(row.bookingRate)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatPercentage(row.showUpRate)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatPercentage(row.noShowRate)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatPercentage(row.lateCancelRate)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatNumber(row.avgAttendance)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatCurrency(row.revenue)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(row.revPerSession)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(row.revPerAttendee)}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatNumber(row.emptyClasses)}</td>
+            <tbody className="bg-white">
+              {rows.map((row, i) => (
+                <tr key={row.name} className={cn('h-[44px] border-b border-slate-200 transition-colors hover:bg-slate-50/80', i % 2 === 1 && 'bg-slate-50/40')}>
+                  <td className="px-4 py-2 font-semibold text-slate-900 sticky left-0 bg-inherit text-sm">{row.name}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.sessions)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.checkins)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.booked)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatPercentage(row.fillRate)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatPercentage(row.bookingRate)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-emerald-700 font-semibold">{formatPercentage(row.showUpRate)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-amber-700">{formatPercentage(row.noShowRate)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-red-600">{formatPercentage(row.lateCancelRate)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums font-semibold text-blue-700">{formatNumber(row.avgAttendance)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-slate-900">{formatCurrency(row.revenue)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slate-700">{formatCurrency(row.revPerSession)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-slate-700">{formatCurrency(row.revPerAttendee)}</td>
+                  <td className="px-3 py-2 text-center tabular-nums text-slate-500">{formatNumber(row.emptyClasses)}</td>
                 </tr>
               ))}
             </tbody>
@@ -292,35 +267,23 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-slate-100 rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Detailed Performance Breakdown</h3>
-            <p className="text-sm text-slate-600 max-w-3xl">
-              Format-specific breakdown across trainers, time slots, and weekdays with booking funnel,
-              attendance, cancellations, and revenue-efficiency metrics.
-            </p>
-          </div>
-          <div className="text-3xl opacity-10">📊</div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+      {/* Controls — format selector + metric selector */}
+      <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        {/* Format pills */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Select Class Format
-          </label>
-          <div className="flex gap-2 flex-wrap">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Class Format</p>
+          <div className="flex flex-wrap gap-2">
             {formats.map((format) => (
               <button
                 key={format}
+                type="button"
                 onClick={() => setSelectedFormat(format)}
-                className={`px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                className={cn(
+                  'rounded-full border px-4 py-1.5 text-xs font-semibold transition-all',
                   selectedFormat === format
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg scale-105'
-                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:shadow-md'
-                }`}
+                    ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                )}
               >
                 {format}
               </button>
@@ -328,12 +291,10 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
           </div>
         </div>
 
-        <div className="pt-2 border-t border-slate-200">
-          <label className="block text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Rank rows by metric
-          </label>
-          <div className="flex gap-2 flex-wrap">
+        {/* Metric pills */}
+        <div className="border-t border-slate-100 pt-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Rank by</p>
+          <div className="flex flex-wrap gap-2">
             {([
               ['revenue', 'Revenue', DollarSign],
               ['attendance', 'Attendance', Users],
@@ -349,14 +310,16 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
             ] as Array<[MetricType, string, React.ComponentType<{ className?: string }>]>).map(([value, label, Icon]) => (
               <button
                 key={value}
+                type="button"
                 onClick={() => setMetric(value)}
-                className={`px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center gap-1 ${
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all',
                   metric === value
-                    ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-300 shadow-md'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
-                }`}
+                    ? 'border-blue-700 bg-blue-700 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                )}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="h-3 w-3" />
                 {label}
               </button>
             ))}
@@ -366,40 +329,43 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
 
       {selectedFormat && formatSessions.length > 0 && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          {/* Summary stat chips — match StudioPulse metric card style */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
             {summaryCards.map((card) => {
               const Icon = card.icon;
               return (
-                <div key={card.label} className="p-4 bg-white rounded-xl border border-slate-200 hover:shadow-md transition-all duration-200 group">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-r ${card.accent} flex items-center justify-center text-white`}>
-                      <Icon className="w-4 h-4" />
+                <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm', card.accent)}>
+                      <Icon className="h-3.5 w-3.5" />
                     </div>
-                    <div className="text-xs text-slate-600 font-semibold leading-tight">{card.label}</div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 leading-tight">{card.label}</p>
                   </div>
-                  <div className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{card.value}</div>
+                  <p className="text-xl font-extrabold tabular-nums text-slate-900">{card.value}</p>
                 </div>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Best performers */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {bestPerformers.map((item) => {
               const Icon = item.icon;
               return (
                 <div key={item.label} className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">
-                    <Icon className="w-4 h-4" />
+                  <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    <Icon className="h-4 w-4" />
                     {item.label}
                   </div>
-                  <div className="text-lg font-bold text-slate-900">{item.value}</div>
-                  <div className="text-sm text-slate-600 mt-1">{item.subvalue}</div>
+                  <p className="text-base font-bold text-slate-900">{item.value}</p>
+                  <p className="mt-1 text-xs text-slate-500">{item.subvalue}</p>
                 </div>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 gap-5">
+          {/* Breakdown tables */}
+          <div className="space-y-5">
             {renderTable(formatData.byTrainer, 'Trainer Breakdown', 'trainer')}
             {renderTable(formatData.byTime, 'Time Slot Breakdown', 'time')}
             {renderTable(formatData.byDay, 'Day of Week Breakdown', 'day')}
@@ -408,8 +374,8 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
       )}
 
       {selectedFormat && formatSessions.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-          No data is available for the selected format.
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center text-sm text-slate-400">
+          No data available for the selected format.
         </div>
       )}
     </div>

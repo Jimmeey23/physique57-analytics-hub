@@ -73,6 +73,15 @@ const DASHBOARD_SECTIONS: DashboardSection[] = [
     insight: 'Overview',
   },
   {
+    id: 'performance-command-center',
+    title: 'Performance Command Center',
+    description: 'Executive metrics, month-on-month trends, section tables, charts, and rankings in one operating view',
+    icon: Activity,
+    color: 'from-cyan-600 to-indigo-700',
+    hoverColor: 'hover:from-cyan-700 hover:to-indigo-800',
+    insight: 'Command',
+  },
+  {
     id: 'sales-analytics',
     title: 'Sales Analytics',
     description: 'Revenue trends and sales performance',
@@ -125,6 +134,15 @@ const DASHBOARD_SECTIONS: DashboardSection[] = [
     color: 'from-emerald-500 to-cyan-600',
     hoverColor: 'hover:from-emerald-600 hover:to-cyan-700',
     insight: 'Lifecycle',
+  },
+  {
+    id: 'studio-pulse',
+    title: 'Studio Pulse',
+    description: 'Live 360 degree operating view across revenue, attendance, leads, payroll, and cancellations',
+    icon: Activity,
+    color: 'from-slate-700 to-slate-900',
+    hoverColor: 'hover:from-slate-800 hover:to-black',
+    insight: 'Pulse',
   },
   {
     id: 'discounts-promotions',

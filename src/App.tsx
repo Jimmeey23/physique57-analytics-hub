@@ -1,13 +1,12 @@
 
 import * as React from "react";
-import Intercom from '@intercom/messenger-js-sdk';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
-import { GlobalCommandPalette } from "@/components/ui/GlobalCommandPalette";
+import { LazyGlobalCommandPalette } from "@/components/lazy/LazyGlobalCommandPalette";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { usePerformanceOptimization } from "@/hooks/usePerformanceOptimization";
 import { useRouteChangeLoader } from "@/hooks/useRouteChangeLoader";
@@ -18,7 +17,8 @@ import { SessionsFiltersProvider } from "@/contexts/SessionsFiltersContext";
 import { RouteLoadingWrapper } from "@/components/RouteLoadingWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { UniversalTableCopyAssist } from "@/components/ui/UniversalTableCopyAssist";
-import { ConsolidatedReportExporterDialog } from "@/components/ui/ConsolidatedReportExporterDialog";
+import { UniversalElementCopyAssist } from "@/components/ui/UniversalElementCopyAssist";
+import { LazyConsolidatedReportExporterDialog } from "@/components/lazy/LazyConsolidatedReportExporterDialog";
 import { DataSourceProvider, useDataSource } from '@/contexts/DataSourceContext';
 import { OfflineAccessManager } from '@/components/ui/OfflineAccessManager';
 
@@ -71,14 +71,20 @@ const PatternsAndTrends = React.lazy(() =>
 const DashboardOverview = React.lazy(() =>
   import("./pages/DashboardOverview").then(module => ({ default: module.default }))
 );
+const PerformanceCommandCenter = React.lazy(() =>
+  import("./pages/PerformanceCommandCenter").then(module => ({ default: module.default }))
+);
 const ForecastingActionCenter = React.lazy(() =>
   import("./pages/ForecastingActionCenter").then(module => ({ default: module.default }))
 );
 const MemberLifecycle = React.lazy(() =>
   import("./pages/MemberLifecycle").then(module => ({ default: module.default }))
 );
-const LocationReport = React.lazy(() => 
+const LocationReport = React.lazy(() =>
   import("./pages/LocationReport").then(module => ({ default: module.default }))
+);
+const StudioPulse = React.lazy(() =>
+  import("./pages/StudioPulse").then(module => ({ default: module.default }))
 );
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
@@ -110,9 +116,10 @@ const AppRoutes = () => {
   return (
     <>
       <GlobalLoader />
-      <GlobalCommandPalette />
+      <LazyGlobalCommandPalette />
       <UniversalTableCopyAssist />
-      <ConsolidatedReportExporterDialog />
+      <UniversalElementCopyAssist />
+      <LazyConsolidatedReportExporterDialog />
       <RouteLoadingWrapper>
         <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}>
           <PageTransition>
@@ -134,9 +141,11 @@ const AppRoutes = () => {
               <Route path="/late-cancellations" element={<LateCancellations />} />
               <Route path="/patterns-trends" element={<PatternsAndTrends />} />
               <Route path="/dashboard-overview" element={<DashboardOverview />} />
+              <Route path="/performance-command-center" element={<PerformanceCommandCenter />} />
               <Route path="/forecasting-action-center" element={<ForecastingActionCenter />} />
               <Route path="/member-lifecycle" element={<MemberLifecycle />} />
               <Route path="/location-report" element={<LocationReport />} />
+              <Route path="/studio-pulse" element={<StudioPulse />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -157,9 +166,19 @@ const AppContent = () => {
       return;
     }
 
-    Intercom({
-      app_id: intercomAppId,
+    let cancelled = false;
+
+    import('@intercom/messenger-js-sdk').then(({ default: Intercom }) => {
+      if (!cancelled) {
+        Intercom({
+          app_id: intercomAppId,
+        });
+      }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [intercomAppId, mode, isOnline]);
 
   return (

@@ -308,7 +308,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
   }, [processedData, onGroupToggle]);
 
   // Show the full descending range (current month back to Jan 2024)
-  const visibleMonths = useMemo(() => monthlyData, [monthlyData]);
+  const visibleMonths = useMemo(() => [...monthlyData].reverse(), [monthlyData]);
 
   // Notify parent when ready (once)
   const [readySent, setReadySent] = React.useState(false);
@@ -596,8 +596,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                       
                       {visibleMonths.map(({ key }, monthIndex) => {
                         const current = categoryGroup.monthlyValues[key] || 0;
-                        // Since months are now ascending (Jan 2024 first), previous month is at monthIndex - 1
-                        const previousMonthKeyData = monthIndex > 0 ? visibleMonths[monthIndex - 1]?.key : null;
+                        const previousMonthKeyData = monthIndex < visibleMonths.length - 1 ? visibleMonths[monthIndex + 1]?.key : null;
                         const previous = previousMonthKeyData ? (categoryGroup.monthlyValues[previousMonthKeyData] || 0) : 0;
                         const growthPercentage = monthIndex > 0 ? getGrowthPercentage(current, previous) : null;
                         const isPreviousMonth = key === previousMonthKey;
@@ -667,8 +666,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
                           
                           {visibleMonths.map(({ key }, monthIndex) => {
                             const current = product.monthlyValues[key] || 0;
-                            // Since months are now ascending (Jan 2024 first), previous month is at monthIndex - 1
-                            const previousMonthKeyData = monthIndex > 0 ? visibleMonths[monthIndex - 1]?.key : null;
+                            const previousMonthKeyData = monthIndex < visibleMonths.length - 1 ? visibleMonths[monthIndex + 1]?.key : null;
                             const previous = previousMonthKeyData ? (product.monthlyValues[previousMonthKeyData] || 0) : 0;
                             const growthPercentage = monthIndex > 0 ? getGrowthPercentage(current, previous) : null;
                             const isPreviousMonth = key === previousMonthKey;

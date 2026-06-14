@@ -11,12 +11,13 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Save, Sparkles } from 'lucide-react';
+import { Copy, Save, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import {
   asOverviewCharts,
   asOverviewTables,
@@ -35,6 +36,7 @@ import type {
   OverviewTableDefinition,
 } from './types';
 import { formatOverviewValue } from './filtering';
+import { buildClipboardHtml, buildElementPayload } from '@/utils/elementCopy';
 
 const accentStyles: Record<
   OverviewAccent,
@@ -86,12 +88,46 @@ const accentStyles: Record<
   },
 };
 
+const copyElement = async (element: HTMLElement, title: string) => {
+  const payload = buildElementPayload(element, title);
+  if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([buildClipboardHtml(payload)], { type: 'text/html' }),
+        'text/plain': new Blob([payload.text], { type: 'text/plain' }),
+      }),
+    ]);
+    return;
+  }
+  await navigator.clipboard.writeText(payload.text);
+};
+
 const MetricCardItem: React.FC<{ card: OverviewMetricCard }> = ({ card }) => {
+  const { toast } = useToast();
   const Icon = card.icon;
   const styles = accentStyles[card.accent];
+  const ref = React.useRef<HTMLDivElement>(null);
 
   return (
-    <Card className={cn('border border-slate-200 shadow-sm border-t-4 bg-white', styles.border)}>
+    <div ref={ref} className="relative">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="absolute right-3 top-3 z-10 h-8 gap-1 rounded-full bg-white/95"
+        onClick={async () => {
+          if (!ref.current) return;
+          try {
+            await copyElement(ref.current, card.title);
+            toast({ title: 'Metric copied', description: `${card.title} copied to clipboard.` });
+          } catch (error) {
+            toast({ title: 'Copy failed', description: error instanceof Error ? error.message : 'Unable to copy metric', variant: 'destructive' });
+          }
+        }}
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+      <Card data-copyable-element="true" data-copy-title={card.title} className={cn('border border-slate-200 shadow-sm border-t-4 bg-white', styles.border)}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
@@ -104,15 +140,36 @@ const MetricCardItem: React.FC<{ card: OverviewMetricCard }> = ({ card }) => {
           </div>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
 const ChartCard: React.FC<{ chart: OverviewChartDefinition }> = ({ chart }) => {
+  const { toast } = useToast();
   const [mode, setMode] = React.useState<'bar' | 'line'>('bar');
+  const ref = React.useRef<HTMLDivElement>(null);
 
   return (
-    <Card className="border border-slate-200 shadow-sm bg-white">
+    <div ref={ref} className="relative">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="absolute right-3 top-3 z-10 h-8 gap-1 rounded-full bg-white/95"
+        onClick={async () => {
+          if (!ref.current) return;
+          try {
+            await copyElement(ref.current, chart.title);
+            toast({ title: 'Chart copied', description: `${chart.title} copied to clipboard.` });
+          } catch (error) {
+            toast({ title: 'Copy failed', description: error instanceof Error ? error.message : 'Unable to copy chart', variant: 'destructive' });
+          }
+        }}
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+      <Card data-copyable-element="true" data-copy-title={chart.title} className="border border-slate-200 shadow-sm bg-white">
       <CardHeader className="space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -189,15 +246,36 @@ const ChartCard: React.FC<{ chart: OverviewChartDefinition }> = ({ chart }) => {
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
 const RankingCard: React.FC<{ ranking: OverviewRankingDefinition }> = ({ ranking }) => {
+  const { toast } = useToast();
   const styles = accentStyles[ranking.accent];
+  const ref = React.useRef<HTMLDivElement>(null);
 
   return (
-    <Card className="border border-slate-200 shadow-sm bg-white">
+    <div ref={ref} className="relative">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="absolute right-3 top-3 z-10 h-8 gap-1 rounded-full bg-white/95"
+        onClick={async () => {
+          if (!ref.current) return;
+          try {
+            await copyElement(ref.current, ranking.title);
+            toast({ title: 'List copied', description: `${ranking.title} copied to clipboard.` });
+          } catch (error) {
+            toast({ title: 'Copy failed', description: error instanceof Error ? error.message : 'Unable to copy list', variant: 'destructive' });
+          }
+        }}
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+      <Card data-copyable-element="true" data-copy-title={ranking.title} className="border border-slate-200 shadow-sm bg-white">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -231,7 +309,8 @@ const RankingCard: React.FC<{ ranking: OverviewRankingDefinition }> = ({ ranking
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
@@ -242,6 +321,7 @@ const TableCard: React.FC<{
   table: OverviewTableDefinition;
   isCustomTable: boolean;
 }> = ({ moduleId, table, isCustomTable }) => {
+  const { toast } = useToast();
   const [isCustomizing, setIsCustomizing] = React.useState(false);
   const [tableTitle, setTableTitle] = React.useState(table.title);
   const [tableDescription, setTableDescription] = React.useState(table.description);
@@ -270,9 +350,28 @@ const TableCard: React.FC<{
   };
 
   const rowsToRender = editableRows.slice(0, visibleRows);
+  const ref = React.useRef<HTMLDivElement>(null);
 
   return (
-    <Card className="border border-slate-200 shadow-sm bg-white">
+    <div ref={ref} className="relative">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="absolute right-3 top-3 z-10 h-8 gap-1 rounded-full bg-white/95"
+        onClick={async () => {
+          if (!ref.current) return;
+          try {
+            await copyElement(ref.current, table.title);
+            toast({ title: 'Table copied', description: `${table.title} copied to clipboard.` });
+          } catch (error) {
+            toast({ title: 'Copy failed', description: error instanceof Error ? error.message : 'Unable to copy table', variant: 'destructive' });
+          }
+        }}
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+      <Card data-copyable-element="true" data-copy-title={table.title} className="border border-slate-200 shadow-sm bg-white">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -402,7 +501,8 @@ const TableCard: React.FC<{
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };
 

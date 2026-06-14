@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OptimizedTable } from '@/components/ui/OptimizedTable';
-import { TrendingUp, TrendingDown, DollarSign, Users, Target, Eye, X } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, Target, Eye, X, CalendarRange } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 
 interface UniversalDrillDownModalProps {
@@ -15,6 +15,92 @@ interface UniversalDrillDownModalProps {
   title: string;
 }
 
+type ColAlign = 'left' | 'center' | 'right';
+interface Column { key: string; header: string; align: ColAlign; render?: (v: any) => React.ReactNode }
+
+const detectSchema = (item: any): 'sales' | 'session' | 'payroll' | 'expiration' | 'latecancel' | 'client' | 'lead' | 'unknown' => {
+  if (!item) return 'unknown';
+  if (item.paymentDate || item.paymentItem || item.paymentValue !== undefined) return 'sales';
+  if (item.sessionId || (item.date && (item.cleanedClass || item.checkedInCount !== undefined))) return 'session';
+  if (item.teacherName && (item.totalSessions !== undefined || item.monthYear)) return 'payroll';
+  if (item.endDate && (item.homeLocation || item.expirationDate)) return 'expiration';
+  if (item.isSameDayCancellation !== undefined || item.chargedPenaltyAmount !== undefined) return 'latecancel';
+  if (item.firstName || item.fullName || item.conversionStatus || item.retentionStatus) return 'client';
+  if (item.trialStatus || item.source) return 'lead';
+  return 'unknown';
+};
+
+const SCHEMA_COLUMNS: Record<string, Column[]> = {
+  sales: [
+    { key: 'paymentDate', header: 'Date', align: 'center' },
+    { key: 'customerName', header: 'Customer', align: 'left' },
+    { key: 'paymentItem', header: 'Product', align: 'left' },
+    { key: 'cleanedCategory', header: 'Category', align: 'left' },
+    { key: 'paymentValue', header: 'Amount', align: 'right', render: (v: number) => formatCurrency(v) },
+    { key: 'paymentMethod', header: 'Method', align: 'center' },
+    { key: 'soldBy', header: 'Sold By', align: 'left' },
+    { key: 'calculatedLocation', header: 'Location', align: 'center' },
+  ],
+  session: [
+    { key: 'date', header: 'Date', align: 'center' },
+    { key: 'cleanedClass', header: 'Class', align: 'left' },
+    { key: 'instructor', header: 'Instructor', align: 'left' },
+    { key: 'checkedInCount', header: 'Attendance', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'capacity', header: 'Capacity', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'location', header: 'Location', align: 'center' },
+    { key: 'classType', header: 'Format', align: 'center' },
+  ],
+  payroll: [
+    { key: 'teacherName', header: 'Trainer', align: 'left' },
+    { key: 'monthYear', header: 'Month', align: 'center' },
+    { key: 'location', header: 'Location', align: 'center' },
+    { key: 'totalSessions', header: 'Sessions', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'totalNonEmptySessions', header: 'Active', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'totalCustomers', header: 'Customers', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'totalPaid', header: 'Revenue', align: 'right', render: (v: number) => formatCurrency(v) },
+    { key: 'new', header: 'New', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'converted', header: 'Conv', align: 'center', render: (v: number) => formatNumber(v) },
+    { key: 'retained', header: 'Ret', align: 'center', render: (v: number) => formatNumber(v) },
+  ],
+  expiration: [
+    { key: 'firstName', header: 'First Name', align: 'left' },
+    { key: 'lastName', header: 'Last Name', align: 'left' },
+    { key: 'email', header: 'Email', align: 'left' },
+    { key: 'endDate', header: 'Expiry Date', align: 'center' },
+    { key: 'homeLocation', header: 'Location', align: 'center' },
+    { key: 'status', header: 'Status', align: 'center' },
+  ],
+  latecancel: [
+    { key: 'dateIST', header: 'Date', align: 'center' },
+    { key: 'customerName', header: 'Customer', align: 'left' },
+    { key: 'instructor', header: 'Instructor', align: 'left' },
+    { key: 'cleanedClass', header: 'Class', align: 'left' },
+    { key: 'location', header: 'Location', align: 'center' },
+    { key: 'isSameDayCancellation', header: 'Same Day', align: 'center', render: (v: boolean) => v ? 'Yes' : 'No' },
+    { key: 'chargedPenaltyAmount', header: 'Penalty', align: 'right', render: (v: number) => formatCurrency(v || 0) },
+  ],
+  client: [
+    { key: 'firstName', header: 'First Name', align: 'left' },
+    { key: 'lastName', header: 'Last Name', align: 'left' },
+    { key: 'email', header: 'Email', align: 'left' },
+    { key: 'firstVisitDate', header: 'First Visit', align: 'center' },
+    { key: 'homeLocation', header: 'Location', align: 'center' },
+    { key: 'conversionStatus', header: 'Conversion', align: 'center' },
+    { key: 'retentionStatus', header: 'Retention', align: 'center' },
+    { key: 'ltv', header: 'LTV', align: 'right', render: (v: number) => formatCurrency(v || 0) },
+  ],
+  lead: [
+    { key: 'firstName', header: 'First Name', align: 'left' },
+    { key: 'lastName', header: 'Last Name', align: 'left' },
+    { key: 'email', header: 'Email', align: 'left' },
+    { key: 'createdAt', header: 'Created', align: 'center' },
+    { key: 'source', header: 'Source', align: 'center' },
+    { key: 'center', header: 'Location', align: 'center' },
+    { key: 'trialStatus', header: 'Trial Status', align: 'center' },
+  ],
+  unknown: [],
+};
+
 export const UniversalDrillDownModal: React.FC<UniversalDrillDownModalProps> = ({
   isOpen,
   onClose,
@@ -23,312 +109,201 @@ export const UniversalDrillDownModal: React.FC<UniversalDrillDownModalProps> = (
   type,
   title
 }) => {
-  // Filter related data based on the selected item
+  const contextDescription = data?.contextDescription as string | undefined;
+
   const filteredData = useMemo(() => {
-    // First, check if we already have pre-filtered specific data
     if (data?.filteredTransactionData && data.filteredTransactionData.length > 0) {
-      // Using pre-filtered data
       return data.filteredTransactionData;
     }
-    
     if (data?.rawData && data.rawData.length > 0) {
-      // Using raw data
       return data.rawData;
     }
-    
     if (!data || !relatedData) return [];
-    
-    // Fallback to filtering relatedData based on the selected item
-    let filtered = [];
+
     switch (type) {
       case 'product':
-        filtered = relatedData.filter(item => 
-          item.paymentItem === data.name || 
-          item.cleanedProduct === data.name ||
-          item.product === data.name
+        return relatedData.filter(item =>
+          item.paymentItem === data.name || item.cleanedProduct === data.name || item.product === data.name
         );
-        break;
       case 'category':
-        filtered = relatedData.filter(item => 
-          item.cleanedCategory === data.name || 
-          item.category === data.name
+        return relatedData.filter(item =>
+          item.cleanedCategory === data.name || item.category === data.name
         );
-        break;
       case 'member':
-        filtered = relatedData.filter(item => 
-          item.customerName === data.name ||
-          item.memberId === data.memberId
+        return relatedData.filter(item =>
+          item.customerName === data.name || item.memberId === data.memberId
         );
-        break;
       case 'seller':
-        filtered = relatedData.filter(item => 
-          item.soldBy === data.name
-        );
-        break;
+        return relatedData.filter(item => item.soldBy === data.name);
       case 'trainer':
-        filtered = relatedData.filter(item => 
-          item.teacherName === data.name ||
-          item.Trainer === data.name ||
-          item.trainerName === data.name
+        return relatedData.filter(item =>
+          item.teacherName === data.name || item.Trainer === data.name || item.trainerName === data.name
         );
-        break;
       case 'location':
-        filtered = relatedData.filter(item => 
-          item.calculatedLocation === data.name ||
-          item.location === data.name ||
-          item.center === data.name
+        return relatedData.filter(item =>
+          item.calculatedLocation === data.name || item.location === data.name || item.center === data.name
         );
-        break;
       case 'lead':
-        filtered = relatedData.filter(item => 
-          item.id === data.id || 
-          item.memberId === data.memberId
-        );
-        break;
+        return relatedData.filter(item => item.id === data.id || item.memberId === data.memberId);
       case 'client':
-        filtered = relatedData.filter(item => 
-          item.memberId === data.memberId ||
-          item.firstName === data.firstName
-        );
-        break;
+        return relatedData.filter(item => item.memberId === data.memberId || item.firstName === data.firstName);
       default:
-        filtered = relatedData.slice(0, 100);
-        break;
+        return relatedData.slice(0, 200);
     }
-    
-    // Debug log removed for production
-    return filtered;
   }, [data, relatedData, type]);
 
-  // Generate summary metrics
+  const schema = useMemo(() => detectSchema(filteredData[0]), [filteredData]);
+
+  const columns = useMemo((): Column[] => {
+    if (!filteredData.length) return [];
+    const all = SCHEMA_COLUMNS[schema] || [];
+    // Only include columns where at least one row has a non-null value
+    return all.filter(col => filteredData.some(row => row[col.key] !== undefined && row[col.key] !== null && row[col.key] !== ''));
+  }, [filteredData, schema]);
+
   const summaryMetrics = useMemo(() => {
     if (!filteredData.length) return null;
-
-    const metrics = {
-      totalRecords: filteredData.length,
-      totalRevenue: 0,
-      totalTransactions: 0,
-      uniqueCustomers: new Set(),
-      avgValue: 0
-    };
+    let totalRevenue = 0;
+    let totalTransactions = 0;
+    const uniqueCustomers = new Set<string>();
 
     filteredData.forEach(item => {
-      if (item.paymentValue) {
-        metrics.totalRevenue += item.paymentValue;
-        metrics.totalTransactions += 1;
-      }
-      if (item.memberId) {
-        metrics.uniqueCustomers.add(item.memberId);
-      }
-      if (item.ltv) {
-        metrics.totalRevenue += item.ltv;
-      }
+      if (item.paymentValue) { totalRevenue += Number(item.paymentValue) || 0; totalTransactions += 1; }
+      if (item.totalPaid) totalRevenue += Number(item.totalPaid) || 0;
+      if (item.ltv) totalRevenue += Number(item.ltv) || 0;
+      if (item.memberId) uniqueCustomers.add(item.memberId);
+      if (item.customerName) uniqueCustomers.add(item.customerName);
     });
 
-    metrics.avgValue = metrics.totalTransactions > 0 ? 
-      metrics.totalRevenue / metrics.totalTransactions : 0;
-
     return {
-      ...metrics,
-      uniqueCustomers: metrics.uniqueCustomers.size
+      totalRecords: filteredData.length,
+      totalRevenue,
+      uniqueCustomers: uniqueCustomers.size,
+      avgValue: totalTransactions > 0 ? totalRevenue / totalTransactions : 0,
     };
-  }, [filteredData]);
-
-  // Dynamic columns based on data type
-  const columns = useMemo(() => {
-    if (!filteredData.length) return [];
-
-    const firstItem = filteredData[0];
-    const baseColumns = [];
-
-    // Common columns for sales data
-    if (firstItem.paymentDate) {
-      baseColumns.push(
-        { key: 'paymentDate', header: 'Date', align: 'center' as const },
-        { key: 'customerName', header: 'Customer', align: 'left' as const },
-        { key: 'paymentItem', header: 'Product', align: 'left' as const },
-        { 
-          key: 'paymentValue', 
-          header: 'Amount', 
-          align: 'right' as const,
-          render: (value: number) => formatCurrency(value)
-        },
-        { key: 'paymentMethod', header: 'Method', align: 'center' as const }
-      );
-    }
-    // Client/Lead data columns
-    else if (firstItem.firstName || firstItem.fullName) {
-      baseColumns.push(
-        { key: 'firstName', header: 'First Name', align: 'left' as const },
-        { key: 'lastName', header: 'Last Name', align: 'left' as const },
-        { key: 'email', header: 'Email', align: 'left' as const },
-        { 
-          key: 'ltv', 
-          header: 'LTV', 
-          align: 'right' as const,
-          render: (value: number) => formatCurrency(value || 0)
-        },
-        { key: 'conversionStatus', header: 'Status', align: 'center' as const }
-      );
-    }
-    // Session data columns
-    else if (firstItem.date || firstItem.sessionId) {
-      baseColumns.push(
-        { key: 'date', header: 'Date', align: 'center' as const },
-        { key: 'cleanedClass', header: 'Class', align: 'left' as const },
-        { key: 'instructor', header: 'Instructor', align: 'left' as const },
-        { key: 'checkedInCount', header: 'Attendance', align: 'center' as const },
-        { key: 'capacity', header: 'Capacity', align: 'center' as const }
-      );
-    }
-    // Trainer data columns
-    else if (firstItem.teacherName) {
-      baseColumns.push(
-        { key: 'teacherName', header: 'Trainer', align: 'left' as const },
-        { key: 'totalSessions', header: 'Sessions', align: 'center' as const },
-        { key: 'totalCustomers', header: 'Customers', align: 'center' as const },
-        { 
-          key: 'totalPaid', 
-          header: 'Revenue', 
-          align: 'right' as const,
-          render: (value: number) => formatCurrency(value || 0)
-        },
-        { key: 'location', header: 'Location', align: 'center' as const }
-      );
-    }
-
-    return baseColumns;
   }, [filteredData]);
 
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0 bg-white">
-        <DialogHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              <Eye className="w-6 h-6" />
-              {title} - Detailed View
-            </DialogTitle>
+      <DialogContent className="max-h-[90vh] max-w-6xl overflow-hidden border border-slate-200 bg-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
+        <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-6 py-5 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3">
+              <Badge variant="secondary" className="w-fit border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-50">
+                Drill Down View
+              </Badge>
+              <DialogTitle className="flex items-center gap-3 text-2xl font-bold leading-tight">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                  <Eye className="h-5 w-5" />
+                </span>
+                <span>{title}</span>
+              </DialogTitle>
+              {contextDescription ? (
+                <div className="flex items-start gap-2 text-sm text-blue-100/90">
+                  <CalendarRange className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{contextDescription}</span>
+                </div>
+              ) : null}
+            </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10"
+              className="rounded-full border border-white/10 p-2 text-white transition-colors hover:bg-white/10"
+              aria-label="Close modal"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </DialogHeader>
 
-        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {/* Summary Cards */}
+        <div className="max-h-[calc(90vh-120px)] space-y-6 overflow-y-auto bg-slate-50/70 p-6">
           {summaryMetrics && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="border-blue-200 bg-blue-50/50">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Card className="border border-slate-200 bg-white shadow-sm">
                 <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Target className="w-5 h-5 text-blue-600" />
+                  <div className="mb-3 flex items-center justify-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                      <Target className="h-5 w-5" />
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-blue-900">
-                    {formatNumber(summaryMetrics.totalRecords)}
-                  </div>
-                  <div className="text-sm text-blue-600">Total Records</div>
+                  <div className="text-2xl font-bold text-slate-950">{formatNumber(summaryMetrics.totalRecords)}</div>
+                  <div className="text-sm text-slate-500">Records</div>
                 </CardContent>
               </Card>
 
-              <Card className="border-green-200 bg-green-50/50">
-                <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <DollarSign className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-green-900">
-                    {formatCurrency(summaryMetrics.totalRevenue)}
-                  </div>
-                  <div className="text-sm text-green-600">Total Revenue</div>
-                </CardContent>
-              </Card>
+              {summaryMetrics.totalRevenue > 0 && (
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardContent className="p-4 text-center">
+                    <div className="mb-3 flex items-center justify-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                        <DollarSign className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-950">{formatCurrency(summaryMetrics.totalRevenue)}</div>
+                    <div className="text-sm text-slate-500">Total Revenue</div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card className="border-purple-200 bg-purple-50/50">
-                <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Users className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-purple-900">
-                    {formatNumber(summaryMetrics.uniqueCustomers)}
-                  </div>
-                  <div className="text-sm text-purple-600">Unique Customers</div>
-                </CardContent>
-              </Card>
+              {summaryMetrics.uniqueCustomers > 0 && (
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardContent className="p-4 text-center">
+                    <div className="mb-3 flex items-center justify-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700">
+                        <Users className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-950">{formatNumber(summaryMetrics.uniqueCustomers)}</div>
+                    <div className="text-sm text-slate-500">Unique Customers</div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card className="border-orange-200 bg-orange-50/50">
-                <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <TrendingUp className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-orange-900">
-                    {formatCurrency(summaryMetrics.avgValue)}
-                  </div>
-                  <div className="text-sm text-orange-600">Average Value</div>
-                </CardContent>
-              </Card>
+              {summaryMetrics.avgValue > 0 && (
+                <Card className="border border-slate-200 bg-white shadow-sm">
+                  <CardContent className="p-4 text-center">
+                    <div className="mb-3 flex items-center justify-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-950">{formatCurrency(summaryMetrics.avgValue)}</div>
+                    <div className="text-sm text-slate-500">Avg Transaction</div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 
-          {/* Data Table */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-slate-100 to-slate-200 border-b">
-              <CardTitle className="flex items-center justify-between">
-                <span>Detailed Data</span>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                  {filteredData.length} items
+          <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 bg-slate-100/80">
+              <CardTitle className="flex items-center justify-between text-slate-900">
+                <span>{title}</span>
+                <Badge variant="secondary" className="border border-blue-200 bg-blue-50 text-blue-800">
+                  {filteredData.length} records
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {columns.length > 0 && filteredData.length > 0 ? (
                 <OptimizedTable
-                  data={filteredData.slice(0, 100)} // Limit for performance
+                  data={filteredData.slice(0, 200)}
                   columns={columns}
-                  maxHeight="500px"
+                  maxHeight="520px"
                   stickyHeader={true}
                 />
               ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No detailed data available</p>
-                  <p className="text-sm">This item doesn't have associated transaction details.</p>
+                <div className="p-10 text-center text-slate-500">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                    <Target className="h-7 w-7" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-700">No data available</p>
+                  <p className="mt-1 text-sm">No records match this selection.</p>
                 </div>
               )}
             </CardContent>
           </Card>
-
-          {/* Additional Data Summary */}
-          {data && (
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-100 to-gray-200 border-b">
-                <CardTitle>Item Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  {Object.entries(data).map(([key, value]) => (
-                    <div key={key} className="space-y-1">
-                      <div className="font-medium text-gray-600 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </div>
-                      <div className="text-gray-900 font-semibold">
-                        {typeof value === 'number' && (key.includes('revenue') || key.includes('value') || key.includes('ltv'))
-                          ? formatCurrency(value as number)
-                          : typeof value === 'number' 
-                          ? formatNumber(value as number)
-                          : String(value || 'N/A')
-                        }
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </DialogContent>
     </Dialog>

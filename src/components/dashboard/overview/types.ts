@@ -15,7 +15,8 @@ export type OverviewModuleId =
   | 'class-formats'
   | 'late-cancellations'
   | 'patterns-trends'
-  | 'expiration-analytics';
+  | 'expiration-analytics'
+  | 'dashboard-workbench';
 
 export type OverviewValueFormat = 'currency' | 'number' | 'percentage' | 'text' | 'days';
 export type OverviewAccent = 'emerald' | 'blue' | 'purple' | 'rose' | 'amber' | 'teal' | 'indigo' | 'slate';

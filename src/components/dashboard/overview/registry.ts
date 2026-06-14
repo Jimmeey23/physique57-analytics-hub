@@ -10,6 +10,7 @@ import {
   TrendingUp,
   UserCheck,
   Users,
+  LayoutGrid,
 } from 'lucide-react';
 import type { OverviewModuleDefinition, OverviewModuleId } from './types';
 
@@ -93,6 +94,14 @@ export const overviewModules: OverviewModuleDefinition[] = [
     icon: AlertTriangle,
     accent: 'amber',
     adapter: React.lazy(() => import('./adapters/ExpirationOverviewAdapter')),
+  },
+  {
+    id: 'dashboard-workbench',
+    label: 'Dashboard Workbench',
+    description: 'Paste copied tables, cards, charts, and lists',
+    icon: LayoutGrid,
+    accent: 'slate',
+    adapter: React.lazy(() => import('@/components/dashboard/DashboardWorkbench')),
   },
 ];
 

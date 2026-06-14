@@ -7,24 +7,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TrendingUp, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// Darker sales-themed palette (deep blues) to match the Sales tab headers
-// Tailwind references: blue-900, blue-800, blue-700, blue-600, indigo-900
 const SALES_DARK_PALETTE = [
-  '#1e3a8a', // blue-900 (primary stroke)
-  '#1e40af', // blue-800 (primary fill)
-  '#1d4ed8', // blue-700
-  '#2563eb', // blue-600 (accent)
-  '#312e81', // indigo-900
-  '#3730a3', // indigo-800
-  '#4338ca', // indigo-700
-  '#0f172a', // slate-900 (deep accent)
+  '#0f172a',
+  '#1e3a8a',
+  '#1d4ed8',
+  '#475569',
 ];
 
 // Custom Tooltip with a dark, sales-themed design and correct value formatting
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="p-3 bg-slate-900/90 text-white backdrop-blur-xl rounded-lg shadow-xl border border-slate-700/70">
+      <div className="rounded-2xl border border-slate-800/70 bg-slate-950/95 p-3 text-white shadow-2xl backdrop-blur-xl">
         <p className="label font-semibold text-white/90 mb-1">{`${label}`}</p>
         {payload.map((pld: any, index: number) => (
           <div key={index} className="flex items-center space-x-2">
@@ -354,22 +348,21 @@ export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = Rea
   };
 
   return (
-    <Card className="bg-white/70 backdrop-blur-lg border-gray-200/80 shadow-lg rounded-2xl overflow-hidden">
-      <CardHeader className="pb-4 border-b border-gray-200/80">
+    <Card className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
+      <CardHeader className="pb-4">
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-semibold text-gray-800 flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg border border-gray-200">
-                <BarChart3 className="w-5 h-5 text-gray-600" />
+          <div className="flex items-start justify-between gap-4">
+            <CardTitle className="flex items-center gap-3 text-lg font-semibold text-slate-900">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-sm">
+                <BarChart3 className="h-4 w-4 text-slate-700" />
               </div>
               Interactive Sales Charts
             </CardTitle>
           </div>
-          
-          {/* Time Range Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
+
+          <div className="flex flex-wrap gap-2">
+            <span className="flex items-center gap-1 text-sm font-medium text-slate-600">
+              <Calendar className="h-4 w-4" />
               Time Range:
             </span>
             {[
@@ -383,24 +376,23 @@ export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = Rea
                 variant={timeRange === key ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleTimeRangeChange(key)}
-                className="transition-all duration-300 rounded-full"
+                className="rounded-full"
               >
                 {label}
               </Button>
             ))}
           </div>
-          
-          {/* Chart Type Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
-              <TrendingUp className="w-4 h-4" />
+
+          <div className="flex flex-wrap gap-2">
+            <span className="flex items-center gap-1 text-sm font-medium text-slate-600">
+              <TrendingUp className="h-4 w-4" />
               Chart Type:
             </span>
             <Button
               variant={activeChart === 'revenue' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleChartChange('revenue')}
-              className="flex items-center gap-1 transition-all duration-300 rounded-full"
+              className="rounded-full"
             >
               <LineChartIcon className="w-4 h-4" />
               Revenue Trend
@@ -409,7 +401,7 @@ export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = Rea
               variant={activeChart === 'products' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleChartChange('products')}
-              className="flex items-center gap-1 transition-all duration-300 rounded-full"
+              className="rounded-full"
             >
               <BarChart3 className="w-4 h-4" />
               Top 10 Products
@@ -418,7 +410,7 @@ export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = Rea
               variant={activeChart === 'categories' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleChartChange('categories')}
-              className="flex items-center gap-1 transition-all duration-300 rounded-full"
+              className="rounded-full"
             >
               <PieChartIcon className="w-4 h-4" />
               Categories
@@ -427,14 +419,26 @@ export const SalesInteractiveCharts: React.FC<SalesInteractiveChartsProps> = Rea
         </div>
       </CardHeader>
 
-      <CardContent className="p-6">
+      <CardContent className="p-0">
         <motion.div
           key={activeChart + productMetric + timeRange}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16, scale: 0.99 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-[0_12px_36px_rgba(15,23,42,0.06)]"
         >
           {renderChart()}
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+              Compact 3D surface with one active metric at a time.
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+              Metric switcher keeps comparisons tight and readable.
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+              Deep blue palette stays aligned with the sales section.
+            </div>
+          </div>
         </motion.div>
       </CardContent>
     </Card>

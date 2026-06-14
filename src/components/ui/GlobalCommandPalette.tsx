@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/command";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSectionNavigation } from "@/contexts/SectionNavigationContext";
-import { OPEN_CONSOLIDATED_REPORT_EVENT } from "@/components/ui/ConsolidatedReportExporterDialog";
+import { OPEN_CONSOLIDATED_REPORT_EVENT } from "@/components/ui/consolidatedReportEvents";
 
 type QuickLink = {
   label: string;
@@ -46,8 +46,12 @@ const pages: { group: string; items: QuickLink[] }[] = [
   },
 ];
 
-export function GlobalCommandPalette() {
-  const [open, setOpen] = React.useState(false);
+interface GlobalCommandPaletteProps {
+  initialOpen?: boolean;
+}
+
+export function GlobalCommandPalette({ initialOpen = false }: GlobalCommandPaletteProps) {
+  const [open, setOpen] = React.useState(initialOpen);
   const navigate = useNavigate();
   const location = useLocation();
   const { sections, jumpTo } = useSectionNavigation();
