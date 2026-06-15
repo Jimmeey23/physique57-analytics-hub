@@ -144,6 +144,7 @@ export const useGoogleSheets = () => {
             secMembershipClassesLeft: parseNumericValue(rawItem['Sec. Membership Classes Left'] || 0),
             secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || 0),
             // Additional discount indicators
+            discountCode: rawItem['Discount Code'] || rawItem['discount_code'] || rawItem['DiscountCode'] || rawItem['Promo Code'] || rawItem['promo_code'] || '',
             discountType: rawItem['Discount Code'] ? 'code' : undefined,
             isPromotional: !!(rawItem['Discount Code'] || rawItem['Purchase Type'] === 'promotional')
           };

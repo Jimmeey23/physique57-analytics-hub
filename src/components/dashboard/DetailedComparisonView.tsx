@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import type { SessionData } from '@/hooks/useSessionsData';
 import { getAllFormats, getClassFormat } from '@/utils/classTypeUtils';
+import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import {
   Activity,
   BarChart3,
@@ -344,7 +345,7 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
                 <table className="min-w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                      <th className="border-b border-slate-200 px-4 py-3 text-left sticky left-0 bg-slate-50">
+                      <th className="border-b border-slate-200 px-4 py-3 text-left sticky left-0 bg-slate-50 min-w-[200px] w-[200px]">
                         {breakdownTab === 'trainer' ? 'Trainer' : breakdownTab === 'time' ? 'Time Slot' : 'Day'}
                       </th>
                       <th className="border-b border-slate-200 px-3 py-3 text-center">Sessions</th>
@@ -365,7 +366,12 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
                   <tbody className="bg-white">
                     {activeRows.map((row, i) => (
                       <tr key={row.name} className={cn('h-[44px] border-b border-slate-100 transition-colors hover:bg-slate-50/80', i % 2 === 1 && 'bg-slate-50/40')}>
-                        <td className="px-4 py-2 font-semibold text-slate-900 sticky left-0 bg-inherit text-sm">{row.name}</td>
+                        <td className="px-4 py-2 sticky left-0 bg-inherit min-w-[200px] w-[200px]">
+                          {breakdownTab === 'trainer'
+                            ? <TrainerNameCell name={row.name} className="min-w-0" />
+                            : <span className="font-semibold text-slate-900 text-sm">{row.name}</span>
+                          }
+                        </td>
                         <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.sessions)}</td>
                         <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.checkins)}</td>
                         <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.booked)}</td>
