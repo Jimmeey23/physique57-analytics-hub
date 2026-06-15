@@ -34,6 +34,7 @@ export interface SalesData {
   discountSource?: 'sheet' | 'item_unit' | 'mrp_gap' | 'percentage_derived' | 'effective_mrp' | 'none';
   discountIsEstimated?: boolean;
   discountType?: string;
+  discountCode?: string;
   isPromotional?: boolean;
   hostId?: string;
   // Secondary (Sec.) fields for membership/session usage behavior
@@ -362,17 +363,49 @@ export interface ExpirationData {
   firstName: string;
   lastName: string;
   email: string;
+  memberPhone?: string;
+  hostId?: string;
+  status: string;
   membershipName: string;
+  sessionsLimit?: string;
+  purchaseDate?: string;
+  startDate?: string;
   endDate: string;
+  churnedDate?: string;
+  amountPaid?: number;
+  discountCode?: string;
+  discountValue?: number;
+  originalAmount?: number;
+  soldBy: string;
+  createdBy?: string;
+  mostRecentVisitDate?: string;
+  firstVisitDate?: string;
+  totalSessionsCompleted?: number;
+  sessionsUsedPct?: number;
+  remainingSessions?: number;
+  totalCancellations?: number;
+  lateCancellations?: number;
+  noShows?: number;
+  cancellationRate?: number;
+  preferredBookingMethod?: string;
+  primaryLocation?: string;
+  locationsAttended?: string;
+  membershipFreezeCount?: number;
+  daysFrozen?: number;
+  membershipDurationDays?: number;
+  daysActive?: number;
+  daysSinceLastVisit?: number;
+  avgSessionsPerMonth?: number;
+  revenuePerSession?: number;
+  attendanceRate?: number;
+  // Legacy fields kept for backward compat
   homeLocation: string;
   currentUsage: string;
   id: string;
   orderAt: string;
-  soldBy: string;
   membershipId: string;
   frozen: boolean;
   paid: string;
-  status: string;
 }
 
 export interface ExpirationFilterOptions {

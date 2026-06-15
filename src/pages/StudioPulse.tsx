@@ -20,6 +20,8 @@ import {
   YAxis,
 } from 'recharts';
 import {
+  Activity,
+  AlertTriangle,
   ArrowUpRight,
   BarChart2,
   Bell,
@@ -87,6 +89,8 @@ import { useLeadsData } from '@/hooks/useLeadsData';
 import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useStudioAISummary } from '@/hooks/useStudioAISummary';
+import { useRecurringSessionsData } from '@/hooks/useRecurringSessionsData';
+import { useCheckinsData } from '@/hooks/useCheckinsData';
 
 import { TrainerNameCell, TrainerAvatar } from '@/components/ui/TrainerAvatar';
 import { mapLocationIdToTab } from '@/utils/memberLifecycleFilters';
@@ -832,8 +836,10 @@ const StudioPulse = memo(() => {
   const { data: leads = [], loading: leadsLoading } = useLeadsData();
   const { data: lateCancels = [], loading: lcLoading } = useLateCancellationsData();
   const { data: expirations = [], loading: expLoading } = useExpirationsData();
+  const { data: recurringData = [], teacherData: teacherRecurring = [], loading: recurringLoading } = useRecurringSessionsData();
+  const { data: checkins = [], loading: checkinsLoading } = useCheckinsData();
 
-  const anyLoading = salesLoading || sessionsLoading || clientsLoading || payrollLoading || leadsLoading || lcLoading || expLoading;
+  const anyLoading = salesLoading || sessionsLoading || clientsLoading || payrollLoading || leadsLoading || lcLoading || expLoading || recurringLoading || checkinsLoading;
 
   useEffect(() => {
     setLoading(salesLoading, 'Reading the studio pulse...');
@@ -899,6 +905,10 @@ const StudioPulse = memo(() => {
     () => leads.filter((item) => inStudio(item.center, studio) && isWithinRange(item.createdAt, previousDateRange)),
     [leads, studio, previousDateRange]
   );
+  const previousYearLeads = useMemo(
+    () => leads.filter((item) => inStudio(item.center, studio) && isWithinRange(item.createdAt, previousYearDateRange)),
+    [leads, studio, previousYearDateRange]
+  );
 
   const filteredLateCancels = useMemo(
     () => lateCancels.filter((item) => inStudio(item.location, studio) && isWithinRange(item.dateIST || item.sessionDateIST, dateRange)),
@@ -919,25 +929,28 @@ const StudioPulse = memo(() => {
 
   /* ---------- Expirations (lapsed) ---------- */
   const filteredExpirations = useMemo(
-    () => expirations.filter((item) => inStudio(item.homeLocation, studio) && isWithinRange(item.endDate, dateRange)),
+    () => expirations.filter((item) => inStudio(item.primaryLocation || item.homeLocation, studio) && isWithinRange(item.endDate, dateRange)),
     [expirations, studio, dateRange]
   );
   const previousExpirations = useMemo(
-    () => expirations.filter((item) => inStudio(item.homeLocation, studio) && isWithinRange(item.endDate, previousDateRange)),
+    () => expirations.filter((item) => inStudio(item.primaryLocation || item.homeLocation, studio) && isWithinRange(item.endDate, previousDateRange)),
     [expirations, studio, previousDateRange]
   );
   const previousYearExpirations = useMemo(
-    () => expirations.filter((item) => inStudio(item.homeLocation, studio) && isWithinRange(item.endDate, previousYearDateRange)),
+    () => expirations.filter((item) => inStudio(item.primaryLocation || item.homeLocation, studio) && isWithinRange(item.endDate, previousYearDateRange)),
     [expirations, studio, previousYearDateRange]
   );
   const expirationStats = useMemo(() => {
     const total = filteredExpirations.length;
     const prev = previousExpirations.length;
     const yoy = previousYearExpirations.length;
-    const churned = filteredExpirations.filter((e) => /churn/i.test(e.status)).length;
-    const prevChurned = previousExpirations.filter((e) => /churn/i.test(e.status)).length;
-    const yoyChurned = previousYearExpirations.filter((e) => /churn/i.test(e.status)).length;
-    const churnRate = total ? (churned / total) * 100 : 0;
+    // All lapsed records are churned (status field not available in this sheet format)
+    const churned = filteredExpirations.length;
+    const prevChurned = previousExpirations.length;
+    const yoyChurned = previousYearExpirations.length;
+    // Churn rate = lapsed / total memberships sold in period (cross-referenced with sales)
+    const totalSalesInPeriod = filteredSales.length;
+    const churnRate = totalSalesInPeriod ? (churned / totalSalesInPeriod) * 100 : total ? (churned / total) * 100 : 0;
     const prevChurnRate = prev ? (prevChurned / prev) * 100 : 0;
     const yoyChurnRate = yoy ? (yoyChurned / yoy) * 100 : 0;
     const byLocation: Record<string, number> = {};
@@ -949,8 +962,12 @@ const StudioPulse = memo(() => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
-    const ltvVals = filteredExpirations.map((e) => Number(e.paid) || 0).filter((v) => v > 0);
+    const ltvVals = filteredExpirations.map((e) => (e as any).amountPaid || Number(e.paid) || 0).filter((v) => v > 0);
     const avgLtvLapsed = ltvVals.length ? ltvVals.reduce((a, b) => a + b, 0) / ltvVals.length : 0;
+    const prevLtvVals = previousExpirations.map((e) => (e as any).amountPaid || Number(e.paid) || 0).filter((v) => v > 0);
+    const prevAvgLtvLapsed = prevLtvVals.length ? prevLtvVals.reduce((a, b) => a + b, 0) / prevLtvVals.length : 0;
+    const yoyLtvVals = previousYearExpirations.map((e) => (e as any).amountPaid || Number(e.paid) || 0).filter((v) => v > 0);
+    const yoyAvgLtvLapsed = yoyLtvVals.length ? yoyLtvVals.reduce((a, b) => a + b, 0) / yoyLtvVals.length : 0;
     return {
       total,
       churned,
@@ -961,6 +978,8 @@ const StudioPulse = memo(() => {
       yoyGrowth: pctChange(total, yoy),
       churnRateMomGrowth: pctChange(churnRate, prevChurnRate),
       churnRateYoyGrowth: pctChange(churnRate, yoyChurnRate),
+      avgLtvMomGrowth: pctChange(avgLtvLapsed, prevAvgLtvLapsed),
+      avgLtvYoyGrowth: pctChange(avgLtvLapsed, yoyAvgLtvLapsed),
     };
   }, [filteredExpirations, previousExpirations, previousYearExpirations]);
 
@@ -1059,6 +1078,121 @@ const StudioPulse = memo(() => {
       topDiscounts,
     };
   }, [filteredSales, previousSales, previousYearSales]);
+
+  // ── Avg Order Value ──────────────────────────────────────────────────────
+  const avgOrderValue = useMemo(() => {
+    const cur = filteredSales.length > 0 ? filteredSales.reduce((s, x) => s + (Number(x.paymentValue) || 0), 0) / filteredSales.length : 0;
+    const prev = previousSales.length > 0 ? previousSales.reduce((s, x) => s + (Number(x.paymentValue) || 0), 0) / previousSales.length : 0;
+    const yoy = previousYearSales.length > 0 ? previousYearSales.reduce((s, x) => s + (Number(x.paymentValue) || 0), 0) / previousYearSales.length : 0;
+    return { value: cur, momGrowth: pctChange(cur, prev), yoyGrowth: pctChange(cur, yoy) };
+  }, [filteredSales, previousSales, previousYearSales]);
+
+  // ── Discount Efficiency: incremental net per ₹1 discounted ───────────────
+  const discountEfficiency = useMemo(() => {
+    let totalDiscount = 0, totalNet = 0, discountedNet = 0, discountedTxns = 0;
+    filteredSales.forEach((s) => {
+      const net = (Number(s.paymentValue) || 0) - (Number(s.paymentVAT) || 0);
+      totalNet += net;
+      const disc = Number(s.discountAmount) || 0;
+      if (disc > 0) { totalDiscount += disc; discountedNet += net; discountedTxns += 1; }
+    });
+    // Incremental revenue per ₹1 discount = discountedNet / totalDiscount
+    const efficiency = totalDiscount > 0 ? discountedNet / totalDiscount : 0;
+    const prevDiscount = previousSales.reduce((s, x) => s + (Number(x.discountAmount) || 0), 0);
+    const prevDiscountedNet = previousSales.filter((x) => (Number(x.discountAmount) || 0) > 0).reduce((s, x) => s + ((Number(x.paymentValue) || 0) - (Number(x.paymentVAT) || 0)), 0);
+    const prevEfficiency = prevDiscount > 0 ? prevDiscountedNet / prevDiscount : 0;
+    const yoyDiscount = previousYearSales.reduce((s, x) => s + (Number(x.discountAmount) || 0), 0);
+    const yoyDiscountedNet = previousYearSales.filter((x) => (Number(x.discountAmount) || 0) > 0).reduce((s, x) => s + ((Number(x.paymentValue) || 0) - (Number(x.paymentVAT) || 0)), 0);
+    const yoyEfficiency = yoyDiscount > 0 ? yoyDiscountedNet / yoyDiscount : 0;
+    return {
+      efficiency,
+      totalDiscount,
+      discountedTxns,
+      momGrowth: pctChange(efficiency, prevEfficiency),
+      yoyGrowth: pctChange(efficiency, yoyEfficiency),
+    };
+  }, [filteredSales, previousSales, previousYearSales]);
+
+  // ── Package Sell-through %: sessions used / sessions purchased ────────────
+  const packageSellThrough = useMemo(() => {
+    const packageRows = filteredSales.filter((s) => /pack|package/i.test(s.cleanedProduct || s.cleanedCategory || ''));
+    let totalClasses = 0, usedClasses = 0;
+    packageRows.forEach((s) => {
+      const total = Number(s.secMembershipTotalClasses) || 0;
+      const left = Number(s.secMembershipClassesLeft) || 0;
+      const used = Number(s.secMembershipUsedSessions) || (total > 0 && left >= 0 ? total - left : 0);
+      if (total > 0) { totalClasses += total; usedClasses += used; }
+    });
+    const rate = totalClasses > 0 ? (usedClasses / totalClasses) * 100 : 0;
+    const prevPackageRows = previousSales.filter((s) => /pack|package/i.test(s.cleanedProduct || s.cleanedCategory || ''));
+    let prevTotal = 0, prevUsed = 0;
+    prevPackageRows.forEach((s) => {
+      const t = Number(s.secMembershipTotalClasses) || 0;
+      const l = Number(s.secMembershipClassesLeft) || 0;
+      const u = Number(s.secMembershipUsedSessions) || (t > 0 && l >= 0 ? t - l : 0);
+      if (t > 0) { prevTotal += t; prevUsed += u; }
+    });
+    const prevRate = prevTotal > 0 ? (prevUsed / prevTotal) * 100 : 0;
+    const yoyPackageRows = previousYearSales.filter((s) => /pack|package/i.test(s.cleanedProduct || s.cleanedCategory || ''));
+    let yoyTotal = 0, yoyUsed = 0;
+    yoyPackageRows.forEach((s) => {
+      const t = Number(s.secMembershipTotalClasses) || 0;
+      const l = Number(s.secMembershipClassesLeft) || 0;
+      const u = Number(s.secMembershipUsedSessions) || (t > 0 && l >= 0 ? t - l : 0);
+      if (t > 0) { yoyTotal += t; yoyUsed += u; }
+    });
+    const yoyRate = yoyTotal > 0 ? (yoyUsed / yoyTotal) * 100 : 0;
+    return {
+      rate,
+      usedClasses,
+      totalClasses,
+      packages: packageRows.length,
+      momGrowth: pctChange(rate, prevRate),
+      yoyGrowth: pctChange(rate, yoyRate),
+    };
+  }, [filteredSales, previousSales, previousYearSales]);
+
+  // ── Repeat Purchase Rate: members with >1 purchase / total members ────────
+  const repeatPurchaseRate = useMemo(() => {
+    const memberTxns: Record<string, number> = {};
+    filteredSales.forEach((s) => { if (s.memberId) memberTxns[s.memberId] = (memberTxns[s.memberId] || 0) + 1; });
+    const total = Object.keys(memberTxns).length;
+    const repeaters = Object.values(memberTxns).filter((n) => n > 1).length;
+    const rate = total > 0 ? (repeaters / total) * 100 : 0;
+    const prevMap: Record<string, number> = {};
+    previousSales.forEach((s) => { if (s.memberId) prevMap[s.memberId] = (prevMap[s.memberId] || 0) + 1; });
+    const prevTotal = Object.keys(prevMap).length;
+    const prevRepeaters = Object.values(prevMap).filter((n) => n > 1).length;
+    const prevRate = prevTotal > 0 ? (prevRepeaters / prevTotal) * 100 : 0;
+    const yoyMap: Record<string, number> = {};
+    previousYearSales.forEach((s) => { if (s.memberId) yoyMap[s.memberId] = (yoyMap[s.memberId] || 0) + 1; });
+    const yoyTotal = Object.keys(yoyMap).length;
+    const yoyRepeaters = Object.values(yoyMap).filter((n) => n > 1).length;
+    const yoyRate = yoyTotal > 0 ? (yoyRepeaters / yoyTotal) * 100 : 0;
+    return { rate, repeaters, total, momGrowth: pctChange(rate, prevRate), yoyGrowth: pctChange(rate, yoyRate) };
+  }, [filteredSales, previousSales, previousYearSales]);
+
+  // ── Discount Code Performance table ──────────────────────────────────────
+  const discountCodePerf = useMemo(() => {
+    const map: Record<string, { revenue: number; txns: number; members: Set<string>; totalOrder: number }> = {};
+    filteredSales.forEach((s) => {
+      const code = (s.discountCode || '').trim();
+      if (!code) return;
+      if (!map[code]) map[code] = { revenue: 0, txns: 0, members: new Set(), totalOrder: 0 };
+      const net = (Number(s.paymentValue) || 0) - (Number(s.paymentVAT) || 0);
+      map[code].revenue += net;
+      map[code].txns += 1;
+      map[code].totalOrder += Number(s.paymentValue) || 0;
+      if (s.memberId) map[code].members.add(s.memberId);
+    });
+    return Object.entries(map).map(([code, d]) => ({
+      code,
+      revenue: d.revenue,
+      txns: d.txns,
+      members: d.members.size,
+      avgOrderValue: d.txns > 0 ? d.totalOrder / d.txns : 0,
+    })).sort((a, b) => b.revenue - a.revenue);
+  }, [filteredSales]);
 
   const salesMetricsMatrix = useMemo(() => {
     const monthlyMap = new Map<string, typeof filteredSales>();
@@ -1312,6 +1446,12 @@ const StudioPulse = memo(() => {
     const topSources = Object.entries(bySource)
       .map(([name, v]) => ({ name, count: v.count, rate: v.count ? (v.converted / v.count) * 100 : 0 }))
       .sort((a, b) => b.count - a.count);
+    const yoyTotal = previousYearLeads.length;
+    const yoyConverted = previousYearLeads.filter((l) => isLeadConverted(l)).length;
+    const yoyTrials = previousYearLeads.filter((l) => {
+      const t = (l.trialStatus || '').toLowerCase();
+      return t.includes('completed') || t.includes('trial') || t.includes('attended');
+    }).length;
     return {
       total,
       trials,
@@ -1327,8 +1467,14 @@ const StudioPulse = memo(() => {
         total: pctChange(total, previousLeads.length),
         conversionRate: pctChange(total ? (converted / total) * 100 : 0, previousLeads.length ? (previousLeads.filter((l) => isLeadConverted(l)).length / previousLeads.length) * 100 : 0),
       },
+      yoyGrowth: {
+        total: pctChange(total, yoyTotal),
+        trials: pctChange(trials, yoyTrials),
+        converted: pctChange(converted, yoyConverted),
+        conversionRate: pctChange(total ? (converted / total) * 100 : 0, yoyTotal ? (yoyConverted / yoyTotal) * 100 : 0),
+      },
     };
-  }, [filteredLeads, previousLeads]);
+  }, [filteredLeads, previousLeads, previousYearLeads]);
 
   /* ---------- Late cancellations ---------- */
   const lcStats = useMemo(() => {
@@ -1403,7 +1549,7 @@ const StudioPulse = memo(() => {
   );
 
   const studioWideExpirations = useMemo(
-    () => expirations.filter((item) => inStudio(item.homeLocation, studio)),
+    () => expirations.filter((item) => inStudio(item.primaryLocation || item.homeLocation, studio)),
     [expirations, studio]
   );
 
@@ -1572,12 +1718,12 @@ const StudioPulse = memo(() => {
     months.forEach((month) => {
       const monthRows = studioWideExpirations.filter((item) => monthKeyFromDate(item.endDate) === month);
       const total = monthRows.length;
-      const renewed = monthRows.filter((e) => /renew|active|converted|paid/i.test(e.status)).length;
-      const lapsed = monthRows.filter((e) => /lapsed|expired|inactive/i.test(e.status)).length;
-      const churned = monthRows.filter((e) => /churn/i.test(e.status)).length;
-      const reactivated = monthRows.filter((e) => /reactivat/i.test(e.status)).length;
-      const revenueRecovered = monthRows.filter((e) => /renew|active|converted|paid/i.test(e.status)).reduce((sum, e) => sum + (Number(e.paid) || 0), 0);
-      const revenueLost = monthRows.filter((e) => /lapsed|expired|inactive|churn/i.test(e.status)).reduce((sum, e) => sum + (Number(e.paid) || 0), 0);
+      const renewed = 0; // not available in this sheet format
+      const lapsed = total;
+      const churned = total; // all lapsed = churned in this sheet format
+      const reactivated = 0;
+      const revenueRecovered = 0;
+      const revenueLost = monthRows.reduce((sum, e) => sum + ((e as any).amountPaid || Number(e.paid) || 0), 0);
       const notRenewed = total - renewed - reactivated;
       const pending = monthRows.filter((e) => !e.status || /pending|unknown|n\/a/i.test(e.status)).length;
       rows[0].values[month] = total;
@@ -1608,6 +1754,152 @@ const StudioPulse = memo(() => {
     return Object.entries(byMembership).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredExpirations]);
 
+  // ── NEW LAPSED ANALYTICS MEMOS ──
+
+  const churnByMonth = useMemo(() => {
+    const monthly: Record<string, { total: number; byMembership: Record<string, number>; byLocation: Record<string, number>; totalAmountPaid: number; totalSessionsCompleted: number; totalDaysActive: number; rowCount: number }> = {};
+    studioWideExpirations.forEach((e) => {
+      const mk = monthKeyFromDate(e.endDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { total: 0, byMembership: {}, byLocation: {}, totalAmountPaid: 0, totalSessionsCompleted: 0, totalDaysActive: 0, rowCount: 0 };
+      const m = monthly[mk];
+      m.total += 1;
+      const mem = e.membershipName || 'Unknown';
+      m.byMembership[mem] = (m.byMembership[mem] || 0) + 1;
+      const loc = e.primaryLocation || e.homeLocation || 'Unknown';
+      m.byLocation[loc] = (m.byLocation[loc] || 0) + 1;
+      m.totalAmountPaid += (e as any).amountPaid || Number(e.paid) || 0;
+      m.totalSessionsCompleted += (e as any).totalSessionsCompleted || 0;
+      m.totalDaysActive += (e as any).daysActive || 0;
+      m.rowCount += 1;
+    });
+    return Object.entries(monthly)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([mk, d]) => ({
+        month: monthLabel(mk),
+        mk,
+        total: d.total,
+        byMembership: d.byMembership,
+        byLocation: d.byLocation,
+        avgAmountPaid: d.rowCount > 0 ? d.totalAmountPaid / d.rowCount : 0,
+        avgSessionsCompleted: d.rowCount > 0 ? d.totalSessionsCompleted / d.rowCount : 0,
+        avgDaysActive: d.rowCount > 0 ? d.totalDaysActive / d.rowCount : 0,
+      }));
+  }, [studioWideExpirations]);
+
+  const membershipChurnBreakdown = useMemo(() => {
+    const map: Record<string, { count: number; members: Set<string>; totalPaid: number; totalSessions: number; totalDaysActive: number; earlyExits: number; discountCodes: number }> = {};
+    studioWideExpirations.forEach((e) => {
+      const key = e.membershipName || 'Unknown';
+      if (!map[key]) map[key] = { count: 0, members: new Set(), totalPaid: 0, totalSessions: 0, totalDaysActive: 0, earlyExits: 0, discountCodes: 0 };
+      const g = map[key];
+      g.count += 1;
+      if (e.memberId) g.members.add(e.memberId);
+      g.totalPaid += (e as any).amountPaid || Number(e.paid) || 0;
+      const sessUsedPct = (e as any).sessionsUsedPct || 0;
+      g.totalSessions += sessUsedPct;
+      g.totalDaysActive += (e as any).daysActive || 0;
+      if (sessUsedPct < 50 && sessUsedPct > 0) g.earlyExits += 1;
+      if ((e as any).discountCode) g.discountCodes += 1;
+    });
+    return Object.entries(map)
+      .map(([name, d]) => ({
+        name,
+        count: d.count,
+        uniqueMembers: d.members.size,
+        avgLtv: d.members.size > 0 ? d.totalPaid / d.members.size : 0,
+        avgSessionsUsedPct: d.count > 0 ? d.totalSessions / d.count : 0,
+        avgDaysActive: d.count > 0 ? d.totalDaysActive / d.count : 0,
+        earlyExitRate: d.count > 0 ? (d.earlyExits / d.count) * 100 : 0,
+        discountRate: d.count > 0 ? (d.discountCodes / d.count) * 100 : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [studioWideExpirations]);
+
+  const lapsedEngagementStats = useMemo(() => {
+    let totalSessionsUsedPct = 0;
+    let totalAvgSessionsPerMonth = 0;
+    let totalDaysActive = 0;
+    let earlyExits = 0;
+    let discountDriven = 0;
+    let prevEarlyExits = 0;
+    let prevTotal = previousExpirations.length;
+    let prevAvgSessionsPerMonth = 0;
+    let yoyEarlyExits = 0;
+    let yoyTotal = previousYearExpirations.length;
+    let yoyAvgSessionsPerMonth = 0;
+    let count = filteredExpirations.length;
+
+    filteredExpirations.forEach((e) => {
+      const pct = (e as any).sessionsUsedPct || 0;
+      totalSessionsUsedPct += pct;
+      totalAvgSessionsPerMonth += (e as any).avgSessionsPerMonth || 0;
+      totalDaysActive += (e as any).daysActive || 0;
+      if (pct < 50 && pct > 0) earlyExits += 1;
+      if ((e as any).discountCode) discountDriven += 1;
+    });
+    previousExpirations.forEach((e) => {
+      const pct = (e as any).sessionsUsedPct || 0;
+      if (pct < 50 && pct > 0) prevEarlyExits += 1;
+      prevAvgSessionsPerMonth += (e as any).avgSessionsPerMonth || 0;
+    });
+    previousYearExpirations.forEach((e) => {
+      const pct = (e as any).sessionsUsedPct || 0;
+      if (pct < 50 && pct > 0) yoyEarlyExits += 1;
+      yoyAvgSessionsPerMonth += (e as any).avgSessionsPerMonth || 0;
+    });
+
+    const earlyExitRate = count > 0 ? (earlyExits / count) * 100 : 0;
+    const prevEarlyExitRate = prevTotal > 0 ? (prevEarlyExits / prevTotal) * 100 : 0;
+    const yoyEarlyExitRate = yoyTotal > 0 ? (yoyEarlyExits / yoyTotal) * 100 : 0;
+    const avgEngagement = count > 0 ? totalAvgSessionsPerMonth / count : 0;
+    const prevAvgEngagement = prevTotal > 0 ? prevAvgSessionsPerMonth / prevTotal : 0;
+    const yoyAvgEngagement = yoyTotal > 0 ? yoyAvgSessionsPerMonth / yoyTotal : 0;
+    const avgSessionsUsedPct = count > 0 ? totalSessionsUsedPct / count : 0;
+    const discountDrivenPct = count > 0 ? (discountDriven / count) * 100 : 0;
+
+    return {
+      earlyExitRate,
+      earlyExitCount: earlyExits,
+      earlyExitMomGrowth: pctChange(earlyExitRate, prevEarlyExitRate),
+      earlyExitYoyGrowth: pctChange(earlyExitRate, yoyEarlyExitRate),
+      avgEngagement,
+      avgEngagementMomGrowth: pctChange(avgEngagement, prevAvgEngagement),
+      avgEngagementYoyGrowth: pctChange(avgEngagement, yoyAvgEngagement),
+      avgSessionsUsedPct,
+      discountDrivenPct,
+      discountDrivenCount: discountDriven,
+    };
+  }, [filteredExpirations, previousExpirations, previousYearExpirations]);
+
+  // Back sparklines for new lapsed cards
+  const backEarlyExitSparkline = useMemo(() => {
+    const monthly: Record<string, { earlyExits: number; total: number }> = {};
+    const studioExp = expirations.filter((e) => inStudio(e.primaryLocation || e.homeLocation, studio));
+    studioExp.forEach((e) => {
+      const mk = monthKeyFromDate(e.endDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { earlyExits: 0, total: 0 };
+      monthly[mk].total += 1;
+      const pct = (e as any).sessionsUsedPct || 0;
+      if (pct < 50 && pct > 0) monthly[mk].earlyExits += 1;
+    });
+    return Object.entries(monthly).sort(([a], [b]) => a.localeCompare(b)).slice(-12).map(([, d]) => d.total > 0 ? (d.earlyExits / d.total) * 100 : 0);
+  }, [expirations, studio]);
+
+  const backEngagementSparkline = useMemo(() => {
+    const monthly: Record<string, { total: number; sum: number }> = {};
+    const studioExp = expirations.filter((e) => inStudio(e.primaryLocation || e.homeLocation, studio));
+    studioExp.forEach((e) => {
+      const mk = monthKeyFromDate(e.endDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { total: 0, sum: 0 };
+      monthly[mk].total += 1;
+      monthly[mk].sum += (e as any).avgSessionsPerMonth || 0;
+    });
+    return Object.entries(monthly).sort(([a], [b]) => a.localeCompare(b)).slice(-12).map(([, d]) => d.total > 0 ? d.sum / d.total : 0);
+  }, [expirations, studio]);
+
   const lapsedByTrainer = useMemo(() => {
     const byTrainer: Record<string, number> = {};
     filteredExpirations.forEach((e) => {
@@ -1618,18 +1910,209 @@ const StudioPulse = memo(() => {
   }, [filteredExpirations]);
 
   const winBackStats = useMemo(() => {
-    const reactivated = filteredExpirations.filter((e) => /reactivat/i.test(e.status)).length;
-    const prevReactivated = previousExpirations.filter((e) => /reactivat/i.test(e.status)).length;
-    const yoyReactivated = previousYearExpirations.filter((e) => /reactivat/i.test(e.status)).length;
+    // Build a lookup: memberId → all purchase dates (across all time, studio-scoped)
+    const purchaseDatesByMember: Record<string, number[]> = {};
+    studioWideSales.forEach((s) => {
+      if (!s.memberId || !s.paymentDate) return;
+      const t = new Date(s.paymentDate).getTime();
+      if (isNaN(t)) return;
+      if (!purchaseDatesByMember[s.memberId]) purchaseDatesByMember[s.memberId] = [];
+      purchaseDatesByMember[s.memberId].push(t);
+    });
+
+    const isWinBack = (memberId: string, endDate: string): boolean => {
+      const lapseMs = new Date(endDate).getTime();
+      if (isNaN(lapseMs)) return false;
+      const purchases = purchaseDatesByMember[memberId];
+      if (!purchases) return false;
+      // Any purchase >= 45 days after membership end date
+      return purchases.some((t) => t >= lapseMs + 45 * 86400000);
+    };
+
+    const reactivated = filteredExpirations.filter((e) => isWinBack(e.memberId, e.endDate)).length;
+    const prevReactivated = previousExpirations.filter((e) => isWinBack(e.memberId, e.endDate)).length;
+    const yoyReactivated = previousYearExpirations.filter((e) => isWinBack(e.memberId, e.endDate)).length;
     const total = filteredExpirations.length;
+    const prevTotal = previousExpirations.length;
+    const yoyTotal = previousYearExpirations.length;
     const winBackRate = total ? (reactivated / total) * 100 : 0;
+    const prevWinBackRate = prevTotal ? (prevReactivated / prevTotal) * 100 : 0;
+    const yoyWinBackRate = yoyTotal ? (yoyReactivated / yoyTotal) * 100 : 0;
     return {
       reactivated,
       winBackRate,
-      momGrowth: pctChange(reactivated, prevReactivated),
-      yoyGrowth: pctChange(reactivated, yoyReactivated),
+      momGrowth: pctChange(winBackRate, prevWinBackRate),
+      yoyGrowth: pctChange(winBackRate, yoyWinBackRate),
     };
-  }, [filteredExpirations, previousExpirations, previousYearExpirations]);
+  }, [filteredExpirations, previousExpirations, previousYearExpirations, studioWideSales]);
+
+  const revenuePerVisitStats = useMemo(() => {
+    const currentAttendance = sessionStats.attendance;
+    const previousAttendance = previousSessions.reduce((sum, s) => sum + (Number(s.checkedInCount) || 0), 0);
+    const yoyAttendance = previousYearSessions.reduce((sum, s) => sum + (Number(s.checkedInCount) || 0), 0);
+    const previousNet = previousSales.reduce((sum, d) => sum + (Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0), 0);
+    const yoyNet = previousYearSales.reduce((sum, d) => sum + (Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0), 0);
+    const value = currentAttendance ? salesStats.net / currentAttendance : 0;
+    const prevValue = previousAttendance ? previousNet / previousAttendance : 0;
+    const yoyValue = yoyAttendance ? yoyNet / yoyAttendance : 0;
+    return {
+      value,
+      momGrowth: pctChange(value, prevValue),
+      yoyGrowth: pctChange(value, yoyValue),
+    };
+  }, [salesStats.net, sessionStats.attendance, previousSales, previousSessions, previousYearSales, previousYearSessions]);
+
+  const revenuePerNewClientStats = useMemo(() => {
+    const prevNewClients = previousClients.filter((c) => isInNewClientCohort(c)).length;
+    const yoyNewClients = previousYearClients.filter((c) => isInNewClientCohort(c)).length;
+    const previousNet = previousSales.reduce((sum, d) => sum + (Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0), 0);
+    const yoyNet = previousYearSales.reduce((sum, d) => sum + (Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0), 0);
+    const value = clientStats.newClients > 0 ? salesStats.net / clientStats.newClients : 0;
+    const prevValue = prevNewClients > 0 ? previousNet / prevNewClients : 0;
+    const yoyValue = yoyNewClients > 0 ? yoyNet / yoyNewClients : 0;
+    return {
+      value,
+      momGrowth: pctChange(value, prevValue),
+      yoyGrowth: pctChange(value, yoyValue),
+    };
+  }, [clientStats.newClients, salesStats.net, previousClients, previousSales, previousYearClients, previousYearSales]);
+
+  // ── Instructor Efficiency ────────────────────────────────────────────────
+  const instructorEfficiency = useMemo(() => {
+    const map: Record<string, { trainer: string; sessions: number; emptySessions: number; totalCheckedIn: number; totalCapacity: number; totalRevenue: number }> = {};
+    teacherRecurring.forEach((r) => {
+      if (!inStudio(r.location, studio)) return;
+      if (!isWithinRange(r.date, dateRange)) return;
+      const key = r.trainer || `${r.firstName} ${r.lastName}`;
+      if (!map[key]) map[key] = { trainer: key, sessions: 0, emptySessions: 0, totalCheckedIn: 0, totalCapacity: 0, totalRevenue: 0 };
+      map[key].sessions += 1;
+      map[key].emptySessions += r.checkedIn === 0 ? 1 : 0;
+      map[key].totalCheckedIn += r.checkedIn;
+      map[key].totalCapacity += r.capacity;
+      map[key].totalRevenue += r.revenue;
+    });
+    return Object.values(map).map((d) => ({
+      trainer: d.trainer,
+      sessions: d.sessions,
+      emptySessions: d.emptySessions,
+      fillRate: d.totalCapacity > 0 ? (d.totalCheckedIn / d.totalCapacity) * 100 : 0,
+      classAvgExclEmpty: (d.sessions - d.emptySessions) > 0 ? d.totalCheckedIn / (d.sessions - d.emptySessions) : 0,
+      revenuePerClass: d.sessions > 0 ? d.totalRevenue / d.sessions : 0,
+      totalRevenue: d.totalRevenue,
+    })).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  }, [teacherRecurring, studio, dateRange]);
+
+  // ── Peak Hour / Day-of-Week Heatmap ────────────────────────────────────
+  const peakHourHeatmap = useMemo(() => {
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    // Per cell: track attendance/booked/lateCancels as counts, and sessionId→capacity map for accurate total capacity
+    type Cell = { attendance: number; booked: number; lateCancels: number; sessionCapacity: Map<string, number> };
+    const buckets: Record<string, Record<string, Cell>> = {};
+    const hourSet = new Set<number>();
+
+    checkins.forEach((c) => {
+      if (!inStudio(c.location, studio)) return;
+      if (!isWithinRange(c.dateIST, dateRange)) return;
+      const hour = parseInt(c.time);
+      if (isNaN(hour)) return;
+      hourSet.add(hour);
+      const slot = `${hour}:00`;
+      const day = c.dayOfWeek;
+      if (!DAYS.includes(day)) return;
+      if (!buckets[slot]) buckets[slot] = {};
+      if (!buckets[slot][day]) buckets[slot][day] = { attendance: 0, booked: 0, lateCancels: 0, sessionCapacity: new Map() };
+      const cell = buckets[slot][day];
+      if (c.checkedIn) cell.attendance += 1;
+      if (c.isLateCancelled) cell.lateCancels += 1;
+      cell.booked += 1;
+      // Store capacity once per unique sessionId — avoids multiplying capacity by attendee count
+      if (c.sessionId && !cell.sessionCapacity.has(c.sessionId)) {
+        cell.sessionCapacity.set(c.sessionId, c.capacity);
+      }
+    });
+
+    const sortedSlots = Array.from(hourSet).sort((a, b) => a - b).map((h) => `${h}:00`);
+
+    const flatBuckets: Record<string, Record<string, { attendance: number; capacity: number; classes: number; lateCancels: number; booked: number; fillRate: number }>> = {};
+    sortedSlots.forEach((slot) => {
+      flatBuckets[slot] = {};
+      DAYS.forEach((day) => {
+        const c = buckets[slot]?.[day];
+        if (!c) { flatBuckets[slot][day] = { attendance: 0, capacity: 0, classes: 0, lateCancels: 0, booked: 0, fillRate: 0 }; return; }
+        const totalCapacity = Array.from(c.sessionCapacity.values()).reduce((s, v) => s + v, 0);
+        flatBuckets[slot][day] = {
+          attendance: c.attendance,
+          capacity: totalCapacity,
+          classes: c.sessionCapacity.size,
+          lateCancels: c.lateCancels,
+          booked: c.booked,
+          fillRate: totalCapacity > 0 ? (c.attendance / totalCapacity) * 100 : 0,
+        };
+      });
+    });
+
+    return { buckets: flatBuckets, days: DAYS, timeSlots: sortedSlots };
+  }, [checkins, studio, dateRange]);
+
+  // ── Complementary Class Rate MoM Trend (all-time, date-range independent) ──
+  // Free/comp visits from recurringData.nonPaid — date-range independent, studio-scoped
+  const compRateTrend = useMemo(() => {
+    const monthly: Record<string, { totalCheckedIn: number; nonPaid: number; complimentary: number }> = {};
+    recurringData.forEach((r) => {
+      if (!inStudio(r.location, studio)) return;
+      const mk = monthKeyFromDate(r.date);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { totalCheckedIn: 0, nonPaid: 0, complimentary: 0 };
+      monthly[mk].totalCheckedIn += r.checkedIn || 0;
+      monthly[mk].nonPaid += r.nonPaid || 0;
+      monthly[mk].complimentary += r.complimentary || 0;
+    });
+    return Object.entries(monthly).sort(([a], [b]) => a.localeCompare(b)).map(([mk, d]) => ({
+      month: monthLabel(mk),
+      nonPaidRate: d.totalCheckedIn > 0 ? (d.nonPaid / d.totalCheckedIn) * 100 : 0,
+      compRate: d.totalCheckedIn > 0 ? (d.complimentary / d.totalCheckedIn) * 100 : 0,
+      nonPaid: d.nonPaid,
+      complimentary: d.complimentary,
+      totalCheckedIn: d.totalCheckedIn,
+    }));
+  }, [recurringData, studio]);
+
+  // ── Product Mix by Month ─────────────────────────────────────────────────
+  const productMixByMonth = useMemo(() => {
+    const monthly: Record<string, { memberships: number; packages: number; introOffers: number; singleClasses: number }> = {};
+    recurringData.forEach((r) => {
+      if (!inStudio(r.location, studio)) return;
+      if (!isWithinRange(r.date, dateRange)) return;
+      const mk = monthKeyFromDate(r.date);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { memberships: 0, packages: 0, introOffers: 0, singleClasses: 0 };
+      monthly[mk].memberships += r.memberships || 0;
+      monthly[mk].packages += r.packages || 0;
+      monthly[mk].introOffers += r.introOffers || 0;
+      monthly[mk].singleClasses += r.singleClasses || 0;
+    });
+    return Object.entries(monthly).sort(([a], [b]) => a.localeCompare(b)).map(([mk, d]) => ({ month: monthLabel(mk), ...d }));
+  }, [recurringData, studio, dateRange]);
+
+  // ── Capacity Utilization by Studio ──────────────────────────────────────
+  const capacityByStudio = useMemo(() => {
+    const map: Record<string, { booked: number; capacity: number; sessions: number }> = {};
+    recurringData.forEach((r) => {
+      if (!isWithinRange(r.date, dateRange)) return;
+      const loc = r.location || 'Unknown';
+      if (!map[loc]) map[loc] = { booked: 0, capacity: 0, sessions: 0 };
+      map[loc].booked += r.checkedIn;
+      map[loc].capacity += r.capacity;
+      map[loc].sessions += 1;
+    });
+    return Object.entries(map).map(([location, d]) => ({
+      location,
+      booked: d.booked,
+      capacity: d.capacity,
+      sessions: d.sessions,
+      utilization: d.capacity > 0 ? (d.booked / d.capacity) * 100 : 0,
+    })).sort((a, b) => b.utilization - a.utilization);
+  }, [recurringData, dateRange]);
 
   const [funnelRankingDimension, setFunnelRankingDimension] = useState<'source' | 'location' | 'stage' | 'membership' | 'class'>('source');
   const [newMemberTableMetric, setNewMemberTableMetric] = useState<'source' | 'membership' | 'class'>('source');
@@ -1652,14 +2135,19 @@ const StudioPulse = memo(() => {
   const [churnLocationMetric, setChurnLocationMetric] = useState<'count' | 'penalty'>('count');
   const [lapseRankDimension, setLapseRankDimension] = useState<'membership' | 'location'>('membership');
   const [showSalesRankings, setShowSalesRankings] = useState(false);
+  const [showDiscountCodes, setShowDiscountCodes] = useState(false);
   const [showFunnelRankings, setShowFunnelRankings] = useState(false);
   const [showTrainerRankings, setShowTrainerRankings] = useState(false);
   const [showLapseRankings, setShowLapseRankings] = useState(false);
+  const [showLapsedChurnTrend, setShowLapsedChurnTrend] = useState(false);
+  const [lapsedTableTab, setLapsedTableTab] = useState<'breakdown' | 'renewal' | 'churned' | 'highvalue'>('churned');
+  const [churnTrendMetric, setChurnTrendMetric] = useState<'count' | 'ltv'>('count');
   const [showSessionRankings, setShowSessionRankings] = useState(false);
   const [sessionRankingDimension, setSessionRankingDimension] = useState<'class' | 'trainer' | 'format' | 'location' | 'day' | 'time'>('class');
   const [sessionRankingMetric, setSessionRankingMetric] = useState<'classAvg' | 'fillRate' | 'visits' | 'sessions' | 'revenue' | 'cancellationRate' | 'revPerCheckin' | 'compositeScore'>('classAvg');
   const [sessionRankingCount, setSessionRankingCount] = useState<10 | 20 | 30>(10);
   const [sessionViewMode, setSessionViewMode] = useState<'grouped' | 'flat'>('grouped');
+  const [heatmapMetric, setHeatmapMetric] = useState<'attendance' | 'classes' | 'booked' | 'lateCancels' | 'fillRate'>('attendance');
   const [sessionTableView, setSessionTableView] = useState<'default' | 'performance' | 'revenue' | 'attendance' | 'capacity' | 'cancellations'>('default');
   const [sessionDensity, setSessionDensity] = useState<'comfortable' | 'compact'>('comfortable');
   const [sessionMinCheckins, setSessionMinCheckins] = useState(0);
@@ -2329,8 +2817,64 @@ const StudioPulse = memo(() => {
     return Object.keys(monthly).sort().map((k) => monthly[k].size);
   }, [studioWideSales]);
 
+  // Back sparklines for the 4 new overview cards (all-time, studio-wide)
+  const backDiscountEfficiencySparkline = useMemo(() => {
+    const monthly: Record<string, { disc: number; net: number }> = {};
+    studioWideSales.forEach((s) => {
+      const mk = monthKeyFromDate(s.paymentDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { disc: 0, net: 0 };
+      const disc = Number(s.discountAmount) || 0;
+      if (disc > 0) {
+        monthly[mk].disc += disc;
+        monthly[mk].net += (Number(s.paymentValue) || 0) - (Number(s.paymentVAT) || 0);
+      }
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].disc > 0 ? monthly[k].net / monthly[k].disc : 0);
+  }, [studioWideSales]);
+
+  const backPackageSellThroughSparkline = useMemo(() => {
+    const monthly: Record<string, { total: number; used: number }> = {};
+    studioWideSales.filter((s) => /pack|package/i.test(s.cleanedProduct || s.cleanedCategory || '')).forEach((s) => {
+      const mk = monthKeyFromDate(s.paymentDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { total: 0, used: 0 };
+      const t = Number(s.secMembershipTotalClasses) || 0;
+      const u = Number(s.secMembershipUsedSessions) || (t > 0 ? t - (Number(s.secMembershipClassesLeft) || 0) : 0);
+      if (t > 0) { monthly[mk].total += t; monthly[mk].used += u; }
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].total > 0 ? (monthly[k].used / monthly[k].total) * 100 : 0);
+  }, [studioWideSales]);
+
+  const backRepeatPurchaseSparkline = useMemo(() => {
+    const monthly: Record<string, Record<string, number>> = {};
+    studioWideSales.forEach((s) => {
+      const mk = monthKeyFromDate(s.paymentDate);
+      if (!mk || !s.memberId) return;
+      if (!monthly[mk]) monthly[mk] = {};
+      monthly[mk][s.memberId] = (monthly[mk][s.memberId] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((k) => {
+      const counts = Object.values(monthly[k]);
+      const total = counts.length;
+      return total > 0 ? (counts.filter((n) => n > 1).length / total) * 100 : 0;
+    });
+  }, [studioWideSales]);
+
+  const backAvgOrderValueSparkline = useMemo(() => {
+    const monthly: Record<string, { sum: number; count: number }> = {};
+    studioWideSales.forEach((s) => {
+      const mk = monthKeyFromDate(s.paymentDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = { sum: 0, count: 0 };
+      monthly[mk].sum += Number(s.paymentValue) || 0;
+      monthly[mk].count += 1;
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].count > 0 ? monthly[k].sum / monthly[k].count : 0);
+  }, [studioWideSales]);
+
   const backLapsedMembersSparkline = useMemo(() => {
-    const studioWideExpirations = expirations.filter((item) => inStudio(item.homeLocation, studio));
+    const studioWideExpirations = expirations.filter((item) => inStudio(item.primaryLocation || item.homeLocation, studio));
     const monthly: Record<string, number> = {};
     studioWideExpirations.forEach((d) => {
       const mk = monthKeyFromDate(d.endDate);
@@ -2720,6 +3264,23 @@ const StudioPulse = memo(() => {
     joinSession(code, name, applySnapshot);
   }, [joinSession, applySnapshot]);
 
+  // Auto-join from shareable URL: ?join=CODE&viewer=NAME
+  useEffect(() => {
+    const code = searchParams.get('join');
+    const name = searchParams.get('viewer') || '';
+    if (code && code.length === 6 && presenterMode.role === 'idle') {
+      handleJoinSession(code.toUpperCase(), name);
+      // Remove params from URL after consuming
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('join');
+        next.delete('viewer');
+        return next;
+      }, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Lock viewer controls when following
   const viewerLocked = presenterMode.role === 'viewer' && presenterMode.isConnected;
 
@@ -2734,82 +3295,128 @@ const StudioPulse = memo(() => {
 
       <div className="relative z-10 mx-auto max-w-[1400px] px-4 py-8 md:px-8">
         {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative mb-6"
-        >
-          {/* Project badge — top right */}
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="absolute right-0 top-0 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-slate-500 backdrop-blur shadow-sm"
-          >
-            <span className="text-slate-400 font-normal">Project by</span>
-            <span className="text-slate-800 font-bold tracking-wide">Jimmeey Gondaa</span>
-          </motion.div>
+        <header className="relative mb-6 overflow-hidden rounded-3xl">
+          {/* Cinematic dark backdrop */}
+          <div className="relative flex flex-col items-center justify-center px-8 py-10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 rounded-3xl overflow-hidden">
 
-          {/* SOMA animated title — centered */}
-          <div className="flex flex-col items-center text-center pt-2">
-            <div className="relative inline-block">
-              <h1 className="text-6xl font-black tracking-[0.22em] md:text-7xl lg:text-8xl">
-                {(['S','O','M','A'] as const).map((letter, i) => (
+            {/* Ambient grid lines — decorative */}
+            <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{
+              backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+              backgroundSize: '48px 48px',
+            }} />
+
+            {/* Left radial glow */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.8, ease: 'easeOut' }}
+              className="pointer-events-none absolute -left-24 top-1/2 -translate-y-1/2 h-[320px] w-[320px] rounded-full bg-rose-600/20 blur-[80px]"
+            />
+            {/* Right radial glow */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.8, delay: 0.2, ease: 'easeOut' }}
+              className="pointer-events-none absolute -right-24 top-1/2 -translate-y-1/2 h-[320px] w-[320px] rounded-full bg-indigo-600/20 blur-[80px]"
+            />
+
+            {/* Project badge — top right */}
+            <motion.div
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 1.4 }}
+              className="absolute right-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold text-white/50 backdrop-blur"
+            >
+              <span className="text-white/30 font-normal">by</span>
+              <span className="text-white/70 font-bold tracking-wide">Jimmeey Gondaa</span>
+            </motion.div>
+
+            {/* Physique57 logo */}
+            <motion.div
+              initial={{ opacity: 0, y: -12, scale: 0.85 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-5 flex items-center justify-center"
+            >
+              <div className="relative flex items-center gap-3">
+                <div className="h-px w-10 bg-gradient-to-r from-transparent to-white/20" />
+                <img
+                  src="/physique57-logo.png"
+                  alt="Physique57"
+                  className="h-7 w-auto object-contain brightness-0 invert opacity-70"
+                />
+                <div className="h-px w-10 bg-gradient-to-l from-transparent to-white/20" />
+              </div>
+            </motion.div>
+
+            {/* Main title — word-by-word reveal */}
+            <div className="relative flex flex-col items-center text-center">
+              <h1 className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1">
+                {(['Performance', 'Analytics', 'Suite'] as const).map((word, i) => (
                   <motion.span
-                    key={letter}
-                    initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
+                    key={word}
+                    initial={{ opacity: 0, y: 32, filter: 'blur(16px)' }}
                     animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={{ duration: 0.9, delay: 0.2 + i * 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    className="inline-block bg-gradient-to-b from-slate-900 via-slate-700 to-slate-400 bg-clip-text text-transparent select-none"
+                    transition={{ duration: 1.0, delay: 0.35 + i * 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    className={cn(
+                      'inline-block select-none font-black leading-none tracking-tight',
+                      'text-5xl md:text-6xl lg:text-7xl',
+                      i === 0 && 'bg-gradient-to-br from-white via-white to-white/60 bg-clip-text text-transparent',
+                      i === 1 && 'bg-gradient-to-br from-rose-300 via-rose-400 to-rose-600 bg-clip-text text-transparent',
+                      i === 2 && 'bg-gradient-to-br from-white/50 via-white/30 to-white/10 bg-clip-text text-transparent',
+                    )}
                   >
-                    {letter}
+                    {word}
                   </motion.span>
                 ))}
               </h1>
 
-              {/* Glow shine sweep — fires after all letters land */}
+              {/* Shine sweep across title */}
               <motion.div
-                initial={{ x: '-110%', opacity: 0 }}
-                animate={{ x: '110%', opacity: [0, 0.7, 0] }}
-                transition={{ duration: 0.75, delay: 1.05, ease: 'easeInOut' }}
-                className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent"
+                initial={{ x: '-120%', opacity: 0 }}
+                animate={{ x: '120%', opacity: [0, 0.5, 0] }}
+                transition={{ duration: 1.1, delay: 1.2, ease: 'easeInOut' }}
+                className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent"
               />
 
-              {/* Underline — grows from center after shine */}
+              {/* Underline — center-out grow */}
               <motion.div
                 initial={{ scaleX: 0, opacity: 0 }}
                 animate={{ scaleX: 1, opacity: 1 }}
-                transition={{ duration: 0.7, delay: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.8, delay: 1.35, ease: [0.22, 1, 0.36, 1] }}
                 style={{ transformOrigin: 'center' }}
-                className="mt-1.5 h-[2px] w-full rounded-full bg-gradient-to-r from-transparent via-slate-400 to-transparent"
+                className="mt-3 h-px w-4/5 rounded-full bg-gradient-to-r from-transparent via-white/25 to-transparent"
               />
             </div>
 
-            {/* Expanded acronym — fades in last */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
+            {/* Subtitle — data-driven tagline */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 1.25 }}
-              className="mt-4 flex items-center justify-center gap-0 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400"
+              transition={{ duration: 0.6, delay: 1.5 }}
+              className="mt-4 text-[11px] font-semibold uppercase tracking-[0.32em] text-white/30"
             >
-              {[
-                { letter: 'S', word: 'Studio' },
-                { letter: 'O', word: 'Operations' },
-                { letter: 'M', word: 'Metrics' },
-                { letter: 'A', word: 'Analytics' },
-              ].map(({ letter, word }, i) => (
-                <React.Fragment key={letter}>
-                  <span className="flex items-baseline gap-[1px]">
-                    <span className="text-slate-700 font-black">{letter}</span>
-                    <span className="text-slate-400">{word.slice(1).toLowerCase()}</span>
-                  </span>
-                  {i < 3 && <span className="mx-2.5 text-slate-200">·</span>}
-                </React.Fragment>
-              ))}
-            </motion.div>
+              Studio · Operations · Intelligence
+            </motion.p>
+
+            {/* Floating data dots — ambient decoration */}
+            {[
+              { x: '8%', y: '20%', delay: 1.6, size: 'h-1.5 w-1.5', color: 'bg-rose-400' },
+              { x: '92%', y: '25%', delay: 1.75, size: 'h-1 w-1', color: 'bg-indigo-400' },
+              { x: '5%', y: '72%', delay: 1.85, size: 'h-1 w-1', color: 'bg-white/40' },
+              { x: '95%', y: '68%', delay: 1.7, size: 'h-1.5 w-1.5', color: 'bg-rose-300' },
+            ].map((dot, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: dot.delay }}
+                className={cn('pointer-events-none absolute rounded-full', dot.size, dot.color)}
+                style={{ left: dot.x, top: dot.y }}
+              />
+            ))}
           </div>
-        </motion.header>
+        </header>
 
         {/* Toolbar row: presenter + icon actions */}
         <div className="mb-3 flex items-center gap-2">
@@ -3094,13 +3701,13 @@ const StudioPulse = memo(() => {
               <StudioPulseMetricCard
                 icon={<Repeat className="h-5 w-5" />}
                 title="Revenue / Visit"
-                metric={sessionStats.attendance ? salesStats.net / sessionStats.attendance : 0}
+                metric={revenuePerVisitStats.value}
                 precision={0}
                 formatter={formatCurrency}
                 growthLabel="MoM"
-                growthValue={salesStats.growth.net}
+                growthValue={revenuePerVisitStats.momGrowth}
                 secondaryGrowthLabel="YoY"
-                secondaryGrowthValue={salesStats.yoyGrowth.net}
+                secondaryGrowthValue={revenuePerVisitStats.yoyGrowth}
                 sparklineData={revenueSparkline}
                 sparklineLabels={revenueSparklineLabels}
                 backSparklineData={backRevenuePerVisitSparkline}
@@ -3126,6 +3733,96 @@ const StudioPulse = memo(() => {
                 subtext={`${formatNumber(lcStats.sameDay)} same-day · Penalties ${formatCurrency(lcStats.penalty)}`}
                 iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-700 text-white"
                 onClick={() => openMetricDrillDown('Late Cancellations', 'location', { name: activeStudio.name, rawData: filteredLateCancels, filteredTransactionData: filteredLateCancels }, filteredLateCancels)}
+              />
+              <StudioPulseMetricCard
+                icon={<TrendingUp className="h-5 w-5" />}
+                title="Rev / New Client"
+                metric={revenuePerNewClientStats.value}
+                precision={0}
+                formatter={formatCurrency}
+                growthLabel="MoM"
+                growthValue={revenuePerNewClientStats.momGrowth}
+                secondaryGrowthLabel="YoY"
+                secondaryGrowthValue={revenuePerNewClientStats.yoyGrowth}
+                sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                tooltipContent="Net revenue divided by new clients acquired. Measures how much revenue each new client drives."
+                subtext={`${formatNumber(clientStats.newClients)} new clients · ${formatCurrency(salesStats.net)} net`}
+                iconContainerClassName="bg-gradient-to-br from-violet-600 to-purple-800 text-white"
+              />
+              <StudioPulseMetricCard
+                icon={<Percent className="h-5 w-5" />}
+                title="Discount Efficiency"
+                metric={discountEfficiency.efficiency}
+                precision={2}
+                formatter={(v) => `₹${v.toFixed(2)}`}
+                growthLabel="MoM"
+                growthValue={discountEfficiency.momGrowth}
+                secondaryGrowthLabel="YoY"
+                secondaryGrowthValue={discountEfficiency.yoyGrowth}
+                sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backDiscountEfficiencySparkline}
+                backSparklineLabels={revenueSparklineLabels}
+                tooltipContent="Net revenue generated per ₹1 discounted. Above ₹1 = discount driving net-positive sales."
+                subtext={`${formatNumber(discountEfficiency.discountedTxns)} discounted txns · ${formatCurrency(discountEfficiency.totalDiscount)} total discount`}
+                iconContainerClassName="bg-gradient-to-br from-amber-500 to-orange-700 text-white"
+              />
+              <StudioPulseMetricCard
+                icon={<TrendingUp className="h-5 w-5" />}
+                title="Package Sell-through"
+                metric={packageSellThrough.rate}
+                precision={1}
+                metricUnit="%"
+                formatter={(v) => `${v.toFixed(1)}%`}
+                growthLabel="MoM"
+                growthValue={packageSellThrough.momGrowth}
+                secondaryGrowthLabel="YoY"
+                secondaryGrowthValue={packageSellThrough.yoyGrowth}
+                sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backPackageSellThroughSparkline}
+                backSparklineLabels={revenueSparklineLabels}
+                tooltipContent="Classes used vs. classes purchased across all active class packs."
+                subtext={`${formatNumber(packageSellThrough.usedClasses)} used of ${formatNumber(packageSellThrough.totalClasses)} purchased`}
+                iconContainerClassName="bg-gradient-to-br from-sky-500 to-cyan-700 text-white"
+              />
+              <StudioPulseMetricCard
+                icon={<Repeat className="h-5 w-5" />}
+                title="Repeat Purchase Rate"
+                metric={repeatPurchaseRate.rate}
+                precision={1}
+                metricUnit="%"
+                formatter={(v) => `${v.toFixed(1)}%`}
+                growthLabel="MoM"
+                growthValue={repeatPurchaseRate.momGrowth}
+                secondaryGrowthLabel="YoY"
+                secondaryGrowthValue={repeatPurchaseRate.yoyGrowth}
+                sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backRepeatPurchaseSparkline}
+                backSparklineLabels={revenueSparklineLabels}
+                tooltipContent="% of members who made more than one purchase in the selected period."
+                subtext={`${formatNumber(repeatPurchaseRate.repeaters)} repeat of ${formatNumber(repeatPurchaseRate.total)} members`}
+                iconContainerClassName="bg-gradient-to-br from-emerald-500 to-green-800 text-white"
+              />
+              <StudioPulseMetricCard
+                icon={<CircleDollarSign className="h-5 w-5" />}
+                title="Avg Order Value"
+                metric={avgOrderValue.value}
+                precision={0}
+                formatter={formatCurrency}
+                growthLabel="MoM"
+                growthValue={avgOrderValue.momGrowth}
+                secondaryGrowthLabel="YoY"
+                secondaryGrowthValue={avgOrderValue.yoyGrowth}
+                sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backAvgOrderValueSparkline}
+                backSparklineLabels={revenueSparklineLabels}
+                tooltipContent="Average gross order value per transaction in the selected period."
+                subtext={`${formatNumber(salesStats.txns)} transactions · ${formatCurrency(salesStats.gross)} gross`}
+                iconContainerClassName="bg-gradient-to-br from-indigo-500 to-blue-800 text-white"
               />
             </div>
 
@@ -3211,6 +3908,10 @@ const StudioPulse = memo(() => {
                         <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
                           <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Rankings</span>
                           <Switch checked={showSalesRankings} onCheckedChange={setShowSalesRankings} />
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Discount Codes</span>
+                          <Switch checked={showDiscountCodes} onCheckedChange={setShowDiscountCodes} />
                         </div>
                       </div>
                     </div>
@@ -3322,6 +4023,111 @@ const StudioPulse = memo(() => {
                     `The lead over the next seller is ${formatCurrency(salesSellerSummary.gap)}.`,
                   ])}
                 </>}
+
+              {/* Product Mix Shift */}
+              {productMixByMonth.length > 0 && (
+                <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10">
+                      <BarChart2 className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Product Mix Shift</h4>
+                      <p className="text-xs text-white/60">Memberships · Packages · Intro Offers · Single Classes — month-on-month</p>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart data={productMixByMonth} barCategoryGap="30%">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
+                        <Bar dataKey="memberships" name="Memberships" fill="#1e3a8a" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="packages" name="Packages" fill="#0e7490" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="introOffers" name="Intro Offers" fill="#6d28d9" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="singleClasses" name="Single Classes" fill="#be123c" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {/* Discount Code Performance — toggled */}
+              {showDiscountCodes && (
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                        <Percent className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Discount Code Performance</h4>
+                        <p className="text-xs text-white/50">{discountCodePerf.length} active codes in selected period · sorted by revenue</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-amber-500/20 px-3 py-1 text-[11px] font-bold text-amber-300 border border-amber-500/30">
+                      {discountCodePerf.length} codes
+                    </span>
+                  </div>
+                  {discountCodePerf.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                            <th className="border-b border-slate-200 px-5 py-3 text-left font-bold">#</th>
+                            <th className="border-b border-slate-200 px-5 py-3 text-left font-bold">Code</th>
+                            <th className="border-b border-slate-200 px-4 py-3 text-right font-bold">Revenue</th>
+                            <th className="border-b border-slate-200 px-4 py-3 text-right font-bold">Txns</th>
+                            <th className="border-b border-slate-200 px-4 py-3 text-right font-bold">Members</th>
+                            <th className="border-b border-slate-200 px-4 py-3 text-right font-bold">Avg Order</th>
+                            <th className="border-b border-slate-200 px-4 py-3 text-right font-bold">Rev Share</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {discountCodePerf.map((row, i) => {
+                            const totalRev = discountCodePerf.reduce((s, r) => s + r.revenue, 0);
+                            const share = totalRev > 0 ? (row.revenue / totalRev) * 100 : 0;
+                            return (
+                              <tr key={row.code} className={`transition-colors hover:bg-slate-50/80 ${i % 2 === 1 ? 'bg-slate-50/40' : ''}`}>
+                                <td className="px-5 py-2.5 text-[11px] font-bold text-slate-400 tabular-nums">{i + 1}</td>
+                                <td className="px-5 py-2.5">
+                                  <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-amber-800">{row.code}</span>
+                                </td>
+                                <td className="px-4 py-2.5 text-right tabular-nums font-bold text-slate-900">{formatCurrency(row.revenue)}</td>
+                                <td className="px-4 py-2.5 text-right tabular-nums text-slate-600">{formatNumber(row.txns)}</td>
+                                <td className="px-4 py-2.5 text-right tabular-nums text-slate-600">{formatNumber(row.members)}</td>
+                                <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{formatCurrency(row.avgOrderValue)}</td>
+                                <td className="px-4 py-2.5 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                                      <div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.min(share, 100)}%` }} />
+                                    </div>
+                                    <span className="tabular-nums text-xs font-semibold text-slate-500">{share.toFixed(1)}%</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-slate-900 text-white text-xs font-bold h-[40px]">
+                            <td className="px-5 py-2" colSpan={2}>Totals</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(discountCodePerf.reduce((s, r) => s + r.revenue, 0))}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{formatNumber(discountCodePerf.reduce((s, r) => s + r.txns, 0))}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{formatNumber(discountCodePerf.reduce((s, r) => s + r.members, 0))}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(discountCodePerf.reduce((s, r) => s + r.revenue, 0) / Math.max(discountCodePerf.reduce((s, r) => s + r.txns, 0), 1))}</td>
+                            <td className="px-4 py-2 text-right">100%</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-sm text-slate-400">No discount codes found in selected period.</div>
+                  )}
+                </div>
+              )}
               </div>
             </AnimatedSectionCard>
 
@@ -3346,7 +4152,7 @@ const StudioPulse = memo(() => {
               }
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <StudioPulseMetricCard icon={<Users className="h-5 w-5" />} title="Leads Received" metric={leadStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={leadStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="All leads captured in the active period" iconContainerClassName="bg-gradient-to-br from-blue-700 to-slate-900 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
+                <StudioPulseMetricCard icon={<Users className="h-5 w-5" />} title="Leads Received" metric={leadStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={leadStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={leadStats.yoyGrowth.total} subtext="All leads captured in the active period" iconContainerClassName="bg-gradient-to-br from-blue-700 to-slate-900 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
                 <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Trials / First Visits" metric={clientStats.newClients} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.newClients} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.newClients} subtext="Unique first visits from New sheet" iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
                 <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Converted Members" metric={clientStats.converted} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.converted} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.converted} subtext={`${formatPercentage(clientStats.conversionRate)} conversion rate`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-800 text-white" backSparklineData={backConvertedSparkline} backSparklineLabels={backClientSparklineLabels} />
                 <StudioPulseMetricCard icon={<Wallet className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retained} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retained} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" backSparklineData={backRetainedSparkline} backSparklineLabels={backClientSparklineLabels} />
@@ -4218,6 +5024,49 @@ const StudioPulse = memo(() => {
               </div>
               </>}
 
+              {/* Instructor Efficiency Table */}
+              {instructorEfficiency.length > 0 && (
+                <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10">
+                      <BarChart2 className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Instructor Efficiency</h4>
+                      <p className="text-xs text-white/60">Revenue, fill rate, and class average per instructor</p>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50">
+                          <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-slate-500">Instructor</th>
+                          <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Sessions</th>
+                          <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Empty</th>
+                          <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Fill %</th>
+                          <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Avg (Excl Empty)</th>
+                          <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Rev / Class</th>
+                          <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Total Rev</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {instructorEfficiency.map((row, i) => (
+                          <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="px-4 py-2.5 font-medium text-slate-900">{row.trainer}</td>
+                            <td className="px-4 py-2.5 tabular-nums text-right text-slate-600">{formatNumber(row.sessions)}</td>
+                            <td className="px-4 py-2.5 tabular-nums text-right text-slate-500">{formatNumber(row.emptySessions)}</td>
+                            <td className="px-4 py-2.5 tabular-nums text-right font-semibold text-slate-800">{row.fillRate.toFixed(1)}%</td>
+                            <td className="px-4 py-2.5 tabular-nums text-right text-slate-700">{row.classAvgExclEmpty.toFixed(1)}</td>
+                            <td className="px-4 py-2.5 tabular-nums text-right text-slate-700">{formatCurrency(row.revenuePerClass)}</td>
+                            <td className="px-4 py-2.5 tabular-nums text-right font-bold text-slate-900">{formatCurrency(row.totalRevenue)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Summary — full width at bottom */}
               <div className="mt-6">
                 {renderAISummary('trainers', [
@@ -4239,6 +5088,10 @@ const StudioPulse = memo(() => {
               action={
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Churn Trend</span>
+                    <Switch checked={showLapsedChurnTrend} onCheckedChange={setShowLapsedChurnTrend} />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
                     <Switch checked={showLapsedMomTable} onCheckedChange={setShowLapsedMomTable} />
                   </div>
@@ -4250,38 +5103,69 @@ const StudioPulse = memo(() => {
               }
             >
               {/* Metric cards */}
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                 <StudioPulseMetricCard icon={<Flame className="h-5 w-5" />} title="Lapsed Members" metric={expirationStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} sparklineData={lapsedCountSparkline} sparklineLabels={lapsedCountSparklineLabels} backSparklineData={backLapsedMembersSparkline} backSparklineLabels={backRevenueSparklineLabels} subtext={`${formatNumber(expirationStats.churned)} churned · memberships expired`} iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-800 text-white" onClick={() => openMetricDrillDown('Lapsed Members', 'client', { name: 'Lapsed Members', rawData: filteredExpirations as any, filteredTransactionData: filteredExpirations as any }, filteredExpirations as any)} />
                 <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Churn Rate" metric={expirationStats.churnRate} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={expirationStats.churnRateMomGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.churnRateYoyGrowth} sparklineData={lapsedCountSparkline} sparklineLabels={lapsedCountSparklineLabels} backSparklineData={backLapsedMembersSparkline} backSparklineLabels={backRevenueSparklineLabels} subtext={`${formatNumber(expirationStats.churned)} of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-rose-600 to-red-900 text-white" />
-                <StudioPulseMetricCard icon={<RotateCcw className="h-5 w-5" />} title="Win-Back Rate" metric={winBackStats.winBackRate} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={winBackStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={winBackStats.yoyGrowth} subtext={`${formatNumber(winBackStats.reactivated)} reactivated of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-700 text-white" tooltipContent="Percentage of lapsed members who reactivated in the selected period." />
-                <StudioPulseMetricCard icon={<CircleDollarSign className="h-5 w-5" />} title="Avg LTV (Lapsed)" metric={expirationStats.avgLtvLapsed} precision={0} formatter={formatCurrency} growthLabel="MoM" growthValue={null} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="Average amount paid by lapsed members" iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" tooltipContent="Average of the paid amount across all lapsed memberships in the selected period." />
+                <StudioPulseMetricCard icon={<CircleDollarSign className="h-5 w-5" />} title="Avg LTV (Lapsed)" metric={expirationStats.avgLtvLapsed} precision={0} formatter={formatCurrency} growthLabel="MoM" growthValue={expirationStats.avgLtvMomGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.avgLtvYoyGrowth} sparklineData={lapsedCountSparkline} backSparklineData={backLapsedMembersSparkline} subtext="Average amount paid by lapsed members" iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" tooltipContent="Average of the paid amount across all lapsed memberships in the selected period." />
               </div>
 
-              {/* Studio Churn Tracker — monthly trend */}
-              <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">                                
-                <div className="p-5">
-                  {lapsedMatrix.months.length > 1 ? (
-                    <ResponsiveContainer width="100%" height={240}>
-                      <AreaChart
-                        data={[...lapsedMatrix.months].reverse().map((m) => ({
-                          month: lapsedMatrix.monthLabels[m],
-                          Lapsed: lapsedMatrix.metricRows[2]?.values[m] || 0,
-                          Churned: lapsedMatrix.metricRows[3]?.values[m] || 0,
-                        }))}
-                        margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={36} />
-                        <RechartsTooltip contentStyle={chartTooltipStyle} />
-                        <Area type="monotone" dataKey="Lapsed" stroke="#f97316" fill="#f97316" fillOpacity={0.12} strokeWidth={2} />
-                        <Area type="monotone" dataKey="Churned" stroke="#dc2626" fill="#dc2626" fillOpacity={0.12} strokeWidth={2} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : <EmptyNote label="Not enough monthly data for trend" />}
-                </div>
-              </div>
+              {/* Churn by Month — hidden behind toggle */}
+              {showLapsedChurnTrend && (() => {
+                const TOP_N = 5;
+                const topMemNames = membershipChurnBreakdown.slice(0, TOP_N).map((m) => m.name);
+                const chartData = churnByMonth.slice(-12).map((d) => {
+                  const row: Record<string, any> = { month: d.month };
+                  topMemNames.forEach((n) => { row[n] = d.byMembership[n] || 0; });
+                  const othersTotal = d.total - topMemNames.reduce((s, n) => s + (d.byMembership[n] || 0), 0);
+                  if (othersTotal > 0) row['Others'] = othersTotal;
+                  return row;
+                });
+                const BAR_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#3b82f6', '#94a3b8'];
+                const allKeys = [...topMemNames, chartData.some((r) => (r['Others'] || 0) > 0) ? 'Others' : ''].filter(Boolean);
+                return (
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                            <TrendingDown className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold">Churn Trend — Monthly by Membership</h4>
+                            <p className="text-xs text-white/75">Last 12 months · stacked by top {TOP_N} membership types</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-0.5 gap-0.5">
+                            {(['count', 'ltv'] as const).map((m) => (
+                              <button key={m} type="button" onClick={() => setChurnTrendMetric(m)}
+                                className={cn('px-2.5 py-1 rounded-lg text-xs font-semibold transition-all', churnTrendMetric === m ? 'bg-white text-slate-900 shadow-sm' : 'text-white/70 hover:text-white')}
+                              >{m === 'count' ? 'Lapse Count' : 'Avg LTV'}</button>
+                            ))}
+                          </div>
+                          <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{churnByMonth.length} months</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      {chartData.length > 1 ? (
+                        <ResponsiveContainer width="100%" height={260}>
+                          <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                            <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={36} allowDecimals={false} />
+                            <RechartsTooltip contentStyle={chartTooltipStyle} />
+                            <Legend wrapperStyle={{ fontSize: 10 }} />
+                            {allKeys.map((key, i) => (
+                              <Bar key={key} dataKey={key} stackId="a" fill={BAR_COLORS[i % BAR_COLORS.length]} radius={i === allKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : <EmptyNote label="Not enough monthly data for trend" />}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* MoM matrix table */}
               {showLapsedMomTable && (
@@ -4297,282 +5181,334 @@ const StudioPulse = memo(() => {
                 </div>
               )}
 
-              {/* Renewal potential by membership — ranked table */}
-              <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                        <Repeat className="h-5 w-5" />
+              {/* Tab selector for lapsed detail tables */}
+              <div className="mt-6">
+                <div className="mb-4 inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 gap-0.5">
+                  {([
+                    { key: 'churned', label: 'Churned by Membership' },
+                    { key: 'breakdown', label: 'Churn Breakdown' },
+                    { key: 'renewal', label: 'Renewal Potential' },
+                    { key: 'highvalue', label: 'High-Value Members' },
+                  ] as const).map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setLapsedTableTab(tab.key)}
+                      className={cn('px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap', lapsedTableTab === tab.key ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600')}
+                    >{tab.label}</button>
+                  ))}
+                </div>
+
+                {/* Tab: Churned by Membership */}
+                {lapsedTableTab === 'churned' && (() => {
+                  const churnedRows = filteredExpirations;
+                  const allMonths = [...new Set(churnedRows.map((e) => monthKeyFromDate(e.endDate)).filter(Boolean))].sort();
+                  const recentMonths = allMonths.slice(-6);
+                  type ChurnGroup = { name: string; total: number; uniqueMembers: Set<string>; totalPaid: number; byMonth: Record<string, { count: number; members: Set<string>; paid: number }> };
+                  const groups: Record<string, ChurnGroup> = {};
+                  churnedRows.forEach((e) => {
+                    const key = e.membershipName || 'Unknown';
+                    const mk = monthKeyFromDate(e.endDate) || 'Unknown';
+                    if (!groups[key]) groups[key] = { name: key, total: 0, uniqueMembers: new Set(), totalPaid: 0, byMonth: {} };
+                    const g = groups[key];
+                    g.total += 1;
+                    if (e.memberId) g.uniqueMembers.add(e.memberId);
+                    g.totalPaid += Number(e.paid) || 0;
+                    if (!g.byMonth[mk]) g.byMonth[mk] = { count: 0, members: new Set(), paid: 0 };
+                    g.byMonth[mk].count += 1;
+                    if (e.memberId) g.byMonth[mk].members.add(e.memberId);
+                    g.byMonth[mk].paid += Number(e.paid) || 0;
+                  });
+                  const sortedGroups = Object.values(groups).sort((a, b) => b.total - a.total);
+                  const grandTotal = churnedRows.length;
+                  const grandMembers = new Set(churnedRows.map((e) => e.memberId).filter(Boolean)).size;
+                  const grandPaid = churnedRows.reduce((s, e) => s + (Number(e.paid) || 0), 0);
+                  const monthLabels: Record<string, string> = {};
+                  recentMonths.forEach((mk) => {
+                    const [y, m] = mk.split('-');
+                    const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+                    monthLabels[mk] = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+                  });
+                  return (
+                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                      <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                              <UserPlus className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h4 className="text-base font-bold">Churned Memberships ({formatNumber(expirationStats.churned)})</h4>
+                              <p className="text-xs text-white/75">Grouped by membership type · last 6 months · lapsed count, unique members, avg LTV, churn share</p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{sortedGroups.length} types</Badge>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-base font-bold">Renewal Potential by Membership</h4>
-                        <p className="text-xs text-white/75">Lapsed memberships ranked by count — high count = renewal opportunity</p>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full border-collapse text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                              <th className="px-4 py-3 text-left sticky left-0 z-10 bg-slate-50 min-w-[200px] border-r border-b border-slate-200">Membership</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Total</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Members</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Avg LTV</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Churn %</th>
+                              {recentMonths.map((mk) => (
+                                <th key={mk} className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">{monthLabels[mk]}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-100">
+                            {sortedGroups.map((g, i) => {
+                              const avgLtv = g.uniqueMembers.size > 0 ? g.totalPaid / g.uniqueMembers.size : 0;
+                              const churnShare = grandTotal > 0 ? (g.total / grandTotal) * 100 : 0;
+                              return (
+                                <tr key={g.name} className="hover:bg-slate-50 transition-colors">
+                                  <td className="px-4 py-2.5 sticky left-0 bg-white border-r border-slate-100 hover:bg-slate-50">
+                                    <div className="flex items-center gap-2">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-md bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold text-[10px] shrink-0">{i + 1}</span>
+                                      <span className="font-semibold text-slate-900 text-xs max-w-[160px] truncate">{g.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums font-bold text-slate-900 text-xs">{formatNumber(g.total)}</td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 text-xs">{formatNumber(g.uniqueMembers.size)}</td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 text-xs">{avgLtv > 0 ? formatCurrency(avgLtv) : '—'}</td>
+                                  <td className="px-3 py-2.5 text-right text-xs">
+                                    <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-bold text-[10px] ${churnShare >= 20 ? 'bg-red-100 text-red-700' : churnShare >= 10 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                                      {churnShare.toFixed(1)}%
+                                    </span>
+                                  </td>
+                                  {recentMonths.map((mk) => {
+                                    const month = g.byMonth[mk];
+                                    return (
+                                      <td key={mk} className="px-3 py-2.5 text-right tabular-nums text-xs">
+                                        {month ? (
+                                          <div className="flex flex-col items-end">
+                                            <span className="font-semibold text-slate-900">{formatNumber(month.count)}</span>
+                                            <span className="text-[9px] text-slate-400">{formatNumber(month.members.size)}m</span>
+                                          </div>
+                                        ) : <span className="text-slate-300">—</span>}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                            {sortedGroups.length === 0 && (
+                              <tr><td colSpan={5 + recentMonths.length} className="p-5 text-center text-xs text-slate-400">No churned membership records in the selected period</td></tr>
+                            )}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-slate-900 text-white font-bold text-xs border-t-2 border-slate-700">
+                              <td className="px-4 py-2.5 sticky left-0 bg-slate-900 border-r border-white/10">Totals</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(grandTotal)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(grandMembers)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{grandMembers > 0 ? formatCurrency(grandPaid / grandMembers) : '—'}</td>
+                              <td className="px-3 py-2.5 text-right">100%</td>
+                              {recentMonths.map((mk) => {
+                                const mTotal = churnedRows.filter((e) => monthKeyFromDate(e.endDate) === mk).length;
+                                return <td key={mk} className="px-3 py-2.5 text-right tabular-nums">{mTotal > 0 ? formatNumber(mTotal) : '—'}</td>;
+                              })}
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{lapsedByMembership.length} types</Badge>
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.16em] text-slate-500">
-                        {['#', 'Membership Type', 'Lapsed Count', 'Share %', 'Potential'].map((col) => (
-                          <th key={col} className="border-b border-slate-200 px-4 py-3 text-left">{col}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white">
-                      {lapsedByMembership.length ? lapsedByMembership.map((item, i) => (
-                        <tr key={item.name} className="h-[38px] border-b border-slate-100 hover:bg-slate-50">
-                          <td className="px-4 py-2 w-10"><span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-red-700 to-red-900 text-white font-bold text-xs">{i + 1}</span></td>
-                          <td className="px-4 py-2 font-medium text-slate-900">{item.name}</td>
-                          <td className="px-4 py-2 tabular-nums text-slate-700">{formatNumber(item.count)}</td>
-                          <td className="px-4 py-2 tabular-nums text-slate-700">
-                            {expirationStats.total ? formatPercentage((item.count / expirationStats.total) * 100) : '—'}
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 flex-1 max-w-[120px] rounded-full bg-slate-100">
-                                <div
-                                  className="h-2 rounded-full bg-gradient-to-r from-red-500 to-orange-400"
-                                  style={{ width: `${expirationStats.total ? Math.min((item.count / lapsedByMembership[0].count) * 100, 100) : 0}%` }}
-                                />
-                              </div>
-                              <span className="text-[10px] font-semibold text-slate-500">
-                                {item.count >= 20 ? 'High' : item.count >= 10 ? 'Med' : 'Low'}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      )) : <tr><td colSpan={5} className="p-5"><EmptyNote label="No membership lapse data available" /></td></tr>}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                  );
+                })()}
 
-              {/* Churned Memberships — grouped by membership type, MoM columns */}
-              {(() => {
-                const churnedRows = filteredExpirations.filter((e) => /churn/i.test(e.status));
-                const allMonths = [...new Set(churnedRows.map((e) => monthKeyFromDate(e.endDate)).filter(Boolean))].sort();
-                const recentMonths = allMonths.slice(-6);
-                type ChurnGroup = { name: string; total: number; uniqueMembers: Set<string>; totalPaid: number; byMonth: Record<string, { count: number; members: Set<string>; paid: number }> };
-                const groups: Record<string, ChurnGroup> = {};
-                churnedRows.forEach((e) => {
-                  const key = e.membershipName || 'Unknown';
-                  const mk = monthKeyFromDate(e.endDate) || 'Unknown';
-                  if (!groups[key]) groups[key] = { name: key, total: 0, uniqueMembers: new Set(), totalPaid: 0, byMonth: {} };
-                  const g = groups[key];
-                  g.total += 1;
-                  if (e.memberId) g.uniqueMembers.add(e.memberId);
-                  g.totalPaid += Number(e.paid) || 0;
-                  if (!g.byMonth[mk]) g.byMonth[mk] = { count: 0, members: new Set(), paid: 0 };
-                  g.byMonth[mk].count += 1;
-                  if (e.memberId) g.byMonth[mk].members.add(e.memberId);
-                  g.byMonth[mk].paid += Number(e.paid) || 0;
-                });
-                const sortedGroups = Object.values(groups).sort((a, b) => b.total - a.total);
-                const grandTotal = churnedRows.length;
-                const grandMembers = new Set(churnedRows.map((e) => e.memberId).filter(Boolean)).size;
-                const grandPaid = churnedRows.reduce((s, e) => s + (Number(e.paid) || 0), 0);
-                const monthLabels: Record<string, string> = {};
-                recentMonths.forEach((mk) => {
-                  const [y, m] = mk.split('-');
-                  const d = new Date(parseInt(y), parseInt(m) - 1, 1);
-                  monthLabels[mk] = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
-                });
-                return (
-                  <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                {/* Tab: Churn Breakdown */}
+                {lapsedTableTab === 'breakdown' && (
+                  <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                     <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                            <UserPlus className="h-5 w-5" />
+                            <Activity className="h-5 w-5" />
                           </div>
                           <div>
-                            <h4 className="text-base font-bold">Churned Memberships ({formatNumber(expirationStats.churned)})</h4>
-                            <p className="text-xs text-white/75">Grouped by membership type · last 6 months · lapsed count, unique members, avg LTV, churn share</p>
+                            <h4 className="text-base font-bold">Membership Churn Breakdown</h4>
+                            <p className="text-xs text-white/75">Per membership: lapse count · avg LTV · share of total churn</p>
                           </div>
                         </div>
-                        <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{sortedGroups.length} types</Badge>
+                        <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{membershipChurnBreakdown.length} types</Badge>
+                      </div>
+                    </div>
+                    {membershipChurnBreakdown.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full border-collapse text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                              <th className="px-4 py-3 text-left sticky left-0 z-10 bg-slate-50 min-w-[200px] border-r border-b border-slate-200"># Membership</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Lapsed</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Unique Members</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Avg LTV</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Churn Share</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-100">
+                            {membershipChurnBreakdown.map((m, i) => {
+                              const churnShare = expirationStats.total ? (m.count / expirationStats.total) * 100 : 0;
+                              return (
+                                <tr key={m.name} className="hover:bg-slate-50 transition-colors">
+                                  <td className="px-4 py-2.5 sticky left-0 bg-white border-r border-slate-100 hover:bg-slate-50">
+                                    <div className="flex items-center gap-2">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-md bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold text-[10px] shrink-0">{i + 1}</span>
+                                      <span className="font-semibold text-slate-900 text-xs max-w-[160px] truncate">{m.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums font-bold text-slate-900 text-xs">{formatNumber(m.count)}</td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 text-xs">{formatNumber(m.uniqueMembers)}</td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 text-xs">{m.avgLtv > 0 ? formatCurrency(m.avgLtv) : '—'}</td>
+                                  <td className="px-3 py-2.5 text-right text-xs">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <div className="h-1.5 w-20 rounded-full bg-slate-100">
+                                        <div className="h-1.5 rounded-full bg-gradient-to-r from-indigo-400 to-violet-500" style={{ width: `${Math.min(churnShare * 3, 100)}%` }} />
+                                      </div>
+                                      <span className="tabular-nums text-slate-700 font-semibold">{churnShare.toFixed(1)}%</span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : <div className="p-5"><EmptyNote label="No membership breakdown data available" /></div>}
+                  </div>
+                )}
+
+                {/* Tab: Renewal Potential */}
+                {lapsedTableTab === 'renewal' && (
+                  <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                            <Repeat className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold">Renewal Potential by Membership</h4>
+                            <p className="text-xs text-white/75">Lapsed memberships ranked by count — high count = renewal opportunity</p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{lapsedByMembership.length} types</Badge>
                       </div>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="min-w-full border-collapse text-sm">
-                        <thead className="sticky top-0 z-20">
-                          <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-[10px] uppercase tracking-[0.14em] text-white">
-                            <th className="px-4 py-3 text-left sticky left-0 z-30 bg-slate-900 min-w-[200px] border-r border-white/10">Membership</th>
-                            <th className="px-3 py-3 text-right whitespace-nowrap border-l border-white/10">Total</th>
-                            <th className="px-3 py-3 text-right whitespace-nowrap border-l border-white/10">Members</th>
-                            <th className="px-3 py-3 text-right whitespace-nowrap border-l border-white/10">Avg LTV</th>
-                            <th className="px-3 py-3 text-right whitespace-nowrap border-l border-white/10">Churn %</th>
-                            {recentMonths.map((mk) => (
-                              <th key={mk} className="px-3 py-3 text-right whitespace-nowrap border-l border-white/10">{monthLabels[mk]}</th>
+                        <thead>
+                          <tr className="bg-slate-50 text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                            {['#', 'Membership Type', 'Lapsed Count', 'Share %', 'Potential'].map((col) => (
+                              <th key={col} className="border-b border-slate-200 px-4 py-3 text-left">{col}</th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-slate-100">
-                          {sortedGroups.map((g, i) => {
-                            const avgLtv = g.uniqueMembers.size > 0 ? g.totalPaid / g.uniqueMembers.size : 0;
-                            const churnShare = grandTotal > 0 ? (g.total / grandTotal) * 100 : 0;
-                            return (
-                              <tr key={g.name} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-2.5 sticky left-0 bg-white border-r border-slate-100 hover:bg-slate-50">
-                                  <div className="flex items-center gap-2">
-                                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-gradient-to-br from-red-700 to-red-900 text-white font-bold text-[10px] shrink-0">{i + 1}</span>
-                                    <span className="font-semibold text-slate-900 text-xs max-w-[160px] truncate">{g.name}</span>
+                        <tbody className="bg-white">
+                          {lapsedByMembership.length ? lapsedByMembership.map((item, i) => (
+                            <tr key={item.name} className="h-[38px] border-b border-slate-100 hover:bg-slate-50">
+                              <td className="px-4 py-2 w-10"><span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold text-xs">{i + 1}</span></td>
+                              <td className="px-4 py-2 font-medium text-slate-900">{item.name}</td>
+                              <td className="px-4 py-2 tabular-nums text-slate-700">{formatNumber(item.count)}</td>
+                              <td className="px-4 py-2 tabular-nums text-slate-700">
+                                {expirationStats.total ? formatPercentage((item.count / expirationStats.total) * 100) : '—'}
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2 flex-1 max-w-[120px] rounded-full bg-slate-100">
+                                    <div
+                                      className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-400"
+                                      style={{ width: `${lapsedByMembership[0]?.count ? Math.min((item.count / lapsedByMembership[0].count) * 100, 100) : 0}%` }}
+                                    />
                                   </div>
-                                </td>
-                                <td className="px-3 py-2.5 text-right tabular-nums font-bold text-slate-900 text-xs">{formatNumber(g.total)}</td>
-                                <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 text-xs">{formatNumber(g.uniqueMembers.size)}</td>
-                                <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 text-xs">{avgLtv > 0 ? formatCurrency(avgLtv) : '—'}</td>
-                                <td className="px-3 py-2.5 text-right text-xs">
-                                  <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-bold text-[10px] ${churnShare >= 20 ? 'bg-red-100 text-red-700' : churnShare >= 10 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                                    {churnShare.toFixed(1)}%
+                                  <span className="text-[10px] font-semibold text-slate-500">
+                                    {item.count >= 20 ? 'High' : item.count >= 10 ? 'Med' : 'Low'}
                                   </span>
-                                </td>
-                                {recentMonths.map((mk) => {
-                                  const m = g.byMonth[mk];
-                                  return (
-                                    <td key={mk} className="px-3 py-2.5 text-right tabular-nums text-xs">
-                                      {m ? (
-                                        <div className="flex flex-col items-end">
-                                          <span className="font-semibold text-slate-900">{formatNumber(m.count)}</span>
-                                          <span className="text-[9px] text-slate-400">{formatNumber(m.members.size)}m</span>
-                                        </div>
-                                      ) : <span className="text-slate-300">—</span>}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            );
-                          })}
-                          {sortedGroups.length === 0 && (
-                            <tr><td colSpan={5 + recentMonths.length} className="p-5 text-center text-xs text-slate-400">No churned membership records in the selected period</td></tr>
-                          )}
+                                </div>
+                              </td>
+                            </tr>
+                          )) : <tr><td colSpan={5} className="p-5"><EmptyNote label="No membership lapse data available" /></td></tr>}
                         </tbody>
-                        <tfoot>
-                          <tr className="bg-slate-900 text-white font-bold text-xs border-t-2 border-slate-700">
-                            <td className="px-4 py-2.5 sticky left-0 bg-slate-900 border-r border-white/10">Totals</td>
-                            <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(grandTotal)}</td>
-                            <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(grandMembers)}</td>
-                            <td className="px-3 py-2.5 text-right tabular-nums">{grandMembers > 0 ? formatCurrency(grandPaid / grandMembers) : '—'}</td>
-                            <td className="px-3 py-2.5 text-right">100%</td>
-                            {recentMonths.map((mk) => {
-                              const mTotal = churnedRows.filter((e) => monthKeyFromDate(e.endDate) === mk).length;
-                              return <td key={mk} className="px-3 py-2.5 text-right tabular-nums">{mTotal > 0 ? formatNumber(mTotal) : '—'}</td>;
-                            })}
-                          </tr>
-                        </tfoot>
                       </table>
                     </div>
                   </div>
-                );
-              })()}
+                )}
 
-              {/* Consolidated ranking panels */}
-              {showLapseRankings && <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                {/* Top lapse rankings — by membership or location */}
-                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-700 to-blue-900 text-white">
-                        <Trophy className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-slate-900">Top Lapse Rankings</h4>
-                        <p className="text-xs text-slate-500">Highest lapse count by membership or location</p>
-                      </div>
-                    </div>
-                    <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setLapseRankDimension('membership')}
-                        className={cn('px-2.5 py-1 rounded-lg text-xs font-semibold transition-all', lapseRankDimension === 'membership' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600')}
-                      >Membership</button>
-                      <button
-                        type="button"
-                        onClick={() => setLapseRankDimension('location')}
-                        className={cn('px-2.5 py-1 rounded-lg text-xs font-semibold transition-all', lapseRankDimension === 'location' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600')}
-                      >Location</button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {(lapseRankDimension === 'membership' ? lapsedByMembership : expirationStats.topLocations).slice(0, 8).map((item, index) => (
-                      <div key={`top-lapse-${item.name}-${index}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 text-white font-bold text-xs shrink-0 select-none">{index + 1}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-slate-900">{item.name}</p>
-                          <p className="text-xs text-slate-500">
-                            {expirationStats.total ? `${Math.round((item.count / expirationStats.total) * 100)}% of total lapsed` : '—'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-slate-950">{formatNumber(item.count)}</p>
+                {/* Tab: High-Value Members */}
+                {lapsedTableTab === 'highvalue' && (() => {
+                  const rows = [...filteredExpirations]
+                    .filter((e) => (e as any).amountPaid || Number(e.paid) || 0)
+                    .sort((a, b) => ((b as any).amountPaid || Number(b.paid) || 0) - ((a as any).amountPaid || Number(a.paid) || 0))
+                    .slice(0, 20);
+                  return rows.length > 0 ? (
+                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                      <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                              <Users className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h4 className="text-base font-bold">High-Value Lapsed Members</h4>
+                              <p className="text-xs text-white/75">Top 20 by amount paid · spot re-engagement targets</p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="bg-white/20 font-semibold text-white">{filteredExpirations.length} total lapsed</Badge>
                         </div>
                       </div>
-                    ))}
-                    {(lapseRankDimension === 'membership' ? lapsedByMembership : expirationStats.topLocations).length === 0 && (
-                      <EmptyNote label="No lapse ranking data available" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Membership + Location lapse panel — metric toggle */}
-                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-red-700 to-red-900 text-white">
-                        <TrendingDown className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-slate-900">Bottom Lapse Rankings</h4>
-                        <p className="text-xs text-slate-500">By membership type or location</p>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full border-collapse text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                              <th className="px-4 py-3 text-left sticky left-0 z-10 bg-slate-50 min-w-[180px] border-r border-b border-slate-200">Member</th>
+                              <th className="px-3 py-3 text-left whitespace-nowrap border-l border-b border-slate-200">Membership</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">End Date</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Amount Paid</th>
+                              <th className="px-3 py-3 text-right whitespace-nowrap border-l border-b border-slate-200">Location</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-100">
+                            {rows.map((e, i) => {
+                              const amtPaid = (e as any).amountPaid || Number(e.paid) || 0;
+                              return (
+                                <tr key={`lmb-${e.memberId}-${i}`} className="hover:bg-slate-50 transition-colors">
+                                  <td className="px-4 py-2.5 sticky left-0 bg-white border-r border-slate-100 hover:bg-slate-50">
+                                    <div>
+                                      <p className="font-semibold text-slate-900 text-xs">{e.firstName} {e.lastName}</p>
+                                      <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{e.email}</p>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-xs text-slate-700 max-w-[160px]">
+                                    <span className="truncate block">{e.membershipName || '—'}</span>
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right text-xs tabular-nums text-slate-600">
+                                    {e.endDate ? new Date(e.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right text-xs font-bold tabular-nums text-slate-900">
+                                    {amtPaid > 0 ? formatCurrency(amtPaid) : '—'}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right text-xs text-slate-500 max-w-[120px]">
+                                    <span className="truncate block">{(e as any).primaryLocation || e.homeLocation || '—'}</span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                    <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setLapseRankDimension('membership')}
-                        className={cn('px-2.5 py-1 rounded-lg text-xs font-semibold transition-all', lapseRankDimension === 'membership' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600')}
-                      >Membership</button>
-                      <button
-                        type="button"
-                        onClick={() => setLapseRankDimension('location')}
-                        className={cn('px-2.5 py-1 rounded-lg text-xs font-semibold transition-all', lapseRankDimension === 'location' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600')}
-                      >Location</button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {(lapseRankDimension === 'membership' ? lapsedByMembership : expirationStats.topLocations).slice(0, 8).map((item, index) => (
-                      <div key={`lr-${item.name}-${index}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-red-700 to-red-900 text-white font-bold text-xs shrink-0 select-none">{index + 1}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-slate-900">{item.name}</p>
-                          <p className="text-xs text-slate-500">
-                            {lapseRankDimension === 'membership'
-                              ? `${expirationStats.total ? Math.round((item.count / expirationStats.total) * 100) : 0}% of total lapsed`
-                              : `${expirationStats.total ? Math.round((item.count / expirationStats.total) * 100) : 0}% of total`}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-slate-950">{formatNumber(item.count)}</p>
-                        </div>
-                      </div>
-                    ))}
-                    {(lapseRankDimension === 'membership' ? lapsedByMembership : expirationStats.topLocations).length === 0 && (
-                      <EmptyNote label="No lapse data available" />
-                    )}
-                  </div>
-                </div>
-              </div>}
+                  ) : <EmptyNote label="No lapsed member data available" />;
+                })()}
+              </div>
 
               {/* Summary */}
               <div className="mt-6">
                 {renderAISummary('lapsed', [
                   `${formatNumber(expirationStats.total)} memberships expired, ${formatNumber(expirationStats.churned)} churned (${expirationStats.total ? formatPercentage((expirationStats.churned / expirationStats.total) * 100) : '0%'} churn rate).`,
+                  `Early exit rate: ${lapsedEngagementStats.earlyExitRate.toFixed(1)}% of lapsed members used less than 50% of purchased sessions — high intent, low retention.`,
+                  `${lapsedEngagementStats.discountDrivenPct.toFixed(0)}% of lapsed members had a promo code — watch for promo-driven churn patterns.`,
                   `Late cancellations total ${formatNumber(lcStats.total)} with ${formatCurrency(lcStats.penalty)} in penalty revenue.`,
-                  `${formatNumber(lcStats.sameDay)} same-day cancellations represent the highest revenue leakage risk.`,
                 ])}
               </div>
             </AnimatedSectionCard>
@@ -5300,6 +6236,274 @@ const StudioPulse = memo(() => {
                     <DetailedComparisonView data={filteredSessions as any} />
                   </div>
                 </div>
+              </div>
+            </AnimatedSectionCard>
+
+            {/* ── SECTION 8: STUDIO OPERATIONS ── */}
+            <AnimatedSectionCard
+              title="Studio Operations"
+              subtitle="Peak hours, capacity utilization, and complementary class trends"
+              icon={BarChart2}
+              iconGradient="from-cyan-600 to-teal-800"
+              iconColor="#0891b2"
+              sectionNumber={8}
+            >
+              <div className="space-y-6">
+                {/* Peak Hour Heatmap */}
+                {(() => {
+                  type HeatMetric = typeof heatmapMetric;
+                  const HEATMAP_TABS: { key: HeatMetric; label: string; icon: string; format: (v: number) => string; palette: [string, string, string]; darkThreshold: number }[] = [
+                    { key: 'attendance',  label: 'Attendance',   icon: '👥', format: (v) => String(Math.round(v)),  palette: ['#dbeafe','#3b82f6','#1e3a8a'], darkThreshold: 0.5 },
+                    { key: 'classes',     label: 'Classes',      icon: '📅', format: (v) => String(Math.round(v)),  palette: ['#ede9fe','#8b5cf6','#4c1d95'], darkThreshold: 0.5 },
+                    { key: 'booked',      label: 'Booked',       icon: '🎟️', format: (v) => String(Math.round(v)),  palette: ['#ccfbf1','#14b8a6','#134e4a'], darkThreshold: 0.5 },
+                    { key: 'lateCancels', label: 'Late Cancels', icon: '⚠️', format: (v) => String(Math.round(v)),  palette: ['#fee2e2','#ef4444','#7f1d1d'], darkThreshold: 0.5 },
+                    { key: 'fillRate',    label: 'Fill Rate',    icon: '📊', format: (v) => `${v.toFixed(0)}%`,     palette: ['#dcfce7','#22c55e','#14532d'], darkThreshold: 0.5 },
+                  ];
+                  const activeTab = HEATMAP_TABS.find((t) => t.key === heatmapMetric)!;
+
+                  let globalMax = 0;
+                  peakHourHeatmap.timeSlots.forEach((slot) => {
+                    peakHourHeatmap.days.forEach((day) => {
+                      const v = peakHourHeatmap.buckets[slot]?.[day]?.[heatmapMetric] ?? 0;
+                      if (v > globalMax) globalMax = v;
+                    });
+                  });
+                  const norm = globalMax > 0 ? globalMax : 1;
+
+                  // Interpolate between three palette stops
+                  const interpColor = (hex1: string, hex2: string, t: number) => {
+                    const p = (h: string) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)] as [number,number,number];
+                    const [r1,g1,b1] = p(hex1), [r2,g2,b2] = p(hex2);
+                    return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+                  };
+                  const cellBg = (v: number) => {
+                    if (v === 0) return 'transparent';
+                    const t = Math.min(v / norm, 1);
+                    const [lo, mid, hi] = activeTab.palette;
+                    return t < 0.5 ? interpColor(lo, mid, t * 2) : interpColor(mid, hi, (t - 0.5) * 2);
+                  };
+                  const cellFg = (v: number) => {
+                    const t = Math.min(v / norm, 1);
+                    return t > activeTab.darkThreshold ? '#fff' : '#1e293b';
+                  };
+
+                  const fmtHour = (slot: string) => {
+                    const h = parseInt(slot);
+                    if (isNaN(h)) return slot;
+                    const ampm = h < 12 ? 'AM' : 'PM';
+                    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                    return `${h12}:00 ${ampm}`;
+                  };
+
+                  // Find peak cell for annotation
+                  let peakSlot = '', peakDay = '', peakVal = 0;
+                  peakHourHeatmap.timeSlots.forEach((slot) => {
+                    peakHourHeatmap.days.forEach((day) => {
+                      const v = peakHourHeatmap.buckets[slot]?.[day]?.[heatmapMetric] ?? 0;
+                      if (v > peakVal) { peakVal = v; peakSlot = slot; peakDay = day; }
+                    });
+                  });
+
+                  return (
+                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_8px_32px_rgba(15,23,42,0.10)]">
+                      {/* Dark header */}
+                      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-lg">{activeTab.icon}</div>
+                          <div>
+                            <h4 className="text-base font-bold text-white tracking-tight">Peak Hour · Day-of-Week Heatmap</h4>
+                            <p className="text-[11px] text-white/50 mt-0.5">
+                              {activeTab.label} per time × day · peak: <span className="text-white/80 font-semibold">{fmtHour(peakSlot)} {peakDay} ({activeTab.format(peakVal)})</span>
+                            </p>
+                          </div>
+                        </div>
+                        {/* Metric pill switcher */}
+                        <div className="flex items-center gap-1 rounded-2xl bg-white/8 border border-white/10 p-1 backdrop-blur-sm">
+                          {HEATMAP_TABS.map((tab) => (
+                            <button
+                              key={tab.key}
+                              onClick={() => setHeatmapMetric(tab.key)}
+                              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold transition-all duration-150 ${heatmapMetric === tab.key ? 'bg-white text-slate-900 shadow-md' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+                            >
+                              <span>{tab.icon}</span>
+                              <span>{tab.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Heatmap grid */}
+                      <div className="overflow-x-auto bg-slate-950/[0.02]">
+                        <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: 100 }} />
+                            {peakHourHeatmap.days.map((d) => <col key={d} />)}
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              <th className="sticky left-0 z-20 bg-slate-50 border-b border-r border-slate-200 px-4 py-3" />
+                              {peakHourHeatmap.days.map((d) => (
+                                <th key={d} className="border-b border-slate-200 py-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                                  {d.slice(0, 3).toUpperCase()}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {peakHourHeatmap.timeSlots.map((slot) => (
+                              <tr key={slot} className="group">
+                                {/* Time label */}
+                                <td className="sticky left-0 z-10 border-r border-slate-100 bg-white px-4 py-0 group-hover:bg-slate-50 transition-colors">
+                                  <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">{fmtHour(slot)}</span>
+                                </td>
+                                {peakHourHeatmap.days.map((day) => {
+                                  const cell = peakHourHeatmap.buckets[slot]?.[day];
+                                  const val = cell?.[heatmapMetric] ?? 0;
+                                  const isPeak = slot === peakSlot && day === peakDay;
+                                  return (
+                                    <td
+                                      key={day}
+                                      className="relative p-0 text-center transition-all duration-150 group-hover:opacity-90"
+                                      style={{ backgroundColor: val > 0 ? cellBg(val) : '#f8fafc' }}
+                                      title={`${fmtHour(slot)} · ${day} · ${activeTab.label}: ${activeTab.format(val)}`}
+                                    >
+                                      <div className="flex h-11 items-center justify-center gap-0.5">
+                                        {isPeak && val > 0 && (
+                                          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-yellow-300 shadow-[0_0_4px_2px_rgba(253,224,71,0.5)]" />
+                                        )}
+                                        <span
+                                          className="text-[12px] font-black tabular-nums"
+                                          style={{ color: val > 0 ? cellFg(val) : '#cbd5e1' }}
+                                        >
+                                          {val > 0 ? activeTab.format(val) : ''}
+                                        </span>
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Footer legend */}
+                      <div className="flex items-center justify-between gap-4 px-6 py-3 border-t border-slate-100 bg-slate-50/80">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Low</span>
+                          <div className="flex rounded-md overflow-hidden h-3" style={{ width: 112 }}>
+                            {Array.from({ length: 14 }, (_, i) => (
+                              <div key={i} className="flex-1" style={{ backgroundColor: cellBg(((i + 1) / 14) * norm) }} />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">High</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-yellow-300 shadow-[0_0_3px_1px_rgba(253,224,71,0.5)]" /> Peak cell</span>
+                          <span>Max: <strong className="text-slate-600">{activeTab.format(globalMax)}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Capacity Utilization by Studio */}
+                {capacityByStudio.length > 0 && (
+                  <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10">
+                        <BarChart2 className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Capacity Utilization by Studio</h4>
+                        <p className="text-xs text-white/60">Booked slots vs. available capacity per location</p>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50">
+                            <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-slate-500">Location</th>
+                            <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Sessions</th>
+                            <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Booked</th>
+                            <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Capacity</th>
+                            <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-slate-500">Utilization</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {capacityByStudio.map((row, i) => (
+                            <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-4 py-2.5 font-medium text-slate-900">{row.location}</td>
+                              <td className="px-4 py-2.5 tabular-nums text-right text-slate-600">{formatNumber(row.sessions)}</td>
+                              <td className="px-4 py-2.5 tabular-nums text-right text-slate-700">{formatNumber(row.booked)}</td>
+                              <td className="px-4 py-2.5 tabular-nums text-right text-slate-500">{formatNumber(row.capacity)}</td>
+                              <td className="px-4 py-2.5 tabular-nums text-right font-bold text-slate-900">
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${row.utilization >= 70 ? 'bg-emerald-100 text-emerald-800' : row.utilization >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
+                                  {row.utilization.toFixed(1)}%
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Free / Complementary Visits Trend */}
+                {compRateTrend.length > 0 && (
+                  <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-5 text-white flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                          <BarChart2 className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">Free &amp; Complementary Visits</h4>
+                          <p className="text-xs text-white/50">NonPaid % and Complementary % of total check-ins · all-time · studio-scoped</p>
+                        </div>
+                      </div>
+                      {/* Summary pills */}
+                      <div className="flex items-center gap-3">
+                        {[
+                          { label: 'Avg NonPaid %', value: compRateTrend.length ? `${(compRateTrend.reduce((s, d) => s + d.nonPaidRate, 0) / compRateTrend.length).toFixed(1)}%` : '—', color: '#f59e0b' },
+                          { label: 'Avg Comp %',    value: compRateTrend.length ? `${(compRateTrend.reduce((s, d) => s + d.compRate, 0) / compRateTrend.length).toFixed(1)}%` : '—', color: '#8b5cf6' },
+                        ].map((p) => (
+                          <div key={p.label} className="flex flex-col items-end">
+                            <span className="text-[18px] font-black" style={{ color: p.color }}>{p.value}</span>
+                            <span className="text-[10px] text-white/50 uppercase tracking-widest">{p.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <ResponsiveContainer width="100%" height={240}>
+                        <AreaChart data={compRateTrend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="nonPaidGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.28} />
+                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="compGrad2" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.28} />
+                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+                          <RechartsTooltip
+                            contentStyle={{ borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                            formatter={(v: number, name: string) => [`${v.toFixed(2)}%`, name === 'nonPaidRate' ? 'NonPaid %' : 'Comp %']}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} formatter={(v) => v === 'nonPaidRate' ? 'NonPaid %' : 'Comp %'} />
+                          <Area type="monotone" dataKey="nonPaidRate" stroke="#f59e0b" strokeWidth={2.5} fill="url(#nonPaidGrad)" dot={{ r: 3.5, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                          <Area type="monotone" dataKey="compRate"    stroke="#8b5cf6" strokeWidth={2.5} fill="url(#compGrad2)"   dot={{ r: 3.5, fill: '#8b5cf6', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
               </div>
             </AnimatedSectionCard>
 

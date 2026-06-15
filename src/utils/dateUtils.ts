@@ -127,11 +127,17 @@ export const parseDate = (dateString: string): Date | null => {
     // Handle comma-separated timestamp e.g., "2020-01-01, 17:30:00" by taking the date part
     if (dateString.includes(',')) {
       const datePart = dateString.split(',')[0].trim();
+      // Parse YYYY-MM-DD as local midnight to avoid UTC offset issues
+      const dashParts = datePart.split('-');
+      if (dashParts.length === 3) {
+        const y = parseInt(dashParts[0]), m = parseInt(dashParts[1]), d = parseInt(dashParts[2]);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m - 1, d);
+      }
       const d = new Date(datePart);
       if (!isNaN(d.getTime())) return d;
     }
     
-    // Handle DD/MM/YYYY format with optional time (e.g., "14/09/2025 10:00:00")
+    // Handle DD/MM/YYYY or D/M/YY format with optional time (e.g., "14/09/2025 10:00:00", "4/3/22")
     if (dateString.includes('/')) {
       // Split by space to separate date and time, take only date part
       const datePart = dateString.split(' ')[0].trim();
@@ -139,20 +145,30 @@ export const parseDate = (dateString: string): Date | null => {
       if (parts.length === 3) {
         const day = parseInt(parts[0]);
         const month = parseInt(parts[1]);
-        const year = parseInt(parts[2]);
-        
+        const rawYear = parseInt(parts[2]);
+        const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+
         if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
           return new Date(year, month - 1, day);
         }
       }
     }
     
-    // Handle YYYY-MM-DD format
+    // Handle YYYY-MM-DD (and YYYY-MM-DD HH:MM:SS) format — parse as local midnight
+    // to avoid UTC-offset date-shifting in timezones like IST (+5:30)
     if (dateString.includes('-')) {
-      const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        return date;
+      const datePart = dateString.split(' ')[0].trim();
+      const parts = datePart.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const day = parseInt(parts[2]);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          return new Date(year, month - 1, day);
+        }
       }
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) return date;
     }
     
     // Try direct parsing
