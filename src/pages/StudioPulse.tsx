@@ -401,34 +401,60 @@ const AnimatedSectionCard: React.FC<{
   subtitle?: string;
   icon: React.ComponentType<{ className?: string }>;
   iconGradient: string;
+  iconColor?: string;
+  sectionNumber?: number;
   className?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ title, subtitle, icon: Icon, iconGradient, className, action, children }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 12 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.4 }}
-    className={cn('rounded-3xl border border-slate-200/70 bg-white/95 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md', className)}
-  >
-    <div className="mb-6 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <motion.div
-          whileHover={{ scale: 1.06 }}
-          className={cn('flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg', iconGradient)}
-        >
-          <Icon className="h-5 w-5" />
-        </motion.div>
-        <div>
-          <h3 className="text-xl font-black leading-tight tracking-tight text-slate-900">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-xs font-medium text-slate-500">{subtitle}</p>}
+}> = ({ title, subtitle, icon: Icon, iconGradient, iconColor = '#6366f1', sectionNumber, className, action, children }) => {
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  const roman = sectionNumber !== undefined ? ROMAN[sectionNumber - 1] : null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
+      className={cn('rounded-3xl border border-slate-200 bg-white shadow-[0_8px_40px_rgba(15,23,42,0.10)] backdrop-blur-md overflow-hidden', className)}
+    >
+      <div
+        className="flex items-center justify-between gap-4 px-7 py-5 border-b-[1.5px]"
+        style={{ borderBottomColor: `${iconColor}40`, background: `linear-gradient(135deg, ${iconColor}0c 0%, transparent 55%)` }}
+      >
+        <div className="flex items-center gap-4">
+          <motion.div
+            animate={{ rotate: [0, -4, 4, -2, 2, 0] }}
+            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 5, ease: 'easeInOut' }}
+            whileHover={{ scale: 1.12, rotate: 0 }}
+            className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg', iconGradient)}
+          >
+            <Icon className="h-5 w-5" />
+          </motion.div>
+          <div>
+            {roman && (
+              <p
+                className="mb-0.5 text-[11px] font-bold uppercase tracking-[0.18em]"
+                style={{ color: iconColor, fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}
+              >
+                Section {roman}
+              </p>
+            )}
+            <h3
+              className="text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900"
+              style={{ fontFamily: "'Sora', 'Space Grotesk', sans-serif" }}
+            >
+              {title}
+            </h3>
+            {subtitle && <p className="mt-0.5 text-[12px] font-medium text-slate-400">{subtitle}</p>}
+          </div>
         </div>
+        {action}
       </div>
-      {action}
-    </div>
-    {children}
-  </motion.div>
-);
+      <div className="p-7">
+        {children}
+      </div>
+    </motion.div>
+  );
+};
 
 const EmptyNote: React.FC<{ label?: string }> = ({ label = 'No data for this studio yet' }) => (
   <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 text-sm text-slate-400">
@@ -909,6 +935,11 @@ const StudioPulse = memo(() => {
     const prev = previousExpirations.length;
     const yoy = previousYearExpirations.length;
     const churned = filteredExpirations.filter((e) => /churn/i.test(e.status)).length;
+    const prevChurned = previousExpirations.filter((e) => /churn/i.test(e.status)).length;
+    const yoyChurned = previousYearExpirations.filter((e) => /churn/i.test(e.status)).length;
+    const churnRate = total ? (churned / total) * 100 : 0;
+    const prevChurnRate = prev ? (prevChurned / prev) * 100 : 0;
+    const yoyChurnRate = yoy ? (yoyChurned / yoy) * 100 : 0;
     const byLocation: Record<string, number> = {};
     filteredExpirations.forEach((e) => {
       const loc = e.homeLocation || 'Unknown';
@@ -918,12 +949,18 @@ const StudioPulse = memo(() => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
+    const ltvVals = filteredExpirations.map((e) => Number(e.paid) || 0).filter((v) => v > 0);
+    const avgLtvLapsed = ltvVals.length ? ltvVals.reduce((a, b) => a + b, 0) / ltvVals.length : 0;
     return {
       total,
       churned,
+      churnRate,
+      avgLtvLapsed,
       topLocations,
       momGrowth: pctChange(total, prev),
       yoyGrowth: pctChange(total, yoy),
+      churnRateMomGrowth: pctChange(churnRate, prevChurnRate),
+      churnRateYoyGrowth: pctChange(churnRate, yoyChurnRate),
     };
   }, [filteredExpirations, previousExpirations, previousYearExpirations]);
 
@@ -1172,12 +1209,14 @@ const StudioPulse = memo(() => {
         totalSessions: pctChange(rows.length, prevRows.length),
         avgFill: pctChange(capacity > 0 ? (attendance / capacity) * 100 : 0, prevCapacity > 0 ? (prevAttendance / prevCapacity) * 100 : 0),
         emptyShare: pctChange(rows.length ? (empty / rows.length) * 100 : 0, prevRows.length ? (prevEmpty / prevRows.length) * 100 : 0),
+        classAvg: pctChange(rows.length ? attendance / Math.max(rows.length - empty, 1) : 0, prevRows.length ? prevAttendance / Math.max(prevRows.length - prevEmpty, 1) : 0),
       },
       yoyGrowth: {
         attendance: pctChange(attendance, yoyAttendance),
         totalSessions: pctChange(rows.length, yoyRows.length),
         avgFill: pctChange(capacity > 0 ? (attendance / capacity) * 100 : 0, yoyCapacity > 0 ? (yoyAttendance / yoyCapacity) * 100 : 0),
         emptyShare: pctChange(rows.length ? (empty / rows.length) * 100 : 0, yoyRows.length ? (yoyEmpty / yoyRows.length) * 100 : 0),
+        classAvg: pctChange(rows.length ? attendance / Math.max(rows.length - empty, 1) : 0, yoyRows.length ? yoyAttendance / Math.max(yoyRows.length - yoyEmpty, 1) : 0),
       },
       trend,
       attDelta,
@@ -1219,12 +1258,16 @@ const StudioPulse = memo(() => {
         newClients: pctChange(total, prevTotal),
         conversionRate: pctChange(total ? (converted / total) * 100 : 0, prevTotal ? (prevConverted / prevTotal) * 100 : 0),
         retentionRate: pctChange(total ? (retained / total) * 100 : 0, prevTotal ? (prevRetained / prevTotal) * 100 : 0),
+        converted: pctChange(converted, prevConverted),
+        retained: pctChange(retained, prevRetained),
         lapsed: pctChange(lapsed, prevLapsed),
       },
       yoyGrowth: {
         newClients: pctChange(total, yoyTotal),
         conversionRate: pctChange(total ? (converted / total) * 100 : 0, yoyTotal ? (yoyConverted / yoyTotal) * 100 : 0),
         retentionRate: pctChange(total ? (retained / total) * 100 : 0, yoyTotal ? (yoyRetained / yoyTotal) * 100 : 0),
+        converted: pctChange(converted, yoyConverted),
+        retained: pctChange(retained, yoyRetained),
         lapsed: pctChange(lapsed, yoyLapsed),
       },
     };
@@ -1574,6 +1617,20 @@ const StudioPulse = memo(() => {
     return Object.entries(byTrainer).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredExpirations]);
 
+  const winBackStats = useMemo(() => {
+    const reactivated = filteredExpirations.filter((e) => /reactivat/i.test(e.status)).length;
+    const prevReactivated = previousExpirations.filter((e) => /reactivat/i.test(e.status)).length;
+    const yoyReactivated = previousYearExpirations.filter((e) => /reactivat/i.test(e.status)).length;
+    const total = filteredExpirations.length;
+    const winBackRate = total ? (reactivated / total) * 100 : 0;
+    return {
+      reactivated,
+      winBackRate,
+      momGrowth: pctChange(reactivated, prevReactivated),
+      yoyGrowth: pctChange(reactivated, yoyReactivated),
+    };
+  }, [filteredExpirations, previousExpirations, previousYearExpirations]);
+
   const [funnelRankingDimension, setFunnelRankingDimension] = useState<'source' | 'location' | 'stage' | 'membership' | 'class'>('source');
   const [newMemberTableMetric, setNewMemberTableMetric] = useState<'source' | 'membership' | 'class'>('source');
   const [funnelChartMetric, setFunnelChartMetric] = useState<'leads' | 'converted' | 'retained' | 'ltv'>('leads');
@@ -1797,8 +1854,8 @@ const StudioPulse = memo(() => {
           case 'TrainerDay': key = `${trainerName} · ${day}`; break;
           case 'ClassLocation': key = `${className} · ${loc}`; break;
           case 'TrainerTime': key = `${trainerName} · ${time}`; break;
-          case 'AMSessions': key = (parseInt(time) < 12 || time.toLowerCase().includes('am')) ? 'AM Sessions' : 'PM Sessions'; break;
-          case 'PMSessions': key = (parseInt(time) >= 12 || time.toLowerCase().includes('pm')) ? 'PM Sessions' : 'AM Sessions'; break;
+          case 'AMSessions': { const hour = parseInt(time); key = (!isNaN(hour) && hour < 12) || time.toLowerCase().includes('am') ? 'AM (Before 12pm)' : 'PM (12pm+)'; break; }
+          case 'PMSessions': { const hour = parseInt(time); key = (!isNaN(hour) && hour >= 12) || time.toLowerCase().includes('pm') ? 'PM (12pm+)' : 'AM (Before 12pm)'; break; }
           case 'MorningClasses': key = (parseInt(time) < 13) ? 'Morning (before 1pm)' : 'Afternoon/Evening'; break;
           case 'EveningClasses': key = (parseInt(time) >= 17 || time.toLowerCase().includes('evening')) ? 'Evening (5pm+)' : 'Day'; break;
           case 'Weekday': { const wd = ['Monday','Tuesday','Wednesday','Thursday','Friday']; key = wd.includes(day) ? 'Weekday' : 'Weekend'; break; }
@@ -2166,6 +2223,41 @@ const StudioPulse = memo(() => {
     });
     return Object.keys(monthly).sort().map((key) => monthly[key]);
   }, [filteredLateCancels]);
+
+  const unitsSoldSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    filteredSales.forEach((d) => {
+      const mk = monthKeyFromDate(d.paymentDate);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k]);
+  }, [filteredSales]);
+
+  const uniqueMembersSparkline = useMemo(() => {
+    const monthly: Record<string, Set<string>> = {};
+    filteredSales.forEach((d) => {
+      const mk = monthKeyFromDate(d.paymentDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = new Set();
+      if (d.memberId || d.customerEmail) monthly[mk].add(String(d.memberId || d.customerEmail));
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].size);
+  }, [filteredSales]);
+
+  const lapsedCountSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    filteredExpirations.forEach((d) => {
+      const mk = monthKeyFromDate(d.endDate);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k]);
+  }, [filteredExpirations]);
+
+  const lapsedCountSparklineLabels = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    filteredExpirations.forEach((d) => { const mk = monthKeyFromDate(d.endDate); if (mk) monthly[mk] = 1; });
+    return Object.keys(monthly).sort().map((k) => monthLabel(k));
+  }, [filteredExpirations]);
 
   // Back-face sparklines — all-time (not date-filtered) so flip shows real 12-month history
   const backRevenueSparkline = useMemo(() => {
@@ -2827,13 +2919,15 @@ const StudioPulse = memo(() => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.35 }}
-            className="space-y-6"
+            className="space-y-10"
           >
             <AnimatedSectionCard
               title="Studio Overview"
               subtitle={`${activeStudio.name} · ${dateRange.start} to ${dateRange.end}`}
               icon={Sparkles}
               iconGradient="from-slate-700 to-slate-900"
+              iconColor="#1e293b"
+              sectionNumber={1}
               action={
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => { setIsSummaryEditing((v) => !v); if (!isSummaryEditing && !editableSummaryText) { setEditableSummaryText((aiSummary?.bullets ?? locationSummary.sections.flatMap((s) => s.bullets)).map((b) => `• ${b}`).join('\n')); } }}>
@@ -2874,7 +2968,7 @@ const StudioPulse = memo(() => {
                 growthValue={salesStats.growth.txns}
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={salesStats.yoyGrowth.txns}
-                sparklineData={revenueSparkline}
+                sparklineData={unitsSoldSparkline}
                 sparklineLabels={revenueSparklineLabels}
                 backSparklineData={backUnitsSoldSparkline}
                 backSparklineLabels={backRevenueSparklineLabels}
@@ -2893,7 +2987,7 @@ const StudioPulse = memo(() => {
                 growthValue={salesStats.growth.members}
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={salesStats.yoyGrowth.members}
-                sparklineData={revenueSparkline}
+                sparklineData={uniqueMembersSparkline}
                 sparklineLabels={revenueSparklineLabels}
                 backSparklineData={backUniqueMembersSparkline}
                 backSparklineLabels={backRevenueSparklineLabels}
@@ -2912,8 +3006,8 @@ const StudioPulse = memo(() => {
                 growthValue={expirationStats.momGrowth}
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={expirationStats.yoyGrowth}
-                sparklineData={revenueSparkline}
-                sparklineLabels={revenueSparklineLabels}
+                sparklineData={lapsedCountSparkline}
+                sparklineLabels={lapsedCountSparklineLabels}
                 backSparklineData={backLapsedMembersSparkline}
                 backSparklineLabels={backRevenueSparklineLabels}
                 tooltipContent="Members whose memberships expired in the selected period, sourced from the Expirations sheet."
@@ -2966,9 +3060,9 @@ const StudioPulse = memo(() => {
                 precision={1}
                 formatter={formatNumber}
                 growthLabel="MoM"
-                growthValue={sessionStats.growth.attendance}
+                growthValue={sessionStats.growth.classAvg}
                 secondaryGrowthLabel="YoY"
-                secondaryGrowthValue={sessionStats.yoyGrowth.attendance}
+                secondaryGrowthValue={sessionStats.yoyGrowth.classAvg}
                 sparklineData={attendanceSparkline}
                 sparklineLabels={attendanceSparklineLabels}
                 backSparklineData={backClassAvgSparkline}
@@ -3036,18 +3130,6 @@ const StudioPulse = memo(() => {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08)]">
-              {/* Header bar */}
-              <div className="flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">Performance Summary</p>
-                  <p className="text-sm font-semibold text-white truncate">
-                    {aiLoading ? 'Generating…' : `${activeStudio.name} · ${dateRange.start} – ${dateRange.end}`}
-                  </p>
-                </div>
-              </div>
               <div className="p-6 space-y-6">
                 {aiLoading ? (
                   <div className="flex items-center gap-3 text-slate-500 py-4">
@@ -3077,19 +3159,11 @@ const StudioPulse = memo(() => {
                     <div className="space-y-6">
                       {/* Narrative */}
                       {narrative ? (
-                        <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-slate-50 px-6 py-5">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Sparkles className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-500">AI Studio Overview</span>
-                          </div>
-                          <p className="text-[14px] leading-relaxed text-slate-800 font-medium">{narrative}</p>
-                        </div>
+                        <p className="text-[15px] leading-[1.75] text-slate-800 font-normal tracking-[-0.01em]">{narrative}</p>
                       ) : (
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5">
-                          <p className="text-[14px] leading-relaxed text-slate-700 font-medium">
-                            {`${activeStudio.name} recorded ${formatCurrency(salesStats.net)} net sales across ${formatNumber(salesStats.txns)} transactions with ${formatNumber(sessionStats.attendance)} visits across ${formatNumber(sessionStats.totalSessions)} sessions (${formatPercentage(sessionStats.avgFill)} avg fill). ${clientStats.newClients} new clients entered the funnel — ${formatPercentage(clientStats.conversionRate)} converted, ${formatPercentage(clientStats.retentionRate)} retained. ${expirationStats.total} memberships lapsed with ${expirationStats.churned} classified as churned.`}
-                          </p>
-                        </div>
+                        <p className="text-[15px] leading-[1.75] text-slate-800 font-normal tracking-[-0.01em]">
+                          {`${activeStudio.name} recorded ${formatCurrency(salesStats.net)} net sales across ${formatNumber(salesStats.txns)} transactions with ${formatNumber(sessionStats.attendance)} visits across ${formatNumber(sessionStats.totalSessions)} sessions (${formatPercentage(sessionStats.avgFill)} avg fill). ${clientStats.newClients} new clients entered the funnel — ${formatPercentage(clientStats.conversionRate)} converted, ${formatPercentage(clientStats.retentionRate)} retained. ${expirationStats.total} memberships lapsed with ${expirationStats.churned} classified as churned.`}
+                        </p>
                       )}
                       {/* Key insights */}
                       <div>
@@ -3103,20 +3177,6 @@ const StudioPulse = memo(() => {
                           ))}
                         </div>
                       </div>
-                      {/* Stat strip */}
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        {[
-                          { label: 'Net Sales', value: formatCurrency(salesStats.net) },
-                          { label: 'Avg Fill', value: formatPercentage(sessionStats.avgFill) },
-                          { label: 'Conv Rate', value: formatPercentage(clientStats.conversionRate) },
-                          { label: 'Lapsed', value: formatNumber(expirationStats.total) },
-                        ].map(({ label, value }) => (
-                          <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-                            <p className="mt-1 text-[1.1rem] font-extrabold tabular-nums text-slate-900">{value}</p>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   );
                 })()}
@@ -3126,7 +3186,7 @@ const StudioPulse = memo(() => {
             </div>
             </AnimatedSectionCard>
 
-            <AnimatedSectionCard title="Sales Metrics" subtitle="Month-on-month table and seller lists" icon={CircleDollarSign} iconGradient="from-blue-700 to-blue-900">
+            <AnimatedSectionCard title="Sales Metrics" subtitle="Month-on-month table and seller lists" icon={CircleDollarSign} iconGradient="from-blue-600 to-blue-900" iconColor="#1d4ed8" sectionNumber={2}>
               <div className="space-y-6">
                 <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                   <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
@@ -3269,7 +3329,9 @@ const StudioPulse = memo(() => {
               title="New Member Funnel & Conversions"
               subtitle="Lead, trial, conversion, retention, and source performance in one view"
               icon={UserPlus}
-              iconGradient="from-blue-700 to-blue-900"
+              iconGradient="from-emerald-500 to-teal-700"
+              iconColor="#059669"
+              sectionNumber={3}
               action={
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
@@ -3286,8 +3348,8 @@ const StudioPulse = memo(() => {
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <StudioPulseMetricCard icon={<Users className="h-5 w-5" />} title="Leads Received" metric={leadStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={leadStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="All leads captured in the active period" iconContainerClassName="bg-gradient-to-br from-blue-700 to-slate-900 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
                 <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Trials / First Visits" metric={clientStats.newClients} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.newClients} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.newClients} subtext="Unique first visits from New sheet" iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
-                <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Converted Members" metric={clientStats.converted} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.conversionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.conversionRate} subtext={`${formatPercentage(clientStats.conversionRate)} conversion rate`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-800 text-white" backSparklineData={backConvertedSparkline} backSparklineLabels={backClientSparklineLabels} />
-                <StudioPulseMetricCard icon={<Wallet className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retentionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retentionRate} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" backSparklineData={backRetainedSparkline} backSparklineLabels={backClientSparklineLabels} />
+                <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Converted Members" metric={clientStats.converted} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.converted} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.converted} subtext={`${formatPercentage(clientStats.conversionRate)} conversion rate`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-800 text-white" backSparklineData={backConvertedSparkline} backSparklineLabels={backClientSparklineLabels} />
+                <StudioPulseMetricCard icon={<Wallet className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retained} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retained} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" backSparklineData={backRetainedSparkline} backSparklineLabels={backClientSparklineLabels} />
               </div>
 
               {showNewMemberMomTable && (
@@ -3336,41 +3398,49 @@ const StudioPulse = memo(() => {
                 const srcRetained = srcClients.filter(c => c.retentionStatus === 'Retained' && isInNewClientCohort(c)).length;
 
                 const fStages = [
-                  { id: 'leads',     label: 'Leads',     sub: '100% captured',                                 value: srcLeadTotal,  pctOfLeads: 100,    fromPrev: null as number|null, dropPct: null as number|null, accent: '#2563eb', light: '#eff6ff', textOnLight: '#1d4ed8' },
-                  { id: 'trials',    label: 'Trials',    sub: `${srcLeadTotal ? ((srcTrials/srcLeadTotal)*100).toFixed(1) : 0}% lead → trial`,  value: srcTrials,     pctOfLeads: srcLeadTotal ? (srcTrials/srcLeadTotal)*100 : 0,    fromPrev: srcLeadTotal ? (srcTrials/srcLeadTotal)*100 : null,    dropPct: srcLeadTotal && srcTrials < srcLeadTotal ? Math.round(((srcLeadTotal-srcTrials)/srcLeadTotal)*100) : null, accent: '#0891b2', light: '#ecfeff', textOnLight: '#0e7490' },
-                  { id: 'converted', label: 'Converted', sub: `${srcLeadTotal ? ((srcConverted/srcLeadTotal)*100).toFixed(1) : 0}% overall`,  value: srcConverted, pctOfLeads: srcLeadTotal ? (srcConverted/srcLeadTotal)*100 : 0, fromPrev: srcTrials ? (srcConverted/srcTrials)*100 : null, dropPct: srcTrials && srcConverted < srcTrials ? Math.round(((srcTrials-srcConverted)/srcTrials)*100) : null, accent: '#16a34a', light: '#f0fdf4', textOnLight: '#15803d' },
-                  { id: 'retained',  label: 'Retained',  sub: 'Active members',                               value: srcRetained,  pctOfLeads: srcLeadTotal ? (srcRetained/srcLeadTotal)*100 : 0,  fromPrev: srcConverted ? (srcRetained/srcConverted)*100 : null, dropPct: null, accent: '#7c3aed', light: '#faf5ff', textOnLight: '#6d28d9' },
+                  { id: 'leads',     label: 'Leads',     sub: '100% captured',                                 value: srcLeadTotal,  pctOfLeads: 100,    fromPrev: null as number|null, dropPct: null as number|null, accent: '#1e3a8a', light: '#eff6ff', textOnLight: '#1d4ed8' },
+                  { id: 'trials',    label: 'Trials',    sub: `${srcLeadTotal ? ((srcTrials/srcLeadTotal)*100).toFixed(1) : 0}% lead → trial`,  value: srcTrials,     pctOfLeads: srcLeadTotal ? (srcTrials/srcLeadTotal)*100 : 0,    fromPrev: srcLeadTotal ? (srcTrials/srcLeadTotal)*100 : null,    dropPct: srcLeadTotal && srcTrials < srcLeadTotal ? Math.round(((srcLeadTotal-srcTrials)/srcLeadTotal)*100) : null, accent: '#164e63', light: '#ecfeff', textOnLight: '#0e7490' },
+                  { id: 'retained',  label: 'Retained',  sub: 'Active members',                               value: srcRetained,  pctOfLeads: srcLeadTotal ? (srcRetained/srcLeadTotal)*100 : 0,  fromPrev: srcTrials ? (srcRetained/srcTrials)*100 : null, dropPct: srcTrials && srcRetained < srcTrials ? Math.round(((srcTrials-srcRetained)/srcTrials)*100) : null, accent: '#4c1d95', light: '#faf5ff', textOnLight: '#6d28d9' },
+                  { id: 'converted', label: 'Converted', sub: `${srcLeadTotal ? ((srcConverted/srcLeadTotal)*100).toFixed(1) : 0}% overall`,  value: srcConverted, pctOfLeads: srcLeadTotal ? (srcConverted/srcLeadTotal)*100 : 0, fromPrev: srcRetained ? (srcConverted/srcRetained)*100 : null, dropPct: null, accent: '#14532d', light: '#f0fdf4', textOnLight: '#15803d' },
                 ];
                 const active = fStages[activeIdx];
 
-                // Compute proportionate funnel trapezoids based on actual values
-                const CX = 300; // horizontal centre
-                const MAX_HW = 248; // half-width of leads (widest) stage
-                const MIN_HW = 60;  // minimum half-width so retained is never invisible
+                // SVG layout constants
+                const CX = 300;
+                const MAX_HW = 220; // half-width of leads
+                const MIN_HW = 72;  // minimum so bottom stages are visible
+                const STAGE_H = 130; // height per stage
+                const GAP = 4;       // gap between stages
+                const TOP_PAD = 30;
                 const leadVal = fStages[0].value || 1;
-                // Half-widths at top and bottom of each stage, proportionate to value
-                const hw = fStages.map(s => Math.max(MIN_HW, (s.value / leadVal) * MAX_HW));
-                // Y positions: stage tops and bottoms
-                const yTops = [34, 156, 284, 402];
-                const yBots = [154, 282, 400, 482];
+                // Half-widths proportionate to value, monotonically narrowing
+                const hwRaw = fStages.map(s => Math.max(MIN_HW, (s.value / leadVal) * MAX_HW));
+                const hw = hwRaw.reduce<number[]>((acc, w, i) => {
+                  acc.push(i === 0 ? w : Math.min(w, acc[i - 1]));
+                  return acc;
+                }, []);
+                // Compute Y positions dynamically
+                const yTops = fStages.map((_, i) => TOP_PAD + i * (STAGE_H + GAP));
+                const yBots = yTops.map(y => y + STAGE_H);
+                const SVG_H = yBots[3] + 70; // total svg height
                 const svgStages = fStages.map((_, i) => {
                   const tl = CX - hw[i], tr = CX + hw[i];
-                  const bl = CX - (i < 3 ? hw[i + 1] : hw[i] * 0.82);
-                  const br = CX + (i < 3 ? hw[i + 1] : hw[i] * 0.82);
+                  const nextHw = i < 3 ? hw[i + 1] : hw[i] * 0.85;
+                  const bl = CX - nextHw, br = CX + nextHw;
                   const yt = yTops[i], yb = yBots[i];
                   const midY = Math.round((yt + yb) / 2);
                   const isLast = i === 3;
+                  // last stage: rounded pill bottom
                   const path = isLast
-                    ? `M ${tl},${yt} L ${tr},${yt} C ${tr + 20},${yt} ${tr + 34},${yt + 14} ${tr + 28},${yt + 31} L ${tr + 18},${yt + 57} C ${tr + 13},${yt + 71} ${tr - 2},${yt + 80} ${tl + 52},${yt + 80} L ${bl},${yb} C ${bl - 16},${yb} ${bl - 29},${yb - 9} ${tl - 18},${yb - 23} L ${tl - 28},${yt + 31} C ${tl - 34},${yt + 14} ${tl - 20},${yt} ${tl},${yt} Z`
+                    ? `M ${bl},${yt} L ${br},${yt} L ${br + 18},${yt + 40} C ${br + 24},${yt + 75} ${br + 10},${yt + STAGE_H} ${CX + 60},${yt + STAGE_H} C ${CX + 20},${yt + STAGE_H + 18} ${CX - 20},${yt + STAGE_H + 18} ${CX - 60},${yt + STAGE_H} C ${bl - 10},${yt + STAGE_H} ${bl - 24},${yt + 75} ${bl - 18},${yt + 40} Z`
                     : `M ${tl},${yt} L ${tr},${yt} L ${br},${yb} L ${bl},${yb} Z`;
-                  const hl = i === 0 ? `M ${tl + 14},${yt + 10} L ${tr - 14},${yt + 10} L ${tr - 22},${yt + 50} L ${tl + 22},${yt + 50} Z` : null;
+                  const hl = i === 0 ? `M ${tl + 12},${yt + 8} L ${tr - 12},${yt + 8} L ${tr - 20},${yt + 44} L ${tl + 20},${yt + 44} Z` : null;
                   return {
                     path,
                     highlightPath: hl,
-                    labelY: midY - 18,
-                    valueY: midY + 10,
-                    annX1: i < 3 ? br + 10 : null,
-                    annY: i < 3 ? yb + 2 : null,
+                    labelY: midY - 16,
+                    valueY: midY + 18,
+                    rightEdgeX: br,
                   };
                 });
 
@@ -3414,7 +3484,7 @@ const StudioPulse = memo(() => {
                                     'inline-flex items-center gap-2 rounded-full border pl-2.5 pr-3 py-1.5 text-[12.5px] font-medium transition-all shadow-[0_1px_4px_rgba(15,23,42,0.07)]',
                                     isOn ? 'border-slate-300 bg-white shadow-md ring-2' : isMuted ? 'opacity-40 border-slate-100 bg-white' : 'border-slate-200 bg-white hover:shadow-md'
                                   )}
-                                  style={isOn ? { ringColor: c } : {}}
+                                  style={isOn ? { outline: `2px solid ${c}`, outlineOffset: '0px' } as React.CSSProperties : {}}
                                 >
                                   <span className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0" style={{ background: `${c}18` }}>
                                     <span className="w-2 h-2 rounded-full" style={{ background: c }} />
@@ -3436,22 +3506,22 @@ const StudioPulse = memo(() => {
                         {/* SVG funnel */}
                         <div className="relative px-4 pb-7 pt-2">
                           <div className="relative max-w-[620px] mx-auto">
-                            <svg viewBox="0 0 600 575" className="w-full h-auto" aria-label="Sales funnel">
+                            <svg viewBox={`0 0 600 ${SVG_H}`} className="w-full h-auto" aria-label="Sales funnel">
                               <defs>
                                 {fStages.map((s, i) => (
                                   <linearGradient key={s.id} id={gradIds[i]} x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor={s.accent} stopOpacity="0.92" />
-                                    <stop offset="100%" stopColor={s.accent} stopOpacity="0.72" />
+                                    <stop offset="0%" stopColor={s.accent} stopOpacity="1" />
+                                    <stop offset="100%" stopColor={s.accent} stopOpacity="0.82" />
                                   </linearGradient>
                                 ))}
                                 <filter id="pfl-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                                  <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#1a2035" floodOpacity="0.09" />
+                                  <feDropShadow dx="0" dy="6" stdDeviation="8" floodColor="#0f172a" floodOpacity="0.18" />
                                 </filter>
                               </defs>
 
                               {/* Ground shadow */}
-                              <ellipse cx="300" cy="538" rx="188" ry="22" fill="#cbd5e1" opacity="0.7" />
-                              <ellipse cx="300" cy="531" rx="164" ry="16" fill="#94a3b8" opacity="0.3" />
+                              <ellipse cx="300" cy={SVG_H - 20} rx={hw[3] + 30} ry="14" fill="#cbd5e1" opacity="0.6" />
+                              <ellipse cx="300" cy={SVG_H - 26} rx={hw[3] + 10} ry="9" fill="#94a3b8" opacity="0.25" />
 
                               {/* Funnel stages */}
                               {svgStages.map((sv, i) => {
@@ -3465,9 +3535,9 @@ const StudioPulse = memo(() => {
                                     role="button"
                                     aria-label={`${s.label} stage, ${formatNumber(s.value)}`}
                                   >
-                                    {/* Active glow ring for retained (bowl shape) */}
+                                    {/* Active glow ring for last stage (bowl shape) */}
                                     {i === 3 && isActive && (
-                                      <ellipse cx="300" cy="462" rx="182" ry="37" fill="none" stroke={s.accent} strokeOpacity="0.18" strokeWidth="20" />
+                                      <ellipse cx="300" cy={yTops[3] + STAGE_H - 10} rx={hw[3] + 20} ry="28" fill="none" stroke={s.accent} strokeOpacity="0.22" strokeWidth="18" />
                                     )}
                                     {/* Main shape */}
                                     <path
@@ -3485,11 +3555,11 @@ const StudioPulse = memo(() => {
                                       <path d={sv.path} fill="none" stroke="white" strokeOpacity="0.55" strokeWidth="2" />
                                     )}
                                     {/* Stage label */}
-                                    <text x="300" y={sv.labelY} textAnchor="middle" fill="white" fontSize="12.5" fontWeight="600" fontFamily="Inter, system-ui" opacity="0.95" style={{ letterSpacing: '0.05em' }}>
+                                    <text x="300" y={sv.labelY} textAnchor="middle" fill="white" fontSize="11" fontWeight="700" fontFamily="Inter, system-ui" opacity="0.88" style={{ letterSpacing: '0.12em' }}>
                                       {s.label.toUpperCase()}
                                     </text>
-                                    {/* Value */}
-                                    <text x="300" y={sv.valueY} textAnchor="middle" fill="white" fontSize={i === 0 ? 44 : i === 1 ? 38 : i === 2 ? 34 : 31} fontWeight="700" fontFamily="Inter, system-ui">
+                                    {/* Value — scale font to available width */}
+                                    <text x="300" y={sv.valueY} textAnchor="middle" fill="white" fontSize={Math.min(42, Math.max(22, hw[i] * 0.38))} fontWeight="700" fontFamily="Inter, system-ui">
                                       {formatNumber(s.value)}
                                     </text>
                                   </g>
@@ -3497,53 +3567,46 @@ const StudioPulse = memo(() => {
                               })}
 
                               {/* Intake lip */}
-                              <path d={`M ${CX - hw[0]},34 L ${CX + hw[0]},34`} stroke="white" strokeOpacity="0.9" strokeWidth="2.2" />
-                              <path d={`M ${CX - hw[0]},34 L ${CX - hw[1]},154`} stroke="white" opacity="0.22" strokeWidth="1.2" />
-                              <path d={`M ${CX + hw[0]},34 L ${CX + hw[1]},154`} stroke="white" opacity="0.15" strokeWidth="1.2" />
+                              <path d={`M ${CX - hw[0]},${yTops[0]} L ${CX + hw[0]},${yTops[0]}`} stroke="white" strokeOpacity="0.9" strokeWidth="2.2" />
+                              <path d={`M ${CX - hw[0]},${yTops[0]} L ${CX - hw[1]},${yBots[0]}`} stroke="white" opacity="0.22" strokeWidth="1.2" />
+                              <path d={`M ${CX + hw[0]},${yTops[0]} L ${CX + hw[1]},${yBots[0]}`} stroke="white" opacity="0.15" strokeWidth="1.2" />
 
-                              {/* Drop annotations — right side */}
-                              {fStages[1].dropPct !== null && svgStages[1].annX1 !== null && (() => {
-                                const ax = svgStages[1].annX1! + 4, ay = yTops[1];
+                              {/* Drop annotations — fixed right margin so never overlap funnel */}
+                              {[1, 2].map((i) => {
+                                if (fStages[i].dropPct === null) return null;
+                                const ay = yTops[i] + 18;
+                                const lostCount = i === 1 ? srcLeadTotal - srcTrials : srcTrials - srcRetained;
+                                const lineX = Math.min(CX + hw[i] + 8, 490);
                                 return (
-                                  <g fontFamily="monospace" fontSize="11">
-                                    <line x1={ax} y1={ay} x2={ax + 28} y2={ay} stroke="#cbd5e1" strokeDasharray="3 4" />
-                                    <text x={ax + 32} y={ay - 6} fill="#dc2626" fontWeight="600">{fStages[1].dropPct}% drop</text>
-                                    <text x={ax + 32} y={ay + 7} fill="#94a3b8">{formatNumber(srcLeadTotal - srcTrials)} lost</text>
+                                  <g key={i} fontFamily="Inter, system-ui" fontSize="11">
+                                    <line x1={lineX} y1={ay} x2={lineX + 16} y2={ay} stroke="#cbd5e1" strokeDasharray="3 3" />
+                                    <text x={lineX + 20} y={ay - 5} fill="#dc2626" fontWeight="700">{fStages[i].dropPct}% drop</text>
+                                    <text x={lineX + 20} y={ay + 9} fill="#94a3b8">{formatNumber(lostCount)} lost</text>
                                   </g>
                                 );
-                              })()}
-                              {fStages[2].dropPct !== null && svgStages[2].annX1 !== null && (() => {
-                                const ax = svgStages[2].annX1! + 4, ay = yTops[2];
-                                return (
-                                  <g fontFamily="monospace" fontSize="11">
-                                    <line x1={ax} y1={ay} x2={ax + 28} y2={ay} stroke="#cbd5e1" strokeDasharray="3 4" />
-                                    <text x={ax + 32} y={ay - 6} fill="#dc2626" fontWeight="600">{fStages[2].dropPct}% drop</text>
-                                    <text x={ax + 32} y={ay + 7} fill="#94a3b8">{formatNumber(srcTrials - srcConverted)} lost</text>
-                                  </g>
-                                );
-                              })()}
-                              {/* Retained annotation */}
+                              })}
+                              {/* Converted annotation — stage 3 right side */}
                               {(() => {
-                                const ax = (CX + hw[3] * 0.82) + 14, ay = yTops[3];
+                                const ay = yTops[3] + 18;
+                                const lineX = Math.min(CX + hw[3] + 8, 490);
                                 return (
-                                  <g fontFamily="monospace" fontSize="11">
-                                    <line x1={ax} y1={ay} x2={ax + 28} y2={ay} stroke="#86efac" />
-                                    <text x={ax + 32} y={ay - 5} fill="#16a34a" fontWeight="600">{srcConverted ? `${Math.round((srcRetained/srcConverted)*100)}%` : '0%'} ret.</text>
-                                    <text x={ax + 32} y={ay + 9} fill="#94a3b8">converted</text>
+                                  <g fontFamily="Inter, system-ui" fontSize="11">
+                                    <line x1={lineX} y1={ay} x2={lineX + 16} y2={ay} stroke="#86efac" />
+                                    <text x={lineX + 20} y={ay - 5} fill="#15803d" fontWeight="700">{srcRetained ? `${Math.round((srcConverted/srcRetained)*100)}%` : '0%'} conv.</text>
+                                    <text x={lineX + 20} y={ay + 9} fill="#94a3b8">of retained</text>
                                   </g>
                                 );
                               })()}
 
-                              {/* Left pct tick labels */}
-                              <g fontFamily="Inter, system-ui" fontSize="11.5" fill="#94a3b8">
-                                <text x="38" y="100" textAnchor="end">100%</text>
-                                <text x="108" y="222" textAnchor="end">{fStages[1].pctOfLeads.toFixed(1)}%</text>
-                                <text x="168" y="343" textAnchor="end">{fStages[2].pctOfLeads.toFixed(1)}%</text>
-                                <text x="135" y="455" textAnchor="end">{fStages[3].pctOfLeads.toFixed(1)}%</text>
+                              {/* Left pct tick labels — fixed left margin */}
+                              <g fontFamily="Inter, system-ui" fontSize="11" fill="#94a3b8">
+                                {fStages.map((s, i) => (
+                                  <text key={s.id} x="44" y={yTops[i] + STAGE_H / 2 + 4} textAnchor="end">{s.pctOfLeads.toFixed(1)}%</text>
+                                ))}
                               </g>
 
                               {/* Footer note */}
-                              <text x="300" y="565" textAnchor="middle" fontSize="10.5" fill="#94a3b8" fontFamily="Inter, system-ui">
+                              <text x="300" y={SVG_H - 4} textAnchor="middle" fontSize="10" fill="#94a3b8" fontFamily="Inter, system-ui">
                                 * Retained includes active members from prior periods
                               </text>
                             </svg>
@@ -3591,7 +3654,7 @@ const StudioPulse = memo(() => {
                                       <div className="text-[11.5px] text-slate-400">{active.fromPrev !== null ? 'from previous' : 'top of funnel'}</div>
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-[220px] text-xs">% of people from the previous funnel stage who reached this stage. Leads→Trials, Trials→Converted, Converted→Retained.</TooltipContent>
+                                  <TooltipContent className="max-w-[220px] text-xs">% of people from the previous funnel stage who reached this stage. Leads→Trials, Trials→Retained, Retained→Converted.</TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -3657,8 +3720,8 @@ const StudioPulse = memo(() => {
                             <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3.5 py-3 text-[12.5px] leading-relaxed text-slate-600">
                               {activeIdx === 0 && `${formatNumber(srcLeadTotal)} leads captured${srcFilter ? ` from ${srcFilter}` : ''}. Top source: ${leadStats.topSources[0]?.name || 'N/A'} with ${formatNumber(leadStats.topSources[0]?.count || 0)}.`}
                               {activeIdx === 1 && `${fStages[1].pctOfLeads.toFixed(1)}% of leads became first visits. ${fStages[1].dropPct ? `${fStages[1].dropPct}% dropped before this stage.` : ''}`}
-                              {activeIdx === 2 && `${srcTrials ? `${((srcConverted/srcTrials)*100).toFixed(1)}%` : '0%'} trial → member. Avg LTV of converted members: ${formatCurrency(clientStats.avgLtv)}.`}
-                              {activeIdx === 3 && `${formatNumber(srcRetained)} active retained members. ${srcConverted ? `${Math.round((srcRetained/srcConverted)*100)}%` : '0%'} of converted retained.`}
+                              {activeIdx === 2 && `${formatNumber(srcRetained)} active retained members. ${srcTrials ? `${((srcRetained/srcTrials)*100).toFixed(1)}%` : '0%'} of trials retained.`}
+                              {activeIdx === 3 && `${srcRetained ? `${((srcConverted/srcRetained)*100).toFixed(1)}%` : '0%'} retained → converted member. Avg LTV of converted members: ${formatCurrency(clientStats.avgLtv)}.`}
                             </div>
                           </div>
                         </div>
@@ -3832,7 +3895,9 @@ const StudioPulse = memo(() => {
               title="Teacher Scorecard"
               subtitle="Trainer attendance, fill, conversion, retention, and pay on one consistent shell"
               icon={UserCheck}
-              iconGradient="from-blue-700 to-blue-900"
+              iconGradient="from-violet-600 to-purple-900"
+              iconColor="#7c3aed"
+              sectionNumber={4}
               action={
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
@@ -4168,7 +4233,9 @@ const StudioPulse = memo(() => {
               title="Lapsed Members"
               subtitle="Membership expirations, churn pressure, and lifetime metrics"
               icon={Flame}
-              iconGradient="from-red-700 to-rose-900"
+              iconGradient="from-red-600 to-rose-900"
+              iconColor="#dc2626"
+              sectionNumber={5}
               action={
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
@@ -4184,10 +4251,10 @@ const StudioPulse = memo(() => {
             >
               {/* Metric cards */}
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <StudioPulseMetricCard icon={<Flame className="h-5 w-5" />} title="Lapsed Members" metric={expirationStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} subtext={`${formatNumber(expirationStats.churned)} churned · memberships expired`} iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-800 text-white" />
-                <StudioPulseMetricCard icon={<CalendarClock className="h-5 w-5" />} title="Late Cancellations" metric={lcStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={lcStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={pctChange(lcStats.total, previousYearLateCancels.length)} subtext={`${formatNumber(lcStats.sameDay)} same-day · ${formatCurrency(lcStats.penalty)} penalty`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" />
-                <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Churn Rate" metric={expirationStats.total ? (expirationStats.churned / expirationStats.total) * 100 : 0} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} subtext={`${formatNumber(expirationStats.churned)} of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-rose-600 to-red-900 text-white" />
-                <StudioPulseMetricCard icon={<CircleDollarSign className="h-5 w-5" />} title="Avg LTV (Lapsed)" metric={clientStats.avgLtv} precision={0} formatter={formatCurrency} growthLabel="MoM" growthValue={null} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="Average lifetime value of lapsed clients" iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
+                <StudioPulseMetricCard icon={<Flame className="h-5 w-5" />} title="Lapsed Members" metric={expirationStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} sparklineData={lapsedCountSparkline} sparklineLabels={lapsedCountSparklineLabels} backSparklineData={backLapsedMembersSparkline} backSparklineLabels={backRevenueSparklineLabels} subtext={`${formatNumber(expirationStats.churned)} churned · memberships expired`} iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-800 text-white" onClick={() => openMetricDrillDown('Lapsed Members', 'client', { name: 'Lapsed Members', rawData: filteredExpirations as any, filteredTransactionData: filteredExpirations as any }, filteredExpirations as any)} />
+                <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Churn Rate" metric={expirationStats.churnRate} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={expirationStats.churnRateMomGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.churnRateYoyGrowth} sparklineData={lapsedCountSparkline} sparklineLabels={lapsedCountSparklineLabels} backSparklineData={backLapsedMembersSparkline} backSparklineLabels={backRevenueSparklineLabels} subtext={`${formatNumber(expirationStats.churned)} of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-rose-600 to-red-900 text-white" />
+                <StudioPulseMetricCard icon={<RotateCcw className="h-5 w-5" />} title="Win-Back Rate" metric={winBackStats.winBackRate} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={winBackStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={winBackStats.yoyGrowth} subtext={`${formatNumber(winBackStats.reactivated)} reactivated of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-700 text-white" tooltipContent="Percentage of lapsed members who reactivated in the selected period." />
+                <StudioPulseMetricCard icon={<CircleDollarSign className="h-5 w-5" />} title="Avg LTV (Lapsed)" metric={expirationStats.avgLtvLapsed} precision={0} formatter={formatCurrency} growthLabel="MoM" growthValue={null} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="Average amount paid by lapsed members" iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" tooltipContent="Average of the paid amount across all lapsed memberships in the selected period." />
               </div>
 
               {/* Studio Churn Tracker — monthly trend */}
@@ -4198,8 +4265,8 @@ const StudioPulse = memo(() => {
                       <AreaChart
                         data={[...lapsedMatrix.months].reverse().map((m) => ({
                           month: lapsedMatrix.monthLabels[m],
-                          Lapsed: lapsedMatrix.metricRows[0]?.values[m] || 0,
-                          Churned: lapsedMatrix.metricRows[1]?.values[m] || 0,
+                          Lapsed: lapsedMatrix.metricRows[2]?.values[m] || 0,
+                          Churned: lapsedMatrix.metricRows[3]?.values[m] || 0,
                         }))}
                         margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
                       >
@@ -4515,7 +4582,9 @@ const StudioPulse = memo(() => {
               title="Class Attendance"
               subtitle="Session delivery, fill rates, format mix, and class-level utilization"
               icon={LineChart}
-              iconGradient="from-cyan-700 to-blue-900"
+              iconGradient="from-cyan-500 to-sky-800"
+              iconColor="#0891b2"
+              sectionNumber={6}
               action={
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
@@ -4531,7 +4600,7 @@ const StudioPulse = memo(() => {
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <StudioPulseMetricCard icon={<LineChart className="h-5 w-5" />} title="Visits" metric={sessionStats.attendance} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.attendance} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.attendance} subtext={`${formatNumber(sessionStats.totalSessions)} sessions · ${formatPercentage(sessionStats.avgFill)} fill`} iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" />
-                <StudioPulseMetricCard icon={<Scan className="h-5 w-5" />} title="Avg Class Size" metric={sessionStats.classAvg} precision={1} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.attendance} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.attendance} subtext={`${formatPercentage(sessionStats.emptyShare)} empty-session share`} iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
+                <StudioPulseMetricCard icon={<Scan className="h-5 w-5" />} title="Avg Class Size" metric={sessionStats.classAvg} precision={1} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.classAvg} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.classAvg} subtext={`${formatPercentage(sessionStats.emptyShare)} empty-session share`} iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
                 <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Fill Rate" metric={sessionStats.avgFill} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={sessionStats.growth.avgFill} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.avgFill} subtext="Capacity utilization across all sessions" iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-700 text-white" />
                 <StudioPulseMetricCard icon={<BarChart2 className="h-5 w-5" />} title="Sessions Conducted" metric={sessionStats.totalSessions} precision={0} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.totalSessions} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.totalSessions} subtext={`${formatPercentage(sessionStats.emptyShare)} empty share`} iconContainerClassName="bg-gradient-to-br from-teal-600 to-emerald-700 text-white" />
               </div>
@@ -5207,18 +5276,27 @@ const StudioPulse = memo(() => {
               title="Class Formats & Performance Analysis"
               subtitle="Format-level attendance trends, fill rates, revenue, and trainer comparison"
               icon={BarChart2}
-              iconGradient="from-violet-700 to-purple-900"
+              iconGradient="from-orange-500 to-amber-700"
+              iconColor="#d97706"
+              sectionNumber={7}
             >
               <div className="space-y-6">
                 {/* Comparison cards (overview) */}
                 <FormatComparisonSection sessions={filteredSessions} activeTab={formatCompTab} onTabChange={setFormatCompTab} />
-                {/* Detailed per-class breakdown — same data as Class Formats > Detailed tab */}
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-violet-900 to-purple-900 px-5 py-3 text-white">
-                    <h4 className="text-sm font-bold">Detailed format breakdown</h4>
-                    <p className="text-[11px] text-white/60">Per-class metrics: sessions, attendance, fill, revenue, late cancels</p>
+                {/* Detailed per-class breakdown */}
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-5 py-4 text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                        <BarChart2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold">Detailed Format Breakdown</h4>
+                        <p className="text-[11px] text-white/60">Per-class metrics: sessions, attendance, fill, revenue, late cancels · by trainer, time slot, or day</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-4">
+                  <div className="p-5">
                     <DetailedComparisonView data={filteredSessions as any} />
                   </div>
                 </div>

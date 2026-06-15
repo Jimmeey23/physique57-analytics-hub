@@ -226,7 +226,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       <div className="max-h-[600px] overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-20">
-            <TableRow className="border-slate-800 bg-slate-950">
+            <TableRow className="border-slate-800 bg-slate-950 hover:bg-slate-950">
               <TableHead className="sticky left-0 z-30 min-w-[200px] bg-slate-950 py-3 text-xs font-semibold uppercase tracking-wide text-white">
                 Client Type
               </TableHead>
@@ -235,7 +235,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
                 return (
                   <TableHead
                     key={mk}
-                    className={`min-w-[70px] py-3 text-center text-xs font-semibold uppercase tracking-wide ${isActive ? 'bg-blue-800 text-white' : 'text-white/70'}`}
+                    className={`min-w-[70px] py-3 text-center text-xs font-semibold uppercase tracking-wide ${isActive ? 'bg-blue-800 text-white' : 'bg-slate-950 text-white/70'}`}
                   >
                     {isActive && <Star className="w-3 h-3 mx-auto mb-0.5 text-white" />}
                     <div>{fmtMonthKey(mk).split(' ')[0]}</div>
@@ -438,18 +438,18 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
       <div className="max-h-[480px] overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-20 bg-slate-950">
-            <TableRow className="border-slate-800">
+            <TableRow className="border-slate-800 hover:bg-slate-950">
               <TableHead className="sticky left-0 z-30 min-w-[200px] bg-slate-950 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-white">
                 First Purchase
               </TableHead>
-              <TableHead className="py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Members</TableHead>
-              <TableHead className="py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Units Sold</TableHead>
-              <TableHead className="py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">Total LTV</TableHead>
-              <TableHead className="py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">ATV</TableHead>
-              <TableHead className="py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">AUV</TableHead>
-              <TableHead className="py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Purch. Freq</TableHead>
-              <TableHead className="py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Avg Conv Days</TableHead>
-              <TableHead className="py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Avg Visits</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Members</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Units Sold</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">Total LTV</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">ATV</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">AUV</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Purch. Freq</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Avg Conv Days</TableHead>
+              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Avg Visits</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

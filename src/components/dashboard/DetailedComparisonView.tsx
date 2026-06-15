@@ -32,6 +32,8 @@ type MetricType =
   | 'rev-per-session'
   | 'rev-per-attendee';
 
+type BreakdownTab = 'trainer' | 'time' | 'day';
+
 interface AggregateStats {
   sessions: number;
   revenue: number;
@@ -103,10 +105,17 @@ const getMetricSortValue = (row: MetricRow, metric: MetricType) => {
 const sortRows = (rows: MetricRow[], metric: MetricType) =>
   [...rows].sort((a, b) => getMetricSortValue(b, metric) - getMetricSortValue(a, metric));
 
+const BREAKDOWN_TABS: { value: BreakdownTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: 'trainer', label: 'Trainer', icon: User },
+  { value: 'time', label: 'Time Slot', icon: Clock },
+  { value: 'day', label: 'Day of Week', icon: CalendarDays },
+];
+
 const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data }) => {
   const sessions = Array.isArray(data) ? data : [];
   const [metric, setMetric] = useState<MetricType>('revenue');
   const [selectedFormat, setSelectedFormat] = useState<string>('');
+  const [breakdownTab, setBreakdownTab] = useState<BreakdownTab>('trainer');
 
   const formats = useMemo(() => {
     const presentFormats = new Set(sessions.map((s) => getClassFormat(s.cleanedClass || s.classType)));
@@ -168,6 +177,8 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
     };
   }, [formatSessions, metric]);
 
+  const activeRows = breakdownTab === 'trainer' ? formatData.byTrainer : breakdownTab === 'time' ? formatData.byTime : formatData.byDay;
+
   const bestPerformers = useMemo(() => {
     const trainerLeader = formatData.byTrainer[0];
     const timeLeader = formatData.byTime[0];
@@ -196,74 +207,6 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
       { label: 'Empty Classes', value: formatNumber(formatOverview.emptyClasses), icon: BarChart3, accent: 'from-slate-600 to-slate-800' },
     ];
   }, [formatOverview]);
-
-  const getTableIcon = (type: 'trainer' | 'time' | 'day') => {
-    if (type === 'trainer') return <User className="w-5 h-5" />;
-    if (type === 'time') return <Clock className="w-5 h-5" />;
-    return <CalendarDays className="w-5 h-5" />;
-  };
-
-  const renderTable = (rows: MetricRow[], title: string, type: 'trainer' | 'time' | 'day') => {
-    if (rows.length === 0) return null;
-    return (
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        {/* Dark gradient header — matches StudioPulse table headers */}
-        <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-              {getTableIcon(type)}
-            </div>
-            <div>
-              <h4 className="text-base font-bold">{title}</h4>
-              <p className="text-xs text-white/60">Sorted by {metric.replace(/-/g, ' ')} · {selectedFormat}</p>
-            </div>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.16em] text-slate-500">
-                <th className="border-b border-slate-200 px-4 py-3 text-left sticky left-0 bg-slate-50">Name</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Sessions</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Attendance</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Booked</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Fill %</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Booking %</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Show-up %</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">No-show %</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">LC %</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Avg/Class</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-right">Revenue</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-right">Rev/Class</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-right">Rev/Att</th>
-                <th className="border-b border-slate-200 px-3 py-3 text-center">Empty</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {rows.map((row, i) => (
-                <tr key={row.name} className={cn('h-[44px] border-b border-slate-200 transition-colors hover:bg-slate-50/80', i % 2 === 1 && 'bg-slate-50/40')}>
-                  <td className="px-4 py-2 font-semibold text-slate-900 sticky left-0 bg-inherit text-sm">{row.name}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.sessions)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.checkins)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.booked)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatPercentage(row.fillRate)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatPercentage(row.bookingRate)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-emerald-700 font-semibold">{formatPercentage(row.showUpRate)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-amber-700">{formatPercentage(row.noShowRate)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-red-600">{formatPercentage(row.lateCancelRate)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums font-semibold text-blue-700">{formatNumber(row.avgAttendance)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-slate-900">{formatCurrency(row.revenue)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-700">{formatCurrency(row.revPerSession)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-slate-700">{formatCurrency(row.revPerAttendee)}</td>
-                  <td className="px-3 py-2 text-center tabular-nums text-slate-500">{formatNumber(row.emptyClasses)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -329,7 +272,7 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
 
       {selectedFormat && formatSessions.length > 0 && (
         <>
-          {/* Summary stat chips — match StudioPulse metric card style */}
+          {/* Summary stat chips */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
             {summaryCards.map((card) => {
               const Icon = card.icon;
@@ -364,11 +307,86 @@ const DetailedComparisonView: React.FC<DetailedComparisonViewProps> = ({ data })
             })}
           </div>
 
-          {/* Breakdown tables */}
-          <div className="space-y-5">
-            {renderTable(formatData.byTrainer, 'Trainer Breakdown', 'trainer')}
-            {renderTable(formatData.byTime, 'Time Slot Breakdown', 'time')}
-            {renderTable(formatData.byDay, 'Day of Week Breakdown', 'day')}
+          {/* Combined breakdown table with tabs */}
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-5 py-4 text-white">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h4 className="text-sm font-bold">Breakdown · {selectedFormat}</h4>
+                  <p className="text-[11px] text-white/60">Sorted by {metric.replace(/-/g, ' ')}</p>
+                </div>
+                {/* Tab switcher in header */}
+                <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-0.5 gap-0.5">
+                  {BREAKDOWN_TABS.map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setBreakdownTab(value)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150',
+                        breakdownTab === value
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-white/70 hover:text-white'
+                      )}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              {activeRows.length > 0 ? (
+                <table className="min-w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                      <th className="border-b border-slate-200 px-4 py-3 text-left sticky left-0 bg-slate-50">
+                        {breakdownTab === 'trainer' ? 'Trainer' : breakdownTab === 'time' ? 'Time Slot' : 'Day'}
+                      </th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Sessions</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Attendance</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Booked</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Fill %</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Booking %</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Show-up %</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">No-show %</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">LC %</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Avg/Class</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-right">Revenue</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-right">Rev/Class</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-right">Rev/Att</th>
+                      <th className="border-b border-slate-200 px-3 py-3 text-center">Empty</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    {activeRows.map((row, i) => (
+                      <tr key={row.name} className={cn('h-[44px] border-b border-slate-100 transition-colors hover:bg-slate-50/80', i % 2 === 1 && 'bg-slate-50/40')}>
+                        <td className="px-4 py-2 font-semibold text-slate-900 sticky left-0 bg-inherit text-sm">{row.name}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.sessions)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.checkins)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatNumber(row.booked)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatPercentage(row.fillRate)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-slate-700">{formatPercentage(row.bookingRate)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-emerald-700 font-semibold">{formatPercentage(row.showUpRate)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-amber-700">{formatPercentage(row.noShowRate)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-red-600">{formatPercentage(row.lateCancelRate)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums font-semibold text-blue-700">{formatNumber(row.avgAttendance)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-bold text-slate-900">{formatCurrency(row.revenue)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-slate-700">{formatCurrency(row.revPerSession)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-slate-700">{formatCurrency(row.revPerAttendee)}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-slate-500">{formatNumber(row.emptyClasses)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-8 text-center text-sm text-slate-400">No data for this breakdown.</div>
+              )}
+            </div>
           </div>
         </>
       )}
