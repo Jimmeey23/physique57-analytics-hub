@@ -187,7 +187,7 @@ export const UniversalDrillDownModal: React.FC<UniversalDrillDownModalProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-6xl overflow-hidden border border-slate-200 bg-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
+      <DialogContent className="max-h-[95vh] max-w-[86rem] overflow-hidden border border-slate-200 bg-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
         <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-6 py-5 text-white">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-3">

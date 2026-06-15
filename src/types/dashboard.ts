@@ -202,26 +202,32 @@ export type TableData = Record<string, any>;
 export type MetricType = 'revenue' | 'transactions' | 'members' | 'atv' | 'auv' | 'asv' | 'upt';
 
 // Trainer-specific metric types
-export type TrainerMetricType = 
-  | 'totalSessions' 
-  | 'totalCustomers' 
-  | 'totalPaid' 
-  | 'classAverage' 
+export type TrainerMetricType =
+  | 'totalSessions'
+  | 'totalCustomers'
+  | 'totalPaid'
+  | 'classAverage'
   | 'classAverageExclEmpty'
   | 'classAverageInclEmpty'
-  | 'retention' 
-  | 'conversion' 
+  | 'retention'
+  | 'conversion'
   | 'retentionRate'
   | 'conversionRate'
-  | 'emptySessions' 
+  | 'emptySessions'
   | 'nonEmptySessions'
   | 'newMembers'
   | 'cycleSessions'
   | 'barreSessions'
+  | 'strengthSessions'
   | 'retainedMembers'
   | 'convertedMembers'
   | 'cycleRevenue'
-  | 'barreRevenue';
+  | 'barreRevenue'
+  | 'revenuePerSession'
+  | 'revenuePerCustomer'
+  | 'fillRate'
+  | 'utilizationRate'
+  | 'consistencyScore';
 
 // Year-on-year specific metric types
 export type YearOnYearMetricType = 

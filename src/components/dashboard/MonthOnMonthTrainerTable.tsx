@@ -68,15 +68,20 @@ export const MonthOnMonthTrainerTable = ({
       case 'totalPaid':
       case 'cycleRevenue':
       case 'barreRevenue':
+      case 'revenuePerSession':
+      case 'revenuePerCustomer':
         return formatCurrency(value);
       case 'retentionRate':
       case 'conversionRate':
+      case 'fillRate':
+      case 'utilizationRate':
+      case 'consistencyScore':
         return `${value.toFixed(1)}%`;
       case 'classAverageExclEmpty':
       case 'classAverageInclEmpty':
         return value.toFixed(1);
       default:
-        return formatNumber(value);
+        return formatNumber(Math.round(value));
     }
   };
 
@@ -137,42 +142,57 @@ export const MonthOnMonthTrainerTable = ({
   const monthlyTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     const isClassAvg = selectedMetric === 'classAverageExclEmpty' || selectedMetric === 'classAverageInclEmpty';
-    const isRate = selectedMetric === 'conversionRate' || selectedMetric === 'retentionRate';
+    const isConvRate = selectedMetric === 'conversionRate';
+    const isRetRate = selectedMetric === 'retentionRate';
+    const isFillRate = selectedMetric === 'fillRate' || selectedMetric === 'utilizationRate' || selectedMetric === 'consistencyScore';
+    const isRate = isConvRate || isRetRate;
+
     processedData.months.forEach(month => {
-      if (!isClassAvg && !isRate) {
+      if (!isClassAvg && !isRate && !isFillRate) {
         let sum = 0;
         Object.values(processedData.trainerGroups).forEach(trainerData => {
           if (trainerData[month]) sum += getMetricValue(trainerData[month], selectedMetric);
         });
         totals[month] = sum;
       } else if (isClassAvg) {
-        let numerator = 0; // attendees
-        let denom = 0; // sessions (non-empty for exclEmpty)
+        let numerator = 0;
+        let denom = 0;
         Object.values(processedData.trainerGroups).forEach(trainerData => {
           const rec = trainerData[month];
           if (!rec) return;
           const sessions = selectedMetric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
-          const customers = rec.totalCustomers || 0;
-          numerator += customers;
+          numerator += rec.totalCustomers || 0;
           denom += sessions;
         });
         totals[month] = denom > 0 ? numerator / denom : 0;
-      } else if (isRate) {
-        // Weighted average of rates by new members for the month
-        let numerator = 0; // converted or retained members
-        let denom = 0; // new members
+      } else if (isConvRate) {
+        let num = 0, den = 0;
         Object.values(processedData.trainerGroups).forEach(trainerData => {
           const rec: any = trainerData[month];
           if (!rec) return;
-          if (selectedMetric === 'conversionRate') {
-            numerator += (rec.convertedMembers || 0);
-            denom += (rec.newMembers || 0);
-          } else if (selectedMetric === 'retentionRate') {
-            numerator += (rec.retainedMembers || 0);
-            denom += (rec.newMembers || 0);
-          }
+          num += rec.convertedMembers || 0;
+          den += rec.newMembers || 0;
         });
-        totals[month] = denom > 0 ? (numerator / denom) * 100 : 0;
+        totals[month] = den > 0 ? (num / den) * 100 : 0;
+      } else if (isRetRate) {
+        let num = 0, den = 0;
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec: any = trainerData[month];
+          if (!rec) return;
+          num += rec.retainedMembers || 0;
+          den += rec.newMembers || 0;
+        });
+        totals[month] = den > 0 ? (num / den) * 100 : 0;
+      } else if (isFillRate) {
+        // Simple average across trainers active that month
+        let sum = 0, count = 0;
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec = trainerData[month];
+          if (!rec) return;
+          sum += getMetricValue(rec, selectedMetric);
+          count++;
+        });
+        totals[month] = count > 0 ? sum / count : 0;
       }
     });
     return totals;
@@ -183,44 +203,38 @@ export const MonthOnMonthTrainerTable = ({
     const allValues = Object.values(monthlyTotals);
     const isClassAvg = selectedMetric === 'classAverageExclEmpty' || selectedMetric === 'classAverageInclEmpty';
     const isRate = selectedMetric === 'conversionRate' || selectedMetric === 'retentionRate';
+    const isAvgMetric = isClassAvg || isRate || selectedMetric === 'fillRate' || selectedMetric === 'utilizationRate' || selectedMetric === 'consistencyScore';
     let total = 0;
-    if (!isClassAvg && !isRate) {
+    if (!isAvgMetric) {
       total = allValues.reduce((sum, val) => sum + val, 0);
     } else if (isClassAvg) {
-      // Compute overall weighted average across months
-      let numerator = 0;
-      let denom = 0;
-      processedData.months.forEach(month => {
-        Object.values(processedData.trainerGroups).forEach(trainerData => {
-          const rec = (trainerData as any)[month];
-          if (!rec) return;
-          const sessions = selectedMetric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
-          const customers = rec.totalCustomers || 0;
-          numerator += customers;
-          denom += sessions;
-        });
-      });
-      total = denom > 0 ? (numerator / denom) : 0;
-    } else if (isRate) {
-      // Weighted average across all months by new members
-      let numerator = 0;
-      let denom = 0;
+      let num = 0, den = 0;
       processedData.months.forEach(month => {
         Object.values(processedData.trainerGroups).forEach(trainerData => {
           const rec: any = (trainerData as any)[month];
           if (!rec) return;
-          if (selectedMetric === 'conversionRate') {
-            numerator += (rec.convertedMembers || 0);
-            denom += (rec.newMembers || 0);
-          } else if (selectedMetric === 'retentionRate') {
-            numerator += (rec.retainedMembers || 0);
-            denom += (rec.newMembers || 0);
-          }
+          const sessions = selectedMetric === 'classAverageExclEmpty' ? (rec.nonEmptySessions || 0) : (rec.totalSessions || 0);
+          num += rec.totalCustomers || 0;
+          den += sessions;
         });
       });
-      total = denom > 0 ? (numerator / denom) * 100 : 0;
+      total = den > 0 ? num / den : 0;
+    } else if (isRate) {
+      let num = 0, den = 0;
+      processedData.months.forEach(month => {
+        Object.values(processedData.trainerGroups).forEach(trainerData => {
+          const rec: any = (trainerData as any)[month];
+          if (!rec) return;
+          if (selectedMetric === 'conversionRate') { num += rec.convertedMembers || 0; den += rec.newMembers || 0; }
+          else { num += rec.retainedMembers || 0; den += rec.newMembers || 0; }
+        });
+      });
+      total = den > 0 ? (num / den) * 100 : 0;
+    } else {
+      // fillRate / utilizationRate — simple average of monthly totals
+      total = allValues.length > 0 ? allValues.reduce((s, v) => s + v, 0) / allValues.length : 0;
     }
-    const average = allValues.length > 0 && !isClassAvg && !isRate ? total / allValues.length : total; // for class avg & rates, show the weighted average as "total"
+    const average = !isAvgMetric && allValues.length > 0 ? total / allValues.length : total;
     const growth = allValues.length >= 2 ? getChangePercentage(allValues[0], allValues[1]) : 0;
     return { total, average, growth };
   }, [monthlyTotals, processedData, selectedMetric]);
@@ -278,9 +292,19 @@ export const MonthOnMonthTrainerTable = ({
       'totalPaid',
       'classAverageExclEmpty',
       'emptySessions',
+      'nonEmptySessions',
+      'fillRate',
+      'utilizationRate',
       'conversionRate',
       'retentionRate',
-      'newMembers'
+      'newMembers',
+      'convertedMembers',
+      'retainedMembers',
+      'revenuePerSession',
+      'revenuePerCustomer',
+      'cycleSessions',
+      'barreSessions',
+      'strengthSessions',
     ];
 
     const metricLabel = (m: TrainerMetricType) => {
@@ -288,11 +312,22 @@ export const MonthOnMonthTrainerTable = ({
         case 'totalSessions': return 'Total Sessions';
         case 'totalCustomers': return 'Total Members';
         case 'totalPaid': return 'Total Revenue';
-        case 'classAverageExclEmpty': return 'Class Average';
+        case 'classAverageExclEmpty': return 'Class Average (Excl Empty)';
+        case 'classAverageInclEmpty': return 'Class Average (Incl Empty)';
         case 'emptySessions': return 'Empty Sessions';
+        case 'nonEmptySessions': return 'Active Classes';
+        case 'fillRate': return 'Fill Rate';
+        case 'utilizationRate': return 'Utilisation Rate';
         case 'conversionRate': return 'Conversion Rate';
         case 'retentionRate': return 'Retention Rate';
         case 'newMembers': return 'New Members';
+        case 'convertedMembers': return 'Converted Members';
+        case 'retainedMembers': return 'Retained Members';
+        case 'revenuePerSession': return 'Revenue / Session';
+        case 'revenuePerCustomer': return 'Revenue / Member';
+        case 'cycleSessions': return 'Cycle Sessions';
+        case 'barreSessions': return 'Barre Sessions';
+        case 'strengthSessions': return 'Strength Sessions';
         default: return m;
       }
     };
@@ -437,13 +472,6 @@ export const MonthOnMonthTrainerTable = ({
                 <Badge className="border-blue-200 bg-blue-100 text-blue-800">
                   Individual Monthly Columns
                 </Badge>
-                <CopyTableButton
-                  tableRef={containerRef as any}
-                  tableName={tableId}
-                  size="sm"
-                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
-                  onCopyAllTabs={async () => generateAllTabsContent}
-                />
               </div>
             </div>
             <TrainerMetricTabs value={selectedMetric} onValueChange={setSelectedMetric} />
@@ -518,15 +546,6 @@ export const MonthOnMonthTrainerTable = ({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                </TableHead>
-                <TableHead className="text-right font-bold text-white min-w-[60px]" style={{ height: '35px' }}>
-                  <CopyTableButton
-                    tableRef={containerRef as any}
-                    tableName={tableId}
-                    size="sm"
-                    className="border-white/20 bg-white/10 text-white hover:bg-white/20 [&_svg]:text-white"
-                    onCopyAllTabs={async () => generateAllTabsContent}
-                  />
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -645,142 +664,116 @@ export const MonthOnMonthTrainerTable = ({
                       </TableCell>
                     </TableRow>
                     
-                     {/* Expanded Row Details */}
-                     {isExpanded && (
-                       <TableRow className="bg-slate-50/50 hover:bg-slate-50 animate-fade-in">
-                         <TableCell colSpan={processedData.months.length + 4} className="p-6" style={{ minHeight: '200px' }}>
-                           <div className="space-y-6">
-                             {/* Key Metrics Grid */}
-                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                               <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                                 <p className="text-slate-600 text-xs font-medium">Average per Month</p>
-                                 <p className="font-bold text-slate-800 text-lg">
-                                   {formatValue(trainerTotal / processedData.months.length, selectedMetric)}
-                                 </p>
-                               </div>
-                               <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                                 <p className="text-slate-600 text-xs font-medium">Best Month</p>
-                                 <p className="font-bold text-green-600 text-lg">
-                                   {formatValue(Math.max(...values), selectedMetric)}
-                                 </p>
-                               </div>
-                               <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                                 <p className="text-slate-600 text-xs font-medium">Consistency Score</p>
-                                 <p className="font-bold text-blue-600 text-lg">
-                                   {values.length > 1 ? 
-                                     (100 - (values.reduce((acc, val, i) => {
-                                       if (i === 0) return acc;
-                                       const change = Math.abs((val - values[i-1]) / Math.max(values[i-1], 1)) * 100;
-                                       return acc + change;
-                                     }, 0) / (values.length - 1))).toFixed(0) 
-                                     : '100'
-                                   }%
-                                 </p>
-                               </div>
-                               <div className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                                 <p className="text-slate-600 text-xs font-medium">Growth Trend</p>
-                                 <p className={cn(
-                                   "font-bold text-lg",
-                                   growth >= 0 ? "text-green-600" : "text-red-600"
-                                 )}>
-                                   {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
-                                 </p>
-                               </div>
-                             </div>
+                     {/* Expanded Row Drill-Down */}
+                     {isExpanded && (() => {
+                       const recs = Object.values(trainerData as any) as any[];
+                       const totSess = recs.reduce((s, r) => s + (r.totalSessions || 0), 0);
+                       const totRev = recs.reduce((s, r) => s + (r.totalPaid || 0), 0);
+                       const totCust = recs.reduce((s, r) => s + (r.totalCustomers || 0), 0);
+                       const totNew = recs.reduce((s, r) => s + (r.newMembers || 0), 0);
+                       const totConv = recs.reduce((s, r) => s + (r.convertedMembers || 0), 0);
+                       const totRet = recs.reduce((s, r) => s + (r.retainedMembers || 0), 0);
+                       const totEmpty = recs.reduce((s, r) => s + (r.emptySessions || 0), 0);
+                       const totNonEmpty = recs.reduce((s, r) => s + (r.nonEmptySessions || 0), 0);
+                       const totCyc = recs.reduce((s, r) => s + (r.cycleSessions || 0), 0);
+                       const totBar = recs.reduce((s, r) => s + (r.barreSessions || 0), 0);
+                       const totStr = recs.reduce((s, r) => s + (r.strengthSessions || 0), 0);
+                       const convRate = totNew > 0 ? (totConv / totNew) * 100 : 0;
+                       const retRate = totConv > 0 ? (totRet / totConv) * 100 : 0;
+                       const revPerSess = totSess > 0 ? totRev / totSess : 0;
+                       const revPerCust = totCust > 0 ? totRev / totCust : 0;
+                       const avgClassExcl = totNonEmpty > 0 ? totCust / totNonEmpty : 0;
+                       const nonZeroMonths = values.filter(v => v > 0).length;
+                       const avgPerActiveMonth = nonZeroMonths > 0 ? trainerTotal / nonZeroMonths : 0;
+                       const bestVal = values.length > 0 ? Math.max(...values) : 0;
+                       const worstVal = values.filter(v => v > 0).length > 0 ? Math.min(...values.filter(v => v > 0)) : 0;
+                       const bestMonthIdx = values.indexOf(bestVal);
+                       const bestMonthLabel = bestMonthIdx >= 0 ? processedData.months[bestMonthIdx] : '—';
 
-                             {/* Enhanced Metrics */}
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border">
-                                 <h4 className="font-semibold text-blue-800 mb-3">Performance Metrics</h4>
-                                 <div className="space-y-2 text-sm">
-                                   <div className="flex justify-between">
-                                     <span className="text-blue-600">Total:</span>
-                                     <span className="font-bold">{formatValue(trainerTotal, selectedMetric)}</span>
+                       return (
+                         <TableRow className="bg-slate-50/60 hover:bg-slate-50/80">
+                           <TableCell colSpan={processedData.months.length + 4} className="p-5">
+                             <div className="space-y-4">
+                               {/* Top KPI strip */}
+                               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                                 {[
+                                   { label: 'Total Sessions', val: formatNumber(totSess), color: 'text-slate-800' },
+                                   { label: 'Active Classes', val: formatNumber(totNonEmpty), color: 'text-slate-800' },
+                                   { label: 'Empty Classes', val: formatNumber(totEmpty), color: 'text-rose-600' },
+                                   { label: 'Total Revenue', val: formatCurrency(totRev), color: 'text-emerald-700' },
+                                   { label: 'Rev / Session', val: formatCurrency(revPerSess), color: 'text-blue-700' },
+                                   { label: 'Rev / Member', val: formatCurrency(revPerCust), color: 'text-blue-700' },
+                                   { label: 'Avg Class Excl', val: avgClassExcl.toFixed(1), color: 'text-slate-800' },
+                                   { label: 'MoM Change', val: `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`, color: growth >= 0 ? 'text-emerald-600' : 'text-rose-600' },
+                                 ].map(({ label, val, color }) => (
+                                   <div key={label} className="bg-white rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm">
+                                     <p className="text-[10px] text-slate-500 font-medium leading-tight">{label}</p>
+                                     <p className={`font-bold text-sm mt-0.5 ${color}`}>{val}</p>
                                    </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-blue-600">Average:</span>
-                                     <span className="font-bold">{formatValue(trainerTotal / processedData.months.length, selectedMetric)}</span>
-                                   </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-blue-600">Best:</span>
-                                     <span className="font-bold">{formatValue(Math.max(...values), selectedMetric)}</span>
+                                 ))}
+                               </div>
+
+                               {/* Three panels */}
+                               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                 {/* Member funnel */}
+                                 <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                                   <h5 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Member Funnel</h5>
+                                   <div className="space-y-2 text-sm">
+                                     {[
+                                       { label: 'New Members', val: formatNumber(totNew) },
+                                       { label: 'Converted', val: formatNumber(totConv) },
+                                       { label: 'Retained', val: formatNumber(totRet) },
+                                       { label: 'Conv. Rate', val: `${convRate.toFixed(1)}%` },
+                                       { label: 'Ret. Rate', val: `${retRate.toFixed(1)}%` },
+                                     ].map(({ label, val }) => (
+                                       <div key={label} className="flex justify-between items-center">
+                                         <span className="text-slate-500">{label}</span>
+                                         <span className="font-semibold text-slate-800">{val}</span>
+                                       </div>
+                                     ))}
                                    </div>
                                  </div>
-                               </div>
 
-                               <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border">
-                                 <h4 className="font-semibold text-green-800 mb-3">Class Formats</h4>
-                                 <div className="space-y-2 text-sm">
-                                   {(() => {
-                                     const recsLocal = Object.values(trainerData || {}) as any[];
-                                     const cyc = recsLocal.reduce((s, r) => s + (r.cycleSessions || 0), 0) as number;
-                                     const bar = recsLocal.reduce((s, r) => s + (r.barreSessions || 0), 0) as number;
-                                     const str = recsLocal.reduce((s, r) => s + (r.strengthSessions || 0), 0) as number;
-                                     return (
-                                       <>
-                                         <div className="flex justify-between">
-                                           <span className="text-green-600">Cycle Sessions:</span>
-                                           <span className="font-bold">{formatNumber(cyc)}</span>
-                                         </div>
-                                         <div className="flex justify-between">
-                                           <span className="text-green-600">Barre Sessions:</span>
-                                           <span className="font-bold">{formatNumber(bar)}</span>
-                                         </div>
-                                         <div className="flex justify-between">
-                                           <span className="text-green-600">Strength Sessions:</span>
-                                           <span className="font-bold">{formatNumber(str)}</span>
-                                         </div>
-                                       </>
-                                     );
-                                   })()}
+                                 {/* Format breakdown */}
+                                 <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                                   <h5 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Class Formats</h5>
+                                   <div className="space-y-2 text-sm">
+                                     {[
+                                       { label: 'Cycle', val: formatNumber(totCyc), pct: totSess > 0 ? (totCyc / totSess * 100).toFixed(0) : '0' },
+                                       { label: 'Barre', val: formatNumber(totBar), pct: totSess > 0 ? (totBar / totSess * 100).toFixed(0) : '0' },
+                                       { label: 'Strength', val: formatNumber(totStr), pct: totSess > 0 ? (totStr / totSess * 100).toFixed(0) : '0' },
+                                     ].map(({ label, val, pct }) => (
+                                       <div key={label} className="flex justify-between items-center">
+                                         <span className="text-slate-500">{label}</span>
+                                         <span className="font-semibold text-slate-800">{val} <span className="text-slate-400 font-normal text-xs">({pct}%)</span></span>
+                                       </div>
+                                     ))}
+                                   </div>
                                  </div>
-                               </div>
 
-                               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-                                 <h4 className="font-semibold text-blue-800 mb-3">Member Engagement</h4>
-                                 <div className="space-y-2 text-sm">
-                                   <div className="flex justify-between">
-                                     <span className="text-blue-600">Retention:</span>
-                                     <span className="font-bold">{
-                                       (() => {
-                                         const recs = Object.values(trainerData as any) as any[];
-                                         const totalNew = recs.reduce((s, r) => s + (r.newMembers || 0), 0);
-                                         const totalRetained = recs.reduce((s, r) => s + (r.retainedMembers || 0), 0);
-                                         const rate = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
-                                         return `${rate.toFixed(1)}%`;
-                                       })()
-                                     }</span>
-                                   </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-blue-600">Conversion:</span>
-                                     <span className="font-bold">{
-                                       (() => {
-                                         const recs = Object.values(trainerData as any) as any[];
-                                         const totalNew = recs.reduce((s, r) => s + (r.newMembers || 0), 0);
-                                         const totalConverted = recs.reduce((s, r) => s + (r.convertedMembers || 0), 0);
-                                         const rate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
-                                         return `${rate.toFixed(1)}%`;
-                                       })()
-                                     }</span>
-                                   </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-blue-600">Revenue/Session:</span>
-                                     <span className="font-bold">{
-                                       (() => {
-                                         const recs = Object.values(trainerData as any) as any[];
-                                         const totRev = recs.reduce((s, r) => s + (r.totalPaid || 0), 0);
-                                         const totSess = recs.reduce((s, r) => s + (r.totalSessions || 0), 0);
-                                         return formatCurrency(totSess > 0 ? totRev / totSess : 0);
-                                       })()
-                                     }</span>
+                                 {/* Trend stats */}
+                                 <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                                   <h5 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Trend — {selectedMetric}</h5>
+                                   <div className="space-y-2 text-sm">
+                                     {[
+                                       { label: 'Best Month', val: `${formatValue(bestVal, selectedMetric)} (${bestMonthLabel})` },
+                                       { label: 'Lowest Active', val: formatValue(worstVal, selectedMetric) },
+                                       { label: 'Avg / Month', val: formatValue(avgPerActiveMonth, selectedMetric) },
+                                       { label: 'Active Months', val: `${nonZeroMonths} / ${processedData.months.length}` },
+                                     ].map(({ label, val }) => (
+                                       <div key={label} className="flex justify-between items-center">
+                                         <span className="text-slate-500">{label}</span>
+                                         <span className="font-semibold text-slate-800">{val}</span>
+                                       </div>
+                                     ))}
                                    </div>
                                  </div>
                                </div>
                              </div>
-                           </div>
-                         </TableCell>
-                       </TableRow>
-                     )}
+                           </TableCell>
+                         </TableRow>
+                       );
+                     })()}
                   </React.Fragment>
                 );
               })}

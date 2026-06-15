@@ -486,7 +486,7 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
         displayMode={displayMode}
         onDisplayModeChange={setDisplayMode}
         tableRef={tableRef}
-        showCopyButton={true}
+        showCopyButton={false}
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
           selectedMetric: contextInfo?.selectedMetric || selectedMetric,

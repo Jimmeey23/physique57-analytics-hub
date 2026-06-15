@@ -92,7 +92,7 @@ import { TrainerNameCell, TrainerAvatar } from '@/components/ui/TrainerAvatar';
 import { mapLocationIdToTab } from '@/utils/memberLifecycleFilters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { isLeadConverted } from '@/utils/leadConversions';
-import { isInNewClientCohort } from '@/utils/clientRetention';
+import { isInNewClientCohort, isConvertedInCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -1268,8 +1268,7 @@ const StudioPulse = memo(() => {
     });
     const topSources = Object.entries(bySource)
       .map(([name, v]) => ({ name, count: v.count, rate: v.count ? (v.converted / v.count) * 100 : 0 }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .sort((a, b) => b.count - a.count);
     return {
       total,
       trials,
@@ -1590,6 +1589,7 @@ const StudioPulse = memo(() => {
   const [trainerRankingCriteria, setTrainerRankingCriteria] = useState<'paid' | 'revenueScore' | 'fillRate' | 'classAvg' | 'sessions'>('paid');
   const [scorecardSortKey, setScorecardSortKey] = useState<'sessions' | 'customers' | 'paid' | 'classAvg' | 'fillRate' | 'utilization' | 'conversionRate' | 'lateCancels' | 'revenueScore'>('sessions');
   const [scorecardSortDir, setScorecardSortDir] = useState<'desc' | 'asc'>('desc');
+  const [scorecardExpandedTrainer, setScorecardExpandedTrainer] = useState<string | null>(null);
   const [showClassMomTable, setShowClassMomTable] = useState(false);
   const [showLapsedMomTable, setShowLapsedMomTable] = useState(false);
   const [churnLocationMetric, setChurnLocationMetric] = useState<'count' | 'penalty'>('count');
@@ -2265,6 +2265,34 @@ const StudioPulse = memo(() => {
       return visits > 0 ? Math.round(sales / visits) : 0;
     });
   }, [studioWideSales, studioWideSessions]);
+
+  const backClientMonthKeys = useMemo(() => {
+    const keys = new Set<string>();
+    studioWideClients.forEach((c) => { const mk = monthKeyFromDate(c.firstVisitDate); if (mk) keys.add(mk); });
+    return [...keys].sort();
+  }, [studioWideClients]);
+  const backClientSparklineLabels = useMemo(() => backClientMonthKeys.map((k) => monthLabel(k)), [backClientMonthKeys]);
+  const backNewClientSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideClients.filter((c) => isInNewClientCohort(c)).forEach((c) => {
+      const mk = monthKeyFromDate(c.firstVisitDate); if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return backClientMonthKeys.map((k) => monthly[k] || 0);
+  }, [studioWideClients, backClientMonthKeys]);
+  const backConvertedSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideClients.filter((c) => isConvertedInCohort(c)).forEach((c) => {
+      const mk = monthKeyFromDate(c.firstVisitDate); if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return backClientMonthKeys.map((k) => monthly[k] || 0);
+  }, [studioWideClients, backClientMonthKeys]);
+  const backRetainedSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideClients.filter((c) => isRetainedInCohort(c)).forEach((c) => {
+      const mk = monthKeyFromDate(c.firstVisitDate); if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return backClientMonthKeys.map((k) => monthly[k] || 0);
+  }, [studioWideClients, backClientMonthKeys]);
 
   const backSessionsSparkline = useMemo(() => {
     const monthly: Record<string, number> = {};
@@ -3256,35 +3284,21 @@ const StudioPulse = memo(() => {
               }
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <StudioPulseMetricCard icon={<Users className="h-5 w-5" />} title="Leads Received" metric={leadStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={leadStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="All leads captured in the active period" iconContainerClassName="bg-gradient-to-br from-blue-700 to-slate-900 text-white" />
-                <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Trials / First Visits" metric={Math.max(leadStats.trials, clientStats.newClients)} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.newClients} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.newClients} subtext="Trials and first visits entering the funnel" iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" />
-                <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Converted Members" metric={clientStats.converted} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.conversionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.conversionRate} subtext={`${formatPercentage(clientStats.conversionRate)} conversion rate`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-800 text-white" />
-                <StudioPulseMetricCard icon={<Wallet className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retentionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retentionRate} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" />
+                <StudioPulseMetricCard icon={<Users className="h-5 w-5" />} title="Leads Received" metric={leadStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={leadStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="All leads captured in the active period" iconContainerClassName="bg-gradient-to-br from-blue-700 to-slate-900 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
+                <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Trials / First Visits" metric={clientStats.newClients} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.newClients} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.newClients} subtext="Unique first visits from New sheet" iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" backSparklineData={backNewClientSparkline} backSparklineLabels={backClientSparklineLabels} />
+                <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Converted Members" metric={clientStats.converted} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.conversionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.conversionRate} subtext={`${formatPercentage(clientStats.conversionRate)} conversion rate`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-800 text-white" backSparklineData={backConvertedSparkline} backSparklineLabels={backClientSparklineLabels} />
+                <StudioPulseMetricCard icon={<Wallet className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retentionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retentionRate} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" backSparklineData={backRetainedSparkline} backSparklineLabels={backClientSparklineLabels} />
               </div>
 
               {showNewMemberMomTable && (
                 <div className="mt-6">
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">First Column</span>
-                    <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 gap-0.5">
-                      {([
-                        { value: 'source', label: 'Lead Source' },
-                        { value: 'membership', label: 'Membership' },
-                        { value: 'class', label: 'Class / Format' },
-                      ] as const).map(({ value, label }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setNewMemberTableMetric(value)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150',
-                            newMemberTableMetric === value ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'
-                          )}
-                        >{label}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <ClientConversionMonthOnMonthByTypeTable data={filteredClients} />
+                  <ClientConversionMonthOnMonthByTypeTable
+                    data={studioWideClients}
+                    onRowClick={(row) => {
+                      const matched = row.clients ?? studioWideClients.filter((c) => c.isNew === row.type);
+                      openMetricDrillDown(row.type || 'Client type detail', 'member', { name: row.type, rawData: matched, filteredTransactionData: matched }, matched);
+                    }}
+                  />
                 </div>
               )}
 
@@ -3292,64 +3306,78 @@ const StudioPulse = memo(() => {
               <div className="mt-6">
                 <NewClientMembershipPurchasesTable
                   data={filteredClients}
-                  onRowClick={(row) => openMetricDrillDown(row.name || 'Membership detail', 'member', { name: row.name, rawData: clients.filter((c: any) => (c.membershipsBoughtPostTrial || c.membershipUsed) === row.name), filteredTransactionData: [] }, [])}
+                  onRowClick={(row) => {
+                    const matched = filteredClients.filter((c) =>
+                      isInNewClientCohort(c) &&
+                      String(c.membershipsBoughtPostTrial || '').split(',').map((m) => m.trim()).includes(row.name)
+                    );
+                    openMetricDrillDown(row.name || 'Membership detail', 'member', { name: row.name, rawData: matched, filteredTransactionData: matched }, matched);
+                  }}
                 />
               </div>
 
               {/* Conversion Pipeline — reference style */}
               {(() => {
                 const PILL_COLORS = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2'];
-                const fStages = [
-                  { id: 'leads',     label: 'Leads',     sub: '100% captured',                                 value: leadStats.total,      pctOfLeads: 100,    fromPrev: null as number|null, dropPct: null as number|null, accent: '#2563eb', light: '#eff6ff', textOnLight: '#1d4ed8' },
-                  { id: 'trials',    label: 'Trials',    sub: `${leadStats.total ? ((leadStats.trials/leadStats.total)*100).toFixed(1) : 0}% lead → trial`,  value: leadStats.trials,     pctOfLeads: leadStats.total ? (leadStats.trials/leadStats.total)*100 : 0,    fromPrev: leadStats.total ? (leadStats.trials/leadStats.total)*100 : null,    dropPct: leadStats.total && leadStats.trials < leadStats.total ? Math.round(((leadStats.total-leadStats.trials)/leadStats.total)*100) : null, accent: '#0891b2', light: '#ecfeff', textOnLight: '#0e7490' },
-                  { id: 'converted', label: 'Converted', sub: `${leadStats.total ? ((clientStats.converted/leadStats.total)*100).toFixed(1) : 0}% overall`,  value: clientStats.converted, pctOfLeads: leadStats.total ? (clientStats.converted/leadStats.total)*100 : 0, fromPrev: leadStats.trials ? (clientStats.converted/leadStats.trials)*100 : null, dropPct: leadStats.trials && clientStats.converted < leadStats.trials ? Math.round(((leadStats.trials-clientStats.converted)/leadStats.trials)*100) : null, accent: '#16a34a', light: '#f0fdf4', textOnLight: '#15803d' },
-                  { id: 'retained',  label: 'Retained',  sub: 'Active members',                               value: clientStats.retained,  pctOfLeads: leadStats.total ? (clientStats.retained/leadStats.total)*100 : 0,  fromPrev: clientStats.converted ? (clientStats.retained/clientStats.converted)*100 : null, dropPct: null, accent: '#7c3aed', light: '#faf5ff', textOnLight: '#6d28d9' },
-                ];
                 const [activeIdx, setActiveIdx] = React.useState(0);
                 const [srcFilter, setSrcFilter] = React.useState<string|null>(null);
+
+                // Source-filtered funnel values
+                const srcLeads = srcFilter ? filteredLeads.filter(l => (l.source || 'Unknown') === srcFilter) : filteredLeads;
+                const srcClients = srcFilter
+                  ? filteredClients.filter(c => {
+                      const matchedLead = filteredLeads.find(l => (l.memberId && l.memberId === c.memberId) || (l.email && l.email.toLowerCase() === c.email?.toLowerCase()));
+                      return matchedLead ? (matchedLead.source || 'Unknown') === srcFilter : false;
+                    })
+                  : filteredClients;
+                const srcLeadTotal = srcLeads.length;
+                const srcTrials = srcClients.filter(c => isInNewClientCohort(c)).length;
+                const srcConverted = srcClients.filter(c => c.conversionStatus === 'Converted' && isInNewClientCohort(c)).length;
+                const srcRetained = srcClients.filter(c => c.retentionStatus === 'Retained' && isInNewClientCohort(c)).length;
+
+                const fStages = [
+                  { id: 'leads',     label: 'Leads',     sub: '100% captured',                                 value: srcLeadTotal,  pctOfLeads: 100,    fromPrev: null as number|null, dropPct: null as number|null, accent: '#2563eb', light: '#eff6ff', textOnLight: '#1d4ed8' },
+                  { id: 'trials',    label: 'Trials',    sub: `${srcLeadTotal ? ((srcTrials/srcLeadTotal)*100).toFixed(1) : 0}% lead → trial`,  value: srcTrials,     pctOfLeads: srcLeadTotal ? (srcTrials/srcLeadTotal)*100 : 0,    fromPrev: srcLeadTotal ? (srcTrials/srcLeadTotal)*100 : null,    dropPct: srcLeadTotal && srcTrials < srcLeadTotal ? Math.round(((srcLeadTotal-srcTrials)/srcLeadTotal)*100) : null, accent: '#0891b2', light: '#ecfeff', textOnLight: '#0e7490' },
+                  { id: 'converted', label: 'Converted', sub: `${srcLeadTotal ? ((srcConverted/srcLeadTotal)*100).toFixed(1) : 0}% overall`,  value: srcConverted, pctOfLeads: srcLeadTotal ? (srcConverted/srcLeadTotal)*100 : 0, fromPrev: srcTrials ? (srcConverted/srcTrials)*100 : null, dropPct: srcTrials && srcConverted < srcTrials ? Math.round(((srcTrials-srcConverted)/srcTrials)*100) : null, accent: '#16a34a', light: '#f0fdf4', textOnLight: '#15803d' },
+                  { id: 'retained',  label: 'Retained',  sub: 'Active members',                               value: srcRetained,  pctOfLeads: srcLeadTotal ? (srcRetained/srcLeadTotal)*100 : 0,  fromPrev: srcConverted ? (srcRetained/srcConverted)*100 : null, dropPct: null, accent: '#7c3aed', light: '#faf5ff', textOnLight: '#6d28d9' },
+                ];
                 const active = fStages[activeIdx];
 
-                // SVG fixed stage paths (matching reference proportions, scaled to viewBox 600×575)
-                // Leads:    wide trapezoid top
-                // Trials:   mid trapezoid
-                // Converted: narrower trapezoid
-                // Retained:  bowl/capsule shape at bottom
-                const svgStages = [
-                  { path: 'M 52,34 L 548,34 L 476,154 L 124,154 Z',   highlightPath: 'M 66,44 L 534,44 L 468,94 L 132,94 Z',  labelY: 89, valueY: 128, annX1: 486, annY: 156 },
-                  { path: 'M 124,156 L 476,156 L 414,282 L 186,282 Z', highlightPath: null,                                   labelY: 205, valueY: 241, annX1: 424, annY: 284 },
-                  { path: 'M 186,284 L 414,284 L 446,398 L 154,398 Z', highlightPath: null,                                   labelY: 328, valueY: 364, annX1: 456, annY: 400 },
-                  { path: 'M 154,400 L 446,400 C 466,400 480,414 474,433 L 464,461 C 459,475 444,484 428,484 L 172,484 C 156,484 141,475 136,461 L 126,433 C 120,414 134,400 154,400 Z', highlightPath: null, labelY: 441, valueY: 467, annX1: null, annY: null },
-                ];
+                // Compute proportionate funnel trapezoids based on actual values
+                const CX = 300; // horizontal centre
+                const MAX_HW = 248; // half-width of leads (widest) stage
+                const MIN_HW = 60;  // minimum half-width so retained is never invisible
+                const leadVal = fStages[0].value || 1;
+                // Half-widths at top and bottom of each stage, proportionate to value
+                const hw = fStages.map(s => Math.max(MIN_HW, (s.value / leadVal) * MAX_HW));
+                // Y positions: stage tops and bottoms
+                const yTops = [34, 156, 284, 402];
+                const yBots = [154, 282, 400, 482];
+                const svgStages = fStages.map((_, i) => {
+                  const tl = CX - hw[i], tr = CX + hw[i];
+                  const bl = CX - (i < 3 ? hw[i + 1] : hw[i] * 0.82);
+                  const br = CX + (i < 3 ? hw[i + 1] : hw[i] * 0.82);
+                  const yt = yTops[i], yb = yBots[i];
+                  const midY = Math.round((yt + yb) / 2);
+                  const isLast = i === 3;
+                  const path = isLast
+                    ? `M ${tl},${yt} L ${tr},${yt} C ${tr + 20},${yt} ${tr + 34},${yt + 14} ${tr + 28},${yt + 31} L ${tr + 18},${yt + 57} C ${tr + 13},${yt + 71} ${tr - 2},${yt + 80} ${tl + 52},${yt + 80} L ${bl},${yb} C ${bl - 16},${yb} ${bl - 29},${yb - 9} ${tl - 18},${yb - 23} L ${tl - 28},${yt + 31} C ${tl - 34},${yt + 14} ${tl - 20},${yt} ${tl},${yt} Z`
+                    : `M ${tl},${yt} L ${tr},${yt} L ${br},${yb} L ${bl},${yb} Z`;
+                  const hl = i === 0 ? `M ${tl + 14},${yt + 10} L ${tr - 14},${yt + 10} L ${tr - 22},${yt + 50} L ${tl + 22},${yt + 50} Z` : null;
+                  return {
+                    path,
+                    highlightPath: hl,
+                    labelY: midY - 18,
+                    valueY: midY + 10,
+                    annX1: i < 3 ? br + 10 : null,
+                    annY: i < 3 ? yb + 2 : null,
+                  };
+                });
 
                 const gradIds = ['pfl-g0','pfl-g1','pfl-g2','pfl-g3'];
 
                 return (
                   <div className="mt-6 space-y-4">
-                    {/* KPI Strip — 4 cards */}
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                      {fStages.map((s, i) => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => setActiveIdx(i)}
-                          className={cn(
-                            'rounded-[22px] border px-5 py-4 text-left transition-all duration-200 shadow-[0_2px_12px_rgba(15,23,42,0.06)]',
-                            activeIdx === i ? 'bg-white border-transparent ring-2' : 'bg-white border-slate-200 hover:shadow-md'
-                          )}
-                          style={activeIdx === i ? { ringColor: s.accent, boxShadow: `0 0 0 2px ${s.accent}` } : {}}
-                        >
-                          <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: activeIdx === i ? s.accent : '#94a3b8' }}>{s.label}</div>
-                          <div className="text-[34px] font-bold leading-tight text-slate-900 tabular-nums mt-0.5">{formatNumber(s.value)}</div>
-                          <div className="text-[12.2px] text-slate-500 mt-0.5">
-                            {i === 0
-                              ? '100% captured'
-                              : <><span className="font-semibold" style={{ color: s.accent }}>{s.pctOfLeads.toFixed(1)}%</span> · {s.dropPct ? <span className="text-red-500">{s.dropPct}% drop</span> : 'retained'}</>
-                            }
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-
                     {/* Main: funnel card (left) + inspector (right) */}
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.18fr_420px] items-start">
 
@@ -3373,7 +3401,7 @@ const StudioPulse = memo(() => {
                         {/* Source pills */}
                         <div className="px-7 pt-5 pb-2">
                           <div className="flex flex-wrap gap-2.5">
-                            {leadStats.topSources.slice(0, 6).map((src, si) => {
+                            {leadStats.topSources.map((src, si) => {
                               const c = PILL_COLORS[si % PILL_COLORS.length];
                               const isOn = srcFilter === src.name;
                               const isMuted = srcFilter && !isOn;
@@ -3469,31 +3497,42 @@ const StudioPulse = memo(() => {
                               })}
 
                               {/* Intake lip */}
-                              <path d="M 52,34 L 548,34" stroke="white" strokeOpacity="0.9" strokeWidth="2.2" />
-                              <path d="M 52,34 L 124,154" stroke="white" opacity="0.22" strokeWidth="1.2" />
-                              <path d="M 548,34 L 476,154" stroke="white" opacity="0.15" strokeWidth="1.2" />
+                              <path d={`M ${CX - hw[0]},34 L ${CX + hw[0]},34`} stroke="white" strokeOpacity="0.9" strokeWidth="2.2" />
+                              <path d={`M ${CX - hw[0]},34 L ${CX - hw[1]},154`} stroke="white" opacity="0.22" strokeWidth="1.2" />
+                              <path d={`M ${CX + hw[0]},34 L ${CX + hw[1]},154`} stroke="white" opacity="0.15" strokeWidth="1.2" />
 
                               {/* Drop annotations — right side */}
-                              {fStages[1].dropPct !== null && (
-                                <g fontFamily="monospace" fontSize="11">
-                                  <line x1="486" y1="156" x2="518" y2="156" stroke="#cbd5e1" strokeDasharray="3 4" />
-                                  <text x="522" y="150" fill="#dc2626" fontWeight="600">{fStages[1].dropPct}% drop</text>
-                                  <text x="522" y="163" fill="#94a3b8">{formatNumber(leadStats.total - leadStats.trials)} lost</text>
-                                </g>
-                              )}
-                              {fStages[2].dropPct !== null && (
-                                <g fontFamily="monospace" fontSize="11">
-                                  <line x1="424" y1="284" x2="518" y2="284" stroke="#cbd5e1" strokeDasharray="3 4" />
-                                  <text x="522" y="278" fill="#dc2626" fontWeight="600">{fStages[2].dropPct}% drop</text>
-                                  <text x="522" y="291" fill="#94a3b8">{formatNumber(leadStats.trials - clientStats.converted)} lost</text>
-                                </g>
-                              )}
+                              {fStages[1].dropPct !== null && svgStages[1].annX1 !== null && (() => {
+                                const ax = svgStages[1].annX1! + 4, ay = yTops[1];
+                                return (
+                                  <g fontFamily="monospace" fontSize="11">
+                                    <line x1={ax} y1={ay} x2={ax + 28} y2={ay} stroke="#cbd5e1" strokeDasharray="3 4" />
+                                    <text x={ax + 32} y={ay - 6} fill="#dc2626" fontWeight="600">{fStages[1].dropPct}% drop</text>
+                                    <text x={ax + 32} y={ay + 7} fill="#94a3b8">{formatNumber(srcLeadTotal - srcTrials)} lost</text>
+                                  </g>
+                                );
+                              })()}
+                              {fStages[2].dropPct !== null && svgStages[2].annX1 !== null && (() => {
+                                const ax = svgStages[2].annX1! + 4, ay = yTops[2];
+                                return (
+                                  <g fontFamily="monospace" fontSize="11">
+                                    <line x1={ax} y1={ay} x2={ax + 28} y2={ay} stroke="#cbd5e1" strokeDasharray="3 4" />
+                                    <text x={ax + 32} y={ay - 6} fill="#dc2626" fontWeight="600">{fStages[2].dropPct}% drop</text>
+                                    <text x={ax + 32} y={ay + 7} fill="#94a3b8">{formatNumber(srcTrials - srcConverted)} lost</text>
+                                  </g>
+                                );
+                              })()}
                               {/* Retained annotation */}
-                              <g fontFamily="monospace" fontSize="11">
-                                <line x1="456" y1="402" x2="518" y2="402" stroke="#86efac" />
-                                <text x="522" y="397" fill="#16a34a" fontWeight="600">{formatPercentage(clientStats.retentionRate)} ret.</text>
-                                <text x="522" y="411" fill="#94a3b8">converted</text>
-                              </g>
+                              {(() => {
+                                const ax = (CX + hw[3] * 0.82) + 14, ay = yTops[3];
+                                return (
+                                  <g fontFamily="monospace" fontSize="11">
+                                    <line x1={ax} y1={ay} x2={ax + 28} y2={ay} stroke="#86efac" />
+                                    <text x={ax + 32} y={ay - 5} fill="#16a34a" fontWeight="600">{srcConverted ? `${Math.round((srcRetained/srcConverted)*100)}%` : '0%'} ret.</text>
+                                    <text x={ax + 32} y={ay + 9} fill="#94a3b8">converted</text>
+                                  </g>
+                                );
+                              })()}
 
                               {/* Left pct tick labels */}
                               <g fontFamily="Inter, system-ui" fontSize="11.5" fill="#94a3b8">
@@ -3541,28 +3580,50 @@ const StudioPulse = memo(() => {
                           <div className="px-6 py-5 space-y-5">
                             {/* Metric tiles 2×2 */}
                             <div className="grid grid-cols-2 gap-3">
-                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Stage conv.</div>
-                                <div className="text-[22px] font-semibold text-slate-900 mt-1 tabular-nums">
-                                  {active.fromPrev !== null ? `${active.fromPrev.toFixed(1)}%` : '100%'}
-                                </div>
-                                <div className="text-[11.5px] text-slate-400">{active.fromPrev !== null ? 'from previous' : 'top of funnel'}</div>
-                              </div>
-                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Avg LTV</div>
-                                <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatCurrency(clientStats.avgLtv)}</div>
-                                <div className="text-[11.5px] text-slate-400">converted members</div>
-                              </div>
-                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Conv. rate</div>
-                                <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatPercentage(clientStats.conversionRate)}</div>
-                                <div className="text-[11.5px] text-slate-400">trial → member</div>
-                              </div>
-                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Ret. rate</div>
-                                <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatPercentage(clientStats.retentionRate)}</div>
-                                <div className="text-[11.5px] text-slate-400">member → retained</div>
-                              </div>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 cursor-help">
+                                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Stage conv. <CircleAlert className="w-3 h-3 opacity-50" /></div>
+                                      <div className="text-[22px] font-semibold text-slate-900 mt-1 tabular-nums">
+                                        {active.fromPrev !== null ? `${active.fromPrev.toFixed(1)}%` : '100%'}
+                                      </div>
+                                      <div className="text-[11.5px] text-slate-400">{active.fromPrev !== null ? 'from previous' : 'top of funnel'}</div>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[220px] text-xs">% of people from the previous funnel stage who reached this stage. Leads→Trials, Trials→Converted, Converted→Retained.</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 cursor-help">
+                                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avg LTV <CircleAlert className="w-3 h-3 opacity-50" /></div>
+                                      <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatCurrency(clientStats.avgLtv)}</div>
+                                      <div className="text-[11.5px] text-slate-400">converted members</div>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[220px] text-xs">Lifetime Value — total revenue collected from a converted member across all purchases, averaged across the cohort.</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 cursor-help">
+                                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Conv. rate <CircleAlert className="w-3 h-3 opacity-50" /></div>
+                                      <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{srcTrials ? `${((srcConverted/srcTrials)*100).toFixed(1)}%` : '0%'}</div>
+                                      <div className="text-[11.5px] text-slate-400">trial → member</div>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[220px] text-xs">% of first-visit trials who went on to purchase a membership. Converted ÷ Trials × 100.</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 cursor-help">
+                                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Ret. rate <CircleAlert className="w-3 h-3 opacity-50" /></div>
+                                      <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{srcConverted ? `${Math.round((srcRetained/srcConverted)*100)}%` : '0%'}</div>
+                                      <div className="text-[11.5px] text-slate-400">member → retained</div>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[220px] text-xs">% of converted members classified as Retained — still active with a valid membership. Retained ÷ Converted × 100.</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
 
                             {/* Source mix bars */}
@@ -3573,9 +3634,9 @@ const StudioPulse = memo(() => {
                                   <div className="text-[11px] text-slate-400">Click left pills to filter</div>
                                 </div>
                                 <div className="space-y-2.5">
-                                  {leadStats.topSources.slice(0, 5).map((src, si) => {
+                                  {leadStats.topSources.map((src, si) => {
                                     const c = PILL_COLORS[si % PILL_COLORS.length];
-                                    const total = leadStats.topSources.slice(0,5).reduce((s,x) => s + x.count, 0) || 1;
+                                    const total = leadStats.topSources.reduce((s,x) => s + x.count, 0) || 1;
                                     const pct = Math.round((src.count / total) * 100);
                                     return (
                                       <div key={src.name} className={cn('flex items-center gap-3 text-[12.5px]', srcFilter && srcFilter !== src.name ? 'opacity-35' : '')}>
@@ -3594,10 +3655,10 @@ const StudioPulse = memo(() => {
 
                             {/* Stage note */}
                             <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3.5 py-3 text-[12.5px] leading-relaxed text-slate-600">
-                              {activeIdx === 0 && `${formatNumber(leadStats.total)} leads captured. Top source: ${leadStats.topSources[0]?.name || 'N/A'} with ${formatNumber(leadStats.topSources[0]?.count || 0)}.`}
-                              {activeIdx === 1 && `${formatPercentage(fStages[1].pctOfLeads)} of leads scheduled a trial. ${fStages[1].dropPct ? `${fStages[1].dropPct}% dropped before reaching this stage.` : ''}`}
-                              {activeIdx === 2 && `${formatPercentage(clientStats.conversionRate)} trial → member conversion. Avg LTV of converted members: ${formatCurrency(clientStats.avgLtv)}.`}
-                              {activeIdx === 3 && `${formatNumber(clientStats.retained)} active retained members. ${formatPercentage(clientStats.retentionRate)} of converted members retained.`}
+                              {activeIdx === 0 && `${formatNumber(srcLeadTotal)} leads captured${srcFilter ? ` from ${srcFilter}` : ''}. Top source: ${leadStats.topSources[0]?.name || 'N/A'} with ${formatNumber(leadStats.topSources[0]?.count || 0)}.`}
+                              {activeIdx === 1 && `${fStages[1].pctOfLeads.toFixed(1)}% of leads became first visits. ${fStages[1].dropPct ? `${fStages[1].dropPct}% dropped before this stage.` : ''}`}
+                              {activeIdx === 2 && `${srcTrials ? `${((srcConverted/srcTrials)*100).toFixed(1)}%` : '0%'} trial → member. Avg LTV of converted members: ${formatCurrency(clientStats.avgLtv)}.`}
+                              {activeIdx === 3 && `${formatNumber(srcRetained)} active retained members. ${srcConverted ? `${Math.round((srcRetained/srcConverted)*100)}%` : '0%'} of converted retained.`}
                             </div>
                           </div>
                         </div>
@@ -3606,13 +3667,13 @@ const StudioPulse = memo(() => {
                         <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 shadow-[0_2px_12px_rgba(15,23,42,0.05)]">
                           <div className="flex items-center justify-between mb-3">
                             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Drop-off analysis · Trial → Convert</div>
-                            <span className="font-mono text-[11px] text-slate-400">n={formatNumber(Math.max(leadStats.trials - clientStats.converted, 0))}</span>
+                            <span className="font-mono text-[11px] text-slate-400">n={formatNumber(Math.max(srcTrials - srcConverted, 0))}</span>
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-[12.5px] text-slate-600">
-                            <div><span className="font-bold text-slate-900">{formatPercentage(clientStats.conversionRate)}</span> convert</div>
+                            <div><span className="font-bold text-slate-900">{srcTrials ? `${((srcConverted/srcTrials)*100).toFixed(1)}%` : '0%'}</span> convert</div>
                             <div><span className="font-bold text-slate-900">{fStages[2].dropPct ?? 0}%</span> drop at this stage</div>
                             <div><span className="font-bold text-slate-900">{formatCurrency(clientStats.avgLtv)}</span> avg LTV</div>
-                            <div><span className="font-bold text-slate-900">{formatPercentage(clientStats.retentionRate)}</span> retention</div>
+                            <div><span className="font-bold text-slate-900">{srcConverted ? `${Math.round((srcRetained/srcConverted)*100)}%` : '0%'}</span> retention</div>
                           </div>
                         </div>
                       </div>
@@ -3652,7 +3713,7 @@ const StudioPulse = memo(() => {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-slate-600">
-                              {funnelRankings.rows.slice(0, 15).map((row, ri) => {
+                              {funnelRankings.rows.map((row, ri) => {
                                 const totalLeads = funnelRankings.rows.reduce((s, r) => s + r.leads, 0) || 1;
                                 const sharePct = Math.round((row.leads / totalLeads) * 100);
                                 const c = PILL_COLORS[ri % PILL_COLORS.length];
@@ -3863,27 +3924,76 @@ const StudioPulse = memo(() => {
                         const av = a[scorecardSortKey] as number;
                         const bv = b[scorecardSortKey] as number;
                         return scorecardSortDir === 'desc' ? bv - av : av - bv;
-                      })).map((t) => (
-                        <tr key={t.name} className="h-[44px] border-b border-slate-200">
-                          <td className="px-3 py-2">
-                            <TrainerNameCell name={t.name} />
-                          </td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.sessions)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(Math.max(t.sessions - t.nonEmpty, 0))}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.nonEmpty)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatCurrency(t.paid)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{(t.sessions ? t.customers / t.sessions : 0).toFixed(1)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{t.classAvg.toFixed(1)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.fillRate)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.new) || 0), 0))}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.converted) || 0), 0))}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.retained) || 0), 0))}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.conversionRate || 0)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.lateCancels)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatCurrency(t.paid)}</td>
-                          <td className="px-3 py-2 text-center font-semibold text-slate-900">{Math.round(t.revenueScore)}</td>
-                        </tr>
-                      )) : <tr><td colSpan={15} className="p-5"><EmptyNote label="No trainer scorecard data available" /></td></tr>}
+                      })).map((t) => {
+                        const isExpanded = scorecardExpandedTrainer === t.name;
+                        const tNew = filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.new) || 0), 0);
+                        const tConv = filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.converted) || 0), 0);
+                        const tRet = filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.retained) || 0), 0);
+                        return (
+                          <React.Fragment key={t.name}>
+                            <tr
+                              className={cn('h-[44px] border-b border-slate-200 cursor-pointer transition-colors', isExpanded ? 'bg-slate-100' : 'hover:bg-slate-50')}
+                              onClick={() => setScorecardExpandedTrainer(isExpanded ? null : t.name)}
+                            >
+                              <td className="px-3 py-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-400 text-xs">{isExpanded ? '▾' : '▸'}</span>
+                                  <TrainerNameCell name={t.name} />
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.sessions)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(Math.max(t.sessions - t.nonEmpty, 0))}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.nonEmpty)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatCurrency(t.paid)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{(t.sessions ? t.customers / t.sessions : 0).toFixed(1)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{t.classAvg.toFixed(1)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.fillRate)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(tNew)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(tConv)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(tRet)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.conversionRate || 0)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.lateCancels)}</td>
+                              <td className="px-3 py-2 text-center text-slate-700">{formatCurrency(t.paid)}</td>
+                              <td className="px-3 py-2 text-center font-semibold text-slate-900">{Math.round(t.revenueScore)}</td>
+                            </tr>
+                            {isExpanded && (() => {
+                              const retRate = tConv > 0 ? (tRet / tConv * 100) : 0;
+                              const revPerSess = t.sessions > 0 ? t.paid / t.sessions : 0;
+                              const revPerCust = t.customers > 0 ? t.paid / t.customers : 0;
+                              const utilPct = t.sessions > 0 ? (t.nonEmpty / t.sessions * 100) : 0;
+                              const trainerSessData = filteredSessions.filter((s) => (s.trainerName || '').toLowerCase() === t.name.toLowerCase());
+                              const totCap = trainerSessData.reduce((s, ss) => s + (Number(ss.capacity) || 0), 0);
+                              const totAtt = trainerSessData.reduce((s, ss) => s + (Number(ss.checkedInCount) || 0), 0);
+                              const kpis = [
+                                { label: 'Total Revenue', val: formatCurrency(t.paid), sub: '' },
+                                { label: 'Rev / Session', val: formatCurrency(revPerSess), sub: '' },
+                                { label: 'Rev / Member', val: formatCurrency(revPerCust), sub: '' },
+                                { label: 'Fill Rate', val: formatPercentage(t.fillRate), sub: `${formatNumber(totAtt)} / ${formatNumber(totCap)} spots` },
+                                { label: 'Utilisation', val: `${utilPct.toFixed(1)}%`, sub: `${formatNumber(t.nonEmpty)} active cls` },
+                                { label: 'Late Cancels', val: formatNumber(t.lateCancels), sub: '' },
+                                { label: 'Conv. Rate', val: formatPercentage(t.conversionRate || 0), sub: `${formatNumber(tConv)} / ${formatNumber(tNew)}` },
+                                { label: 'Ret. Rate', val: formatPercentage(retRate), sub: `${formatNumber(tRet)} / ${formatNumber(tConv)}` },
+                                { label: 'Score', val: Math.round(t.revenueScore).toString(), sub: '0–100 composite' },
+                              ];
+                              return (
+                                <tr className="bg-slate-50/70 border-b border-slate-200">
+                                  <td colSpan={15} className="px-4 py-4">
+                                    <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
+                                      {kpis.map(({ label, val, sub }) => (
+                                        <div key={label} className="bg-white rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm">
+                                          <p className="text-[10px] text-slate-500 font-medium leading-tight">{label}</p>
+                                          <p className="font-bold text-sm text-slate-800 mt-0.5">{val}</p>
+                                          {sub && <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{sub}</p>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })()}
+                          </React.Fragment>
+                        );
+                      }) : <tr><td colSpan={15} className="p-5"><EmptyNote label="No trainer scorecard data available" /></td></tr>}
                     </tbody>
                     {trainerRankingsExtended.rows.length > 0 && (() => {
                       const rows = trainerRankingsExtended.rows;
@@ -3953,7 +4063,7 @@ const StudioPulse = memo(() => {
                     trainerMatrix.months,
                     trainerMatrix.monthLabels,
                     trainerMatrix.metricRows,
-                    (row, month) => openMetricDrillDown(`${row.label}${month ? ` • ${trainerMatrix.monthLabels[month]}` : ''}`, 'trainer', { name: row.label, rawData: month ? filteredPayroll.filter((item) => item.monthYear && normalizeMonthYearToISO(item.monthYear) === month) : filteredPayroll, filteredTransactionData: month ? filteredPayroll.filter((item) => item.monthYear && normalizeMonthYearToISO(item.monthYear) === month) : filteredPayroll }, filteredPayroll as any)
+                    (row, month) => openMetricDrillDown(`${row.label}${month ? ` • ${trainerMatrix.monthLabels[month]}` : ''}`, 'trainer', { name: row.label, rawData: month ? studioWidePayroll.filter((item) => item.monthYear && normalizeMonthYearToISO(item.monthYear) === month) : studioWidePayroll, filteredTransactionData: month ? studioWidePayroll.filter((item) => item.monthYear && normalizeMonthYearToISO(item.monthYear) === month) : studioWidePayroll }, studioWidePayroll as any)
                   )}
                 </div>
               )}
@@ -4115,7 +4225,7 @@ const StudioPulse = memo(() => {
                     lapsedMatrix.months,
                     lapsedMatrix.monthLabels,
                     lapsedMatrix.metricRows,
-                    (row, month) => openMetricDrillDown(`${row.label}${month ? ` • ${lapsedMatrix.monthLabels[month]}` : ''}`, 'client', { name: row.label, rawData: month ? filteredExpirations.filter((item) => monthKeyFromDate(item.endDate) === month) : filteredExpirations, filteredTransactionData: month ? filteredExpirations.filter((item) => monthKeyFromDate(item.endDate) === month) : filteredExpirations }, filteredExpirations as any)
+                    (row, month) => openMetricDrillDown(`${row.label}${month ? ` • ${lapsedMatrix.monthLabels[month]}` : ''}`, 'client', { name: row.label, rawData: month ? studioWideExpirations.filter((item) => monthKeyFromDate(item.endDate) === month) : studioWideExpirations, filteredTransactionData: month ? studioWideExpirations.filter((item) => monthKeyFromDate(item.endDate) === month) : studioWideExpirations }, studioWideExpirations as any)
                   )}
                 </div>
               )}
@@ -4434,7 +4544,7 @@ const StudioPulse = memo(() => {
                     classMatrix.months,
                     classMatrix.monthLabels,
                     classMatrix.metricRows,
-                    (row, month) => openMetricDrillDown(`${row.label}${month ? ` • ${classMatrix.monthLabels[month]}` : ''}`, 'location', { name: row.label, rawData: month ? filteredSessions.filter((item) => monthKeyFromDate(item.date) === month) : filteredSessions, filteredTransactionData: month ? filteredSessions.filter((item) => monthKeyFromDate(item.date) === month) : filteredSessions }, filteredSessions as any)
+                    (row, month) => openMetricDrillDown(`${row.label}${month ? ` • ${classMatrix.monthLabels[month]}` : ''}`, 'location', { name: row.label, rawData: month ? studioWideSessions.filter((item) => monthKeyFromDate(item.date) === month) : studioWideSessions, filteredTransactionData: month ? studioWideSessions.filter((item) => monthKeyFromDate(item.date) === month) : studioWideSessions }, studioWideSessions as any)
                   )}
                 </div>
               )}
