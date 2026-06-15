@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Area,
@@ -20,36 +20,49 @@ import {
   YAxis,
 } from 'recharts';
 import {
-  Activity,
   ArrowUpRight,
-  Banknote,
+  BarChart2,
+  Bell,
+  BookOpen,
   CalendarClock,
-  BarChart3,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   ChevronUp,
   CircleAlert,
-  DollarSign,
+  CircleDollarSign,
+  Coins,
+  Crown,
   Filter,
   Flame,
-  Gauge,
-  HeartPulse,
-  LayoutGrid,
-  List,
+  Layers,
+  LineChart,
   MapPin,
+  Medal,
   Percent,
+  PersonStanding,
+  RefreshCcw,
   RefreshCw,
   Repeat,
+  RotateCcw,
+  Scan,
+  SlidersHorizontal,
   Sparkles,
   Star,
   Tag,
   Target,
+  ThumbsDown,
+  Timer,
   TrendingDown,
   TrendingUp,
   Trophy,
   UserCheck,
+  UserCog,
   UserPlus,
+  UserRoundCheck,
   Users,
+  Wallet,
+  Zap,
 } from 'lucide-react';
 
 import { Footer } from '@/components/ui/footer';
@@ -62,7 +75,7 @@ import { StudioPulseMetricCard } from '@/components/dashboard/StudioPulseMetricC
 import InsightDetailDialog from '@/components/dashboard/InsightDetailDialog';
 import { UniversalDrillDownModal } from '@/components/dashboard/UniversalDrillDownModal';
 import { MonthOnMonthTableNew } from '@/components/dashboard/MonthOnMonthTableNew';
-import { ClientConversionMonthOnMonthByTypeTable } from '@/components/dashboard/ClientConversionMonthOnMonthByTypeTableEnhanced';
+import { ClientConversionMonthOnMonthByTypeTable, NewClientMembershipPurchasesTable } from '@/components/dashboard/ClientConversionMonthOnMonthByTypeTableEnhanced';
 import { UnifiedTopBottomSellers } from '@/components/dashboard/UnifiedTopBottomSellers';
 import DetailedComparisonView from '@/components/dashboard/DetailedComparisonView';
 
@@ -75,16 +88,18 @@ import { useLateCancellationsData } from '@/hooks/useLateCancellationsData';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useStudioAISummary } from '@/hooks/useStudioAISummary';
 
-import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
+import { TrainerNameCell, TrainerAvatar } from '@/components/ui/TrainerAvatar';
 import { mapLocationIdToTab } from '@/utils/memberLifecycleFilters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { isLeadConverted } from '@/utils/leadConversions';
+import { isInNewClientCohort } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { usePresenterMode, PulseSnapshot } from '@/hooks/usePresenterMode';
 import { PresenterToolbar } from '@/components/dashboard/PresenterToolbar';
+import { PresenterAnnotationOverlay } from '@/components/dashboard/PresenterAnnotationOverlay';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminCodeGate } from '@/components/ui/AdminCodeGate';
 
@@ -177,8 +192,7 @@ const classifyFormat = (value?: string): keyof typeof FORMAT_COLORS => {
   const v = (value || '').toLowerCase();
   if (v.includes('cycle') || v.includes('spin') || v.includes('ride')) return 'PowerCycle';
   if (v.includes('strength') || v.includes('sculpt') || v.includes('hiit') || v.includes('fit')) return 'Strength';
-  if (v.includes('barre') || v.includes('57') || v.includes('mat') || v.includes('express') || v.includes('foundation')) return 'Barre';
-  return 'Other'; // Catch-all: workshops, privates, events, cardio, pilates, yoga, etc.
+  return 'Barre'; // All other classes (barre, mat, express, workshops, privates, yoga, etc.) → Barre
 };
 
 const pctChange = (current: number, previous: number): number | null => {
@@ -457,8 +471,10 @@ interface FormatMetrics {
   monthlyAvg: { month: string; avg: number; fill: number }[];
 }
 
-function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]; trainerTabOnly?: boolean }) {
-  const [activeTab, setActiveTab] = useState<FormatCompTab>(trainerTabOnly ? 'trainer' : 'overview');
+function FormatComparisonSection({ sessions, trainerTabOnly, activeTab: activeTabProp, onTabChange }: { sessions: any[]; trainerTabOnly?: boolean; activeTab?: FormatCompTab; onTabChange?: (tab: FormatCompTab) => void }) {
+  const [localTab, setLocalTab] = useState<FormatCompTab>(trainerTabOnly ? 'trainer' : 'overview');
+  const activeTab = activeTabProp ?? localTab;
+  const setActiveTab = (tab: FormatCompTab) => { setLocalTab(tab); onTabChange?.(tab); };
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'classAvg' | 'fillRate' | 'revenue' | 'sessions'>('classAvg');
 
@@ -561,24 +577,21 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
 
       {/* Overview tab — format cards */}
       {activeTab === 'overview' && (() => {
-        const FMT_ORDER = ['PowerCycle', 'Barre', 'Strength', 'Other'] as const;
+        const FMT_ORDER = ['PowerCycle', 'Barre', 'Strength'] as const;
         const FMT_GRAD: Record<string, string> = {
           PowerCycle: 'from-blue-600 via-indigo-600 to-indigo-700',
           Barre: 'from-purple-600 via-violet-600 to-violet-700',
           Strength: 'from-rose-500 via-pink-600 to-pink-700',
-          Other: 'from-slate-500 via-slate-600 to-slate-700',
         };
         const FMT_ACCENT: Record<string, string> = {
           PowerCycle: 'bg-blue-500/20 text-blue-100',
           Barre: 'bg-purple-500/20 text-purple-100',
           Strength: 'bg-rose-500/20 text-rose-100',
-          Other: 'bg-slate-500/20 text-slate-200',
         };
         const FMT_BAR: Record<string, string> = {
           PowerCycle: 'bg-blue-300',
           Barre: 'bg-purple-300',
           Strength: 'bg-rose-300',
-          Other: 'bg-slate-300',
         };
 
         const grouped: Record<string, typeof sessions> = {};
@@ -614,7 +627,7 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
         const fmtCur = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0, notation: 'compact' });
 
         return (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {cards.map((card) => (
               <div key={card.fmt} className={cn('relative overflow-hidden rounded-2xl bg-gradient-to-br text-white shadow-lg', FMT_GRAD[card.fmt])}>
                 <div className="absolute inset-0 bg-black/10 pointer-events-none" />
@@ -622,9 +635,6 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-white/60 mb-0.5">Class Format</p>
                     <h3 className="text-2xl font-extrabold leading-tight tracking-tight">{card.fmt}</h3>
-                    {card.fmt === 'Other' && (
-                      <p className="mt-0.5 text-[10px] text-white/50 leading-snug">Workshops, privates, events, cardio, pilates, yoga &amp; uncategorised classes</p>
-                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {[
@@ -681,26 +691,41 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
       {/* Trainer comparison tab */}
       {activeTab === 'trainer' && (
         <div className="space-y-4">
-          {/* Format selector */}
-          <div className="flex flex-wrap gap-2">
-            {formatMetrics.map((f) => (
-              <button
-                key={f.name}
-                type="button"
-                onClick={() => setSelectedFormat(f.name)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all',
-                  selectedFormat === f.name ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
-                )}
-              >{f.name}</button>
-            ))}
+          {/* Controls row: format selector + sort */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              {formatMetrics.map((f) => (
+                <button
+                  key={f.name}
+                  type="button"
+                  onClick={() => setSelectedFormat(f.name)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all',
+                    selectedFormat === f.name ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                  )}
+                >{f.name}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sort by</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:border-slate-400"
+              >
+                <option value="classAvg">Class Avg</option>
+                <option value="fillRate">Fill Rate</option>
+                <option value="revenue">Revenue</option>
+                <option value="sessions">Sessions</option>
+              </select>
+            </div>
           </div>
 
           {selected ? (
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-5 py-3 text-white">
-                <h4 className="text-sm font-bold">Trainer breakdown for {selected.name}</h4>
-                <p className="text-[11px] text-white/70">{selected.sessions} sessions · {selected.trainers.length} trainers</p>
+                <h4 className="text-sm font-bold">Trainer breakdown · {selected.name}</h4>
+                <p className="text-[11px] text-white/70">{selected.sessions} sessions · {selected.trainers.length} trainers · sorted by {sortBy === 'classAvg' ? 'class avg' : sortBy}</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse text-sm">
@@ -724,9 +749,17 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
                       const trLC = trSessions.reduce((sum, s) => sum + (Number(s.lateCancelledCount) || 0), 0);
                       const trAvg = trSessions.length > 0 ? trVisits / trSessions.length : 0;
                       const trFill = trCap > 0 ? (trVisits / trCap) * 100 : 0;
-                      return (
+                      return { trainer, trSessions, trVisits, trRev, trLC, trAvg, trFill };
+                    }).sort((a, b) => {
+                      if (sortBy === 'classAvg') return b.trAvg - a.trAvg;
+                      if (sortBy === 'fillRate') return b.trFill - a.trFill;
+                      if (sortBy === 'revenue') return b.trRev - a.trRev;
+                      return b.trSessions.length - a.trSessions.length;
+                    }).map(({ trainer, trSessions, trVisits, trRev, trLC, trAvg, trFill }) => (
                         <tr key={trainer} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="px-4 py-2.5 font-medium text-slate-900 text-sm">{trainer}</td>
+                          <td className="px-4 py-2.5">
+                            <TrainerNameCell name={trainer} />
+                          </td>
                           <td className="px-3 py-2.5 tabular-nums text-slate-700 text-right text-xs">{trSessions.length}</td>
                           <td className="px-3 py-2.5 tabular-nums text-slate-700 text-right text-xs">{trVisits}</td>
                           <td className="px-3 py-2.5 tabular-nums font-bold text-blue-700 text-right text-xs">{trAvg.toFixed(1)}</td>
@@ -735,14 +768,13 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
                               <div className="h-1.5 w-14 rounded-full bg-slate-100 overflow-hidden">
                                 <div className="h-1.5 rounded-full bg-cyan-500" style={{ width: `${Math.min(trFill, 100)}%` }} />
                               </div>
-                              <span className="text-xs text-slate-700 font-semibold">{trFill.toFixed(0)}%</span>
+                              <span className="text-xs text-slate-700 font-semibold">{trFill.toFixed(1)}%</span>
                             </div>
                           </td>
                           <td className="px-3 py-2.5 tabular-nums text-green-700 font-semibold text-right text-xs">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(trRev)}</td>
                           <td className="px-3 py-2.5 tabular-nums text-slate-500 text-right text-xs">{trLC}</td>
                         </tr>
-                      );
-                    })}
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -758,6 +790,8 @@ function FormatComparisonSection({ sessions, trainerTabOnly }: { sessions: any[]
 
 const StudioPulse = memo(() => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const didInitFromUrl = useRef(false);
   const { setLoading } = useGlobalLoading();
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
   const [studio, setStudio] = useState<StudioId>('all');
@@ -843,6 +877,10 @@ const StudioPulse = memo(() => {
   const filteredLateCancels = useMemo(
     () => lateCancels.filter((item) => inStudio(item.location, studio) && isWithinRange(item.dateIST || item.sessionDateIST, dateRange)),
     [lateCancels, studio, dateRange]
+  );
+  const studioWideLateCancels = useMemo(
+    () => lateCancels.filter((item) => inStudio(item.location, studio)),
+    [lateCancels, studio]
   );
   const previousLateCancels = useMemo(
     () => lateCancels.filter((item) => inStudio(item.location, studio) && isWithinRange(item.dateIST || item.sessionDateIST, previousDateRange)),
@@ -1149,7 +1187,7 @@ const StudioPulse = memo(() => {
 
   /* ---------- Clients (retention / conversion) ---------- */
   const clientStats = useMemo(() => {
-    const rows = filteredClients;
+    const rows = filteredClients.filter((c) => isInNewClientCohort(c));
     const total = rows.length;
     const converted = rows.filter((c) => c.conversionStatus === 'Converted').length;
     const retained = rows.filter((c) => c.retentionStatus === 'Retained').length;
@@ -1157,8 +1195,8 @@ const StudioPulse = memo(() => {
     const avgLtv = ltvVals.length ? ltvVals.reduce((a, b) => a + b, 0) / ltvVals.length : 0;
     const spanVals = rows.map((c) => Number(c.conversionSpan) || 0).filter((v) => v > 0);
     const avgSpan = spanVals.length ? spanVals.reduce((a, b) => a + b, 0) / spanVals.length : 0;
-    const prevRows = previousClients;
-    const yoyRows = previousYearClients;
+    const prevRows = previousClients.filter((c) => isInNewClientCohort(c));
+    const yoyRows = previousYearClients.filter((c) => isInNewClientCohort(c));
     const prevTotal = prevRows.length;
     const prevConverted = prevRows.filter((c) => c.conversionStatus === 'Converted').length;
     const prevRetained = prevRows.filter((c) => c.retentionStatus === 'Retained').length;
@@ -1549,12 +1587,18 @@ const StudioPulse = memo(() => {
   const [showNewMemberMomTable, setShowNewMemberMomTable] = useState(false);
   const [showTrainerMomTable, setShowTrainerMomTable] = useState(false);
   const [showTrainerFormatSection, setShowTrainerFormatSection] = useState(false);
-  const [scorecardSortKey, setScorecardSortKey] = useState<'sessions' | 'customers' | 'paid' | 'classAvg' | 'utilization' | 'conversionRate' | 'lateCancels' | 'revenueScore'>('sessions');
+  const [trainerRankingCriteria, setTrainerRankingCriteria] = useState<'paid' | 'revenueScore' | 'fillRate' | 'classAvg' | 'sessions'>('paid');
+  const [scorecardSortKey, setScorecardSortKey] = useState<'sessions' | 'customers' | 'paid' | 'classAvg' | 'fillRate' | 'utilization' | 'conversionRate' | 'lateCancels' | 'revenueScore'>('sessions');
   const [scorecardSortDir, setScorecardSortDir] = useState<'desc' | 'asc'>('desc');
   const [showClassMomTable, setShowClassMomTable] = useState(false);
   const [showLapsedMomTable, setShowLapsedMomTable] = useState(false);
   const [churnLocationMetric, setChurnLocationMetric] = useState<'count' | 'penalty'>('count');
   const [lapseRankDimension, setLapseRankDimension] = useState<'membership' | 'location'>('membership');
+  const [showSalesRankings, setShowSalesRankings] = useState(false);
+  const [showFunnelRankings, setShowFunnelRankings] = useState(false);
+  const [showTrainerRankings, setShowTrainerRankings] = useState(false);
+  const [showLapseRankings, setShowLapseRankings] = useState(false);
+  const [showSessionRankings, setShowSessionRankings] = useState(false);
   const [sessionRankingDimension, setSessionRankingDimension] = useState<'class' | 'trainer' | 'format' | 'location' | 'day' | 'time'>('class');
   const [sessionRankingMetric, setSessionRankingMetric] = useState<'classAvg' | 'fillRate' | 'visits' | 'sessions' | 'revenue' | 'cancellationRate' | 'revPerCheckin' | 'compositeScore'>('classAvg');
   const [sessionRankingCount, setSessionRankingCount] = useState<10 | 20 | 30>(10);
@@ -1564,6 +1608,8 @@ const StudioPulse = memo(() => {
   const [sessionMinCheckins, setSessionMinCheckins] = useState(0);
   const [sessionMinClasses, setSessionMinClasses] = useState(0);
   const [sessionIncludeTrainer, setSessionIncludeTrainer] = useState(false);
+  const [annotationMode, setAnnotationMode] = React.useState(false);
+  const [formatCompTab, setFormatCompTab] = useState<FormatCompTab>('overview');
   const [sessionStatusFilter, setSessionStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sessionShowAdvanced, setSessionShowAdvanced] = useState(false);
   const [sessionExcludeHosted, setSessionExcludeHosted] = useState(false);
@@ -1583,25 +1629,201 @@ const StudioPulse = memo(() => {
     });
   }, []);
 
+  // Init state from URL params (one-time on mount)
+  useEffect(() => {
+    if (didInitFromUrl.current) return;
+    didInitFromUrl.current = true;
+    const p = searchParams;
+    if (p.has('studio')) setStudio((p.get('studio') as StudioId) || 'all');
+    if (p.has('from') && p.has('to')) setDateRange({ start: p.get('from')!, end: p.get('to')! });
+    if (p.has('frd')) setFunnelRankingDimension(p.get('frd') as any);
+    if (p.has('nmm')) setNewMemberTableMetric(p.get('nmm') as any);
+    if (p.has('fcm')) setFunnelChartMetric(p.get('fcm') as any);
+    if (p.has('frc')) setFunnelRankingCount(Number(p.get('frc')) as any);
+    if (p.has('fcv')) setFunnelChartView(p.get('fcv') as any);
+    if (p.has('sfmt')) setShowFunnelMomTable(p.get('sfmt') === '1');
+    if (p.has('sfbt')) setShowFunnelBreakdownTable(p.get('sfbt') === '1');
+    if (p.has('snmmt')) setShowNewMemberMomTable(p.get('snmmt') === '1');
+    if (p.has('stmt')) setShowTrainerMomTable(p.get('stmt') === '1');
+    if (p.has('stfs')) setShowTrainerFormatSection(p.get('stfs') === '1');
+    if (p.has('ssk')) setScorecardSortKey(p.get('ssk') as any);
+    if (p.has('ssd')) setScorecardSortDir(p.get('ssd') as any);
+    if (p.has('scmt')) setShowClassMomTable(p.get('scmt') === '1');
+    if (p.has('slmt')) setShowLapsedMomTable(p.get('slmt') === '1');
+    if (p.has('clm')) setChurnLocationMetric(p.get('clm') as any);
+    if (p.has('lrd')) setLapseRankDimension(p.get('lrd') as any);
+    if (p.has('srd')) setSessionRankingDimension(p.get('srd') as any);
+    if (p.has('srm')) setSessionRankingMetric(p.get('srm') as any);
+    if (p.has('src')) setSessionRankingCount(Number(p.get('src')) as any);
+    if (p.has('svm')) setSessionViewMode(p.get('svm') as any);
+    if (p.has('stv')) setSessionTableView(p.get('stv') as any);
+    if (p.has('sd')) setSessionDensity(p.get('sd') as any);
+    if (p.has('fct')) setFormatCompTab(p.get('fct') as any);
+    if (p.has('ssf')) setSessionStatusFilter(p.get('ssf') as any);
+    if (p.has('seh')) setSessionExcludeHosted(p.get('seh') === '1');
+    if (p.has('stm')) setSessionTopMetric(p.get('stm') as any);
+    if (p.has('sbm')) setSessionBottomMetric(p.get('sbm') as any);
+    if (p.has('stc')) setSessionTopCount(Number(p.get('stc')) as any);
+    if (p.has('sbc')) setSessionBottomCount(Number(p.get('sbc')) as any);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync state → URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('studio', studio);
+    params.set('from', dateRange.start);
+    params.set('to', dateRange.end);
+    if (funnelRankingDimension !== 'source') params.set('frd', funnelRankingDimension);
+    if (newMemberTableMetric !== 'source') params.set('nmm', newMemberTableMetric);
+    if (funnelChartMetric !== 'leads') params.set('fcm', funnelChartMetric);
+    if (funnelRankingCount !== 5) params.set('frc', String(funnelRankingCount));
+    if (funnelChartView !== 'funnel') params.set('fcv', funnelChartView);
+    if (showFunnelMomTable) params.set('sfmt', '1');
+    if (showFunnelBreakdownTable) params.set('sfbt', '1');
+    if (showNewMemberMomTable) params.set('snmmt', '1');
+    if (showTrainerMomTable) params.set('stmt', '1');
+    if (showTrainerFormatSection) params.set('stfs', '1');
+    if (scorecardSortKey !== 'sessions') params.set('ssk', scorecardSortKey);
+    if (scorecardSortDir !== 'desc') params.set('ssd', scorecardSortDir);
+    if (showClassMomTable) params.set('scmt', '1');
+    if (showLapsedMomTable) params.set('slmt', '1');
+    if (churnLocationMetric !== 'count') params.set('clm', churnLocationMetric);
+    if (lapseRankDimension !== 'membership') params.set('lrd', lapseRankDimension);
+    if (sessionRankingDimension !== 'class') params.set('srd', sessionRankingDimension);
+    if (sessionRankingMetric !== 'classAvg') params.set('srm', sessionRankingMetric);
+    if (sessionRankingCount !== 10) params.set('src', String(sessionRankingCount));
+    if (sessionViewMode !== 'grouped') params.set('svm', sessionViewMode);
+    if (sessionTableView !== 'default') params.set('stv', sessionTableView);
+    if (sessionDensity !== 'comfortable') params.set('sd', sessionDensity);
+    if (formatCompTab !== 'overview') params.set('fct', formatCompTab);
+    if (sessionStatusFilter !== 'all') params.set('ssf', sessionStatusFilter);
+    if (sessionExcludeHosted) params.set('seh', '1');
+    if (sessionTopMetric !== 'classAvg') params.set('stm', sessionTopMetric);
+    if (sessionBottomMetric !== 'classAvg') params.set('sbm', sessionBottomMetric);
+    if (sessionTopCount !== 10) params.set('stc', String(sessionTopCount));
+    if (sessionBottomCount !== 10) params.set('sbc', String(sessionBottomCount));
+    setSearchParams(params, { replace: true });
+  }, [
+    studio, dateRange, funnelRankingDimension, newMemberTableMetric, funnelChartMetric,
+    funnelRankingCount, funnelChartView, showFunnelMomTable, showFunnelBreakdownTable,
+    showNewMemberMomTable, showTrainerMomTable, showTrainerFormatSection, scorecardSortKey,
+    scorecardSortDir, showClassMomTable, showLapsedMomTable, churnLocationMetric,
+    lapseRankDimension, sessionRankingDimension, sessionRankingMetric, sessionRankingCount,
+    sessionViewMode, sessionTableView, sessionDensity, formatCompTab, sessionStatusFilter,
+    sessionExcludeHosted, sessionTopMetric, sessionBottomMetric, sessionTopCount, sessionBottomCount,
+    setSearchParams,
+  ]);
+
   /* ---------- Session Intelligence grouped rankings ---------- */
   const sessionIntelligence = useMemo(() => {
+    const HOSTED_TOKENS = ['host', 'hosted', 'p57', 'birthday', 'rugby', 'lrs'];
+    const isHostedClass = (s: { sessionName?: string; cleanedClass?: string; classType?: string }) => {
+      const name = (s.sessionName || s.cleanedClass || s.classType || '').toLowerCase();
+      return HOSTED_TOKENS.some((t) => name.includes(t));
+    };
+
+    // Determine active/inactive: group by the same key as ranking dimension using ALL studio sessions,
+    // then mark a key as active if it appeared in the last 2 calendar months.
+    const studioAllSessions = sessions.filter((s) => inStudio(s.location, studio));
+    const now = new Date();
+    const activeThresholdDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const activeThresholdStr = activeThresholdDate.toISOString().slice(0, 10);
+    const activeKeys = new Set<string>();
+    studioAllSessions.forEach((s) => {
+      if ((s.date || '') >= activeThresholdStr) {
+        const className = normalizeClassName(s.sessionName || s.cleanedClass || s.classType);
+        const trainerName = s.trainerName || 'Unknown';
+        const loc = s.location || 'Unknown';
+        const day = (() => { const d = parseDate(s.date); return d ? d.toLocaleDateString('en-IN', { weekday: 'long' }) : 'Unknown'; })();
+        const time = s.time || 'Unknown';
+        activeKeys.add(className);
+        activeKeys.add(trainerName);
+        activeKeys.add(loc);
+        activeKeys.add(day);
+        activeKeys.add(time);
+        activeKeys.add(classifyFormat(s.cleanedClass || s.classType));
+        // compound keys
+        activeKeys.add(`${className}|${day}|${time}|${loc}`);
+        activeKeys.add(`${className}|${day}|${time}|${loc}|${trainerName}`);
+        activeKeys.add(`${loc}|${className}`);
+        activeKeys.add(`${className}|${day}`);
+        activeKeys.add(`${className}|${time}`);
+        activeKeys.add(`${className}|${day}|${trainerName}`);
+        activeKeys.add(`${className}|${trainerName}`);
+        activeKeys.add(`${day}|${time}|${loc}`);
+        activeKeys.add(`${day}|${time}`);
+        activeKeys.add(`${trainerName}|${loc}`);
+      }
+    });
+
     type GroupRow = {
       name: string; sessions: number; visits: number; capacity: number; empty: number;
       revenue: number; memberships: number; packages: number; introOffers: number; singleClasses: number; lateCancels: number;
       children: Array<{ date: string; trainer: string; location: string; sessions: number; visits: number; capacity: number; fillRate: number; classAvg: number; empty: number; revenue: number; lateCancels: number; }>;
     };
+
+    // Apply pre-filters: excludeHosted
+    const preSessions = filteredSessions.filter((s) => {
+      if (sessionExcludeHosted && isHostedClass(s)) return false;
+      return true;
+    });
+
     const grouped: Record<string, GroupRow> = {};
-    filteredSessions.forEach((s) => {
+    preSessions.forEach((s) => {
+      const className = normalizeClassName(s.sessionName || s.cleanedClass || s.classType);
+      const trainerName = s.trainerName || 'Unknown';
+      const loc = s.location || 'Unknown';
+      const day = (() => { const d = parseDate(s.date); return d ? d.toLocaleDateString('en-IN', { weekday: 'long' }) : 'Unknown'; })();
+      const time = s.time || 'Unknown';
+      const fmt = classifyFormat(s.cleanedClass || s.classType);
+
       let key = '';
-      if (sessionRankingDimension === 'class') key = normalizeClassName(s.sessionName || s.cleanedClass || s.classType);
-      else if (sessionRankingDimension === 'trainer') key = s.trainerName || 'Unknown';
-      else if (sessionRankingDimension === 'format') key = classifyFormat(s.cleanedClass || s.classType);
-      else if (sessionRankingDimension === 'location') key = s.location || 'Unknown';
-      else if (sessionRankingDimension === 'day') {
-        const d = parseDate(s.date);
-        key = d ? d.toLocaleDateString('en-IN', { weekday: 'long' }) : 'Unknown';
-      } else if (sessionRankingDimension === 'time') key = s.time || 'Unknown';
+      if (sessionGrouping !== 'none') {
+        switch (sessionGrouping) {
+          case 'ClassDayTimeLocation': key = `${className} · ${day} · ${time} · ${loc}`; break;
+          case 'ClassDayTimeLocationTrainer': key = `${className} · ${day} · ${time} · ${loc} · ${trainerName}`; break;
+          case 'LocationClass': key = `${loc} → ${className}`; break;
+          case 'ClassDay': key = `${className} · ${day}`; break;
+          case 'ClassTime': key = `${className} · ${time}`; break;
+          case 'ClassDayTrainer': key = `${className} · ${day} · ${trainerName}`; break;
+          case 'ClassTrainer': key = `${className} · ${trainerName}`; break;
+          case 'DayTimeLocation': key = `${day} · ${time} · ${loc}`; break;
+          case 'DayTime': key = `${day} · ${time}`; break;
+          case 'TrainerLocation': key = `${trainerName} · ${loc}`; break;
+          case 'DayLocation': key = `${day} · ${loc}`; break;
+          case 'TimeLocation': key = `${time} · ${loc}`; break;
+          case 'ClassType': key = fmt; break;
+          case 'TypeLocation': key = `${fmt} · ${loc}`; break;
+          case 'TrainerDay': key = `${trainerName} · ${day}`; break;
+          case 'ClassLocation': key = `${className} · ${loc}`; break;
+          case 'TrainerTime': key = `${trainerName} · ${time}`; break;
+          case 'AMSessions': key = (parseInt(time) < 12 || time.toLowerCase().includes('am')) ? 'AM Sessions' : 'PM Sessions'; break;
+          case 'PMSessions': key = (parseInt(time) >= 12 || time.toLowerCase().includes('pm')) ? 'PM Sessions' : 'AM Sessions'; break;
+          case 'MorningClasses': key = (parseInt(time) < 13) ? 'Morning (before 1pm)' : 'Afternoon/Evening'; break;
+          case 'EveningClasses': key = (parseInt(time) >= 17 || time.toLowerCase().includes('evening')) ? 'Evening (5pm+)' : 'Day'; break;
+          case 'Weekday': { const wd = ['Monday','Tuesday','Wednesday','Thursday','Friday']; key = wd.includes(day) ? 'Weekday' : 'Weekend'; break; }
+          case 'Weekend': { const we = ['Saturday','Sunday']; key = we.includes(day) ? 'Weekend' : 'Weekday'; break; }
+          case 'Class': key = className; break;
+          case 'Type': key = fmt; break;
+          case 'Trainer': key = trainerName; break;
+          case 'Location': key = loc; break;
+          case 'Day': key = day; break;
+          case 'Date': key = s.date || 'Unknown'; break;
+          case 'Time': key = time; break;
+          case 'SessionName': key = s.sessionName || className; break;
+          default: key = className;
+        }
+      } else {
+        if (sessionRankingDimension === 'class') {
+          key = sessionIncludeTrainer ? `${className} · ${trainerName}` : className;
+        } else if (sessionRankingDimension === 'trainer') key = trainerName;
+        else if (sessionRankingDimension === 'format') key = fmt;
+        else if (sessionRankingDimension === 'location') key = loc;
+        else if (sessionRankingDimension === 'day') key = day;
+        else if (sessionRankingDimension === 'time') key = time;
+      }
       if (!key) key = 'Unknown';
+
       if (!grouped[key]) grouped[key] = { name: key, sessions: 0, visits: 0, capacity: 0, empty: 0, revenue: 0, memberships: 0, packages: 0, introOffers: 0, singleClasses: 0, lateCancels: 0, children: [] };
       const g = grouped[key];
       const visits = Number(s.checkedInCount) || 0;
@@ -1644,8 +1866,15 @@ const StudioPulse = memo(() => {
       const fillScore = Math.min(g.fillRate, 100);
       const sessionScore = Math.min(g.sessions * 2, 100);
       const compositeScore = attendanceScore * 0.4 + fillScore * 0.35 + sessionScore * 0.25;
-      return { ...g, cancellationRate, revPerCheckin, compositeScore };
-    }).filter((g) => g.visits >= sessionMinCheckins && g.sessions >= sessionMinClasses);
+      const isActive = activeKeys.has(g.name);
+      return { ...g, cancellationRate, revPerCheckin, compositeScore, isActive };
+    }).filter((g) => {
+      if (g.visits < sessionMinCheckins) return false;
+      if (g.sessions < sessionMinClasses) return false;
+      if (sessionStatusFilter === 'active' && !g.isActive) return false;
+      if (sessionStatusFilter === 'inactive' && g.isActive) return false;
+      return true;
+    });
     const sorted = [...enriched].sort((a, b) => {
       if (sessionRankingMetric === 'classAvg') return b.classAvg - a.classAvg;
       if (sessionRankingMetric === 'fillRate') return b.fillRate - a.fillRate;
@@ -1657,7 +1886,7 @@ const StudioPulse = memo(() => {
       return b.sessions - a.sessions;
     });
     return { rows: sorted, top: sorted.slice(0, sessionRankingCount), bottom: [...sorted].reverse().slice(0, sessionRankingCount) };
-  }, [filteredSessions, sessionRankingDimension, sessionRankingMetric, sessionRankingCount, sessionMinCheckins, sessionMinClasses]);
+  }, [filteredSessions, sessions, studio, sessionRankingDimension, sessionRankingMetric, sessionRankingCount, sessionMinCheckins, sessionMinClasses, sessionExcludeHosted, sessionIncludeTrainer, sessionStatusFilter, sessionGrouping]);
 
   const funnelRankings = useMemo(() => {
     const leadLookup = new Map<string, any>();
@@ -1736,22 +1965,27 @@ const StudioPulse = memo(() => {
   }, [filteredClients, filteredLeads, funnelChartMetric, funnelRankingDimension, funnelRankingCount]);
 
   const trainerRankingsExtended = useMemo(() => {
-    const rows = trainerStats.all.map((trainer, index) => ({
-      ...trainer,
-      rank: index + 1,
-      utilization: trainer.sessions > 0 ? (trainer.nonEmpty / trainer.sessions) * 100 : 0,
-      conversionRate: filteredPayroll
-        .filter((item) => item.teacherName === trainer.name)
-        .reduce((sum, item) => sum + (Number(item.converted) || 0), 0) / Math.max(filteredPayroll.filter((item) => item.teacherName === trainer.name).reduce((sum, item) => sum + (Number(item.new) || 0), 0), 1) * 100,
-      retentionRate: filteredPayroll
-        .filter((item) => item.teacherName === trainer.name)
-        .reduce((sum, item) => sum + (Number(item.retained) || 0), 0) / Math.max(filteredPayroll.filter((item) => item.teacherName === trainer.name).reduce((sum, item) => sum + (Number(item.new) || 0), 0), 1) * 100,
-      lateCancels: filteredLateCancels.filter((item) => (`${item.teacherName || item.instructor || ''}`).toLowerCase() === trainer.name.toLowerCase()).length,
-      revenueScore: trainer.paid + trainer.customers,
-    })).sort((a, b) => b.revenueScore - a.revenueScore);
+    const rows = trainerStats.all.map((trainer, index) => {
+      const trainerPayroll = filteredPayroll.filter((item) => item.teacherName === trainer.name);
+      const totalNew = trainerPayroll.reduce((sum, item) => sum + (Number(item.new) || 0), 0);
+      const totalConverted = trainerPayroll.reduce((sum, item) => sum + (Number(item.converted) || 0), 0);
+      const totalRetained = trainerPayroll.reduce((sum, item) => sum + (Number(item.retained) || 0), 0);
+      const trainerLC = filteredLateCancels.filter((item) => (`${item.teacherName || item.instructor || ''}`).toLowerCase() === trainer.name.toLowerCase()).length;
+      const trainerSessions = filteredSessions.filter((s) => (s.trainerName || '').toLowerCase() === trainer.name.toLowerCase());
+      const totalAttended = trainerSessions.reduce((sum, s) => sum + (Number(s.checkedInCount) || 0), 0);
+      const totalCapacity = trainerSessions.reduce((sum, s) => sum + (Number(s.capacity) || 0), 0);
+      const fillRate = totalCapacity > 0 ? (totalAttended / totalCapacity) * 100 : 0;
+      const utilization = trainer.sessions > 0 ? (trainer.nonEmpty / trainer.sessions) * 100 : 0;
+      const conversionRate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
+      const retentionRate = totalConverted > 0 ? (totalRetained / totalConverted) * 100 : 0;
+      // Composite score (0–100): 40% avg class size (normalised, 30 = full), 30% fill rate, 20% conv%, 10% ret%
+      const avgScore = Math.min((trainer.classAvg / 30) * 100, 100);
+      const compositeScore = avgScore * 0.4 + fillRate * 0.3 + conversionRate * 0.2 + retentionRate * 0.1;
+      return { ...trainer, rank: index + 1, utilization, fillRate, conversionRate, retentionRate, totalNew, totalConverted, totalRetained, lateCancels: trainerLC, revenueScore: compositeScore };
+    }).sort((a, b) => b.revenueScore - a.revenueScore);
 
     return { rows, top: rows.slice(0, 5), bottom: rows.slice(-5).reverse() };
-  }, [filteredLateCancels, filteredPayroll, trainerStats.all]);
+  }, [filteredLateCancels, filteredPayroll, filteredSessions, trainerStats.all]);
 
   const salesCollapsedGroups = useMemo(() => {
     const groups = new Set<string>();
@@ -1806,7 +2040,7 @@ const StudioPulse = memo(() => {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart2 className="h-5 w-5" />
             </div>
             <div>
               <h4 className="text-base font-bold">{title}</h4>
@@ -1918,8 +2152,11 @@ const StudioPulse = memo(() => {
   const [showMomTable, setShowMomTable] = useState(false);
   const activeMatrixMonthKey = useMemo(() => getPreviousMonthKey(), []);
 
+  // Front-face sparklines — date-filtered (show trend within selected range, same as before)
   const revenueSparkline = useMemo(() => salesStats.trend.map((point) => point.revenue), [salesStats.trend]);
+  const revenueSparklineLabels = useMemo(() => salesStats.trend.map((point) => point.label), [salesStats.trend]);
   const attendanceSparkline = useMemo(() => sessionStats.trend.map((point) => point.attendance), [sessionStats.trend]);
+  const attendanceSparklineLabels = useMemo(() => sessionStats.trend.map((point) => point.label), [sessionStats.trend]);
   const fillSparkline = useMemo(() => sessionStats.trend.map((point) => point.fill), [sessionStats.trend]);
   const lateCancelSparkline = useMemo(() => {
     const monthly: Record<string, number> = {};
@@ -1929,6 +2166,128 @@ const StudioPulse = memo(() => {
     });
     return Object.keys(monthly).sort().map((key) => monthly[key]);
   }, [filteredLateCancels]);
+
+  // Back-face sparklines — all-time (not date-filtered) so flip shows real 12-month history
+  const backRevenueSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideSales.forEach((d) => {
+      const mk = monthKeyFromDate(d.paymentDate);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + ((Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0));
+    });
+    return Object.keys(monthly).sort().map((k) => Math.round(monthly[k]));
+  }, [studioWideSales]);
+  const backRevenueSparklineLabels = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideSales.forEach((d) => { const mk = monthKeyFromDate(d.paymentDate); if (mk) monthly[mk] = 1; });
+    return Object.keys(monthly).sort().map((k) => monthLabel(k));
+  }, [studioWideSales]);
+  const backAttendanceSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideSessions.forEach((s) => {
+      const mk = monthKeyFromDate(s.date);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + (Number(s.checkedInCount) || 0);
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k]);
+  }, [studioWideSessions]);
+  const backAttendanceSparklineLabels = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideSessions.forEach((s) => { const mk = monthKeyFromDate(s.date); if (mk) monthly[mk] = 1; });
+    return Object.keys(monthly).sort().map((k) => monthLabel(k));
+  }, [studioWideSessions]);
+  const backFillSparkline = useMemo(() => {
+    const monthly: Record<string, { att: number; cap: number }> = {};
+    studioWideSessions.forEach((s) => {
+      const mk = monthKeyFromDate(s.date);
+      if (mk) {
+        monthly[mk] = monthly[mk] || { att: 0, cap: 0 };
+        monthly[mk].att += Number(s.checkedInCount) || 0;
+        monthly[mk].cap += Number(s.capacity) || 0;
+      }
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].cap > 0 ? Math.round((monthly[k].att / monthly[k].cap) * 100) : 0);
+  }, [studioWideSessions]);
+  const backLateCancelSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideLateCancels.forEach((item) => {
+      const key = monthKeyFromDate(item.dateIST || item.sessionDateIST);
+      if (key) monthly[key] = (monthly[key] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((key) => monthly[key]);
+  }, [studioWideLateCancels]);
+
+  const backUnitsSoldSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideSales.forEach((d) => {
+      const mk = monthKeyFromDate(d.paymentDate);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k]);
+  }, [studioWideSales]);
+
+  const backUniqueMembersSparkline = useMemo(() => {
+    const monthly: Record<string, Set<string>> = {};
+    studioWideSales.forEach((d) => {
+      const mk = monthKeyFromDate(d.paymentDate);
+      if (!mk) return;
+      if (!monthly[mk]) monthly[mk] = new Set();
+      if (d.memberId || d.customerEmail) {
+        monthly[mk].add(String(d.memberId || d.customerEmail));
+      }
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].size);
+  }, [studioWideSales]);
+
+  const backLapsedMembersSparkline = useMemo(() => {
+    const studioWideExpirations = expirations.filter((item) => inStudio(item.homeLocation, studio));
+    const monthly: Record<string, number> = {};
+    studioWideExpirations.forEach((d) => {
+      const mk = monthKeyFromDate(d.endDate);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k]);
+  }, [expirations, studio]);
+
+  const backRevenuePerVisitSparkline = useMemo(() => {
+    const monthlySales: Record<string, number> = {};
+    const monthlyVisits: Record<string, number> = {};
+    studioWideSales.forEach((d) => {
+      const mk = monthKeyFromDate(d.paymentDate);
+      if (mk) monthlySales[mk] = (monthlySales[mk] || 0) + ((Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0));
+    });
+    studioWideSessions.forEach((s) => {
+      const mk = monthKeyFromDate(s.date);
+      if (mk) monthlyVisits[mk] = (monthlyVisits[mk] || 0) + (Number(s.checkedInCount) || 0);
+    });
+    const allKeys = Array.from(new Set([...Object.keys(monthlySales), ...Object.keys(monthlyVisits)])).sort();
+    return allKeys.map((k) => {
+      const visits = monthlyVisits[k] || 0;
+      const sales = monthlySales[k] || 0;
+      return visits > 0 ? Math.round(sales / visits) : 0;
+    });
+  }, [studioWideSales, studioWideSessions]);
+
+  const backSessionsSparkline = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    studioWideSessions.forEach((s) => {
+      const mk = monthKeyFromDate(s.date);
+      if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k]);
+  }, [studioWideSessions]);
+
+  const backClassAvgSparkline = useMemo(() => {
+    const monthly: Record<string, { att: number; sessions: number }> = {};
+    studioWideSessions.forEach((s) => {
+      const mk = monthKeyFromDate(s.date);
+      const att = Number(s.checkedInCount) || 0;
+      if (mk && att > 0) {
+        monthly[mk] = monthly[mk] || { att: 0, sessions: 0 };
+        monthly[mk].att += att;
+        monthly[mk].sessions += 1;
+      }
+    });
+    return Object.keys(monthly).sort().map((k) => monthly[k].sessions > 0 ? Math.round(monthly[k].att / monthly[k].sessions * 10) / 10 : 0);
+  }, [studioWideSessions]);
 
   const openMetricDrillDown = useCallback((title: string, type: any, data: any, relatedData: any[]) => {
     setDrillDownConfig({ title, type, data, relatedData });
@@ -2171,7 +2530,7 @@ const StudioPulse = memo(() => {
     sessionTableView, sessionDensity, sessionMinCheckins, sessionMinClasses,
     sessionIncludeTrainer, sessionStatusFilter, sessionShowAdvanced, sessionExcludeHosted,
     sessionGrouping, sessionTopMetric, sessionBottomMetric, sessionTopCount, sessionBottomCount,
-    showMomTable, insightOpen, drillDownOpen,
+    showMomTable, insightOpen, drillDownOpen, formatCompTab,
     scrollY: presenterScrollY,
   };
 
@@ -2189,7 +2548,7 @@ const StudioPulse = memo(() => {
     sessionTableView, sessionDensity, sessionMinCheckins, sessionMinClasses,
     sessionIncludeTrainer, sessionStatusFilter, sessionShowAdvanced, sessionExcludeHosted,
     sessionGrouping, sessionTopMetric, sessionBottomMetric, sessionTopCount, sessionBottomCount,
-    showMomTable, insightOpen, drillDownOpen, presenterScrollY,
+    showMomTable, insightOpen, drillDownOpen, formatCompTab, presenterScrollY,
   ]);
 
   // Apply incoming snapshot (viewer)
@@ -2232,6 +2591,7 @@ const StudioPulse = memo(() => {
     setShowMomTable(snap.showMomTable);
     setInsightOpen(snap.insightOpen);
     setDrillDownOpen(snap.drillDownOpen);
+    if (snap.formatCompTab) setFormatCompTab(snap.formatCompTab);
     // scroll to presenter position smoothly
     window.scrollTo({ top: snap.scrollY, behavior: 'smooth' });
   }, []);
@@ -2258,24 +2618,81 @@ const StudioPulse = memo(() => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-6 text-center"
+          className="relative mb-6"
         >
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-4 py-1.5 text-xs font-semibold text-slate-600 backdrop-blur">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            Live · 360° Studio Pulse
+          {/* Project badge — top right */}
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="absolute right-0 top-0 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-slate-500 backdrop-blur shadow-sm"
+          >
+            <span className="text-slate-400 font-normal">Project by</span>
+            <span className="text-slate-800 font-bold tracking-wide">Jimmeey Gondaa</span>
+          </motion.div>
+
+          {/* SOMA animated title — centered */}
+          <div className="flex flex-col items-center text-center pt-2">
+            <div className="relative inline-block">
+              <h1 className="text-6xl font-black tracking-[0.22em] md:text-7xl lg:text-8xl">
+                {(['S','O','M','A'] as const).map((letter, i) => (
+                  <motion.span
+                    key={letter}
+                    initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{ duration: 0.9, delay: 0.2 + i * 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    className="inline-block bg-gradient-to-b from-slate-900 via-slate-700 to-slate-400 bg-clip-text text-transparent select-none"
+                  >
+                    {letter}
+                  </motion.span>
+                ))}
+              </h1>
+
+              {/* Glow shine sweep — fires after all letters land */}
+              <motion.div
+                initial={{ x: '-110%', opacity: 0 }}
+                animate={{ x: '110%', opacity: [0, 0.7, 0] }}
+                transition={{ duration: 0.75, delay: 1.05, ease: 'easeInOut' }}
+                className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent"
+              />
+
+              {/* Underline — grows from center after shine */}
+              <motion.div
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{ scaleX: 1, opacity: 1 }}
+                transition={{ duration: 0.7, delay: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformOrigin: 'center' }}
+                className="mt-1.5 h-[2px] w-full rounded-full bg-gradient-to-r from-transparent via-slate-400 to-transparent"
+              />
+            </div>
+
+            {/* Expanded acronym — fades in last */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 1.25 }}
+              className="mt-4 flex items-center justify-center gap-0 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400"
+            >
+              {[
+                { letter: 'S', word: 'Studio' },
+                { letter: 'O', word: 'Operations' },
+                { letter: 'M', word: 'Metrics' },
+                { letter: 'A', word: 'Analytics' },
+              ].map(({ letter, word }, i) => (
+                <React.Fragment key={letter}>
+                  <span className="flex items-baseline gap-[1px]">
+                    <span className="text-slate-700 font-black">{letter}</span>
+                    <span className="text-slate-400">{word.slice(1).toLowerCase()}</span>
+                  </span>
+                  {i < 3 && <span className="mx-2.5 text-slate-200">·</span>}
+                </React.Fragment>
+              ))}
+            </motion.div>
           </div>
-          <h1 className="bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-3xl font-black tracking-tight text-transparent md:text-4xl">
-            STUDIO PULSE
-          </h1>
-          <p className="mt-1 text-sm font-medium tracking-wide text-slate-500">
-            PHYSIQUE 57 INDIA · A complete snapshot across every dashboard module
-          </p>
         </motion.header>
 
-        <div className="flex items-center gap-3">
+        {/* Toolbar row: presenter + icon actions */}
+        <div className="mb-3 flex items-center gap-2">
           <PresenterToolbar
             modeState={presenterMode}
             isPresenter={isPresenter}
@@ -2283,17 +2700,52 @@ const StudioPulse = memo(() => {
             onEnd={endSession}
             onJoin={handleJoinSession}
           />
-          <div className="ml-auto flex items-center gap-2">
+          <PresenterAnnotationOverlay active={annotationMode} isPresenter={isPresenter} />
+          <div className="ml-auto flex items-center gap-1.5">
+            {/* Annotate — presenter only */}
+            {isPresenter && presenterMode.role === 'presenter' && (
+              <button
+                onClick={() => setAnnotationMode((v) => !v)}
+                title={annotationMode ? 'Exit Draw' : 'Annotate'}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition',
+                  annotationMode
+                    ? 'border-violet-400 bg-violet-600 text-white'
+                    : 'border-slate-200 bg-white/70 text-slate-500 backdrop-blur hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700'
+                )}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            )}
+            {/* Refresh Data */}
+            <button
+              onClick={handleRefresh}
+              title="Refresh data"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white/70 text-slate-500 shadow-sm backdrop-blur transition hover:bg-slate-50 hover:text-slate-800"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+            {/* Refresh Summaries */}
+            <button
+              onClick={handleRefreshSummaries}
+              disabled={summaryRefreshing}
+              title={summaryRefreshing ? 'Refreshing summaries…' : 'Refresh AI summaries'}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white/70 text-purple-600 shadow-sm backdrop-blur transition hover:border-purple-300 hover:bg-purple-50 disabled:opacity-50"
+            >
+              <Sparkles className={cn('h-3.5 w-3.5', summaryRefreshing && 'animate-spin')} />
+            </button>
+            {/* Admin */}
             {isAdmin ? (
               <button
                 onClick={lockAdmin}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm backdrop-blur transition hover:bg-amber-50"
                 title="Lock admin mode"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 shadow-sm transition hover:bg-amber-100"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 </svg>
-                Admin
               </button>
             ) : (
               <AdminCodeGate onUnlock={unlockAdmin} error={adminError} />
@@ -2302,8 +2754,9 @@ const StudioPulse = memo(() => {
         </div>
 
         <div className={viewerLocked ? 'pointer-events-none select-none opacity-80' : ''}>
-        <div className="mb-6 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-slate-200/70 bg-white/80 p-2 shadow-sm backdrop-blur-sm">
-          <div className="flex flex-1 flex-wrap justify-center gap-2">
+        {/* Location tabs — full width, centered */}
+        <div className="mb-6 w-full rounded-2xl border border-slate-200/70 bg-white/80 p-2 shadow-sm backdrop-blur-sm">
+          <div className="flex w-full items-center gap-2">
           {STUDIOS.map((s) => {
             const active = s.id === studio;
             return (
@@ -2312,11 +2765,11 @@ const StudioPulse = memo(() => {
                 type="button"
                 onClick={() => setStudio(s.id)}
                 className={cn(
-                  'group flex flex-1 basis-[120px] items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-center transition-all duration-300',
+                  'flex flex-1 items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-center transition-all duration-300',
                   active ? cn('bg-gradient-to-br text-white shadow-md', s.accent) : 'text-slate-600 hover:bg-slate-100'
                 )}
               >
-                <MapPin className={cn('h-4 w-4', active ? 'text-white' : 'text-slate-400')} />
+                <MapPin className={cn('h-4 w-4 shrink-0', active ? 'text-white' : 'text-slate-400')} />
                 <span className="flex flex-col leading-tight">
                   <span className="text-sm font-bold">{s.name}</span>
                   <span className={cn('text-[10px]', active ? 'text-white/80' : 'text-slate-400')}>{s.area}</span>
@@ -2324,21 +2777,6 @@ const StudioPulse = memo(() => {
               </button>
             );
           })}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-1.5 border-slate-300">
-              <RefreshCw className="h-3.5 w-3.5" /> Refresh Data
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshSummaries}
-              disabled={summaryRefreshing}
-              className="gap-1.5 border-slate-300 text-purple-700 hover:border-purple-300 hover:bg-purple-50"
-            >
-              <Sparkles className={cn('h-3.5 w-3.5', summaryRefreshing && 'animate-spin')} />
-              {summaryRefreshing ? 'Refreshing…' : 'Refresh Summaries'}
-            </Button>
           </div>
         </div>
 
@@ -2363,9 +2801,24 @@ const StudioPulse = memo(() => {
             transition={{ duration: 0.35 }}
             className="space-y-6"
           >
+            <AnimatedSectionCard
+              title="Studio Overview"
+              subtitle={`${activeStudio.name} · ${dateRange.start} to ${dateRange.end}`}
+              icon={Sparkles}
+              iconGradient="from-slate-700 to-slate-900"
+              action={
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setIsSummaryEditing((v) => !v); if (!isSummaryEditing && !editableSummaryText) { setEditableSummaryText((aiSummary?.bullets ?? locationSummary.sections.flatMap((s) => s.bullets)).map((b) => `• ${b}`).join('\n')); } }}>
+                    {isSummaryEditing ? 'Done' : 'Edit'}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setInsightOpen(true)}>Expand</Button>
+                </div>
+              }
+            >
+            <div className="space-y-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <StudioPulseMetricCard
-                icon={<DollarSign className="h-5 w-5" />}
+                icon={<CircleDollarSign className="h-5 w-5" />}
                 title="Net Sales"
                 metric={salesStats.net}
                 precision={0}
@@ -2375,13 +2828,16 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={salesStats.yoyGrowth.net}
                 sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backRevenueSparkline}
+                backSparklineLabels={backRevenueSparklineLabels}
                 tooltipContent="Net sales after VAT. Tracks retained revenue quality across the active period."
                 subtext={`Gross ${formatCurrency(salesStats.gross)} · Discount ${formatCurrency(salesStats.discount)}`}
                 iconContainerClassName="bg-gradient-to-br from-emerald-600 to-green-700 text-white"
                 onClick={() => openMetricDrillDown('Net Sales', 'metric', { name: 'Net Sales', rawData: filteredSales, filteredTransactionData: filteredSales }, filteredSales)}
               />
               <StudioPulseMetricCard
-                icon={<Banknote className="h-5 w-5" />}
+                icon={<Wallet className="h-5 w-5" />}
                 title="Units Sold"
                 metric={salesStats.txns}
                 precision={0}
@@ -2391,6 +2847,9 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={salesStats.yoyGrowth.txns}
                 sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backUnitsSoldSparkline}
+                backSparklineLabels={backRevenueSparklineLabels}
                 tooltipContent="Completed sales transactions in the active window. Useful for purchase volume tracking."
                 subtext={`ATV ${formatCurrency(salesStats.atv)} · ${formatPercentage(salesStats.discountPenetration)} discounted`}
                 iconContainerClassName="bg-gradient-to-br from-blue-700 to-blue-900 text-white"
@@ -2407,13 +2866,16 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={salesStats.yoyGrowth.members}
                 sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backUniqueMembersSparkline}
+                backSparklineLabels={backRevenueSparklineLabels}
                 tooltipContent="Distinct purchasing members. Shows customer reach across the active sales mix."
                 subtext="Unique buyers in the active period"
                 iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white"
                 onClick={() => openMetricDrillDown('Unique Members', 'member', { name: 'Unique Members', rawData: filteredSales, filteredTransactionData: filteredSales }, filteredSales)}
               />
               <StudioPulseMetricCard
-                icon={<HeartPulse className="h-5 w-5" />}
+                icon={<Zap className="h-5 w-5" />}
                 title="Lapsed Members"
                 metric={expirationStats.total}
                 precision={0}
@@ -2423,13 +2885,16 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={expirationStats.yoyGrowth}
                 sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backLapsedMembersSparkline}
+                backSparklineLabels={backRevenueSparklineLabels}
                 tooltipContent="Members whose memberships expired in the selected period, sourced from the Expirations sheet."
                 subtext={`${formatNumber(expirationStats.churned)} churned · memberships expired`}
                 iconContainerClassName="bg-gradient-to-br from-slate-600 to-slate-800 text-white"
                 onClick={() => openMetricDrillDown('Lapsed Members', 'client', { name: 'Lapsed Members', rawData: filteredExpirations as any, filteredTransactionData: filteredExpirations as any }, filteredExpirations as any)}
               />
               <StudioPulseMetricCard
-                icon={<Activity className="h-5 w-5" />}
+                icon={<LineChart className="h-5 w-5" />}
                 title="Visits"
                 metric={sessionStats.attendance}
                 precision={0}
@@ -2439,13 +2904,16 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={sessionStats.yoyGrowth.attendance}
                 sparklineData={attendanceSparkline}
+                sparklineLabels={attendanceSparklineLabels}
+                backSparklineData={backAttendanceSparkline}
+                backSparklineLabels={backAttendanceSparklineLabels}
                 tooltipContent="Total check-ins across sessions in the selected period."
                 subtext={`${formatNumber(sessionStats.totalSessions)} sessions · Avg ${formatNumber(sessionStats.classAvg)} per non-empty class`}
                 iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-700 text-white"
                 onClick={() => openMetricDrillDown('Visits', 'location', { name: activeStudio.name, rawData: filteredSessions, filteredTransactionData: filteredSessions }, filteredSessions)}
               />
               <StudioPulseMetricCard
-                icon={<Gauge className="h-5 w-5" />}
+                icon={<Scan className="h-5 w-5" />}
                 title="Sessions Conducted"
                 metric={sessionStats.totalSessions}
                 precision={0}
@@ -2455,6 +2923,9 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={sessionStats.yoyGrowth.totalSessions}
                 sparklineData={attendanceSparkline}
+                sparklineLabels={attendanceSparklineLabels}
+                backSparklineData={backSessionsSparkline}
+                backSparklineLabels={backAttendanceSparklineLabels}
                 tooltipContent="All conducted sessions during the selected period."
                 subtext={`Fill rate ${formatPercentage(sessionStats.avgFill)} · Empty share ${formatPercentage(sessionStats.emptyShare)}`}
                 iconContainerClassName="bg-gradient-to-br from-sky-600 to-cyan-700 text-white"
@@ -2464,13 +2935,16 @@ const StudioPulse = memo(() => {
                 icon={<UserPlus className="h-5 w-5" />}
                 title="Class Average"
                 metric={sessionStats.classAvg}
-                precision={0}
+                precision={1}
                 formatter={formatNumber}
                 growthLabel="MoM"
                 growthValue={sessionStats.growth.attendance}
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={sessionStats.yoyGrowth.attendance}
                 sparklineData={attendanceSparkline}
+                sparklineLabels={attendanceSparklineLabels}
+                backSparklineData={backClassAvgSparkline}
+                backSparklineLabels={backAttendanceSparklineLabels}
                 tooltipContent="Average check-ins per non-empty class. Indicates delivery density."
                 subtext="Average check-ins per non-empty class"
                 iconContainerClassName="bg-gradient-to-br from-teal-600 to-emerald-700 text-white"
@@ -2488,6 +2962,8 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={sessionStats.yoyGrowth.avgFill}
                 sparklineData={fillSparkline}
+                backSparklineData={backFillSparkline}
+                backSparklineLabels={backAttendanceSparklineLabels}
                 tooltipContent="Capacity utilization across all sessions in the selected period."
                 subtext={`${formatPercentage(sessionStats.emptyShare)} empty-session share`}
                 iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-700 text-white"
@@ -2495,7 +2971,7 @@ const StudioPulse = memo(() => {
               />
               <StudioPulseMetricCard
                 icon={<Repeat className="h-5 w-5" />}
-                title="Revenue / Session Visit"
+                title="Revenue / Visit"
                 metric={sessionStats.attendance ? salesStats.net / sessionStats.attendance : 0}
                 precision={0}
                 formatter={formatCurrency}
@@ -2504,10 +2980,13 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={salesStats.yoyGrowth.net}
                 sparklineData={revenueSparkline}
+                sparklineLabels={revenueSparklineLabels}
+                backSparklineData={backRevenuePerVisitSparkline}
+                backSparklineLabels={backRevenueSparklineLabels}
                 tooltipContent="Net sales divided by session visits. Indicates monetization efficiency per visit."
                 subtext={`${formatNumber(sessionStats.attendance)} visits · ${formatNumber(sessionStats.totalSessions)} sessions`}
                 iconContainerClassName="bg-gradient-to-br from-rose-600 to-pink-700 text-white"
-                onClick={() => openMetricDrillDown('Revenue / Session Visit', 'metric', { name: 'Revenue / Session Visit', rawData: filteredSessions, filteredTransactionData: filteredSessions }, filteredSessions)}
+                onClick={() => openMetricDrillDown('Revenue / Visit', 'metric', { name: 'Revenue / Visit', rawData: filteredSessions, filteredTransactionData: filteredSessions }, filteredSessions)}
               />
               <StudioPulseMetricCard
                 icon={<CalendarClock className="h-5 w-5" />}
@@ -2520,6 +2999,7 @@ const StudioPulse = memo(() => {
                 secondaryGrowthLabel="YoY"
                 secondaryGrowthValue={pctChange(lcStats.total, previousYearLateCancels.length)}
                 sparklineData={lateCancelSparkline}
+                backSparklineData={backLateCancelSparkline}
                 tooltipContent="Late cancellations in the selected period. High values signal revenue leakage and scheduling friction."
                 subtext={`${formatNumber(lcStats.sameDay)} same-day · Penalties ${formatCurrency(lcStats.penalty)}`}
                 iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-700 text-white"
@@ -2527,118 +3007,105 @@ const StudioPulse = memo(() => {
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-              <AnimatedSectionCard
-                title="Selected Studio Summary"
-                subtitle={`${activeStudio.name} · ${dateRange.start} to ${dateRange.end}`}
-                icon={Sparkles}
-                iconGradient="from-slate-700 to-slate-900"
-                className="lg:col-span-3"
-                action={
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => { setIsSummaryEditing((v) => !v); if (!isSummaryEditing && !editableSummaryText) { setEditableSummaryText((aiSummary?.bullets ?? locationSummary.sections.flatMap((s) => s.bullets)).map((b) => `• ${b}`).join('\n')); } }}>
-                      {isSummaryEditing ? 'Done' : 'Edit'}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setInsightOpen(true)}>Expand</Button>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08)]">
+              {/* Header bar */}
+              <div className="flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">Performance Summary</p>
+                  <p className="text-sm font-semibold text-white truncate">
+                    {aiLoading ? 'Generating…' : `${activeStudio.name} · ${dateRange.start} – ${dateRange.end}`}
+                  </p>
+                </div>
+              </div>
+              <div className="p-6 space-y-6">
+                {aiLoading ? (
+                  <div className="flex items-center gap-3 text-slate-500 py-4">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-violet-500" />
+                    <span className="text-sm font-medium">Generating AI summary…</span>
                   </div>
-                }
-              >
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-3">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 text-white">
-                      <Sparkles className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                      {aiLoading ? 'Generating summary…' : `Performance Summary · ${activeStudio.name} · ${dateRange.start}–${dateRange.end}`}
-                    </span>
-                  </div>
-                  <div className="p-5 space-y-5">
-                    {aiLoading ? (
-                      <div className="flex items-center gap-3 text-slate-400 py-4">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-purple-500" />
-                        <span className="text-sm">Generating AI summary…</span>
+                ) : isSummaryEditing ? (
+                  <textarea
+                    className="w-full min-h-[220px] rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-800 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100 resize-y font-medium"
+                    value={editableSummaryText}
+                    onChange={(e) => setEditableSummaryText(e.target.value)}
+                    placeholder="Write your studio summary here. Use • to start bullet points."
+                  />
+                ) : editableSummaryText ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {editableSummaryText.split('\n').filter(Boolean).map((line, i) => (
+                      <div key={i} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-500" />
+                        <span className="text-[13px] font-medium leading-relaxed text-slate-700">{line.replace(/^[•\-]\s*/, '')}</span>
                       </div>
-                    ) : isSummaryEditing ? (
-                      <textarea
-                        className="w-full min-h-[220px] rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-y font-medium"
-                        value={editableSummaryText}
-                        onChange={(e) => setEditableSummaryText(e.target.value)}
-                        placeholder="Write your studio summary here. Use • to start bullet points."
-                      />
-                    ) : editableSummaryText ? (
-                      <div className="space-y-4">
+                    ))}
+                  </div>
+                ) : (() => {
+                  const bullets = aiSummary?.bullets ?? locationSummary.sections.flatMap((s) => s.bullets);
+                  const narrative = aiSummary?.narrative;
+                  return (
+                    <div className="space-y-6">
+                      {/* Narrative */}
+                      {narrative ? (
+                        <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-slate-50 px-6 py-5">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-500">AI Studio Overview</span>
+                          </div>
+                          <p className="text-[14px] leading-relaxed text-slate-800 font-medium">{narrative}</p>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5">
+                          <p className="text-[14px] leading-relaxed text-slate-700 font-medium">
+                            {`${activeStudio.name} recorded ${formatCurrency(salesStats.net)} net sales across ${formatNumber(salesStats.txns)} transactions with ${formatNumber(sessionStats.attendance)} visits across ${formatNumber(sessionStats.totalSessions)} sessions (${formatPercentage(sessionStats.avgFill)} avg fill). ${clientStats.newClients} new clients entered the funnel — ${formatPercentage(clientStats.conversionRate)} converted, ${formatPercentage(clientStats.retentionRate)} retained. ${expirationStats.total} memberships lapsed with ${expirationStats.churned} classified as churned.`}
+                          </p>
+                        </div>
+                      )}
+                      {/* Key insights */}
+                      <div>
+                        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Key Insights</p>
                         <div className="grid gap-2 sm:grid-cols-2">
-                          {editableSummaryText.split('\n').filter(Boolean).map((line, i) => (
-                            <div key={i} className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5">
-                              <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
-                              <span className="text-[12px] leading-relaxed text-slate-700">{line.replace(/^[•\-]\s*/, '')}</span>
+                          {bullets.map((b, i) => (
+                            <div key={i} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-400" />
+                              <span className="text-[13px] font-medium leading-relaxed text-slate-700">{b}</span>
                             </div>
                           ))}
                         </div>
                       </div>
-                    ) : (() => {
-                      const bullets = aiSummary?.bullets ?? locationSummary.sections.flatMap((s) => s.bullets);
-                      const narrative = aiSummary?.narrative;
-                      return (
-                        <div className="space-y-4">
-                          {/* Narrative paragraph */}
-                          {narrative ? (
-                            <div className="rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50/60 to-slate-50 px-5 py-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Sparkles className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-purple-400">AI Studio Overview</span>
-                              </div>
-                              <p className="text-[13px] leading-relaxed text-slate-700 font-medium">{narrative}</p>
-                            </div>
-                          ) : (
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-4">
-                              <p className="text-[13px] leading-relaxed text-slate-600">
-                                {`${activeStudio.name} recorded ${formatCurrency(salesStats.net)} net sales across ${formatNumber(salesStats.txns)} transactions with ${formatNumber(sessionStats.attendance)} visits across ${formatNumber(sessionStats.totalSessions)} sessions (${formatPercentage(sessionStats.avgFill)} avg fill). ${clientStats.newClients} new clients entered the funnel — ${formatPercentage(clientStats.conversionRate)} converted, ${formatPercentage(clientStats.retentionRate)} retained. ${expirationStats.total} memberships lapsed with ${expirationStats.churned} classified as churned.`}
-                              </p>
-                            </div>
-                          )}
-                          {/* Key bullets */}
-                          <div>
-                            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Key Insights</p>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              {bullets.map((b, i) => (
-                                <div key={i} className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
-                                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-purple-400" />
-                                  <span className="text-[12px] leading-relaxed text-slate-700">{b}</span>
-                                </div>
-                              ))}
-                            </div>
+                      {/* Stat strip */}
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {[
+                          { label: 'Net Sales', value: formatCurrency(salesStats.net) },
+                          { label: 'Avg Fill', value: formatPercentage(sessionStats.avgFill) },
+                          { label: 'Conv Rate', value: formatPercentage(clientStats.conversionRate) },
+                          { label: 'Lapsed', value: formatNumber(expirationStats.total) },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+                            <p className="mt-1 text-[1.1rem] font-extrabold tabular-nums text-slate-900">{value}</p>
                           </div>
-                          {/* Quick stat strip */}
-                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 pt-1">
-                            {[
-                              { label: 'Net Sales', value: formatCurrency(salesStats.net) },
-                              { label: 'Avg Fill', value: formatPercentage(sessionStats.avgFill) },
-                              { label: 'Conv Rate', value: formatPercentage(clientStats.conversionRate) },
-                              { label: 'Lapsed', value: formatNumber(expirationStats.total) },
-                            ].map(({ label, value }) => (
-                              <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-center">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-                                <p className="mt-0.5 text-base font-extrabold tabular-nums text-slate-900">{value}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </AnimatedSectionCard>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
 
-            <AnimatedSectionCard title="Sales Metrics" subtitle="Month-on-month table and seller lists" icon={DollarSign} iconGradient="from-blue-700 to-blue-900">
+            </div>
+            </AnimatedSectionCard>
+
+            <AnimatedSectionCard title="Sales Metrics" subtitle="Month-on-month table and seller lists" icon={CircleDollarSign} iconGradient="from-blue-700 to-blue-900">
               <div className="space-y-6">
                 <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                   <div className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-6 py-4 text-white">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center space-x-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-                          <DollarSign className="h-5 w-5" />
+                          <CircleDollarSign className="h-5 w-5" />
                         </div>
                         <div>
                           <h4 className="text-base font-bold">Monthly sales metrics matrix</h4>
@@ -2652,6 +3119,10 @@ const StudioPulse = memo(() => {
                         <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
                           <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">MoM</span>
                           <Switch checked={showMomTable} onCheckedChange={setShowMomTable} />
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80">Rankings</span>
+                          <Switch checked={showSalesRankings} onCheckedChange={setShowSalesRankings} />
                         </div>
                       </div>
                     </div>
@@ -2755,12 +3226,14 @@ const StudioPulse = memo(() => {
                     ])}
                   </>
                 ) : null}
-                <UnifiedTopBottomSellers data={filteredSales as any} onRowClick={(row) => openMetricDrillDown(row.title || row.name || 'Seller detail', row.type || 'seller', row, filteredSales)} />
-                {renderAISummary('sales', [
-                  `${salesSellerSummary.topName} is the current top seller across the displayed data.`,
-                  `Top-seller share stands at ${formatPercentage(salesSellerSummary.share)}, indicating current concentration risk.`,
-                  `The lead over the next seller is ${formatCurrency(salesSellerSummary.gap)}.`,
-                ])}
+                {showSalesRankings && <>
+                  <UnifiedTopBottomSellers data={filteredSales as any} onRowClick={(row) => openMetricDrillDown(row.title || row.name || 'Seller detail', row.type || 'seller', row, filteredSales)} />
+                  {renderAISummary('sales', [
+                    `${salesSellerSummary.topName} is the current top seller across the displayed data.`,
+                    `Top-seller share stands at ${formatPercentage(salesSellerSummary.share)}, indicating current concentration risk.`,
+                    `The lead over the next seller is ${formatCurrency(salesSellerSummary.gap)}.`,
+                  ])}
+                </>}
               </div>
             </AnimatedSectionCard>
 
@@ -2770,17 +3243,23 @@ const StudioPulse = memo(() => {
               icon={UserPlus}
               iconGradient="from-blue-700 to-blue-900"
               action={
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
-                  <Switch checked={showNewMemberMomTable} onCheckedChange={setShowNewMemberMomTable} />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
+                    <Switch checked={showNewMemberMomTable} onCheckedChange={setShowNewMemberMomTable} />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Rankings</span>
+                    <Switch checked={showFunnelRankings} onCheckedChange={setShowFunnelRankings} />
+                  </div>
                 </div>
               }
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <StudioPulseMetricCard icon={<Users className="h-5 w-5" />} title="Leads Received" metric={leadStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={leadStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="All leads captured in the active period" iconContainerClassName="bg-gradient-to-br from-blue-700 to-slate-900 text-white" />
-                <StudioPulseMetricCard icon={<HeartPulse className="h-5 w-5" />} title="Trials / First Visits" metric={Math.max(leadStats.trials, clientStats.newClients)} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.newClients} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.newClients} subtext="Trials and first visits entering the funnel" iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" />
+                <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Trials / First Visits" metric={Math.max(leadStats.trials, clientStats.newClients)} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.newClients} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.newClients} subtext="Trials and first visits entering the funnel" iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" />
                 <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Converted Members" metric={clientStats.converted} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.conversionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.conversionRate} subtext={`${formatPercentage(clientStats.conversionRate)} conversion rate`} iconContainerClassName="bg-gradient-to-br from-emerald-600 to-teal-800 text-white" />
-                <StudioPulseMetricCard icon={<Banknote className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retentionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retentionRate} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" />
+                <StudioPulseMetricCard icon={<Wallet className="h-5 w-5" />} title="Retained Members" metric={clientStats.retained} formatter={formatNumber} growthLabel="MoM" growthValue={clientStats.growth.retentionRate} secondaryGrowthLabel="YoY" secondaryGrowthValue={clientStats.yoyGrowth.retentionRate} subtext={`${formatPercentage(clientStats.retentionRate)} retained · Avg LTV ${formatCurrency(clientStats.avgLtv)}`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" />
               </div>
 
               {showNewMemberMomTable && (
@@ -2805,249 +3284,478 @@ const StudioPulse = memo(() => {
                       ))}
                     </div>
                   </div>
-                  <ClientConversionMonthOnMonthByTypeTable data={clients} />
+                  <ClientConversionMonthOnMonthByTypeTable data={filteredClients} />
                 </div>
               )}
 
-              {/* Funnel chart — full width */}
-              <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-5">
-                  <h4 className="text-sm font-semibold text-slate-900">Funnel chart</h4>
-                </div>
-                {funnelRankings.rows.length ? (
-                  <div className="space-y-4">
-                    {/* Single consolidated chart — toggled */}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 gap-0.5">
-                        {([
-                          { value: 'funnel', label: '🔻 Funnel' },
-                          { value: 'bar', label: '📊 By Dimension' },
-                        ] as const).map(({ value, label }) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setFunnelChartView(value)}
-                            className={cn(
-                              'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150',
-                              funnelChartView === value ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'
-                            )}
-                          >{label}</button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowFunnelBreakdownTable((v) => !v)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 transition-colors"
-                      >
-                        {showFunnelBreakdownTable ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        Per-{funnelRankingDimension} Breakdown Table
-                      </button>
+              {/* Membership Purchases Table — always shown */}
+              <div className="mt-6">
+                <NewClientMembershipPurchasesTable
+                  data={filteredClients}
+                  onRowClick={(row) => openMetricDrillDown(row.name || 'Membership detail', 'member', { name: row.name, rawData: clients.filter((c: any) => (c.membershipsBoughtPostTrial || c.membershipUsed) === row.name), filteredTransactionData: [] }, [])}
+                />
+              </div>
+
+              {/* Conversion Pipeline — reference style */}
+              {(() => {
+                const PILL_COLORS = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2'];
+                const fStages = [
+                  { id: 'leads',     label: 'Leads',     sub: '100% captured',                                 value: leadStats.total,      pctOfLeads: 100,    fromPrev: null as number|null, dropPct: null as number|null, accent: '#2563eb', light: '#eff6ff', textOnLight: '#1d4ed8' },
+                  { id: 'trials',    label: 'Trials',    sub: `${leadStats.total ? ((leadStats.trials/leadStats.total)*100).toFixed(1) : 0}% lead → trial`,  value: leadStats.trials,     pctOfLeads: leadStats.total ? (leadStats.trials/leadStats.total)*100 : 0,    fromPrev: leadStats.total ? (leadStats.trials/leadStats.total)*100 : null,    dropPct: leadStats.total && leadStats.trials < leadStats.total ? Math.round(((leadStats.total-leadStats.trials)/leadStats.total)*100) : null, accent: '#0891b2', light: '#ecfeff', textOnLight: '#0e7490' },
+                  { id: 'converted', label: 'Converted', sub: `${leadStats.total ? ((clientStats.converted/leadStats.total)*100).toFixed(1) : 0}% overall`,  value: clientStats.converted, pctOfLeads: leadStats.total ? (clientStats.converted/leadStats.total)*100 : 0, fromPrev: leadStats.trials ? (clientStats.converted/leadStats.trials)*100 : null, dropPct: leadStats.trials && clientStats.converted < leadStats.trials ? Math.round(((leadStats.trials-clientStats.converted)/leadStats.trials)*100) : null, accent: '#16a34a', light: '#f0fdf4', textOnLight: '#15803d' },
+                  { id: 'retained',  label: 'Retained',  sub: 'Active members',                               value: clientStats.retained,  pctOfLeads: leadStats.total ? (clientStats.retained/leadStats.total)*100 : 0,  fromPrev: clientStats.converted ? (clientStats.retained/clientStats.converted)*100 : null, dropPct: null, accent: '#7c3aed', light: '#faf5ff', textOnLight: '#6d28d9' },
+                ];
+                const [activeIdx, setActiveIdx] = React.useState(0);
+                const [srcFilter, setSrcFilter] = React.useState<string|null>(null);
+                const active = fStages[activeIdx];
+
+                // SVG fixed stage paths (matching reference proportions, scaled to viewBox 600×575)
+                // Leads:    wide trapezoid top
+                // Trials:   mid trapezoid
+                // Converted: narrower trapezoid
+                // Retained:  bowl/capsule shape at bottom
+                const svgStages = [
+                  { path: 'M 52,34 L 548,34 L 476,154 L 124,154 Z',   highlightPath: 'M 66,44 L 534,44 L 468,94 L 132,94 Z',  labelY: 89, valueY: 128, annX1: 486, annY: 156 },
+                  { path: 'M 124,156 L 476,156 L 414,282 L 186,282 Z', highlightPath: null,                                   labelY: 205, valueY: 241, annX1: 424, annY: 284 },
+                  { path: 'M 186,284 L 414,284 L 446,398 L 154,398 Z', highlightPath: null,                                   labelY: 328, valueY: 364, annX1: 456, annY: 400 },
+                  { path: 'M 154,400 L 446,400 C 466,400 480,414 474,433 L 464,461 C 459,475 444,484 428,484 L 172,484 C 156,484 141,475 136,461 L 126,433 C 120,414 134,400 154,400 Z', highlightPath: null, labelY: 441, valueY: 467, annX1: null, annY: null },
+                ];
+
+                const gradIds = ['pfl-g0','pfl-g1','pfl-g2','pfl-g3'];
+
+                return (
+                  <div className="mt-6 space-y-4">
+                    {/* KPI Strip — 4 cards */}
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      {fStages.map((s, i) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setActiveIdx(i)}
+                          className={cn(
+                            'rounded-[22px] border px-5 py-4 text-left transition-all duration-200 shadow-[0_2px_12px_rgba(15,23,42,0.06)]',
+                            activeIdx === i ? 'bg-white border-transparent ring-2' : 'bg-white border-slate-200 hover:shadow-md'
+                          )}
+                          style={activeIdx === i ? { ringColor: s.accent, boxShadow: `0 0 0 2px ${s.accent}` } : {}}
+                        >
+                          <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: activeIdx === i ? s.accent : '#94a3b8' }}>{s.label}</div>
+                          <div className="text-[34px] font-bold leading-tight text-slate-900 tabular-nums mt-0.5">{formatNumber(s.value)}</div>
+                          <div className="text-[12.2px] text-slate-500 mt-0.5">
+                            {i === 0
+                              ? '100% captured'
+                              : <><span className="font-semibold" style={{ color: s.accent }}>{s.pctOfLeads.toFixed(1)}%</span> · {s.dropPct ? <span className="text-red-500">{s.dropPct}% drop</span> : 'retained'}</>
+                            }
+                          </div>
+                        </button>
+                      ))}
                     </div>
 
-                    {funnelChartView === 'funnel' ? (
-                      <div className="space-y-4">
-                        {/* Custom CSS funnel — proportional widths */}
-                        {(() => {
-                          const stages = [
-                            { label: 'Leads', value: leadStats.total, color: 'from-slate-800 to-slate-900', pct: 100 },
-                            { label: 'Trials', value: leadStats.trials, color: 'from-blue-800 to-blue-900', pct: leadStats.total ? Math.round((leadStats.trials / leadStats.total) * 100) : 0 },
-                            { label: 'Converted', value: clientStats.converted, color: 'from-blue-600 to-blue-700', pct: leadStats.total ? Math.round((clientStats.converted / leadStats.total) * 100) : 0 },
-                            { label: 'Retained', value: clientStats.retained, color: 'from-blue-400 to-blue-500', pct: leadStats.total ? Math.round((clientStats.retained / leadStats.total) * 100) : 0 },
-                          ];
-                          return (
-                            <div className="flex flex-col gap-1.5 px-4">
-                              {stages.map((s, i) => (
-                                <div key={s.label} className="flex items-center gap-3">
-                                  <div className="w-20 shrink-0 text-right">
-                                    <span className="text-[11px] font-semibold text-slate-600">{s.label}</span>
-                                  </div>
-                                  <div className="flex-1 flex justify-center">
-                                    <div
-                                      className={`bg-gradient-to-r ${s.color} rounded-lg flex items-center justify-center h-10 transition-all duration-500`}
-                                      style={{ width: `${Math.max(s.pct, 8)}%`, minWidth: 80 }}
-                                    >
-                                      <span className="text-white font-bold text-xs tabular-nums">{formatNumber(s.value)}</span>
-                                    </div>
-                                  </div>
-                                  <div className="w-12 shrink-0">
-                                    <span className="text-[11px] font-semibold text-slate-400 tabular-nums">{s.pct}%</span>
-                                  </div>
-                                  {i < stages.length - 1 && (
-                                    <div className="absolute left-0 w-full" />
+                    {/* Main: funnel card (left) + inspector (right) */}
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.18fr_420px] items-start">
+
+                      {/* Left — funnel canvas card */}
+                      <div className="rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_34px_rgba(15,23,42,0.07)] overflow-hidden">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-7 py-5">
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Lead Intake Flow</div>
+                            <div className="text-[13.5px] text-slate-600 mt-0.5">{leadStats.topSources.length} inbound sources feeding the funnel</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowFunnelBreakdownTable(v => !v)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                          >
+                            {showFunnelBreakdownTable ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            Per-source breakdown
+                          </button>
+                        </div>
+
+                        {/* Source pills */}
+                        <div className="px-7 pt-5 pb-2">
+                          <div className="flex flex-wrap gap-2.5">
+                            {leadStats.topSources.slice(0, 6).map((src, si) => {
+                              const c = PILL_COLORS[si % PILL_COLORS.length];
+                              const isOn = srcFilter === src.name;
+                              const isMuted = srcFilter && !isOn;
+                              return (
+                                <button
+                                  key={src.name}
+                                  type="button"
+                                  onClick={() => setSrcFilter(isOn ? null : src.name)}
+                                  className={cn(
+                                    'inline-flex items-center gap-2 rounded-full border pl-2.5 pr-3 py-1.5 text-[12.5px] font-medium transition-all shadow-[0_1px_4px_rgba(15,23,42,0.07)]',
+                                    isOn ? 'border-slate-300 bg-white shadow-md ring-2' : isMuted ? 'opacity-40 border-slate-100 bg-white' : 'border-slate-200 bg-white hover:shadow-md'
                                   )}
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })()}
-                        {/* Per-source funnel breakdown */}
-                        {leadStats.topSources.length > 0 && (
-                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">By Lead Source</p>
-                            <div className="space-y-2">
-                              {leadStats.topSources.map((src) => {
-                                const barW = leadStats.total ? Math.max((src.count / leadStats.total) * 100, 4) : 4;
+                                  style={isOn ? { ringColor: c } : {}}
+                                >
+                                  <span className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0" style={{ background: `${c}18` }}>
+                                    <span className="w-2 h-2 rounded-full" style={{ background: c }} />
+                                  </span>
+                                  <span className="text-slate-800">{src.name}</span>
+                                  <span className="text-[11.5px] font-mono text-slate-400">{formatNumber(src.count)}</span>
+                                </button>
+                              );
+                            })}
+                            {srcFilter && (
+                              <button type="button" onClick={() => setSrcFilter(null)} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11.5px] text-slate-500 hover:text-slate-800 transition-colors">
+                                All sources active
+                              </button>
+                            )}
+                          </div>
+                          <div className="text-[11.5px] text-slate-400 mt-2">Click a source to filter the funnel.</div>
+                        </div>
+
+                        {/* SVG funnel */}
+                        <div className="relative px-4 pb-7 pt-2">
+                          <div className="relative max-w-[620px] mx-auto">
+                            <svg viewBox="0 0 600 575" className="w-full h-auto" aria-label="Sales funnel">
+                              <defs>
+                                {fStages.map((s, i) => (
+                                  <linearGradient key={s.id} id={gradIds[i]} x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor={s.accent} stopOpacity="0.92" />
+                                    <stop offset="100%" stopColor={s.accent} stopOpacity="0.72" />
+                                  </linearGradient>
+                                ))}
+                                <filter id="pfl-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                  <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#1a2035" floodOpacity="0.09" />
+                                </filter>
+                              </defs>
+
+                              {/* Ground shadow */}
+                              <ellipse cx="300" cy="538" rx="188" ry="22" fill="#cbd5e1" opacity="0.7" />
+                              <ellipse cx="300" cy="531" rx="164" ry="16" fill="#94a3b8" opacity="0.3" />
+
+                              {/* Funnel stages */}
+                              {svgStages.map((sv, i) => {
+                                const s = fStages[i];
+                                const isActive = activeIdx === i;
                                 return (
-                                  <div key={src.name} className="flex items-center gap-3">
-                                    <div className="w-28 shrink-0 truncate text-[11px] font-semibold text-slate-700">{src.name}</div>
-                                    <div className="flex-1 flex items-center gap-1.5">
-                                      <div className="flex-1 h-5 bg-slate-200 rounded overflow-hidden relative">
-                                        <div
-                                          className="h-full bg-gradient-to-r from-blue-700 to-blue-500 rounded transition-all duration-500"
-                                          style={{ width: `${barW}%` }}
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="w-16 shrink-0 text-right">
-                                      <span className="text-[11px] tabular-nums font-semibold text-slate-800">{formatNumber(src.count)}</span>
-                                      <span className="text-[10px] text-slate-400 ml-1">leads</span>
-                                    </div>
-                                    <div className="w-20 shrink-0 text-right">
-                                      <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${src.rate >= 50 ? 'bg-emerald-100 text-emerald-700' : src.rate >= 25 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'}`}>
-                                        {src.rate.toFixed(0)}% conv
-                                      </span>
-                                    </div>
-                                  </div>
+                                  <g
+                                    key={s.id}
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => setActiveIdx(i)}
+                                    role="button"
+                                    aria-label={`${s.label} stage, ${formatNumber(s.value)}`}
+                                  >
+                                    {/* Active glow ring for retained (bowl shape) */}
+                                    {i === 3 && isActive && (
+                                      <ellipse cx="300" cy="462" rx="182" ry="37" fill="none" stroke={s.accent} strokeOpacity="0.18" strokeWidth="20" />
+                                    )}
+                                    {/* Main shape */}
+                                    <path
+                                      d={sv.path}
+                                      fill={`url(#${gradIds[i]})`}
+                                      filter="url(#pfl-shadow)"
+                                      opacity={isActive ? 1 : 0.84}
+                                    />
+                                    {/* Highlight / shine */}
+                                    {sv.highlightPath && (
+                                      <path d={sv.highlightPath} fill="white" opacity="0.38" />
+                                    )}
+                                    {/* Active ring stroke */}
+                                    {isActive && (
+                                      <path d={sv.path} fill="none" stroke="white" strokeOpacity="0.55" strokeWidth="2" />
+                                    )}
+                                    {/* Stage label */}
+                                    <text x="300" y={sv.labelY} textAnchor="middle" fill="white" fontSize="12.5" fontWeight="600" fontFamily="Inter, system-ui" opacity="0.95" style={{ letterSpacing: '0.05em' }}>
+                                      {s.label.toUpperCase()}
+                                    </text>
+                                    {/* Value */}
+                                    <text x="300" y={sv.valueY} textAnchor="middle" fill="white" fontSize={i === 0 ? 44 : i === 1 ? 38 : i === 2 ? 34 : 31} fontWeight="700" fontFamily="Inter, system-ui">
+                                      {formatNumber(s.value)}
+                                    </text>
+                                  </g>
                                 );
                               })}
+
+                              {/* Intake lip */}
+                              <path d="M 52,34 L 548,34" stroke="white" strokeOpacity="0.9" strokeWidth="2.2" />
+                              <path d="M 52,34 L 124,154" stroke="white" opacity="0.22" strokeWidth="1.2" />
+                              <path d="M 548,34 L 476,154" stroke="white" opacity="0.15" strokeWidth="1.2" />
+
+                              {/* Drop annotations — right side */}
+                              {fStages[1].dropPct !== null && (
+                                <g fontFamily="monospace" fontSize="11">
+                                  <line x1="486" y1="156" x2="518" y2="156" stroke="#cbd5e1" strokeDasharray="3 4" />
+                                  <text x="522" y="150" fill="#dc2626" fontWeight="600">{fStages[1].dropPct}% drop</text>
+                                  <text x="522" y="163" fill="#94a3b8">{formatNumber(leadStats.total - leadStats.trials)} lost</text>
+                                </g>
+                              )}
+                              {fStages[2].dropPct !== null && (
+                                <g fontFamily="monospace" fontSize="11">
+                                  <line x1="424" y1="284" x2="518" y2="284" stroke="#cbd5e1" strokeDasharray="3 4" />
+                                  <text x="522" y="278" fill="#dc2626" fontWeight="600">{fStages[2].dropPct}% drop</text>
+                                  <text x="522" y="291" fill="#94a3b8">{formatNumber(leadStats.trials - clientStats.converted)} lost</text>
+                                </g>
+                              )}
+                              {/* Retained annotation */}
+                              <g fontFamily="monospace" fontSize="11">
+                                <line x1="456" y1="402" x2="518" y2="402" stroke="#86efac" />
+                                <text x="522" y="397" fill="#16a34a" fontWeight="600">{formatPercentage(clientStats.retentionRate)} ret.</text>
+                                <text x="522" y="411" fill="#94a3b8">converted</text>
+                              </g>
+
+                              {/* Left pct tick labels */}
+                              <g fontFamily="Inter, system-ui" fontSize="11.5" fill="#94a3b8">
+                                <text x="38" y="100" textAnchor="end">100%</text>
+                                <text x="108" y="222" textAnchor="end">{fStages[1].pctOfLeads.toFixed(1)}%</text>
+                                <text x="168" y="343" textAnchor="end">{fStages[2].pctOfLeads.toFixed(1)}%</text>
+                                <text x="135" y="455" textAnchor="end">{fStages[3].pctOfLeads.toFixed(1)}%</text>
+                              </g>
+
+                              {/* Footer note */}
+                              <text x="300" y="565" textAnchor="middle" fontSize="10.5" fill="#94a3b8" fontFamily="Inter, system-ui">
+                                * Retained includes active members from prior periods
+                              </text>
+                            </svg>
+                          </div>
+
+                          {/* Legend */}
+                          <div className="flex flex-wrap gap-4 justify-center text-[11.5px] text-slate-500 mt-1">
+                            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Click a stage to inspect</div>
+                            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Hover to preview</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right — Inspector */}
+                      <div className="sticky top-6 space-y-4">
+                        <div className="rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_34px_rgba(15,23,42,0.07)] overflow-hidden">
+                          {/* Stage header */}
+                          <div className="px-6 pt-6 pb-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: active.accent }}>Stage · {active.id.toUpperCase()}</div>
+                                <div className="text-[26px] font-bold text-slate-900 leading-tight mt-0.5">{active.label}</div>
+                                <div className="text-[13px] text-slate-500">{active.sub}</div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-[40px] font-bold leading-none text-slate-900 tabular-nums">{formatNumber(active.value)}</div>
+                                <div className="text-[12px] text-slate-500 mt-1">{active.pctOfLeads.toFixed(1)}% of leads</div>
+                              </div>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="mb-2 text-center text-xs font-medium text-slate-500">
-                          By {funnelRankingDimension} · {funnelChartMetric}
-                        </p>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={funnelRankings.top.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 24, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                            <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v) => funnelChartMetric === 'ltv' ? formatCurrency(v) : formatNumber(v)} />
-                            <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={100} />
-                            <RechartsTooltip contentStyle={chartTooltipStyle} formatter={(v: number) => [funnelChartMetric === 'ltv' ? formatCurrency(v) : formatNumber(v), funnelChartMetric]} />
-                            <Bar dataKey={funnelChartMetric === 'leads' ? 'leads' : funnelChartMetric} fill="#0f172a" radius={[0, 6, 6, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
 
-                    {/* Per-dimension breakdown table — drill-down */}
-                    {showFunnelBreakdownTable && (
-                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div className="bg-slate-900 px-5 py-3 text-white">
-                          <h4 className="text-sm font-bold">Per-{funnelRankingDimension} funnel breakdown</h4>
-                          <p className="text-[11px] text-white/60">Each {funnelRankingDimension}'s leads → trials → converted → retained pipeline</p>
+                          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+                          <div className="px-6 py-5 space-y-5">
+                            {/* Metric tiles 2×2 */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Stage conv.</div>
+                                <div className="text-[22px] font-semibold text-slate-900 mt-1 tabular-nums">
+                                  {active.fromPrev !== null ? `${active.fromPrev.toFixed(1)}%` : '100%'}
+                                </div>
+                                <div className="text-[11.5px] text-slate-400">{active.fromPrev !== null ? 'from previous' : 'top of funnel'}</div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Avg LTV</div>
+                                <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatCurrency(clientStats.avgLtv)}</div>
+                                <div className="text-[11.5px] text-slate-400">converted members</div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Conv. rate</div>
+                                <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatPercentage(clientStats.conversionRate)}</div>
+                                <div className="text-[11.5px] text-slate-400">trial → member</div>
+                              </div>
+                              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Ret. rate</div>
+                                <div className="text-[20px] font-semibold text-slate-900 mt-1 tabular-nums">{formatPercentage(clientStats.retentionRate)}</div>
+                                <div className="text-[11.5px] text-slate-400">member → retained</div>
+                              </div>
+                            </div>
+
+                            {/* Source mix bars */}
+                            {leadStats.topSources.length > 0 && (
+                              <div>
+                                <div className="flex items-center justify-between mb-2.5">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Source mix — this stage</div>
+                                  <div className="text-[11px] text-slate-400">Click left pills to filter</div>
+                                </div>
+                                <div className="space-y-2.5">
+                                  {leadStats.topSources.slice(0, 5).map((src, si) => {
+                                    const c = PILL_COLORS[si % PILL_COLORS.length];
+                                    const total = leadStats.topSources.slice(0,5).reduce((s,x) => s + x.count, 0) || 1;
+                                    const pct = Math.round((src.count / total) * 100);
+                                    return (
+                                      <div key={src.name} className={cn('flex items-center gap-3 text-[12.5px]', srcFilter && srcFilter !== src.name ? 'opacity-35' : '')}>
+                                        <div className="w-24 shrink-0 truncate text-slate-600">{src.name}</div>
+                                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: c }} />
+                                        </div>
+                                        <div className="w-10 text-right font-mono text-slate-800 font-semibold">{formatNumber(src.count)}</div>
+                                        <div className="w-9 text-right text-[11.5px] text-slate-400">{pct}%</div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Stage note */}
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3.5 py-3 text-[12.5px] leading-relaxed text-slate-600">
+                              {activeIdx === 0 && `${formatNumber(leadStats.total)} leads captured. Top source: ${leadStats.topSources[0]?.name || 'N/A'} with ${formatNumber(leadStats.topSources[0]?.count || 0)}.`}
+                              {activeIdx === 1 && `${formatPercentage(fStages[1].pctOfLeads)} of leads scheduled a trial. ${fStages[1].dropPct ? `${fStages[1].dropPct}% dropped before reaching this stage.` : ''}`}
+                              {activeIdx === 2 && `${formatPercentage(clientStats.conversionRate)} trial → member conversion. Avg LTV of converted members: ${formatCurrency(clientStats.avgLtv)}.`}
+                              {activeIdx === 3 && `${formatNumber(clientStats.retained)} active retained members. ${formatPercentage(clientStats.retentionRate)} of converted members retained.`}
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Loss reasons card — below inspector */}
+                        <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 shadow-[0_2px_12px_rgba(15,23,42,0.05)]">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Drop-off analysis · Trial → Convert</div>
+                            <span className="font-mono text-[11px] text-slate-400">n={formatNumber(Math.max(leadStats.trials - clientStats.converted, 0))}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-[12.5px] text-slate-600">
+                            <div><span className="font-bold text-slate-900">{formatPercentage(clientStats.conversionRate)}</span> convert</div>
+                            <div><span className="font-bold text-slate-900">{fStages[2].dropPct ?? 0}%</span> drop at this stage</div>
+                            <div><span className="font-bold text-slate-900">{formatCurrency(clientStats.avgLtv)}</span> avg LTV</div>
+                            <div><span className="font-bold text-slate-900">{formatPercentage(clientStats.retentionRate)}</span> retention</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Per-source breakdown table — shown only when toggle active */}
+                    {showFunnelBreakdownTable && <div>
+                      <div className="flex items-end justify-between flex-wrap gap-3 mb-3 px-1">
+                        <div>
+                          <h3 className="text-[22px] font-bold text-slate-900 tracking-tight">Per-source breakdown</h3>
+                          <p className="text-[13px] text-slate-500 mt-0.5">Which channels are actually converting to retained members.</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
+                          {(['source','location','membership','class'] as const).map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => setFunnelRankingDimension(d)}
+                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all', funnelRankingDimension === d ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700')}
+                            >{d.charAt(0).toUpperCase() + d.slice(1)}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[26px] border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] overflow-hidden">
                         <div className="overflow-x-auto">
-                          <table className="min-w-full border-collapse text-sm">
-                            <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500">
-                              <tr>
-                                <th className="border-b border-slate-200 px-4 py-3 text-left">{funnelRankingDimension === 'source' ? 'Source' : funnelRankingDimension.charAt(0).toUpperCase() + funnelRankingDimension.slice(1)}</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-center">Leads</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-center">Trials</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-center">Conv.</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-center">Ret.</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-center">Conv %</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-center">Ret %</th>
-                                <th className="border-b border-slate-200 px-3 py-3 text-right">LTV</th>
+                          <table className="w-full text-[13px]">
+                            <thead className="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-50">
+                              <tr className="[&>th]:py-3.5 [&>th]:px-5 [&>th]:font-semibold [&>th]:text-left">
+                                <th>{funnelRankingDimension === 'source' ? 'Source' : funnelRankingDimension.charAt(0).toUpperCase() + funnelRankingDimension.slice(1)}</th>
+                                <th className="text-right">Leads</th>
+                                <th className="text-right">Trials</th>
+                                <th className="text-right">Converted</th>
+                                <th className="text-right">Retained</th>
+                                <th className="text-right">L→C Rate</th>
+                                <th className="w-40">Mix</th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-slate-100">
-                              {funnelRankings.rows.slice(0, 20).map((row) => (
-                                <tr key={row.name} className="hover:bg-slate-50">
-                                  <td className="px-4 py-2.5 font-semibold text-slate-900 text-xs">{row.name}</td>
-                                  <td className="px-3 py-2.5 text-center tabular-nums text-slate-700 text-xs">{formatNumber(row.leads)}</td>
-                                  <td className="px-3 py-2.5 text-center tabular-nums text-slate-700 text-xs">{formatNumber(row.trials)}</td>
-                                  <td className="px-3 py-2.5 text-center tabular-nums text-emerald-700 font-semibold text-xs">{formatNumber(row.converted)}</td>
-                                  <td className="px-3 py-2.5 text-center tabular-nums text-blue-700 font-semibold text-xs">{formatNumber(row.retained)}</td>
-                                  <td className="px-3 py-2.5 text-center text-xs">
-                                    <span className={`inline-block rounded-full px-2 py-0.5 font-bold text-[10px] ${row.conversionRate >= 50 ? 'bg-emerald-100 text-emerald-700' : row.conversionRate >= 25 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'}`}>
-                                      {formatPercentage(row.conversionRate)}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2.5 text-center text-xs">
-                                    <span className={`inline-block rounded-full px-2 py-0.5 font-bold text-[10px] ${row.retentionRate >= 50 ? 'bg-emerald-100 text-emerald-700' : row.retentionRate >= 25 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'}`}>
-                                      {formatPercentage(row.retentionRate)}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 font-semibold text-xs">{formatCurrency(row.ltv)}</td>
-                                </tr>
-                              ))}
+                            <tbody className="divide-y divide-slate-100 text-slate-600">
+                              {funnelRankings.rows.slice(0, 15).map((row, ri) => {
+                                const totalLeads = funnelRankings.rows.reduce((s, r) => s + r.leads, 0) || 1;
+                                const sharePct = Math.round((row.leads / totalLeads) * 100);
+                                const c = PILL_COLORS[ri % PILL_COLORS.length];
+                                return (
+                                  <tr key={row.name} className="hover:bg-slate-50 transition-colors">
+                                    <td className="py-[14px] px-5 font-semibold text-slate-900">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />
+                                        {row.name}
+                                      </div>
+                                    </td>
+                                    <td className="py-[14px] px-5 text-right font-mono">{formatNumber(row.leads)}</td>
+                                    <td className="py-[14px] px-5 text-right font-mono">{formatNumber(row.trials)}</td>
+                                    <td className="py-[14px] px-5 text-right font-mono font-semibold text-emerald-700">{formatNumber(row.converted)}</td>
+                                    <td className="py-[14px] px-5 text-right font-mono font-semibold text-violet-700">{formatNumber(row.retained)}</td>
+                                    <td className="py-[14px] px-5 text-right font-semibold text-slate-900">{formatPercentage(row.conversionRate)}</td>
+                                    <td className="py-[14px] px-5">
+                                      <div className="h-[7px] w-full rounded-full overflow-hidden bg-slate-100">
+                                        <div className="h-full rounded-full transition-all" style={{ width: `${sharePct}%`, background: c }} />
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
                       </div>
-                    )}
+                    </div>}
                   </div>
-                ) : <EmptyNote label="No funnel ranking data available" />}
-              </div>
+                );
+              })()}
 
-              {/* Group by + Metric selectors — control the ranking lists below */}
-              <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <div className="flex w-full max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
-                  <span className="shrink-0 pl-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Group by</span>
-                  {([
-                    { value: 'source', label: 'Source', icon: <Tag className="h-3 w-3" /> },
-                    { value: 'location', label: 'Location', icon: <MapPin className="h-3 w-3" /> },
-                    { value: 'stage', label: 'Stage', icon: <TrendingUp className="h-3 w-3" /> },
-                    { value: 'membership', label: 'Membership', icon: <Star className="h-3 w-3" /> },
-                    { value: 'class', label: 'Class', icon: <Activity className="h-3 w-3" /> },
-                  ] as const).map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setFunnelRankingDimension(opt.value)}
-                      className={cn(
-                        'inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-all',
-                        funnelRankingDimension === opt.value ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                      )}
-                    >
-                      {opt.icon}{opt.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
-                  <span className="shrink-0 pl-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Metric</span>
-                  {([
-                    { value: 'leads', label: 'Leads', icon: <UserPlus className="h-3 w-3" /> },
-                    { value: 'converted', label: 'Converted', icon: <Target className="h-3 w-3" /> },
-                    { value: 'retained', label: 'Retained', icon: <Repeat className="h-3 w-3" /> },
-                    { value: 'ltv', label: 'LTV', icon: <DollarSign className="h-3 w-3" /> },
-                  ] as const).map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setFunnelChartMetric(opt.value)}
-                      className={cn(
-                        'inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-all',
-                        funnelChartMetric === opt.value ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                      )}
-                    >
-                      {opt.icon}{opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {showFunnelRankings && (
+                <>
+                  {/* Group by + Metric selectors — control the ranking lists below */}
+                  <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                    <div className="flex w-full max-w-2xl items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
+                      <span className="shrink-0 pl-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Group by</span>
+                      {([
+                        { value: 'source', label: 'Source', icon: <Tag className="h-3 w-3" /> },
+                        { value: 'location', label: 'Location', icon: <MapPin className="h-3 w-3" /> },
+                        { value: 'stage', label: 'Stage', icon: <TrendingUp className="h-3 w-3" /> },
+                        { value: 'membership', label: 'Membership', icon: <Star className="h-3 w-3" /> },
+                        { value: 'class', label: 'Class', icon: <LineChart className="h-3 w-3" /> },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFunnelRankingDimension(opt.value)}
+                          className={cn(
+                            'inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-all',
+                            funnelRankingDimension === opt.value ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                          )}
+                        >
+                          {opt.icon}{opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
+                      <span className="shrink-0 pl-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Metric</span>
+                      {([
+                        { value: 'leads', label: 'Leads', icon: <UserPlus className="h-3 w-3" /> },
+                        { value: 'converted', label: 'Converted', icon: <Target className="h-3 w-3" /> },
+                        { value: 'retained', label: 'Retained', icon: <Repeat className="h-3 w-3" /> },
+                        { value: 'ltv', label: 'LTV', icon: <CircleDollarSign className="h-3 w-3" /> },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFunnelChartMetric(opt.value)}
+                          className={cn(
+                            'inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-semibold transition-all',
+                            funnelChartMetric === opt.value ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                          )}
+                        >
+                          {opt.icon}{opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                {renderRankingList('Top funnel segments', funnelRankings.top, funnelChartMetric === 'leads' ? 'leads' : funnelChartMetric, funnelChartMetric === 'ltv' ? formatCurrency : formatNumber, (item) => `${formatNumber(item.uniqueMembers)} members · ${formatPercentage(item.conversionRate)} conv · ${formatPercentage(item.retentionRate)} ret`, false)}
-                {renderRankingList('Bottom funnel segments', funnelRankings.bottom, funnelChartMetric === 'leads' ? 'leads' : funnelChartMetric, funnelChartMetric === 'ltv' ? formatCurrency : formatNumber, (item) => `${formatNumber(item.trials)} trials · ${formatNumber(item.membershipsBought)} memberships · ${formatNumber(item.visitsPostTrial)} visits`, true)}
-              </div>
+                  <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                    {renderRankingList('Top funnel segments', funnelRankings.top, funnelChartMetric === 'leads' ? 'leads' : funnelChartMetric, funnelChartMetric === 'ltv' ? formatCurrency : formatNumber, (item) => `${formatNumber(item.uniqueMembers)} members · ${formatPercentage(item.conversionRate)} conv · ${formatPercentage(item.retentionRate)} ret`, false)}
+                    {renderRankingList('Bottom funnel segments', funnelRankings.bottom, funnelChartMetric === 'leads' ? 'leads' : funnelChartMetric, funnelChartMetric === 'ltv' ? formatCurrency : formatNumber, (item) => `${formatNumber(item.trials)} trials · ${formatNumber(item.membershipsBought)} memberships · ${formatNumber(item.visitsPostTrial)} visits`, true)}
+                  </div>
 
-              {/* Count selector below ranking lists */}
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-slate-500">Show top/bottom</span>
-                {([5, 10, 15, 20] as const).map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setFunnelRankingCount(n)}
-                    className={cn('rounded-full border px-3 py-1 text-xs font-semibold transition-colors', funnelRankingCount === n ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-slate-300')}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
+                  {/* Count selector below ranking lists */}
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-xs text-slate-500">Show top/bottom</span>
+                    {([5, 10, 15, 20] as const).map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setFunnelRankingCount(n)}
+                        className={cn('rounded-full border px-3 py-1 text-xs font-semibold transition-colors', funnelRankingCount === n ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-slate-300')}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               {/* Summary — full width at bottom */}
               <div className="mt-6">
@@ -3065,9 +3773,15 @@ const StudioPulse = memo(() => {
               icon={UserCheck}
               iconGradient="from-blue-700 to-blue-900"
               action={
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
-                  <Switch checked={showTrainerMomTable} onCheckedChange={setShowTrainerMomTable} />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
+                    <Switch checked={showTrainerMomTable} onCheckedChange={setShowTrainerMomTable} />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Rankings</span>
+                    <Switch checked={showTrainerRankings} onCheckedChange={setShowTrainerRankings} />
+                  </div>
                 </div>
               }
             >
@@ -3088,7 +3802,7 @@ const StudioPulse = memo(() => {
                       <option value="customers">Avg Incl</option>
                       <option value="classAvg">Avg Excl</option>
                       <option value="paid">Pay</option>
-                      <option value="utilization">Fill %</option>
+                      <option value="fillRate">Fill %</option>
                       <option value="conversionRate">Conv %</option>
                       <option value="lateCancels">Late Cancels</option>
                       <option value="revenueScore">Score</option>
@@ -3105,21 +3819,21 @@ const StudioPulse = memo(() => {
                     <thead>
                       <tr className="bg-slate-50 text-[11px] uppercase tracking-[0.16em] text-slate-500">
                         {[
-                          { label: 'Instructor', key: null },
+                            { label: 'Instructor', key: null },
                           { label: 'Cls', key: 'sessions' },
                           { label: 'Empty', key: null },
-                          { label: 'Active', key: null },
+                          { label: 'Active', key: 'nonEmpty' },
                           { label: 'Pay', key: 'paid' },
                           { label: 'Avg Incl', key: 'customers' },
                           { label: 'Avg Excl', key: 'classAvg' },
-                          { label: 'Fill', key: 'utilization' },
-                          { label: 'New', key: null },
-                          { label: 'Conv', key: null },
-                          { label: 'Ret', key: null },
+                          { label: 'Fill Rate', key: 'fillRate' },
+                          { label: 'New', key: 'totalNew' },
+                          { label: 'Conv', key: 'totalConverted' },
+                          { label: 'Ret', key: 'totalRetained' },
                           { label: 'Conv %', key: 'conversionRate' },
                           { label: 'Late', key: 'lateCancels' },
-                          { label: 'Rev', key: null },
-                          { label: 'Score', key: 'revenueScore' },
+                          { label: 'Pay', key: 'paid' },
+                          { label: 'Score ⓘ', key: 'revenueScore' },
                         ].map(({ label, key }) => (
                           <th
                             key={label}
@@ -3158,16 +3872,16 @@ const StudioPulse = memo(() => {
                           <td className="px-3 py-2 text-center text-slate-700">{formatNumber(Math.max(t.sessions - t.nonEmpty, 0))}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.nonEmpty)}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatCurrency(t.paid)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.sessions ? t.customers / t.sessions : 0)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.classAvg)}</td>
-                          <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.utilization)}</td>
+                          <td className="px-3 py-2 text-center text-slate-700">{(t.sessions ? t.customers / t.sessions : 0).toFixed(1)}</td>
+                          <td className="px-3 py-2 text-center text-slate-700">{t.classAvg.toFixed(1)}</td>
+                          <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.fillRate)}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatNumber(filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.new) || 0), 0))}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatNumber(filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.converted) || 0), 0))}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatNumber(filteredPayroll.filter((item) => item.teacherName === t.name).reduce((sum, item) => sum + (Number(item.retained) || 0), 0))}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatPercentage(t.conversionRate || 0)}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatNumber(t.lateCancels)}</td>
                           <td className="px-3 py-2 text-center text-slate-700">{formatCurrency(t.paid)}</td>
-                          <td className="px-3 py-2 text-center font-semibold text-slate-900">{formatNumber(t.revenueScore)}</td>
+                          <td className="px-3 py-2 text-center font-semibold text-slate-900">{Math.round(t.revenueScore)}</td>
                         </tr>
                       )) : <tr><td colSpan={15} className="p-5"><EmptyNote label="No trainer scorecard data available" /></td></tr>}
                     </tbody>
@@ -3179,9 +3893,12 @@ const StudioPulse = memo(() => {
                       const totPaid = rows.reduce((s, r) => s + r.paid, 0);
                       const totCustomers = rows.reduce((s, r) => s + r.customers, 0);
                       const totLateCancels = rows.reduce((s, r) => s + r.lateCancels, 0);
-                      const avgFill = rows.length ? rows.reduce((s, r) => s + r.utilization, 0) / rows.length : 0;
-                      const avgConv = rows.length ? rows.reduce((s, r) => s + (r.conversionRate || 0), 0) / rows.length : 0;
-                      const totScore = rows.reduce((s, r) => s + r.revenueScore, 0);
+                      const totNew = rows.reduce((s, r) => s + (r.totalNew || 0), 0);
+                      const totConverted = rows.reduce((s, r) => s + (r.totalConverted || 0), 0);
+                      const totRetained = rows.reduce((s, r) => s + (r.totalRetained || 0), 0);
+
+                      const avgConv = totNew > 0 ? (totConverted / totNew) * 100 : 0;
+                      const avgScore = rows.length ? rows.reduce((s, r) => s + r.revenueScore, 0) / rows.length : 0;
                       return (
                         <tfoot>
                           <tr className="bg-slate-900 text-white text-xs font-bold h-[44px]">
@@ -3190,16 +3907,16 @@ const StudioPulse = memo(() => {
                             <td className="px-3 py-2 text-center">{formatNumber(totEmpty)}</td>
                             <td className="px-3 py-2 text-center">{formatNumber(totActive)}</td>
                             <td className="px-3 py-2 text-center">{formatCurrency(totPaid)}</td>
-                            <td className="px-3 py-2 text-center">{formatNumber(totSessions ? totCustomers / totSessions : 0)}</td>
+                            <td className="px-3 py-2 text-center">{(totSessions ? totCustomers / totSessions : 0).toFixed(1)}</td>
                             <td className="px-3 py-2 text-center">—</td>
-                            <td className="px-3 py-2 text-center">{formatPercentage(avgFill)}</td>
-                            <td className="px-3 py-2 text-center">—</td>
-                            <td className="px-3 py-2 text-center">—</td>
-                            <td className="px-3 py-2 text-center">—</td>
+                            <td className="px-3 py-2 text-center">{formatPercentage(rows.reduce((s, r) => s + r.fillRate, 0) / (rows.length || 1))}</td>
+                            <td className="px-3 py-2 text-center">{formatNumber(totNew)}</td>
+                            <td className="px-3 py-2 text-center">{formatNumber(totConverted)}</td>
+                            <td className="px-3 py-2 text-center">{formatNumber(totRetained)}</td>
                             <td className="px-3 py-2 text-center">{formatPercentage(avgConv)}</td>
                             <td className="px-3 py-2 text-center">{formatNumber(totLateCancels)}</td>
                             <td className="px-3 py-2 text-center">{formatCurrency(totPaid)}</td>
-                            <td className="px-3 py-2 text-center">{formatNumber(totScore)}</td>
+                            <td className="px-3 py-2 text-center">{Math.round(avgScore)}</td>
                           </tr>
                         </tfoot>
                       );
@@ -3241,8 +3958,33 @@ const StudioPulse = memo(() => {
                 </div>
               )}
 
-              <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                {/* Top trainers by pay */}
+              {showTrainerRankings && <>
+              {/* Ranking criteria selector */}
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 shrink-0">Rank by</span>
+                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 gap-0.5">
+                  {([
+                    { value: 'paid', label: 'Pay' },
+                    { value: 'revenueScore', label: 'Score' },
+                    { value: 'fillRate', label: 'Fill Rate' },
+                    { value: 'classAvg', label: 'Class Avg' },
+                    { value: 'sessions', label: 'Classes' },
+                  ] as const).map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setTrainerRankingCriteria(value)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
+                        trainerRankingCriteria === value ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-700'
+                      )}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                {/* Top trainers */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-700 to-slate-900 text-white">
@@ -3250,26 +3992,27 @@ const StudioPulse = memo(() => {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900">Top trainers</h4>
-                      <p className="text-xs text-slate-500">Ranked by total pay</p>
+                      <p className="text-xs text-slate-500">Highest {trainerRankingCriteria === 'paid' ? 'pay' : trainerRankingCriteria === 'revenueScore' ? 'score' : trainerRankingCriteria === 'fillRate' ? 'fill rate' : trainerRankingCriteria === 'classAvg' ? 'class avg' : 'classes'}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {trainerRankingsExtended.rows.slice(0, 10).map((item, index) => (
+                    {[...trainerRankingsExtended.rows].sort((a, b) => (b[trainerRankingCriteria] as number) - (a[trainerRankingCriteria] as number)).slice(0, 10).map((item, index) => (
                       <div key={`top-trainer-${item.name}-${index}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 text-white font-bold text-xs shrink-0 select-none">{index + 1}</span>
+                        <TrainerAvatar name={item.name} size="lg" showName={false} />
                         <div className="min-w-0 flex-1">
-                          <TrainerNameCell name={item.name} />
-                          <p className="mt-0.5 text-xs text-slate-500">{formatNumber(item.customers)} customers · {formatPercentage(item.utilization)} fill · {formatPercentage(item.conversionRate || 0)} conv</p>
+                          <p className="font-semibold text-slate-900 text-sm truncate">{item.name}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{formatNumber(item.sessions)} cls · {item.classAvg.toFixed(1)} avg · {formatPercentage(item.fillRate)} fill · {formatPercentage(item.conversionRate || 0)} conv</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-slate-950">{formatCurrency(item.paid)}</p>
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-slate-950 text-sm">{trainerRankingCriteria === 'paid' ? formatCurrency(item.paid) : trainerRankingCriteria === 'revenueScore' ? `Score ${Math.round(item.revenueScore)}` : trainerRankingCriteria === 'fillRate' ? formatPercentage(item.fillRate) : trainerRankingCriteria === 'classAvg' ? item.classAvg.toFixed(1) : formatNumber(item.sessions)}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{formatCurrency(item.paid)}</p>
                         </div>
                       </div>
                     ))}
                     {!trainerRankingsExtended.rows.length && <EmptyNote label="No ranking data available" />}
                   </div>
                 </div>
-                {/* Bottom trainers by pay */}
+                {/* Bottom trainers */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-red-700 to-red-900 text-white">
@@ -3277,19 +4020,20 @@ const StudioPulse = memo(() => {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900">Bottom trainers</h4>
-                      <p className="text-xs text-slate-500">Ranked by total pay</p>
+                      <p className="text-xs text-slate-500">Lowest {trainerRankingCriteria === 'paid' ? 'pay' : trainerRankingCriteria === 'revenueScore' ? 'score' : trainerRankingCriteria === 'fillRate' ? 'fill rate' : trainerRankingCriteria === 'classAvg' ? 'class avg' : 'classes'}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    {[...trainerRankingsExtended.rows].sort((a, b) => a.paid - b.paid).slice(0, 10).map((item, index) => (
+                    {[...trainerRankingsExtended.rows].sort((a, b) => (a[trainerRankingCriteria] as number) - (b[trainerRankingCriteria] as number)).slice(0, 10).map((item, index) => (
                       <div key={`bot-trainer-${item.name}-${index}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-red-700 to-red-900 text-white font-bold text-xs shrink-0 select-none">{index + 1}</span>
+                        <TrainerAvatar name={item.name} size="lg" showName={false} />
                         <div className="min-w-0 flex-1">
-                          <TrainerNameCell name={item.name} />
-                          <p className="mt-0.5 text-xs text-slate-500">{formatNumber(item.sessions)} sessions · {formatNumber(item.lateCancels)} late cancels · {formatPercentage(item.retentionRate || 0)} ret</p>
+                          <p className="font-semibold text-slate-900 text-sm truncate">{item.name}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{formatNumber(item.sessions)} cls · {formatNumber(item.lateCancels)} late · {formatPercentage(item.retentionRate || 0)} ret · {formatCurrency(item.paid)}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-slate-950">{formatCurrency(item.paid)}</p>
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-red-600 text-sm">{trainerRankingCriteria === 'paid' ? formatCurrency(item.paid) : trainerRankingCriteria === 'revenueScore' ? `Score ${Math.round(item.revenueScore)}` : trainerRankingCriteria === 'fillRate' ? formatPercentage(item.fillRate) : trainerRankingCriteria === 'classAvg' ? item.classAvg.toFixed(1) : formatNumber(item.sessions)}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{item.classAvg.toFixed(1)} avg class</p>
                         </div>
                       </div>
                     ))}
@@ -3297,6 +4041,7 @@ const StudioPulse = memo(() => {
                   </div>
                 </div>
               </div>
+              </>}
 
               {/* Summary — full width at bottom */}
               <div className="mt-6">
@@ -3315,9 +4060,15 @@ const StudioPulse = memo(() => {
               icon={Flame}
               iconGradient="from-red-700 to-rose-900"
               action={
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
-                  <Switch checked={showLapsedMomTable} onCheckedChange={setShowLapsedMomTable} />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
+                    <Switch checked={showLapsedMomTable} onCheckedChange={setShowLapsedMomTable} />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Rankings</span>
+                    <Switch checked={showLapseRankings} onCheckedChange={setShowLapseRankings} />
+                  </div>
                 </div>
               }
             >
@@ -3325,8 +4076,8 @@ const StudioPulse = memo(() => {
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <StudioPulseMetricCard icon={<Flame className="h-5 w-5" />} title="Lapsed Members" metric={expirationStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} subtext={`${formatNumber(expirationStats.churned)} churned · memberships expired`} iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-800 text-white" />
                 <StudioPulseMetricCard icon={<CalendarClock className="h-5 w-5" />} title="Late Cancellations" metric={lcStats.total} formatter={formatNumber} growthLabel="MoM" growthValue={lcStats.growth.total} secondaryGrowthLabel="YoY" secondaryGrowthValue={pctChange(lcStats.total, previousYearLateCancels.length)} subtext={`${formatNumber(lcStats.sameDay)} same-day · ${formatCurrency(lcStats.penalty)} penalty`} iconContainerClassName="bg-gradient-to-br from-amber-600 to-orange-800 text-white" />
-                <StudioPulseMetricCard icon={<HeartPulse className="h-5 w-5" />} title="Churn Rate" metric={expirationStats.total ? (expirationStats.churned / expirationStats.total) * 100 : 0} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} subtext={`${formatNumber(expirationStats.churned)} of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-rose-600 to-red-900 text-white" />
-                <StudioPulseMetricCard icon={<DollarSign className="h-5 w-5" />} title="Avg LTV (Lapsed)" metric={clientStats.avgLtv} precision={0} formatter={formatCurrency} growthLabel="MoM" growthValue={null} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="Average lifetime value of lapsed clients" iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
+                <StudioPulseMetricCard icon={<Zap className="h-5 w-5" />} title="Churn Rate" metric={expirationStats.total ? (expirationStats.churned / expirationStats.total) * 100 : 0} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={expirationStats.momGrowth} secondaryGrowthLabel="YoY" secondaryGrowthValue={expirationStats.yoyGrowth} subtext={`${formatNumber(expirationStats.churned)} of ${formatNumber(expirationStats.total)} lapsed`} iconContainerClassName="bg-gradient-to-br from-rose-600 to-red-900 text-white" />
+                <StudioPulseMetricCard icon={<CircleDollarSign className="h-5 w-5" />} title="Avg LTV (Lapsed)" metric={clientStats.avgLtv} precision={0} formatter={formatCurrency} growthLabel="MoM" growthValue={null} secondaryGrowthLabel="YoY" secondaryGrowthValue={null} subtext="Average lifetime value of lapsed clients" iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
               </div>
 
               {/* Studio Churn Tracker — monthly trend */}
@@ -3543,7 +4294,7 @@ const StudioPulse = memo(() => {
               })()}
 
               {/* Consolidated ranking panels */}
-              <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {showLapseRankings && <div className="mt-6 grid gap-4 lg:grid-cols-2">
                 {/* Top lapse rankings — by membership or location */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="mb-4 flex items-center justify-between gap-3">
@@ -3637,7 +4388,7 @@ const StudioPulse = memo(() => {
                     )}
                   </div>
                 </div>
-              </div>
+              </div>}
 
               {/* Summary */}
               <div className="mt-6">
@@ -3653,20 +4404,26 @@ const StudioPulse = memo(() => {
             <AnimatedSectionCard
               title="Class Attendance"
               subtitle="Session delivery, fill rates, format mix, and class-level utilization"
-              icon={Activity}
+              icon={LineChart}
               iconGradient="from-cyan-700 to-blue-900"
               action={
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
-                  <Switch checked={showClassMomTable} onCheckedChange={setShowClassMomTable} />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">MoM Table</span>
+                    <Switch checked={showClassMomTable} onCheckedChange={setShowClassMomTable} />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Rankings</span>
+                    <Switch checked={showSessionRankings} onCheckedChange={setShowSessionRankings} />
+                  </div>
                 </div>
               }
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <StudioPulseMetricCard icon={<Activity className="h-5 w-5" />} title="Visits" metric={sessionStats.attendance} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.attendance} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.attendance} subtext={`${formatNumber(sessionStats.totalSessions)} sessions · ${formatPercentage(sessionStats.avgFill)} fill`} iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" />
-                <StudioPulseMetricCard icon={<Gauge className="h-5 w-5" />} title="Avg Class Size" metric={sessionStats.classAvg} precision={1} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.attendance} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.attendance} subtext={`${formatPercentage(sessionStats.emptyShare)} empty-session share`} iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
+                <StudioPulseMetricCard icon={<LineChart className="h-5 w-5" />} title="Visits" metric={sessionStats.attendance} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.attendance} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.attendance} subtext={`${formatNumber(sessionStats.totalSessions)} sessions · ${formatPercentage(sessionStats.avgFill)} fill`} iconContainerClassName="bg-gradient-to-br from-cyan-600 to-blue-800 text-white" />
+                <StudioPulseMetricCard icon={<Scan className="h-5 w-5" />} title="Avg Class Size" metric={sessionStats.classAvg} precision={1} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.attendance} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.attendance} subtext={`${formatPercentage(sessionStats.emptyShare)} empty-session share`} iconContainerClassName="bg-gradient-to-br from-slate-700 to-slate-900 text-white" />
                 <StudioPulseMetricCard icon={<Target className="h-5 w-5" />} title="Fill Rate" metric={sessionStats.avgFill} precision={1} metricUnit="%" formatter={(v) => `${v.toFixed(1)}%`} growthLabel="MoM" growthValue={sessionStats.growth.avgFill} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.avgFill} subtext="Capacity utilization across all sessions" iconContainerClassName="bg-gradient-to-br from-orange-600 to-red-700 text-white" />
-                <StudioPulseMetricCard icon={<BarChart3 className="h-5 w-5" />} title="Sessions Conducted" metric={sessionStats.totalSessions} precision={0} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.totalSessions} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.totalSessions} subtext={`${formatPercentage(sessionStats.emptyShare)} empty share`} iconContainerClassName="bg-gradient-to-br from-teal-600 to-emerald-700 text-white" />
+                <StudioPulseMetricCard icon={<BarChart2 className="h-5 w-5" />} title="Sessions Conducted" metric={sessionStats.totalSessions} precision={0} formatter={formatNumber} growthLabel="MoM" growthValue={sessionStats.growth.totalSessions} secondaryGrowthLabel="YoY" secondaryGrowthValue={sessionStats.yoyGrowth.totalSessions} subtext={`${formatPercentage(sessionStats.emptyShare)} empty share`} iconContainerClassName="bg-gradient-to-br from-teal-600 to-emerald-700 text-white" />
               </div>
 
               {showClassMomTable && (
@@ -3857,7 +4614,7 @@ const StudioPulse = memo(() => {
                                 sessionViewMode === m ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'
                               )}
                             >
-                              {m === 'grouped' ? <List className="w-3 h-3" /> : <BarChart3 className="w-3 h-3" />}
+                              {m === 'grouped' ? <BookOpen className="w-3 h-3" /> : <BarChart2 className="w-3 h-3" />}
                               {m.charAt(0).toUpperCase() + m.slice(1)}
                             </button>
                           ))}
@@ -3902,7 +4659,7 @@ const StudioPulse = memo(() => {
                 </div>
 
                 {/* ── Top / Bottom performer cards (reference Rankings layout) ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {showSessionRankings && <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {/* Top Performers */}
                   <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
                     <div className="bg-green-700 px-4 py-4 flex items-center justify-between">
@@ -4084,7 +4841,7 @@ const StudioPulse = memo(() => {
                       )}
                     </div>
                   </div>
-                </div>
+                </div>}
 
                 {/* ── Session Intelligence grouped table (reference DataTable structure) ── */}
                 <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -4092,7 +4849,7 @@ const StudioPulse = memo(() => {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                          <BarChart3 className="h-5 w-5" />
+                          <BarChart2 className="h-5 w-5" />
                         </div>
                         <div>
                           <h4 className="text-base font-bold">Session Intelligence</h4>
@@ -4339,12 +5096,12 @@ const StudioPulse = memo(() => {
             <AnimatedSectionCard
               title="Class Formats & Performance Analysis"
               subtitle="Format-level attendance trends, fill rates, revenue, and trainer comparison"
-              icon={BarChart3}
+              icon={BarChart2}
               iconGradient="from-violet-700 to-purple-900"
             >
               <div className="space-y-6">
                 {/* Comparison cards (overview) */}
-                <FormatComparisonSection sessions={filteredSessions} />
+                <FormatComparisonSection sessions={filteredSessions} activeTab={formatCompTab} onTabChange={setFormatCompTab} />
                 {/* Detailed per-class breakdown — same data as Class Formats > Detailed tab */}
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                   <div className="bg-gradient-to-r from-violet-900 to-purple-900 px-5 py-3 text-white">

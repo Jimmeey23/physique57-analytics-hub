@@ -19,7 +19,7 @@ export interface PulseSnapshot {
   showNewMemberMomTable: boolean;
   showTrainerMomTable: boolean;
   showTrainerFormatSection: boolean;
-  scorecardSortKey: 'sessions' | 'customers' | 'paid' | 'classAvg' | 'utilization' | 'conversionRate' | 'lateCancels' | 'revenueScore';
+  scorecardSortKey: 'sessions' | 'customers' | 'paid' | 'classAvg' | 'fillRate' | 'utilization' | 'conversionRate' | 'lateCancels' | 'revenueScore';
   scorecardSortDir: 'desc' | 'asc';
   showClassMomTable: boolean;
   showLapsedMomTable: boolean;
@@ -45,6 +45,7 @@ export interface PulseSnapshot {
   showMomTable: boolean;
   insightOpen: boolean;
   drillDownOpen: boolean;
+  formatCompTab: 'overview' | 'trainer';
   scrollY: number;
 }
 
