@@ -110,3 +110,4 @@ config/secrets.json
 secrets/
 
 sales-with-mapping-fixed.js
+.ideavo/project
