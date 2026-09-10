@@ -1193,3 +1193,109 @@ html.dark .custom-html-iframe-container { background: #0d0e11; }
   .p57-enter, .p57-skeleton::after, .p57-dot-live, .p57-ticker, .p57-logo-mark { animation: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* ==========================================================================
+   POLISH PASS — dialog uniformity, sticky modal tables, stagger,
+   ticker fade, print chrome
+   ========================================================================== */
+
+/* --- Uniform dialog surface (flattens bespoke modal bg overrides) --- */
+[role="dialog"].p57-scope {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0e1729;
+}
+html.dark [role="dialog"].p57-scope {
+  background-color: #0d0e11 !important;
+  background-image: none !important;
+  color: #f8fafc;
+  border-color: #2a2e36 !important;
+}
+
+/* --- Sticky table head/foot inside dialogs (internal scroll areas) --- */
+[role="dialog"] .p57-scope thead th,
+[role="dialog"] .p57-scope thead td,
+.p57-scope[role="dialog"] thead th,
+.p57-scope[role="dialog"] thead td {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+}
+html.dark [role="dialog"] .p57-scope thead th,
+html.dark [role="dialog"] .p57-scope thead td,
+html.dark .p57-scope[role="dialog"] thead th,
+html.dark .p57-scope[role="dialog"] thead td {
+  background: linear-gradient(180deg, #161a22, #0e1015) !important;
+}
+[role="dialog"] .p57-scope tfoot td,
+[role="dialog"] .p57-scope tfoot th,
+.p57-scope[role="dialog"] tfoot td,
+.p57-scope[role="dialog"] tfoot th {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+}
+
+/* Opt-in sticky head for page tables inside bounded scrollers */
+.p57-sticky-head thead th, .p57-sticky-head thead td {
+  position: sticky; top: 0; z-index: 30;
+  background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+}
+html.dark .p57-sticky-head thead th, html.dark .p57-sticky-head thead td {
+  background: linear-gradient(180deg, #161a22, #0e1015) !important;
+}
+
+/* --- Stagger: automatic entrance cascade for direct children --- */
+.p57-stagger > * { animation: p57-enter 0.36s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.p57-stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.p57-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.p57-stagger > *:nth-child(3) { animation-delay: 0.1s; }
+.p57-stagger > *:nth-child(4) { animation-delay: 0.14s; }
+.p57-stagger > *:nth-child(5) { animation-delay: 0.18s; }
+.p57-stagger > *:nth-child(6) { animation-delay: 0.22s; }
+.p57-stagger > *:nth-child(7) { animation-delay: 0.26s; }
+.p57-stagger > *:nth-child(8) { animation-delay: 0.3s; }
+.p57-stagger > *:nth-child(n+9) { animation-delay: 0.32s; }
+
+/* --- Metric value swap animation (re-keyed by React on change) --- */
+.p57-value-swap { display: inline-block; animation: p57-value-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes p57-value-in {
+  from { opacity: 0; transform: translateY(6px); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* --- Ticker edge fade --- */
+.p57-ticker-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+/* --- Scroll progress bar --- */
+.p57-progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 100%;
+  transform-origin: 0 50%; z-index: 60; pointer-events: none;
+  background: linear-gradient(90deg, #005eed, #6aa5ff);
+  box-shadow: 0 0 12px rgba(0, 94, 237, 0.5);
+}
+
+/* --- Sleek spinner --- */
+.p57-spin {
+  border-radius: 9999px;
+  border: 2px solid rgba(0, 94, 237, 0.18);
+  border-top-color: #005eed;
+  animation: p57-rotate 0.7s linear infinite;
+}
+html.dark .p57-spin { border-color: rgba(111, 168, 255, 0.2); border-top-color: #6ea8ff; }
+@keyframes p57-rotate { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .p57-stagger > *, .p57-value-swap { animation: none !important; }
+  .p57-spin { animation-duration: 1.6s; }
+}
+
+@media print {
+  .p57-progress, .p57-grain, .p57-ambient { display: none !important; }
+  .p57-ticker-mask { -webkit-mask-image: none; mask-image: none; }
+  main.p57-scope { padding: 0 !important; }
+}

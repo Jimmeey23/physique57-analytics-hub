@@ -15,6 +15,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1'];
 
@@ -27,7 +28,7 @@ export const MemberBehaviorPatterns: React.FC = () => {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <BrandSpinner ringOnly size="md" className="mx-auto mb-4" />
           <p className="text-gray-600">Loading member behavior data...</p>
         </CardContent>
       </Card>

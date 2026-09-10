@@ -1,64 +1,61 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg';
 
 interface BrandSpinnerProps {
   size?: SpinnerSize;
   className?: string;
-  /** If true, only shows the ring without the logo image (useful for very tight spaces) */
+  /** If true, only shows the ring without the center mark */
   ringOnly?: boolean;
   /** Optional accessible label for screen readers */
   ariaLabel?: string;
-  /** Tailwind classes to customize the ring border color/opacity */
+  /** Extra classes for the ring */
   ringClassName?: string;
-  /** One or more image sources to attempt (in order) for the center logo */
+  /** @deprecated logos are no longer used; kept for API compatibility */
   srcs?: string[];
 }
 
-const sizeMap: Record<SpinnerSize, { box: string; img: string; ring: string; border: string }> = {
-  xs: { box: 'w-4 h-4', img: 'w-2.5 h-2.5', ring: 'w-4 h-4', border: 'border-[1.5px]' },
-  sm: { box: 'w-5 h-5', img: 'w-3.5 h-3.5', ring: 'w-5 h-5', border: 'border-2' },
-  md: { box: 'w-8 h-8', img: 'w-5 h-5', ring: 'w-8 h-8', border: 'border-2' },
-  lg: { box: 'w-12 h-12', img: 'w-8 h-8', ring: 'w-12 h-12', border: 'border-[3px]' },
+const sizeMap: Record<SpinnerSize, { ring: string; mark: string; text: string }> = {
+  xs: { ring: 'h-3.5 w-3.5', mark: 'h-3.5 w-3.5', text: 'text-[5px]' },
+  sm: { ring: 'h-5 w-5', mark: 'h-5 w-5', text: 'text-[7px]' },
+  md: { ring: 'h-8 w-8', mark: 'h-8 w-8', text: 'text-[10px]' },
+  lg: { ring: 'h-12 w-12', mark: 'h-12 w-12', text: 'text-[13px]' },
 };
 
+/**
+ * Sleek dual-tone brand spinner: soft track + royal-blue arc,
+ * with a micro "57" tile at the center (md/lg only).
+ */
 export const BrandSpinner: React.FC<BrandSpinnerProps> = ({
   size = 'md',
-  className = '',
+  className,
   ringOnly = false,
   ariaLabel = 'Loading',
-  ringClassName = 'border-primary/60',
-  srcs = ['/physique57-logo.png', '/placeholder.svg'],
+  ringClassName,
 }) => {
-  const [imgFailed, setImgFailed] = useState(false);
-  const [srcIndex, setSrcIndex] = useState(0);
   const sz = sizeMap[size];
-
+  const showMark = !ringOnly && (size === 'md' || size === 'lg');
   return (
-    <div className={`relative inline-flex items-center justify-center ${sz.box} ${className}`} role="status" aria-label={ariaLabel}>
-      {!ringOnly && !imgFailed && (
-        <img
-          src={srcs[srcIndex]}
-          alt="Physique 57"
-          className={`${sz.img} object-contain animate-pulse`}
-          onError={() => {
-            if (srcIndex < srcs.length - 1) {
-              setSrcIndex(srcIndex + 1);
-            } else {
-              setImgFailed(true);
-            }
-          }}
-        />
+    <span
+      className={cn('relative inline-flex shrink-0 items-center justify-center', sz.ring, className)}
+      role="status"
+      aria-label={ariaLabel}
+    >
+      <span className={cn('p57-spin absolute inset-0', ringClassName)} aria-hidden="true" />
+      {showMark && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            'flex items-center justify-center rounded-[6px] bg-gradient-to-br from-primary to-[hsl(var(--brand-deep))] font-display font-extrabold text-white',
+            size === 'lg' ? 'h-6 w-6' : 'h-4 w-4',
+            sz.text
+          )}
+        >
+          57
+        </span>
       )}
-      {!ringOnly && imgFailed && (
-        <div className={`${sz.img} rounded-sm bg-slate-300 animate-pulse`} />
-      )}
-
-      {/* Rotating ring */}
-      <div
-        className={`absolute ${sz.ring} rounded-full ${sz.border} border-t-transparent border-l-transparent ${ringClassName} animate-spin`}
-      />
-    </div>
+    </span>
   );
 };
 

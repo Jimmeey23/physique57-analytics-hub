@@ -112,6 +112,7 @@ import { PresenterAnnotationOverlay } from '@/components/dashboard/PresenterAnno
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminCodeGate } from '@/components/ui/AdminCodeGate';
 import { useToast } from '@/hooks/use-toast';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 /* ------------------------------------------------------------------ */
 /* Studio definitions                                                  */
@@ -2785,7 +2786,7 @@ const StudioPulse = memo(() => {
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
             {loading ? 'Generating AI insights…' : s ? `AI insights · generated ${new Date(s.lastGenerated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : 'Summary'}
           </span>
-          {loading && <div className="h-3 w-3 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500 shrink-0" />}
+          {loading && <BrandSpinner ringOnly size="xs" />}
         </div>
         {bullets.length > 0 ? renderBulletSummary(bullets, columns) : (
           <p className="text-sm text-slate-400">AI summary will appear here when cached or generated.</p>
@@ -4458,7 +4459,7 @@ const StudioPulse = memo(() => {
               <div className="p-6 space-y-6">
                 {aiLoading ? (
                   <div className="flex items-center gap-3 text-slate-500 py-4">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-violet-500" />
+                    <BrandSpinner ringOnly size="xs" />
                     <span className="text-sm font-medium">Generating AI summary…</span>
                   </div>
                 ) : isSummaryEditing ? (

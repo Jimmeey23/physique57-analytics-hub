@@ -18,6 +18,7 @@ import { calculateMetrics, calculateTotalsRow, formatCurrency, formatPercentage,
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 interface DataTableEnhancedProps {
   sessions: SessionData[];
@@ -540,7 +541,7 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
                   <tr>
                     <td colSpan={columns.length} className="px-4 py-8 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <BrandSpinner ringOnly size="sm" />
                         <span className="text-gray-500">Calculating metrics...</span>
                       </div>
                     </td>

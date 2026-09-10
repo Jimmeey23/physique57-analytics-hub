@@ -42,7 +42,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           </span>
         )}
       </div>
-      <p className="p57-metric-value">{value}</p>
+      <p className="p57-metric-value">
+        <span key={String(value)} className="p57-value-swap">{value}</span>
+      </p>
       {(sub || delta) && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {delta && (

@@ -10,7 +10,8 @@ export interface TickerItem {
 }
 
 /**
- * Athena-style KPI marquee ticker. Duplicate the strip for a seamless loop.
+ * Athena-style KPI marquee ticker. The strip is duplicated for a
+ * seamless loop; pauses on hover; edges fade via CSS mask.
  */
 export const KpiTicker: React.FC<{ items: TickerItem[]; className?: string }> = ({ items, className }) => {
   if (!items.length) return null;
@@ -49,8 +50,8 @@ export const KpiTicker: React.FC<{ items: TickerItem[]; className?: string }> = 
     </div>
   );
   return (
-    <div className={cn('p57-ticker', className)}>
-      <div className="flex w-max animate-p57-marquee">
+    <div className={cn('p57-ticker-mask rounded-2xl border border-border shadow-card', className)}>
+      <div className="p57-ticker">
         {row(false)}
         {row(true)}
       </div>

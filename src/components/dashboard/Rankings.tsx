@@ -4,6 +4,7 @@ import { formatNumber, formatCurrency, formatPercentage, calculateMetrics } from
 import { TrendingUp, TrendingDown, Award, BarChart3, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 interface RankingGroup {
   key: string;
@@ -244,7 +245,7 @@ const Rankings = ({ data }: RankingsProps) => {
       {isCalculating && (
         <div className="absolute inset-0 bg-white/50 z-10 flex items-start justify-center pt-20 backdrop-blur-sm rounded-2xl">
           <div className="bg-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 border border-blue-100">
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+            <BrandSpinner ringOnly size="sm" />
             <span className="font-medium text-blue-700">Updating rankings...</span>
           </div>
         </div>

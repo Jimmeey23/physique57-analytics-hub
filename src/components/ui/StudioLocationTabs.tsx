@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MapPin, Play, Pause, Building2, Home, LocateFixed, Navigation } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 interface StudioLocation {
   id: string;
@@ -498,7 +499,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
                         {imageLoadingStatus[`${location.id}-${currentIndex}`] === 'loading' && 
                          !preloadedImages.has(location.media.sources[currentIndex]) && (
                           <div className="absolute inset-0 flex items-center justify-center bg-slate-200">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                            <BrandSpinner ringOnly size="md" />
                           </div>
                         )}
                         

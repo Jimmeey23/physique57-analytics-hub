@@ -270,11 +270,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   useEffect(() => {
-    const onScroll = () => setShowTop(window.scrollY > 640);
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        setShowTop(window.scrollY > 640);
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+      });
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+    };
   }, []);
+
+  // Alt+T toggles the theme (ignored while typing)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 't' || e.key === 'T')) {
+        const el = document.activeElement as HTMLElement | null;
+        const typing =
+          el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+        if (typing) return;
+        e.preventDefault();
+        toggleTheme();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleTheme]);
 
   const crumb = useMemo(() => {
     const hit = PATH_TITLES[location.pathname];
@@ -289,11 +316,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background text-foreground">
       <div className="p57-grain" aria-hidden="true" />
       <div className="p57-ambient" aria-hidden="true" />
+      <div className="p57-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />
 
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/70 bg-white/80 backdrop-blur-xl transition-[width] duration-200 dark:bg-[#07080a]/90 lg:flex',
+          'p57-no-print fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/70 bg-white/80 backdrop-blur-xl transition-[width] duration-200 dark:bg-[#07080a]/90 lg:flex',
           collapsed ? 'w-[68px]' : 'w-[240px]'
         )}
       >
@@ -310,14 +338,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile sidebar */}
       <div
         className={cn(
-          'fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden',
+          'p57-no-print fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden',
           mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
         onClick={() => setMobileOpen(false)}
       />
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-border bg-white shadow-pop transition-transform duration-200 dark:bg-[#07080a] lg:hidden',
+          'p57-no-print fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-border bg-white shadow-pop transition-transform duration-200 dark:bg-[#07080a] lg:hidden',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -334,7 +362,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main column */}
       <div className={cn('relative z-10 flex min-h-screen flex-col transition-[padding] duration-200', collapsed ? 'lg:pl-[68px]' : 'lg:pl-[240px]')}>
         {/* Topbar */}
-        <header className="hide-scroll sticky top-0 z-30 flex h-[64px] items-center gap-2 overflow-x-auto border-b border-border/70 bg-white/80 px-4 backdrop-blur-xl dark:bg-[#050506]/85 md:px-6">
+        <header className="p57-no-print hide-scroll sticky top-0 z-30 flex h-[64px] items-center gap-2 overflow-x-auto border-b border-border/70 bg-white/80 px-4 backdrop-blur-xl dark:bg-[#050506]/85 md:px-6">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -396,8 +424,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode (Alt+T)' : 'Switch to dark mode (Alt+T)'}
             aria-label="Toggle dark mode"
+            aria-keyshortcuts="alt+t"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -412,7 +441,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border/70 bg-white/60 dark:bg-transparent">
+        <footer className="p57-no-print border-t border-border/70 bg-white/60 dark:bg-transparent">
           <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-2 px-4 py-3 md:px-6">
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[hsl(var(--brand-deep))] font-display text-[10px] font-extrabold text-white">
@@ -436,7 +465,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         className={cn(
-          'fixed bottom-5 right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-ink text-white shadow-pop transition-all duration-200 hover:bg-ink-soft dark:bg-primary',
+          'p57-no-print fixed bottom-5 right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-ink text-white shadow-pop transition-all duration-200 hover:bg-ink-soft dark:bg-primary',
           showTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
         )}
       >
