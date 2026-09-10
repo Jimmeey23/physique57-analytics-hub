@@ -39,7 +39,7 @@ interface DisplayedTablesExportButtonProps {
   buttonSize?: ButtonProps['size'];
   buttonClassName?: string;
   buttonLabel?: string;
-  openRef?: React.RefObject<{ open: () => void }>;
+  openRef?: { current: { open: () => void } | null };
   renderTrigger?: boolean;
   contextLabel?: string;
   dialogDescription?: string;

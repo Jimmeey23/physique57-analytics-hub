@@ -407,12 +407,12 @@ export const EnhancedTrainerPerformanceSection = () => {
       t.totalCustomers += r.totalCustomers || 0;
       t.nonEmptySessions += r.nonEmptySessions || 0;
       // processed data fields use `convertedMembers`, `newMembers`, `retainedMembers`, `conversionRate`
-      t.totalConverted += (r.convertedMembers ?? r.converted ?? 0);
-      t.totalNew += (r.newMembers ?? r.new ?? 0);
-      t.totalRetained += (r.retainedMembers ?? r.retained ?? 0);
+      t.totalConverted += r.convertedMembers;
+      t.totalNew += r.newMembers;
+      t.totalRetained += r.retainedMembers;
       t.conversionSum += (r.conversionRate ?? 0);
       t.retentionSum += (r.retentionRate ?? 0);
-      t.emptySessions += (r.emptySessions ?? r.totalEmptySessions ?? 0);
+      t.emptySessions += r.emptySessions;
       t.records += 1;
       return acc;
     }, {} as Record<string, any>);

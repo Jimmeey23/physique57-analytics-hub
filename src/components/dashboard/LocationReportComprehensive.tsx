@@ -152,7 +152,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
           {/* Quick Stats Pills */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
             <div className="bg-white/10 backdrop-blur rounded-lg p-3 text-center">
-              <div className="text-lg font-bold">{formatCurrency(metrics.totalRevenue || 0, true)}</div>
+              <div className="text-lg font-bold">{formatCurrency(metrics.totalRevenue || 0)}</div>
               <div className="text-xs text-blue-200">Revenue</div>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-3 text-center">

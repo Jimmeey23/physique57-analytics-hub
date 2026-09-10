@@ -418,10 +418,8 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
         header: 'Status',
         cell: ({ row }) => (
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.original.status === 'excellent' ? 'bg-green-100 text-green-700' :
-            row.original.status === 'good' ? 'bg-blue-100 text-blue-700' :
-            row.original.status === 'average' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-red-100 text-red-700'
+            row.original.status === 'Active' ? 'bg-green-100 text-green-700' :
+            'bg-slate-100 text-slate-600'
           }`}>
             {row.original.status?.charAt(0).toUpperCase() + row.original.status?.slice(1)}
           </span>

@@ -136,7 +136,7 @@ export function EnhancedTrainerDrillDownModal({
   }, [processedData.sessions, searchTerm, selectedLocation]);
 
   // Get unique values for filters
-  const uniqueLocations = Array.from(new Set(processedData.sessions.map((s: any) => s.location).filter(Boolean)));
+  const uniqueLocations: string[] = Array.from(new Set(processedData.sessions.map((s: any) => s.location).filter(Boolean)));
 
   // Performance score calculation
   const performanceScore = useMemo(() => {
@@ -265,7 +265,7 @@ export function EnhancedTrainerDrillDownModal({
                           fontSize: '12px'
                         }}
                         formatter={(value, name) => [
-                          name === 'revenue' ? formatCurrency(value) : value,
+                          name === 'revenue' ? formatCurrency(Number(value) || 0) : value,
                           name === 'revenue' ? 'Revenue' : 'Sessions'
                         ]}
                       />

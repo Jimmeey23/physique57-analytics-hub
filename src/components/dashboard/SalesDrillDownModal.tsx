@@ -34,7 +34,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
 }) => {
   if (!data) return null;
 
-  const rawData = data.rawData || data.filteredTransactionData || [];
+  const rawData: SalesData[] = data.rawData || data.filteredTransactionData || [];
 
   const analytics = React.useMemo(() => {
     const totalRevenue = rawData.reduce((sum: number, item: SalesData) => sum + (Number(item.paymentValue) || 0), 0);

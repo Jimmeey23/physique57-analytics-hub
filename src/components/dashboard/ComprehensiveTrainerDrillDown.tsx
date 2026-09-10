@@ -283,7 +283,7 @@ export function ComprehensiveTrainerDrillDown({
 
     // Robust date parsing to normalize to MMM-YYYY (tries multiple formats)
     const toMonthYear = (dStr: string) => {
-      if (!dStr && dStr !== 0) return '';
+      if (!dStr) return '';
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
       // If already in MMM-YYYY, return as-is

@@ -1950,10 +1950,8 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
           dragField.from === 'columns'
             ? current.columnFields.filter((field) => field !== dragField.field)
             : current.columnFields;
-        const nextValues =
-          dragField.from === 'values'
-            ? current.valueFields.filter((valueField) => valueField.id !== dragField.valueId)
-            : current.valueFields;
+        // NOTE: `from === 'values'` returns early above, so values always pass through here.
+        const nextValues = current.valueFields;
         const nextMetric: ValueFieldConfig = {
           id: makeId('value'),
           field: dragField.field,

@@ -128,8 +128,8 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
         tableRef={tableRef}
         contextInfo={{
           selectedMetric: metric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          dateRange: copyContext.contextInfo.dateRange,
+          filters: copyContext.contextInfo.filters,
           additionalInfo: {
             groupKey: groupKey,
             metric: metric,

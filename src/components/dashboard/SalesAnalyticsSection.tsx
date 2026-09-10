@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building2, Landmark, Building, Calendar, TrendingUp, ShoppingCart, FolderOpen, Users, CreditCard, UserCheck } from 'lucide-react';
 import { AutoCloseFilterSection } from './AutoCloseFilterSection';
-import { MetricCard } from './MetricCard';
 import { UnifiedTopBottomSellers } from './UnifiedTopBottomSellers';
 import { DataTable } from './DataTable';
 import { InteractiveChart } from './InteractiveChart';
@@ -877,18 +876,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                         onRowClick={handleRowClick} 
                         selectedMetric={activeYoyMetric} 
                         onReady={markReady}
-                        contextInfo={{
-                          selectedMetric: activeYoyMetric,
-                          dateRange: filters.dateRange,
-                          location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
-                          filters: {
-                            location: [activeLocation],
-                            category: filters.category,
-                            product: filters.product,
-                            soldBy: filters.soldBy,
-                            paymentMethod: filters.paymentMethod
-                          }
-                        }}
                       />
                     </SectionAnchor>
                   </TabsContent>
@@ -922,18 +909,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
-                      contextInfo={{
-                        selectedMetric: activeYoyMetric,
-                        dateRange: filters.dateRange,
-                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
-                        filters: {
-                          location: [activeLocation],
-                          category: filters.category,
-                          product: filters.product,
-                          soldBy: filters.soldBy,
-                          paymentMethod: filters.paymentMethod
-                        }
-                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -951,18 +926,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
-                      contextInfo={{
-                        selectedMetric: activeYoyMetric,
-                        dateRange: filters.dateRange,
-                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
-                        filters: {
-                          location: [activeLocation],
-                          category: filters.category,
-                          product: filters.product,
-                          soldBy: filters.soldBy,
-                          paymentMethod: filters.paymentMethod
-                        }
-                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -980,18 +943,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       onRowClick={handleRowClick} 
                       selectedMetric={activeYoyMetric} 
                       onReady={markReady}
-                      contextInfo={{
-                        selectedMetric: activeYoyMetric,
-                        dateRange: filters.dateRange,
-                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
-                        filters: {
-                          location: [activeLocation],
-                          category: filters.category,
-                          product: filters.product,
-                          soldBy: filters.soldBy,
-                          paymentMethod: filters.paymentMethod
-                        }
-                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>
@@ -1009,18 +960,6 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
                       data={allHistoricData} 
                       onReady={markReady} 
                       onRowClick={handleRowClick}
-                      contextInfo={{
-                        selectedMetric: activeYoyMetric,
-                        dateRange: filters.dateRange,
-                        location: locations.find(loc => loc.id === activeLocation)?.fullName || 'All Locations',
-                        filters: {
-                          location: [activeLocation],
-                          category: filters.category,
-                          product: filters.product,
-                          soldBy: filters.soldBy,
-                          paymentMethod: filters.paymentMethod
-                        }
-                      }}
                     />
                   </SectionAnchor>
                 </TabsContent>

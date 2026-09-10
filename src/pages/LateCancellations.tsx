@@ -26,7 +26,7 @@ const LateCancellations = () => {
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   
   // Location tabs state
-  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
+  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
   
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
 

@@ -60,7 +60,7 @@ const formatMonthSelectionLabel = (months: string[]) => {
 };
 
 interface TrainerFilterSectionProps {
-  data: PayrollData[];
+  data: Pick<PayrollData, 'location' | 'teacherName' | 'monthYear'>[];
   onFiltersChange: (filters: any) => void;
   activeLocation?: string;
   activeMonths?: string[];

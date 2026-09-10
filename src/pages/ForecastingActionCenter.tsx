@@ -478,11 +478,11 @@ const ForecastingActionCenter: React.FC = () => {
                       { label: 'Conversion rate', value: formatPercentage(leadSignals.leadConversionRate), tone: 'amber' },
                     ],
                     rows: leadsData.map((lead) => ({
-                      name: lead.clientName || lead.name || 'Lead',
+                      name: lead.fullName || 'Lead',
                       status: lead.status || 'Unknown',
                       conversionStatus: lead.conversionStatus || 'Unknown',
                       source: lead.source || 'Unknown',
-                      owner: lead.salesOwner || lead.assignedTo || 'Unassigned',
+                      owner: lead.associate || 'Unassigned',
                     })),
                     columns: [
                       { key: 'name', header: 'Lead', align: 'left' },
@@ -957,11 +957,11 @@ const ForecastingActionCenter: React.FC = () => {
                         { label: 'Conversion rate', value: formatPercentage(leadSignals.leadConversionRate), tone: 'amber' },
                       ],
                       rows: leadsData.map((lead) => ({
-                        name: lead.clientName || lead.name || 'Lead',
+                        name: lead.fullName || 'Lead',
                         status: lead.status || 'Unknown',
                         conversionStatus: lead.conversionStatus || 'Unknown',
                         source: lead.source || 'Unknown',
-                        owner: lead.salesOwner || lead.assignedTo || 'Unassigned',
+                        owner: lead.associate || 'Unassigned',
                       })),
                       columns: [
                         { key: 'name', header: 'Lead', align: 'left' },

@@ -40,7 +40,7 @@ export default function FunnelLeads() {
   }, [loading, setLoading]);
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
-  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'all');
+  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{

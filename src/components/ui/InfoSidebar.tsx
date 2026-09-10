@@ -14,8 +14,7 @@ import {
   Maximize2,
   RefreshCw,
   Sparkles,
-  Brain,
-  Tabs
+  Brain
 } from 'lucide-react';
 import { Button } from './button';
 import { Textarea } from './textarea';

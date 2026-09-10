@@ -115,7 +115,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
     const rawTransactionData = data.filteredTransactionData || data.rawData || data.transactionData || [];
 
     // If this is a class-focused drill payload, prefer sessionsFiltered/checkinsFiltered provided by the page
-    if ((type === 'class' || type === 'class-drill') && (Array.isArray(data.sessionsFiltered) || Array.isArray(data.checkinsFiltered))) {
+    if (type === 'class' && (Array.isArray(data.sessionsFiltered) || Array.isArray(data.checkinsFiltered))) {
       const sessions = data.sessionsFiltered || [];
       const checkins = data.checkinsFiltered || [];
       const totalSessions = sessions.length;

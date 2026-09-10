@@ -111,7 +111,7 @@ const ExecutiveSummaryContent = () => {
       <div className="hidden">
         <AdvancedExportButton 
           renderTrigger={false}
-          openRef={exportRef as any}
+          openRef={exportRef}
           salesData={salesData}
           sessionsData={sessionsData as any}
           newClientData={newClientData}

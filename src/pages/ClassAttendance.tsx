@@ -86,7 +86,7 @@ const ClassAttendance = () => {
   const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawData, payrollData }) => {
     const filteredData = useFilteredSessionsData(rawData || []);
     const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
-    const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
+    const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
     const [activeTab, setActiveTab] = useState('overview');
 
     const filterByLocation = useMemo(() => {

@@ -117,7 +117,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
   const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState<boolean>(true);
   const [autoCollapseTimer, setAutoCollapseTimer] = useState<NodeJS.Timeout | null>(null);
-  const intervalRefs = useRef<Record<string, number>>({});
+  const intervalRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   // Shared animation state for synchronization
   const colorAnimation = {

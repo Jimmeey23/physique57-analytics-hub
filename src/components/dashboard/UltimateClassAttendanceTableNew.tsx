@@ -1094,7 +1094,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                             className={`${rowHeightClass} border-b border-slate-200/70 bg-slate-50/60 hover:bg-slate-100/70`}
                           >
                             {columns.map((col, colIdx) => {
-                              const cellValue = col.accessorFn 
+                              const cellValue = 'accessorFn' in col && col.accessorFn
                                 ? col.accessorFn(childSession, idx)
                                 : (childSession as any)[col.id || ''];
                               

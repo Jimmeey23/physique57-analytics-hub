@@ -7,7 +7,6 @@ import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatte
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { ModernTableWrapper } from './ModernTableWrapper';
-import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { Button } from '@/components/ui/button';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
@@ -687,11 +686,6 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
             </div>
           </motion.div>
           
-          <PersistentTableFooter
-            tableRef={tableRef}
-            filename="funnel-year-on-year-analysis"
-            sheetName="Funnel YoY Analysis"
-          />
         </div>
       </ModernTableWrapper>
     </motion.div>

@@ -149,7 +149,15 @@ export const TrainerPerformanceDetailTable: React.FC<TrainerPerformanceDetailTab
     }
   };
 
-  const columns = [
+  interface DetailColumn {
+    key: string;
+    header: React.ReactNode;
+    sortable?: boolean;
+    align?: 'left' | 'center' | 'right';
+    className?: string;
+    render?: (value: any, row: any) => React.ReactNode;
+  }
+  const columns: DetailColumn[] = [
     {
       key: 'trainerName' as const,
       header: (

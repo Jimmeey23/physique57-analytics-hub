@@ -20,7 +20,7 @@ export interface ClientMetric {
   description: string;
 }
 
-export interface ClientMetricWithYoY extends ClientMetric {
+export interface ClientMetricWithYoY extends Omit<ClientMetric, 'icon'> {
   yoyPreviousValue?: string;
   yoyPreviousRawValue?: number;
   yoyChange?: number;

@@ -490,9 +490,9 @@ const MonthOnMonthTableNewComponent: React.FC<MonthOnMonthTableNewProps> = ({
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
           selectedMetric: contextInfo?.selectedMetric || selectedMetric,
-          dateRange: contextInfo?.dateRange || copyContext.dateRange,
+          dateRange: contextInfo?.dateRange || copyContext.contextInfo.dateRange,
           location: contextInfo?.location,
-          filters: contextInfo?.filters || copyContext.filters,
+          filters: contextInfo?.filters || copyContext.contextInfo.filters,
           additionalInfo: {
             ...contextInfo?.additionalInfo,
             displayMode: displayMode,

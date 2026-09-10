@@ -6,7 +6,6 @@ import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { ModernTableWrapper } from './ModernTableWrapper';
-import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { extractTableTextFromContainer } from '@/utils/tableCopy';
 
@@ -359,11 +358,6 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
         </div>
       </div>
 
-      <PersistentTableFooter
-        tableRef={tableRef}
-        filename="funnel-health-metrics"
-        sheetName="Health Metrics"
-      />
     </ModernTableWrapper>
   );
 };

@@ -119,7 +119,15 @@ export const TrainerYearOnYearTable: React.FC<TrainerYearOnYearTableProps> = ({
       });
     }
   };
-  const columns = [{
+  interface YoYColumn {
+    key: string;
+    header: React.ReactNode;
+    sortable?: boolean;
+    align?: 'left' | 'center' | 'right';
+    className?: string;
+    render?: (value: any, row: any) => React.ReactNode;
+  }
+  const columns: YoYColumn[] = [{
     key: 'trainerName' as const,
     header: (
       <TooltipProvider>

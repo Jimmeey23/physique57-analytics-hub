@@ -31,7 +31,7 @@ import { logger } from '@/utils/logger';
 
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: unknown) => jsPDF;
+    autoTable: (options: any) => jsPDF;
     lastAutoTable?: {
       finalY: number;
     };
@@ -76,6 +76,7 @@ const MODULE_POPOVER_CONTEXT: Record<OverviewModuleId, string> = {
   'late-cancellations': 'late-cancellations-overview',
   'patterns-trends': 'patterns-trends-overview',
   'expiration-analytics': 'expiration-analytics-overview',
+  'dashboard-workbench': 'dashboard-workbench-overview',
 };
 
 const MODULE_SUMMARY_CONTEXT: Record<OverviewModuleId, SummaryContext> = {
@@ -89,6 +90,7 @@ const MODULE_SUMMARY_CONTEXT: Record<OverviewModuleId, SummaryContext> = {
   'late-cancellations': 'late-cancellations-overview',
   'patterns-trends': 'sessions-overview',
   'expiration-analytics': 'expiration-analytics-overview',
+  'dashboard-workbench': 'executive',
 };
 
 const ACCENT_PALETTES: Record<OverviewAccent, AccentPalette> = {

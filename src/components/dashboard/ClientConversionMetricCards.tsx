@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, Target, TrendingUp, DollarSign, UserCheck, Award, UserPlus, CalendarDays, Repeat, ShoppingBag, AlertTriangle, HeartHandshake, UserX, type LucideIcon } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { useClientConversionMetrics, ClientMetricWithYoY } from '@/hooks/useClientConversionMetrics';
+import { useClientConversionMetrics } from '@/hooks/useClientConversionMetrics';
 import { parseDate } from '@/utils/dateUtils';
 import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { MetricCard, MetricGrid } from '@/components/ui/MetricCard';
@@ -122,7 +122,26 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
     'Avg Visits Post-Trial': Repeat,
   };
   
-  const metricCards: ClientMetricWithYoY[] = [
+  interface ClientCard {
+    title: string;
+    value: string;
+    icon: LucideIcon;
+    description: string;
+    change: number;
+    previousValue: string;
+    yoyPreviousValue?: string;
+    yoyChange?: number;
+    comparison?: { current: number; previous: number; difference: number };
+    changeDetails?: { rate: number; isSignificant: boolean; trend: string };
+    filterData?: () => NewClientData[];
+    metricType?: string;
+    gradient?: string;
+    period?: string;
+    rawValue?: number;
+    previousRawValue?: number;
+    yoyPreviousRawValue?: number;
+  }
+  const metricCards: ClientCard[] = [
     ...metrics.map(m => ({
       title: m.title,
       value: m.value,
@@ -151,7 +170,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
             return data;
         }
       }
-    } as ClientMetricWithYoY)),
+    })),
     {
       title: 'Avg Conversion Time',
       value: `${Math.round(avgConversionTime)} days`,
@@ -173,7 +192,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: avgConversionTime > avgConversionTimePrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => c.conversionSpan && c.conversionSpan > 0)
-    } as ClientMetricWithYoY,
+    },
     {
       title: 'Avg Visits Post-Trial',
       value: avgVisitsPostTrial.toFixed(1),
@@ -193,7 +212,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: avgVisitsPostTrial > avgVisitsPostTrialPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => c.visitsPostTrial && c.visitsPostTrial > 0)
-    } as ClientMetricWithYoY,
+    },
     {
       title: 'Repeat Purchase Rate',
       value: formatPercentage(repeatRate),
@@ -216,7 +235,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: repeatRate > repeatRatePrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(isRepeatBuyer)
-    } as ClientMetricWithYoY,
+    },
     {
       title: 'At-Risk Members',
       value: formatNumber(atRiskCount),
@@ -239,7 +258,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: atRiskCount > atRiskPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(isAtRiskStatus)
-    } as ClientMetricWithYoY,
+    },
     ...(reactivatedCount > 0 ? [{
       title: 'Reactivated Members',
       value: formatNumber(reactivatedCount),
@@ -262,7 +281,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: reactivatedCount > reactivatedPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(isReactivatedStatus)
-    } as ClientMetricWithYoY] : []),
+    }] : []),
     {
       title: 'Avg Visits Before Churn',
       value: churnVisitsAvg.toFixed(1),
@@ -285,10 +304,10 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: churnVisitsAvg > churnVisitsPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => isChurnedStatus(c) && (c.visitsPostTrial || 0) > 0)
-    } as ClientMetricWithYoY
+    }
   ];
 
-  const formatYoyFallback = (metric: ClientMetricWithYoY): string => {
+  const formatYoyFallback = (metric: ClientCard): string => {
     const prev = metric.comparison?.previous;
     if (prev === undefined) return '—';
     const title = metric.title.toLowerCase();
@@ -300,7 +319,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
   return (
     <MetricGrid cols={4}>
       {metricCards.map((metric) => {
-        const Icon = metric.icon as LucideIcon;
+        const Icon = metric.icon;
         const change = typeof metric.change === 'number' ? metric.change : 0;
         const yoyValue = metric.yoyPreviousValue ?? formatYoyFallback(metric);
         const yoyChange = typeof metric.yoyChange === 'number' ? metric.yoyChange : null;

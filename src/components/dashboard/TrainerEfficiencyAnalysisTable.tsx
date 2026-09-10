@@ -176,18 +176,26 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
         avgClassFill: rowData.avgClassFill,
         customerRetention: rowData.customerRetention,
         productivityRank: rowData.productivityRank,
-        monthYear: mostRecentRecord?.monthYear || mostRecentRecord?.month || '',
+        monthYear: mostRecentRecord?.monthYear || '',
         location: mostRecentRecord?.location || rowData.location || '',
         type: 'trainer-efficiency',
         contextFilters: {
           location: mostRecentRecord?.location || rowData.location || '',
-          month: mostRecentRecord?.monthYear || mostRecentRecord?.month || ''
+          month: mostRecentRecord?.monthYear || ''
         }
       });
     }
   };
 
-  const columns = [
+  interface EfficiencyColumn {
+    key: string;
+    header: React.ReactNode;
+    sortable?: boolean;
+    align?: 'left' | 'center' | 'right';
+    className?: string;
+    render?: (value: any, row: any) => React.ReactNode;
+  }
+  const columns: EfficiencyColumn[] = [
     {
       key: 'trainerName' as const,
       header: 'Trainer',

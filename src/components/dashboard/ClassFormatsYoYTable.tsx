@@ -296,8 +296,8 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
             onCopyAllTabs={async () => getAllTabsText()}
             contextInfo={{
               selectedMetric: metric,
-              dateRange: copyContext.dateRange,
-              filters: copyContext.filters,
+              dateRange: copyContext.contextInfo.dateRange,
+              filters: copyContext.contextInfo.filters,
                 additionalInfo: {
                 metric: metric,
                 yearsCompared: years,

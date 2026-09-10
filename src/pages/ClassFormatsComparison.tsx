@@ -39,7 +39,7 @@ const ClassFormatsComparison: React.FC = () => {
   const { allCheckins, loading: checkinsLoading } = useLateCancellationsData();
   const { setLoading } = useGlobalLoading();
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
-  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
+  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
   const [drill, setDrill] = useState<any | null>(null);
 
   useEffect(() => {
@@ -137,11 +137,27 @@ const ClassFormatsComparison: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="monthly" className="space-y-6">
-          <ClassFormatsMoMDetails sessions={filteredSessionsByLocation as any} />
+          <ClassFormatsMoMTable
+            sessions={filteredSessionsByLocation as any}
+            checkins={filteredCheckinsByLocation}
+            onDrillDown={(data) => {
+              window.dispatchEvent(new CustomEvent('open-drilldown', {
+                detail: { type: 'format-trend', ...data }
+              }));
+            }}
+          />
         </TabsContent>
-        
+
         <TabsContent value="yearly" className="space-y-6">
-          <ClassFormatsYoYDetails sessions={filteredSessionsByLocation as any} />
+          <ClassFormatsYoYTable
+            sessions={filteredSessionsByLocation as any}
+            checkins={filteredCheckinsByLocation}
+            onDrillDown={(data) => {
+              window.dispatchEvent(new CustomEvent('open-drilldown', {
+                detail: { type: 'format-trend', ...data }
+              }));
+            }}
+          />
         </TabsContent>
       </Tabs>
     );

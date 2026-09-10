@@ -359,8 +359,8 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
           selectedMetric: selectedMetric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          dateRange: copyContext.contextInfo.dateRange,
+          filters: copyContext.contextInfo.filters,
           additionalInfo: {
             displayMode: displayMode,
             behaviorMetric: selectedMetric,

@@ -44,6 +44,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   className,
   details,
   detailsTitle = 'Details',
+  onSelect,
+  selectLabel = 'Open details',
 }) => {
   const [flipped, setFlipped] = useState(false);
   const flippable = details !== undefined && details !== null;
@@ -97,7 +99,26 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     </div>
   );
 
-  if (!flippable) return <div className={className}>{front}</div>;
+  if (!flippable) {
+    if (!onSelect) return <div className={className}>{front}</div>;
+    return (
+      <div
+        className={cn('cursor-pointer', className)}
+        role="button"
+        tabIndex={0}
+        aria-label={`${label}: ${value}. Activate to ${selectLabel.toLowerCase()}.`}
+        onClick={onSelect}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
+      >
+        {front}
+      </div>
+    );
+  }
 
   return (
     <div className={cn('p57-flip', className)}>
