@@ -263,7 +263,6 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
                   footerData={footerData}
                   maxHeight="480px"
                   className="rounded-lg"
-                  headerGradient="from-slate-800 via-slate-900 to-slate-800"
                   onRowClick={onDrillDown ? (row) => {
                     // Filter data based on the group value and pass to drill down
                     const filteredData = data.filter(lead => {

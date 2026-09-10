@@ -1572,20 +1572,20 @@ export const PatternsAndTrends = () => {
           <CardContent className="p-0" ref={monthOnMonthTableRef as any}>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                   <TableRow className="border-none">
-                    <TableHead className="font-bold text-white sticky left-0 bg-slate-800 z-30 min-w-[240px]">
+                    <TableHead className="bg-[#f6f7f9] font-bold text-slate-700 sticky left-0 z-30 min-w-[240px]">
                       {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
                     </TableHead>
                     {monthlyProductData.months.map((month) => (
-                      <TableHead key={month} className="text-center font-bold text-white min-w-[140px]">
+                      <TableHead key={month} className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[140px]">
                         <div className="flex flex-col">
                           <span className="text-sm">{month.split(' ')[0]}</span>
-                          <span className="text-slate-300 text-xs">{month.split(' ')[1]}</span>
+                          <span className="text-xs text-slate-400">{month.split(' ')[1]}</span>
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-white min-w-[120px]">
+                    <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[120px]">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger className="cursor-help">Total Visits</TooltipTrigger>
@@ -1593,7 +1593,7 @@ export const PatternsAndTrends = () => {
                         </Tooltip>
                       </TooltipProvider>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-white min-w-[120px]">
+                    <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[120px]">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger className="cursor-help">Unique Members</TooltipTrigger>
@@ -1778,22 +1778,22 @@ export const PatternsAndTrends = () => {
                                   </div>
                                   <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                                     <Table>
-                                      <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 z-10 shadow-lg">
-                                        <TableRow className="border-b border-slate-600">
-                                          <TableHead className="font-bold text-white bg-transparent">#</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Visit Date</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Month/Year</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Member Name</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Member ID</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Class Name</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Time</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Product</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Category</TableHead>
-                                          <TableHead className="text-center font-bold text-white bg-transparent">Status</TableHead>
-                                          <TableHead className="text-center font-bold text-white bg-transparent">New/Returning</TableHead>
-                                          <TableHead className="text-center font-bold text-white bg-transparent">Paid</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Teacher</TableHead>
-                                          <TableHead className="font-bold text-white bg-transparent">Location</TableHead>
+                                      <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
+                                        <TableRow className="border-b border-slate-200">
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">#</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Visit Date</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Month/Year</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Member Name</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Member ID</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Class Name</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Time</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Product</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Category</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">Status</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">New/Returning</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">Paid</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Teacher</TableHead>
+                                          <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Location</TableHead>
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
@@ -2134,19 +2134,19 @@ export const PatternsAndTrends = () => {
               {/* Tabular Frequency Data Display */}
               <div className="overflow-x-auto">
                 <Table className="unified-table">
-                  <TableHeader className="sticky top-0 z-10 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+                  <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
                     <TableRow className="border-none">
-                      <TableHead className="font-bold text-white sticky left-0 bg-slate-800/95 backdrop-blur-sm z-20 min-w-[200px] border-r border-white/20">
+                      <TableHead className="bg-[#f6f7f9] font-bold text-slate-700 sticky left-0 z-20 min-w-[200px] border-r border-slate-200">
                         {frequencyBreakdownBy.charAt(0).toUpperCase() + frequencyBreakdownBy.slice(1)}
                       </TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">1 class</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">2-5 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">6-10 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">11-15 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">16-20 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">21-25 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">&gt;25 classes</TableHead>
-                      <TableHead className="text-center font-bold text-white border-l border-white/20">Total</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">1 class</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">2-5 classes</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">6-10 classes</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">11-15 classes</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">16-20 classes</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">21-25 classes</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">&gt;25 classes</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 border-l border-slate-200">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -2369,19 +2369,19 @@ export const PatternsAndTrends = () => {
               {/* Tabular Frequency Data Display */}
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="sticky top-0 z-10 bg-gradient-to-r from-red-700 via-red-800 to-red-700">
+                  <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
                     <TableRow className="border-none">
-                      <TableHead className="font-bold text-white sticky left-0 bg-red-800/95 backdrop-blur-sm z-20 min-w-[200px]">
+                      <TableHead className="bg-[#f6f7f9] font-bold text-slate-700 sticky left-0 z-20 min-w-[200px]">
                         {cancellationBreakdownBy.charAt(0).toUpperCase() + cancellationBreakdownBy.slice(1)}
                       </TableHead>
-                      <TableHead className="text-center font-bold text-white">1 cancellation</TableHead>
-                      <TableHead className="text-center font-bold text-white">2-5 cancellations</TableHead>
-                      <TableHead className="text-center font-bold text-white">6-10 cancellations</TableHead>
-                      <TableHead className="text-center font-bold text-white">11-15 cancellations</TableHead>
-                      <TableHead className="text-center font-bold text-white">16-20 cancellations</TableHead>
-                      <TableHead className="text-center font-bold text-white">21-25 cancellations</TableHead>
-                      <TableHead className="text-center font-bold text-white">&gt;25 cancellations</TableHead>
-                      <TableHead className="text-center font-bold text-white">Total</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">1 cancellation</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">2-5 cancellations</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">6-10 cancellations</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">11-15 cancellations</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">16-20 cancellations</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">21-25 cancellations</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">&gt;25 cancellations</TableHead>
+                      <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

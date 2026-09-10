@@ -96,15 +96,15 @@ function OptimizedTableComponent<T extends Record<string, any>>({
         style={{ maxHeight }}
       >
         <Table ref={tableRef} id={tableId}>
-          <TableHeader className={stickyHeader ? "sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800" : "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800"}>
-            <TableRow className="border-b-2 border-slate-600">
+          <TableHeader className={stickyHeader ? "sticky top-0 z-20 bg-[#f6f7f9]" : "bg-[#f6f7f9]"}>
+            <TableRow className="border-b border-slate-200">
               {columns.map((column, colIndex) => (
                 <TableHead 
                   key={String(column.key)} 
                   className={`
-                    font-bold text-white py-4 px-4 text-sm uppercase tracking-wider
+                    bg-[#f6f7f9] font-bold text-slate-700 py-4 px-4 text-sm uppercase tracking-wider
                     ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}
-                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-30 border-r border-slate-600' : ''}
+                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 z-30 border-r border-slate-200 bg-[#f6f7f9]' : ''}
                   `}
                 >
                   {column.header}

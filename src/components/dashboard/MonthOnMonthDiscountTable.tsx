@@ -471,7 +471,6 @@ export const MonthOnMonthDiscountTable: React.FC<MonthOnMonthDiscountTableProps>
               footerData={footerData}
               maxHeight="500px"
               className="rounded-lg"
-              headerGradient="from-slate-800 via-slate-900 to-slate-800"
               tableId="month-on-month-discount-analysis"
             />
           </motion.div>

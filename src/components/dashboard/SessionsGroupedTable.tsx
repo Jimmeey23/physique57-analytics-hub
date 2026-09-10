@@ -300,9 +300,9 @@ export const SessionsGroupedTable: React.FC<SessionsGroupedTableProps> = ({ data
         <CardContent className="p-0">
           <div className="max-h-[800px] overflow-auto">
             <Table>
-              <TableHeader className="sticky top-0 bg-gradient-to-r from-gray-50 to-blue-50 z-10">
+              <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
                 <TableRow>
-                  <TableHead className="w-80 sticky left-0 bg-gradient-to-r from-gray-50 to-blue-50 z-20 border-r">
+                  <TableHead className="w-80 sticky left-0 z-20 border-r border-slate-200 bg-[#f6f7f9]">
                     <Button
                       variant="ghost"
                       size="sm"

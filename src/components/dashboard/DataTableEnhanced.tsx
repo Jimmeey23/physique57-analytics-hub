@@ -520,7 +520,7 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white sticky top-0 z-10">
+            <thead className="sticky top-0 z-10 bg-[#f6f7f9] text-slate-700">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (

@@ -480,10 +480,10 @@ export const MonthOnMonthTrainerTable = ({
         <div className="overflow-x-auto">
           <Table data-table="trainer-month-on-month" data-table-name="Month-on-Month Trainer Analysis">
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="border-none bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800" style={{ height: '35px', maxHeight: '35px' }}>
-                <TableHead className="font-bold text-white sticky left-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-30 min-w-[240px] border-r border-white/20" style={{ height: '35px' }}>
+              <TableRow className="border-none bg-[#f6f7f9]" style={{ height: '35px', maxHeight: '35px' }}>
+                <TableHead className="bg-[#f6f7f9] font-bold text-slate-700 sticky left-0 z-30 min-w-[240px] border-r border-slate-200" style={{ height: '35px' }}>
                   <div className="flex items-center justify-center">
-                    <span className="text-white font-bold">Trainer</span>
+                    <span className="font-bold text-slate-800">Trainer</span>
                   </div>
                 </TableHead>
                 {processedData.months.map((month, index) => {
@@ -508,24 +508,24 @@ export const MonthOnMonthTrainerTable = ({
                     <TableHead 
                       key={month} 
                       className={cn(
-                        "text-center font-bold min-w-[140px] whitespace-nowrap text-white bg-slate-900 border-l border-white/20",
-                        isMainMonth ? "bg-blue-800" : ""
+                        "text-center font-bold min-w-[140px] whitespace-nowrap border-l border-slate-200",
+                        isMainMonth ? "bg-sky-100 text-sky-900" : "bg-[#f6f7f9] text-slate-700"
                       )}
                       style={{ height: '35px' }}
                     >
                       <div className="flex items-center justify-center gap-1">
-                        {isMainMonth && <Star className="w-3 h-3 text-white" />}
+                        {isMainMonth && <Star className="w-3 h-3" />}
                         <span className="text-sm font-bold">
                           {month.split('-')[0]}
                         </span>
-                        <span className="text-slate-300 text-xs">
+                        <span className="text-xs text-slate-400">
                           {month.split('-')[1]}
                         </span>
                       </div>
                     </TableHead>
                   );
                 })}
-                <TableHead className="text-center font-bold text-white bg-slate-900 min-w-[120px] border-l border-white/20" style={{ height: '35px' }}>
+                <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[120px] border-l border-slate-200" style={{ height: '35px' }}>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">MoM Change</TooltipTrigger>
@@ -533,7 +533,7 @@ export const MonthOnMonthTrainerTable = ({
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
-                <TableHead className="text-center font-bold text-white min-w-[140px] bg-slate-900 border-l border-white/20" style={{ height: '35px' }}>
+                <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[140px] border-l border-slate-200" style={{ height: '35px' }}>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">Total</TooltipTrigger>

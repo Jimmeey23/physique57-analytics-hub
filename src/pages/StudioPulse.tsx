@@ -2838,18 +2838,18 @@ const StudioPulse = memo(() => {
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-sm">
             <thead className="sticky top-0 z-30">
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                <th className="sticky left-0 z-40 min-w-[280px] bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-white border-r border-white/20">
+              <tr className="bg-[#f6f7f9]">
+                <th className="sticky left-0 z-40 min-w-[280px] bg-[#f6f7f9] px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700 border-r border-slate-200">
                   Metric
                 </th>
                 {months.map((month) => (
-                  <th key={month} className={`min-w-[90px] border-l border-white/20 px-3 py-3 text-center text-xs font-bold uppercase tracking-wider ${month === activeMatrixMonthKey ? 'bg-blue-800 text-white' : 'text-white'}`}>
+                  <th key={month} className={`min-w-[90px] border-l border-slate-200 px-3 py-3 text-center text-xs font-bold uppercase tracking-wider ${month === activeMatrixMonthKey ? 'bg-sky-100 text-sky-900' : 'bg-[#f6f7f9] text-slate-700'}`}>
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-1">
                         {month === activeMatrixMonthKey ? <Star className="h-3 w-3" /> : null}
                         <span className="text-xs font-bold whitespace-nowrap">{monthLabels[month]?.split(' ')[0]}</span>
                       </div>
-                      <span className={`text-xs ${month === activeMatrixMonthKey ? 'text-blue-100' : 'text-slate-300'}`}>{monthLabels[month]?.split(' ')[1]}</span>
+                      <span className={`text-xs ${month === activeMatrixMonthKey ? 'text-sky-700' : 'text-slate-400'}`}>{monthLabels[month]?.split(' ')[1]}</span>
                     </div>
                   </th>
                 ))}
@@ -4559,16 +4559,16 @@ const StudioPulse = memo(() => {
                     <div className="overflow-x-auto">
                       <table className="min-w-full border-collapse text-sm">
                         <thead className="sticky top-0 z-30">
-                          <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                            <th className="sticky left-0 z-40 min-w-[280px] bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-white border-r border-white/20">Metric</th>
+                          <tr className="bg-[#f6f7f9]">
+                            <th className="sticky left-0 z-40 min-w-[280px] bg-[#f6f7f9] px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-700 border-r border-slate-200">Metric</th>
                             {salesMetricsMatrix.months.map((month) => (
-                              <th key={month} className={`min-w-[90px] border-l border-white/20 px-3 py-3 text-center text-xs font-bold uppercase tracking-wider ${month === activeMatrixMonthKey ? 'bg-blue-800 text-white' : 'text-white'}`}>
+                              <th key={month} className={`min-w-[90px] border-l border-slate-200 px-3 py-3 text-center text-xs font-bold uppercase tracking-wider ${month === activeMatrixMonthKey ? 'bg-sky-100 text-sky-900' : 'bg-[#f6f7f9] text-slate-700'}`}>
                                 <div className="flex flex-col items-center">
                                   <div className="flex items-center gap-1">
                                     {month === activeMatrixMonthKey ? <Star className="h-3 w-3" /> : null}
                                     <span className="text-xs font-bold whitespace-nowrap">{salesMetricsMatrix.monthLabels[month].split(' ')[0]}</span>
                                   </div>
-                                  <span className={`text-xs ${month === activeMatrixMonthKey ? 'text-blue-100' : 'text-slate-300'}`}>{salesMetricsMatrix.monthLabels[month].split(' ')[1]}</span>
+                                  <span className={`text-xs ${month === activeMatrixMonthKey ? 'text-sky-700' : 'text-slate-400'}`}>{salesMetricsMatrix.monthLabels[month].split(' ')[1]}</span>
                                 </div>
                               </th>
                             ))}

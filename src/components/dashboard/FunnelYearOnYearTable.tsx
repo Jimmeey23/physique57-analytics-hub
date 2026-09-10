@@ -507,10 +507,10 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
             <div className="overflow-x-auto" data-table="funnel-year-on-year-analysis">
               <table ref={tableRef} className="min-w-full bg-white">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                    <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 z-40 border-r border-white/20 cursor-pointer select-none">
+                  <tr className="bg-[#f6f7f9]">
+                    <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 sticky left-0 z-40 border-r border-slate-200 cursor-pointer select-none">
                       <div className="flex items-center space-x-2">
-                        <Star className="w-4 h-4 text-white" />
+                        <Star className="w-4 h-4" />
                         <span>Source</span>
                       </div>
                     </th>
@@ -519,7 +519,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                       return [
                         <th
                           key={`${monthInfo.name}_${currentYear}`}
-                          className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none text-white"
+                          className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => {
                             const key = `${monthInfo.name}_${currentYear}`;
                             if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
@@ -532,12 +532,12 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                               <Star className="w-3 h-3" />
                               <span className="text-xs font-bold whitespace-nowrap">{monthInfo.name}</span>
                             </div>
-                            <span className="text-slate-300 text-xs">{currentYear}</span>
+                            <span className="text-xs text-slate-400">{currentYear}</span>
                           </div>
                         </th>,
                         <th
                           key={`${monthInfo.name}_${currentYear - 1}`}
-                          className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none text-white"
+                          className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => {
                             const key = `${monthInfo.name}_${currentYear - 1}`;
                             if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
@@ -547,7 +547,7 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
                         >
                           <div className="flex flex-col items-center">
                             <span className="text-xs font-bold whitespace-nowrap">{monthInfo.name}</span>
-                            <span className="text-slate-300 text-xs">{currentYear - 1}</span>
+                            <span className="text-xs text-slate-400">{currentYear - 1}</span>
                           </div>
                         </th>
                       ];

@@ -565,7 +565,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="overflow-x-auto">
                     <table data-table="class-attendance-trainer-rankings" data-table-name="Class Attendance Trainer Rankings" className="w-full text-sm">
-                      <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white">
+                      <thead className="bg-[#f6f7f9] text-slate-700">
                         <tr>
                           <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-wider w-16">Rank</th>
                           <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Trainer</th>
@@ -819,7 +819,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table data-table="class-attendance-historical-sessions" data-table-name="Class Attendance Historical Sessions" className="w-full text-sm">
-                      <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white sticky top-0 z-10">
+                      <thead className="sticky top-0 z-10 bg-[#f6f7f9] text-slate-700">
                         <tr>
                           <th className="px-3 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Date</th>
                           {selectedClasses.length > 1 && (
@@ -913,7 +913,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                   <table data-table="class-attendance-trainer-session-detail" data-table-name="Class Attendance Trainer Session Detail" className="w-full text-sm">
-                    <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white sticky top-0 z-10">
+                    <thead className="sticky top-0 z-10 bg-[#f6f7f9] text-slate-700">
                       <tr>
                         <th className="px-3 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Date</th>
                         <th className="px-3 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Day</th>

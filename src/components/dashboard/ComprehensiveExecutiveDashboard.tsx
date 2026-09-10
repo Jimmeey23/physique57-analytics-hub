@@ -57,7 +57,6 @@ import { LateCancellationsMonthOnMonthTable } from './LateCancellationsMonthOnMo
 import { EnhancedLateCancellationsDataTables } from './EnhancedLateCancellationsDataTables';
 import { LateCancellationsInteractiveCharts } from './LateCancellationsInteractiveCharts';
 import { ClientConversionMetricCards } from './ClientConversionMetricCards';
-import { ClientConversionMonthOnMonthByTypeTable } from './ClientConversionMonthOnMonthByTypeTable';
 import { ClientRetentionMonthByTypePivot } from './ClientRetentionMonthByTypePivot';
 import { ClientConversionEnhancedCharts } from './ClientConversionEnhancedCharts';
 import { SalesAnimatedMetricCards } from './SalesAnimatedMetricCards';

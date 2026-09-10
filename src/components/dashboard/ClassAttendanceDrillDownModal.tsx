@@ -262,15 +262,15 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                     <div className="max-h-96 overflow-auto">
                       <Table className="class-attendance-neat-table">
                         <TableHeader className="sticky top-0 z-10">
-                          <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                            <TableHead className="font-semibold text-slate-100">Date</TableHead>
-                            <TableHead className="font-semibold text-slate-100">Time</TableHead>
-                            <TableHead className="font-semibold text-slate-100">Trainer</TableHead>
-                            <TableHead className="font-semibold text-slate-100">Location</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Capacity</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Checked In</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Fill Rate</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Revenue</TableHead>
+                          <TableRow className="bg-[#f6f7f9]">
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Date</TableHead>
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Time</TableHead>
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Trainer</TableHead>
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Location</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Capacity</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Checked In</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Fill Rate</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Revenue</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>

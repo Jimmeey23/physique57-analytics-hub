@@ -413,9 +413,9 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
         <div className="overflow-x-auto" data-table="product-performance-analysis">
           <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+              <tr className="bg-[#f6f7f9]">
                 <th
-                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-[30rem] bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 sticky left-0 z-40 border-r border-slate-200 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -423,7 +423,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                   title={`Sort by total (${sortDir})`}
                 >
                   <div className="flex items-center space-x-2">
-                    <ShoppingCart className="w-4 h-4 text-white" />
+                    <ShoppingCart className="w-4 h-4" />
                     <span>Product</span>
                   </div>
                 </th>
@@ -433,10 +433,10 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                   return (
                   <th
                     key={key}
-                    className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] cursor-pointer select-none ${
+                    className={`bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[90px] cursor-pointer select-none ${
                       isPreviousMonth 
-                        ? 'bg-blue-800 text-white' 
-                        : 'text-white'
+                        ? 'bg-sky-100 text-sky-900' 
+                        : 'text-slate-700'
                     }`}
                     onClick={() => {
                       if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
@@ -449,7 +449,7 @@ export const ProductPerformanceTableNewComponent: React.FC<ProductPerformanceTab
                         {isPreviousMonth && <Star className="w-3 h-3" />}
                         <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
                       </div>
-                      <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
+                      <span className="text-xs text-slate-400">{display.split(' ')[1]}</span>
                     </div>
                   </th>
                   );

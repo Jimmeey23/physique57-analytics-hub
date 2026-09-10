@@ -856,7 +856,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                           </div>
                         </div>
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                          <div className="relative min-w-[280px]">
+                          <div className="relative min-w-0">
                           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                           <input
                             value={search}
@@ -879,26 +879,26 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white">
                     <div className="max-h-[62vh] overflow-auto">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>
-                            <TableHead className="w-[60px] text-center text-xs font-semibold uppercase tracking-wide ">View</TableHead>
-                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide ">Client name</TableHead>
-                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide ">Email</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">First visit</TableHead>
-                            <TableHead className="min-w-[160px] text-xs font-semibold uppercase tracking-wide ">Membership used</TableHead>
-                            <TableHead className="min-w-[140px] text-xs font-semibold uppercase tracking-wide ">Payment method</TableHead>
-                            <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wide ">Entity name</TableHead>
-                            <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wide ">First purchase made</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">Purchases</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">First purchase date</TableHead>
-                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide ">Total LTV</TableHead>
-                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide ">Memberships purchased</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">Conv span</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">Conversion status</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">No. of visits</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">Retention status</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">Visits post trial</TableHead>
-                            <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wide ">Second visit date</TableHead>
+                            <TableHead className="w-[60px] text-center bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">View</TableHead>
+                            <TableHead className="min-w-[220px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Client name</TableHead>
+                            <TableHead className="min-w-[220px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Email</TableHead>
+                            <TableHead className="min-w-[130px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">First visit</TableHead>
+                            <TableHead className="min-w-[160px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Membership used</TableHead>
+                            <TableHead className="min-w-[140px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Payment method</TableHead>
+                            <TableHead className="min-w-[180px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Entity name</TableHead>
+                            <TableHead className="min-w-[180px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">First purchase made</TableHead>
+                            <TableHead className="text-center bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Purchases</TableHead>
+                            <TableHead className="min-w-[130px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">First purchase date</TableHead>
+                            <TableHead className="text-right bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Total LTV</TableHead>
+                            <TableHead className="min-w-[220px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Memberships purchased</TableHead>
+                            <TableHead className="text-center bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Conv span</TableHead>
+                            <TableHead className="min-w-[130px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Conversion status</TableHead>
+                            <TableHead className="text-center bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">No. of visits</TableHead>
+                            <TableHead className="min-w-[130px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Retention status</TableHead>
+                            <TableHead className="text-center bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Visits post trial</TableHead>
+                            <TableHead className="min-w-[170px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Second visit date</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1031,7 +1031,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                                           {record.transactions.length > 0 ? (
                                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                                               <Table>
-                                                <TableHeader>
+                                                <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                                                   <TableRow className="bg-slate-100 hover:bg-slate-100">
                                                     <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">Date</TableHead>
                                                     <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">Item</TableHead>
@@ -1104,18 +1104,18 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   <CardContent className="p-0">
                     <div className="max-h-[62vh] overflow-auto">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Client</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Type</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Payment date</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Item</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Membership</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Method</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Location</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Sold by</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Status</TableHead>
-                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide ">Value</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Client</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Type</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Payment date</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Item</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Membership</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Method</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Location</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Sold by</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Status</TableHead>
+                            <TableHead className="text-right bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Value</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>

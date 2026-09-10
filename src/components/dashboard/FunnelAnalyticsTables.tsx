@@ -365,34 +365,34 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               <div className="overflow-x-auto" data-table="funnel-source-analytics">
                 <table ref={sourceTableRef} className="min-w-full bg-white">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                    <tr className="bg-[#f6f7f9]">
+                      <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 h-9 max-h-9 sticky left-0 z-40 border-r border-slate-200">
                         <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-white" />
+                          <Star className="w-4 h-4" />
                           <span>Source</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => handleSort('totalLeads', 'source')}
                           title="Sort by Total Leads">
                         Total Leads
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => handleSort('converted', 'source')}
                           title="Sort by Converted">
                         Converted
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => handleSort('conversionRate', 'source')}
                           title="Sort by Conversion Rate">
                         Conv. Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => handleSort('avgLTV', 'source')}
                           title="Sort by Average LTV">
                         Avg LTV
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px] cursor-pointer select-none"
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px] cursor-pointer select-none"
                           onClick={() => handleSort('leadQuality', 'source')}
                           title="Sort by Quality Score">
                         Quality Score
@@ -506,26 +506,26 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               <div className="overflow-x-auto" data-table="funnel-stage-analytics">
                 <table ref={stageTableRef} className="min-w-full bg-white">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                    <tr className="bg-[#f6f7f9]">
+                      <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 h-9 max-h-9 sticky left-0 z-40 border-r border-slate-200">
                         <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-white" />
+                          <Star className="w-4 h-4" />
                           <span>Stage</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Total Leads
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Converted
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Conv. Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Avg LTV
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Efficiency
                       </th>
                     </tr>
@@ -637,26 +637,26 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               <div className="overflow-x-auto" data-table="funnel-timespan-analytics">
                 <table ref={spanTableRef} className="min-w-full bg-white">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                    <tr className="bg-[#f6f7f9]">
+                      <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 h-9 max-h-9 sticky left-0 z-40 border-r border-slate-200">
                         <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-white" />
+                          <Star className="w-4 h-4" />
                           <span>Time Range</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Total Leads
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Converted
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Conv. Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Avg LTV
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Efficiency
                       </th>
                     </tr>
@@ -723,26 +723,26 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               <div className="overflow-x-auto" data-table="funnel-ltv-analytics">
                 <table ref={ltvTableRef} className="min-w-full bg-white">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                    <tr className="bg-[#f6f7f9]">
+                      <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 h-9 max-h-9 sticky left-0 z-40 border-r border-slate-200">
                         <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-white" />
+                          <Star className="w-4 h-4" />
                           <span>LTV Range</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Total Leads
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Converted
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Conv. Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Total Revenue
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Avg Visits
                       </th>
                     </tr>
@@ -809,26 +809,26 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               <div className="overflow-x-auto" data-table="funnel-topstages-analytics">
                 <table ref={topStagesTableRef} className="min-w-full bg-white">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                    <tr className="bg-[#f6f7f9]">
+                      <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 h-9 max-h-9 sticky left-0 z-40 border-r border-slate-200">
                         <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-white" />
+                          <Star className="w-4 h-4" />
                           <span>Stage</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Lead Count
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Percentage
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Converted
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Conv. Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Avg LTV
                       </th>
                     </tr>
@@ -895,23 +895,23 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
               <div className="overflow-x-auto" data-table="funnel-proximity-analytics">
                 <table ref={proximityTableRef} className="min-w-full bg-white">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                      <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide h-9 max-h-9 sticky left-0 z-40 border-r border-white/20">
+                    <tr className="bg-[#f6f7f9]">
+                      <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 h-9 max-h-9 sticky left-0 z-40 border-r border-slate-200">
                         <div className="flex items-center space-x-2">
-                          <Star className="w-4 h-4 text-white" />
+                          <Star className="w-4 h-4" />
                           <span>Location</span>
                         </div>
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Total Leads
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Proximity Issues
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Proximity Rate
                       </th>
-                      <th className="px-3 py-3 text-center text-white font-bold text-xs uppercase tracking-wider h-9 max-h-9 border-l border-white/20 min-w-[90px]">
+                      <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 h-9 max-h-9 border-l border-slate-200 min-w-[90px]">
                         Impact Score
                       </th>
                     </tr>

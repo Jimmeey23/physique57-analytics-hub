@@ -32,7 +32,7 @@ export function useSortableData<T>(
         : String(av).localeCompare(String(bv), 'en-IN');
       return sortDir === 'asc' ? cmp : -cmp;
     });
-    return sorted;
+    return copy;
   }, [rows, sortKey, sortDir, getValue]);
 
   const toggleSort = (key: string) => {

@@ -1247,13 +1247,13 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="overflow-x-auto">
                             <table className="w-full">
                               <thead>
-                                <tr className="border-b border-slate-200 bg-black">
-                                  <th className="text-left py-3 px-4 font-medium text-white bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800">Month</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Sessions</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Revenue</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Avg/Session</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Customers</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Avg/Customer</th>
+                                <tr className="border-b border-slate-200 bg-[#f6f7f9]">
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-left font-medium text-slate-700">Month</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Sessions</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Revenue</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Avg/Session</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Customers</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Avg/Customer</th>
                                 </tr>
                               </thead>
                               <tbody>
