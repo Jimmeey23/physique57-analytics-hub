@@ -1376,8 +1376,17 @@ html.dark .custom-html-iframe-container { background: #0d0e11; }
   .p57-scope thead tr { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
+/* Tab panel entrance — subtle fade/slide on every tab switch */
+@keyframes p57-tab-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.p57-scope [role="tabpanel"][data-state="active"] {
+  animation: p57-tab-in 220ms ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .p57-enter, .p57-skeleton::after, .p57-dot-live, .p57-ticker, .p57-logo-mark { animation: none !important; }
+  .p57-enter, .p57-skeleton::after, .p57-dot-live, .p57-ticker, .p57-logo-mark, .p57-scope [role="tabpanel"] { animation: none !important; }
   html { scroll-behavior: auto; }
 }
 
