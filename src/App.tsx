@@ -219,9 +219,11 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <DataSourceProvider>
-            <AppContent />
-          </DataSourceProvider>
+          <ThemeProvider>
+            <DataSourceProvider>
+              <AppContent />
+            </DataSourceProvider>
+          </ThemeProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
