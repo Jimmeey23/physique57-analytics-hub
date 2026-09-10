@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
   server: {
     host: "0.0.0.0",
     port: 8080,
-    allowedHosts: true,
+    allowedHosts: env.VITE_DEV_SERVER_ALLOW_ALL_HOSTS === "true" ? true : undefined,
   },
 
   plugins: [
