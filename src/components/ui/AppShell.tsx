@@ -256,6 +256,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const [progress, setProgress] = useState(0);
   const { density, setDensity } = useDensity();
 
   useEffect(() => {

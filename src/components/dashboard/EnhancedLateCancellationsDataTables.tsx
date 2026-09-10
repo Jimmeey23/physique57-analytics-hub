@@ -139,12 +139,12 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         </div>
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TableView)}>
           <TabsList className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-2 lg:grid-cols-6">
-            <TabsTrigger value="lead-time" className="rounded-xl data-[state=active]:bg-white">Lead Time</TabsTrigger>
-            <TabsTrigger value="events" className="rounded-xl data-[state=active]:bg-white">Events</TabsTrigger>
-            <TabsTrigger value="memberships" className="rounded-xl data-[state=active]:bg-white">Memberships</TabsTrigger>
-            <TabsTrigger value="locations" className="rounded-xl data-[state=active]:bg-white">Locations</TabsTrigger>
-            <TabsTrigger value="repeat-members" className="rounded-xl data-[state=active]:bg-white">Repeat Members</TabsTrigger>
-            <TabsTrigger value="records" className="rounded-xl data-[state=active]:bg-white">Recent Records</TabsTrigger>
+            <TabsTrigger value="lead-time" className="rounded-xl ">Lead Time</TabsTrigger>
+            <TabsTrigger value="events" className="rounded-xl ">Events</TabsTrigger>
+            <TabsTrigger value="memberships" className="rounded-xl ">Memberships</TabsTrigger>
+            <TabsTrigger value="locations" className="rounded-xl ">Locations</TabsTrigger>
+            <TabsTrigger value="repeat-members" className="rounded-xl ">Repeat Members</TabsTrigger>
+            <TabsTrigger value="records" className="rounded-xl ">Recent Records</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>

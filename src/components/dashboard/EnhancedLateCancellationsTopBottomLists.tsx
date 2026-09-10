@@ -112,7 +112,7 @@ export const EnhancedLateCancellationsTopBottomLists: React.FC<EnhancedLateCance
             {Object.entries(labels).map(([key, value]) => {
               const Icon = value.icon;
               return (
-                <TabsTrigger key={key} value={key} className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsTrigger key={key} value={key} className="rounded-xl data-[state=active]:shadow-sm">
                   <Icon className="mr-2 h-4 w-4" />
                   {value.title}
                 </TabsTrigger>

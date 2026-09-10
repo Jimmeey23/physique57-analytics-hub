@@ -783,23 +783,23 @@ export function ComprehensiveTrainerDrillDown({
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
               <div className="px-6 pt-4 bg-white border-b">
                 <TabsList className="bg-slate-100 p-1">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="overview" className="">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="sessions" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="sessions" className="">
                     <Activity className="w-4 h-4 mr-2" />
                     Sessions
                   </TabsTrigger>
-                  <TabsTrigger value="revenue" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="revenue" className="">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Revenue
                   </TabsTrigger>
-                  <TabsTrigger value="trends" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="trends" className="">
                     <TrendingUp className="w-4 h-4 mr-2" />
                     Trends
                   </TabsTrigger>
-                  <TabsTrigger value="insights" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="insights" className="">
                     <Sparkles className="w-4 h-4 mr-2" />
                     Insights
                   </TabsTrigger>

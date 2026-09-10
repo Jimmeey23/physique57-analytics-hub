@@ -311,19 +311,19 @@ export const DiscountBreakdownTables: React.FC<DiscountBreakdownTablesProps> = (
       <CardContent className="p-6">
         <Tabs defaultValue="product" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-100 to-slate-200 p-1 rounded-xl">
-            <TabsTrigger value="product" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+            <TabsTrigger value="product" className="data-[state=active]:shadow-md">
               <Package className="w-4 h-4 mr-2" />
               By Product
             </TabsTrigger>
-            <TabsTrigger value="category" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+            <TabsTrigger value="category" className="data-[state=active]:shadow-md">
               <ShoppingBag className="w-4 h-4 mr-2" />
               By Category
             </TabsTrigger>
-            <TabsTrigger value="location" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+            <TabsTrigger value="location" className="data-[state=active]:shadow-md">
               <MapPin className="w-4 h-4 mr-2" />
               By Location
             </TabsTrigger>
-            <TabsTrigger value="soldby" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+            <TabsTrigger value="soldby" className="data-[state=active]:shadow-md">
               <Users className="w-4 h-4 mr-2" />
               By Seller
             </TabsTrigger>

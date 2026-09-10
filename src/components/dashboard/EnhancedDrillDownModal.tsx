@@ -645,23 +645,23 @@ export function EnhancedDrillDownModal({
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-5 bg-slate-100 border border-slate-200 p-1 rounded-lg">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+                <TabsTrigger value="overview" className="data-[state=active]:shadow-md">
                   <BarChart className="w-4 h-4 mr-2" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="sessions" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+                <TabsTrigger value="sessions" className="data-[state=active]:shadow-md">
                   <Activity className="w-4 h-4 mr-2" />
                   Sessions
                 </TabsTrigger>
-                <TabsTrigger value="clients" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+                <TabsTrigger value="clients" className="data-[state=active]:shadow-md">
                   <Users className="w-4 h-4 mr-2" />
                   Clients
                 </TabsTrigger>
-                <TabsTrigger value="revenue" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+                <TabsTrigger value="revenue" className="data-[state=active]:shadow-md">
                   <DollarSign className="w-4 h-4 mr-2" />
                   Revenue
                 </TabsTrigger>
-                <TabsTrigger value="insights" className="data-[state=active]:bg-white data-[state=active]:shadow-md">
+                <TabsTrigger value="insights" className="data-[state=active]:shadow-md">
                   <Sparkles className="w-4 h-4 mr-2" />
                   Insights
                 </TabsTrigger>
