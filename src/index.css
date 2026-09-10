@@ -1158,6 +1158,21 @@ html.dark .gradient-border, html.dark .gradient-border-inner { background: #0d0e
   box-shadow: 0 8px 20px -14px rgba(0, 94, 237, 0.9) !important;
   transform: none !important;
 }
+/* Uniform active-tab treatment for ALL other radix tab triggers (Tailwind one-offs).
+   Location pills use aria-selected (no data-state) so they are intentionally untouched.
+   Add .p57-tab-keep to a trigger to opt out of uniformity. */
+[role="tab"][data-state="active"]:not(.modern-tab-trigger):not(.premium-tab-trigger):not(.location-tab-trigger):not(.p57-tab):not(.p57-tab-keep) {
+  background: #0e1729 !important;
+  color: #fff !important;
+  border-color: #0e1729 !important;
+  box-shadow: 0 8px 20px -14px rgba(0, 94, 237, 0.9) !important;
+  transform: none !important;
+}
+html.dark [role="tab"][data-state="active"]:not(.modern-tab-trigger):not(.premium-tab-trigger):not(.location-tab-trigger):not(.p57-tab):not(.p57-tab-keep) {
+  background: linear-gradient(180deg, rgba(0,94,237,0.92), rgba(0,71,184,0.92)) !important;
+  border-color: rgba(111,168,255,0.5) !important;
+  color: #fff !important;
+}
 html.dark .modern-tabs, html.dark .premium-tabs, html.dark .location-tabs, html.dark .tab-modern {
   background: #101114 !important; border-color: #2a2e36 !important;
 }

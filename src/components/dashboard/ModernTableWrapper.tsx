@@ -312,6 +312,8 @@ export const ModernMetricTabs: React.FC<ModernMetricTabsProps> = ({
           <button
             key={metric.key}
             onClick={() => onMetricChange(metric.key)}
+            data-state={selectedMetric === metric.key ? 'active' : 'inactive'}
+            aria-pressed={selectedMetric === metric.key}
             className={cn(
               TABLE_STYLES.metricTabs.button,
               selectedMetric === metric.key

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TablePager } from '@/components/ui/TablePager';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -698,72 +699,8 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
           </div>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600 font-medium">
-              Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} items
-            </div>
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-              <SelectTrigger className="w-24 px-3 py-2 rounded-xl border-2 border-gray-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {[10, 25, 50, 100].map(size => (
-                  <SelectItem key={size} value={size.toString()}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 rounded-xl border-2 border-gray-300 disabled:opacity-50 hover:bg-blue-50 transition-all"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Previous
-            </Button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={pageNum === currentPage ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={cn(
-                      "w-10 h-10 p-0 rounded-xl transition-all",
-                      pageNum === currentPage 
-                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:from-blue-700 hover:to-blue-800" 
-                        : "border-2 border-gray-300 hover:bg-blue-50"
-                    )}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 rounded-xl border-2 border-gray-300 disabled:opacity-50 hover:bg-blue-50 transition-all"
-            >
-              Next
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        </div>
+        {/* Pagination (uniform) */}
+        <TablePager page={currentPage} totalPages={totalPages} pageSize={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} showPageSize onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }} className="mt-6" />
       </div>
     </div>
     <div className="mt-4">
