@@ -79,7 +79,7 @@ export const SourceDataModal: React.FC<SourceDataModalProps> = ({ open, onOpenCh
                         <TableHeader className={designTokens.table.header + ' sticky top-0 z-10'}>
                           <TableRow>
                             {cols.map((col) => (
-                              <TableHead key={col} className={cn(designTokens.table.headerText, 'px-4 py-3')}>
+                              <TableHead key={col} className={cn(designTokens.table.headerCell, 'px-4 py-3')}>
                                 {col}
                               </TableHead>
                             ))}

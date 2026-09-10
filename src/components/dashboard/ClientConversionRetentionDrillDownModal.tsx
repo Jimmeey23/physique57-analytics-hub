@@ -37,7 +37,7 @@ type DrillDownModalType = 'month' | 'year' | 'class' | 'membership' | 'metric' |
 type QuickFilterKey = 'all' | 'eligible' | 'converted' | 'retained' | 'excluded' | 'highValue' | 'newOnly' | 'hosted';
 type ModalTabKey = 'overview' | 'clients' | 'transactions' | 'methodology';
 
-type DrillDownDataPayload = {
+export type DrillDownDataPayload = {
   clients?: NewClientData[];
   relatedClients?: NewClientData[];
   metricType?: string;

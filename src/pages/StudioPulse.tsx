@@ -4680,7 +4680,7 @@ const StudioPulse = memo(() => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ borderRadius: 12, border: `1px solid ${designTokens.colors.slate[200]}`, fontSize: 12 }} />
+                        <RechartsTooltip contentStyle={{ borderRadius: 12, border: `1px solid ${designTokens.colors.slate[200]}`, fontSize: 12 }} />
                         <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
                         <Bar dataKey="memberships" name="Memberships" fill="#1e3a8a" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="packages" name="Packages" fill="#0e7490" radius={[4, 4, 0, 0]} />

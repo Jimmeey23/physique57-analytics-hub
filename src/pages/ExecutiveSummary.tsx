@@ -28,7 +28,7 @@ const ExecutiveSummaryContent = () => {
   const { data: leadsData = [], loading: leadsLoading } = useLeadsData();
   const { data: discountData = [] } = useDiscountAnalysis();
   const { setLoading } = useGlobalLoading();
-  const exportRef = React.useRef<{ open: () => void }>(null);
+  const exportRef = React.useRef<{ open: () => void; close: () => void }>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
 
   // Track loading state

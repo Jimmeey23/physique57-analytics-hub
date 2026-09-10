@@ -34,6 +34,7 @@ import { isRetentionTable } from '@/components/dashboard/retentionTableOptions';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
+import type { DrillDownDataPayload } from '@/components/dashboard/ClientConversionRetentionDrillDownModal';
 
 const ClientConversionSimplifiedRanks = lazy(() =>
   import('@/components/dashboard/ClientConversionSimplifiedRanks').then((module) => ({
@@ -86,7 +87,7 @@ type DrillDownType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ran
 interface DrillDownModalState {
   isOpen: boolean;
   title: string;
-  data: unknown;
+  data: DrillDownDataPayload | NewClientData[] | null;
   type: DrillDownType;
 }
 

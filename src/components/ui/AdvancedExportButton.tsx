@@ -27,7 +27,7 @@ interface AdvancedExportButtonProps {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   buttonClassName?: string;
   buttonLabel?: string;
-  openRef?: React.RefObject<{ open: () => void; close: () => void }>;
+  openRef?: { current: { open: () => void; close: () => void } | null };
   renderTrigger?: boolean;
 }
 export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
@@ -54,13 +54,13 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
   React.useEffect(() => {
     if (!openRef) return;
     // Expose imperative open/close controls
-    (openRef as any).current = {
+    openRef.current = {
       open: () => setIsDialogOpen(true),
       close: () => setIsDialogOpen(false)
     };
     return () => {
-      if ((openRef as any).current) {
-        (openRef as any).current = null;
+      if (openRef.current) {
+        openRef.current = null;
       }
     };
   }, [openRef]);
