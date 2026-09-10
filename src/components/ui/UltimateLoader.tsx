@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 interface UltimateLoaderProps {
   onComplete?: () => void;
@@ -67,59 +68,89 @@ export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
     return () => clearInterval(id);
   }, [messages.length]);
 
+  const pct = Math.round(progress);
+  const R = 44;
+  const CIRC = 2 * Math.PI * R;
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-white dark:bg-[#050506]">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-background"
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+    >
       <div className="p57-grain opacity-100" aria-hidden="true" />
-      {/* blue ambience */}
+
+      {/* Single soft accent wash — no competing gradients */}
       <div
-        className="pointer-events-none absolute left-1/2 top-[38%] h-72 w-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-        style={{ background: 'radial-gradient(ellipse, rgba(0,94,237,0.16), transparent 70%)' }}
+        className="pointer-events-none absolute left-1/2 top-[42%] h-[26rem] w-[46rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+        style={{ background: 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.14), transparent 68%)' }}
         aria-hidden="true"
       />
 
-      <div className="animate-p57-enter relative z-10 flex flex-col items-center gap-6 px-8">
-        {/* Mark with progress ring */}
-        <div className="relative flex h-24 w-24 items-center justify-center">
-          <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 96 96">
-            <circle cx="48" cy="48" r="44" fill="none" stroke="currentColor" strokeOpacity="0.12" strokeWidth="5" className="text-foreground" />
+      <div className="animate-p57-enter relative z-10 flex w-[min(22rem,calc(100vw-3rem))] flex-col items-center">
+        {/* Brand mark inside a determinate progress ring */}
+        <div className="relative flex h-[92px] w-[92px] items-center justify-center">
+          <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 96 96" aria-hidden="true">
             <circle
-              cx="48" cy="48" r="44" fill="none"
-              stroke="url(#p57-ring)" strokeWidth="5" strokeLinecap="round"
-              strokeDasharray={2 * Math.PI * 44}
-              strokeDashoffset={2 * Math.PI * 44 * (1 - progress / 100)}
-              style={{ transition: 'stroke-dashoffset 120ms linear' }}
+              cx="48" cy="48" r={R} fill="none"
+              stroke="currentColor" strokeOpacity="0.14" strokeWidth="4"
+              className="text-foreground"
             />
-            <defs>
-              <linearGradient id="p57-ring" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#005eed" />
-                <stop offset="100%" stopColor="#6aa5ff" />
-              </linearGradient>
-            </defs>
+            <circle
+              cx="48" cy="48" r={R} fill="none"
+              stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round"
+              strokeDasharray={CIRC}
+              strokeDashoffset={CIRC * (1 - progress / 100)}
+              style={{ transition: 'stroke-dashoffset 160ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+            />
           </svg>
-          <span className="p57-logo-mark flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--brand-deep))] font-display text-xl font-extrabold text-white shadow-[0_8px_32px_rgba(0,94,237,0.45)]">
-            57
-          </span>
+
+          <BrandLogo
+            className="h-[62px] w-[62px] rounded-[18px] shadow-card ring-1 ring-black/[0.07] dark:ring-white/10"
+            imgClassName="p-[8px]"
+          />
         </div>
 
-        <div className="text-center">
-          <h1 className="font-serif text-[32px] leading-none tracking-tight text-foreground">
-            {title.includes('57') ? (
-              <>{title.replace('57', '').trim()} <em className="text-primary">57</em></>
-            ) : title}
+        {/* Wordmark */}
+        <div className="mt-7 text-center">
+          <h1 className="font-serif text-[30px] leading-none tracking-tight text-foreground">
+            {title}
           </h1>
-          <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">{subtitle}</p>
+          <p className="mt-2.5 text-[9px] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
+            {subtitle}
+          </p>
         </div>
 
-        <div className="w-64">
-          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+        {/* Progress: hairline track, accent fill, tabular readout */}
+        <div
+          className="mt-8 w-full"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-label="Loading progress"
+        >
+          <div className="h-[3px] overflow-hidden rounded-full bg-foreground/[0.07]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-[#6aa5ff]"
-              style={{ width: `${progress}%`, transition: 'width 120ms linear' }}
+              className="h-full rounded-full bg-primary"
+              style={{
+                width: `${progress}%`,
+                transition: 'width 160ms cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
             />
           </div>
-          <div className="mt-3 flex items-center justify-between text-[11px] font-bold tabular-nums">
-            <span className="truncate pr-4 font-medium text-muted-foreground">{messages[messageIndex]}</span>
-            <span className="shrink-0 text-foreground">{Math.round(progress)}%</span>
+
+          <div className="mt-3.5 flex items-baseline justify-between gap-4">
+            <span
+              key={messageIndex}
+              className="p57-message truncate text-[11px] font-medium text-muted-foreground"
+            >
+              {messages[messageIndex]}
+            </span>
+            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-foreground/70">
+              {pct}%
+            </span>
           </div>
         </div>
       </div>

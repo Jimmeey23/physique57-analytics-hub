@@ -840,6 +840,14 @@ html.dark .p57-ticker-mask { border-color: #28282E; background: #08080A; }
 
 .animate-p57-enter { animation: p57-enter 0.32s ease both; }
 .animate-p57-fade-in { animation: p57-fade-in 0.3s ease both; }
+
+/* Loader message rotation: crossfade without dropping to fully invisible, so
+   the line never reads as missing mid-swap. */
+@keyframes p57-message-in {
+  from { opacity: 0.35; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.p57-message { animation: p57-message-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .p57-logo-mark { animation: p57-logo-glow 3.2s ease-in-out infinite; }
 
 /* Neon text — solid brand color in light, glowing neon in dark */
@@ -1557,6 +1565,10 @@ html.dark .p57-spin { border-color: rgba(90, 200, 255, 0.2); border-top-color: #
 @media (prefers-reduced-motion: reduce) {
   .p57-stagger > *, .p57-value-swap { animation: none !important; }
   .p57-spin { animation-duration: 1.6s; }
+  .p57-logo-mark,
+  .p57-message,
+  .animate-p57-enter,
+  .animate-p57-fade-in { animation: none !important; }
 }
 
 @media print {
