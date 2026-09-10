@@ -315,13 +315,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="p57-grain" aria-hidden="true" />
+      <div className="p57-gloss" aria-hidden="true" />
       <div className="p57-ambient" aria-hidden="true" />
       <div className="p57-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />
 
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'p57-no-print fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/70 bg-white/80 backdrop-blur-xl transition-[width] duration-200 dark:bg-[#07080a]/90 lg:flex',
+          'p57-no-print fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/70 bg-white/80 backdrop-blur-xl transition-[width] duration-200 dark:bg-[#0C0C0E]/90 lg:flex',
           collapsed ? 'w-[68px]' : 'w-[240px]'
         )}
       >
@@ -345,7 +346,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       />
       <aside
         className={cn(
-          'p57-no-print fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-border bg-white shadow-pop transition-transform duration-200 dark:bg-[#07080a] lg:hidden',
+          'p57-no-print fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-border bg-white shadow-pop transition-transform duration-200 dark:bg-[#0C0C0E] lg:hidden',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -362,7 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main column */}
       <div className={cn('relative z-10 flex min-h-screen flex-col transition-[padding] duration-200', collapsed ? 'lg:pl-[68px]' : 'lg:pl-[240px]')}>
         {/* Topbar */}
-        <header className="p57-no-print hide-scroll sticky top-0 z-30 flex h-[64px] items-center gap-2 overflow-x-auto border-b border-border/70 bg-white/80 px-4 backdrop-blur-xl dark:bg-[#050506]/85 md:px-6">
+        <header className="p57-no-print hide-scroll sticky top-0 z-30 flex h-[64px] items-center gap-2 overflow-x-auto border-b border-border/70 bg-white/80 px-4 backdrop-blur-xl dark:bg-[#0A0A0C]/85 md:px-6">
           <Button
             variant="ghost"
             size="icon-sm"

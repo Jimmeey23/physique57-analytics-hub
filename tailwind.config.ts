@@ -84,7 +84,7 @@ const config = {
       },
       boxShadow: {
         card: "0 12px 32px -26px rgba(14, 23, 41, 0.28)",
-        lift: "0 20px 40px -24px rgba(0, 94, 237, 0.28)",
+        lift: "0 20px 40px -24px rgba(5, 155, 255, 0.35)",
         pop: "0 24px 58px -28px rgba(14, 23, 41, 0.35)",
       },
       keyframes: {

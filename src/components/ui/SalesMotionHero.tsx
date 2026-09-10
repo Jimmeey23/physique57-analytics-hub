@@ -12,7 +12,7 @@ type MetricCardData = {
 export interface SalesMotionHeroProps {
   title: string;
   subtitle: string;
-  metrics: MetricCardData[];
+  metrics?: MetricCardData[];
   primaryAction?: { label: string; onClick?: () => void };
   secondaryAction?: { label: string; onClick?: () => void };
   compact?: boolean;
@@ -21,8 +21,8 @@ export interface SalesMotionHeroProps {
   extra?: React.ReactNode;
 }
 
-function toHeroStats(metrics: MetricCardData[]): HeroStat[] {
-  return metrics.map((m) => {
+function toHeroStats(metrics: MetricCardData[] | undefined): HeroStat[] {
+  return (metrics ?? []).map((m) => {
     let tone: HeroStat['deltaTone'] = 'flat';
     if (m.change) {
       if (m.change.trim().startsWith('-')) tone = 'down';
@@ -39,7 +39,7 @@ function toHeroStats(metrics: MetricCardData[]): HeroStat[] {
 export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
   title,
   subtitle,
-  metrics,
+  metrics = [],
   primaryAction,
   secondaryAction,
   extra,

@@ -73,10 +73,10 @@ export const PageHero: React.FC<PageHeroProps> = ({
                       className={cn(
                         'ml-2 align-middle font-sans text-[11px] font-bold',
                         s.deltaTone === 'down'
-                          ? 'text-[#c23333] dark:text-[#fb7185]'
+                          ? 'text-[#DB1300] dark:text-[#FF5C7A]'
                           : s.deltaTone === 'flat'
                             ? 'text-muted-foreground'
-                            : 'text-[#147153] dark:text-[#4ade9e]'
+                            : 'text-[#147153] dark:text-[#3DFFA0]'
                       )}
                     >
                       {s.delta}
