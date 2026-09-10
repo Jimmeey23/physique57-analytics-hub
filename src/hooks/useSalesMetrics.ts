@@ -255,6 +255,83 @@ export const useSalesMetrics = (
     const yoyDiscountPercentage = (yoyGrossRevenue + yoyDiscount) > 0 ? 
       (yoyDiscount / (yoyGrossRevenue + yoyDiscount)) * 100 : 0;
 
+    // ---- Extended metrics: basket size, new-vs-returning mix, cadence, cashless ----
+    const currentUPT = currentTransactions > 0 ? currentUnits / currentTransactions : 0;
+    const prevUPT = prevTransactions > 0 ? prevUnits / prevTransactions : 0;
+    const yoyUPT = yoyTransactions > 0 ? yoyUnits / yoyTransactions : 0;
+
+    const memberKey = (it: SalesData) => (it.memberId || it.customerEmail || '').toString().trim().toLowerCase();
+    const netOf = (it: SalesData) => num((it as any).paymentValue) - (num((it as any).paymentVAT) || num((it as any).vat));
+
+    // First-ever purchase per member across full history (base + current window)
+    const firstPurchase = new Map<string, number>();
+    for (const it of [...base, ...currentPeriodData]) {
+      const k = memberKey(it);
+      if (!k) continue;
+      const d = parseDate((it as any).paymentDate);
+      if (!d) continue;
+      const t = d.getTime();
+      const prev = firstPurchase.get(k);
+      if (prev === undefined || t < prev) firstPurchase.set(k, t);
+    }
+
+    // Share of window revenue from members whose first purchase falls inside the window
+    const newMemberShareOf = (rows: SalesData[], wStart: Date, wEnd: Date) => {
+      let total = 0, fresh = 0;
+      for (const it of rows) {
+        const v = netOf(it);
+        total += v;
+        const fp = firstPurchase.get(memberKey(it));
+        if (fp !== undefined && fp >= wStart.getTime() && fp <= wEnd.getTime()) fresh += v;
+      }
+      return total !== 0 ? (fresh / total) * 100 : 0;
+    };
+    const currentNewShare = newMemberShareOf(currentPeriodData, currentStart, currentEnd);
+    const prevNewShare = newMemberShareOf(previousPeriodData, prevStart, prevEnd);
+    const yoyNewShare = newMemberShareOf(yoyPeriodData, yoyStart, yoyEnd);
+
+    // Avg days between consecutive purchases (repeat buyers inside the window)
+    const intervalOf = (rows: SalesData[]) => {
+      const byMember = new Map<string, number[]>();
+      for (const it of rows) {
+        const k = memberKey(it);
+        if (!k) continue;
+        const d = parseDate((it as any).paymentDate);
+        if (!d) continue;
+        const arr = byMember.get(k);
+        if (arr) arr.push(d.getTime());
+        else byMember.set(k, [d.getTime()]);
+      }
+      let gaps = 0, gapDays = 0;
+      byMember.forEach(ts => {
+        if (ts.length < 2) return;
+        ts.sort((a, b) => a - b);
+        for (let i = 1; i < ts.length; i++) {
+          gapDays += (ts[i] - ts[i - 1]) / 86400000;
+          gaps += 1;
+        }
+      });
+      return gaps > 0 ? gapDays / gaps : 0;
+    };
+    const currentInterval = intervalOf(currentPeriodData);
+    const prevInterval = intervalOf(previousPeriodData);
+    const yoyInterval = intervalOf(yoyPeriodData);
+
+    // Cashless revenue share (non-cash payment methods)
+    const cashlessOf = (rows: SalesData[]) => {
+      let total = 0, cashless = 0;
+      for (const it of rows) {
+        const v = netOf(it);
+        total += v;
+        const m = String((it as any).paymentMethod || '').toLowerCase();
+        if (m && !/cash/.test(m)) cashless += v;
+      }
+      return total !== 0 ? (cashless / total) * 100 : 0;
+    };
+    const currentCashless = cashlessOf(currentPeriodData);
+    const prevCashless = cashlessOf(previousPeriodData);
+    const yoyCashless = cashlessOf(yoyPeriodData);
+
     const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
     const yoyPeriodLabel = `${fmt(currentStart)} vs ${fmt(yoyStart)}`;
 
@@ -267,6 +344,10 @@ export const useSalesMetrics = (
     const discountGrowth = calculateGrowth(currentDiscount, prevDiscount);
     const discountPercentageGrowth = calculateGrowth(currentDiscountPercentage, prevDiscountPercentage);
     const vatGrowth = calculateGrowth(currentVAT, prevVAT);
+    const uptGrowth = calculateGrowth(currentUPT, prevUPT);
+    const newShareGrowth = calculateGrowth(currentNewShare, prevNewShare);
+    const intervalGrowth = calculateGrowth(currentInterval, prevInterval);
+    const cashlessGrowth = calculateGrowth(currentCashless, prevCashless);
 
     // Year-on-year growth rates
     const yoyRevenueGrowth = calculateGrowth(currentRevenue, yoyRevenue);
@@ -278,6 +359,10 @@ export const useSalesMetrics = (
     const yoyDiscountGrowth = calculateGrowth(currentDiscount, yoyDiscount);
     const yoyDiscountPercentageGrowth = calculateGrowth(currentDiscountPercentage, yoyDiscountPercentage);
     const yoyVatGrowth = calculateGrowth(currentVAT, yoyVAT);
+    const yoyUptGrowth = calculateGrowth(currentUPT, yoyUPT);
+    const yoyNewShareGrowth = calculateGrowth(currentNewShare, yoyNewShare);
+    const yoyIntervalGrowth = calculateGrowth(currentInterval, yoyInterval);
+    const yoyCashlessGrowth = calculateGrowth(currentCashless, yoyCashless);
 
     const calculatedMetrics: SalesMetric[] = [
       {
@@ -485,6 +570,98 @@ export const useSalesMetrics = (
         yoyChangeDetails: yoyVatGrowth,
         yoyPreviousValue: formatCurrency(yoyVAT),
         yoyPreviousRawValue: yoyVAT,
+        yoyPeriodLabel
+      },
+      {
+        title: "Units per Transaction",
+        value: currentUPT.toFixed(2),
+        rawValue: currentUPT,
+        change: uptGrowth.rate,
+        changeDetails: uptGrowth,
+        icon: "ShoppingCart",
+        color: "teal",
+        description: "Average items in each basket",
+        previousValue: prevUPT.toFixed(2),
+        previousRawValue: prevUPT,
+        comparison: {
+          current: currentUPT,
+          previous: prevUPT,
+          difference: currentUPT - prevUPT
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyUptGrowth.rate,
+        yoyChangeDetails: yoyUptGrowth,
+        yoyPreviousValue: yoyUPT.toFixed(2),
+        yoyPreviousRawValue: yoyUPT,
+        yoyPeriodLabel
+      },
+      {
+        title: "New-Member Revenue",
+        value: formatPercentage(currentNewShare),
+        rawValue: currentNewShare,
+        change: newShareGrowth.rate,
+        changeDetails: newShareGrowth,
+        icon: "UserPlus",
+        color: "emerald",
+        description: "Revenue share from first-time buyers",
+        previousValue: formatPercentage(prevNewShare),
+        previousRawValue: prevNewShare,
+        comparison: {
+          current: currentNewShare,
+          previous: prevNewShare,
+          difference: currentNewShare - prevNewShare
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyNewShareGrowth.rate,
+        yoyChangeDetails: yoyNewShareGrowth,
+        yoyPreviousValue: formatPercentage(yoyNewShare),
+        yoyPreviousRawValue: yoyNewShare,
+        yoyPeriodLabel
+      },
+      {
+        title: "Purchase Interval",
+        value: `${currentInterval.toFixed(1)} days`,
+        rawValue: currentInterval,
+        change: intervalGrowth.rate,
+        changeDetails: intervalGrowth,
+        icon: "Calendar",
+        color: "indigo",
+        description: "Avg days between repeat purchases",
+        previousValue: `${prevInterval.toFixed(1)} days`,
+        previousRawValue: prevInterval,
+        comparison: {
+          current: currentInterval,
+          previous: prevInterval,
+          difference: currentInterval - prevInterval
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyIntervalGrowth.rate,
+        yoyChangeDetails: yoyIntervalGrowth,
+        yoyPreviousValue: `${yoyInterval.toFixed(1)} days`,
+        yoyPreviousRawValue: yoyInterval,
+        yoyPeriodLabel
+      },
+      {
+        title: "Cashless Share",
+        value: formatPercentage(currentCashless),
+        rawValue: currentCashless,
+        change: cashlessGrowth.rate,
+        changeDetails: cashlessGrowth,
+        icon: "CreditCard",
+        color: "sky",
+        description: "Revenue via non-cash methods",
+        previousValue: formatPercentage(prevCashless),
+        previousRawValue: prevCashless,
+        comparison: {
+          current: currentCashless,
+          previous: prevCashless,
+          difference: currentCashless - prevCashless
+        },
+        periodLabel: currentPeriodLabel && previousPeriodLabel ? `${currentPeriodLabel} vs ${previousPeriodLabel}` : undefined,
+        yoyChange: yoyCashlessGrowth.rate,
+        yoyChangeDetails: yoyCashlessGrowth,
+        yoyPreviousValue: formatPercentage(yoyCashless),
+        yoyPreviousRawValue: yoyCashless,
         yoyPeriodLabel
       }
     ];

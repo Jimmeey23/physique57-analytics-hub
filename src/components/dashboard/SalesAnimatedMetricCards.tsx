@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, CreditCard, Target, Users, Calendar, ArrowDownRight, Activity, ArrowUpRight, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, CreditCard, Target, Users, Calendar, ArrowDownRight, Activity, UserPlus, ArrowUpRight, Minus } from 'lucide-react';
 import { SalesData } from '@/types/dashboard';
 import { formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ const iconMap = {
   Calendar,
   ArrowDownRight,
   Activity,
+  UserPlus,
 };
 
 export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCardsProps> = ({ 
@@ -36,7 +37,7 @@ export const SalesAnimatedMetricCardsComponent: React.FC<SalesAnimatedMetricCard
   const { metrics } = useSalesMetrics(data, historicalData, { dateRange });
 
   // Take the first 8 metrics for the cards (was 4, now 8)
-  const displayMetrics = metrics.slice(0, 8);
+  const displayMetrics = metrics;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

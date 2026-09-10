@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight, CalendarDays, Repeat, TrendingDown } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight, CalendarDays, Repeat, TrendingDown, ShoppingBag, AlertTriangle, HeartHandshake, UserX } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { useClientConversionMetrics, ClientMetricWithYoY } from '@/hooks/useClientConversionMetrics';
@@ -21,6 +21,24 @@ interface ClientConversionMetricCardsProps {
     if (filteredData.length === 0) return 0;
     const sum = filteredData.reduce((s, c) => s + (c[field] || 0), 0);
     return sum / filteredData.length;
+  };
+
+  // ---- Cohort helpers for the extended retention metrics (fuzzy sheet-status matching) ----
+  const statusOf = (c: NewClientData) => String(c.retentionStatus || '').toLowerCase();
+  const isReactivatedStatus = (c: NewClientData) => /reactivat|rejoin|win.?back|returning|re-?engag/.test(statusOf(c));
+  const isAtRiskStatus = (c: NewClientData) => !isReactivatedStatus(c) && /at.?risk|dormant|inactive|lapsing|slipping|cooling/.test(statusOf(c));
+  const isChurnedStatus = (c: NewClientData) => !isReactivatedStatus(c) && !isAtRiskStatus(c) && /churn|lost|cancel|lapsed|expir|dropped|terminat|dead/.test(statusOf(c));
+  const isRepeatBuyer = (c: NewClientData) => isConvertedInCohort(c) && (c.purchaseCountPostTrial || 0) >= 2;
+  const pctGrowth = (cur: number, prev: number) => prev > 0 ? Math.round(((cur - prev) / prev) * 100) : (cur > 0 ? 100 : 0);
+  const repeatRateOf = (arr: NewClientData[]) => {
+    const converted = arr.filter(isConvertedInCohort).length;
+    if (converted === 0) return 0;
+    return (arr.filter(isRepeatBuyer).length / converted) * 100;
+  };
+  const churnVisitsAvgOf = (arr: NewClientData[]) => {
+    const churned = arr.filter(c => isChurnedStatus(c) && (c.visitsPostTrial || 0) > 0);
+    if (churned.length === 0) return 0;
+    return churned.reduce((sum, c) => sum + (c.visitsPostTrial || 0), 0) / churned.length;
   };
 
 const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCardsProps> = ({ data, historicalData, dateRange, onCardClick }) => {
@@ -80,6 +98,20 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
 
   const avgVisitsPostTrialPrev = React.useMemo(() => computeAvgForRange(prevPeriodData, 'visitsPostTrial'), [prevPeriodData]);
   const avgVisitsPostTrialYoY = React.useMemo(() => computeAvgForRange(prevYearData, 'visitsPostTrial'), [prevYearData]);
+
+  // Extended retention metrics (current / previous-period / YoY splits)
+  const repeatRate = React.useMemo(() => repeatRateOf(data), [data]);
+  const repeatRatePrev = React.useMemo(() => repeatRateOf(prevPeriodData), [prevPeriodData]);
+  const repeatRateYoY = React.useMemo(() => repeatRateOf(prevYearData), [prevYearData]);
+  const atRiskCount = React.useMemo(() => data.filter(isAtRiskStatus).length, [data]);
+  const atRiskPrev = React.useMemo(() => prevPeriodData.filter(isAtRiskStatus).length, [prevPeriodData]);
+  const atRiskYoY = React.useMemo(() => prevYearData.filter(isAtRiskStatus).length, [prevYearData]);
+  const reactivatedCount = React.useMemo(() => data.filter(isReactivatedStatus).length, [data]);
+  const reactivatedPrev = React.useMemo(() => prevPeriodData.filter(isReactivatedStatus).length, [prevPeriodData]);
+  const reactivatedYoY = React.useMemo(() => prevYearData.filter(isReactivatedStatus).length, [prevYearData]);
+  const churnVisitsAvg = React.useMemo(() => churnVisitsAvgOf(data), [data]);
+  const churnVisitsPrev = React.useMemo(() => churnVisitsAvgOf(prevPeriodData), [prevPeriodData]);
+  const churnVisitsYoY = React.useMemo(() => churnVisitsAvgOf(prevYearData), [prevYearData]);
 
   const iconMap: Record<string, typeof Users> = {
     'New Members': UserPlus,
@@ -163,6 +195,98 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: avgVisitsPostTrial > avgVisitsPostTrialPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => c.visitsPostTrial && c.visitsPostTrial > 0)
+    } as ClientMetricWithYoY,
+    {
+      title: 'Repeat Purchase Rate',
+      value: formatPercentage(repeatRate),
+      rawValue: repeatRate,
+      previousRawValue: repeatRatePrev,
+      icon: ShoppingBag,
+      gradient: 'from-slate-700 to-slate-800',
+      description: 'Converted clients buying again',
+      change: pctGrowth(repeatRate, repeatRatePrev),
+      previousValue: formatPercentage(repeatRatePrev),
+      period: 'vs previous month',
+      metricType: 'repeat_purchase_rate',
+      yoyPreviousValue: prevYearData.length > 0 ? formatPercentage(repeatRateYoY) : undefined,
+      yoyPreviousRawValue: repeatRateYoY,
+      yoyChange: prevYearData.length > 0 ? pctGrowth(repeatRate, repeatRateYoY) : undefined,
+      comparison: { current: repeatRate, previous: repeatRateYoY || 0, difference: repeatRate - (repeatRateYoY || 0) },
+      changeDetails: {
+        rate: pctGrowth(repeatRate, repeatRatePrev),
+        isSignificant: Math.abs(repeatRate - repeatRatePrev) > 1,
+        trend: repeatRate > repeatRatePrev ? 'moderate' : 'weak'
+      },
+      filterData: () => data.filter(isRepeatBuyer)
+    } as ClientMetricWithYoY,
+    {
+      title: 'At-Risk Members',
+      value: formatNumber(atRiskCount),
+      rawValue: atRiskCount,
+      previousRawValue: atRiskPrev,
+      icon: AlertTriangle,
+      gradient: 'from-slate-700 to-slate-800',
+      description: data.length > 0 ? `${((atRiskCount / data.length) * 100).toFixed(1)}% of clients need attention` : 'Clients showing churn signals',
+      change: pctGrowth(atRiskCount, atRiskPrev),
+      previousValue: formatNumber(atRiskPrev),
+      period: 'vs previous month',
+      metricType: 'at_risk_members',
+      yoyPreviousValue: prevYearData.length > 0 ? formatNumber(atRiskYoY) : undefined,
+      yoyPreviousRawValue: atRiskYoY,
+      yoyChange: prevYearData.length > 0 ? pctGrowth(atRiskCount, atRiskYoY) : undefined,
+      comparison: { current: atRiskCount, previous: atRiskYoY || 0, difference: atRiskCount - (atRiskYoY || 0) },
+      changeDetails: {
+        rate: pctGrowth(atRiskCount, atRiskPrev),
+        isSignificant: Math.abs(atRiskCount - atRiskPrev) >= 5,
+        trend: atRiskCount > atRiskPrev ? 'moderate' : 'weak'
+      },
+      filterData: () => data.filter(isAtRiskStatus)
+    } as ClientMetricWithYoY,
+    ...(reactivatedCount > 0 ? [{
+      title: 'Reactivated Members',
+      value: formatNumber(reactivatedCount),
+      rawValue: reactivatedCount,
+      previousRawValue: reactivatedPrev,
+      icon: HeartHandshake,
+      gradient: 'from-slate-700 to-slate-800',
+      description: 'Won-back clients this period',
+      change: pctGrowth(reactivatedCount, reactivatedPrev),
+      previousValue: formatNumber(reactivatedPrev),
+      period: 'vs previous month',
+      metricType: 'reactivated_members',
+      yoyPreviousValue: prevYearData.length > 0 ? formatNumber(reactivatedYoY) : undefined,
+      yoyPreviousRawValue: reactivatedYoY,
+      yoyChange: prevYearData.length > 0 ? pctGrowth(reactivatedCount, reactivatedYoY) : undefined,
+      comparison: { current: reactivatedCount, previous: reactivatedYoY || 0, difference: reactivatedCount - (reactivatedYoY || 0) },
+      changeDetails: {
+        rate: pctGrowth(reactivatedCount, reactivatedPrev),
+        isSignificant: Math.abs(reactivatedCount - reactivatedPrev) >= 3,
+        trend: reactivatedCount > reactivatedPrev ? 'moderate' : 'weak'
+      },
+      filterData: () => data.filter(isReactivatedStatus)
+    } as ClientMetricWithYoY] : []),
+    {
+      title: 'Avg Visits Before Churn',
+      value: churnVisitsAvg.toFixed(1),
+      rawValue: churnVisitsAvg,
+      previousRawValue: churnVisitsPrev,
+      icon: UserX,
+      gradient: 'from-slate-700 to-slate-800',
+      description: 'Avg visits of churned clients',
+      change: pctGrowth(churnVisitsAvg, churnVisitsPrev),
+      previousValue: churnVisitsPrev.toFixed(1),
+      period: 'vs previous month',
+      metricType: 'avg_visits_before_churn',
+      yoyPreviousValue: prevYearData.length > 0 ? churnVisitsYoY.toFixed(1) : undefined,
+      yoyPreviousRawValue: churnVisitsYoY,
+      yoyChange: prevYearData.length > 0 ? pctGrowth(churnVisitsAvg, churnVisitsYoY) : undefined,
+      comparison: { current: churnVisitsAvg, previous: churnVisitsYoY || 0, difference: churnVisitsAvg - (churnVisitsYoY || 0) },
+      changeDetails: {
+        rate: pctGrowth(churnVisitsAvg, churnVisitsPrev),
+        isSignificant: Math.abs(churnVisitsAvg - churnVisitsPrev) > 0.5,
+        trend: churnVisitsAvg > churnVisitsPrev ? 'moderate' : 'weak'
+      },
+      filterData: () => data.filter(c => isChurnedStatus(c) && (c.visitsPostTrial || 0) > 0)
     } as ClientMetricWithYoY
   ];
 

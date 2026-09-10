@@ -12,18 +12,26 @@ import {
   Zap,
   Award,
   Calendar,
-  BarChart3
+  BarChart3,
+  Gauge,
+  CalendarX,
+  AlarmClock,
+  UserX
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ProcessedTrainerData } from './TrainerDataProcessor';
+import { SessionData } from '@/hooks/useSessionsData';
+import { parseDate } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 
 interface EnhancedTrainerMetricCardsProps {
   data: ProcessedTrainerData[];
+  /** Raw sessions for reliability metrics; scoped to the in-scope trainers/locations/months. */
+  sessions?: SessionData[];
   onCardClick?: (title: string, data: any) => void;
 }
 
-export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProps> = ({ data, onCardClick }) => {
+export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProps> = ({ data, sessions, onCardClick }) => {
   const summaryStats = React.useMemo(() => {
     if (!data.length) return null;
 
@@ -46,6 +54,76 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
     const avgConversionRate = totalNewMembers > 0 ? (totalConverted / totalNewMembers) * 100 : 0;
     const avgRetentionRate = totalNewMembers > 0 ? (totalRetained / totalNewMembers) * 100 : 0;
 
+    // ---- Fill & class-quality metrics (payroll scope) ----
+    const totalCapacity = data.reduce((sum, d) => sum + (d.capacity || 0), 0);
+    const fillRate = totalCapacity > 0 ? (totalCustomers / totalCapacity) * 100 : 0;
+    const totalEmptySessions = data.reduce((sum, d) => sum + (d.emptySessions || 0), 0);
+    const emptySessionRate = totalSessions > 0 ? (totalEmptySessions / totalSessions) * 100 : 0;
+
+    // Month-over-month deltas for the new cards (latest vs previous in-scope month)
+    const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    const monthKeyOf = (label: string) => {
+      const m = String(label || '').match(/^([A-Za-z]+)-(\d{4})$/);
+      if (!m) return null;
+      const idx = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
+      if (idx < 0) return null;
+      return Number(m[2]) * 12 + idx;
+    };
+    const monthKeys = Array.from(new Set(data.map(d => monthKeyOf(d.monthYear)).filter((k): k is number => k !== null))).sort((a, b) => b - a);
+    const latestKey = monthKeys[0] ?? null;
+    const prevKey = monthKeys[1] ?? null;
+    const rowsIn = (key: number | null) => (key === null ? [] : data.filter(d => monthKeyOf(d.monthYear) === key));
+    const fillOf = (rows: ProcessedTrainerData[]) => {
+      const cap = rows.reduce((sum, d) => sum + (d.capacity || 0), 0);
+      const cust = rows.reduce((sum, d) => sum + d.totalCustomers, 0);
+      return cap > 0 ? (cust / cap) * 100 : 0;
+    };
+    const emptyOf = (rows: ProcessedTrainerData[]) => {
+      const sess = rows.reduce((sum, d) => sum + d.totalSessions, 0);
+      const empty = rows.reduce((sum, d) => sum + (d.emptySessions || 0), 0);
+      return sess > 0 ? (empty / sess) * 100 : 0;
+    };
+    const sizeOf = (rows: ProcessedTrainerData[]) => {
+      const sess = rows.reduce((sum, d) => sum + d.totalSessions, 0);
+      const cust = rows.reduce((sum, d) => sum + d.totalCustomers, 0);
+      return sess > 0 ? cust / sess : 0;
+    };
+    const fillMom = latestKey !== null && prevKey !== null ? fillOf(rowsIn(latestKey)) - fillOf(rowsIn(prevKey)) : null;
+    const emptyMom = latestKey !== null && prevKey !== null ? emptyOf(rowsIn(latestKey)) - emptyOf(rowsIn(prevKey)) : null;
+    const sizeMom = latestKey !== null && prevKey !== null ? sizeOf(rowsIn(latestKey)) - sizeOf(rowsIn(prevKey)) : null;
+
+    // ---- Reliability metrics (sessions scope, matched to in-scope trainer/location/month) ----
+    const sessionMonthLabel = (dateStr: string) => {
+      const d = parseDate(dateStr);
+      if (!d || isNaN(d.getTime())) return '';
+      return `${d.toLocaleDateString('en-US', { month: 'short' })}-${d.getFullYear()}`;
+    };
+    const scopeKeys = new Set(data.map(d => `${d.trainerName}|${d.location || ''}|${d.monthYear}`));
+    const scopedSessions = (sessions || []).filter(sv =>
+      scopeKeys.has(`${sv.trainerName}|${sv.location || ''}|${sessionMonthLabel(sv.date)}`)
+    );
+    const lateOf = (rows: SessionData[]) => {
+      const booked = rows.reduce((sum, r) => sum + (r.bookedCount || 0), 0);
+      const late = rows.reduce((sum, r) => sum + (r.lateCancelledCount || 0), 0);
+      return booked > 0 ? (late / booked) * 100 : 0;
+    };
+    const noShowOf = (rows: SessionData[]) => {
+      const booked = rows.reduce((sum, r) => sum + (r.bookedCount || 0), 0);
+      const noShow = rows.reduce((sum, r) => sum + Math.max(0, (r.bookedCount || 0) - (r.checkedInCount || 0) - (r.lateCancelledCount || 0)), 0);
+      return booked > 0 ? (noShow / booked) * 100 : 0;
+    };
+    const lateCancelRate = lateOf(scopedSessions);
+    const noShowRate = noShowOf(scopedSessions);
+    const scopedBooked = scopedSessions.reduce((sum, r) => sum + (r.bookedCount || 0), 0);
+    const latestLabel = latestKey !== null ? data.find(d => monthKeyOf(d.monthYear) === latestKey)?.monthYear || '' : '';
+    const prevLabel = prevKey !== null ? data.find(d => monthKeyOf(d.monthYear) === prevKey)?.monthYear || '' : '';
+    const lateMom = latestLabel && prevLabel
+      ? lateOf(scopedSessions.filter(r => sessionMonthLabel(r.date) === latestLabel)) - lateOf(scopedSessions.filter(r => sessionMonthLabel(r.date) === prevLabel))
+      : null;
+    const noShowMom = latestLabel && prevLabel
+      ? noShowOf(scopedSessions.filter(r => sessionMonthLabel(r.date) === latestLabel)) - noShowOf(scopedSessions.filter(r => sessionMonthLabel(r.date) === prevLabel))
+      : null;
+
     return {
       totalTrainers,
       totalSessions,
@@ -56,9 +134,22 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
       avgRevenuePerSession,
       utilizationRate,
       avgConversionRate,
-      avgRetentionRate
+      avgRetentionRate,
+      fillRate,
+      emptySessionRate,
+      totalCapacity,
+      totalEmptySessions,
+      lateCancelRate,
+      noShowRate,
+      scopedBooked,
+      scopedSessionCount: scopedSessions.length,
+      fillMom,
+      emptyMom,
+      sizeMom,
+      lateMom,
+      noShowMom
     };
-  }, [data]);
+  }, [data, sessions]);
 
   if (!summaryStats) {
     return null;
@@ -184,6 +275,81 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
         { label: 'Conversion Rate', value: `${summaryStats.avgConversionRate.toFixed(1)}%` },
         { label: 'Utilization', value: `${summaryStats.utilizationRate.toFixed(1)}%` }
       ]
+    },
+    {
+      title: 'Fill Rate',
+      value: `${summaryStats.fillRate.toFixed(1)}%`,
+      subtitle: 'Seats filled vs capacity',
+      icon: Gauge,
+      gradient: 'from-cyan-500 to-blue-600',
+      bgGradient: 'from-cyan-50 to-blue-50',
+      borderColor: 'border-cyan-200',
+      change: summaryStats.fillMom === null ? '—' : `${summaryStats.fillMom >= 0 ? '+' : ''}${summaryStats.fillMom.toFixed(1)} pts`,
+      changeType: (summaryStats.fillMom ?? 0) >= 0 ? 'positive' as const : 'negative' as const,
+      details: [
+        { label: 'Total Capacity', value: formatNumber(summaryStats.totalCapacity) },
+        { label: 'Attendees', value: formatNumber(summaryStats.totalCustomers) }
+      ]
+    },
+    {
+      title: 'Avg Class Size',
+      value: summaryStats.avgClassSize.toFixed(1),
+      subtitle: 'Attendees per session',
+      icon: Users,
+      gradient: 'from-lime-500 to-green-600',
+      bgGradient: 'from-lime-50 to-green-50',
+      borderColor: 'border-lime-200',
+      change: summaryStats.sizeMom === null ? '—' : `${summaryStats.sizeMom >= 0 ? '+' : ''}${summaryStats.sizeMom.toFixed(1)}`,
+      changeType: (summaryStats.sizeMom ?? 0) >= 0 ? 'positive' as const : 'negative' as const,
+      details: [
+        { label: 'Total Sessions', value: formatNumber(summaryStats.totalSessions) },
+        { label: 'Total Attendees', value: formatNumber(summaryStats.totalCustomers) }
+      ]
+    },
+    {
+      title: 'Empty Sessions',
+      value: `${summaryStats.emptySessionRate.toFixed(1)}%`,
+      subtitle: `${formatNumber(summaryStats.totalEmptySessions)} sessions with zero turnout`,
+      icon: CalendarX,
+      gradient: 'from-amber-500 to-orange-600',
+      bgGradient: 'from-amber-50 to-orange-50',
+      borderColor: 'border-amber-200',
+      change: summaryStats.emptyMom === null ? '—' : `${summaryStats.emptyMom >= 0 ? '+' : ''}${summaryStats.emptyMom.toFixed(1)} pts`,
+      changeType: (summaryStats.emptyMom ?? 0) <= 0 ? 'positive' as const : 'negative' as const,
+      details: [
+        { label: 'Empty Sessions', value: formatNumber(summaryStats.totalEmptySessions) },
+        { label: 'Total Sessions', value: formatNumber(summaryStats.totalSessions) }
+      ]
+    },
+    {
+      title: 'Late-Cancel Rate',
+      value: `${summaryStats.lateCancelRate.toFixed(1)}%`,
+      subtitle: 'Late cancels of booked seats',
+      icon: AlarmClock,
+      gradient: 'from-rose-500 to-red-600',
+      bgGradient: 'from-rose-50 to-red-50',
+      borderColor: 'border-rose-200',
+      change: summaryStats.lateMom === null ? '—' : `${summaryStats.lateMom >= 0 ? '+' : ''}${summaryStats.lateMom.toFixed(1)} pts`,
+      changeType: (summaryStats.lateMom ?? 0) <= 0 ? 'positive' as const : 'negative' as const,
+      details: [
+        { label: 'Scoped Sessions', value: formatNumber(summaryStats.scopedSessionCount) },
+        { label: 'Booked Seats', value: formatNumber(summaryStats.scopedBooked) }
+      ]
+    },
+    {
+      title: 'No-Show Rate',
+      value: `${summaryStats.noShowRate.toFixed(1)}%`,
+      subtitle: 'Booked but never checked in',
+      icon: UserX,
+      gradient: 'from-slate-500 to-gray-700',
+      bgGradient: 'from-slate-50 to-gray-50',
+      borderColor: 'border-slate-200',
+      change: summaryStats.noShowMom === null ? '—' : `${summaryStats.noShowMom >= 0 ? '+' : ''}${summaryStats.noShowMom.toFixed(1)} pts`,
+      changeType: (summaryStats.noShowMom ?? 0) <= 0 ? 'positive' as const : 'negative' as const,
+      details: [
+        { label: 'Scoped Sessions', value: formatNumber(summaryStats.scopedSessionCount) },
+        { label: 'Booked Seats', value: formatNumber(summaryStats.scopedBooked) }
+      ]
     }
   ];
 
@@ -211,7 +377,7 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {metricCards.slice(0, 8).map((card, index) => {
+      {metricCards.map((card, index) => {
         const Icon = card.icon;
         const isPositive = card.changeType === 'positive';
         

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -11,10 +11,13 @@ import {
   DollarSign,
   Calendar,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Target
 } from 'lucide-react';
 import { formatNumber, formatPercentage, formatCurrency } from '@/utils/formatters';
 import { LocationReportMetrics } from '@/hooks/useLocationReportData';
+import { useNewClientData } from '@/hooks/useNewClientData';
+import { parseDate } from '@/utils/dateUtils';
 import {
   AreaChart,
   Area,
@@ -44,20 +47,59 @@ export const ClientRetentionSection: React.FC<ClientRetentionSectionProps> = ({
     { name: 'New', value: metrics.newClientsAcquired, color: '#3B82F6' }
   ];
 
-  // Sample retention trend data
-  const retentionTrend = [
-    { month: 'Sep', retention: 82, newClients: 45, churn: 12 },
-    { month: 'Oct', retention: 85, newClients: 52, churn: 8 },
-    { month: 'Nov', retention: metrics.retentionRate * 0.95, newClients: metrics.newClientsAcquired * 0.9, churn: metrics.churnedMembers * 1.2 },
-    { month: 'Dec', retention: metrics.retentionRate, newClients: metrics.newClientsAcquired, churn: metrics.churnedMembers }
-  ];
+  // Real monthly trend (trailing 12 cohorts) computed from client first visits
+  const { data: allClients = [] } = useNewClientData();
+  const statusOf = (c: { retentionStatus?: string }) => String(c.retentionStatus || '').toLowerCase();
+  const isRetainedStatus = (c: { retentionStatus?: string }) => statusOf(c) === 'retained' || statusOf(c).startsWith('retained ');
+  const isChurnedStatus = (c: { retentionStatus?: string }) =>
+    !isRetainedStatus(c) && /churn|lost|cancel|lapsed|expir|dropped|terminat/.test(statusOf(c));
 
-  // LTV breakdown data
-  const ltvBreakdown = [
-    { segment: 'High Value', clients: Math.round(metrics.uniqueMembers * 0.2), avgLTV: metrics.averageLTV * 1.8, color: '#10B981' },
-    { segment: 'Medium Value', clients: Math.round(metrics.uniqueMembers * 0.5), avgLTV: metrics.averageLTV * 1.1, color: '#3B82F6' },
-    { segment: 'Low Value', clients: Math.round(metrics.uniqueMembers * 0.3), avgLTV: metrics.averageLTV * 0.6, color: '#F59E0B' }
-  ];
+  const retentionTrend = useMemo(() => {
+    const byMonth = new Map<string, { label: string; sort: number; total: number; retained: number; churned: number }>();
+    for (const c of allClients) {
+      const d = parseDate(c.firstVisitDate);
+      if (!d || isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleString('en-US', { month: 'short' }) + ` '${String(d.getFullYear()).slice(2)}`;
+      const sort = d.getFullYear() * 12 + d.getMonth();
+      const entry = byMonth.get(key) || { label, sort, total: 0, retained: 0, churned: 0 };
+      entry.total += 1;
+      if (isRetainedStatus(c)) entry.retained += 1;
+      if (isChurnedStatus(c)) entry.churned += 1;
+      byMonth.set(key, entry);
+    }
+    return Array.from(byMonth.values())
+      .sort((a, b) => a.sort - b.sort)
+      .slice(-12)
+      .map(m => ({
+        month: m.label,
+        retention: m.total > 0 ? Math.round((m.retained / m.total) * 1000) / 10 : 0,
+        newClients: m.total,
+        churn: m.churned,
+      }));
+  }, [allClients]);
+
+  // LTV breakdown data — real tertiles by client LTV (no estimates)
+  const ltvBreakdown = useMemo(() => {
+    const withLtv = allClients.filter(c => (c.ltv || 0) > 0).sort((a, b) => (a.ltv || 0) - (b.ltv || 0));
+    if (withLtv.length === 0) {
+      return [
+        { segment: 'High Value', clients: 0, avgLTV: 0, color: '#10B981' },
+        { segment: 'Medium Value', clients: 0, avgLTV: 0, color: '#3B82F6' },
+        { segment: 'Low Value', clients: 0, avgLTV: 0, color: '#F59E0B' },
+      ];
+    }
+    const third = Math.ceil(withLtv.length / 3);
+    const low = withLtv.slice(0, third);
+    const mid = withLtv.slice(third, third * 2);
+    const high = withLtv.slice(third * 2);
+    const avg = (arr: typeof withLtv) => arr.length > 0 ? arr.reduce((s, c) => s + (c.ltv || 0), 0) / arr.length : 0;
+    return [
+      { segment: 'High Value', clients: high.length, avgLTV: avg(high), color: '#10B981' },
+      { segment: 'Medium Value', clients: mid.length, avgLTV: avg(mid), color: '#3B82F6' },
+      { segment: 'Low Value', clients: low.length, avgLTV: avg(low), color: '#F59E0B' },
+    ];
+  }, [allClients]);
 
   const clientMetrics = [
     {
@@ -95,6 +137,24 @@ export const ClientRetentionSection: React.FC<ClientRetentionSectionProps> = ({
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       isPositive: true
+    },
+    {
+      title: 'Trial Conversion',
+      value: formatPercentage(metrics.conversionRate),
+      change: 0,
+      icon: Target,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      isPositive: true
+    },
+    {
+      title: 'Avg Days to Convert',
+      value: `${Math.round(metrics.avgConversionDays)} days`,
+      change: 0,
+      icon: Calendar,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      isPositive: false
     }
   ];
 
