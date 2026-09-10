@@ -46,18 +46,19 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
 }) => {
   const [selectedRanking, setSelectedRanking] = useState('trainer-conversion');
 
-  // Calculate comprehensive trainer stats using both client and payroll data
+  // Calculate comprehensive trainer stats using both client and payroll data.
+  //
+  // Session counts (taught / empty / customers) come from payroll. Conversion,
+  // retention and new-member counts are derived from client status fields —
+  // the payroll sheet's Converted/Retained/New columns are blank for the
+  // current in-progress month, which previously emptied every ranking.
   const trainerStats = React.useMemo(() => {
     const stats = new Map();
-    
-    // Initialize stats from payroll data (classes taught, empty classes, etc.)
-    payrollData.forEach(payroll => {
-      const trainer = payroll.teacherName;
-      if (!trainer || trainer === 'Unknown') return;
-      
-      if (!stats.has(trainer)) {
-        stats.set(trainer, {
-          name: trainer,
+
+    const ensure = (name: string) => {
+      if (!stats.has(name)) {
+        stats.set(name, {
+          name,
           totalSessions: 0,
           totalEmptySessions: 0,
           totalNonEmptySessions: 0,
@@ -66,61 +67,80 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
           totalRetained: 0,
           totalNew: 0,
           totalLTV: 0,
-          clientCount: 0
+          clientCount: 0,
+          payrollConverted: 0,
+          payrollRetained: 0,
+          payrollNew: 0,
         });
       }
-      
-      const trainerStat = stats.get(trainer);
+      return stats.get(name);
+    };
+
+    payrollData.forEach(payroll => {
+      const trainer = payroll.teacherName;
+      if (!trainer || trainer === 'Unknown') return;
+
+      const trainerStat = ensure(trainer);
       trainerStat.totalSessions += payroll.totalSessions || 0;
       trainerStat.totalEmptySessions += payroll.totalEmptySessions || 0;
       trainerStat.totalNonEmptySessions += payroll.totalNonEmptySessions || 0;
       trainerStat.totalCustomers += payroll.totalCustomers || 0;
-      trainerStat.totalConverted += payroll.converted || 0;
-      trainerStat.totalRetained += payroll.retained || 0;
-      trainerStat.totalNew += payroll.new || 0;
+      trainerStat.payrollConverted += payroll.converted || 0;
+      trainerStat.payrollRetained += payroll.retained || 0;
+      trainerStat.payrollNew += payroll.new || 0;
     });
 
-    // Add client data for LTV and additional metrics
+    // Client data drives LTV and the status-truth conversion/retention counts.
     data.forEach(client => {
       const trainer = client.trainerName;
-      if (!trainer || trainer === 'Unknown' || !stats.has(trainer)) return;
-      
-      const trainerStat = stats.get(trainer);
+      if (!trainer || trainer === 'Unknown') return;
+
+      const trainerStat = ensure(trainer);
       trainerStat.totalLTV += client.ltv || 0;
       trainerStat.clientCount++;
+
+      if ((client.isNew || '').toLowerCase().includes('new')) trainerStat.totalNew++;
+      if (client.conversionStatus === 'Converted') trainerStat.totalConverted++;
+      if (client.retentionStatus === 'Retained') trainerStat.totalRetained++;
     });
-    
+
     return Array.from(stats.values()).map(stat => {
-      const conversionRate = stat.totalNew > 0 ? (stat.totalConverted / stat.totalNew) * 100 : 0;
-      const retentionRate = stat.totalNew > 0 ? (stat.totalRetained / stat.totalNew) * 100 : 0;
+      // Prefer client-derived counts; fall back to payroll columns when the
+      // client feed has no rows for this trainer in the current filter.
+      const totalNew = stat.totalNew || stat.payrollNew;
+      const totalConverted = stat.totalConverted || stat.payrollConverted;
+      const totalRetained = stat.totalRetained || stat.payrollRetained;
+
+      const conversionRate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
+      const retentionRate = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
       const classAverage = stat.totalNonEmptySessions > 0 ? stat.totalCustomers / stat.totalNonEmptySessions : 0;
       const avgLTV = stat.clientCount > 0 ? stat.totalLTV / stat.clientCount : 0;
       const emptyClassRate = stat.totalSessions > 0 ? (stat.totalEmptySessions / stat.totalSessions) * 100 : 0;
-      
+
       return {
         ...stat,
+        totalNew,
+        totalConverted,
+        totalRetained,
         conversionRate,
         retentionRate,
         classAverage,
         avgLTV,
         emptyClassRate,
-        totalClients: stat.clientCount // Add this for consistency
+        totalClients: stat.clientCount,
       };
-    }).filter(stat => stat.totalSessions > 0); // Only include trainers who actually taught classes
+    }).filter(stat => stat.totalSessions > 0 || stat.clientCount > 0);
   }, [data, payrollData]);
 
-  // Calculate location stats using both data sources
+  // Calculate location stats using both data sources (same status-truth rule
+  // as trainerStats above).
   const locationStats = React.useMemo(() => {
     const stats = new Map();
-    
-    // Initialize stats from payroll data
-    payrollData.forEach(payroll => {
-      const location = payroll.location;
-      if (!location || location === 'Unknown') return;
-      
-      if (!stats.has(location)) {
-        stats.set(location, {
-          name: location,
+
+    const ensure = (name: string) => {
+      if (!stats.has(name)) {
+        stats.set(name, {
+          name,
           totalSessions: 0,
           totalEmptySessions: 0,
           totalNonEmptySessions: 0,
@@ -129,47 +149,66 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
           totalRetained: 0,
           totalNew: 0,
           totalLTV: 0,
-          clientCount: 0
+          clientCount: 0,
+          payrollConverted: 0,
+          payrollRetained: 0,
+          payrollNew: 0,
         });
       }
-      
-      const locationStat = stats.get(location);
+      return stats.get(name);
+    };
+
+    payrollData.forEach(payroll => {
+      const location = payroll.location;
+      if (!location || location === 'Unknown') return;
+
+      const locationStat = ensure(location);
       locationStat.totalSessions += payroll.totalSessions || 0;
       locationStat.totalEmptySessions += payroll.totalEmptySessions || 0;
       locationStat.totalNonEmptySessions += payroll.totalNonEmptySessions || 0;
       locationStat.totalCustomers += payroll.totalCustomers || 0;
-      locationStat.totalConverted += payroll.converted || 0;
-      locationStat.totalRetained += payroll.retained || 0;
-      locationStat.totalNew += payroll.new || 0;
+      locationStat.payrollConverted += payroll.converted || 0;
+      locationStat.payrollRetained += payroll.retained || 0;
+      locationStat.payrollNew += payroll.new || 0;
     });
 
-    // Add client data for LTV
     data.forEach(client => {
       const location = client.firstVisitLocation || client.homeLocation;
-      if (!location || location === 'Unknown' || !stats.has(location)) return;
-      
-      const locationStat = stats.get(location);
+      if (!location || location === 'Unknown') return;
+
+      const locationStat = ensure(location);
       locationStat.totalLTV += client.ltv || 0;
       locationStat.clientCount++;
+
+      if ((client.isNew || '').toLowerCase().includes('new')) locationStat.totalNew++;
+      if (client.conversionStatus === 'Converted') locationStat.totalConverted++;
+      if (client.retentionStatus === 'Retained') locationStat.totalRetained++;
     });
-    
+
     return Array.from(stats.values()).map(stat => {
-      const conversionRate = stat.totalNew > 0 ? (stat.totalConverted / stat.totalNew) * 100 : 0;
-      const retentionRate = stat.totalNew > 0 ? (stat.totalRetained / stat.totalNew) * 100 : 0;
+      const totalNew = stat.totalNew || stat.payrollNew;
+      const totalConverted = stat.totalConverted || stat.payrollConverted;
+      const totalRetained = stat.totalRetained || stat.payrollRetained;
+
+      const conversionRate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
+      const retentionRate = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
       const classAverage = stat.totalNonEmptySessions > 0 ? stat.totalCustomers / stat.totalNonEmptySessions : 0;
       const avgLTV = stat.clientCount > 0 ? stat.totalLTV / stat.clientCount : 0;
       const emptyClassRate = stat.totalSessions > 0 ? (stat.totalEmptySessions / stat.totalSessions) * 100 : 0;
-      
+
       return {
         ...stat,
+        totalNew,
+        totalConverted,
+        totalRetained,
         conversionRate,
         retentionRate,
         classAverage,
         avgLTV,
         emptyClassRate,
-        totalClients: stat.clientCount // Add this for consistency
+        totalClients: stat.clientCount,
       };
-    }).filter(stat => stat.totalSessions > 0);
+    }).filter(stat => stat.totalSessions > 0 || stat.clientCount > 0);
   }, [data, payrollData]);
 
   // Calculate membership stats (client-data only since payroll doesn't track memberships)
@@ -218,6 +257,11 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
       
       return {
         ...stat,
+        // Alias so the shared eligibility filter reads the same field name it
+        // uses for trainers and locations.
+        totalNew: stat.newMembers,
+        totalConverted: stat.converted,
+        totalRetained: stat.retained,
         conversionRate,
         retentionRate,
         avgLTV,
@@ -245,7 +289,7 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
 
   const getCurrentData = () => {
     const option = rankingOptions.find(r => r.id === selectedRanking);
-    if (!option) return { top: [], bottom: [] };
+    if (!option) return { top: [], bottom: [], total: 0, eligible: 0, requirement: '' };
 
     let sourceData;
     switch (option.type) {
@@ -264,22 +308,34 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
 
     // Filter out items with insufficient data
     const minThreshold = option.type === 'trainer' ? 3 : 1;
+    let requirement = '';
     const filtered = sourceData.filter(item => {
       if (option.metric === 'totalSessions' || option.metric === 'classAverage' || option.metric === 'emptyClassRate') {
+        requirement = 'at least 5 classes taught';
         return item.totalSessions >= 5; // Require at least 5 sessions for meaningful class metrics
       }
       if (option.metric === 'conversionRate' || option.metric === 'retentionRate') {
+        requirement = `at least ${minThreshold} new member${minThreshold === 1 ? '' : 's'}`;
         return item.totalNew >= minThreshold; // Require new members for conversion metrics
       }
+      requirement = 'at least 1 client';
       return item.totalClients >= 1 || item.clientCount >= 1;
     });
-    
+
     const sorted = [...filtered].sort((a, b) => {
       const aValue = a[option.metric] || 0;
       const bValue = b[option.metric] || 0;
       return bValue - aValue;
     });
-    
+
+    // With fewer than 10 eligible rows, top-5 and bottom-5 would overlap and
+    // show the same names twice. Split the list instead.
+    const half = Math.min(5, Math.floor(sorted.length / 2));
+    const top = sorted.length >= 10 ? sorted.slice(0, 5) : sorted.slice(0, Math.max(half, sorted.length <= 5 ? sorted.length : half));
+    const bottom = sorted.length >= 10
+      ? sorted.slice(-5).reverse()
+      : sorted.slice(sorted.length - half).reverse();
+
     return {
       top: sorted.slice(0, 5),
       bottom: sorted.slice(-5).reverse(),
