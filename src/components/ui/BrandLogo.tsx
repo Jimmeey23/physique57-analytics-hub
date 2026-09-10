@@ -14,6 +14,7 @@ export const BrandLogo: React.FC<{
     <span
       className={cn(
         'flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-card ring-1 ring-black/[0.06] dark:ring-white/10',
+        tileClassName,
         className
       )}
     >
@@ -21,7 +22,7 @@ export const BrandLogo: React.FC<{
         src="/physique57-logo.png"
         alt="Physique 57"
         draggable={false}
-        className={cn('h-full w-full object-contain p-[3px]', imgClassName, tileClassName)}
+        className={cn('h-full w-full object-contain p-[3px]', imgClassName)}
       />
     </span>
   );

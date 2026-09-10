@@ -42,7 +42,7 @@ const shouldLog = (level: LogLevel): boolean => {
 export const createLogger = (source?: string) => ({
   debug: (message: string, ...rest: any[]) => {
     if (!shouldLog('debug')) return;
-    const entry: LogEntry = { level: 'debug', message, data: rest[0], timestamp: new Date(), source };
+    const entry: LogEntry = { level: 'debug', message, data: rest.length <= 1 ? rest[0] : rest, timestamp: new Date(), source };
     addToHistory(entry);
     console.debug(`[${source || 'App'}] ${message}`, ...rest);
   },
