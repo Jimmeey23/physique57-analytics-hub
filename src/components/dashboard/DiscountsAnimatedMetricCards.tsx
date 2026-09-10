@@ -154,7 +154,7 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
 
                 <div className="space-y-2">
                   <p className={cn(
-                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                    "text-[28px] font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
                   )}>
                     {metric.value}
                   </p>
@@ -173,12 +173,8 @@ export const DiscountsAnimatedMetricCards: React.FC<DiscountsAnimatedMetricCards
               </div>
               
               <div className={cn(
-                "mt-4 p-3 border-t border-l-4 transition-all duration-700",
-                "bg-slate-50 group-hover:bg-slate-800/50 border-t-slate-200 group-hover:border-t-white/10",
-                index % 4 === 0 && "border-l-indigo-700",
-                index % 4 === 1 && "border-l-purple-700",
-                index % 4 === 2 && "border-l-blue-700",
-                index % 4 === 3 && "border-l-violet-700"
+                "mt-4 p-3 rounded-xl border border-slate-200/80 bg-slate-50 transition-all duration-700",
+                "group-hover:border-white/10 group-hover:bg-slate-800/50"
               )}>
                 <p className="text-xs text-slate-900 group-hover:text-white transition-colors duration-700">
                   {metric.description}

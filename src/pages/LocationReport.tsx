@@ -1,6 +1,7 @@
 import React from 'react';
-import { Footer } from '@/components/ui/footer';
 import { LocationReportComprehensive } from '@/components/dashboard/LocationReportComprehensive';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
 const LocationReportPage = () => {
@@ -25,9 +26,10 @@ const LocationReportPage = () => {
         </div>
 
         <LocationReportComprehensive onReady={handleReady} />
+        <div className="pt-6">
+          <MetricDefinitions items={METRIC_DEFINITIONS.locationReport} />
+        </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

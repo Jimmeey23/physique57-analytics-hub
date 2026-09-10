@@ -58,7 +58,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-4 bg-white rounded-lg border">
               <div className="text-2xl font-bold text-green-600">{activeCount}</div>
               <div className="text-sm text-green-600">Active</div>
@@ -308,17 +308,17 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-3 bg-white rounded-lg border-l-4 border-blue-400">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <div className="text-sm font-medium text-blue-800">Class Type</div>
               <div className="text-blue-600">{specificData.classType}</div>
             </div>
-            <div className="p-3 bg-white rounded-lg border-l-4 border-green-400">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <div className="text-sm font-medium text-green-800">Revenue/Session</div>
               <div className="text-green-600">
                 {formatCurrency(specificData.totalSessions > 0 ? specificData.totalRevenue / specificData.totalSessions : 0)}
               </div>
             </div>
-            <div className="p-3 bg-white rounded-lg border-l-4 border-purple-400">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <div className="text-sm font-medium text-purple-800">Customer/Session</div>
               <div className="text-purple-600">
                 {(specificData.totalSessions > 0 ? specificData.totalCustomers / specificData.totalSessions : 0).toFixed(1)}
@@ -508,11 +508,11 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
                     <CardTitle className="text-blue-800">Key Insights</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="p-3 bg-white rounded-lg border-l-4 border-blue-400">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
                       <div className="text-sm font-medium text-blue-800">Market Position</div>
                       <div className="text-blue-600">Strong performer in category</div>
                     </div>
-                    <div className="p-3 bg-white rounded-lg border-l-4 border-green-400">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
                       <div className="text-sm font-medium text-green-800">Customer Loyalty</div>
                       <div className="text-green-600">High retention rate</div>
                     </div>
@@ -532,7 +532,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-purple-400">
+                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
                       <h4 className="font-medium text-purple-800 mb-2">Strengths</h4>
                       <ul className="text-sm text-purple-600 space-y-1">
                         <li>• Consistent revenue performance</li>
@@ -540,7 +540,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
                         <li>• Effective conversion rates</li>
                       </ul>
                     </div>
-                    <div className="p-4 bg-white rounded-lg border-l-4 border-orange-400">
+                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
                       <h4 className="font-medium text-orange-800 mb-2">Opportunities</h4>
                       <ul className="text-sm text-orange-600 space-y-1">
                         <li>• Expand successful programs</li>

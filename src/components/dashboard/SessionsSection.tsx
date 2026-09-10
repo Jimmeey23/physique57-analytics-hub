@@ -41,7 +41,7 @@ const LocationTab = memo(({ location, isActive }: { location: typeof locations[0
 // Memoized metric display component
 const MetricDisplay = memo(({ title, value, description }: { title: string; value: string; description: string }) => (
   <div className="text-center">
-    <div className="text-4xl font-bold text-white mb-2">{value}</div>
+    <div className="text-3xl font-bold text-white mb-2">{value}</div>
     <div className="text-sm text-slate-300 font-medium">{description}</div>
   </div>
 ));
@@ -306,7 +306,7 @@ export const SessionsSection: React.FC = () => {
         sources={[{
           name: 'Sessions',
           sheetName: 'Sessions',
-          spreadsheetId: '1sDPAX6OmGb48kL1pm0mhin2C9KD-Jykq8skJjNuQUNg',
+          spreadsheetId: '16wFlke0bHFcmfn-3UyuYlGnImBq0DY7ouVYAlAFTZys',
           data: data || []
         }]}
       />

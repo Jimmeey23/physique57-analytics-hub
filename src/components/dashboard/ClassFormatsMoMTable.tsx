@@ -378,7 +378,7 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
                     }}
                     className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
                       dimension === dim
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
+                        ? 'bg-[#E6F4FF] font-bold text-[#0277C4]'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >

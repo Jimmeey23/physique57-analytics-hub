@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { batchFetchGoogleSheet, parseNumericValue } from '@/utils/googleAuth';
+import { batchFetchGoogleSheet, parseNumericValue, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('useRecurringSessionsData');
@@ -63,13 +63,14 @@ export const useRecurringSessionsData = () => {
       const recurringRows = results[0];
       const teacherRows = results[1];
       
-      // Process Recurring data
+      // Process Recurring data — note: this tab has NO TotalSessions column,
+      // so aggregate columns start at index 26 (one earlier than Teacher Recurring)
       if (recurringRows.length > 1) {
         const recurringData: RecurringSessionData[] = recurringRows.slice(1).map((row: any[]) => {
           const capacity = parseNumericValue(row[6]);
           const checkedIn = parseNumericValue(row[7]);
           const fillPercentage = capacity > 0 ? (checkedIn / capacity) * 100 : 0;
-          
+
           return {
             trainerId: row[0] || '',
             firstName: row[1] || '',
@@ -97,17 +98,17 @@ export const useRecurringSessionsData = () => {
             type: row[23] || '',
             class: row[24] || '',
             classes: parseNumericValue(row[25]),
-            totalSessions: parseNumericValue(row[26]),
-            emptySessions: parseNumericValue(row[27]),
-            nonEmptySessions: parseNumericValue(row[28]),
-            totalCheckedInSum: parseNumericValue(row[29]),
-            totalCapacitySum: parseNumericValue(row[30]),
-            totalRevenueSum: parseNumericValue(row[31]),
-            classAvgInclEmpty: parseNumericValue(row[32]),
-            classAvgExclEmpty: parseNumericValue(row[33]),
-            fillRate: row[34] || '0%',
-            weightedAverage: parseNumericValue(row[35]),
-            top5Trainers: row[36] || '',
+            totalSessions: parseNumericValue(row[25]),
+            emptySessions: parseNumericValue(row[26]),
+            nonEmptySessions: parseNumericValue(row[27]),
+            totalCheckedInSum: parseNumericValue(row[28]),
+            totalCapacitySum: parseNumericValue(row[29]),
+            totalRevenueSum: parseNumericValue(row[30]),
+            classAvgInclEmpty: parseNumericValue(row[31]),
+            classAvgExclEmpty: parseNumericValue(row[32]),
+            fillRate: row[33] || '0%',
+            weightedAverage: parseNumericValue(row[34]),
+            top5Trainers: row[35] || '',
             fillPercentage
           };
         });

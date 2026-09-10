@@ -5,7 +5,13 @@ export type OfflineDatasetKey =
   | 'new-clients'
   | 'leads'
   | 'checkins'
-  | 'expirations';
+  | 'expirations'
+  | 'bookings'
+  | 'late-cancellations'
+  | 'vc-members';
+
+/** Where the rows currently displayed came from (per dataset, this session). */
+export type DatasetLiveSource = 'remote' | 'offline-cache';
 
 export type DataSourceMode = 'online' | 'offline';
 
@@ -35,6 +41,9 @@ export const OFFLINE_DATASET_LABELS: Record<OfflineDatasetKey, string> = {
   leads: 'Leads',
   checkins: 'Checkins',
   expirations: 'Expirations',
+  bookings: 'Bookings',
+  'late-cancellations': 'Late Cancellations',
+  'vc-members': 'VC Members',
 };
 
 export const OFFLINE_DATASET_KEYS: OfflineDatasetKey[] = [
@@ -45,9 +54,12 @@ export const OFFLINE_DATASET_KEYS: OfflineDatasetKey[] = [
   'leads',
   'checkins',
   'expirations',
+  'bookings',
+  'late-cancellations',
+  'vc-members',
 ];
 
-export const BUNDLED_OFFLINE_DATASET_FILES: Record<OfflineDatasetKey, string> = {
+export const BUNDLED_OFFLINE_DATASET_FILES: Partial<Record<OfflineDatasetKey, string>> = {
   sales: 'Sales-Data.csv',
   sessions: 'Sessions-Data.csv',
   payroll: 'Payroll.csv',

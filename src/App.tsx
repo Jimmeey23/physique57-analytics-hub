@@ -21,6 +21,8 @@ import { UniversalElementCopyAssist } from "@/components/ui/UniversalElementCopy
 import { LazyConsolidatedReportExporterDialog } from "@/components/lazy/LazyConsolidatedReportExporterDialog";
 import { DataSourceProvider, useDataSource } from '@/contexts/DataSourceContext';
 import { OfflineAccessManager } from '@/components/ui/OfflineAccessManager';
+import { AppShell } from '@/components/ui/AppShell';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 // Optimized lazy loading with preloading for critical pages
 const Index = React.lazy(() => 
@@ -124,8 +126,9 @@ const AppRoutes = () => {
       <UniversalElementCopyAssist />
       <LazyConsolidatedReportExporterDialog />
       <RouteLoadingWrapper>
-        <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-white" />}>
+        <React.Suspense fallback={<div className="fixed inset-0 z-[9999] bg-background" />}>
           <PageTransition>
+            <AppShell>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/main-dashboard" element={<MainDashboard />} />
@@ -153,6 +156,7 @@ const AppRoutes = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </AppShell>
           </PageTransition>
         </React.Suspense>
       </RouteLoadingWrapper>
@@ -215,9 +219,11 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <DataSourceProvider>
-            <AppContent />
-          </DataSourceProvider>
+          <ThemeProvider>
+            <DataSourceProvider>
+              <AppContent />
+            </DataSourceProvider>
+          </ThemeProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

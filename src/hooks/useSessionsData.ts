@@ -44,7 +44,7 @@ export const useSessionsData = () => {
   const [data, setData] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchSessionsData = async () => {
     try {
@@ -55,7 +55,7 @@ export const useSessionsData = () => {
         return fetchGoogleSheet(SPREADSHEET_IDS.SESSIONS, 'Sessions', {
           valueRenderOption: 'FORMATTED_VALUE'
         });
-      });
+      }, reportSource);
       
       if (rows.length < 2) {
         setData([]);

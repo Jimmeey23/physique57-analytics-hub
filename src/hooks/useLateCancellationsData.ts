@@ -119,7 +119,7 @@ export const useLateCancellationsData = () => {
   const [allCheckins, setAllCheckins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchLateCancellationsData = async () => {
     try {
@@ -128,21 +128,19 @@ export const useLateCancellationsData = () => {
       logger.info('Fetching late cancellations data from Google Sheets...');
 
       const [lateCancellationRows, rawCheckinRows] = await Promise.all([
-        (async () => {
-          if (mode === 'offline') {
-            logger.warn('Late cancellations sheet is unavailable in offline mode; returning empty live dataset.');
-            return [] as any[][];
-          }
-
+        loadDatasetRowsForMode('late-cancellations', mode, async () => {
           return fetchGoogleSheet(LATE_CANCELLATIONS_SPREADSHEET_ID, LATE_CANCELLATIONS_SHEET_NAME, {
             valueRenderOption: 'FORMATTED_VALUE'
           });
-        })(),
+        }, reportSource).then(result => result.rows).catch((error) => {
+          logger.warn('Late cancellations unavailable; continuing without live late-cancel rows:', error);
+          return [] as any[][];
+        }),
         loadDatasetRowsForMode('checkins', mode, async () => {
           return fetchGoogleSheet(CHECKINS_SPREADSHEET_ID, CHECKINS_SHEET_NAME, {
             valueRenderOption: 'FORMATTED_VALUE'
           });
-        }).then(result => result.rows)
+        }, reportSource).then(result => result.rows)
       ]);
       
       logger.info('Late cancellations fetch result:', {

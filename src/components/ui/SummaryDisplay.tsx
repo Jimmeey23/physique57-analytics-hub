@@ -190,7 +190,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + index * 0.1 }}
-                    className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400"
+                    className="flex items-start gap-3 p-3 bg-green-50/60 rounded-xl border border-green-200"
                   >
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-gray-800">{insight}</span>
@@ -223,7 +223,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.6 + index * 0.1 }}
-                      className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400"
+                      className="flex items-start gap-3 p-3 bg-blue-50/60 rounded-xl border border-blue-200"
                     >
                       <TrendingUp className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                       <span className="text-sm text-gray-800">{trend}</span>
@@ -257,7 +257,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.8 + index * 0.1 }}
-                      className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-400"
+                      className="flex items-start gap-3 p-3 bg-amber-50/60 rounded-xl border border-amber-200"
                     >
                       <Lightbulb className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
                       <span className="text-sm text-gray-800">{rec}</span>

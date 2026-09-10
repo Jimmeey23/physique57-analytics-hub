@@ -191,7 +191,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
           <CardContent className="space-y-6">
             {/* Revenue & Growth Row */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-l-4 border-emerald-500 pl-3">Revenue & Growth</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue & Growth</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-lg border border-emerald-200 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
@@ -241,7 +241,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
 
             {/* Operations & Efficiency Row */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-l-4 border-blue-500 pl-3">Operations & Efficiency</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Operations & Efficiency</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
@@ -302,7 +302,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
 
             {/* Growth & Retention Row */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-l-4 border-purple-500 pl-3">Client Growth & Retention</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Client Growth & Retention</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">

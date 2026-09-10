@@ -721,7 +721,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                               </div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-4 gap-2 text-xs">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                             <div className="bg-white/60 rounded-lg p-2 border border-slate-200">
                               <div className="text-[10px] text-slate-600 mb-1">Attend</div>
                               <div className="font-bold text-slate-900">{item.avgCheckIns.toFixed(1)}</div>
@@ -779,7 +779,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                               </div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-4 gap-2 text-xs">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                             <div className="bg-white/60 rounded-lg p-2 border border-slate-200">
                               <div className="text-[10px] text-slate-600 mb-1">Attend</div>
                               <div className="font-bold text-slate-900">{item.avgCheckIns.toFixed(1)}</div>

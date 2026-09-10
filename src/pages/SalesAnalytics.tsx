@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { SalesAnalyticsSection } from '@/components/dashboard/SalesAnalyticsSection';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
-import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
+import type { TickerItem } from '@/components/ui/KpiTicker';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 const SalesAnalytics = () => {
   const { data, loading, error, refetch } = useGoogleSheets();
@@ -19,15 +23,19 @@ const SalesAnalytics = () => {
     setLoading(loading, 'Loading sales analytics data...');
   }, [loading, setLoading]);
 
+  const tickerItems: TickerItem[] = useMemo(() => {
+    const rows = data || [];
+    const revenue = rows.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    return [
+      { label: 'Total revenue', value: formatCurrency(revenue) },
+      { label: 'Transactions', value: formatNumber(rows.length) },
+      { label: 'Avg ticket', value: rows.length > 0 ? formatCurrency(revenue / rows.length) : '—' },
+    ];
+  }, [data]);
+
   return (
     <GlobalFiltersProvider>
       <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Enhanced Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-        </div>
         
         <div className="relative z-10">
           {loading ? (
@@ -49,11 +57,16 @@ const SalesAnalytics = () => {
             </div>
           ) : (
             <div className="bg-white text-slate-800 slide-in-from-left">
+              <div className="container mx-auto px-6 pt-8">
+                <KpiTicker items={tickerItems} />
+              </div>
               <SalesAnalyticsSection data={data} onReady={handleReady} />
+              <div className="container mx-auto px-6 pb-8">
+                <MetricDefinitions items={METRIC_DEFINITIONS.sales} />
+              </div>
             </div>
           )}
         </div>
-        <Footer />
       </div>
     </GlobalFiltersProvider>
   );

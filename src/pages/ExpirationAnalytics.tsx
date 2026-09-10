@@ -4,8 +4,12 @@ import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
+import type { TickerItem } from '@/components/ui/KpiTicker';
+import { formatNumber, formatPercentage } from '@/utils/formatters';
 
 const ExpirationAnalytics = () => {
   const { data, loading, error } = useExpirationsData();
@@ -14,6 +18,21 @@ const ExpirationAnalytics = () => {
   useEffect(() => {
     setLoading(loading, 'Loading expirations and churn data...');
   }, [loading, setLoading]);
+
+  const tickerItems: TickerItem[] = (() => {
+    const rows = data || [];
+    const total = rows.length;
+    const active = rows.filter((item) => item.status === 'Active').length;
+    const churned = rows.filter((item) => item.status === 'Churned').length;
+    const frozen = rows.filter((item) => item.status === 'Frozen').length;
+    const churnRate = total > 0 ? (churned / total) * 100 : 0;
+    return [
+      { label: 'Memberships', value: formatNumber(total) },
+      { label: 'Active', value: formatNumber(active) },
+      { label: 'Churned', value: formatNumber(churned), delta: formatPercentage(churnRate), tone: 'down' },
+      { label: 'Frozen', value: formatNumber(frozen) },
+    ];
+  })();
 
   // Remove individual loader - rely on global loader only
 
@@ -53,13 +72,16 @@ const ExpirationAnalytics = () => {
         metrics={[]}
       />
 
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker items={tickerItems} />
+      </div>
+
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
           <ExpirationAnalyticsSection data={data || []} />
+          <MetricDefinitions items={METRIC_DEFINITIONS.expirations} />
         </main>
       </div>
-      
-      <Footer />
     </div>
   );
 };

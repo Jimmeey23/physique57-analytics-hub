@@ -1221,19 +1221,19 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
 
                       return (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-blue-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Sessions</p>
                             <p className="text-2xl font-bold text-blue-700">{formatNumber(metrics.totalSessions)}</p>
                           </div>
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-green-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Total Check-ins</p>
                             <p className="text-2xl font-bold text-green-700">{formatNumber(metrics.totalCheckIns)}</p>
                           </div>
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-purple-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Avg Fill Rate</p>
                             <p className="text-2xl font-bold text-purple-700">{formatPercentage(avgFillRate)}</p>
                           </div>
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-emerald-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Revenue</p>
                             <p className="text-2xl font-bold text-emerald-700">{formatNumber(metrics.totalRevenue)}</p>
                           </div>

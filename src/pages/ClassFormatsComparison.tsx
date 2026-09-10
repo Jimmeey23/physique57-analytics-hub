@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { Footer } from '@/components/ui/footer';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
@@ -59,7 +61,7 @@ const ClassFormatsComparison: React.FC = () => {
   const FormatTrendsSection: React.FC<{ sessions: SessionData[]; checkins: any[]; activeLocation: string }>
     = ({ sessions, checkins, activeLocation }) => {
     const { filters } = useSessionsFilters();
-    const filteredSessionsByFilters = useFilteredSessionsData(sessions || []);
+    const filteredSessionsByFilters = useFilteredSessionsData(sessions || [], { skipDateRange: true });
     const filteredSessionsByLocation = React.useMemo(() => {
       if (activeLocation === 'all') return filteredSessionsByFilters;
       return filteredSessionsByFilters.filter(s => {
@@ -150,6 +152,7 @@ const ClassFormatsComparison: React.FC = () => {
     = ({ sessions, allCheckins }) => {
     const { filters } = useSessionsFilters();
     const filteredAll = useFilteredSessionsData(sessions || []);
+    const filteredAllNoDate = useFilteredSessionsData(sessions || [], { skipDateRange: true });
     
     React.useEffect(() => {
       if (sessions && sessions.length > 0) {
@@ -381,6 +384,16 @@ const ClassFormatsComparison: React.FC = () => {
           extra={exportButton}
         />
 
+        <div className="container mx-auto px-6 pt-5">
+          <KpiTicker
+            items={[
+              { label: 'Total Sessions', value: heroTotals.sessions.toLocaleString() },
+              { label: 'Avg Fill', value: `${heroTotals.fill.toFixed(1)}%` },
+              { label: 'Total Revenue', value: formatNumber(heroTotals.revenue) },
+            ]}
+          />
+        </div>
+
         <div className="container mx-auto px-6 py-10">
           {/* Location Tabs - Above Filters Section */}
           <div className="mb-8">
@@ -401,6 +414,16 @@ const ClassFormatsComparison: React.FC = () => {
           <div className="space-y-8">{locations.map(location => {
             // Calculate filtered data specific to THIS location tab
             const locationFilteredData = location.id === 'all' ? filteredAll : filteredAll.filter(s => {
+              const sl = (s.location || '').toLowerCase();
+              if (location.id === 'kwality') return sl.includes('kwality');
+              if (location.id === 'supreme') return sl.includes('supreme');
+              if (location.id === 'kenkere') return sl.includes('kenkere');
+              if (location.id === 'popup') return sl.includes('pop') || sl.includes('popup') || sl.includes('pop-up');
+              return false;
+            });
+
+            // Date-free sessions for the MoM tab (same location predicate, no date range)
+            const momLocationSessions = location.id === 'all' ? filteredAllNoDate : filteredAllNoDate.filter(s => {
               const sl = (s.location || '').toLowerCase();
               if (location.id === 'kwality') return sl.includes('kwality');
               if (location.id === 'supreme') return sl.includes('supreme');
@@ -477,7 +500,7 @@ const ClassFormatsComparison: React.FC = () => {
                         <h3 className="text-lg font-semibold text-slate-900 mb-2">Month-over-Month Performance Trends</h3>
                         <p className="text-sm text-slate-600">Historical class format performance comparison across all months</p>
                       </div>
-                      <ClassFormatsMoMTable sessions={locationFilteredData as any} checkins={locationFilteredCheckins} />
+                      <ClassFormatsMoMTable sessions={momLocationSessions as any} checkins={locationFilteredCheckins} />
                     </>
                   ) : (
                     <div className="text-center py-8 text-slate-500">No data available</div>
@@ -487,6 +510,9 @@ const ClassFormatsComparison: React.FC = () => {
               </div>
             );
           })}</div>
+        </div>
+        <div className="container mx-auto px-6 pb-10">
+          <MetricDefinitions items={METRIC_DEFINITIONS.classFormats} />
         </div>
         {drill && (
           <ModernDrillDownModal
@@ -502,12 +528,6 @@ const ClassFormatsComparison: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/40 relative overflow-hidden">
-      {/* Enhanced Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 -left-20 w-96 h-96 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 -right-20 w-96 h-96 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-400/15 to-blue-400/15 rounded-full blur-2xl animate-pulse delay-500"></div>
-      </div>
       
       {/* Subtle grid pattern overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
@@ -516,7 +536,6 @@ const ClassFormatsComparison: React.FC = () => {
       <SessionsFiltersProvider>
         <ClassFormatsBody sessions={data || []} allCheckins={allCheckins || []} />
       </SessionsFiltersProvider>
-      <Footer />
       </div>
     </div>
   );

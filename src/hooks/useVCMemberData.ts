@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { MemberBehaviorData, MonthlyMetrics } from '@/types/memberBehavior';
 import { fetchGoogleSheet, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
+import { useDataSource } from '@/contexts/DataSourceContext';
+import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
 
 const logger = createLogger('useVCMemberData');
 
@@ -19,6 +21,7 @@ interface UseVCMemberDataResult {
 }
 
 export const useVCMemberData = (): UseVCMemberDataResult => {
+  const { mode, reportSource } = useDataSource();
   const [data, setData] = useState<MemberBehaviorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +77,9 @@ export const useVCMemberData = (): UseVCMemberDataResult => {
 
     try {
       logger.info('🔄 Fetching VC member data from Google Sheets...');
-      const rows = await fetchGoogleSheet(SPREADSHEET_ID, VC_SHEET_NAME);
+      const { rows } = await loadDatasetRowsForMode('vc-members', mode, async () => {
+        return fetchGoogleSheet(SPREADSHEET_ID, VC_SHEET_NAME);
+      }, reportSource);
 
       if (rows.length < 2) {
         throw new Error('VC sheet appears to be empty');
@@ -119,7 +124,7 @@ export const useVCMemberData = (): UseVCMemberDataResult => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [mode]);
 
   return {
     data,

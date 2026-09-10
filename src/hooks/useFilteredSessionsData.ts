@@ -3,7 +3,7 @@ import { useMemo, useContext } from 'react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 
-export const useFilteredSessionsData = (data: SessionData[]) => {
+export const useFilteredSessionsData = (data: SessionData[], options?: { skipDateRange?: boolean }) => {
   // Try to get filters context, but don't throw if it doesn't exist
   let filters = null;
   try {
@@ -61,8 +61,8 @@ export const useFilteredSessionsData = (data: SessionData[]) => {
         return false;
       }
 
-      // Date range filter with improved parsing
-      if (filters.dateRange.start || filters.dateRange.end) {
+      // Date range filter with improved parsing (skippable for MoM/YoY views)
+      if (!options?.skipDateRange && (filters.dateRange.start || filters.dateRange.end)) {
         let sessionDate: Date;
         
         // Handle different date formats from the sheets
@@ -108,7 +108,7 @@ export const useFilteredSessionsData = (data: SessionData[]) => {
 
       return true;
     });
-  }, [data, filters]);
+  }, [data, filters, options?.skipDateRange]);
 
   return filteredData;
 };

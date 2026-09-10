@@ -11,10 +11,14 @@ export const isInNewClientCohort = (record: Pick<RetentionLikeRecord, 'isNew'> |
   return normalized === 'new' || normalized.startsWith('new ');
 };
 
+// Source of truth: the New sheet's status columns (no isNew gate).
+// A row counts as converted/retained purely from its status column value.
+const normalizedStatus = (value: unknown) => String(value || '').trim();
+
 export const isConvertedInCohort = (record: RetentionLikeRecord) => {
-  return isInNewClientCohort(record) && record.conversionStatus === 'Converted';
+  return normalizedStatus(record.conversionStatus) === 'Converted';
 };
 
 export const isRetainedInCohort = (record: RetentionLikeRecord) => {
-  return isInNewClientCohort(record) && record.retentionStatus === 'Retained';
+  return normalizedStatus(record.retentionStatus) === 'Retained';
 };

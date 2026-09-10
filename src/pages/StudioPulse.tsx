@@ -1,5 +1,7 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -112,6 +114,7 @@ import { PresenterAnnotationOverlay } from '@/components/dashboard/PresenterAnno
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminCodeGate } from '@/components/ui/AdminCodeGate';
 import { useToast } from '@/hooks/use-toast';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 /* ------------------------------------------------------------------ */
 /* Studio definitions                                                  */
@@ -1579,8 +1582,10 @@ const StudioPulse = memo(() => {
   const clientStats = useMemo(() => {
     const rows = filteredClients.filter((c) => isInNewClientCohort(c));
     const total = rows.length;
-    const converted = rows.filter((c) => c.conversionStatus === 'Converted').length;
-    const retained = rows.filter((c) => c.retentionStatus === 'Retained').length;
+    // Status truth (New sheet): converted/retained count from status columns across ALL clients
+    const totalClients = filteredClients.length;
+    const converted = filteredClients.filter((c) => isConvertedInCohort(c)).length;
+    const retained = filteredClients.filter((c) => isRetainedInCohort(c)).length;
     const ltvVals = rows.map((c) => Number(c.ltv) || 0).filter((v) => v > 0);
     const avgLtv = ltvVals.length ? ltvVals.reduce((a, b) => a + b, 0) / ltvVals.length : 0;
     const spanVals = rows.map((c) => Number(c.conversionSpan) || 0).filter((v) => v > 0);
@@ -1588,18 +1593,21 @@ const StudioPulse = memo(() => {
     const prevRows = previousClients.filter((c) => isInNewClientCohort(c));
     const yoyRows = previousYearClients.filter((c) => isInNewClientCohort(c));
     const prevTotal = prevRows.length;
-    const prevConverted = prevRows.filter((c) => c.conversionStatus === 'Converted').length;
-    const prevRetained = prevRows.filter((c) => c.retentionStatus === 'Retained').length;
+    const prevTotalClients = previousClients.length;
+    const prevConverted = previousClients.filter((c) => isConvertedInCohort(c)).length;
+    const prevRetained = previousClients.filter((c) => isRetainedInCohort(c)).length;
     const yoyTotal = yoyRows.length;
-    const yoyConverted = yoyRows.filter((c) => c.conversionStatus === 'Converted').length;
-    const yoyRetained = yoyRows.filter((c) => c.retentionStatus === 'Retained').length;
+    const yoyTotalClients = previousYearClients.length;
+    const yoyConverted = previousYearClients.filter((c) => isConvertedInCohort(c)).length;
+    const yoyRetained = previousYearClients.filter((c) => isRetainedInCohort(c)).length;
     const lapsed = rows.filter((c) => /lapsed|inactive|expired|churn|lost/i.test(`${c.retentionStatus || ''} ${c.conversionStatus || ''}`)).length;
     const prevLapsed = prevRows.filter((c) => /lapsed|inactive|expired|churn|lost/i.test(`${c.retentionStatus || ''} ${c.conversionStatus || ''}`)).length;
     const yoyLapsed = yoyRows.filter((c) => /lapsed|inactive|expired|churn|lost/i.test(`${c.retentionStatus || ''} ${c.conversionStatus || ''}`)).length;
     return {
       newClients: total,
-      conversionRate: total ? (converted / total) * 100 : 0,
-      retentionRate: total ? (retained / total) * 100 : 0,
+      totalClients,
+      conversionRate: totalClients ? (converted / totalClients) * 100 : 0,
+      retentionRate: totalClients ? (retained / totalClients) * 100 : 0,
       converted,
       retained,
       lapsed,
@@ -1607,16 +1615,16 @@ const StudioPulse = memo(() => {
       avgSpan,
       growth: {
         newClients: pctChange(total, prevTotal),
-        conversionRate: pctChange(total ? (converted / total) * 100 : 0, prevTotal ? (prevConverted / prevTotal) * 100 : 0),
-        retentionRate: pctChange(total ? (retained / total) * 100 : 0, prevTotal ? (prevRetained / prevTotal) * 100 : 0),
+        conversionRate: pctChange(totalClients ? (converted / totalClients) * 100 : 0, prevTotalClients ? (prevConverted / prevTotalClients) * 100 : 0),
+        retentionRate: pctChange(totalClients ? (retained / totalClients) * 100 : 0, prevTotalClients ? (prevRetained / prevTotalClients) * 100 : 0),
         converted: pctChange(converted, prevConverted),
         retained: pctChange(retained, prevRetained),
         lapsed: pctChange(lapsed, prevLapsed),
       },
       yoyGrowth: {
         newClients: pctChange(total, yoyTotal),
-        conversionRate: pctChange(total ? (converted / total) * 100 : 0, yoyTotal ? (yoyConverted / yoyTotal) * 100 : 0),
-        retentionRate: pctChange(total ? (retained / total) * 100 : 0, yoyTotal ? (yoyRetained / yoyTotal) * 100 : 0),
+        conversionRate: pctChange(totalClients ? (converted / totalClients) * 100 : 0, yoyTotalClients ? (yoyConverted / yoyTotalClients) * 100 : 0),
+        retentionRate: pctChange(totalClients ? (retained / totalClients) * 100 : 0, yoyTotalClients ? (yoyRetained / yoyTotalClients) * 100 : 0),
         converted: pctChange(converted, yoyConverted),
         retained: pctChange(retained, yoyRetained),
         lapsed: pctChange(lapsed, yoyLapsed),
@@ -2785,7 +2793,7 @@ const StudioPulse = memo(() => {
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
             {loading ? 'Generating AI insights…' : s ? `AI insights · generated ${new Date(s.lastGenerated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : 'Summary'}
           </span>
-          {loading && <div className="h-3 w-3 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500 shrink-0" />}
+          {loading && <BrandSpinner ringOnly size="xs" />}
         </div>
         {bullets.length > 0 ? renderBulletSummary(bullets, columns) : (
           <p className="text-sm text-slate-400">AI summary will appear here when cached or generated.</p>
@@ -3490,17 +3498,17 @@ const StudioPulse = memo(() => {
       ].join('\n'),
 
       funnel: [
-        `${clientStats.newClients} new clients entered funnel · ${clientStats.converted} converted (${formatPercentage(clientStats.conversionRate)}) · ${clientStats.retained} retained (${formatPercentage(clientStats.retentionRate)})`,
+        `${clientStats.totalClients} clients in scope (${clientStats.newClients} new) · ${clientStats.converted} converted (${formatPercentage(clientStats.conversionRate)}) · ${clientStats.retained} retained (${formatPercentage(clientStats.retentionRate)})`,
         `Avg LTV post-trial: ${formatCurrency(clientStats.avgLtv)}`,
-        `Conversion gap: ${formatNumber(clientStats.newClients - clientStats.converted)} new clients did NOT convert`,
+        `Conversion gap: ${formatNumber(clientStats.totalClients - clientStats.converted)} clients did NOT convert`,
         `Retention gap: ${formatNumber(clientStats.converted - clientStats.retained)} converted clients did NOT retain`,
         clientStats.conversionRate > 0 && clientStats.retentionRate > 0
           ? `Retention-to-conversion ratio: ${(clientStats.retentionRate / clientStats.conversionRate * 100).toFixed(0)}% of converters retained`
           : '',
       ].filter(Boolean).join('\n'),
       funnelOverview: [
-        `${clientStats.newClients} newcomers entered the funnel and ${clientStats.converted} converted.`,
-        `The biggest gap is ${formatNumber(clientStats.newClients - clientStats.converted)} members who entered but did not convert.`,
+        `${clientStats.totalClients} clients in scope and ${clientStats.converted} converted (${clientStats.newClients} of them new).`,
+        `The biggest gap is ${formatNumber(clientStats.totalClients - clientStats.converted)} members who did not convert.`,
         `Avg LTV is ${formatCurrency(clientStats.avgLtv)}, so every conversion gap has direct revenue impact.`,
       ].join('\n'),
       funnelRankings: [
@@ -3874,11 +3882,6 @@ const StudioPulse = memo(() => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {/* Ambient background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-24 left-10 h-80 w-80 rounded-full bg-gradient-to-br from-blue-300/20 to-blue-900/10 blur-3xl" />
-        <div className="absolute top-40 right-0 h-96 w-96 rounded-full bg-gradient-to-br from-fuchsia-300/15 to-purple-300/10 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-gradient-to-br from-emerald-300/15 to-teal-300/10 blur-3xl" />
-      </div>
 
       <div className="relative z-10 mx-auto max-w-[1400px] px-4 py-8 md:px-8">
         {/* Header */}
@@ -4463,7 +4466,7 @@ const StudioPulse = memo(() => {
               <div className="p-6 space-y-6">
                 {aiLoading ? (
                   <div className="flex items-center gap-3 text-slate-500 py-4">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-violet-500" />
+                    <BrandSpinner ringOnly size="xs" />
                     <span className="text-sm font-medium">Generating AI summary…</span>
                   </div>
                 ) : isSummaryEditing ? (
@@ -5327,7 +5330,7 @@ const StudioPulse = memo(() => {
                 {renderAISummary('funnel-overview', [
                   `Current conversion rate is ${formatPercentage(clientStats.conversionRate)} and retention rate is ${formatPercentage(clientStats.retentionRate)}.`,
                   `Average post-trial value is ${formatCurrency(clientStats.avgLtv)} with ${formatNumber(filteredClients.reduce((sum, item) => sum + (Number(item.visitsPostTrial) || 0), 0))} total post-trial visits.`,
-                  `${clientStats.newClients} new clients entered the funnel — ${clientStats.converted} converted.`,
+                  `${clientStats.totalClients} clients in scope — ${clientStats.converted} converted (${clientStats.newClients} of them new).`,
                 ])}
               </div>
             </AnimatedSectionCard>
@@ -7210,6 +7213,10 @@ const StudioPulse = memo(() => {
         footerNote="This summary uses the currently selected studio scope and date filter."
       />
 
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.studioPulse} />
+      </div>
+
       {drillDownConfig ? (
         <UniversalDrillDownModal
           isOpen={drillDownOpen}
@@ -7220,8 +7227,6 @@ const StudioPulse = memo(() => {
           title={drillDownConfig.title}
         />
       ) : null}
-
-      <Footer />
     </div>
   );
 });

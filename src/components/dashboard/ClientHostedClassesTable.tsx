@@ -1,13 +1,12 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Dumbbell, TrendingUp, TrendingDown } from 'lucide-react';
+import { Dumbbell } from 'lucide-react';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { downloadCsv } from '@/utils/csvExport';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
 import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
 import { NewClientData } from '@/types/dashboard';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
-import { motion } from 'framer-motion';
 
 interface ClientHostedClassesTableProps {
   data: NewClientData[];
@@ -17,6 +16,7 @@ interface ClientHostedClassesTableProps {
 export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> = ({ data, onRowClick }) => {
   const [sortField, setSortField] = React.useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
+  const [query, setQuery] = React.useState('');
   const safeData = data ?? [];
 
   const hostedClassData = React.useMemo(() => {
@@ -97,9 +97,9 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     return Object.values(classStats)
       .map((stat: any) => ({
         ...stat,
-        conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
-  // Standardize retention rate: retained / newMembers
-  retentionRate: stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0,
+        conversionRate: stat.totalMembers > 0 ? (stat.converted / stat.totalMembers) * 100 : 0,
+  // Standardize retention rate: retained / totalMembers
+  retentionRate: stat.totalMembers > 0 ? (stat.retained / stat.totalMembers) * 100 : 0,
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgConversionInterval: stat.conversionIntervals.length > 0 
           ? stat.conversionIntervals.reduce((a: number, b: number) => a + b, 0) / stat.conversionIntervals.length 
@@ -217,13 +217,15 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     avgLTV: hostedClassData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1),
     avgConversionInterval: hostedClassData.reduce((sum, row) => sum + (row.avgConversionInterval * row.totalMembers), 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
-  totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
-  totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+  totals.conversionRate = totals.totalMembers > 0 ? (totals.converted / totals.totalMembers) * 100 : 0;
+  totals.retentionRate = totals.totalMembers > 0 ? (totals.retained / totals.totalMembers) * 100 : 0;
   const allHostedClients = hostedClassData.flatMap(row => row.clients || []);
 
   // Sorting logic
   const displayedData = React.useMemo(() => {
-    const arr = [...hostedClassData];
+    const term = query.trim().toLowerCase();
+    const base = term ? hostedClassData.filter((r: any) => `${r.month} ${r.className}`.toLowerCase().includes(term)) : hostedClassData;
+    const arr = [...base];
     if (!sortField) return arr;
     return arr.sort((a: any, b: any) => {
       const av = a[sortField];
@@ -232,7 +234,7 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
       return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
     });
-  }, [hostedClassData, sortField, sortDirection]);
+  }, [hostedClassData, sortField, sortDirection, query]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -241,6 +243,16 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       setSortField(field);
       setSortDirection('desc');
     }
+  };
+
+  const handleExportCsv = () => {
+    const cols = columns.map((c) => ({ key: c.key, header: c.header }));
+    const toRec = (r: any): Record<string, unknown> => {
+      const rec: Record<string, unknown> = {};
+      columns.forEach((c) => { rec[c.key] = r[c.key] ?? ''; });
+      return rec;
+    };
+    downloadCsv('Hosted Classes Performance Analysis.csv', cols, [...displayedData.map(toRec), toRec(totals)]);
   };
 
   const aiNotes = React.useMemo(() => {
@@ -255,56 +267,39 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     return notes;
   }, [hostedClassData]);
 
-  if (safeData.length === 0) {
-    return (
-      <Card className="bg-white shadow-xl border-0 overflow-hidden">
-        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
-          <CardTitle className="flex items-center gap-2">
-            <Dumbbell className="w-5 h-5" />
-            Hosted Classes Performance Analysis
-            <Badge variant="secondary" className="bg-white/20 text-white">
-              0 Classes
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <p className="text-gray-500 text-center">No class data available for analysis.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const emptyShell = (
+    <P57TableShell
+      icon={Dumbbell}
+      title="Hosted Classes"
+      description="Signature partnership sessions, guest behavior, and conversion signals."
+      rowCount={0}
+      rowCountLabel="classes"
+    >
+      <p className="px-1 py-12 text-center text-sm text-slate-500">No class data available for analysis.</p>
+    </P57TableShell>
+  );
+
+  if (safeData.length === 0) return emptyShell;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Card className="bg-white shadow-xl border-0 overflow-hidden hover:shadow-2xl transition-all duration-300">
-  <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
-          <CardTitle className="flex items-center gap-2">
-            <Dumbbell className="w-5 h-5" />
-            Hosted Classes Performance Analysis
-            <Badge variant="secondary" className="bg-white/20 text-white">
-              {hostedClassData.length} Classes
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+    <div className="space-y-4">
+      <P57TableShell
+        icon={Dumbbell}
+        title="Hosted Classes"
+        description="Signature partnership sessions, guest behavior, and conversion signals. Click a row for drill-down evidence."
+        rowCount={displayedData.length}
+        rowCountLabel="classes"
+        onSearch={setQuery}
+        searchPlaceholder="Search classes or months\u2026"
+        onExportCsv={handleExportCsv}
+        meta={<span>{formatNumber(totals.totalMembers)} trials \u00b7 {totals.conversionRate.toFixed(1)}% conversion</span>}
+      >
           <ModernDataTable
             data={displayedData}
             columns={columns}
-            headerGradient="from-slate-950 via-slate-900 to-slate-800"
             showFooter={true}
             footerData={totals}
-            footerRowClassName="border-t-4 border-indigo-950 bg-indigo-950 text-slate-50 hover:bg-indigo-900"
-            footerStickyCellClassName="bg-indigo-950 border-indigo-900"
-            footerCellClassName="bg-indigo-950 border-indigo-900 text-slate-50"
-            footerSectionStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderTopColor: '#4338ca' }}
-            footerRowStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderTopColor: '#4338ca' }}
-            footerStickyCellStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#4338ca' }}
-            footerCellStyle={{ ['--unified-totals-bg' as string]: '#3730a3', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#3730a3', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#4338ca' }}
-            maxHeight="600px"
+            maxHeight="560px"
             onRowClick={onRowClick}
             onSort={handleSort}
             sortField={sortField}
@@ -317,15 +312,16 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
             })}
             tableId="Hosted Classes Performance Analysis"
             />
-          <div className="border-t border-slate-200 p-4 bg-slate-50">
-            <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              {aiNotes.map((insight, index) => (
-                <li key={index}>{insight}</li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+      </P57TableShell>
+      {aiNotes.length > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">
+            {aiNotes.map((insight, index) => (
+              <li key={index}>{insight}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 };

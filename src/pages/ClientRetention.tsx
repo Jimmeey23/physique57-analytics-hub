@@ -13,11 +13,13 @@ import { useNewClientData } from '@/hooks/useNewClientData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { BarChart3, Clock3, Gauge, RotateCcw, SlidersHorizontal } from 'lucide-react';
-import { Footer } from '@/components/ui/footer';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
@@ -277,8 +279,8 @@ const isClientInRetentionDateRange = (client: NewClientData, startDate: Date | n
 const finalizeRetentionPivotCell = (cell: RetentionPivotCell) => ({
   ...cell,
   avgLTV: cell.trials > 0 ? cell.totalLTV / cell.trials : 0,
-  conversionRate: cell.newMembers > 0 ? (cell.converted / cell.newMembers) * 100 : 0,
-  retentionRate: cell.newMembers > 0 ? (cell.retained / cell.newMembers) * 100 : 0,
+  conversionRate: cell.trials > 0 ? (cell.converted / cell.trials) * 100 : 0,
+  retentionRate: cell.trials > 0 ? (cell.retained / cell.trials) * 100 : 0,
   avgConversionDays: cell.conversionSpans.length > 0 ? cell.conversionSpans.reduce((sum, value) => sum + value, 0) / cell.conversionSpans.length : 0,
   avgVisits: cell.visitsPostTrial.length > 0 ? cell.visitsPostTrial.reduce((sum, value) => sum + value, 0) / cell.visitsPostTrial.length : 0,
 });
@@ -438,8 +440,8 @@ const buildClientConversionMonthOnMonthRows = (
 
   return Array.from(statsMap.values())
     .map((row) => {
-      const conversionRate = row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0;
-      const retentionRate = row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0;
+      const conversionRate = row.totalTrials > 0 ? (row.converted / row.totalTrials) * 100 : 0;
+      const retentionRate = row.totalTrials > 0 ? (row.retained / row.totalTrials) * 100 : 0;
       const avgLTV = row.totalTrials > 0 ? row.totalLTV / row.totalTrials : 0;
       const avgConversionDays = row.conversionSpans.length > 0 ? row.conversionSpans.reduce((sum: number, value: number) => sum + value, 0) / row.conversionSpans.length : 0;
       const avgVisits = row.visitsPostTrial.length > 0 ? row.visitsPostTrial.reduce((sum: number, value: number) => sum + value, 0) / row.visitsPostTrial.length : 0;
@@ -509,9 +511,9 @@ const buildHostedClassesExportRows = (inputData: NewClientData[]): ExportRow[] =
       Trials: formatNumber(row.totalMembers),
       'New Members': formatNumber(row.newMembers),
       Retained: formatNumber(row.retained),
-      'Retention %': formatPercentage(row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0),
+      'Retention %': formatPercentage(row.totalMembers > 0 ? (row.retained / row.totalMembers) * 100 : 0),
       Converted: formatNumber(row.converted),
-      'Conversion %': formatPercentage(row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0),
+      'Conversion %': formatPercentage(row.totalMembers > 0 ? (row.converted / row.totalMembers) * 100 : 0),
       'Avg LTV': formatCurrency(row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0),
       'Avg Conv Days': row.conversionIntervals.length > 0
         ? `${(row.conversionIntervals.reduce((sum: number, value: number) => sum + value, 0) / row.conversionIntervals.length).toFixed(1)} days`
@@ -548,9 +550,9 @@ const buildMembershipPerformanceRows = (inputData: NewClientData[]): ExportRow[]
       Trials: formatNumber(row.totalMembers),
       'New Members': formatNumber(row.newMembers),
       Retained: formatNumber(row.retained),
-      'Retention %': formatPercentage(row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0),
+      'Retention %': formatPercentage(row.totalMembers > 0 ? (row.retained / row.totalMembers) * 100 : 0),
       Converted: formatNumber(row.converted),
-      'Conversion %': formatPercentage(row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0),
+      'Conversion %': formatPercentage(row.totalMembers > 0 ? (row.converted / row.totalMembers) * 100 : 0),
       'Avg LTV': formatCurrency(row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0),
       'Total LTV': formatCurrency(row.totalLTV),
     }))
@@ -558,13 +560,14 @@ const buildMembershipPerformanceRows = (inputData: NewClientData[]): ExportRow[]
 };
 
 const buildTeacherPerformanceRows = (inputData: NewClientData[]): ExportRow[] => {
-  const stats = new Map<string, { newMembers: Set<string>; sessions: number; converted: Set<string>; retained: Set<string> }>();
+  const stats = new Map<string, { newMembers: Set<string>; totalMembers: Set<string>; sessions: number; converted: Set<string>; retained: Set<string> }>();
   inputData.forEach((client) => {
     const trainerName = client.trainerName || 'Unknown Trainer';
     if (!stats.has(trainerName)) {
-      stats.set(trainerName, { newMembers: new Set(), sessions: 0, converted: new Set(), retained: new Set() });
+      stats.set(trainerName, { newMembers: new Set(), totalMembers: new Set(), sessions: 0, converted: new Set(), retained: new Set() });
     }
     const row = stats.get(trainerName)!;
+    if (client.memberId) row.totalMembers.add(client.memberId);
     if (isInNewClientCohort(client) && client.memberId) row.newMembers.add(client.memberId);
     row.sessions += client.classNo || 0;
     if (isConvertedInCohort(client) && client.memberId) row.converted.add(client.memberId);
@@ -574,6 +577,7 @@ const buildTeacherPerformanceRows = (inputData: NewClientData[]): ExportRow[] =>
   return Array.from(stats.entries())
     .map(([trainerName, row]) => {
       const newMembers = row.newMembers.size;
+      const totalMembers = row.totalMembers.size;
       const converted = row.converted.size;
       const retained = row.retained.size;
       return {
@@ -581,9 +585,9 @@ const buildTeacherPerformanceRows = (inputData: NewClientData[]): ExportRow[] =>
         'New Members': formatNumber(newMembers),
         Sessions: formatNumber(row.sessions),
         Converted: formatNumber(converted),
-        'Conversion Rate': formatPercentage(newMembers > 0 ? (converted / newMembers) * 100 : 0),
+        'Conversion Rate': formatPercentage(totalMembers > 0 ? (converted / totalMembers) * 100 : 0),
         Retained: formatNumber(retained),
-        'Retention Rate': formatPercentage(newMembers > 0 ? (retained / newMembers) * 100 : 0),
+        'Retention Rate': formatPercentage(totalMembers > 0 ? (retained / totalMembers) * 100 : 0),
       };
     })
     .sort((a, b) => Number(String(b['New Members']).replace(/,/g, '')) - Number(String(a['New Members']).replace(/,/g, '')));
@@ -1064,8 +1068,8 @@ const ClientRetention = () => {
     const newMembers = filteredData.filter(c => isInNewClientCohort(c)).length;
     const converted = filteredData.filter(c => isConvertedInCohort(c)).length;
     const retained = filteredData.filter(c => isRetainedInCohort(c)).length;
-    const conversionRate = newMembers > 0 ? (converted / newMembers) * 100 : 0;
-    const retentionRate = newMembers > 0 ? (retained / newMembers) * 100 : 0;
+    const conversionRate = totalTrials > 0 ? (converted / totalTrials) * 100 : 0;
+    const retentionRate = totalTrials > 0 ? (retained / totalTrials) * 100 : 0;
     const totalLTV = filteredData.reduce((sum, c) => sum + (c.ltv || 0), 0);
     const avgLTV = totalTrials > 0 ? totalLTV / totalTrials : 0;
     
@@ -1158,6 +1162,9 @@ const ClientRetention = () => {
             metrics={heroMetrics}
             extra={exportButton}
           />
+          <div className="mx-auto w-full max-w-screen-2xl px-3 pb-5 sm:px-6 lg:px-8">
+            <KpiTicker items={heroMetrics} />
+          </div>
         </div>
 
         <div className="mx-auto w-full max-w-screen-2xl px-3 py-5 sm:px-6 lg:px-8">
@@ -1497,12 +1504,9 @@ const ClientRetention = () => {
             />
           )}
         </ModalSuspense>
+          <MetricDefinitions items={METRIC_DEFINITIONS.clientRetention} />
         </div>
       </div>
-      
-      <Footer />
-
-
     </div>;
 };
 export default ClientRetention;

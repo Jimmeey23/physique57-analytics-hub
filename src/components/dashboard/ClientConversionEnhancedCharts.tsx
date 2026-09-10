@@ -73,6 +73,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         monthMap.set(monthKey, {
           month: monthKey,
           newMembers: 0,
+          total: 0,
           converted: 0,
           retained: 0,
           revenue: 0
@@ -91,14 +92,15 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         monthData.retained++;
       }
       monthData.revenue += client.ltv || 0;
+      monthData.total++;
     });
     
     return Array.from(monthMap.values())
       .sort((a, b) => a.month.localeCompare(b.month))
       .map(item => ({
         ...item,
-        conversionRate: item.newMembers > 0 ? (item.converted / item.newMembers) * 100 : 0,
-        retentionRate: item.converted > 0 ? (item.retained / item.converted) * 100 : 0
+        conversionRate: item.total > 0 ? (item.converted / item.total) * 100 : 0,
+        retentionRate: item.total > 0 ? (item.retained / item.total) * 100 : 0
       }));
   }, [data]);
 
@@ -113,6 +115,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         locationMap.set(location, {
           location,
           newMembers: 0,
+          total: 0,
           converted: 0,
           retained: 0,
           revenue: 0
@@ -131,13 +134,14 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         locationStat.retained++;
       }
       locationStat.revenue += client.ltv || 0;
+      locationStat.total++;
     });
     
     return Array.from(locationMap.values())
       .map(item => ({
         ...item,
-        conversionRate: item.newMembers > 0 ? (item.converted / item.newMembers) * 100 : 0,
-        retentionRate: item.converted > 0 ? (item.retained / item.converted) * 100 : 0
+        conversionRate: item.total > 0 ? (item.converted / item.total) * 100 : 0,
+        retentionRate: item.total > 0 ? (item.retained / item.total) * 100 : 0
       }))
       .sort((a, b) => b.revenue - a.revenue);
   }, [data]);
@@ -153,6 +157,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         trainerMap.set(trainer, {
           trainer,
           newMembers: 0,
+          total: 0,
           converted: 0,
           retained: 0,
           revenue: 0
@@ -171,14 +176,15 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         trainerStat.retained++;
       }
       trainerStat.revenue += client.ltv || 0;
+      trainerStat.total++;
     });
     
     return Array.from(trainerMap.values())
       .filter(item => item.newMembers >= 3)
       .map(item => ({
         ...item,
-        conversionRate: item.newMembers > 0 ? (item.converted / item.newMembers) * 100 : 0,
-        retentionRate: item.converted > 0 ? (item.retained / item.converted) * 100 : 0
+        conversionRate: item.total > 0 ? (item.converted / item.total) * 100 : 0,
+        retentionRate: item.total > 0 ? (item.retained / item.total) * 100 : 0
       }))
       .sort((a, b) => b.conversionRate - a.conversionRate)
       .slice(0, 10);

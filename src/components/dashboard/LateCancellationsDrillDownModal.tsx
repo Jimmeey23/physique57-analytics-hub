@@ -94,9 +94,9 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
           ) : (
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-slate-100 p-2">
-                <TabsTrigger value="overview" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
-                <TabsTrigger value="breakdowns" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Breakdowns</TabsTrigger>
-                <TabsTrigger value="records" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Records</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl data-[state=active]:shadow-sm">Overview</TabsTrigger>
+                <TabsTrigger value="breakdowns" className="rounded-xl data-[state=active]:shadow-sm">Breakdowns</TabsTrigger>
+                <TabsTrigger value="records" className="rounded-xl data-[state=active]:shadow-sm">Records</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">

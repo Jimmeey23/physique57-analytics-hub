@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
-import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useCheckinsData } from '@/hooks/useCheckinsData';
@@ -57,11 +59,6 @@ const DataLabPageContent = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-        </div>
 
         <div className="relative z-10 container mx-auto px-6 py-10">
           <LoadingSkeleton type="full-page" />
@@ -73,10 +70,6 @@ const DataLabPageContent = () => {
   if (salesError) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-        </div>
 
         <div className="relative z-10 container mx-auto px-6 py-10">
           <div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-2xl shadow-sm">
@@ -105,11 +98,6 @@ const DataLabPageContent = () => {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-        <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-      </div>
 
       <div className="relative z-10">
         <div className="bg-white text-slate-800 slide-in-from-left">
@@ -120,12 +108,17 @@ const DataLabPageContent = () => {
             onExportClick={() => {}}
           />
 
+          <div className="container mx-auto px-6 pt-2">
+            <KpiTicker items={heroMetrics} />
+          </div>
+
           <div className="container mx-auto px-6 py-8">
             <DataLabWorkspace dataSources={dataSources} />
+            <div className="pt-2">
+              <MetricDefinitions items={METRIC_DEFINITIONS.outlierLab} />
+            </div>
           </div>
         </div>
-
-        <Footer />
       </div>
     </div>
   );

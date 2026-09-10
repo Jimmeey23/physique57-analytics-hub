@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { requestCache } from '@/utils/performanceOptimizations';
-import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
+import { fetchSheetValuesSmart, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 import { useDataSource } from '@/contexts/DataSourceContext';
 import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
@@ -17,7 +17,7 @@ export const useGoogleSheets = () => {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchSalesData = async () => {
     // Abort previous request if still pending
@@ -34,27 +34,11 @@ export const useGoogleSheets = () => {
       const { rows } = await loadDatasetRowsForMode('sales', mode, async () => {
         const result = await requestCache.fetch('google-sheets-sales', async () => {
           logger.info('Fetching sales data from Google Sheets...');
-          const accessToken = await getGoogleAccessToken();
-          
-          const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-              },
-              signal: abortControllerRef.current?.signal,
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch data');
-          }
-
-          return response.json();
+          return fetchSheetValuesSmart(SPREADSHEET_ID, 'Sales', abortControllerRef.current?.signal);
         });
 
         return result.values || [];
-      });
+      }, reportSource);
       
       // Raw data from Google Sheets received
       
@@ -142,7 +126,7 @@ export const useGoogleSheets = () => {
             secMembershipEndDate: rawItem['Sec. Membership End Date'] || rawItem['Sec Membership End Date'] || '',
             secMembershipTotalClasses: parseNumericValue(rawItem['Sec. Membership Total Classes'] || 0),
             secMembershipClassesLeft: parseNumericValue(rawItem['Sec. Membership Classes Left'] || 0),
-            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || 0),
+            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || rawItem['Sec. Membership Used Session Credits'] || 0),
             // Additional discount indicators
             discountCode: rawItem['Discount Code'] || rawItem['discount_code'] || rawItem['DiscountCode'] || rawItem['Promo Code'] || rawItem['promo_code'] || '',
             discountType: rawItem['Discount Code'] ? 'code' : undefined,

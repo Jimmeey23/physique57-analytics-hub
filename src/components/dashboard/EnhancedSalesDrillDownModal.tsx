@@ -961,7 +961,7 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6 relative z-10">
-                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border-l-4 border-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
                           <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -972,7 +972,7 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
                         Peak sales occur between 6-8 PM. Consider targeted promotions during this window to maximize revenue potential.
                       </div>
                     </div>
-                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border-l-4 border-blue-500 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                           <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -983,7 +983,7 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
                         High-value customers prefer premium services. Multiple upselling opportunities have been detected.
                       </div>
                     </div>
-                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border-l-4 border-purple-500 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="p-6 bg-white/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                           <Target className="w-4 h-4 text-purple-600 dark:text-purple-400" />

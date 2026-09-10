@@ -136,7 +136,7 @@ const MetricCardComponent: React.FC<MetricCardProps> = ({
                 {/* Premium value display */}
                 <div className="space-y-3 mt-6">
                   <p className={cn(
-                    "text-4xl font-light text-transparent bg-clip-text transition-all duration-700",
+                    "text-[28px] font-light text-transparent bg-clip-text transition-all duration-700",
                     "bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900",
                     "group-hover:from-white group-hover:via-slate-100 group-hover:to-white",
                     "group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] tracking-tight leading-none"
@@ -159,16 +159,10 @@ const MetricCardComponent: React.FC<MetricCardProps> = ({
               {/* Premium description section */}
               {data.description && (
                 <div className={cn(
-                  "p-5 border-t border-slate-200/50 transition-all duration-700 border-l-4 backdrop-blur-sm",
+                  "p-5 border-t border-slate-200/50 transition-all duration-700 backdrop-blur-sm",
                   "bg-gradient-to-br from-slate-100/80 via-slate-200/40 to-slate-100/60",
                   "group-hover:bg-gradient-to-br group-hover:from-slate-800/90 group-hover:via-slate-700/80 group-hover:to-slate-900/90",
-                  "group-hover:border-t-white/10",
-                  // Dynamic left border colors with glow effects
-                  data.icon === 'revenue' && "border-l-emerald-400/70 group-hover:border-l-emerald-400 group-hover:shadow-[inset_4px_0_8px_rgba(52,211,153,0.3)]",
-                  data.icon === 'members' && "border-l-blue-600/70 group-hover:border-l-blue-500 group-hover:shadow-[inset_4px_0_8px_rgba(59,130,246,0.3)]",
-                  data.icon === 'transactions' && "border-l-cyan-400/70 group-hover:border-l-cyan-400 group-hover:shadow-[inset_4px_0_8px_rgba(34,211,238,0.3)]",
-                  data.icon === 'target' && "border-l-orange-400/70 group-hover:border-l-orange-400 group-hover:shadow-[inset_4px_0_8px_rgba(251,146,60,0.3)]",
-                  !data.icon && "border-l-blue-400/70 group-hover:border-l-blue-400 group-hover:shadow-[inset_4px_0_8px_rgba(59,130,246,0.3)]"
+                  "group-hover:border-t-white/10"
                 )}>
                   <p className="text-xs text-slate-600 group-hover:text-slate-100 leading-relaxed transition-colors duration-700 font-medium">
                     {data.description}

@@ -1,9 +1,11 @@
 
 import React, { useMemo, useEffect } from 'react';
 import { SessionsSection } from '@/components/dashboard/SessionsSection';
-import { Footer } from '@/components/ui/footer';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { formatNumber } from '@/utils/formatters';
@@ -53,6 +55,9 @@ const Sessions = () => {
           metrics={heroMetrics}
           onExportClick={() => {}}
         />
+        <div className="container mx-auto px-6 pt-5">
+          <KpiTicker items={heroMetrics} />
+        </div>
         <main>
           <SessionsSection />
           
@@ -64,8 +69,10 @@ const Sessions = () => {
               author="Sessions Analyst"
             />
           </div>
+          <div className="container mx-auto px-6 pb-8">
+            <MetricDefinitions items={METRIC_DEFINITIONS.sessions} />
+          </div>
         </main>
-        <Footer />
       </div>
     </SessionsFiltersProvider>
   );

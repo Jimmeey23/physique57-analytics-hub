@@ -44,14 +44,14 @@ interface ExecutiveDrillDownModalProps {
 }
 
 const borderColorMap = {
-  emerald: 'border-l-emerald-500',
-  blue: 'border-l-blue-500',
-  purple: 'border-l-purple-500',
-  rose: 'border-l-rose-500',
-  amber: 'border-l-amber-500',
-  sky: 'border-l-sky-500',
-  indigo: 'border-l-indigo-500',
-  pink: 'border-l-pink-500',
+  emerald: 'border-emerald-200',
+  blue: 'border-blue-200',
+  purple: 'border-purple-200',
+  rose: 'border-rose-200',
+  amber: 'border-amber-200',
+  sky: 'border-sky-200',
+  indigo: 'border-indigo-200',
+  pink: 'border-pink-200',
 };
 
 const badgeColorMap = {
@@ -83,7 +83,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className={cn('border-l-4 pb-4 pt-6 px-6 flex-shrink-0', borderColorMap[borderColor])}>
+        <DialogHeader className="border-b border-slate-200 pb-4 pt-6 px-6 flex-shrink-0">
           <div className="flex items-start justify-between gap-4 pl-4">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-xl font-bold text-slate-900">{title}</DialogTitle>
@@ -105,8 +105,8 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           <div className="space-y-6 pt-2">
           {/* Metric Header */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="border-l-4 border-l-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="border border-slate-200">
               <CardContent className="pt-6">
                 <p className="text-xs text-slate-600 font-semibold uppercase tracking-wide mb-1">
                   {metric}
@@ -121,7 +121,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
             </Card>
 
             {/* Trend Badge */}
-            <Card className={cn('border-l-4', borderColorMap[borderColor])}>
+            <Card className={cn('border', borderColorMap[borderColor])}>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-slate-600" />
@@ -139,7 +139,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
 
             {/* Export */}
             {onExport && (
-              <Card className="border-l-4 border-l-slate-200">
+              <Card className="border border-slate-200">
                 <CardContent className="pt-6">
                   <Button
                     onClick={onExport}
@@ -194,7 +194,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
 
           {/* Analytics Text */}
           {analyticsText && (
-            <Card className={cn('border-l-4', borderColorMap[borderColor])}>
+            <Card className={cn('border', borderColorMap[borderColor])}>
               <CardHeader>
                 <CardTitle className="text-base">Analytics</CardTitle>
               </CardHeader>

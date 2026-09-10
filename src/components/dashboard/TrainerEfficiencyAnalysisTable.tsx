@@ -464,7 +464,7 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Summary Stats Header */}
         <div className="rounded-t-lg bg-gradient-to-r from-slate-900 via-blue-950 to-blue-900 p-4 text-white">
-          <div className="grid grid-cols-3 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div className="rounded-lg border border-white/10 bg-white/8 p-3">
               <div className="text-white/80">Avg Efficiency</div>
               <div className="text-xl font-bold">{summaryStats.avgEfficiency.toFixed(0)}</div>

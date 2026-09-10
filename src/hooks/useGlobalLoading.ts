@@ -30,7 +30,7 @@ interface GlobalLoadingState {
 }
 
 let hideLoaderTimeoutId: NodeJS.Timeout | null = null;
-const MIN_LOADER_DISPLAY_TIME = 600; // Minimum time to show loader in milliseconds
+const MIN_LOADER_DISPLAY_TIME = 350; // Minimum time to show loader in milliseconds
 
 export const useGlobalLoading = create<GlobalLoadingState>()(
   subscribeWithSelector((set, get) => ({

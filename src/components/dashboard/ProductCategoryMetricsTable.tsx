@@ -1,12 +1,16 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { BarChart3, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { BarChart3, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { SalesData, FilterOptions, YearOnYearMetricType } from '@/types/dashboard';
-import { ModernTableWrapper, STANDARD_METRICS } from './ModernTableWrapper';
+import { STANDARD_METRICS } from './ModernTableWrapper';
 import { TABLE_STYLES } from '@/styles/tableStyles';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
-import { Badge } from '@/components/ui/badge';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57SortTh, type P57SortDir } from '@/components/ui/P57SortTh';
+import { CellDrillDownModal } from '@/components/ui/CellDrillDownModal';
+import { P57Badge } from '@/components/ui/P57Badge';
+import { downloadCsv } from '@/utils/csvExport';
 
 interface ProductCategoryMetricsTableProps {
   /** Raw sales rows (can be already filtered). The table will re-apply the provided dateRange. */
@@ -173,13 +177,24 @@ type CategoryBlock = {
   products: Array<{ product: string; items: SalesData[] }>;
 };
 
+type DrillState = {
+  title: string;
+  context: Array<{ label: string; value: string }>;
+  items: SalesData[];
+  metricLabel: string;
+  metricKey: YearOnYearMetricType;
+} | null;
+
 export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTableProps> = ({
   data,
   filters,
   onReady,
 }) => {
-  const tableRef = useRef<HTMLTableElement>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState('');
+  const [sortKey, setSortKey] = useState<string>('revenue');
+  const [sortDir, setSortDir] = useState<P57SortDir>('desc');
+  const [drill, setDrill] = useState<DrillState>(null);
 
   const periodLabel = useMemo(() => getPeriodLabel(filters), [filters]);
 
@@ -193,10 +208,12 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
 
   const grouped = useMemo<CategoryBlock[]>(() => {
     const byCategory = new Map<string, Map<string, SalesData[]>>();
+    const q = query.trim().toLowerCase();
 
     for (const row of periodData) {
       const category = row.cleanedCategory || 'Uncategorized';
       const product = row.cleanedProduct || 'Unspecified';
+      if (q && !product.toLowerCase().includes(q) && !category.toLowerCase().includes(q)) continue;
       if (!byCategory.has(category)) byCategory.set(category, new Map());
       const byProduct = byCategory.get(category)!;
       if (!byProduct.has(product)) byProduct.set(product, []);
@@ -205,9 +222,14 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
 
     const blocks: CategoryBlock[] = [];
     for (const [category, byProduct] of byCategory.entries()) {
+      // Products sorted by the active header sort (default revenue desc)
       const products = Array.from(byProduct.entries())
         .map(([product, items]) => ({ product, items }))
-        .sort((a, b) => getMetricValue(b.items, 'revenue') - getMetricValue(a.items, 'revenue'));
+        .sort((a, b) => {
+          const av = getMetricValue(a.items, sortKey as YearOnYearMetricType);
+          const bv = getMetricValue(b.items, sortKey as YearOnYearMetricType);
+          return sortDir === 'asc' ? av - bv : bv - av;
+        });
       blocks.push({ category, products });
     }
 
@@ -219,7 +241,7 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
     });
 
     return blocks;
-  }, [periodData]);
+  }, [periodData, query, sortKey, sortDir]);
 
   const totals = useMemo(() => {
     const totalByMetric = new Map<YearOnYearMetricType, number>();
@@ -243,58 +265,126 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
   const collapseAll = () => setCollapsedCategories(new Set(grouped.map((g) => g.category)));
   const expandAll = () => setCollapsedCategories(new Set());
 
+  const toggleSort = (key: string) => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir('desc');
+    } else {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    }
+  };
+
+  const openDrill = (
+    scope: 'Product' | 'Category' | 'All products',
+    category: string | undefined,
+    product: string | undefined,
+    metric: MetricDef,
+    items: SalesData[]
+  ) => {
+    const context: Array<{ label: string; value: string }> = [
+      { label: 'Scope', value: scope },
+      { label: 'Metric', value: metric.label },
+      { label: 'Period', value: periodLabel },
+    ];
+    if (category) context.splice(1, 0, { label: 'Category', value: category });
+    if (product) context.splice(category ? 2 : 1, 0, { label: 'Product', value: product });
+    setDrill({
+      title: `${metric.label} · ${product || category || 'All products'}`,
+      context,
+      items,
+      metricLabel: metric.label,
+      metricKey: metric.key,
+    });
+  };
+
+  const drillRows = useMemo(() => {
+    if (!drill) return [];
+    return drill.items.map((r, i) => ({
+      date: r.paymentDate || '—',
+      member: r.customerName || r.memberId || r.customerEmail || '—',
+      product: r.cleanedProduct || r.paymentItem || '—',
+      payment: formatCurrency(num((r as any).paymentValue)),
+      discount: formatCurrency(num((r as any).discountAmount)),
+      method: r.paymentMethod || '—',
+      soldBy: r.soldBy || '—',
+      txn: (r as any).paymentTransactionId || (r as any).transactionId || `#${i + 1}`,
+    }));
+  }, [drill]);
+
+  const exportCsv = () => {
+    const columns = [
+      { key: 'category', header: 'Category' },
+      { key: 'product', header: 'Product' },
+      ...METRICS.map((m) => ({ key: m.key, header: m.label })),
+    ];
+    const rows: Array<Record<string, unknown>> = [];
+    for (const g of grouped) {
+      for (const p of g.products) {
+        const row: Record<string, unknown> = { category: g.category, product: p.product };
+        for (const m of METRICS) row[m.key] = getMetricValue(p.items, m.key);
+        rows.push(row);
+      }
+    }
+    downloadCsv(`product-category-metrics-${periodLabel.replace(/\s+/g, '-').toLowerCase()}`, columns, rows);
+  };
+
   React.useEffect(() => {
     onReady?.();
   }, [onReady]);
 
+  const metricCellClass = cn(TABLE_STYLES.body.cell, TABLE_STYLES.body.cellCenter, 'cursor-pointer tabular-nums');
+
   return (
-    <ModernTableWrapper
-      title="Product × Category Metrics (Previous Month)"
-      description={`Each metric is a column; rows are products grouped by category for ${periodLabel}.`}
-      icon={<BarChart3 className="w-5 h-5 text-white" />}
-      totalItems={totalProducts}
-      headerControls={
-        <Badge variant="secondary" className="bg-white/20 text-white font-semibold">
-          {periodLabel}
-        </Badge>
-      }
-      showCollapseControls={true}
-      onCollapseAll={collapseAll}
-      onExpandAll={expandAll}
-      tableRef={tableRef}
-      contextInfo={{
-        selectedMetric: 'all',
-        dateRange: filters?.dateRange?.start && filters?.dateRange?.end ? filters.dateRange : undefined,
-        filters: {
-          category: filters?.category,
-          product: filters?.product,
-          soldBy: filters?.soldBy,
-          paymentMethod: filters?.paymentMethod,
-        },
-      }}
-    >
-      <div className={TABLE_STYLES.container}>
-        <table ref={tableRef} className={TABLE_STYLES.table}>
-          <thead className={TABLE_STYLES.header.wrapper}>
-            <tr className={TABLE_STYLES.header.row}>
-              <th
-                className={cn(
-                  TABLE_STYLES.header.cell,
-                  TABLE_STYLES.header.cellSticky,
-                  'min-w-[280px]'
-                )}
-              >
+    <>
+      <P57TableShell
+        icon={BarChart3}
+        title="Product × Category Metrics"
+        description={`Each metric is a column; rows are products grouped by category for ${periodLabel}. Click any column header to sort, any value to drill into the underlying sales.`}
+        rowCount={totalProducts}
+        rowCountLabel="products"
+        onSearch={setQuery}
+        searchPlaceholder="Search products or categories…"
+        onExportCsv={exportCsv}
+        actions={
+          <>
+            <P57Badge tone="blue">{periodLabel}</P57Badge>
+            <button type="button" className="p57-ctl-btn" onClick={expandAll} title="Expand all categories">
+              <ChevronsUpDown />
+              Expand
+            </button>
+            <button type="button" className="p57-ctl-btn" onClick={collapseAll} title="Collapse all categories">
+              <ChevronsDownUp />
+              Collapse
+            </button>
+          </>
+        }
+        meta={
+          <>
+            <span>{grouped.length} categor{grouped.length === 1 ? 'y' : 'ies'}</span>
+            <span aria-hidden="true">·</span>
+            <span>Net revenue = payment − VAT</span>
+            <span aria-hidden="true">·</span>
+            <span>Click a value for item-level sales</span>
+          </>
+        }
+      >
+        <table className={TABLE_STYLES.table}>
+          <thead>
+            <tr>
+              <th className={cn(TABLE_STYLES.header.cell, TABLE_STYLES.header.cellSticky, 'min-w-[280px]')}>
                 Product
               </th>
               {METRICS.map((m) => (
-                <th
+                <P57SortTh
                   key={m.key}
-                  className={cn(TABLE_STYLES.header.cell, TABLE_STYLES.header.monthCell)}
+                  sortKey={m.key}
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onToggle={toggleSort}
+                  align="center"
                 >
-                  <div className={TABLE_STYLES.header.monthDisplay}>
-                    <span className={TABLE_STYLES.header.monthText}>{m.label}</span>
-                  </div>
-                </th>
+                  {m.label}
+                </P57SortTh>
               ))}
             </tr>
           </thead>
@@ -303,21 +393,22 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
             {grouped.length === 0 ? (
               <tr className={TABLE_STYLES.body.row}>
                 <td className={cn(TABLE_STYLES.body.cell, 'text-center text-slate-500')} colSpan={METRICS.length + 1}>
-                  No records found for the selected period.
+                  {query ? `No products match “${query}”.` : 'No records found for the selected period.'}
                 </td>
               </tr>
             ) : (
-              grouped.map((group, groupIndex) => {
+              grouped.map((group) => {
                 const isCollapsed = collapsedCategories.has(group.category);
                 const categoryItems = group.products.flatMap((p) => p.items);
                 return (
                   <React.Fragment key={group.category}>
-                    <tr className={TABLE_STYLES.group.row}>
+                    <tr className={TABLE_STYLES.group.row} data-collapsible="true">
                       <td className={cn(TABLE_STYLES.group.cell, TABLE_STYLES.group.cellSticky)}>
                         <button
                           type="button"
                           onClick={() => toggleCategory(group.category)}
-                          className="flex items-center gap-2 w-full text-left"
+                          className="flex w-full items-center gap-2 text-left"
+                          aria-expanded={!isCollapsed}
                         >
                           {isCollapsed ? (
                             <ChevronRight className={TABLE_STYLES.group.expandIcon} />
@@ -333,7 +424,9 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
                         return (
                           <td
                             key={`${group.category}::group::${m.key}`}
-                            className={cn(TABLE_STYLES.group.cell, TABLE_STYLES.body.cellCenter, 'tabular-nums')}
+                            className={cn(TABLE_STYLES.group.cell, TABLE_STYLES.body.cellCenter, 'cursor-pointer tabular-nums')}
+                            onClick={() => openDrill('Category', group.category, undefined, m, categoryItems)}
+                            title={`Drill into ${m.label} for ${group.category}`}
                           >
                             {formatMetricValue(val, m.key)}
                           </td>
@@ -342,57 +435,73 @@ export const ProductCategoryMetricsTable: React.FC<ProductCategoryMetricsTablePr
                     </tr>
 
                     {!isCollapsed &&
-                      group.products.map((p, productIndex) => {
-                        const rowAlt = (groupIndex + productIndex) % 2 === 1;
-                        return (
-                          <tr
-                            key={`${group.category}::${p.product}`}
-                            className={cn(TABLE_STYLES.body.row, rowAlt && TABLE_STYLES.body.rowAlternate)}
-                          >
-                            <td
-                              className={cn(
-                                TABLE_STYLES.body.cell,
-                                TABLE_STYLES.body.cellSticky,
-                                TABLE_STYLES.body.cellBold
-                              )}
-                            >
-                              {p.product}
-                            </td>
-                            {METRICS.map((m) => {
-                              const val = getMetricValue(p.items, m.key);
-                              return (
-                                <td
-                                  key={`${group.category}::${p.product}::${m.key}`}
-                                  className={cn(TABLE_STYLES.body.cell, TABLE_STYLES.body.cellCenter, 'tabular-nums')}
-                                >
-                                  {formatMetricValue(val, m.key)}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
+                      group.products.map((p) => (
+                        <tr key={`${group.category}::${p.product}`} className={TABLE_STYLES.body.row}>
+                          <td className={cn(TABLE_STYLES.body.cell, TABLE_STYLES.body.cellSticky, TABLE_STYLES.body.cellBold)}>
+                            {p.product}
+                          </td>
+                          {METRICS.map((m) => {
+                            const val = getMetricValue(p.items, m.key);
+                            return (
+                              <td
+                                key={`${group.category}::${p.product}::${m.key}`}
+                                className={metricCellClass}
+                                onClick={() => openDrill('Product', group.category, p.product, m, p.items)}
+                                title={`Drill into ${m.label} for ${p.product}`}
+                              >
+                                {formatMetricValue(val, m.key)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
                   </React.Fragment>
                 );
               })
             )}
+          </tbody>
 
-            {/* Totals footer row */}
-            {grouped.length > 0 && (
+          {/* Totals footer band */}
+          {grouped.length > 0 && (
+            <tfoot>
               <tr className={TABLE_STYLES.footer.row}>
                 <td className={cn(TABLE_STYLES.footer.cell, TABLE_STYLES.footer.cellSticky)}>
                   <span className={TABLE_STYLES.footer.label}>TOTALS</span>
                 </td>
                 {METRICS.map((m) => (
-                  <td key={`totals::${m.key}`} className={cn(TABLE_STYLES.footer.cell, TABLE_STYLES.footer.cellCenter)}>
+                  <td
+                    key={`totals::${m.key}`}
+                    className={cn(TABLE_STYLES.footer.cell, TABLE_STYLES.footer.cellCenter, 'cursor-pointer')}
+                    onClick={() => openDrill('All products', undefined, undefined, m, periodData)}
+                    title={`Drill into total ${m.label}`}
+                  >
                     {formatMetricValue(totals.get(m.key) || 0, m.key)}
                   </td>
                 ))}
               </tr>
-            )}
-          </tbody>
+            </tfoot>
+          )}
         </table>
-      </div>
-    </ModernTableWrapper>
+      </P57TableShell>
+
+      <CellDrillDownModal
+        open={drill !== null}
+        onClose={() => setDrill(null)}
+        title={drill?.title ?? ''}
+        subtitle="Item-level sales behind the clicked cell"
+        context={drill?.context ?? []}
+        columns={[
+          { key: 'date', header: 'Date', mono: true },
+          { key: 'member', header: 'Member' },
+          { key: 'product', header: 'Product' },
+          { key: 'payment', header: 'Payment', align: 'right', mono: true },
+          { key: 'discount', header: 'Discount', align: 'right', mono: true },
+          { key: 'method', header: 'Method', align: 'center' },
+          { key: 'soldBy', header: 'Sold By' },
+          { key: 'txn', header: 'Txn ID', mono: true },
+        ]}
+        rows={drillRows}
+      />
+    </>
   );
 };

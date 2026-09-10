@@ -40,6 +40,9 @@ import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { cn } from '@/lib/utils';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { buildPerformanceCommandCenter } from '@/components/dashboard/performance-command-center/buildPerformanceCommandCenter';
 import type {
@@ -586,6 +589,15 @@ const PerformanceCommandCenter = () => {
           </div>
         </motion.header>
 
+        <KpiTicker
+          items={model.metricCards.map((card) => ({
+            label: card.label,
+            value: card.formattedValue,
+            delta: `${card.changePercent.toFixed(1)}%`,
+            tone: card.trend,
+          }))}
+        />
+
         <ExecutiveFilterSection availableLocations={OVERVIEW_LOCATION_OPTIONS} showExportButton={false} onClearFilters={clearToDefault} />
 
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -601,8 +613,9 @@ const PerformanceCommandCenter = () => {
             <PerformanceSectionView key={section.id} section={section} />
           ))}
         </div>
+
+        <MetricDefinitions items={METRIC_DEFINITIONS.commandCenter} />
       </main>
-      <Footer />
     </div>
   );
 };

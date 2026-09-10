@@ -4,6 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { countConvertedLeads, calculateConversionRate } from '@/utils/leadConversions';
@@ -203,6 +206,16 @@ export default function FunnelLeads() {
         ]}
       />
 
+      <div className="mx-auto w-full max-w-7xl px-6 pt-5">
+        <KpiTicker
+          items={[
+            { label: 'Total Leads', value: filteredData.length.toLocaleString() },
+            { label: 'Converted', value: countConvertedLeads(filteredData).toString() },
+            { label: 'Conversion Rate', value: `${calculateConversionRate(filteredData).toFixed(1)}%` },
+          ]}
+        />
+      </div>
+
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
         <StudioLocationTabs 
@@ -361,6 +374,10 @@ export default function FunnelLeads() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-7xl px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.funnelLeads} />
       </div>
 
       {/* Drill Down Modal - Lazy loaded */}

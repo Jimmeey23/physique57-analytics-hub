@@ -522,11 +522,11 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
             <div className="space-y-4">
               {analytics.recommendations.map((rec, index) => (
                 <Card key={index} className={cn(
-                  "border-l-4",
-                  rec.type === 'success' ? "border-l-green-500 bg-green-50" :
-                  rec.type === 'warning' ? "border-l-yellow-500 bg-yellow-50" :
-                  rec.type === 'improvement' ? "border-l-blue-500 bg-blue-50" :
-                  "border-l-red-500 bg-red-50"
+                  "border",
+                  rec.type === 'success' ? "border-green-200 bg-green-50/60" :
+                  rec.type === 'warning' ? "border-amber-200 bg-amber-50/60" :
+                  rec.type === 'improvement' ? "border-blue-200 bg-blue-50/60" :
+                  "border-red-200 bg-red-50/60"
                 )}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
@@ -554,7 +554,7 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
               ))}
               
               {analytics.recommendations.length === 0 && (
-                <Card className="border-l-4 border-l-green-500 bg-green-50">
+                <Card className="border border-green-200 bg-green-50/60">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-green-100 rounded-lg">

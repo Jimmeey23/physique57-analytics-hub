@@ -272,7 +272,7 @@ export const AdvancedNotesModal: React.FC<AdvancedNotesModalProps> = ({
               {filteredNotes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredNotes.map((note) => (
-                    <Card key={note.id} className="bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 border-l-4 border-l-indigo-400">
+                    <Card key={note.id} className="bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 border border-indigo-200">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LeadsData } from '@/types/leads';
-import { getGoogleAccessToken } from '@/utils/googleAuth';
+import { fetchSheetValuesSmart } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 import { useDataSource } from '@/contexts/DataSourceContext';
 import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
@@ -82,7 +82,7 @@ export const useLeadsData = () => {
   const [data, setData] = useState<LeadsData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchLeadsData = async () => {
     try {
@@ -90,25 +90,9 @@ export const useLeadsData = () => {
       setError(null);
       
       const { rows } = await loadDatasetRowsForMode('leads', mode, async () => {
-        const accessToken = await getGoogleAccessToken();
-        
-        const sheetName = encodeURIComponent('◉ Leads');
-        const response = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?alt=json`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch leads data: ${response.statusText}`);
-        }
-
-        const result = await response.json();
+        const result = await fetchSheetValuesSmart(SPREADSHEET_ID, encodeURIComponent('◉ Leads'));
         return result.values || [];
-      });
+      }, reportSource);
       
       logger.info(`Fetched ${rows.length} rows from leads sheet`);
       

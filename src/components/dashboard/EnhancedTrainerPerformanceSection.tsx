@@ -555,6 +555,7 @@ export const EnhancedTrainerPerformanceSection = () => {
       <div className="glass-card modern-card-hover rounded-2xl p-6 soft-bounce stagger-2" id="metrics">
         <EnhancedTrainerMetricCards 
           data={processedData} 
+          sessions={sessionsData || []} 
           onCardClick={(title, data) => {
             // Open drill-down modal with trainer data and remember clicked metric
             const trainerName = title;

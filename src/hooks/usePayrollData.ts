@@ -88,7 +88,7 @@ export const usePayrollData = () => {
   const [data, setData] = useState<PayrollData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchPayrollData = async () => {
     try {
@@ -152,11 +152,26 @@ export const usePayrollData = () => {
 
           return [headers, ...bodyRows];
         } catch {
-          return fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'Payroll', {
+          const sheetRows = await fetchGoogleSheet(SPREADSHEET_IDS.PAYROLL, 'Payroll', {
             valueRenderOption: 'FORMATTED_VALUE',
           });
+          if (sheetRows.length < 2) return sheetRows;
+          // Live sheet layout splits Month(24)/Year(25) ahead of Unique Key(26),
+          // Converted(27), Conversion Rate(28), Retained(29), Retention Rate(30),
+          // New(31) — normalize to the mapper's [monthYear, unique, ...] layout.
+          // (If Year is blank the row already matches the mapper layout.)
+          const body = sheetRows.slice(1).map((r: any[]) => {
+            const c24 = r[24] ?? '';
+            const c25 = r[25] ?? '';
+            const hasSplitYear = /^\d{4}$/.test(String(c25).trim());
+            const monthYear = hasSplitYear ? `${c24}-${c25}` : c24;
+            const rest = hasSplitYear ? r.slice(26, 33) : r.slice(25, 32);
+            while (rest.length < 7) rest.push('');
+            return [...r.slice(0, 24), monthYear, ...rest];
+          });
+          return [sheetRows[0], ...body];
         }
-      });
+      }, reportSource);
 
       const loadedData = rows.length < 2 ? [] : rows.slice(1).map(mapRowToPayroll);
 

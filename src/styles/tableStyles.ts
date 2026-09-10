@@ -1,112 +1,133 @@
 /**
- * Unified Table Styles - Based on Sales Tab MonthOnMonthTableNew
- * 
- * This provides consistent styling across all tables in the application.
- * Use these styles with ModernDataTable, ModernTableWrapper, and custom tables.
+ * Unified Table Styles — "Atelier" system.
+ *
+ * Visual styling is driven by the global `.p57-scope table` rules in
+ * index.css; these tokens keep legacy `TABLE_STYLES.*` imports working
+ * and carry explicit `dark:` variants so they also render correctly
+ * outside the scoped area (portals, modals). Prefer `p57-*` classes
+ * for new code.
  */
 
 export const TABLE_STYLES = {
   // Container styles
-  container: "relative overflow-auto rounded-xl border border-slate-200 shadow-sm",
-  
+  container: "p57-table-frame p57-table-scroll",
+
   // Table base
-  table: "min-w-full bg-white font-sans",
-  
-  // Header styles - Dark slate gradient matching Sales tab
+  table: "min-w-full bg-card tabular-nums",
+
+  // Header styles — airy light band / deep dark band (see index.css)
   header: {
     wrapper: "sticky top-0 z-30",
-    row: "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800",
-    cell: "px-3 py-3 text-left text-white font-bold text-xs uppercase tracking-wide border-r border-white/20 last:border-r-0 font-sans",
+    row: "",
+    cell: "px-3.5 py-2.5 text-left font-bold text-[11px] uppercase tracking-wider border-r border-border/60 last:border-r-0 whitespace-nowrap text-muted-foreground bg-white dark:bg-[#131721] dark:text-slate-300",
     cellCenter: "text-center",
-    cellSticky: "sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20",
+    cellSticky: "sticky left-0 z-40 border-r border-border/60 bg-[#f6f7f9] dark:bg-[#141417]",
     monthCell: "min-w-[90px] text-center",
     monthDisplay: "flex flex-col items-center",
-    monthText: "text-xs font-bold whitespace-nowrap font-sans",
-    yearText: "text-slate-300 text-xs font-sans",
+    monthText: "text-[11px] font-bold whitespace-nowrap",
+    yearText: "text-muted-foreground text-[11px]",
   },
-  
+
   // Body styles
   body: {
-    row: "bg-white hover:bg-slate-50 border-b border-gray-200 transition-all duration-200 font-sans",
-    rowAlternate: "bg-slate-50/50",
-    rowClickable: "cursor-pointer hover:scale-[1.002] hover:shadow-sm",
-    cell: "px-3 py-2 text-sm text-slate-700 border-r border-gray-200/50 last:border-r-0 font-sans",
+    row: "bg-card hover:bg-accent/60 border-b border-border transition-colors duration-150 dark:hover:bg-[rgba(5,155,255,0.10)]",
+    rowAlternate: "bg-secondary/40",
+    rowClickable: "cursor-pointer",
+    cell: "px-3.5 py-2 text-[13px] font-medium text-foreground/90 border-r border-border/60 last:border-r-0 tabular-nums whitespace-nowrap dark:text-slate-200",
     cellCenter: "text-center",
-    cellBold: "font-semibold text-slate-900",
+    cellBold: "font-bold text-foreground",
     cellMono: "font-mono",
-    cellSticky: "sticky left-0 bg-white hover:bg-slate-50 border-r border-gray-200 z-20",
-    cellHover: "hover:bg-slate-50 cursor-pointer transition-all duration-200",
+    cellSticky: "sticky left-0 bg-card border-r border-border z-20",
+    cellHover: "hover:bg-accent cursor-pointer transition-colors duration-150",
   },
-  
+
   // Group/Category row styles
   group: {
-    row: "bg-slate-100 hover:bg-slate-200 border-b border-slate-300 transition-all duration-200",
-    cell: "px-4 py-2 text-sm font-bold text-slate-800",
-    cellSticky: "sticky left-0 bg-slate-100 hover:bg-slate-200 border-r border-slate-300 z-20",
-    badge: "inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-slate-200 text-slate-700 rounded-sm",
-    expandIcon: "w-4 h-4 text-slate-600 transition-transform duration-200",
+    row: "p57-group-row bg-secondary hover:bg-secondary/70 border-b border-border transition-colors duration-150",
+    cell: "px-4 py-2 text-[13px] font-bold text-foreground",
+    cellSticky: "sticky left-0 bg-secondary border-r border-border z-20",
+    badge: "inline-flex items-center px-2 py-0.5 text-xs font-bold bg-secondary text-secondary-foreground rounded-md",
+    expandIcon: "w-4 h-4 text-muted-foreground transition-transform duration-200",
     expandIconRotated: "rotate-90",
   },
-  
-  // Total/Footer row styles
+
+  // Total/Footer row styles — ink band light / blue-tinted band dark
   footer: {
-    row: "bg-slate-800 text-white font-bold sticky bottom-0 z-20",
-    cell: "px-3 py-2 text-sm font-bold border-r border-slate-600 last:border-r-0",
+    row: "p57-total-row bg-ink text-white font-bold sticky bottom-0 z-20 dark:bg-[#0D1520]",
+    cell: "px-3.5 py-2 text-[13px] font-bold border-r border-white/10 last:border-r-0 tabular-nums",
     cellCenter: "text-center",
-    cellSticky: "sticky left-0 bg-slate-800 border-r border-slate-600 z-30",
-    label: "text-xs uppercase tracking-wider",
+    cellSticky: "sticky left-0 bg-ink border-r border-white/10 z-30 dark:bg-[#0D1520]",
+    label: "text-[11px] uppercase tracking-wider",
   },
-  
+
   // Growth indicators
   growth: {
-    positive: "text-emerald-600 font-semibold",
-    negative: "text-red-600 font-semibold", 
-    neutral: "text-slate-500",
-    badge: "inline-flex items-center text-xs font-semibold rounded-sm px-1.5 py-0.5",
-    badgePositive: "bg-emerald-100 text-emerald-700",
-    badgeNegative: "bg-red-100 text-red-700",
+    positive: "p57-up",
+    negative: "p57-down",
+    neutral: "p57-flat",
+    badge: "p57-delta",
+    badgePositive: "p57-delta-up",
+    badgeNegative: "p57-delta-down",
     icon: "w-3 h-3 ml-0.5",
   },
-  
+
   // Ranking styles
   ranking: {
-    first: "bg-gradient-to-r from-yellow-400 to-amber-500 text-white",
-    second: "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-800",
-    third: "bg-gradient-to-r from-amber-600 to-orange-700 text-white",
-    badge: "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm",
+    first: "p57-rank p57-rank-1",
+    second: "p57-rank p57-rank-2",
+    third: "p57-rank p57-rank-3",
+    badge: "p57-rank p57-rank-rest",
   },
-  
+
   // Metric tabs
   metricTabs: {
-    container: "flex flex-wrap gap-2 p-4 bg-white rounded-lg border border-slate-300 shadow-sm",
-    label: "flex items-center space-x-2 text-slate-700 font-semibold text-sm mr-4",
-    button: "flex items-center space-x-1.5 px-3 py-1.5 rounded-sm font-medium text-sm transition-all duration-200 whitespace-nowrap",
-    buttonActive: "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white shadow-sm",
-    buttonInactive: "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200",
+    container: "p57-filterbar",
+    label: "p57-filterbar-label",
+    button: "p57-tab",
+    buttonActive: "p57-tab",
+    buttonInactive: "p57-tab",
   },
-  
-  // Card wrapper
+
+  // Card wrapper (flat + hairline; new code should use P57TableShell)
   card: {
-    container: "w-full shadow-lg border border-slate-300 bg-white rounded-lg overflow-hidden",
-    header: "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white p-4",
-    headerTitle: "text-lg font-bold text-white",
-    headerDescription: "text-slate-300 text-sm font-medium",
-    headerIcon: "p-2 bg-white/20 rounded-sm",
+    container: "p57-card overflow-hidden",
+    header: "border-b border-border bg-white px-4 py-3 dark:bg-[#101013]",
+    headerTitle: "font-display text-[14px] font-bold text-foreground",
+    headerDescription: "text-muted-foreground text-xs font-medium",
+    headerIcon: "p57-shell-ic",
     content: "p-0",
+  },
+
+  // Canonical badge (P57Badge) — uniform 22px geometry in every table
+  badge: {
+    base: "p57-badge",
+    green: "p57-badge p57-badge-green",
+    red: "p57-badge p57-badge-red",
+    amber: "p57-badge p57-badge-amber",
+    blue: "p57-badge p57-badge-blue",
+    violet: "p57-badge p57-badge-violet",
+    slate: "p57-badge p57-badge-slate",
+  },
+
+  // Sortable header affordance (see P57SortTh)
+  sortable: {
+    th: "cursor-pointer select-none",
+    icon: "p57-sort-ic",
+    iconActive: "p57-sort-ic p57-sort-pop",
   },
 } as const;
 
-// Header gradient options for different sections
+// Header accents for different sections (used as rails/badges, not full gradients)
 export const HEADER_GRADIENTS = {
-  default: "from-slate-800 via-slate-900 to-slate-800",
-  sales: "from-slate-800 via-slate-900 to-slate-800",
-  funnel: "from-red-700 via-red-800 to-red-900",
-  retention: "from-blue-700 via-blue-800 to-cyan-800",
-  trainer: "from-indigo-700 via-purple-800 to-indigo-900",
-  class: "from-emerald-700 via-teal-800 to-emerald-900",
-  discount: "from-orange-600 via-orange-700 to-red-800",
-  expiration: "from-amber-600 via-orange-700 to-amber-800",
-  sessions: "from-violet-700 via-purple-800 to-violet-900",
+  default: "bg-ink dark:bg-primary",
+  sales: "bg-ink dark:bg-primary",
+  funnel: "bg-ink dark:bg-primary",
+  retention: "bg-ink dark:bg-primary",
+  trainer: "bg-ink dark:bg-primary",
+  class: "bg-ink dark:bg-primary",
+  discount: "bg-ink dark:bg-primary",
+  expiration: "bg-ink dark:bg-primary",
+  sessions: "bg-ink dark:bg-primary",
 } as const;
 
 // CSS class builder utility
@@ -119,7 +140,7 @@ export function getRankingBadgeStyle(rank: number): string {
   if (rank === 1) return TABLE_STYLES.ranking.first;
   if (rank === 2) return TABLE_STYLES.ranking.second;
   if (rank === 3) return TABLE_STYLES.ranking.third;
-  return "bg-slate-200 text-slate-700";
+  return "p57-rank p57-rank-rest";
 }
 
 // Get growth color based on value
@@ -134,5 +155,5 @@ export function getGrowthBadgeStyle(growth: number): string {
   const base = TABLE_STYLES.growth.badge;
   if (growth > 0) return `${base} ${TABLE_STYLES.growth.badgePositive}`;
   if (growth < 0) return `${base} ${TABLE_STYLES.growth.badgeNegative}`;
-  return `${base} bg-slate-100 text-slate-600`;
+  return `${base} p57-delta-flat`;
 }

@@ -1,8 +1,10 @@
 import React from 'react';
 import { ExecutiveSummarySection } from '@/components/dashboard/ExecutiveSummarySection';
-import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { FileText, Download, Home, Play, Pause } from 'lucide-react';
 import { useSalesData } from '@/hooks/useSalesData';
@@ -93,8 +95,16 @@ const ExecutiveSummaryContent = () => {
         <InfoPopover context="sales-overview" locationId="supreme" iframeSrc="/popovers/sales-overview/supreme.html" startAsSidebar={true} />
       </div>
       
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker items={heroMetrics} />
+      </div>
+
       <div className="container mx-auto px-6 py-8">
         <ExecutiveSummarySection />
+      </div>
+
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.executiveSummary} />
       </div>
 
       {/* Hidden export dialog wired for programmatic open */}
@@ -111,7 +121,6 @@ const ExecutiveSummaryContent = () => {
           defaultFileName="executive-dashboard-export"
         />
       </div>
-      <Footer />
     </div>
   );
 };

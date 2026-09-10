@@ -41,7 +41,7 @@ export const useCheckinsData = () => {
   const [data, setData] = useState<CheckinData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const parseBoolean = (value: string | boolean): boolean => {
     if (typeof value === 'boolean') return value;
@@ -57,7 +57,7 @@ export const useCheckinsData = () => {
         return fetchGoogleSheet(SPREADSHEET_ID, 'Checkins', {
           valueRenderOption: 'FORMATTED_VALUE'
         });
-      });
+      }, reportSource);
 
       if (rows.length < 2) {
         setData([]);

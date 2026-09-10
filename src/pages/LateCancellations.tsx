@@ -7,10 +7,12 @@ import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/
 import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/EnhancedLateCancellationsDataTables';
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
 import { LateCancellationsMonthOnMonthTable } from '@/components/dashboard/LateCancellationsMonthOnMonthTable';
-import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatNumber } from '@/utils/formatters';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import '@/components/dashboard/trainer-performance-styles.css';
@@ -492,6 +494,10 @@ const LateCancellations = () => {
         extra={exportButton}
       />
 
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker items={heroMetrics} />
+      </div>
+
       {/* Main Content */}
       <div className="relative">
         <div className="container mx-auto px-6 py-8">
@@ -565,13 +571,15 @@ const LateCancellations = () => {
         </div>
       </div>
 
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.lateCancellations} />
+      </div>
+
       <LateCancellationsDrillDownModal
         isOpen={isDrillDownOpen}
         onClose={() => setIsDrillDownOpen(false)}
         data={drillDownData}
       />
-      
-      <Footer />
     </div>
   );
 };

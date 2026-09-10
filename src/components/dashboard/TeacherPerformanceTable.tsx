@@ -1,9 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { UserCheck, Users, Target, TrendingUp, Award, FileText, Image, Download } from 'lucide-react';
+import { Download, Image, UserCheck } from 'lucide-react';
+import { P57TableShell } from '@/components/ui/P57TableShell';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import CopyTableButton from '@/components/ui/CopyTableButton';
@@ -20,6 +18,7 @@ interface TeacherPerformanceTableProps {
 interface TeacherStats {
   trainerName: string;
   newMembers: number;
+  totalMembers: number;
   sessions: number;
   converted: number;
   conversionRate: number;
@@ -35,10 +34,12 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
   const tableTitle = 'Teacher Performance Analysis';
   const { getAllTabsText } = useRegisterTableForCopy(containerRef as any, tableTitle);
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
+  const [query, setQuery] = useState('');
 
   const teacherStats = useMemo(() => {
     const stats = new Map<string, {
       newMembers: Set<string>;
+      totalMembers: Set<string>;
       sessions: number;
       converted: Set<string>;
       retained: Set<string>;
@@ -51,6 +52,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       if (!stats.has(trainerName)) {
         stats.set(trainerName, {
           newMembers: new Set(),
+          totalMembers: new Set(),
           sessions: 0,
           converted: new Set(),
           retained: new Set()
@@ -59,7 +61,10 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
 
       const trainerStats = stats.get(trainerName)!;
       
-      // Track unique new members
+      // Track every member (rate denominators) + unique new members
+      if (client.memberId) {
+        trainerStats.totalMembers.add(client.memberId);
+      }
       if (isInNewClientCohort(client) && client.memberId) {
         trainerStats.newMembers.add(client.memberId);
       }
@@ -81,17 +86,19 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
     // Convert to array and calculate rates
     const results: TeacherStats[] = Array.from(stats.entries()).map(([trainerName, stats]) => {
       const newMembers = stats.newMembers.size;
+      const totalMembers = stats.totalMembers.size;
       const converted = stats.converted.size;
       const retained = stats.retained.size;
       
       return {
         trainerName,
         newMembers,
+        totalMembers,
         sessions: stats.sessions,
         converted,
-        conversionRate: newMembers > 0 ? (converted / newMembers) * 100 : 0,
+        conversionRate: totalMembers > 0 ? (converted / totalMembers) * 100 : 0,
         retained,
-        retentionRate: newMembers > 0 ? (retained / newMembers) * 100 : 0,
+        retentionRate: totalMembers > 0 ? (retained / totalMembers) * 100 : 0,
       };
     });
 
@@ -104,8 +111,10 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const sortedData = useMemo(() => {
-    if (!sortField) return [...teacherStats];
-    const copy = [...teacherStats];
+    const term = query.trim().toLowerCase();
+    const base = term ? teacherStats.filter((t) => t.trainerName.toLowerCase().includes(term)) : teacherStats;
+    if (!sortField) return [...base];
+    const copy = [...base];
     copy.sort((a: any, b: any) => {
       const va = a[sortField as keyof TeacherStats];
       const vb = b[sortField as keyof TeacherStats];
@@ -117,7 +126,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       return sortDirection === 'asc' ? na - nb : nb - na;
     });
     return copy;
-  }, [teacherStats, sortField, sortDirection]);
+  }, [teacherStats, sortField, sortDirection, query]);
 
   const handleSort = (field: string) => {
     if (field === sortField) {
@@ -402,14 +411,16 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
     const totalConverted = teacherStats.reduce((sum, t) => sum + t.converted, 0);
     const totalRetained = teacherStats.reduce((sum, t) => sum + t.retained, 0);
     
+    const grandTotalMembers = teacherStats.reduce((sum, t) => sum + t.totalMembers, 0);
     return {
       trainerName: 'TOTAL',
       newMembers: totalNewMembers,
+      totalMembers: grandTotalMembers,
       sessions: totalSessions,
       converted: totalConverted,
-      conversionRate: totalNewMembers > 0 ? (totalConverted / totalNewMembers) * 100 : 0,
+      conversionRate: grandTotalMembers > 0 ? (totalConverted / grandTotalMembers) * 100 : 0,
       retained: totalRetained,
-      retentionRate: totalNewMembers > 0 ? (totalRetained / totalNewMembers) * 100 : 0,
+      retentionRate: grandTotalMembers > 0 ? (totalRetained / grandTotalMembers) * 100 : 0,
     };
   }, [teacherStats]);
 
@@ -576,148 +587,50 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
 
   return (
     <div ref={containerRef} className="space-y-6">
-      <Card className="shadow-xl border-0 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-slate-800 to-gray-900 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <UserCheck className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl font-bold text-white mb-1">
-                  Teacher Performance Analysis
-                </CardTitle>
-                <p className="text-blue-200 text-sm">
-                  Comprehensive teacher metrics including conversions and retention rates
-                </p>
-              </div>
+      <P57TableShell
+        icon={UserCheck}
+        title="Teacher Performance"
+        description="Comprehensive teacher metrics including conversions and retention rates. Click a row for drill-down evidence."
+        rowCount={sortedData.length}
+        rowCountLabel="teachers"
+        onSearch={setQuery}
+        searchPlaceholder="Search teachers\u2026"
+        onExportCsv={exportToCSV}
+        meta={<span>{formatNumber(totals.newMembers)} new members \u00b7 {totals.conversionRate.toFixed(1)}% conversion</span>}
+        actions={
+          <>
+            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 p-0.5 text-[11px] font-semibold">
+              {(['values', 'growth'] as const).map((m) => (
+                <button key={m} type="button" onClick={() => setDisplayMode(m)}
+                  className={displayMode === m ? 'rounded-full bg-white px-2.5 py-1 text-slate-900 shadow-sm' : 'rounded-full px-2.5 py-1 text-slate-500 hover:text-slate-800'}>
+                  {m === 'values' ? 'Values' : 'Growth'}
+                </button>
+              ))}
             </div>
-            <div className="flex items-center gap-3">
-              <Badge className="bg-white/20 text-white border-white/30 px-3 py-1">
-                {teacherStats.length} Teachers
-              </Badge>
-              
-              {/* Display Mode Toggle */}
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant={displayMode === 'values' ? 'default' : 'outline'}
-                  onClick={() => setDisplayMode('values')}
-                  className={displayMode === 'values' ? 'h-8 border-teal-300/40 bg-teal-500 text-white hover:bg-teal-400' : 'h-8 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white'}
-                >
-                  Values
-                </Button>
-                <Button
-                  size="sm"
-                  variant={displayMode === 'growth' ? 'default' : 'outline'}
-                  onClick={() => setDisplayMode('growth')}
-                  className={displayMode === 'growth' ? 'h-8 border-teal-300/40 bg-teal-500 text-white hover:bg-teal-400' : 'h-8 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white'}
-                >
-                  Growth
-                </Button>
-              </div>
-
-              {/* Export Buttons */}
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={exportToCSV}
-                  className="h-8 gap-1 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white"
-                  variant="outline"
-                >
-                  <FileText className="w-3 h-3" />
-                  CSV
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={exportToPNG}
-                  className="h-8 gap-1 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white"
-                  variant="outline"
-                >
-                  <Image className="w-3 h-3" />
-                  PNG
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={exportToPDF}
-                  className="h-8 gap-1 border-white/20 bg-white/10 text-teal-100 hover:bg-teal-500/20 hover:text-white"
-                  variant="outline"
-                >
-                  <Download className="w-3 h-3" />
-                  PDF
-                </Button>
-              </div>
-
-              <CopyTableButton 
-                tableRef={containerRef}
-                tableName={tableTitle}
-                size="sm"
-                onCopyAllTabs={async () => getAllTabsText()}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="p-0">
-          <div style={{ 
-            '--row-height': '35px',
-            '--text-color': '#000000',
-            '--bg-color': '#ffffff'
-          } as React.CSSProperties}>
+            <button type="button" onClick={exportToPNG} className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50">
+              <Image className="h-3 w-3" /> PNG
+            </button>
+            <button type="button" onClick={exportToPDF} className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50">
+              <Download className="h-3 w-3" /> PDF
+            </button>
+            <CopyTableButton tableRef={containerRef} tableName={tableTitle} size="sm" onCopyAllTabs={async () => getAllTabsText()} />
+          </>
+        }
+      >
             <ModernDataTable
               data={sortedData}
               columns={columns}
-              headerGradient="from-slate-950 via-slate-900 to-slate-800"
               showFooter={true}
               footerData={totals}
-              footerRowClassName="border-t-4 border-teal-950 bg-teal-950 text-slate-50 hover:bg-teal-900"
-              footerStickyCellClassName="bg-teal-950 border-teal-900"
-              footerCellClassName="bg-teal-950 border-teal-900 text-slate-50"
-              footerSectionStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderTopColor: '#0f766e' }}
-              footerRowStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderTopColor: '#0f766e' }}
-              footerStickyCellStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#0f766e' }}
-              footerCellStyle={{ ['--unified-totals-bg' as string]: '#115e59', ['--unified-totals-text' as string]: '#ffffff', ['--unified-totals-border' as string]: 'rgba(255, 255, 255, 0.16)', backgroundColor: '#115e59', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.16)', borderTopColor: '#0f766e' }}
-              maxHeight="600px"
+              maxHeight="560px"
               stickyHeader={true}
               onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}
               onSort={handleSort}
               sortField={sortField}
               sortDirection={sortDirection}
               tableId={tableTitle}
-              className="teacher-performance-table"
             />
-          </div>
-          
-          <style>{`
-            .teacher-performance-table tbody tr {
-              height: 35px !important;
-              max-height: 35px !important;
-              background-color: white !important;
-            }
-            /* Uniform white background for all rows per request */
-            .teacher-performance-table tbody tr:nth-child(even) {
-              background-color: white !important;
-            }
-            .teacher-performance-table tbody tr:hover {
-              background-color: white !important;
-            }
-            .teacher-performance-table td {
-              height: 35px !important;
-              max-height: 35px !important;
-              padding: 8px 12px !important;
-              white-space: nowrap !important;
-              overflow: hidden !important;
-              text-overflow: ellipsis !important;
-              color: black !important;
-            }
-            .teacher-performance-table .truncate {
-              overflow: hidden !important;
-              text-overflow: ellipsis !important;
-              white-space: nowrap !important;
-            }
-          `}</style>
-        </CardContent>
-      </Card>
+      </P57TableShell>
     </div>
   );
 };

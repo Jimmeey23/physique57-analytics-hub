@@ -113,10 +113,10 @@ export const LateCancellationsMonthOnMonthTable: React.FC<LateCancellationsMonth
         </div>
         <Tabs value={activeView} onValueChange={(value) => setActiveView(value as ViewType)}>
           <TabsList className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-2 lg:grid-cols-4">
-            <TabsTrigger value="monthly" className="rounded-xl data-[state=active]:bg-white">Monthly</TabsTrigger>
-            <TabsTrigger value="window" className="rounded-xl data-[state=active]:bg-white">Lead Time</TabsTrigger>
-            <TabsTrigger value="event" className="rounded-xl data-[state=active]:bg-white">Events</TabsTrigger>
-            <TabsTrigger value="membership" className="rounded-xl data-[state=active]:bg-white">Memberships</TabsTrigger>
+            <TabsTrigger value="monthly" className="rounded-xl ">Monthly</TabsTrigger>
+            <TabsTrigger value="window" className="rounded-xl ">Lead Time</TabsTrigger>
+            <TabsTrigger value="event" className="rounded-xl ">Events</TabsTrigger>
+            <TabsTrigger value="membership" className="rounded-xl ">Memberships</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>

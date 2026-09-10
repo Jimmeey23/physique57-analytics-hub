@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, ArrowUpDown } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57SortTh } from '@/components/ui/P57SortTh';
+import { TABLE_STYLES } from '@/styles/tableStyles';
+import { downloadCsv } from '@/utils/csvExport';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
@@ -21,6 +22,9 @@ type MetricKey =
   | 'totalLTV'
   | 'avgConversionDays'
   | 'avgVisits';
+
+const SELECT_CLASS =
+  'h-[30px] rounded-[9px] border border-[#ececef] bg-white px-2 text-[12px] font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-blue-400 dark:border-[#2a2a2e] dark:bg-[#141416] dark:text-slate-200';
 
 const METRIC_LABELS: Record<MetricKey, string> = {
   trials: 'Trials',
@@ -43,25 +47,6 @@ interface ClientRetentionMonthByTypePivotProps {
 }
 
 export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTypePivotProps> = ({ data, months: providedMonths, visitsSummary, onRowClick }) => {
-  const totalsRowStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#065f46',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#065f46',
-    color: '#ffffff',
-    borderTopColor: '#047857',
-  };
-
-  const totalsCellStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#065f46',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#065f46',
-    color: '#ffffff',
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    borderTopColor: '#047857',
-  };
-
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -165,8 +150,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         const avgVisits = cell.visitsPostTrial.length > 0
           ? cell.visitsPostTrial.reduce((a: number, b: number) => a + b, 0) / cell.visitsPostTrial.length
           : 0;
-        const conversionRate = cell.newMembers > 0 ? (cell.converted / cell.newMembers) * 100 : 0;
-        const retentionRate = cell.newMembers > 0 ? (cell.retained / cell.newMembers) * 100 : 0;
+        const conversionRate = cell.trials > 0 ? (cell.converted / cell.trials) * 100 : 0;
+        const retentionRate = cell.trials > 0 ? (cell.retained / cell.trials) * 100 : 0;
         
         // Link to the actual previous month in chronological order
         const prevMonthKey = months[idx - 1]?.key;
@@ -357,8 +342,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       const avgVisits = aggregated.visitsPostTrial.length > 0
         ? aggregated.visitsPostTrial.reduce((a: number, b: number) => a + b, 0) / aggregated.visitsPostTrial.length
         : 0;
-      const conversionRate = aggregated.newMembers > 0 ? (aggregated.converted / aggregated.newMembers) * 100 : 0;
-      const retentionRate = aggregated.newMembers > 0 ? (aggregated.retained / aggregated.newMembers) * 100 : 0;
+      const conversionRate = aggregated.trials > 0 ? (aggregated.converted / aggregated.trials) * 100 : 0;
+      const retentionRate = aggregated.trials > 0 ? (aggregated.retained / aggregated.trials) * 100 : 0;
 
       totals[m.key] = {
         ...aggregated,
@@ -371,6 +356,41 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
     });
     return totals;
   }, [pivot, clientTypes, months]);
+
+  const metricRaw = (cell: any): number => {
+    if (!cell) return 0;
+    switch (metric) {
+      case 'trials': return cell.trials || 0;
+      case 'newMembers': return cell.newMembers || 0;
+      case 'converted': return cell.converted || 0;
+      case 'retained': return cell.retained || 0;
+      case 'retentionRate': return cell.retentionRate || 0;
+      case 'conversionRate': return cell.conversionRate || 0;
+      case 'avgLTV': return cell.avgLTV || 0;
+      case 'totalLTV': return cell.totalLTV || 0;
+      case 'avgConversionDays': return cell.avgConversionDays || 0;
+      case 'avgVisits': return cell.avgVisits || 0;
+    }
+  };
+
+  const handleExportCsv = () => {
+    downloadCsv(
+      `${tableId} - ${METRIC_LABELS[metric]}.csv`,
+      [{ key: 'type', header: 'Client Type' }, ...months.map((m) => ({ key: m.key, header: m.label }))],
+      [
+        ...sortedTypes.map((t) => {
+          const rec: Record<string, unknown> = { type: t };
+          months.forEach((m) => { rec[m.key] = metricRaw(pivot[t]?.[m.key]); });
+          return rec;
+        }),
+        (() => {
+          const rec: Record<string, unknown> = { type: 'TOTALS' };
+          months.forEach((m) => { rec[m.key] = metricRaw(totalsRow[m.key]); });
+          return rec;
+        })(),
+      ]
+    );
+  };
 
   // Copy-all: include ALL metrics across ALL months and types (values mode)
   const generateAllTabsContent = useCallback(() => {
@@ -454,107 +474,73 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   }, [registry, metric, displayMode, pivot, sortedTypes]);
 
   return (
-    <Card ref={containerRef} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.10)]">
-      <CardHeader className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pt-4 text-white">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Month-on-Month by Client Type
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  {months.length} {months.length === 1 ? 'month' : 'months'}
-                </Badge>
-                <div className="ml-4">
-                  <CopyTableButton
-                    tableRef={containerRef as any}
-                    tableName={tableId}
-                    size="sm"
-                    onCopyAllTabs={async () => generateAllTabsContent()}
-                  />
-                </div>
-              </CardTitle>
-              <p className="mt-2 text-sm text-slate-300">
-                Click any row or totals cell to open detailed drill-down evidence for that slice.
-              </p>
+    <div ref={containerRef}>
+      <P57TableShell
+        icon={Calendar}
+        title="Month on Month"
+        description="Monthly client movement across all reporting months. Studio and client filters apply; the date range is ignored. Click any cell for month-specific drill-down."
+        rowCount={sortedTypes.length}
+        rowCountLabel="types"
+        onExportCsv={handleExportCsv}
+        actions={
+          <>
+            <select
+              value={metric}
+              onChange={(e) => setMetric(e.target.value as MetricKey)}
+              className={SELECT_CLASS}
+              aria-label="Metric"
+            >
+              {(Object.keys(METRIC_LABELS) as MetricKey[]).map((k) => (
+                <option key={k} value={k}>{METRIC_LABELS[k]}</option>
+              ))}
+            </select>
+            <div className="flex items-center gap-1 rounded-[10px] border border-[#ececef] bg-[#f6f7f9] p-[3px] dark:border-[#2a2a2e] dark:bg-[#141416]" role="group" aria-label="Display mode">
+              {(['values', 'growth'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setDisplayMode(v)}
+                  aria-pressed={displayMode === v}
+                  className={displayMode === v
+                    ? 'rounded-[7px] bg-slate-900 px-2.5 py-1 text-[12px] font-bold text-white shadow-sm dark:bg-white dark:text-slate-900'
+                    : 'rounded-[7px] px-2.5 py-1 text-[12px] font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}
+                >
+                  {v === 'values' ? 'Values' : 'Growth %'}
+                </button>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={displayMode === 'values' ? 'default' : 'outline'}
-                onClick={() => setDisplayMode('values')}
-                className={displayMode === 'values' ? 'rounded-xl border border-emerald-400/30 bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl border border-white/20 bg-white/10 text-emerald-100 hover:bg-emerald-500/20 hover:text-white'}
-              >
-                Values
-              </Button>
-              <Button
-                size="sm"
-                variant={displayMode === 'growth' ? 'default' : 'outline'}
-                onClick={() => setDisplayMode('growth')}
-                className={displayMode === 'growth' ? 'rounded-xl border border-emerald-400/30 bg-emerald-500 text-white hover:bg-emerald-400' : 'rounded-xl border border-white/20 bg-white/10 text-emerald-100 hover:bg-emerald-500/20 hover:text-white'}
-              >
-                Growth %
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {(Object.keys(METRIC_LABELS) as MetricKey[]).map(k => (
-              <button
-                key={k}
-                onClick={() => setMetric(k)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all min-w-[90px] ${metric === k ? 'border border-emerald-400/30 bg-emerald-500 text-white shadow-md' : 'border border-white/10 bg-white/10 text-emerald-100 hover:bg-emerald-500/20 hover:text-white'}`}
-                title={METRIC_LABELS[k]}
-              >
-                {METRIC_LABELS[k]}
-              </button>
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/90 px-5 py-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Months shown</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatNumber(months.length)}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Client types</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatNumber(clientTypes.length)}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Current metric</div>
-            <div className="mt-1 text-xl font-semibold text-slate-950">{METRIC_LABELS[metric]}</div>
-          </div>
-        </div>
-        <div className="overflow-x-auto max-h-[900px] relative" data-table="client-retention-mom-pivot" data-table-name={tableId}>
+            <CopyTableButton
+              tableRef={containerRef as any}
+              tableName={tableId}
+              size="sm"
+              onCopyAllTabs={async () => generateAllTabsContent()}
+            />
+          </>
+        }
+        meta={<span>{months.length} months · {METRIC_LABELS[metric]} · {displayMode === 'values' ? 'Values' : 'Growth %'}</span>}
+      >
+        <div className="max-h-[560px] overflow-auto" data-table="client-retention-mom-pivot" data-table-name={tableId}>
           <table className="min-w-full relative" data-table="client-retention-mom-pivot" data-table-name={tableId}>
             <thead>
-              <tr className="sticky top-0 z-10 bg-slate-950 text-white" style={{ maxHeight: '35px' }}>
-                <th 
-                  className="sticky left-0 z-30 border-r border-white/20 bg-slate-950 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide cursor-pointer select-none"
-                  onClick={() => handleSort('type')}
-                  style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}
-                >
-                  <div className="flex items-center gap-1">
-                    Client Type
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
+              <tr>
+                <P57SortTh sortKey="type" activeKey={sortColumn} dir={sortDir} onToggle={handleSort} className="sticky left-0 z-40 min-w-[300px]">
+                  Client Type
+                </P57SortTh>
                 {months.map(m => (
-                  <th 
-                    key={m.key} 
-                    className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wide border-l border-white/20 cursor-pointer hover:bg-slate-800/60 select-none sticky top-0"
-                    onClick={() => handleSort(m.key)}
-                    style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}
+                  <P57SortTh
+                    key={m.key}
+                    sortKey={m.key}
+                    activeKey={sortColumn}
+                    dir={sortDir}
+                    onToggle={handleSort}
+                    align="center"
+                    className="min-w-[100px] border-l"
                   >
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold whitespace-nowrap">{m.label.split(' ')[0]}</span>
-                        <ArrowUpDown className="w-3 h-3" />
-                      </div>
-                      <span className="text-white/80 text-[10px]">{m.label.split(' ')[1]}</span>
-                    </div>
-                  </th>
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>{m.label.split(' ')[0]}</span>
+                      <span className="text-[10px] font-semibold normal-case tracking-normal text-slate-400">{m.label.split(' ')[1]}</span>
+                    </span>
+                  </P57SortTh>
                 ))}
               </tr>
             </thead>
@@ -562,8 +548,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               {sortedTypes.map((t) => (
                 <tr 
                   key={t} 
-                  className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-indigo-50/60"
-                  style={{ maxHeight: '35px' }}
+                  className="cursor-pointer"
                   onClick={() => {
                     // Aggregate all clients for this type across all months
                     const allMonthsData = months.map(m => pivot[t]?.[m.key]).filter(Boolean);
@@ -571,16 +556,13 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                     onRowClick?.({ type: t, data: pivot[t], metric, clients: allClients });
                   }}
                 >
-                  <td className="sticky left-0 z-20 border-r bg-white px-4 py-2" style={{ maxHeight: '35px' }}>
-                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm">{t}</span>
-                  </td>
+                  <td className="sticky left-0 z-20 px-4 py-2 text-sm font-semibold">{t}</td>
                   {months.map((m, idx) => {
                     const cell = pivot[t]?.[m.key] || {};
                     return (
                       <td 
                         key={m.key} 
-                        className="border-l px-2 py-2 text-center transition-colors hover:bg-indigo-50/80"
-                        style={{ maxHeight: '35px' }}
+                        className="border-l px-2 py-2 text-center"
                         onClick={(e) => {
                           // Allow clicking individual cells for month-specific drill-down
                           e.stopPropagation();
@@ -600,15 +582,14 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="retention-totals-row border-t-4 border-emerald-700 font-bold" style={{ ...totalsRowStyle, maxHeight: '35px' }}>
-                <td className="sticky left-0 z-20 border-r px-4 py-2 text-sm" style={{ ...totalsCellStyle, maxHeight: '35px' }}>TOTALS</td>
+              <tr className={TABLE_STYLES.footer.row}>
+                <td className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} px-4 py-2`}>Totals</td>
                 {months.map((m, idx) => {
                   const cell = totalsRow[m.key] || {};
                   return (
-                    <td 
+                    <td
                       key={m.key}
-                      style={{ ...totalsCellStyle, maxHeight: '35px' }} 
-                      className="cursor-pointer border-l px-2 py-2 text-center"
+                      className={`${TABLE_STYLES.footer.cell} cursor-pointer border-l text-center`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onRowClick?.({ 
@@ -628,9 +609,10 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
             </tbody>
           </table>
         </div>
-      </CardContent>
-    </Card>
+      </P57TableShell>
+    </div>
   );
 };
 
 export default ClientRetentionMonthByTypePivot;
+

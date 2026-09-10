@@ -492,9 +492,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                     <th
                       key={key}
                       className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider min-w-[90px] cursor-pointer select-none ${
-                        isFirstOfGroup ? 'border-l-2 border-slate-400' : ''
+                        isFirstOfGroup ? 'border-l border-slate-300' : ''
                       } ${
-                        isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                        isLastOfGroup ? 'border-r border-slate-300' : ''
                       } ${
                         isPreviousMonth 
                           ? 'bg-blue-800 text-white' 
@@ -577,9 +577,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                         <td 
                           key={key} 
                           className={`px-2 py-2 text-center text-sm font-bold text-slate-800 hover:bg-blue-100/50 cursor-pointer transition-all duration-200 h-12 ${
-                            isFirstOfGroup ? 'border-l-2 border-slate-400' : ''
+                            isFirstOfGroup ? 'border-l border-slate-300' : ''
                           } ${
-                            isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                            isLastOfGroup ? 'border-r border-slate-300' : ''
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -662,9 +662,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                             <td 
                               key={key} 
                               className={`px-2 py-2 text-center text-sm font-mono text-slate-700 border-gray-200 hover:bg-blue-100/50 cursor-pointer transition-all duration-200 ${
-                                isFirstOfGroup ? 'border-l-2 border-slate-400' : 'border-l'
+                                isFirstOfGroup ? 'border-l border-slate-200' : 'border-l'
                               } ${
-                                isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                                isLastOfGroup ? 'border-r border-slate-300' : ''
                               }`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -748,9 +748,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                     <td 
                       key={key} 
                       className={`px-2 py-2 text-center text-sm font-bold text-white border-slate-400 group-hover:bg-slate-700 ${
-                        isFirstOfGroup ? 'border-l-2' : 'border-l'
+                        isFirstOfGroup ? 'border-l border-white/20' : 'border-l border-white/10'
                       } ${
-                        isLastOfGroup ? 'border-r-2' : ''
+                        isLastOfGroup ? 'border-r border-white/20' : ''
                       }`}
                       onClick={(e) => {
                         e.stopPropagation();

@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import { TABLE_STYLES, HEADER_GRADIENTS } from '@/styles/tableStyles';
+import { TABLE_STYLES } from '@/styles/tableStyles';
 
 interface Column {
   key: string;
@@ -24,7 +24,8 @@ interface ModernDataTableProps {
   footerData?: any;
   maxHeight?: string;
   className?: string;
-  headerGradient?: keyof typeof HEADER_GRADIENTS | string;
+  /** @deprecated headers are solid slate; kept for API compatibility. */
+  headerGradient?: string;
   onSort?: (field: string) => void;
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
@@ -55,7 +56,6 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   footerData,
   maxHeight,
   className,
-  headerGradient = "default",
   onSort,
   sortField,
   sortDirection,
@@ -73,8 +73,6 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   striped = true,
   compact = false
 }) => {
-  // Get the gradient class - support both preset keys and custom strings
-  const gradientClass = HEADER_GRADIENTS[headerGradient as keyof typeof HEADER_GRADIENTS] || headerGradient;
   // Remove individual loading state - parent components handle loading via global loader
   // if (loading) {
   //   return (
@@ -169,14 +167,7 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
           stickyHeader && TABLE_STYLES.header.wrapper,
           "border-b border-slate-300"
         )}>
-          <TableRow className={cn(
-            "border-none",
-            compact ? "h-10" : "h-12",
-            "relative",
-            gradientClass.includes('from-') ? `bg-gradient-to-r ${gradientClass}` : ''
-          )} style={!gradientClass.includes('from-') ? {
-            background: `linear-gradient(to right, rgb(51 65 85), rgb(15 23 42), rgb(51 65 85))`
-          } : undefined}>
+          <TableRow className={cn("border-none", compact ? "h-10" : "h-12", "relative")}>
             {columns.map((column, colIndex) => {
               const isSticky = column.sticky || colIndex === 0;
               const isLastColumn = colIndex === columns.length - 1;
@@ -188,25 +179,16 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 <TableHead 
                   key={column.key} 
                   className={cn(
-                    "px-3 text-left text-white font-bold text-xs uppercase tracking-wide border-r border-white/20 last:border-r-0",
+                    "px-3 text-left font-bold text-xs uppercase tracking-wide border-r border-border/60 last:border-r-0 bg-[#f6f7f9] dark:bg-[#141417]",
                     compact ? "py-2" : "py-3",
                     column.align === 'center' && 'text-center',
                     column.align === 'right' && 'text-right',
-                    column.sortable && 'cursor-pointer hover:bg-white/10 transition-colors',
-                    isSticky && 'sticky left-0 z-40 border-r border-white/20',
+                    column.sortable && 'cursor-pointer hover:bg-slate-200/70 transition-colors',
+                    isSticky && 'sticky left-0 z-40',
                     sanitizedHeaderClass,
                     isLastColumn && tableId && "pr-12" // Extra padding for copy button
                   )}
-                  style={{
-                    minWidth: '80px',
-                    ...(isSticky
-                      ? {
-                          background: gradientClass.includes('from-')
-                            ? `linear-gradient(to right, ${gradientClass.split(' ').slice(1).join(' ')})`
-                            : 'linear-gradient(to right, rgb(51 65 85), rgb(15 23 42))',
-                        }
-                      : {}),
-                  }}
+                  style={{ minWidth: '80px' }}
                   onClick={() => handleSort(column)}
                 >
                 <div className={cn(

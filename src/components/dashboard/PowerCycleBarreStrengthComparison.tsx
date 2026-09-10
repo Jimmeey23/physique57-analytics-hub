@@ -277,8 +277,8 @@ export const PowerCycleBarreStrengthComparison: React.FC<PowerCycleBarreStrength
               {performanceMetrics.map((metric) => (
                 <div 
                   key={metric.category}
-                  className="flex items-center justify-between p-4 rounded-lg border-l-4"
-                  style={{ borderLeftColor: metric.color, backgroundColor: `${metric.color}10` }}
+                  className="flex items-center justify-between p-4 rounded-xl border"
+                  style={{ borderColor: `${metric.color}55`, backgroundColor: `${metric.color}10` }}
                 >
                   <div>
                     <h4 className="font-semibold text-gray-900">{metric.category}</h4>

@@ -1,4 +1,7 @@
 import { SectionLayout } from '@/components/layout/SectionLayout';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import Rankings from '@/components/dashboard/Rankings';
 import { DataTableEnhanced } from '@/components/dashboard/DataTableEnhanced';
 import { MetricsCardsEnhanced } from '@/components/dashboard/MetricsCardsEnhanced';
@@ -22,6 +25,16 @@ export default function MainDashboard() {
       <div className="space-y-8">
         {/* Filter Section */}
         <ExecutiveFilterSection availableLocations={availableLocations} />
+        <KpiTicker
+          items={[
+            { label: 'Sessions', value: filteredSessions.length.toLocaleString() },
+            {
+              label: 'Check-ins',
+              value: filteredSessions.reduce((sum, s) => sum + (s.checkedInCount || 0), 0).toLocaleString(),
+            },
+            { label: 'Locations', value: availableLocations.length.toLocaleString() },
+          ]}
+        />
         
         {/* Metrics Cards Section */}
         <MetricsCardsEnhanced sessions={filteredSessions} />
@@ -31,6 +44,8 @@ export default function MainDashboard() {
         
         {/* Data Table Section */}
         <DataTableEnhanced sessions={filteredSessions} />
+
+        <MetricDefinitions items={METRIC_DEFINITIONS.mainDashboard} />
       </div>
     </SectionLayout>
   );

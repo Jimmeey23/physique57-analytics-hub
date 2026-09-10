@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { Footer } from '@/components/ui/footer';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -176,6 +178,17 @@ const MemberLifecycle: React.FC = () => {
         ]}
         compact={false}
       />
+
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker
+          items={[
+            { label: 'Tracked members', value: formatNumber(analytics.summaryInsights.totalMembers) },
+            { label: 'Active members', value: formatNumber(analytics.summaryInsights.activeMembers) },
+            { label: 'At-risk members', value: formatNumber(analytics.summaryInsights.atRiskMembers) },
+            { label: 'Avg show-up rate', value: formatPercentage(analytics.summaryInsights.averageShowUpRate) },
+          ]}
+        />
+      </div>
 
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
@@ -480,10 +493,9 @@ const MemberLifecycle: React.FC = () => {
               </Tabs>
             </CardContent>
           </Card>
+          <MetricDefinitions items={METRIC_DEFINITIONS.lifecycle} />
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 };

@@ -799,7 +799,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-emerald-500/50 group-hover:border-l-emerald-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-emerald-500/20 group-hover:before:bg-emerald-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {salesMetrics?.metrics?.[0]?.description || 'Total sales revenue'}
                     </p>
@@ -873,7 +873,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-blue-500/50 group-hover:border-l-blue-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-blue-500/20 group-hover:before:bg-blue-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       Total classes conducted
                     </p>
@@ -955,7 +955,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-red-500/50 group-hover:border-l-red-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-red-500/20 group-hover:before:bg-red-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       Sessions cancelled late
                     </p>
@@ -1043,7 +1043,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-purple-500/50 group-hover:border-l-purple-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-purple-500/20 group-hover:before:bg-purple-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {clientMetrics?.metrics?.[0]?.description || 'New member acquisitions'}
                     </p>
@@ -1131,7 +1131,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-indigo-500/50 group-hover:border-l-indigo-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-indigo-500/20 group-hover:before:bg-indigo-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {salesMetrics?.metrics?.[6]?.description || 'Average value per transaction'}
                     </p>
@@ -1205,7 +1205,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-teal-500/50 group-hover:border-l-teal-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-teal-500/20 group-hover:before:bg-teal-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       Total member check-ins
                     </p>
@@ -1295,7 +1295,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-rose-500/50 group-hover:border-l-rose-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-rose-500/20 group-hover:before:bg-rose-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {clientMetrics?.metrics?.[3]?.description || 'Average customer lifetime value'}
                     </p>
@@ -1383,7 +1383,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-orange-500/50 group-hover:border-l-orange-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-orange-500/20 group-hover:before:bg-orange-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {salesMetrics?.metrics?.[8]?.description || 'Average discount percentage'}
                     </p>

@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { BarChart3, ArrowUpDown } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57SortTh } from '@/components/ui/P57SortTh';
+import { TABLE_STYLES } from '@/styles/tableStyles';
+import { downloadCsv } from '@/utils/csvExport';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
@@ -21,6 +22,9 @@ type MetricKey =
   | 'totalLTV'
   | 'avgConversionDays'
   | 'avgVisits';
+
+const SELECT_CLASS =
+  'h-[30px] rounded-[9px] border border-[#ececef] bg-white px-2 text-[12px] font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-blue-400 dark:border-[#2a2a2e] dark:bg-[#141416] dark:text-slate-200';
 
 const METRIC_LABELS: Record<MetricKey, string> = {
   trials: 'Trials',
@@ -44,28 +48,8 @@ interface Props {
 }
 
 export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: providedMonths, onRowClick }) => {
-  const totalsRowStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#6b21a8',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#6b21a8',
-    color: '#ffffff',
-    borderTopColor: '#7e22ce',
-  };
-
-  const totalsCellStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#6b21a8',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#6b21a8',
-    color: '#ffffff',
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    borderTopColor: '#7e22ce',
-  };
-
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [rowType, setRowType] = useState<RowType>('clientType');
-  const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -191,8 +175,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
         const b = map[rk][m.key];
         if (!b) return;
         b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-        b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
-        b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+        b.conversionRate = b.trials > 0 ? (b.converted / b.trials) * 100 : 0;
+        b.retentionRate = b.trials > 0 ? (b.retained / b.trials) * 100 : 0;
         b.avgConversionDays = b.conversionIntervals.length > 0 
           ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
           : 0;
@@ -205,178 +189,40 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
     return map;
   }, [data, rowKeys, months, rowType]);
 
-  const renderValue = (current: any, previous: any) => {
-    let currVal = 0, prevVal = 0;
-    
+  const metricRaw = (cell: any): number => {
+    if (!cell) return 0;
     switch (metric) {
-      case 'trials':
-        currVal = current.trials || 0;
-        prevVal = previous.trials || 0;
-        break;
-      case 'newMembers':
-        currVal = current.newMembers || 0;
-        prevVal = previous.newMembers || 0;
-        break;
-      case 'converted':
-        currVal = current.converted || 0;
-        prevVal = previous.converted || 0;
-        break;
-      case 'retained':
-        currVal = current.retained || 0;
-        prevVal = previous.retained || 0;
-        break;
-      case 'conversionRate':
-        currVal = current.conversionRate || 0;
-        prevVal = previous.conversionRate || 0;
-        break;
-      case 'retentionRate':
-        currVal = current.retentionRate || 0;
-        prevVal = previous.retentionRate || 0;
-        break;
-      case 'avgLTV':
-        currVal = current.avgLTV || 0;
-        prevVal = previous.avgLTV || 0;
-        break;
-      case 'totalLTV':
-        currVal = current.totalLTV || 0;
-        prevVal = previous.totalLTV || 0;
-        break;
-      case 'avgConversionDays':
-        currVal = current.avgConversionDays || 0;
-        prevVal = previous.avgConversionDays || 0;
-        break;
-      case 'avgVisits':
-        currVal = current.avgVisits || 0;
-        prevVal = previous.avgVisits || 0;
-        break;
+      case 'trials': return cell.trials || 0;
+      case 'newMembers': return cell.newMembers || 0;
+      case 'converted': return cell.converted || 0;
+      case 'retained': return cell.retained || 0;
+      case 'retentionRate': return cell.retentionRate || 0;
+      case 'conversionRate': return cell.conversionRate || 0;
+      case 'avgLTV': return cell.avgLTV || 0;
+      case 'totalLTV': return cell.totalLTV || 0;
+      case 'avgConversionDays': return cell.avgConversionDays || 0;
+      case 'avgVisits': return cell.avgVisits || 0;
     }
-
-    if (displayMode === 'growth') {
-      const growth = prevVal !== 0 ? ((currVal - prevVal) / prevVal) * 100 : 0;
-      const isPositive = growth >= 0;
-      return (
-        <span className={`text-xs font-semibold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
-          {isPositive ? '▲' : '▼'} {Math.abs(growth).toFixed(1)}%
-        </span>
-      );
-    }
-
-    // Values mode: show prev | curr
-    const format = (val: number) => {
-      switch (metric) {
-        case 'trials':
-        case 'newMembers':
-        case 'converted':
-        case 'retained':
-          return formatNumber(val);
-        case 'conversionRate':
-        case 'retentionRate':
-          return `${val.toFixed(1)}%`;
-        case 'avgLTV':
-        case 'totalLTV':
-          return formatCurrency(val);
-        case 'avgConversionDays':
-          return `${val.toFixed(0)} days`;
-        case 'avgVisits':
-          return `${val.toFixed(1)}`;
-        default:
-          return String(val);
-      }
-    };
-
-    return (
-      <div className="flex flex-col gap-0.5 text-xs">
-        <span className="text-slate-500">{format(prevVal)}</span>
-        <span className="font-bold text-slate-800">{format(currVal)}</span>
-      </div>
-    );
   };
 
-  // Render value with white text for totals row
-  const renderValueWhite = (current: any, previous: any) => {
-    let currVal = 0, prevVal = 0;
-    
-    switch (metric) {
-      case 'trials':
-        currVal = current.trials || 0;
-        prevVal = previous.trials || 0;
-        break;
-      case 'newMembers':
-        currVal = current.newMembers || 0;
-        prevVal = previous.newMembers || 0;
-        break;
-      case 'converted':
-        currVal = current.converted || 0;
-        prevVal = previous.converted || 0;
-        break;
-      case 'retained':
-        currVal = current.retained || 0;
-        prevVal = previous.retained || 0;
-        break;
-      case 'conversionRate':
-        currVal = current.conversionRate || 0;
-        prevVal = previous.conversionRate || 0;
-        break;
-      case 'retentionRate':
-        currVal = current.retentionRate || 0;
-        prevVal = previous.retentionRate || 0;
-        break;
-      case 'avgLTV':
-        currVal = current.avgLTV || 0;
-        prevVal = previous.avgLTV || 0;
-        break;
-      case 'totalLTV':
-        currVal = current.totalLTV || 0;
-        prevVal = previous.totalLTV || 0;
-        break;
-      case 'avgConversionDays':
-        currVal = current.avgConversionDays || 0;
-        prevVal = previous.avgConversionDays || 0;
-        break;
-      case 'avgVisits':
-        currVal = current.avgVisits || 0;
-        prevVal = previous.avgVisits || 0;
-        break;
-    }
+  const rowLabel = rowType === 'clientType' ? 'Client Type' : 'Membership';
 
-    if (displayMode === 'growth') {
-      const growth = prevVal !== 0 ? ((currVal - prevVal) / prevVal) * 100 : 0;
-      const isPositive = growth >= 0;
-      return (
-        <span className="text-xs font-semibold text-white">
-          {isPositive ? '▲' : '▼'} {Math.abs(growth).toFixed(1)}%
-        </span>
-      );
-    }
-
-    // Values mode: show prev | curr with white text
-    const format = (val: number) => {
-      switch (metric) {
-        case 'trials':
-        case 'newMembers':
-        case 'converted':
-        case 'retained':
-          return formatNumber(val);
-        case 'conversionRate':
-        case 'retentionRate':
-          return `${val.toFixed(1)}%`;
-        case 'avgLTV':
-        case 'totalLTV':
-          return formatCurrency(val);
-        case 'avgConversionDays':
-          return `${val.toFixed(0)} days`;
-        case 'avgVisits':
-          return `${val.toFixed(1)}`;
-        default:
-          return String(val);
-      }
-    };
-
-    return (
-      <div className="flex flex-col gap-0.5 text-xs">
-        <span className="text-white/70">{format(prevVal)}</span>
-        <span className="font-bold text-white">{format(currVal)}</span>
-      </div>
+  const handleExportCsv = () => {
+    downloadCsv(
+      `${tableId} - ${METRIC_LABELS[metric]}.csv`,
+      [{ key: 'row', header: rowLabel }, ...months.map((m: any) => ({ key: m.key, header: `${m.monthName} ${m.year}` }))],
+      [
+        ...sortedRowKeys.map((rk) => {
+          const rec: Record<string, unknown> = { row: rk };
+          months.forEach((m: any) => { rec[m.key] = metricRaw(pivot[rk]?.[m.key]); });
+          return rec;
+        }),
+        (() => {
+          const rec: Record<string, unknown> = { row: 'TOTALS' };
+          months.forEach((m: any) => { rec[m.key] = metricRaw(totalsRow[m.key]); });
+          return rec;
+        })(),
+      ]
     );
   };
 
@@ -454,8 +300,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       
       const b = totals[m.key];
       b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-      b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
-      b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+      b.conversionRate = b.trials > 0 ? (b.converted / b.trials) * 100 : 0;
+      b.retentionRate = b.trials > 0 ? (b.retained / b.trials) * 100 : 0;
       b.avgConversionDays = b.conversionIntervals.length > 0 
         ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
         : 0;
@@ -526,7 +372,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
     const getTextContent = () => {
       const table = el.querySelector('table');
       if (!table) return `${tableId} (No Data)`;
-      let text = `${tableId}\nMetric: ${METRIC_LABELS[metric]} | Mode: ${displayMode} | Rows: ${rowType}\n`;
+      let text = `${tableId}\nMetric: ${METRIC_LABELS[metric]} | Rows: ${rowType}\n`;
       const headerCells = table.querySelectorAll('thead th');
       const headers: string[] = [];
       headerCells.forEach(h => headers.push((h.textContent || '').trim().replace(/Prev \| Curr/i, '').trim()));
@@ -545,115 +391,44 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
     };
     registry.register({ id: tableId, getTextContent });
     return () => registry.unregister(tableId);
-  }, [registry, metric, displayMode, rowType, pivot, sortedRowKeys]);
+  }, [registry, metric, rowType, pivot, sortedRowKeys]);
 
   return (
-    <Card ref={containerRef} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.10)]">
-      <CardHeader className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pt-4 text-white">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Year-on-Year Analysis
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  {comparisonYears.baselineYear} vs {comparisonYears.latestYear}
-                </Badge>
-                <div className="ml-4">
-                  <CopyTableButton
-                    tableRef={containerRef as any}
-                    tableName={tableId}
-                    size="sm"
-                    onCopyAllTabs={async () => generateAllTabsContent()}
-                  />
-                </div>
-              </CardTitle>
-              <p className="mt-2 text-sm text-slate-300">
-                Compare the same month across years, then open any row or month cell for supporting client evidence.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={displayMode === 'values' ? 'default' : 'outline'}
-                onClick={() => setDisplayMode('values')}
-                className={displayMode === 'values' ? 'rounded-xl border border-purple-400/30 bg-purple-500 text-white hover:bg-purple-400' : 'rounded-xl border border-white/20 bg-white/10 text-purple-100 hover:bg-purple-500/20 hover:text-white'}
-              >
-                Values
-              </Button>
-              <Button
-                size="sm"
-                variant={displayMode === 'growth' ? 'default' : 'outline'}
-                onClick={() => setDisplayMode('growth')}
-                className={displayMode === 'growth' ? 'rounded-xl border border-purple-400/30 bg-purple-500 text-white hover:bg-purple-400' : 'rounded-xl border border-white/20 bg-white/10 text-purple-100 hover:bg-purple-500/20 hover:text-white'}
-              >
-                Growth %
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 rounded-xl bg-white/10 p-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setRowType('clientType')}
-                className={`min-w-[110px] rounded-lg ${rowType === 'clientType' ? 'border border-purple-400/30 bg-purple-500 text-white' : 'text-purple-100 hover:bg-purple-500/20 hover:text-white'}`}
-              >
-                Client Type
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setRowType('membership')}
-                className={`min-w-[110px] rounded-lg ${rowType === 'membership' ? 'border border-purple-400/30 bg-purple-500 text-white' : 'text-purple-100 hover:bg-purple-500/20 hover:text-white'}`}
-              >
-                Membership
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {(Object.keys(METRIC_LABELS) as MetricKey[]).map(k => (
-                <button
-                  key={k}
-                  onClick={() => setMetric(k)}
-                  className={`min-w-[90px] rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${metric === k ? 'border border-purple-400/30 bg-purple-500 text-white shadow-md' : 'border border-white/10 bg-white/10 text-purple-100 hover:bg-purple-500/20 hover:text-white'}`}
-                  title={METRIC_LABELS[k]}
-                >
-                  {METRIC_LABELS[k]}
+    <div ref={containerRef}>
+      <P57TableShell
+        icon={TrendingUp}
+        title="Year on Year"
+        description="Year comparison across all reporting months. Studio and client filters apply; the date range is ignored. Click any cell for supporting client evidence."
+        rowCount={sortedRowKeys.length}
+        rowCountLabel="rows"
+        onExportCsv={handleExportCsv}
+        actions={
+          <>
+            <div className="flex items-center gap-1 rounded-[10px] border border-[#ececef] bg-[#f6f7f9] p-[3px] dark:border-[#2a2a2e] dark:bg-[#141416]" role="group" aria-label="Row grouping">
+              {([['clientType', 'Client Type'], ['membership', 'Membership']] as const).map(([v, label]) => (
+                <button key={v} type="button" onClick={() => setRowType(v)} aria-pressed={rowType === v}
+                  className={rowType === v ? 'rounded-[7px] bg-slate-900 px-2.5 py-1 text-[12px] font-bold text-white shadow-sm dark:bg-white dark:text-slate-900' : 'rounded-[7px] px-2.5 py-1 text-[12px] font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}>
+                  {label}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/90 px-5 py-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Years compared</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">2</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Row grouping</div>
-            <div className="mt-1 text-xl font-semibold text-slate-950">{rowType === 'clientType' ? 'Client Type' : 'Membership'}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Current metric</div>
-            <div className="mt-1 text-xl font-semibold text-slate-950">{METRIC_LABELS[metric]}</div>
-          </div>
-        </div>
-        <div className="overflow-x-auto max-h-[900px] relative" data-table="client-retention-yoy-pivot" data-table-name={tableId}>
+            <select value={metric} onChange={(e) => setMetric(e.target.value as MetricKey)} className={SELECT_CLASS} aria-label="Metric">
+              {(Object.keys(METRIC_LABELS) as MetricKey[]).map((k) => (
+                <option key={k} value={k}>{METRIC_LABELS[k]}</option>
+              ))}
+            </select>
+            <CopyTableButton tableRef={containerRef as any} tableName={tableId} size="sm" onCopyAllTabs={async () => generateAllTabsContent()} />
+          </>
+        }
+        meta={<span>{comparisonYears.baselineYear} vs {comparisonYears.latestYear} · {rowLabel} · {METRIC_LABELS[metric]}</span>}
+      >
+        <div className="max-h-[560px] overflow-auto" data-table="client-retention-yoy-pivot" data-table-name={tableId}>
           <table className="min-w-full relative" data-table="client-retention-yoy-pivot" data-table-name={tableId}>
             <thead>
-              <tr className="sticky top-0 z-10 bg-slate-950 text-white">
-                <th 
-                  className="sticky left-0 z-20 border-r border-white/20 bg-slate-950 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide cursor-pointer select-none"
-                  style={{ width: '300px', minWidth: '300px' }}
-                  onClick={() => handleSort('row')}
-                >
-                  <div className="flex items-center gap-1">
-                    {rowType === 'clientType' ? 'Client Type' : 'Membership'}
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
+              <tr>
+                <P57SortTh sortKey="row" activeKey={sortColumn} dir={sortDir} onToggle={handleSort} className="sticky left-0 z-40 min-w-[300px]">
+                  {rowLabel}
+                </P57SortTh>
                 {months.map((m, index) => {
                   const prevMonth = index > 0 ? months[index - 1] : null;
                   const nextMonth = index < months.length - 1 ? months[index + 1] : null;
@@ -662,20 +437,24 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                   const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
                   
                   return (
-                    <th 
-                      key={m.key} 
-                      className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider min-w-[90px] cursor-pointer hover:bg-slate-800/60 select-none sticky top-0 ${
-                        isFirstOfGroup ? 'border-l-2 border-slate-400' : ''
+                    <P57SortTh
+                      key={m.key}
+                      sortKey={m.key}
+                      activeKey={sortColumn}
+                      dir={sortDir}
+                      onToggle={handleSort}
+                      align="center"
+                      className={`min-w-[90px] ${
+                        isFirstOfGroup ? 'border-l border-slate-300' : ''
                       } ${
-                        isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                        isLastOfGroup ? 'border-r border-slate-300' : ''
                       }`}
-                      onClick={() => handleSort(m.key)}
                     >
-                      <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold whitespace-nowrap leading-tight">{m.monthName}</span>
-                        <span className="text-slate-300 text-xs leading-tight">{m.year}</span>
-                      </div>
-                    </th>
+                      <span className="flex flex-col items-center leading-tight">
+                        <span>{m.monthName}</span>
+                        <span className="text-[10px] font-semibold normal-case tracking-normal text-slate-400">{m.year}</span>
+                      </span>
+                    </P57SortTh>
                   );
                 })}
               </tr>
@@ -684,8 +463,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
               {sortedRowKeys.map((rk) => (
                 <tr 
                   key={rk} 
-                  className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-indigo-50/60"
-                  style={{ maxHeight: '35px' }}
+                  className="cursor-pointer"
                   onClick={() => {
                     // Aggregate clients from all months for this row
                     const allClients = months.flatMap(m => pivot[rk]?.[m.key]?.clients || []);
@@ -698,8 +476,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                     });
                   }}
                 >
-                  <td className="sticky left-0 z-10 border-r bg-white px-4 py-2 hover:bg-indigo-50/60" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>
-                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm">{rk}</span>
+                  <td className="sticky left-0 z-20 px-4 py-2 text-sm font-semibold">
+                    {rk}
                   </td>
                   {months.map((m, index) => {
                     const prevMonth = index > 0 ? months[index - 1] : null;
@@ -713,12 +491,11 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                     return (
                       <td 
                         key={m.key} 
-                        className={`px-2 py-2 text-center text-sm font-mono text-slate-800 transition-colors hover:bg-indigo-50/80 ${
-                          isFirstOfGroup ? 'border-l-2 border-slate-300' : 'border-l'
+                        className={`px-2 py-2 text-center text-sm tabular-nums ${
+                          isFirstOfGroup ? 'border-l border-slate-200' : 'border-l'
                         } ${
-                          isLastOfGroup ? 'border-r-2 border-slate-300' : ''
+                          isLastOfGroup ? 'border-r border-slate-200' : ''
                         }`}
-                        style={{ maxHeight: '35px' }}
                         onClick={(e) => {
                           // Allow clicking individual cells for month-specific drill-down
                           e.stopPropagation();
@@ -755,8 +532,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                 </tr>
               ))}
               {/* Totals Row */}
-              <tr className="retention-totals-row border-t-4 border-purple-700 font-bold" style={{ ...totalsRowStyle, maxHeight: '35px' }}>
-                <td className="sticky left-0 z-10 border-r px-4 py-2 text-sm" style={{ ...totalsCellStyle, width: '300px', minWidth: '300px', maxHeight: '35px' }}>TOTALS</td>
+              <tr className={TABLE_STYLES.footer.row}>
+                <td className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} px-4 py-2`}>Totals</td>
                 {months.map((m, index) => {
                   const prevMonth = index > 0 ? months[index - 1] : null;
                   const nextMonth = index < months.length - 1 ? months[index + 1] : null;
@@ -769,12 +546,11 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                   return (
                     <td 
                       key={m.key} 
-                      className={`cursor-pointer px-2 py-2 text-center text-sm font-mono ${
-                        isFirstOfGroup ? 'border-l-2' : 'border-l'
+                      className={`${TABLE_STYLES.footer.cell} cursor-pointer text-center ${
+                        isFirstOfGroup ? 'border-l border-white/20' : 'border-l border-white/10'
                       } ${
-                        isLastOfGroup ? 'border-r-2' : ''
+                        isLastOfGroup ? 'border-r border-white/20' : ''
                       }`}
-                      style={{ ...totalsCellStyle, maxHeight: '35px' }}
                       onClick={(e) => {
                         e.stopPropagation();
                         const clients = cellData?.clients || [];
@@ -811,8 +587,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
             </tbody>
           </table>
         </div>
-      </CardContent>
-    </Card>
+      </P57TableShell>
+    </div>
   );
 };
 

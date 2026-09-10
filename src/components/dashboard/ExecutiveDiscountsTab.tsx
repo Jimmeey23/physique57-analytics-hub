@@ -428,7 +428,7 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
 
       {/* No Discount Warning */}
       {discountAnalysis.message && (
-        <Card className="border-l-4 border-yellow-400 bg-yellow-50">
+        <Card className="border border-amber-200 bg-amber-50/60">
           <CardContent className="pt-6">
             <div className="flex gap-3">
               <div className="text-yellow-600 font-semibold">ℹ️</div>

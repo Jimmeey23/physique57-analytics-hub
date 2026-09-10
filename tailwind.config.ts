@@ -1,4 +1,3 @@
-
 import type { Config } from 'tailwindcss'
 
 const config = {
@@ -20,7 +19,10 @@ const config = {
     },
     extend: {
       fontFamily: {
-        'serif': ['Playfair Display', 'serif'],
+        display: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'ui-serif', 'Georgia', 'serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -56,18 +58,34 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          soft: "hsl(var(--ink-soft))",
+        },
+        mist: "hsl(var(--mist))",
+        line: "hsl(var(--line))",
+        brand: {
+          DEFAULT: "hsl(var(--primary))",
+          soft: "hsl(var(--accent))",
+          deep: "hsl(var(--brand-deep))",
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
           "3": "hsl(var(--chart-3))",
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
-        }
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        card: "0 12px 32px -26px rgba(14, 23, 41, 0.28)",
+        lift: "0 20px 40px -24px rgba(5, 155, 255, 0.35)",
+        pop: "0 24px 58px -28px rgba(14, 23, 41, 0.35)",
       },
       keyframes: {
         "accordion-down": {
@@ -78,85 +96,25 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "fade-in": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(10px)"
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)"
-          }
+        "p57-enter": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
-        "slide-up": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(30px)"
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)"
-          }
+        "p57-fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
         },
-        "scale-in": {
-          "0%": {
-            opacity: "0",
-            transform: "scale(0.95)"
-          },
-          "100%": {
-            opacity: "1",
-            transform: "scale(1)"
-          }
+        "p57-marquee": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
         },
-        "float": {
-          "0%, 100%": {
-            transform: "translateY(0px) rotate(0deg)"
-          },
-          "25%": {
-            transform: "translateY(-10px) rotate(1deg)"
-          },
-          "50%": {
-            transform: "translateY(-5px) rotate(-1deg)"
-          },
-          "75%": {
-            transform: "translateY(-15px) rotate(0.5deg)"
-          }
-        },
-        "shimmer": {
-          "0%": {
-            transform: "translateX(-100%)"
-          },
-          "100%": {
-            transform: "translateX(200%)"
-          }
-        },
-        "wave": {
-          "0%, 40%, 100%": {
-            transform: "scaleY(0.4)"
-          },
-          "20%": {
-            transform: "scaleY(1)"
-          }
-        },
-        "gentle-bounce": {
-          "0%, 100%": {
-            transform: "scale(1) translateY(0)"
-          },
-          "50%": {
-            transform: "scale(1.05) translateY(-2px)"
-          }
-        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.6s ease-out",
-        "slide-up": "slide-up 0.6s ease-out",
-        "scale-in": "scale-in 0.4s ease-out",
-        "float": "float 6s ease-in-out infinite",
-        "shimmer": "shimmer 2.5s ease-in-out infinite",
-        "wave": "wave 1.5s ease-in-out infinite",
-        "gentle-bounce": "gentle-bounce 2s ease-in-out infinite",
+        "p57-enter": "p57-enter 0.32s ease both",
+        "p57-fade-in": "p57-fade-in 0.3s ease both",
+        "p57-marquee": "p57-marquee 42s linear infinite",
       },
     },
   },

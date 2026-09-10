@@ -1,9 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
-import { SessionData, RankingMetric, CalculatedMetrics } from '@/types';
-import { formatNumber, formatCurrency, formatPercentage, calculateMetrics } from '@/utils/calculations';
-import { TrendingUp, TrendingDown, Award, BarChart3, Search } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { RankingMetric, CalculatedMetrics } from '@/types';
+import type { SessionData as HookSessionData } from '@/hooks/useSessionsData';
+
+/** Hook rows plus the optional legacy fallbacks this component reads. */
+type RankingSession = HookSessionData & {
+  day?: string;
+  instructor?: string;
+  checkins?: number;
+  bookings?: number;
+  lateCancelled?: number;
+  waitlistedCount?: number;
+  waitlisted?: number;
+};
+import { formatNumber, formatCurrency, formatPercentage } from '@/utils/calculations';
+import { Search, Trophy, TrendingDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { BrandSpinner } from '@/components/ui/BrandSpinner';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57RankList, type P57RankItem } from '@/components/ui/P57RankList';
+import { CellDrillDownModal } from '@/components/ui/CellDrillDownModal';
 
 interface RankingGroup {
   key: string;
@@ -12,15 +27,21 @@ interface RankingGroup {
   time: string;
   location: string;
   trainer?: string;
-  sessions: SessionData[];
+  sessions: RankingSession[];
   metrics: CalculatedMetrics;
 }
 
 interface RankingsProps {
-  data: SessionData[];
+  data?: RankingSession[];
+  sessions?: RankingSession[];
 }
 
-const Rankings = ({ data }: RankingsProps) => {
+const SELECT_CLASS =
+  'h-[30px] rounded-[9px] border border-[#ececef] bg-white px-2 text-[12px] font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-blue-400 dark:border-[#2a2a2e] dark:bg-[#141416] dark:text-slate-200';
+
+const Rankings = ({ data, sessions }: RankingsProps) => {
+  // MainDashboard passes `sessions`, ClassAttendance passes `data` — accept both.
+  const rows = data ?? sessions ?? [];
   const [topMetric, setTopMetric] = useState<RankingMetric>('classAvg');
   const [bottomMetric, setBottomMetric] = useState<RankingMetric>('classAvg');
   const [topCount, setTopCount] = useState(10);
@@ -30,13 +51,14 @@ const Rankings = ({ data }: RankingsProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [includeTrainer, setIncludeTrainer] = useState(false);
   const [excludeHostedClasses, setExcludeHostedClasses] = useState(true);
-  
+  const [drill, setDrill] = useState<{ group: RankingGroup; metric: RankingMetric } | null>(null);
+
   const [rankedGroups, setRankedGroups] = useState<RankingGroup[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
 
   // Group sessions by composite key
   useEffect(() => {
-    if (data.length === 0) {
+    if (rows.length === 0) {
       setRankedGroups([]);
       return;
     }
@@ -46,14 +68,14 @@ const Rankings = ({ data }: RankingsProps) => {
     const timer = setTimeout(() => {
       // Filter hosted classes if enabled
       const filteredData = excludeHostedClasses
-        ? data.filter(s => {
+        ? rows.filter(s => {
             const className = (s.sessionName || s.cleanedClass || s.classType || '').toLowerCase();
             const hostedPattern = /hosted|bridal|lrs|x p57|rugby|wework|olympics|birthday|host|raheja|pop|workshop|community|physique|soundrise|outdoor|p57 x|x/i;
             return !hostedPattern.test(className);
           })
-        : data;
+        : rows;
 
-      const groups = new Map<string, SessionData[]>();
+      const groups = new Map<string, RankingSession[]>();
 
       filteredData.forEach((session) => {
         const key = [
@@ -79,7 +101,7 @@ const Rankings = ({ data }: RankingsProps) => {
         const totalBooked = sessionGroup.reduce((sum, s) => sum + (s.bookedCount || s.bookings || 0), 0);
         const totalCancellations = sessionGroup.reduce((sum, s) => sum + (s.lateCancelledCount || s.lateCancelled || 0), 0);
         const totalWaitlisted = sessionGroup.reduce((sum, s) => sum + (s.waitlistedCount || s.waitlisted || 0), 0);
-        
+
         const classAvg = sessionGroup.length > 0 ? totalCheckIns / sessionGroup.length : 0;
         const fillRate = totalCapacity > 0 ? (totalCheckIns / totalCapacity) * 100 : 0;
         const cancellationRate = totalBooked > 0 ? (totalCancellations / totalBooked) * 100 : 0;
@@ -87,7 +109,7 @@ const Rankings = ({ data }: RankingsProps) => {
         const revPerCheckin = totalCheckIns > 0 ? totalRevenue / totalCheckIns : 0;
         const revPerBooking = totalBooked > 0 ? totalRevenue / totalBooked : 0;
         const revLostPerCancellation = totalCancellations > 0 ? revPerBooking * totalCancellations : 0;
-        
+
         // Consistency calculation
         const avg = classAvg;
         const variance = sessionGroup.reduce((sum, s) => {
@@ -96,14 +118,14 @@ const Rankings = ({ data }: RankingsProps) => {
         }, 0) / sessionGroup.length;
         const stdDev = Math.sqrt(variance);
         const consistencyScore = avg > 0 ? Math.max(0, 100 - (stdDev / avg) * 100) : 0;
-        
+
         const compositeScore = (
           fillRate * 0.3 +
           classAvg * 0.25 +
           consistencyScore * 0.25 +
           (totalRevenue / sessionGroup.length / 100) * 0.2
         );
-        
+
         const metrics: CalculatedMetrics = {
           classes: sessionGroup.length,
           emptyClasses: sessionGroup.filter(s => (s.checkedInCount || s.checkins || 0) === 0).length,
@@ -129,7 +151,7 @@ const Rankings = ({ data }: RankingsProps) => {
           status: 'Active',
           compositeScore
         };
-        
+
         if (totalCheckIns < minCheckins || sessionGroup.length < minClasses) {
           return;
         }
@@ -152,12 +174,12 @@ const Rankings = ({ data }: RankingsProps) => {
     }, 10);
 
     return () => clearTimeout(timer);
-  }, [data, includeTrainer, minCheckins, minClasses, excludeHostedClasses]);
+  }, [rows, includeTrainer, minCheckins, minClasses, excludeHostedClasses]);
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return rankedGroups;
     const query = searchQuery.toLowerCase();
-    return rankedGroups.filter(g => 
+    return rankedGroups.filter(g =>
       g.className.toLowerCase().includes(query) ||
       g.location.toLowerCase().includes(query) ||
       g.trainer?.toLowerCase().includes(query)
@@ -239,12 +261,44 @@ const Rankings = ({ data }: RankingsProps) => {
     'revLostPerCancellation',
   ];
 
+  const toRankItems = (groups: RankingGroup[], metric: RankingMetric): P57RankItem[] => {
+    const max = Math.max(1, ...groups.map((g) => g.metrics[metric]));
+    return groups.map((g, i) => ({
+      rank: i + 1,
+      name: g.className,
+      sub: `${[g.day, g.time, g.location].filter((x) => x && x !== 'Unknown').join(' • ')}${g.trainer ? ` · ${g.trainer}` : ''} · ${g.metrics.classes} classes · ${formatNumber(g.metrics.totalCheckIns)} check-ins`,
+      value: formatMetricValue(metric, g.metrics[metric]),
+      barPct: max > 0 ? (g.metrics[metric] / max) * 100 : 0,
+    }));
+  };
+
+  const drillRows = useMemo(() => {
+    if (!drill) return [];
+    return drill.group.sessions.map((s) => {
+      const checkedIn = s.checkedInCount || s.checkins || 0;
+      const capacity = s.capacity || 0;
+      return {
+        date: s.date || '—',
+        time: s.time || '—',
+        checkedIn: formatNumber(checkedIn),
+        capacity: formatNumber(capacity),
+        fill: capacity > 0 ? formatPercentage((checkedIn / capacity) * 100) : '—',
+        revenue: formatCurrency(s.totalPaid || 0, true),
+      };
+    });
+  }, [drill]);
+
+  const openDrill = (groups: RankingGroup[], metric: RankingMetric, item: P57RankItem) => {
+    const group = groups[item.rank - 1];
+    if (group) setDrill({ group, metric });
+  };
+
   return (
-    <div className="space-y-6 relative">
+    <div className="relative space-y-6">
       {isCalculating && (
-        <div className="absolute inset-0 bg-white/50 z-10 flex items-start justify-center pt-20 backdrop-blur-sm rounded-2xl">
-          <div className="bg-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 border border-blue-100">
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+        <div className="absolute inset-0 z-10 flex items-start justify-center rounded-2xl bg-white/50 pt-20 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-full border border-blue-100 bg-white px-6 py-3 shadow-lg">
+            <BrandSpinner ringOnly size="sm" />
             <span className="font-medium text-blue-700">Updating rankings...</span>
           </div>
         </div>
@@ -253,22 +307,20 @@ const Rankings = ({ data }: RankingsProps) => {
       {/* Filter Controls */}
       <Card className="p-5">
         <div className="flex flex-wrap items-center gap-4">
-          {/* Exclude Hosted Classes */}
-          <label className="flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white shadow-sm cursor-pointer hover:border-blue-400 transition-all">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
             <input
               type="checkbox"
               checked={excludeHostedClasses}
               onChange={(e) => setExcludeHostedClasses(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              className="h-4 w-4 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
             />
-            <span className="text-sm font-semibold text-gray-800">
+            <span className="text-sm font-semibold text-slate-800">
               Exclude Hosted Classes
             </span>
           </label>
 
-          {/* Min Checkins */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+            <label className="whitespace-nowrap text-sm font-semibold text-slate-700">
               Min Check-ins:
             </label>
             <input
@@ -276,13 +328,12 @@ const Rankings = ({ data }: RankingsProps) => {
               min="0"
               value={minCheckins}
               onChange={(e) => setMinCheckins(parseInt(e.target.value) || 0)}
-              className="w-24 px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm font-semibold"
+              className="w-24 rounded-xl border border-slate-200 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
             />
           </div>
 
-          {/* Min Classes */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+            <label className="whitespace-nowrap text-sm font-semibold text-slate-700">
               Min Classes:
             </label>
             <input
@@ -290,29 +341,30 @@ const Rankings = ({ data }: RankingsProps) => {
               min="0"
               value={minClasses}
               onChange={(e) => setMinClasses(parseInt(e.target.value) || 0)}
-              className="w-24 px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm font-semibold"
+              className="w-24 rounded-xl border border-slate-200 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
             />
           </div>
 
-          {/* Search Bar */}
-          <div className="flex items-center gap-2 flex-1 max-w-md">
-            <Search className="w-4 h-4 text-gray-600" />
+          <div className="flex max-w-md flex-1 items-center gap-2">
+            <Search className="h-4 w-4 text-slate-600" />
             <input
               type="text"
               placeholder="Search classes, trainers, locations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+              className="flex-1 rounded-xl border border-slate-200 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
             />
           </div>
 
-          {/* Include Trainer Toggle */}
-          <div className="flex items-center gap-3 ml-auto">
-            <span className="text-sm font-semibold text-gray-700">Include Trainer</span>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-sm font-semibold text-slate-700">Include Trainer</span>
             <button
+              type="button"
+              role="switch"
+              aria-checked={includeTrainer}
               onClick={() => setIncludeTrainer(!includeTrainer)}
               className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
-                includeTrainer ? 'bg-blue-600' : 'bg-gray-300'
+                includeTrainer ? 'bg-blue-600' : 'bg-slate-300'
               }`}
             >
               <span
@@ -325,189 +377,116 @@ const Rankings = ({ data }: RankingsProps) => {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Performers */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-green-600 to-green-800 shadow-lg">
-                <Award className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-800">Top Performers</h3>
-                <p className="text-sm text-gray-500">Best performing classes</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex gap-3 mb-4">
-            <select
-              value={topMetric}
-              onChange={(e) => setTopMetric(e.target.value as RankingMetric)}
-              className="flex-1 px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none text-sm font-medium transition-all"
-            >
-              {metricOptions.map((metric) => (
-                <option key={metric} value={metric}>
-                  {getMetricLabel(metric)}
-                </option>
-              ))}
-            </select>
-            <select
-              value={topCount}
-              onChange={(e) => setTopCount(parseInt(e.target.value))}
-              className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none text-sm font-medium transition-all"
-            >
-              <option value={5}>Top 5</option>
-              <option value={10}>Top 10</option>
-              <option value={20}>Top 20</option>
-            </select>
-          </div>
-
-          {/* List */}
-          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-            {topPerformers.map((group, index) => (
-              <motion.div
-                key={group.key}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-gray-100 hover:border-green-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+      <div className="p57-stagger grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <P57TableShell
+          icon={Trophy}
+          title="Top Performers"
+          description={`Highest-ranked classes by ${getMetricLabel(topMetric).toLowerCase()}. Click a row for session-level detail.`}
+          rowCount={topPerformers.length}
+          actions={
+            <>
+              <select
+                value={topMetric}
+                onChange={(e) => setTopMetric(e.target.value as RankingMetric)}
+                className={SELECT_CLASS}
+                aria-label="Top ranking metric"
               >
-                <div className="flex items-center justify-center min-w-[36px] h-9 rounded-lg bg-gradient-to-br from-green-600 to-green-700 text-white font-bold text-sm shadow-md">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <p className="font-bold truncate text-sm text-gray-900">
-                    {group.className}
-                  </p>
-                  <p className="text-xs truncate text-gray-600">
-                    {group.day} • {group.time} • {group.location}
-                  </p>
-                  {group.trainer && (
-                    <p className="text-xs truncate text-blue-600 font-medium">
-                      {group.trainer}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span className="font-medium">{group.metrics.classes} classes</span>
-                    <span>•</span>
-                    <span>{formatNumber(group.metrics.totalCheckIns)} check-ins</span>
-                    <span>•</span>
-                    <span className={group.metrics.status === 'Active' ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold'}>
-                      {group.metrics.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span className="font-bold text-lg text-gray-900">
-                      {formatMetricValue(topMetric, group.metrics[topMetric])}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Bottom Performers */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-orange-600 to-orange-800 shadow-lg">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-800">Needs Improvement</h3>
-                <p className="text-sm text-gray-500">Classes requiring attention</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex gap-3 mb-4">
-            <select
-              value={bottomMetric}
-              onChange={(e) => setBottomMetric(e.target.value as RankingMetric)}
-              className="flex-1 px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none text-sm font-medium transition-all"
-            >
-              {metricOptions.map((metric) => (
-                <option key={metric} value={metric}>
-                  {getMetricLabel(metric)}
-                </option>
-              ))}
-            </select>
-            <select
-              value={bottomCount}
-              onChange={(e) => setBottomCount(parseInt(e.target.value))}
-              className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none text-sm font-medium transition-all"
-            >
-              <option value={5}>Bottom 5</option>
-              <option value={10}>Bottom 10</option>
-              <option value={20}>Bottom 20</option>
-            </select>
-          </div>
-
-          {/* List */}
-          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-            {bottomPerformers.map((group, index) => (
-              <motion.div
-                key={group.key}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center gap-3 p-4 rounded-xl bg-white border-2 border-gray-100 hover:border-red-700 hover:shadow-md transition-all cursor-pointer"
+                {metricOptions.map((metric) => (
+                  <option key={metric} value={metric}>
+                    {getMetricLabel(metric)}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={topCount}
+                onChange={(e) => setTopCount(parseInt(e.target.value))}
+                className={SELECT_CLASS}
+                aria-label="Top count"
               >
-                <div className="flex items-center justify-center min-w-[32px] h-8 rounded-lg bg-gradient-to-br from-red-700 to-red-800 text-white font-bold text-sm">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate text-sm text-gray-900">
-                    {group.className}
-                  </p>
-                  <p className="text-xs truncate text-gray-600">
-                    {group.day} • {group.time} • {group.location}
-                  </p>
-                  {group.trainer && (
-                    <p className="text-xs truncate text-blue-600">
-                      {group.trainer}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                    <span>{group.metrics.classes} classes</span>
-                    <span>•</span>
-                    <span>{formatNumber(group.metrics.totalCheckIns)} check-ins</span>
-                    <span>•</span>
-                    <span>{group.metrics.emptyClasses} empty</span>
-                    <span>•</span>
-                    <span className={group.metrics.status === 'Active' ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold'}>
-                      {group.metrics.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="w-4 h-4 text-red-700" />
-                  <span className="font-bold text-gray-900 text-sm">
-                    {formatMetricValue(bottomMetric, group.metrics[bottomMetric])}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+                <option value={5}>Top 5</option>
+                <option value={10}>Top 10</option>
+                <option value={20}>Top 20</option>
+              </select>
+            </>
+          }
+          meta={<span>Hosted classes {excludeHostedClasses ? 'excluded' : 'included'}</span>}
+        >
+          <div className="max-h-[520px] overflow-y-auto">
+            <P57RankList
+              items={toRankItems(topPerformers, topMetric)}
+              onSelect={(item) => openDrill(topPerformers, topMetric, item)}
+              emptyText="No classes match the current filters."
+            />
           </div>
-        </motion.div>
+        </P57TableShell>
+
+        <P57TableShell
+          icon={TrendingDown}
+          title="Needs Improvement"
+          description={`Lowest-ranked classes by ${getMetricLabel(bottomMetric).toLowerCase()}. Click a row for session-level detail.`}
+          rowCount={bottomPerformers.length}
+          actions={
+            <>
+              <select
+                value={bottomMetric}
+                onChange={(e) => setBottomMetric(e.target.value as RankingMetric)}
+                className={SELECT_CLASS}
+                aria-label="Bottom ranking metric"
+              >
+                {metricOptions.map((metric) => (
+                  <option key={metric} value={metric} />
+                ))}
+              </select>
+              <select
+                value={bottomCount}
+                onChange={(e) => setBottomCount(parseInt(e.target.value))}
+                className={SELECT_CLASS}
+                aria-label="Bottom count"
+              >
+                <option value={5}>Bottom 5</option>
+                <option value={10}>Bottom 10</option>
+                <option value={20}>Bottom 20</option>
+              </select>
+            </>
+          }
+          meta={<span>Hosted classes {excludeHostedClasses ? 'excluded' : 'included'}</span>}
+        >
+          <div className="max-h-[520px] overflow-y-auto">
+            <P57RankList
+              items={toRankItems(bottomPerformers, bottomMetric)}
+              onSelect={(item) => openDrill(bottomPerformers, bottomMetric, item)}
+              emptyText="No classes match the current filters."
+            />
+          </div>
+        </P57TableShell>
       </div>
+
+      <CellDrillDownModal
+        open={drill !== null}
+        onClose={() => setDrill(null)}
+        title={drill ? `${drill.group.className} · ${getMetricLabel(drill.metric)}` : ''}
+        subtitle="Session-level rows behind this ranked class"
+        context={
+          drill
+            ? [
+                { label: 'Class', value: drill.group.className },
+                { label: 'Schedule', value: `${drill.group.day} · ${drill.group.time}` },
+                { label: 'Location', value: drill.group.location },
+                ...(drill.group.trainer ? [{ label: 'Trainer', value: drill.group.trainer }] : []),
+                { label: getMetricLabel(drill.metric), value: formatMetricValue(drill.metric, drill.group.metrics[drill.metric]) },
+              ]
+            : []
+        }
+        columns={[
+          { key: 'date', header: 'Date', mono: true },
+          { key: 'time', header: 'Time', mono: true },
+          { key: 'checkedIn', header: 'Checked In', align: 'right', mono: true },
+          { key: 'capacity', header: 'Capacity', align: 'right', mono: true },
+          { key: 'fill', header: 'Fill', align: 'right', mono: true },
+          { key: 'revenue', header: 'Revenue', align: 'right', mono: true },
+        ]}
+        rows={drillRows}
+      />
     </div>
   );
 };

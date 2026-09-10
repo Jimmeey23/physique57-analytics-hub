@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { Footer } from '@/components/ui/footer';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
 import { SectionAnchor } from '@/components/ui/SectionAnchor';
@@ -407,11 +409,6 @@ const ForecastingActionCenter: React.FC = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute left-[-6rem] top-20 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
-        <div className="absolute right-[-4rem] top-64 h-80 w-80 rounded-full bg-indigo-400/10 blur-3xl" />
-        <div className="absolute bottom-24 left-1/3 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
-      </div>
 
       <div className="relative z-10">
         <DashboardMotionHero
@@ -426,6 +423,16 @@ const ForecastingActionCenter: React.FC = () => {
           extra={exportButton}
           compact={false}
         />
+        <div className="container mx-auto px-6 pt-5">
+          <KpiTicker
+            items={[
+              { label: '90-day forecast', value: formatCurrency(forecastSummary.totalForecastRevenue) },
+              { label: 'Forecast confidence', value: formatPercentage(forecastSummary.avgConfidence) },
+              { label: 'Open actions', value: formatNumber(actionQueue.length) },
+              { label: 'Outstanding exposure', value: formatCurrency(forecastSummary.outstandingExposure) },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="container relative z-10 mx-auto px-6 py-8">
@@ -1041,9 +1048,9 @@ const ForecastingActionCenter: React.FC = () => {
           </SectionAnchor>
         </main>
       </div>
-
-      <Footer />
-
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.forecasting} />
+      </div>
       <ModalSuspense>
         {drillDownModal && (
           <LazyMemberInsightsDrillDownModal

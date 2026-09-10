@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
 import { NewClientData, SalesData } from '@/types/dashboard';
+import { P57Badge } from '@/components/ui/P57Badge';
 import {
   BarChart3,
   Calendar,
@@ -27,7 +28,6 @@ import {
   TrendingUp,
   UserRound,
   Users,
-  X,
 } from 'lucide-react';
 
 type DrillDownModalType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ranking';
@@ -226,9 +226,9 @@ const getScopeBadges = (payload: DrillDownDataPayload | null, type: DrillDownMod
 
   if (type === 'month' && payload?.month) badges.push(`Month: ${payload.month}`);
   if (type === 'year' && payload?.year) badges.push(`Year: ${payload.year}`);
-  if (payload?.rowKey) badges.push(`Segment: ${payload.rowKey}`);
-  if (payload?.rowType) badges.push(`Grouping: ${payload.rowType}`);
-  if (payload?.metricType) badges.push(`Metric: ${payload.metricType}`);
+  if (payload?.rowKey) badges.push(`Segment: ${String(payload.rowKey).replace(/_/g, ' ')}`);
+  if (payload?.rowType) badges.push(`Grouping: ${String(payload.rowType).replace(/_/g, ' ')}`);
+  if (payload?.metricType) badges.push(`Metric: ${String(payload.metricType).replace(/_/g, ' ')}`);
   if (payload?.type && type !== 'month') badges.push(`Type: ${payload.type}`);
 
   if (badges.length === 0) badges.push(`${safeText(type, 'Detail')} drill-down`);
@@ -250,6 +250,14 @@ const buildDistribution = (items: string[]) => {
 const isHostedEntity = (value?: string | null) => {
   const normalized = safeText(value, '').toLowerCase();
   return ['host', 'hosted', 'p57', 'birthday', 'rugby', 'lrs'].some((token) => normalized.includes(token));
+};
+
+const paymentTone = (status: string): 'green' | 'amber' | 'red' | 'slate' => {
+  const normalized = status.toLowerCase();
+  if (/paid|success|complete|approved/.test(normalized)) return 'green';
+  if (/pend|partial|process/.test(normalized)) return 'amber';
+  if (/fail|cancel|refund|void|decline/.test(normalized)) return 'red';
+  return 'slate';
 };
 
 const buildCsv = (headers: string[], rows: Array<Array<string | number>>) => {
@@ -639,9 +647,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                <div className="flex flex-wrap gap-1.5">
                   {scopeBadges.map((badge) => (
-                    <span key={badge}>{badge}</span>
+                    <span key={badge} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-600">{badge}</span>
                   ))}
                 </div>
               </div>
@@ -655,16 +663,13 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   <Copy className="mr-2 h-4 w-4" />
                   Copy emails
                 </Button>
-                <Button size="icon" variant="ghost" className="rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900" onClick={onClose}>
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-8 py-6">
             <div className="mb-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
               {[
                 { label: 'Clients in slice', value: formatNumber(summary.totalMembers), helper: `${formatNumber(displayedRecords.length)} shown`, icon: Users },
                 { label: 'Conversion cohort', value: formatNumber(summary.cohortIncluded), helper: `${formatNumber(summary.totalMembers - summary.cohortIncluded)} excluded`, icon: Target },
@@ -675,18 +680,14 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               ].map((card) => {
                 const Icon = card.icon;
                 return (
-                  <Card key={card.label} className="rounded-xl border border-slate-200 bg-slate-50 shadow-none">
-                    <CardContent className="flex h-full flex-col gap-2 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">{card.label}</span>
-                      </div>
-                      <div className="text-2xl font-semibold text-slate-950">{card.value}</div>
-                      <div className="text-xs text-slate-500">{card.helper}</div>
-                    </CardContent>
-                  </Card>
+                  <div key={card.label} className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                    <div className="flex min-h-[28px] items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="leading-snug">{card.label}</span>
+                    </div>
+                    <div className="mt-1 truncate text-[26px] font-semibold leading-none tracking-tight text-slate-950">{card.value}</div>
+                    <div className="mt-1.5 truncate text-xs text-slate-500">{card.helper}</div>
+                  </div>
                 );
               })}
               </div>
@@ -703,7 +704,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   <TabsTrigger
                     key={value}
                     value={value}
-                    className="rounded-xl border border-transparent bg-transparent text-sm font-semibold text-slate-600 transition-all shadow-none before:hidden hover:bg-slate-50 hover:text-slate-900 data-[state=active]:border-slate-950 data-[state=active]:bg-slate-950 data-[state=active]:bg-none data-[state=active]:from-transparent data-[state=active]:via-transparent data-[state=active]:to-transparent data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:shadow-slate-950/20 data-[state=active]:scale-100 data-[state=active]:translate-y-0"
+                    className="rounded-xl text-sm data-[state=active]:bg-slate-950 data-[state=active]:bg-none data-[state=active]:text-white dark:data-[state=active]:bg-slate-200 dark:data-[state=active]:bg-none dark:data-[state=active]:text-slate-950"
                   >
                     {label}
                   </TabsTrigger>
@@ -878,26 +879,26 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white">
                     <div className="max-h-[62vh] overflow-auto">
                       <Table>
-                        <TableHeader className="sticky top-0 z-20 bg-slate-950">
-                          <TableRow className="border-slate-800 bg-slate-950 hover:bg-slate-950">
-                            <TableHead className="w-[60px] text-center text-xs font-semibold uppercase tracking-wide text-white">View</TableHead>
-                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide text-white">Client name</TableHead>
-                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide text-white">Email</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide text-white">First visit</TableHead>
-                            <TableHead className="min-w-[160px] text-xs font-semibold uppercase tracking-wide text-white">Membership used</TableHead>
-                            <TableHead className="min-w-[140px] text-xs font-semibold uppercase tracking-wide text-white">Payment method</TableHead>
-                            <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wide text-white">Entity name</TableHead>
-                            <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wide text-white">First purchase made</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-white">Purchases</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide text-white">First purchase date</TableHead>
-                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-white">Total LTV</TableHead>
-                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide text-white">Memberships purchased</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-white">Conv span</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide text-white">Conversion status</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-white">No. of visits</TableHead>
-                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide text-white">Retention status</TableHead>
-                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-white">Visits post trial</TableHead>
-                            <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wide text-white">Second visit date</TableHead>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[60px] text-center text-xs font-semibold uppercase tracking-wide ">View</TableHead>
+                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide ">Client name</TableHead>
+                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide ">Email</TableHead>
+                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">First visit</TableHead>
+                            <TableHead className="min-w-[160px] text-xs font-semibold uppercase tracking-wide ">Membership used</TableHead>
+                            <TableHead className="min-w-[140px] text-xs font-semibold uppercase tracking-wide ">Payment method</TableHead>
+                            <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wide ">Entity name</TableHead>
+                            <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wide ">First purchase made</TableHead>
+                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">Purchases</TableHead>
+                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">First purchase date</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide ">Total LTV</TableHead>
+                            <TableHead className="min-w-[220px] text-xs font-semibold uppercase tracking-wide ">Memberships purchased</TableHead>
+                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">Conv span</TableHead>
+                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">Conversion status</TableHead>
+                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">No. of visits</TableHead>
+                            <TableHead className="min-w-[130px] text-xs font-semibold uppercase tracking-wide ">Retention status</TableHead>
+                            <TableHead className="text-center text-xs font-semibold uppercase tracking-wide ">Visits post trial</TableHead>
+                            <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wide ">Second visit date</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -959,18 +960,18 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                                   </TableCell>
                                   <TableCell className="align-top text-center font-medium text-slate-800">{client.conversionSpan > 0 ? `${client.conversionSpan} days` : 'N/A'}</TableCell>
                                   <TableCell className="align-top">
-                                    <div className="text-sm font-medium text-slate-800">
+                                    <P57Badge tone={record.conversionIncluded ? 'green' : 'slate'}>
                                       {safeText(client.conversionStatus, record.conversionIncluded ? 'Converted' : 'Not converted')}
-                                    </div>
+                                    </P57Badge>
                                     <div className="mt-1 text-xs text-slate-500">
                                       {record.conversionIncluded ? 'Included in conversion results' : 'Not counted in conversion results'}
                                     </div>
                                   </TableCell>
                                   <TableCell className="align-top text-center font-medium text-slate-800">{formatNumber(record.recordedVisits)}</TableCell>
                                   <TableCell className="align-top">
-                                    <div className="text-sm font-medium text-slate-800">
+                                    <P57Badge tone={record.retentionIncluded ? 'green' : 'slate'}>
                                       {safeText(client.retentionStatus, record.retentionIncluded ? 'Retained' : 'Not retained')}
-                                    </div>
+                                    </P57Badge>
                                     <div className="mt-1 text-xs text-slate-500">
                                       {record.retentionIncluded ? 'Included in retention results' : 'Not counted in retention results'}
                                     </div>
@@ -1103,18 +1104,18 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   <CardContent className="p-0">
                     <div className="max-h-[62vh] overflow-auto">
                       <Table>
-                        <TableHeader className="sticky top-0 z-20 bg-slate-950">
-                          <TableRow className="border-slate-800 bg-slate-950 hover:bg-slate-950">
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Client</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Type</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Payment date</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Item</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Membership</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Method</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Location</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Sold by</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-white">Status</TableHead>
-                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-white">Value</TableHead>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Client</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Type</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Payment date</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Item</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Membership</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Method</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Location</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Sold by</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide ">Status</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide ">Value</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1128,7 +1129,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                               <TableCell className="text-sm text-slate-700">{safeText(transaction.paymentMethod)}</TableCell>
                               <TableCell className="text-sm text-slate-700">{safeText(transaction.calculatedLocation)}</TableCell>
                               <TableCell className="text-sm text-slate-700">{safeText(transaction.soldBy)}</TableCell>
-                              <TableCell className="text-sm text-slate-700">{safeText(transaction.paymentStatus)}</TableCell>
+                              <TableCell><P57Badge tone={paymentTone(safeText(transaction.paymentStatus, ''))}>{safeText(transaction.paymentStatus)}</P57Badge></TableCell>
                               <TableCell className="text-right text-sm font-semibold text-slate-900">{formatCurrency(transaction.paymentValue || 0)}</TableCell>
                             </TableRow>
                           )) : (

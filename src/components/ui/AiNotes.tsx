@@ -365,7 +365,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
   // Collapsed view - show only icons
   if (isCollapsed) {
     return (
-      <Card className="mt-4 ai-notes border-l-4 border-l-blue-500">
+      <Card className="mt-4 ai-notes border border-blue-200">
         <CardHeader className="pb-2 pt-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -403,7 +403,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
   }
 
   return (
-    <Card className="mt-4 ai-notes border-l-4 border-l-blue-500">
+    <Card className="mt-4 ai-notes border border-blue-200">
       <CardHeader className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">

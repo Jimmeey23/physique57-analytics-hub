@@ -737,15 +737,8 @@ export const ExecutiveMetricCardsGrid: React.FC<ExecutiveMetricCardsGridProps> =
                     </div>
                   </div>
 
-                  {/* Description Footer with Enhanced Side Border */}
-                  <div className={cn(
-                    "relative pt-1.5 border-l-3 pl-3 transition-all duration-500",
-                    "before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500",
-                    index % 4 === 0 && "border-l-emerald-500/50 group-hover:border-l-emerald-400 before:bg-emerald-500/20 group-hover:before:bg-emerald-400/30",
-                    index % 4 === 1 && "border-l-blue-500/50 group-hover:border-l-blue-400 before:bg-blue-500/20 group-hover:before:bg-blue-400/30",
-                    index % 4 === 2 && "border-l-purple-500/50 group-hover:border-l-purple-400 before:bg-purple-500/20 group-hover:before:bg-purple-400/30",
-                    index % 4 === 3 && "border-l-rose-500/50 group-hover:border-l-rose-400 before:bg-rose-500/20 group-hover:before:bg-rose-400/30"
-                  )}>
+                  {/* Description footer */}
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {metric.description}
                     </p>

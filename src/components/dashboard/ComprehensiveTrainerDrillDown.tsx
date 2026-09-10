@@ -783,23 +783,23 @@ export function ComprehensiveTrainerDrillDown({
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
               <div className="px-6 pt-4 bg-white border-b">
                 <TabsList className="bg-slate-100 p-1">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="overview" className="">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="sessions" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="sessions" className="">
                     <Activity className="w-4 h-4 mr-2" />
                     Sessions
                   </TabsTrigger>
-                  <TabsTrigger value="revenue" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="revenue" className="">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Revenue
                   </TabsTrigger>
-                  <TabsTrigger value="trends" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="trends" className="">
                     <TrendingUp className="w-4 h-4 mr-2" />
                     Trends
                   </TabsTrigger>
-                  <TabsTrigger value="insights" className="data-[state=active]:bg-white">
+                  <TabsTrigger value="insights" className="">
                     <Sparkles className="w-4 h-4 mr-2" />
                     Insights
                   </TabsTrigger>
@@ -811,7 +811,7 @@ export function ComprehensiveTrainerDrillDown({
                   {/* Overview Tab */}
                   <TabsContent value="overview" className="mt-0 space-y-6">
                     {/* Key Metrics Grid */}
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <MetricCard
                         title="Total Sessions"
                         value={summary.totalSessions}
@@ -946,7 +946,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="flex items-start justify-between">
                             <div>
                               <p className="text-sm font-medium text-emerald-700">Conversion Rate</p>
-                              <p className="text-4xl font-bold text-emerald-600 mt-2">
+                              <p className="text-3xl font-bold text-emerald-600 mt-2">
                                 {summary.conversionRate.toFixed(1)}%
                               </p>
                               <p className="text-sm text-emerald-600/70 mt-1">
@@ -965,7 +965,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="flex items-start justify-between">
                             <div>
                               <p className="text-sm font-medium text-blue-700">Retention Rate</p>
-                              <p className="text-4xl font-bold text-blue-600 mt-2">
+                              <p className="text-3xl font-bold text-blue-600 mt-2">
                                 {summary.retentionRate.toFixed(1)}%
                               </p>
                               <p className="text-sm text-blue-600/70 mt-1">
@@ -983,7 +983,7 @@ export function ComprehensiveTrainerDrillDown({
 
                   {/* Sessions Tab */}
                   <TabsContent value="sessions" className="mt-0 space-y-6">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <MetricCard
                         title="Total Sessions (Clicked)"
                         value={summary.clickedCellSessions || summary.totalSessions}
@@ -1104,7 +1104,7 @@ export function ComprehensiveTrainerDrillDown({
 
                             {/* Format Split Mini Cards */}
                             {sessionMetrics.split && sessionMetrics.split.length > 0 && (
-                              <div className="grid grid-cols-3 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {sessionMetrics.split.map((s: any) => (
                                   <Card key={s.name} className="border bg-slate-50">
                                     <CardContent className="p-4">
@@ -1199,7 +1199,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="flex items-center justify-center">
                             <div className="w-40 h-40 rounded-full border-8 border-blue-100 flex items-center justify-center">
                               <div className="text-center">
-                                <p className="text-4xl font-bold text-blue-600">
+                                <p className="text-3xl font-bold text-blue-600">
                                   {formatNumber(summary.totalCustomers)}
                                 </p>
                                 <p className="text-sm text-slate-500">Total Attendees</p>
@@ -1213,7 +1213,7 @@ export function ComprehensiveTrainerDrillDown({
 
                   {/* Revenue Tab */}
                   <TabsContent value="revenue" className="mt-0 space-y-6">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <MetricCard
                         title="Total Revenue"
                         value={formatCurrency(summary.totalRevenue)}
@@ -1291,7 +1291,7 @@ export function ComprehensiveTrainerDrillDown({
                       </CardHeader>
                       <CardContent>
                         {byFormat.length > 0 ? (
-                          <div className="grid grid-cols-3 gap-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             {byFormat.map((format) => (
                               <div 
                                 key={format.name}
@@ -1450,7 +1450,7 @@ export function ComprehensiveTrainerDrillDown({
                         <div className="flex items-center gap-8 mb-6">
                           <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
                             <div className="text-center">
-                              <p className="text-4xl font-bold">{performanceScore}</p>
+                              <p className="text-3xl font-bold">{performanceScore}</p>
                               <p className="text-sm text-white/80">Score</p>
                             </div>
                           </div>
