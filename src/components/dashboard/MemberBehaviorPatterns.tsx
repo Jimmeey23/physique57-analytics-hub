@@ -356,7 +356,7 @@ export const MemberBehaviorPatterns: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     {trendAnalysis.correlationInsights.highRiskPatterns.map((pattern, idx) => (
-                      <div key={idx} className={`p-3 rounded-lg border ${
+                      <div key={pattern.pattern} className={`p-3 rounded-lg border ${
                         pattern.severity === 'high' ? 'bg-red-50 border-red-200' :
                         pattern.severity === 'medium' ? 'bg-amber-50 border-amber-200' :
                         'bg-yellow-50 border-yellow-200'
@@ -836,7 +836,7 @@ export const MemberBehaviorPatterns: React.FC = () => {
             {trendAnalysis.correlationInsights.highRiskPatterns.length > 0 && (
               <div className="mt-4 space-y-2">
                 {trendAnalysis.correlationInsights.highRiskPatterns.map((pattern, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
+                  <div key={pattern.pattern} className="flex items-center gap-2 text-sm">
                     <AlertTriangle className="w-4 h-4 text-amber-400" />
                     <span className="text-gray-300">{pattern.pattern}</span>
                   </div>

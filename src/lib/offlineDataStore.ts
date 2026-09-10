@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { logger } from '@/utils/logger';
 import {
   BUNDLED_OFFLINE_DATASET_FILES,
   OFFLINE_DATASET_KEYS,
@@ -163,7 +164,7 @@ export const seedBundledOfflineDatasets = async () => {
         }
         const response = await fetch(`/offline-files/${encodeURIComponent(fileName)}`);
         if (!response.ok) {
-          console.warn(`[offlineDataStore] Bundled dataset missing for ${key}: ${fileName}`);
+          logger.warn(`[offlineDataStore] Bundled dataset missing for ${key}: ${fileName}`);
           return;
         }
 
@@ -171,7 +172,7 @@ export const seedBundledOfflineDatasets = async () => {
         const rows = parseSpreadsheetBufferToRows(buffer);
         await saveOfflineDatasetRows(key, rows, 'bundle', fileName);
       } catch (error) {
-        console.warn(`[offlineDataStore] Failed to seed bundled dataset for ${key}:`, error);
+        logger.warn(`[offlineDataStore] Failed to seed bundled dataset for ${key}:`, error);
       }
     })
   );

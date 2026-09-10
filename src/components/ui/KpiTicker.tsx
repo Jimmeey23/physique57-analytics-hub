@@ -18,7 +18,7 @@ export const KpiTicker: React.FC<{ items: TickerItem[]; className?: string }> = 
   const row = (ariaHidden: boolean) => (
     <div aria-hidden={ariaHidden} className="flex shrink-0 items-center">
       {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2 whitespace-nowrap px-5">
+        <div key={item.label} className="flex items-center gap-2 whitespace-nowrap px-5">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
             {item.label}
           </span>

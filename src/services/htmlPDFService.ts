@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { LocationReportData, LocationReportMetrics } from '@/hooks/useLocationReportData';
+import { designTokens } from '@/utils/designTokens';
 
 // Extend jsPDF with autoTable
 declare module 'jspdf' {
@@ -82,7 +83,7 @@ export const generateHTMLPDFReport = async (data: ReportData): Promise<void> => 
   const secondaryColor = '#8b5cf6'; // Purple
   const accentColor = '#ec4899'; // Pink
   const textDark = '#1e293b';
-  const textLight = '#64748b';
+  const textLight = designTokens.colors.slate[500];
 
   // Helper function to add new page if needed
   const checkAndAddPage = (requiredHeight: number) => {

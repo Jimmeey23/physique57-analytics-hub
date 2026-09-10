@@ -8,8 +8,9 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 type MetricKey =
   | 'trials'
@@ -114,8 +115,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       if (rowType === 'clientType') {
         const an = a.toLowerCase();
         const bn = b.toLowerCase();
-        if (an.includes('new') && !bn.includes('new')) return -1;
-        if (!an.includes('new') && bn.includes('new')) return 1;
+        if (isNewClient(an) && !isNewClient(bn)) return -1;
+        if (!isNewClient(an) && isNewClient(bn)) return 1;
       }
       return a.localeCompare(b);
     });
@@ -154,9 +155,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       if (!bucket) return;
       
       bucket.trials += 1;
-      if (isInNewClientCohort(c)) bucket.newMembers += 1;
-      if (isConvertedInCohort(c)) bucket.converted += 1;
-      if (isRetainedInCohort(c)) bucket.retained += 1;
+      if (isNewClient(c)) bucket.newMembers += 1;
+      if (isConverted(c)) bucket.converted += 1;
+      if (isRetained(c)) bucket.retained += 1;
       bucket.totalLTV += c.ltv || 0;
       bucket.clients.push(c); // Add client to bucket
       
@@ -175,8 +176,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
         const b = map[rk][m.key];
         if (!b) return;
         b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-        b.conversionRate = b.trials > 0 ? (b.converted / b.trials) * 100 : 0;
-        b.retentionRate = b.trials > 0 ? (b.retained / b.trials) * 100 : 0;
+        b.conversionRate = calcConversionRate(b.converted, b.newMembers);
+        b.retentionRate = calcRetentionRate(b.retained, b.newMembers);
         b.avgConversionDays = b.conversionIntervals.length > 0 
           ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
           : 0;
@@ -300,8 +301,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       
       const b = totals[m.key];
       b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-      b.conversionRate = b.trials > 0 ? (b.converted / b.trials) * 100 : 0;
-      b.retentionRate = b.trials > 0 ? (b.retained / b.trials) * 100 : 0;
+      b.conversionRate = calcConversionRate(b.converted, b.newMembers);
+      b.retentionRate = calcRetentionRate(b.retained, b.newMembers);
       b.avgConversionDays = b.conversionIntervals.length > 0 
         ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
         : 0;

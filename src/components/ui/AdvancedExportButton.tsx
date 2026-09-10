@@ -13,6 +13,7 @@ import { useAdvancedExport } from '@/hooks/useAdvancedExport';
 import { format } from 'date-fns';
 import { SalesData, SessionData, NewClientData, PayrollData, LateCancellationsData, DiscountAnalysisData } from '@/types/dashboard';
 import { DateRange } from 'react-day-picker';
+import { logger } from '@/utils/logger';
 interface AdvancedExportButtonProps {
   salesData?: SalesData[];
   sessionsData?: SessionData[];
@@ -115,7 +116,7 @@ export const AdvancedExportButton: React.FC<AdvancedExportButtonProps> = ({
       await exportAllData(exportData, options);
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('Export failed:', error);
     }
   };
   const getTotalRecords = () => {

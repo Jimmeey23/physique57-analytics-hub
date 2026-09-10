@@ -3,6 +3,7 @@ import { PayrollData } from '@/types/dashboard';
 import { fetchGoogleSheet, parseNumericValue, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { useDataSource } from '@/contexts/DataSourceContext';
 import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
+import { logger } from '@/utils/logger';
 
 const mapRowToPayroll = (row: any[]): PayrollData => {
   const teacherId = row[0] || '';
@@ -178,7 +179,7 @@ export const usePayrollData = () => {
       setData(loadedData || []);
       setError(null);
     } catch (err) {
-      console.error('Error fetching payroll data:', err);
+      logger.error('Error fetching payroll data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load payroll data');
       setData([]);
     } finally {

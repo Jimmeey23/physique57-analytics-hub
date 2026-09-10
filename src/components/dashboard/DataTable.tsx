@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, ArrowUpDown, Eye, Download, Filter, Search, 
 import { SalesData, FilterOptions } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 interface DataTableProps {
   title: string;
   data: SalesData[];
@@ -617,7 +618,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody className="bg-white">
-              {currentData.map((row, index) => <TableRow key={index} className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-purple-50/30 cursor-pointer transition-all duration-300 border-b border-slate-200/20" onClick={() => handleRowClick(row)}>
+              {currentData.map((row, index) => <TableRow key={rowKey(row, index)} className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-purple-50/30 cursor-pointer transition-all duration-300 border-b border-slate-200/20" onClick={() => handleRowClick(row)}>
                   <TableCell>
                     <Badge variant="outline" className="capitalize font-semibold">
                       {row.category}

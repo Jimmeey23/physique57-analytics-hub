@@ -8,6 +8,8 @@ import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatte
 import { NewClientData } from '@/types/dashboard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { isNewClient } from '@/utils/clientRetention';
+import { rowKey } from '@/utils/reactKeys';
 
 interface NewClientMembershipPurchaseTableProps {
   data: NewClientData[];
@@ -44,9 +46,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
 
   // Filter to only new clients
   const newClientsData = React.useMemo(() => {
-    return data.filter(client => 
-      String(client.isNew || '').toLowerCase().includes('new')
-    );
+    return data.filter(isNewClient);
   }, [data]);
 
   // Store client data by membership + client type combination for drill-down
@@ -719,7 +719,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                         <p>• Engagement status: {drillDownData.clients.filter(c => c.conversionStatus === 'Converted').length} converted clients, {drillDownData.clients.filter(c => c.retentionStatus === 'Retained').length} retained</p>
                         <p>• Client type insight: {(() => {
                           const type = drillDownData.stats.clientType.toLowerCase();
-                          if (type.includes('new')) return 'New clients typically show higher engagement and are building their relationship with the studio.';
+                          if (isNewClient(type)) return 'New clients typically show higher engagement and are building their relationship with the studio.';
                           if (type.includes('return') || type.includes('existing')) return 'Returning clients demonstrate loyalty and familiarity with the studio offerings.';
                           return 'This client segment shows unique engagement patterns worth monitoring.';
                         })()}</p>
@@ -800,7 +800,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                       </thead>
                       <tbody className="divide-y divide-slate-200">
                         {drillDownData.clients.map((client, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50">
+                          <tr key={rowKey(client, idx)} className="hover:bg-slate-50">
                             <td className="px-4 py-2 text-slate-700">
                               <div className="font-medium">{client.firstName} {client.lastName}</div>
                               <div className="text-xs text-slate-500">{client.email}</div>

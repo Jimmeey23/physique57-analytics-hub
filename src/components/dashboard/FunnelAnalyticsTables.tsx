@@ -17,6 +17,7 @@ import { isLeadConverted, countConvertedLeads } from '@/utils/leadConversions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import CopyTableButton from '@/components/ui/CopyTableButton';
+import { extractTableTextFromContainer } from '@/utils/tableCopy';
 
 interface FunnelAnalyticsTablesProps {
   data: LeadsData[];
@@ -105,14 +106,14 @@ export const FunnelAnalyticsTables: React.FC<FunnelAnalyticsTablesProps> = ({
   // Register tables for metrics
   React.useEffect(() => {
     if (sourceTableRef.current) {
-      registry.registerTable('funnel-source-analytics', sourceTableRef.current);
+      registry.register({ id: 'funnel-source-analytics', getTextContent: () => (sourceTableRef.current ? extractTableTextFromContainer(sourceTableRef.current, 'funnel-source-analytics') : 'funnel-source-analytics (No Data)') });
     }
     if (stageTableRef.current) {
-      registry.registerTable('funnel-stage-analytics', stageTableRef.current);
+      registry.register({ id: 'funnel-stage-analytics', getTextContent: () => (stageTableRef.current ? extractTableTextFromContainer(stageTableRef.current, 'funnel-stage-analytics') : 'funnel-stage-analytics (No Data)') });
     }
     return () => {
-      registry.unregisterTable('funnel-source-analytics');
-      registry.unregisterTable('funnel-stage-analytics');
+      registry.unregister('funnel-source-analytics');
+      registry.unregister('funnel-stage-analytics');
     };
   }, [registry]);
 

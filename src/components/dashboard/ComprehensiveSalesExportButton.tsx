@@ -15,34 +15,19 @@ import { BrandSpinner } from '@/components/ui/BrandSpinner';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useToast } from '@/hooks/use-toast';
 import type { SalesData } from '@/types/dashboard';
-
-interface TableExportData {
-  id: string;
-  name: string;
-  headers: string[];
-  rows: string[][];
-}
-
-interface ExportSection {
-  key: string;
-  heading: string;
-  tabValue: string;
-  tabLabel: string;
-  tables: TableExportData[];
-}
-
-interface ExportBundle {
-  title: string;
-  generatedAt: string;
-  locationName: string;
-  locationSuffix: string;
-  dateRange: {
-    start: string;
-    end: string;
-    label: string;
-  };
-  sections: ExportSection[];
-}
+import {
+  buildCsvContent,
+  buildPrintableHtml,
+  buildTextReport,
+  downloadBlob,
+  ExportBundle,
+  ExportSection,
+  normalizeCellText,
+  normalizeTabValue,
+  SUMMARY_ROW_LABEL_PATTERN,
+  TableExportData,
+} from '@/utils/exportBundle';
+import { downloadTextFile } from '@/utils/csvExport';
 
 interface ComprehensiveSalesExportButtonProps {
   data: SalesData[];
@@ -126,33 +111,7 @@ const sanitizeFileSegment = (value: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '') || 'export';
 
-const escapeCsvCell = (value: string) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
-const normalizeCellText = (value: string) => value.replace(/[↑↓▲▼]/g, '').replace(/\s+/g, ' ').trim();
-
-const SUMMARY_ROW_LABEL_PATTERN = /^(grand\s+total|totals?|subtotals?)$/i;
 const METRIC_SELECTOR_LABEL_PATTERN = /metrics:/i;
-
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-const normalizeTabValue = (value: string) => value.replace(/\s+/g, '').toLowerCase();
 
 const getTabTriggerValue = (trigger: Element | null) => {
   if (!trigger) return 'current-view';
@@ -389,108 +348,6 @@ const shouldExcludeExportRow = (
   }
 
   return false;
-};
-
-const buildCsvContent = (bundle: ExportBundle, section: ExportSection, table: TableExportData) => {
-  const lines: string[] = [
-    `# ${bundle.title}`,
-    `# Generated: ${new Date(bundle.generatedAt).toLocaleString()}`,
-    `# Location: ${bundle.locationName}`,
-    `# Date Range: ${bundle.dateRange.label}`,
-    `# Section: ${section.heading}`,
-    `# Table: ${table.name}`,
-    '',
-  ];
-
-  if (table.headers.length > 0) {
-    lines.push(table.headers.map(escapeCsvCell).join(','));
-  }
-
-  table.rows.forEach((row) => {
-    lines.push(row.map((cell) => escapeCsvCell(cell)).join(','));
-  });
-
-  return lines.join('\n');
-};
-
-const buildTextReport = (bundle: ExportBundle) => {
-  const lines: string[] = [
-    '════════════════════════════════════════════════════════════',
-    ` ${bundle.title}`,
-    '════════════════════════════════════════════════════════════',
-    '',
-    `Generated: ${new Date(bundle.generatedAt).toLocaleString()}`,
-    `Location: ${bundle.locationName}`,
-    `Date Range: ${bundle.dateRange.label}`,
-    `Sections: ${bundle.sections.length}`,
-    '',
-  ];
-
-  bundle.sections.forEach((section, sectionIndex) => {
-    lines.push(`## ${sectionIndex + 1}. ${section.heading}`);
-    lines.push('');
-    section.tables.forEach((table, tableIndex) => {
-      lines.push(`### ${sectionIndex + 1}.${tableIndex + 1} ${table.name}`);
-      lines.push(`Columns: ${table.headers.length} | Rows: ${table.rows.length}`);
-      lines.push('');
-      if (table.headers.length > 0) {
-        lines.push(table.headers.join(' | '));
-        lines.push(table.headers.map(() => '---').join(' | '));
-      }
-      table.rows.forEach((row) => lines.push(row.join(' | ')));
-      lines.push('');
-    });
-  });
-
-  return lines.join('\n');
-};
-
-const buildPrintableHtml = (bundle: ExportBundle) => {
-  const styles = `
-    <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; color: #0f172a; }
-      h1 { font-size: 24px; margin-bottom: 12px; }
-      h2 { font-size: 18px; margin: 28px 0 10px; color: #1e293b; }
-      h3 { font-size: 14px; margin: 16px 0 8px; color: #475569; }
-      .meta { font-size: 12px; color: #64748b; margin-bottom: 4px; }
-      table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 12px; }
-      th, td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; }
-      thead th { background: #0f172a; color: white; }
-      .page-break { page-break-after: always; }
-    </style>
-  `;
-
-  let html = `<!doctype html><html><head><meta charset="utf-8" />${styles}<title>${escapeHtml(bundle.title)}</title></head><body>`;
-  html += `<h1>${escapeHtml(bundle.title)}</h1>`;
-  html += `<div class="meta">Generated: ${escapeHtml(new Date(bundle.generatedAt).toLocaleString())}</div>`;
-  html += `<div class="meta">Location: ${escapeHtml(bundle.locationName)}</div>`;
-  html += `<div class="meta">Date Range: ${escapeHtml(bundle.dateRange.label)}</div>`;
-
-  bundle.sections.forEach((section, sectionIndex) => {
-    html += `<h2>${escapeHtml(section.heading)}</h2>`;
-    section.tables.forEach((table) => {
-      html += `<h3>${escapeHtml(table.name)}</h3>`;
-      html += '<table><thead><tr>';
-      table.headers.forEach((header) => {
-        html += `<th>${escapeHtml(header)}</th>`;
-      });
-      html += '</tr></thead><tbody>';
-      table.rows.forEach((row) => {
-        html += '<tr>';
-        row.forEach((cell) => {
-          html += `<td>${escapeHtml(cell)}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    });
-    if (sectionIndex < bundle.sections.length - 1) {
-      html += '<div class="page-break"></div>';
-    }
-  });
-
-  html += '</body></html>';
-  return html;
 };
 
 export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportButtonProps> = (props) => {
@@ -760,7 +617,7 @@ export const ComprehensiveSalesExportButton: React.FC<ComprehensiveSalesExportBu
     const allTables = bundle.sections.flatMap((section) => section.tables.map((table) => ({ section, table })));
     if (allTables.length === 1) {
       const { section, table } = allTables[0];
-      downloadBlob(new Blob([buildCsvContent(bundle, section, table)], { type: 'text/csv;charset=utf-8;' }), `${baseFileName}.csv`);
+      downloadTextFile(`${baseFileName}.csv`, buildCsvContent(bundle, section, table));
       return;
     }
 

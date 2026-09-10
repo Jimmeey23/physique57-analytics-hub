@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ModernTableWrapper } from './ModernTableWrapper';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { extractTableTextFromContainer } from '@/utils/tableCopy';
 
 interface FunnelHealthMetricsTableProps {
   data: LeadsData[];
@@ -20,9 +21,9 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
   // Register table for metrics
   React.useEffect(() => {
     if (tableRef.current) {
-      registry.registerTable('funnel-health-metrics', tableRef.current);
+      registry.register({ id: 'funnel-health-metrics', getTextContent: () => (tableRef.current ? extractTableTextFromContainer(tableRef.current, 'funnel-health-metrics') : 'funnel-health-metrics (No Data)') });
     }
-    return () => registry.unregisterTable('funnel-health-metrics');
+    return () => registry.unregister('funnel-health-metrics');
   }, [registry]);
   const healthMetrics = useMemo(() => {
     if (!data.length) return [];

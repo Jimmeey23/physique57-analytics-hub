@@ -25,6 +25,8 @@ import { useNavigate } from 'react-router-dom';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption, getPresetMonthLabels } from '@/utils/consolidatedExportPreset';
+import { isNewClient } from '@/utils/clientRetention';
+import { rowKey } from '@/utils/reactKeys';
 
 type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
@@ -419,7 +421,7 @@ export const PatternsAndTrends = () => {
         monthData.uniqueMembers.add(item.memberId);
         
         // Check if "New" appears in isNew column
-        if (item.isNew && item.isNew.toLowerCase().includes('new')) {
+        if (isNewClient(item.isNew)) {
           monthData.newMembers.add(item.memberId);
         } else {
           monthData.returningMembers.add(item.memberId);
@@ -620,7 +622,7 @@ export const PatternsAndTrends = () => {
               allData.actualCheckins += 1;
               allData.uniqueMembers.add(item.memberId);
               
-              if (item.isNew && item.isNew.toLowerCase().includes('new')) {
+              if (isNewClient(item.isNew)) {
                 allData.newMembers.add(item.memberId);
               } else {
                 allData.returningMembers.add(item.memberId);
@@ -1864,15 +1866,15 @@ export const PatternsAndTrends = () => {
                                               </TableCell>
                                               <TableCell className="text-center">
                                                 <Badge 
-                                                  variant={record.isNew && record.isNew.toLowerCase().includes('new') ? 'default' : 'outline'} 
+                                                  variant={isNewClient(record.isNew) ? 'default' : 'outline'} 
                                                   className={cn(
                                                     "text-xs whitespace-nowrap",
-                                                    record.isNew && record.isNew.toLowerCase().includes('new') 
+                                                    isNewClient(record.isNew) 
                                                       ? 'bg-indigo-100 text-indigo-800' 
                                                       : 'bg-slate-100 text-slate-800'
                                                   )}
                                                 >
-                                                  {record.isNew && record.isNew.toLowerCase().includes('new') ? '✨ New' : '↩️ Returning'}
+                                                  {isNewClient(record.isNew) ? '✨ New' : '↩️ Returning'}
                                                 </Badge>
                                               </TableCell>
                                               <TableCell className="text-center text-xs">
@@ -2605,7 +2607,7 @@ const PatternsDrillDownModal: React.FC<{
                 </TableHeader>
                 <TableBody>
                   {rawData.slice(0, 100).map((item: any, index: number) => (
-                    <TableRow key={index} className="hover:bg-slate-50 transition-colors">
+                    <TableRow key={rowKey(item, index)} className="hover:bg-slate-50 transition-colors">
                       <TableCell>
                         <div>
                           <div className="font-medium text-slate-900">{item.customerName || 'Unknown'}</div>

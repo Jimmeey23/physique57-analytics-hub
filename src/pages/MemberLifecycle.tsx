@@ -34,6 +34,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { designTokens } from '@/utils/designTokens';
 
 const SEGMENT_COLORS: Record<string, string> = {
   'high-value': '#2563eb',
@@ -41,7 +42,7 @@ const SEGMENT_COLORS: Record<string, string> = {
   reliable: '#06b6d4',
   'at-risk': '#f59e0b',
   unreliable: '#ef4444',
-  inactive: '#64748b',
+  inactive: designTokens.colors.slate[500],
 };
 
 const SEGMENT_BADGES: Record<string, string> = {
@@ -82,7 +83,7 @@ const MemberLifecycle: React.FC = () => {
       segment,
       label: titleCaseSegment(segment),
       count,
-      color: SEGMENT_COLORS[segment] || '#64748b',
+      color: SEGMENT_COLORS[segment] || designTokens.colors.slate[500],
     }));
   }, [analytics.memberSegments]);
 

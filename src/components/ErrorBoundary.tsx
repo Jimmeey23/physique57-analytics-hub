@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
     
     // Special handling for context-related errors
     if (error.message.includes('useContext') || error.message.includes('Cannot read properties of null')) {
-      console.warn('Context-related error detected. This might be due to hot reloading or React initialization issues.');
+      logger.warn('Context-related error detected. This might be due to hot reloading or React initialization issues.');
       // Attempt to reload after a short delay to allow React to reinitialize
       setTimeout(() => {
         if (window.location.pathname === '/') {

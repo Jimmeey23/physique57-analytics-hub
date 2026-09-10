@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 type Trend = 'strong' | 'moderate' | 'weak';
 
@@ -107,9 +108,7 @@ export function useClientConversionMetrics(
 
     const periodLabel = `${formatPeriodDate(currentStart)} to ${formatPeriodDate(currentEnd)} vs previous period`;
 
-    const isNew = (c: NewClientData) => isInNewClientCohort(c);
-    const isConverted = (c: NewClientData) => isConvertedInCohort(c);
-    const isRetained = (c: NewClientData) => isRetainedInCohort(c);
+    const isNew = (c: NewClientData) => isNewClient(c);
 
     // Calculate current period metrics
     const curNew = current.filter(isNew).length;
@@ -123,11 +122,11 @@ export function useClientConversionMetrics(
 
     const curTotal = current.length;
     const prevTotal = previous.length;
-    const overallConvCur = curTotal > 0 ? (curConverted / curTotal) * 100 : 0;
-    const overallConvPrev = prevTotal > 0 ? (prevConverted / prevTotal) * 100 : 0;
+    const overallConvCur = calcConversionRate(curConverted, curNew);
+    const overallConvPrev = calcConversionRate(prevConverted, prevNew);
 
-    const retentionCur = curTotal > 0 ? (curRetained / curTotal) * 100 : 0;
-    const retentionPrev = prevTotal > 0 ? (prevRetained / prevTotal) * 100 : 0;
+    const retentionCur = calcRetentionRate(curRetained, curNew);
+    const retentionPrev = calcRetentionRate(prevRetained, prevNew);
 
     const totalLTVCur = current.reduce((s, c) => s + (c.ltv || 0), 0);
     const totalLTVPrev = previous.reduce((s, c) => s + (c.ltv || 0), 0);
@@ -141,6 +140,11 @@ export function useClientConversionMetrics(
     prevYearEnd.setFullYear(prevYearEnd.getFullYear() - 1);
 
     const previousYear = base.filter((it) => within(parseDate((it as any).firstVisitDate), prevYearStart, prevYearEnd));
+    const yoyNew = previousYear.filter(isNew).length;
+    const yoyConverted = previousYear.filter(isConverted).length;
+    const yoyRetained = previousYear.filter(isRetained).length;
+    const yoyConv = calcConversionRate(yoyConverted, yoyNew);
+    const yoyRet = calcRetentionRate(yoyRetained, yoyNew);
 
     const metrics = [
       {
@@ -202,11 +206,11 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(overallConvCur, overallConvPrev),
         previousValue: formatPercentage(overallConvPrev),
         previousRawValue: overallConvPrev,
-        yoyPreviousValue: formatPercentage(previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0),
-        yoyPreviousRawValue: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0,
-        yoyChange: calcGrowth(overallConvCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).rate,
-        yoyChangeDetails: { trend: calcGrowth(overallConvCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0).trend },
-        comparison: { current: overallConvCur, previous: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0, difference: overallConvCur - (previousYear.filter(isNew).length > 0 ? (previousYear.filter(isConverted).length / previousYear.filter(isNew).length) * 100 : 0) },
+        yoyPreviousValue: formatPercentage(yoyConv),
+        yoyPreviousRawValue: yoyConv,
+        yoyChange: calcGrowth(overallConvCur, yoyConv).rate,
+        yoyChangeDetails: { trend: calcGrowth(overallConvCur, yoyConv).trend },
+        comparison: { current: overallConvCur, previous: yoyConv, difference: overallConvCur - (yoyConv) },
         periodLabel,
         icon: 'TrendingUp',
         description: 'New to converted rate',
@@ -219,11 +223,11 @@ export function useClientConversionMetrics(
         changeDetails: calcGrowth(retentionCur, retentionPrev),
         previousValue: formatPercentage(retentionPrev),
         previousRawValue: retentionPrev,
-        yoyPreviousValue: formatPercentage(previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0),
-        yoyPreviousRawValue: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0,
-        yoyChange: calcGrowth(retentionCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).rate,
-        yoyChangeDetails: { trend: calcGrowth(retentionCur, previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0).trend },
-        comparison: { current: retentionCur, previous: previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0, difference: retentionCur - (previousYear.filter(isNew).length > 0 ? (previousYear.filter(isRetained).length / previousYear.filter(isNew).length) * 100 : 0) },
+        yoyPreviousValue: formatPercentage(yoyRet),
+        yoyPreviousRawValue: yoyRet,
+        yoyChange: calcGrowth(retentionCur, yoyRet).rate,
+        yoyChangeDetails: { trend: calcGrowth(retentionCur, yoyRet).trend },
+        comparison: { current: retentionCur, previous: yoyRet, difference: retentionCur - (yoyRet) },
         periodLabel,
         icon: 'Target',
         description: 'Member retention rate',

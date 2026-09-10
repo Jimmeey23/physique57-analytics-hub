@@ -582,7 +582,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                           <tr 
                             key={trainer.trainer}
                             onClick={() => setSelectedTrainer(trainer.trainer)}
-                            className="hover:bg-slate-50 transition-colors cursor-pointer h-[35px]"
+                            className="hover:bg-slate-50 transition-colors cursor-pointer p57-row-h"
                           >
                             <td className="px-4 py-2">
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${
@@ -839,7 +839,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                         {historicalSessions.map((session, index) => {
                           const fillRate = (session.capacity || 0) > 0 ? ((session.checkedInCount || 0) / (session.capacity || 1)) * 100 : 0;
                           return (
-                            <tr key={`hist_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors h-[35px]">
+                            <tr key={`hist_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors p57-row-h">
                               <td className="px-3 py-2 font-medium text-slate-900 text-xs whitespace-nowrap">
                                 {format(parseISO(session.date), 'MMM dd, yyyy')}
                               </td>
@@ -932,7 +932,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                         .map((session, index) => {
                           const fillRate = (session.capacity || 0) > 0 ? ((session.checkedInCount || 0) / (session.capacity || 1)) * 100 : 0;
                           return (
-                            <tr key={`trainer_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors h-[35px]">
+                            <tr key={`trainer_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors p57-row-h">
                               <td className="px-3 py-2 font-medium text-slate-900 text-xs whitespace-nowrap">
                                 {format(parseISO(session.date), 'MMM dd, yyyy')}
                               </td>

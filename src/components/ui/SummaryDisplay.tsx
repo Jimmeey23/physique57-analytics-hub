@@ -186,7 +186,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
               <div className="space-y-3">
                 {data.keyInsights.map((insight, index) => (
                   <motion.div
-                    key={index}
+                    key={insight}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + index * 0.1 }}
@@ -219,7 +219,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
                 <div className="space-y-3">
                   {data.trends.map((trend, index) => (
                     <motion.div
-                      key={index}
+                      key={trend}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.6 + index * 0.1 }}
@@ -253,7 +253,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
                 <div className="space-y-3">
                   {data.recommendations.map((rec, index) => (
                     <motion.div
-                      key={index}
+                      key={rec}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.8 + index * 0.1 }}

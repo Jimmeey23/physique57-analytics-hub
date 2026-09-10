@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X, Download, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 /**
  * ExecutiveDrillDownModal
@@ -164,7 +165,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
               <CardContent>
                 <div className="space-y-3">
                   {breakdownData.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between">
+                    <div key={item.label} className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-slate-700">{item.label}</p>
                         {item.percentage !== undefined && (
@@ -228,7 +229,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
                     <tbody>
                       {rawData.slice(0, 50).map((row, idx) => (
                         <tr
-                          key={idx}
+                          key={rowKey(row, idx)}
                           className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                         >
                           {rawDataColumns.map((col) => {

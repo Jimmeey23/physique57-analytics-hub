@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Centralized Google OAuth Authentication Utility
  * 
@@ -86,7 +87,7 @@ export const getGoogleAccessToken = async (): Promise<string> => {
     
     return cachedToken;
   } catch (error) {
-    console.error('Error getting access token:', error);
+    logger.error('Error getting access token:', error);
     throw error;
   }
 };
@@ -247,7 +248,7 @@ export const fetchGoogleSheet = async (
       const result = await response.json();
       return result.values || [];
     } catch (error) {
-      console.warn(`[googleAuth] Sheets API failed for ${spreadsheetId} / ${range}; trying public access:`, error);
+      logger.warn(`[googleAuth] Sheets API failed for ${spreadsheetId} / ${range}; trying public access:`, error);
       return fetchPublicSheetRange(spreadsheetId, range);
     }
   });
@@ -344,7 +345,7 @@ export const validateGoogleConfig = (): boolean => {
   const missing = required.filter(key => !import.meta.env[key]);
   
   if (missing.length > 0) {
-    console.warn('Missing Google OAuth environment variables:', missing);
+    logger.warn('Missing Google OAuth environment variables:', missing);
     return false;
   }
   

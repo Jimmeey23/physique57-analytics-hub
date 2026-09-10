@@ -516,7 +516,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
     
     // Ensure we have valid transaction data - if no specific filter worked, use a fallback
     if (specificFilteredData.length === 0) {
-      console.warn('No specific transactions found for this drill-down. Trying fallback filtering...');
+      logger.warn('No specific transactions found for this drill-down. Trying fallback filtering...');
       
       // More aggressive fallback filtering based on row data properties
       if (rowData.product || rowData.name) {
@@ -536,7 +536,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({ da
         logger.debug(`Fallback category filter found ${specificFilteredData.length} transactions for "${rowData.category}"`);
       } else {
         // Last resort - use all filtered data but log warning
-        console.warn('Using all filtered data as last resort');
+        logger.warn('Using all filtered data as last resort');
         specificFilteredData = filteredData.slice(0, 100); // Limit to 100 for performance
       }
     }

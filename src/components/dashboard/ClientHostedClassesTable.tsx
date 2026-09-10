@@ -4,9 +4,10 @@ import { P57TableShell } from '@/components/ui/P57TableShell';
 import { downloadCsv } from '@/utils/csvExport';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { NewClientData } from '@/types/dashboard';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 interface ClientHostedClassesTableProps {
   data: NewClientData[];
@@ -62,17 +63,17 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       acc[key].clients.push(client);
       
       // Count new members - when isNew contains "new" (case insensitive)
-      if (isInNewClientCohort(client)) {
+      if (isNewClient(client)) {
         acc[key].newMembers++;
       }
       
       // Count converted within the new-client cohort
-      if (isConvertedInCohort(client)) {
+      if (isConverted(client)) {
         acc[key].converted++;
       }
       
       // Count retained within the converted new-client cohort
-      if (isRetainedInCohort(client)) {
+      if (isRetained(client)) {
         acc[key].retained++;
       }
       
@@ -97,9 +98,8 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     return Object.values(classStats)
       .map((stat: any) => ({
         ...stat,
-        conversionRate: stat.totalMembers > 0 ? (stat.converted / stat.totalMembers) * 100 : 0,
-  // Standardize retention rate: retained / totalMembers
-  retentionRate: stat.totalMembers > 0 ? (stat.retained / stat.totalMembers) * 100 : 0,
+        conversionRate: calcConversionRate(stat.converted, stat.newMembers),
+  retentionRate: calcRetentionRate(stat.retained, stat.newMembers),
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgConversionInterval: stat.conversionIntervals.length > 0 
           ? stat.conversionIntervals.reduce((a: number, b: number) => a + b, 0) / stat.conversionIntervals.length 
@@ -217,8 +217,8 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     avgLTV: hostedClassData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1),
     avgConversionInterval: hostedClassData.reduce((sum, row) => sum + (row.avgConversionInterval * row.totalMembers), 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
-  totals.conversionRate = totals.totalMembers > 0 ? (totals.converted / totals.totalMembers) * 100 : 0;
-  totals.retentionRate = totals.totalMembers > 0 ? (totals.retained / totals.totalMembers) * 100 : 0;
+  totals.conversionRate = calcConversionRate(totals.converted, totals.newMembers);
+  totals.retentionRate = calcRetentionRate(totals.retained, totals.newMembers);
   const allHostedClients = hostedClassData.flatMap(row => row.clients || []);
 
   // Sorting logic
@@ -316,8 +316,8 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
       {aiNotes.length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
           <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">
-            {aiNotes.map((insight, index) => (
-              <li key={index}>{insight}</li>
+            {aiNotes.map((insight) => (
+              <li key={insight}>{insight}</li>
             ))}
           </ul>
         </div>

@@ -10,7 +10,8 @@ import { Award, ChevronDown, ChevronRight, Layers3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 interface ClientConversionMembershipTableProps {
   data: NewClientData[];
@@ -65,9 +66,9 @@ const buildChildRows = (clients: NewClientData[]) => {
       };
     }
     acc[label].totalMembers += 1;
-    if (isInNewClientCohort(client)) acc[label].newMembers += 1;
-    if (isConvertedInCohort(client)) acc[label].converted += 1;
-    if (isRetainedInCohort(client)) acc[label].retained += 1;
+    if (isNewClient(client)) acc[label].newMembers += 1;
+    if (isConverted(client)) acc[label].converted += 1;
+    if (isRetained(client)) acc[label].retained += 1;
     acc[label].totalLTV += client.ltv || 0;
     acc[label].clients.push(client);
     return acc;
@@ -76,8 +77,8 @@ const buildChildRows = (clients: NewClientData[]) => {
   return Object.values(byClientType)
     .map((row) => ({
       ...row,
-      conversionRate: row.totalMembers > 0 ? (row.converted / row.totalMembers) * 100 : 0,
-      retentionRate: row.totalMembers > 0 ? (row.retained / row.totalMembers) * 100 : 0,
+      conversionRate: calcConversionRate(row.converted, row.newMembers),
+      retentionRate: calcRetentionRate(row.retained, row.newMembers),
       avgLTV: row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0,
     }))
     .sort((a, b) => b.totalMembers - a.totalMembers);
@@ -109,9 +110,9 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
 
       const bucket = acc[membership];
       bucket.totalMembers += 1;
-      if (isInNewClientCohort(client)) bucket.newMembers += 1;
-      if (isConvertedInCohort(client)) bucket.converted += 1;
-      if (isRetainedInCohort(client)) bucket.retained += 1;
+      if (isNewClient(client)) bucket.newMembers += 1;
+      if (isConverted(client)) bucket.converted += 1;
+      if (isRetained(client)) bucket.retained += 1;
       bucket.totalLTV += client.ltv || 0;
       bucket.totalVisits += client.visitsPostTrial || 0;
       if ((client.conversionSpan || 0) > 0) bucket.conversionSpans.push(client.conversionSpan);
@@ -122,8 +123,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     return Object.values(grouped)
       .map((bucket) => ({
         ...bucket,
-        conversionRate: bucket.totalMembers > 0 ? (bucket.converted / bucket.totalMembers) * 100 : 0,
-        retentionRate: bucket.totalMembers > 0 ? (bucket.retained / bucket.totalMembers) * 100 : 0,
+        conversionRate: calcConversionRate(bucket.converted, bucket.newMembers),
+        retentionRate: calcRetentionRate(bucket.retained, bucket.newMembers),
         avgLTV: bucket.totalMembers > 0 ? bucket.totalLTV / bucket.totalMembers : 0,
         avgVisits: bucket.totalMembers > 0 ? bucket.totalVisits / bucket.totalMembers : 0,
         avgConversionSpan:
@@ -183,8 +184,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       }
     );
 
-    total.conversionRate = total.totalMembers > 0 ? (total.converted / total.totalMembers) * 100 : 0;
-    total.retentionRate = total.totalMembers > 0 ? (total.retained / total.totalMembers) * 100 : 0;
+    total.conversionRate = calcConversionRate(total.converted, total.newMembers);
+    total.retentionRate = calcRetentionRate(total.retained, total.newMembers);
     total.avgLTV = total.totalMembers > 0 ? total.totalLTV / total.totalMembers : 0;
     total.avgVisits = total.totalMembers > 0 ? total.totalVisits / total.totalMembers : 0;
     total.avgConversionSpan = total.conversionSpans.length > 0

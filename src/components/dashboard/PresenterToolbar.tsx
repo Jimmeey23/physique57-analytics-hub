@@ -225,8 +225,8 @@ export function PresenterToolbar({ modeState, isPresenter, onStart, onEnd, onJoi
               <span className="text-xs text-slate-400">No viewers yet</span>
             ) : (
               <div className="flex -space-x-1.5">
-                {modeState.viewers.slice(0, 6).map((v, i) => (
-                  <Avatar key={i} name={v.name} color={v.color} title={v.name} />
+                {modeState.viewers.slice(0, 6).map((v) => (
+                  <Avatar key={v.name} name={v.name} color={v.color} title={v.name} />
                 ))}
                 {modeState.viewers.length > 6 && (
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 ring-2 ring-white">
@@ -251,8 +251,8 @@ export function PresenterToolbar({ modeState, isPresenter, onStart, onEnd, onJoi
                 className="absolute left-0 top-full z-50 mt-2 min-w-[200px] rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
               >
                 <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Live viewers</p>
-                {modeState.viewers.map((v, i) => (
-                  <div key={i} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-slate-50">
+                {modeState.viewers.map((v) => (
+                  <div key={v.name} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-slate-50">
                     <Avatar name={v.name} color={v.color} />
                     <span className="text-sm font-medium text-slate-700">{v.name}</span>
                     <span className="ml-auto text-[10px] text-slate-400">

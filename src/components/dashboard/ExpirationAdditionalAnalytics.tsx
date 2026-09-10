@@ -150,7 +150,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
                 </thead>
                 <tbody>
                   {locationData.map((location, index) => (
-                    <tr key={index} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <tr key={location.name} className="border-b border-slate-100 hover:bg-slate-50/50">
                       <td className="py-2 px-3 font-medium text-xs">{location.name}</td>
                       <td className="py-2 px-3 text-center">{formatNumber(location.total)}</td>
                       <td className={`py-2 px-3 text-center font-medium ${getChurnRateColor(location.churnRate)}`}>
@@ -187,7 +187,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
               </thead>
               <tbody>
                 {topSalesReps.map((rep, index) => (
-                  <tr key={index} className="border-b border-slate-100 hover:bg-slate-50/50">
+                  <tr key={rep.name} className="border-b border-slate-100 hover:bg-slate-50/50">
                     <td className="py-2 px-3 font-medium text-xs">{rep.name}</td>
                     <td className="py-2 px-3 text-center font-medium">{formatNumber(rep.total)}</td>
                     <td className="py-2 px-3 text-center text-green-600">{formatNumber(rep.active)}</td>
@@ -238,7 +238,7 @@ export const ExpirationAdditionalAnalytics: React.FC<ExpirationAdditionalAnalyti
           <CardContent>
             <div className="space-y-4">
               {valueSegments.map((segment, index) => (
-                <div key={index} className="p-4 bg-slate-50/50 rounded-lg">
+                <div key={segment.category} className="p-4 bg-slate-50/50 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="font-medium text-slate-700">{segment.category}</h4>
                     <Badge variant="outline" className={`${getChurnRateColor(segment.churnRate)} border-current`}>

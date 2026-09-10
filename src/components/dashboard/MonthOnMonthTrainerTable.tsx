@@ -480,8 +480,8 @@ export const MonthOnMonthTrainerTable = ({
         <div className="overflow-x-auto">
           <Table data-table="trainer-month-on-month" data-table-name="Month-on-Month Trainer Analysis">
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="border-none bg-[#f6f7f9]" style={{ height: '35px', maxHeight: '35px' }}>
-                <TableHead className="bg-[#f6f7f9] font-bold text-slate-700 sticky left-0 z-30 min-w-[240px] border-r border-slate-200" style={{ height: '35px' }}>
+              <TableRow className="border-none bg-[#f6f7f9] p57-row-h">
+                <TableHead className="bg-[#f6f7f9] font-bold text-slate-700 sticky left-0 z-30 min-w-[240px] border-r border-slate-200 p57-row-h">
                   <div className="flex items-center justify-center">
                     <span className="font-bold text-slate-800">Trainer</span>
                   </div>
@@ -508,10 +508,10 @@ export const MonthOnMonthTrainerTable = ({
                     <TableHead 
                       key={month} 
                       className={cn(
+                        'p57-row-h',
                         "text-center font-bold min-w-[140px] whitespace-nowrap border-l border-slate-200",
                         isMainMonth ? "bg-sky-100 text-sky-900" : "bg-[#f6f7f9] text-slate-700"
                       )}
-                      style={{ height: '35px' }}
                     >
                       <div className="flex items-center justify-center gap-1">
                         {isMainMonth && <Star className="w-3 h-3" />}
@@ -525,7 +525,7 @@ export const MonthOnMonthTrainerTable = ({
                     </TableHead>
                   );
                 })}
-                <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[120px] border-l border-slate-200" style={{ height: '35px' }}>
+                <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[120px] border-l border-slate-200 p57-row-h">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">MoM Change</TooltipTrigger>
@@ -533,7 +533,7 @@ export const MonthOnMonthTrainerTable = ({
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
-                <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[140px] border-l border-slate-200" style={{ height: '35px' }}>
+                <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 min-w-[140px] border-l border-slate-200 p57-row-h">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">Total</TooltipTrigger>
@@ -593,11 +593,10 @@ export const MonthOnMonthTrainerTable = ({
                 return (
                   <React.Fragment key={trainer}>
                     <TableRow 
-                      className="border-b border-gray-200 bg-white transition-all duration-200 hover:bg-slate-50 cursor-pointer h-9 max-h-9"
+                      className="border-b border-gray-200 bg-white transition-all duration-200 hover:bg-slate-50 cursor-pointer p57-row-h"
                       onClick={() => handleRowClick(trainer)}
-                      style={{ height: '35px' }}
                     >
-                      <TableCell className="sticky left-0 z-20 min-w-[240px] overflow-hidden whitespace-nowrap border-r border-gray-200 bg-white font-medium text-slate-800 text-ellipsis" style={{ height: '35px' }}>
+                      <TableCell className="sticky left-0 z-20 min-w-[240px] overflow-hidden whitespace-nowrap border-r border-gray-200 bg-white font-medium text-slate-800 text-ellipsis p57-row-h">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -616,8 +615,7 @@ export const MonthOnMonthTrainerTable = ({
                       {values.map((value, index) => (
                         <TableCell 
                           key={`${trainer}-${index}`} 
-                          className="border-l border-gray-200 text-center text-sm font-medium text-slate-800 hover:bg-slate-100 cursor-pointer transition-all duration-200" 
-                          style={{ height: '35px', maxHeight: '35px' }}
+                          className="border-l border-gray-200 text-center text-sm font-medium text-slate-800 hover:bg-slate-100 cursor-pointer transition-all duration-200 p57-row-h" 
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!onRowClick) return;
@@ -779,12 +777,12 @@ export const MonthOnMonthTrainerTable = ({
               })}
 
               {/* Totals Row */}
-              <TableRow className="retention-totals-row bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-9 max-h-9 hover:bg-slate-700" style={{ height: '35px', maxHeight: '35px' }}>
-                <TableCell className="sticky left-0 z-20 whitespace-nowrap border-r border-slate-400 bg-slate-800 font-bold text-white" style={{ height: '35px', maxHeight: '35px' }}>
+              <TableRow className="retention-totals-row bg-slate-800 text-white font-bold border-t-2 border-slate-400 h-9 max-h-9 hover:bg-slate-700 p57-row-h">
+                <TableCell className="sticky left-0 z-20 whitespace-nowrap border-r border-slate-400 bg-slate-800 font-bold text-white p57-row-h">
                   TOTALS
                 </TableCell>
                 {processedData.months.map((month) => (
-                  <TableCell key={`total-${month}`} className="border-l border-slate-400 text-center font-bold whitespace-nowrap text-white" style={{ height: '35px', maxHeight: '35px' }}>
+                  <TableCell key={`total-${month}`} className="border-l border-slate-400 text-center font-bold whitespace-nowrap text-white p57-row-h">
                     {formatValue(monthlyTotals[month] || 0, selectedMetric)}
                   </TableCell>
                 ))}

@@ -13,6 +13,7 @@ import {
 import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 interface DrillDownAnalyticsModalProps {
   isOpen: boolean;
@@ -392,7 +393,7 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
                   </TableHeader>
                   <TableBody>
                     {analytics.topSessions.map((session, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={rowKey(session, index)}>
                         <TableCell>{session.date}</TableCell>
                         <TableCell className="font-medium">{session.cleanedClass}</TableCell>
                         <TableCell>{session.trainerName}</TableCell>
@@ -521,7 +522,7 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
           <TabsContent value="insights" className="space-y-6 mt-6">
             <div className="space-y-4">
               {analytics.recommendations.map((rec, index) => (
-                <Card key={index} className={cn(
+                <Card key={`${rec.type}-${rec.title}`} className={cn(
                   "border",
                   rec.type === 'success' ? "border-green-200 bg-green-50/60" :
                   rec.type === 'warning' ? "border-amber-200 bg-amber-50/60" :

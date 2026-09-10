@@ -91,6 +91,9 @@ import { getSummaryText } from '@/services/infoSummaryService';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { parseDate } from '@/utils/dateUtils';
 import { generateHTMLPDFReport, generateMultiLocationHTMLPDFReports } from '@/services/htmlPDFService';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
+import { logger } from '@/utils/logger';
 
 // Helper function to get location ID for InfoPopover
 const getLocationId = (location: string | undefined): 'kwality' | 'supreme' | 'kenkere' | 'all' => {
@@ -177,7 +180,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       // Force the Executive Summary to November 2025 on mount
       updateFilters({ dateRange: { start: '2025-11-01', end: '2025-11-30' } });
     } catch (e) {
-      console.warn('Failed to set default Executive Summary date range:', e);
+      logger.warn('Failed to set default Executive Summary date range:', e);
     }
     // Intentionally only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -356,9 +359,9 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
         (sessions.reduce((sum, s) => sum + (s.checkedInCount || 0), 0) / sessions.reduce((sum, s) => sum + (s.capacity || 0), 0)) * 100 : 0,
       lateCancellations: cancellations.length,
       cancellationRate: sessions.length > 0 ? (cancellations.length / sessions.length) * 100 : 0,
-      newClients: clients.length,
-      conversionRate: clients.length > 0 ? (clients.filter(c => c.conversionStatus === 'Converted').length / clients.length) * 100 : 0,
-      retentionRate: clients.length > 0 ? (clients.filter(c => c.retentionStatus === 'Retained').length / clients.length) * 100 : 0,
+      newClients: clients.filter(isNewClient).length,
+      conversionRate: calcConversionRate(clients.filter(isConverted).length, clients.filter(isNewClient).length),
+      retentionRate: calcRetentionRate(clients.filter(isRetained).length, clients.filter(isNewClient).length),
       avgLTV: clients.length > 0 ? clients.reduce((sum, c) => sum + (c.ltv || 0), 0) / clients.length : 0,
       totalDiscounts: discounts.reduce((sum, d) => sum + (d.discountAmount || 0), 0),
       discountRate: sales.length > 0 ? (discounts.length / sales.length) * 100 : 0
@@ -577,7 +580,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
             uniqueCustomers: new Set(safeArray(previousMonthData.sales).map(s => safeString(s.customerName))).size,
           },
           clients: {
-            newMembers: safeArray(previousMonthData.newClients).filter(c => safeString(c.isNew).toLowerCase().includes('new')).length,
+            newMembers: safeArray(previousMonthData.newClients).filter(c => isNewClient(c.isNew)).length,
             convertedMembers: safeArray(previousMonthData.newClients).filter(c => safeString(c.conversionStatus) === 'Converted').length,
             retentionRate: safeArray(previousMonthData.newClients).length > 0
               ? (safeArray(previousMonthData.newClients).filter(c => safeString(c.retentionStatus) === 'Retained').length / safeArray(previousMonthData.newClients).length) * 100
@@ -659,7 +662,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
           duration: 5000,
         });
     } catch (error) {
-      console.error('Error generating PDF reports:', error);
+      logger.error('Error generating PDF reports:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF reports. Please try again.",

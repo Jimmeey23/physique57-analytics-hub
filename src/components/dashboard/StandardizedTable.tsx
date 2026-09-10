@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 interface TableColumn {
   key: string;
@@ -80,7 +81,7 @@ export const StandardizedTable: React.FC<StandardizedTableProps> = ({
         <tbody className="divide-y divide-slate-100">
           {data.map((row, index) => (
             <tr
-              key={index}
+              key={rowKey(row, index)}
               className={cn(
                 'transition-colors hover:bg-slate-100',
                 striped && index % 2 === 0 ? 'bg-white' : striped && 'bg-slate-50'

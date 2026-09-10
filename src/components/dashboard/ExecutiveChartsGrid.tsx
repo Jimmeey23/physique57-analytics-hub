@@ -75,7 +75,7 @@ export const ExecutiveChartsGrid: React.FC<ExecutiveChartsGridProps> = ({ data, 
       return acc;
     }, {} as Record<string, number>);
 
-    const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+    const COLORS = ['#8B5CF6', '#06B6D4', '#10b981', '#F59E0B', '#EF4444'];
     
     return Object.entries(types).map(([name, value], index) => ({
       name,
@@ -162,7 +162,7 @@ export const ExecutiveChartsGrid: React.FC<ExecutiveChartsGridProps> = ({ data, 
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="leads" fill="#94A3B8" name="Total Leads" />
-                <Bar dataKey="conversions" fill="#10B981" name="Conversions" />
+                <Bar dataKey="conversions" fill="#10b981" name="Conversions" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -217,7 +217,7 @@ export const ExecutiveChartsGrid: React.FC<ExecutiveChartsGridProps> = ({ data, 
                 } />
                 <Legend />
                 <Bar dataKey="leads" fill="#94A3B8" name="Total Leads" />
-                <Bar dataKey="conversions" fill="#10B981" name="Conversions" />
+                <Bar dataKey="conversions" fill="#10b981" name="Conversions" />
                 <Bar dataKey="rate" fill="#F59E0B" name="Conversion Rate %" />
               </BarChart>
             </ResponsiveContainer>

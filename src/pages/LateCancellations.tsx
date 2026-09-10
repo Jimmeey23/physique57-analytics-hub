@@ -15,7 +15,6 @@ import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
 import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatNumber } from '@/utils/formatters';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
-import '@/components/dashboard/trainer-performance-styles.css';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 import { Badge } from '@/components/ui/badge';

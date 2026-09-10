@@ -9,6 +9,9 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
 import { NewClientData, SalesData } from '@/types/dashboard';
 import { P57Badge } from '@/components/ui/P57Badge';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
+import { isNewClient } from '@/utils/clientRetention';
+import { downloadCsvArray } from '@/utils/csvExport';
 import {
   BarChart3,
   Calendar,
@@ -152,7 +155,7 @@ const buildMembershipList = (client: NewClientData, transactions: SalesData[]) =
 
 const getCohortReason = (client: NewClientData) => {
   const label = safeText(client.isNew, 'Blank');
-  if (label.toLowerCase().includes('new')) {
+  if (isNewClient(client)) {
     return {
       included: true,
       reason: `Included in the conversion cohort because isNew is recorded as “${label}”.`,
@@ -180,7 +183,7 @@ const getConversionReason = (client: NewClientData, transactionCount: number) =>
     };
   }
 
-  if (!String(client.isNew || '').toLowerCase().includes('new')) {
+  if (!isNewClient(client)) {
     return {
       included: false,
       reason: 'Excluded from conversion performance because this client is outside the new-client denominator.',
@@ -258,21 +261,6 @@ const paymentTone = (status: string): 'green' | 'amber' | 'red' | 'slate' => {
   if (/pend|partial|process/.test(normalized)) return 'amber';
   if (/fail|cancel|refund|void|decline/.test(normalized)) return 'red';
   return 'slate';
-};
-
-const buildCsv = (headers: string[], rows: Array<Array<string | number>>) => {
-  const lines = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','));
-  return [headers.join(','), ...lines].join('\n');
-};
-
-const downloadCsv = (filename: string, csv: string) => {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 };
 
 const toolbarButtonClass =
@@ -388,8 +376,8 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
       matchedRevenue,
       matchedTransactions,
       avgLTV: totalMembers > 0 ? totalLTV / totalMembers : 0,
-      conversionRate: cohortIncluded > 0 ? (convertedMembers / cohortIncluded) * 100 : 0,
-      retentionRate: cohortIncluded > 0 ? (retainedMembers / cohortIncluded) * 100 : 0,
+      conversionRate: calcConversionRate(convertedMembers, cohortIncluded),
+      retentionRate: calcRetentionRate(retainedMembers, cohortIncluded),
       avgConversionSpan: conversionSpans.length > 0 ? conversionSpans.reduce((sum, value) => sum + value, 0) / conversionSpans.length : 0,
     };
   }, [clientRecords]);
@@ -427,7 +415,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
         case 'highValue':
           return (record.client.ltv || 0) >= (summary.avgLTV || 0);
         case 'newOnly':
-          return String(record.client.isNew || '').toLowerCase().includes('new');
+          return isNewClient(record.client);
         case 'hosted':
           return isHostedEntity(record.client.firstVisitEntityName);
         default:
@@ -496,7 +484,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
   }, [displayedRecords]);
 
   const exportClients = React.useCallback(() => {
-    const csv = buildCsv(
+    downloadCsvArray(`${title.replace(/\s+/g, '-').toLowerCase()}-clients.csv`,
       [
         'Client Name',
         'Email',
@@ -556,12 +544,10 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
         record.retentionReason,
       ])
     );
-
-    downloadCsv(`${title.replace(/\s+/g, '-').toLowerCase()}-clients.csv`, csv);
   }, [displayedRecords, title]);
 
   const exportTransactions = React.useCallback(() => {
-    const csv = buildCsv(
+    downloadCsvArray(`${title.replace(/\s+/g, '-').toLowerCase()}-transactions.csv`,
       [
         'Client',
         'Client Type',
@@ -587,12 +573,10 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
         transaction.paymentValue || 0,
       ])
     );
-
-    downloadCsv(`${title.replace(/\s+/g, '-').toLowerCase()}-transactions.csv`, csv);
   }, [displayedTransactions, title]);
 
   const exportSummary = React.useCallback(() => {
-    const csv = buildCsv(
+    downloadCsvArray(`${title.replace(/\s+/g, '-').toLowerCase()}-summary.csv`,
       ['Metric', 'Value'],
       [
         ['Clients in slice', summary.totalMembers],
@@ -608,8 +592,6 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
         ['Matched revenue', formatCurrency(summary.matchedRevenue)],
       ]
     );
-
-    downloadCsv(`${title.replace(/\s+/g, '-').toLowerCase()}-summary.csv`, csv);
   }, [displayedRecords.length, summary, title]);
 
   const exportCurrentTab = React.useCallback(() => {

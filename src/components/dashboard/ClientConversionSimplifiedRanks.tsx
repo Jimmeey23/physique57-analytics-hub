@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData, PayrollData } from '@/types/dashboard';
+import { isNewClient } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 interface ClientConversionSimplifiedRanksProps {
   data: NewClientData[];
@@ -194,8 +196,7 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
       membershipStat.avgVisits += client.visitsPostTrial || 0;
       
       // Standardized status detection
-      const isNewValue = (client.isNew || '').toLowerCase();
-      if (isNewValue.includes('new')) {
+      if (isNewClient(client)) {
         membershipStat.newMembers++;
       }
       
@@ -210,8 +211,8 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
     });
     
     return Array.from(stats.values()).map(stat => {
-      const conversionRate = stat.totalClients > 0 ? (stat.converted / stat.totalClients) * 100 : 0;
-      const retentionRate = stat.totalClients > 0 ? (stat.retained / stat.totalClients) * 100 : 0;
+      const conversionRate = calcConversionRate(stat.converted, stat.newMembers);
+      const retentionRate = calcRetentionRate(stat.retained, stat.newMembers);
       const avgLTV = stat.totalClients > 0 ? stat.totalLTV / stat.totalClients : 0;
       const avgVisitsPerClient = stat.totalClients > 0 ? stat.avgVisits / stat.totalClients : 0;
       

@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { LateCancellationsData } from '@/types/dashboard';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { P57RankList, type P57RankItem } from '@/components/ui/P57RankList';
 import { AlertTriangle, Clock3, MapPin, Package, Sparkles, Users } from 'lucide-react';
 
 interface EnhancedLateCancellationsTopBottomListsProps {
@@ -124,44 +124,44 @@ export const EnhancedLateCancellationsTopBottomLists: React.FC<EnhancedLateCance
       <CardContent className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-2">
           {[
-            { title: `Highest ${labels[activeType].title}`, items: topItems, tone: 'text-red-700 border-red-200 bg-red-50' },
-            { title: `Lowest ${labels[activeType].title}`, items: bottomItems, tone: 'text-emerald-700 border-emerald-200 bg-emerald-50' },
-          ].map((section) => (
-            <div key={section.title} className="space-y-3">
-              <div className="flex items-center gap-2">
-                <ActiveIcon className="h-4 w-4 text-slate-600" />
-                <h3 className="font-semibold text-slate-900">{section.title}</h3>
+            { title: `Highest ${labels[activeType].title}`, items: topItems },
+            { title: `Lowest ${labels[activeType].title}`, items: bottomItems },
+          ].map((section) => {
+            const max = Math.max(1, ...section.items.map((item: any) => item.count));
+            const rankItems: P57RankItem[] = section.items.map((item: any, index: number) => ({
+              rank: index + 1,
+              name: item.label,
+              sub: `${formatNumber(item.memberCount)} members · ${formatCurrency(item.penalties || 0)} penalties`,
+              value: `${formatNumber(item.count)} cancellations`,
+              barPct: (item.count / max) * 100,
+            }));
+            const byLabel = new Map(section.items.map((item: any) => [item.label, item]));
+            return (
+              <div key={section.title} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ActiveIcon className="h-4 w-4 text-slate-600" />
+                  <h3 className="font-semibold text-slate-900">{section.title}</h3>
+                </div>
+                <P57RankList
+                  items={rankItems}
+                  emptyText="No ranked items for the current filters."
+                  onSelect={(rankItem) => {
+                    const item = byLabel.get(rankItem.name);
+                    if (!item) return;
+                    onItemClick?.({
+                      title: `${section.title}: ${item.label}`,
+                      records: item.records,
+                      summary: {
+                        cancellations: item.count,
+                        members: item.memberCount,
+                        penalties: item.penalties,
+                      },
+                    });
+                  }}
+                />
               </div>
-              {section.items.map((item: any, index) => (
-                <button
-                  key={`${section.title}-${item.label}-${index}`}
-                  type="button"
-                  onClick={() => onItemClick?.({
-                    title: `${section.title}: ${item.label}`,
-                    records: item.records,
-                    summary: {
-                      cancellations: item.count,
-                      members: item.memberCount,
-                      penalties: item.penalties,
-                    }
-                  })}
-                  className="w-full rounded-2xl border border-slate-200 p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:bg-red-50/30 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-900" title={item.label}>{item.label}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge variant="outline" className={section.tone}>{formatNumber(item.count)} cancellations</Badge>
-                        <Badge variant="outline">{formatNumber(item.memberCount)} members</Badge>
-                        <Badge variant="outline">{formatCurrency(item.penalties || 0)} penalties</Badge>
-                        <Badge variant="outline" className="border-dashed border-slate-300 text-slate-600">Click for details</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ))}
+            );
+          })}
         </div>
         {groupedData.length > 5 && (
           <div className="flex justify-center">

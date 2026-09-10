@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { useAdvancedExport } from '@/hooks/useAdvancedExport';
+import { designTokens } from '@/utils/designTokens';
 
 interface EnhancedSalesDrillDownModalProps {
   isOpen: boolean;
@@ -60,6 +61,9 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
     const uniqueCustomers = data.isDynamic && data.totalCustomers !== undefined ? data.totalCustomers : 
                            new Set(transactionData.map((item: any) => item.memberId || item.customerEmail)).size;
     const avgTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+    const revenuePerCustomer = uniqueCustomers > 0 ? totalRevenue / uniqueCustomers : 0;
+    const txnsPerCustomer = uniqueCustomers > 0 ? totalTransactions / uniqueCustomers : 0;
+    const repeatTxnShare = totalTransactions > 0 ? Math.max(0, (totalTransactions - uniqueCustomers) / totalTransactions) * 100 : 0;
     const uniqueProducts = new Set(transactionData.map((item: any) => item.cleanedProduct || item.paymentItem)).size;
 
     // Advanced analytics
@@ -155,6 +159,9 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
       totalTransactions,
       uniqueCustomers,
       avgTransactionValue,
+      revenuePerCustomer,
+      txnsPerCustomer,
+      repeatTxnShare,
       paymentMethodBreakdown,
       categoryBreakdown,
       timeAnalysis,
@@ -256,7 +263,7 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
   };
 
   // Chart colors
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
+  const COLORS = ['#3b82f6', '#10b981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
 
   const getTitle = () => {
     // Use the contextual item name if available
@@ -378,9 +385,9 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.6}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
-                <XAxis dataKey="hour" stroke="#64748b" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} opacity={0.5} />
+                <XAxis dataKey="hour" stroke={designTokens.colors.slate[500]} style={{ fontSize: '12px' }} />
+                <YAxis stroke={designTokens.colors.slate[500]} style={{ fontSize: '12px' }} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'rgba(255, 255, 255, 0.95)', 
@@ -517,8 +524,8 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
         align: 'center' as const,
         render: (value: string[]) => (
           <div className="flex flex-wrap gap-1 max-w-[150px]">
-            {value.slice(0, 2).map((cat, idx) => (
-              <Badge key={idx} variant="outline" className="text-xs">
+            {value.slice(0, 2).map((cat) => (
+              <Badge key={String(cat)} variant="outline" className="text-xs">
                 {cat.length > 8 ? `${cat.substring(0, 8)}...` : cat}
               </Badge>
             ))}
@@ -802,28 +809,28 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
                     <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-white" />
-                        <span className="text-slate-100 font-medium">Revenue Growth</span>
+                        <span className="text-slate-100 font-medium">Revenue / Customer</span>
                       </div>
                       <Badge className="bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 backdrop-blur-sm">
-                        +{((enhancedData.totalRevenue / 1000000) * 1.5).toFixed(1)}%
+                        {formatCurrency(enhancedData.revenuePerCustomer)}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-white" />
-                        <span className="text-slate-100 font-medium">Customer Retention</span>
+                        <span className="text-slate-100 font-medium">Repeat Transactions</span>
                       </div>
                       <Badge className="bg-blue-500/20 text-blue-200 border border-blue-400/30 backdrop-blur-sm">
-                        {((enhancedData.uniqueCustomers / enhancedData.totalTransactions) * 100).toFixed(1)}%
+                        {formatPercentage(enhancedData.repeatTxnShare)}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                       <div className="flex items-center gap-2">
                         <Target className="w-4 h-4 text-white" />
-                        <span className="text-slate-100 font-medium">Market Share</span>
+                        <span className="text-slate-100 font-medium">Avg Transaction Value</span>
                       </div>
                       <Badge className="bg-purple-500/20 text-purple-200 border border-purple-400/30 backdrop-blur-sm">
-                        {((enhancedData.totalRevenue / 10000000) * 100).toFixed(1)}%
+                        {formatCurrency(enhancedData.avgTransactionValue)}
                       </Badge>
                     </div>
                   </CardContent>
@@ -842,10 +849,10 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
                     <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all duration-200">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-slate-600" />
-                        <span className="text-slate-700 font-medium">Conversion Rate</span>
+                        <span className="text-slate-700 font-medium">Txns / Customer</span>
                       </div>
                       <span className="font-bold text-slate-900 bg-slate-200 px-3 py-1 rounded-full">
-                        {((enhancedData.totalTransactions / (enhancedData.uniqueCustomers * 2)) * 100).toFixed(1)}%
+                        {enhancedData.txnsPerCustomer.toFixed(1)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all duration-200">

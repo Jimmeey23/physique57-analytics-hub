@@ -27,6 +27,7 @@ import type {
   OverviewTableDefinition,
 } from '@/components/dashboard/overview/types';
 import { getSummaryText, type SummaryContext, type SummaryLocationId } from '@/services/infoSummaryService';
+import { logger } from '@/utils/logger';
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -217,7 +218,7 @@ const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
     context.drawImage(image, 0, 0);
     return canvas.toDataURL('image/jpeg', 0.9);
   } catch (error) {
-    console.warn(`Unable to load image asset: ${src}`, error);
+    logger.warn(`Unable to load image asset: ${src}`, error);
     return null;
   }
 };
@@ -339,7 +340,7 @@ const loadModuleSummaries = async (moduleId: OverviewModuleId, locationId: Overv
       return blocks;
     }
   } catch (error) {
-    console.warn(`Failed to load popover summary for ${moduleId}/${locationId}`, error);
+    logger.warn(`Failed to load popover summary for ${moduleId}/${locationId}`, error);
   }
 
   return fallbackSummary ? [fallbackSummary] : [];

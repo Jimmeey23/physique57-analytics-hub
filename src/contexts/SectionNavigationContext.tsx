@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
+import { logger } from '@/utils/logger';
 
 export type SectionEntry = {
   id: string;
@@ -81,7 +82,7 @@ export function SectionNavigationProvider({ children }: { children: React.ReactN
 export function useSectionNavigation() {
   const ctx = React.useContext(SectionNavigationContext);
   if (!ctx) {
-    console.error("useSectionNavigation must be used within SectionNavigationProvider. Returning fallback values.");
+    logger.error("useSectionNavigation must be used within SectionNavigationProvider. Returning fallback values.");
     // Return a fallback context
     return {
       sections: [],

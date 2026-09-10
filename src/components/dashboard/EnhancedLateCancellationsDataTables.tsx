@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { LateCancellationsData } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { ListFilter } from 'lucide-react';
+import { rowKey } from '@/utils/reactKeys';
 
 interface EnhancedLateCancellationsDataTablesProps {
   data: LateCancellationsData[];
@@ -100,7 +101,7 @@ export const EnhancedLateCancellationsDataTables: React.FC<EnhancedLateCancellat
         </TableHeader>
         <TableBody>
           {rows.map((row: any, index: number) => (
-            <TableRow key={index} className="cursor-pointer hover:bg-red-50/40" onClick={() => onDrillDown?.({
+            <TableRow key={rowKey(row, index)} className="cursor-pointer hover:bg-red-50/40" onClick={() => onDrillDown?.({
               title: row.window || row.event || row.membership || row.location || row.member || 'Late cancellation details',
               records: row.records || (row.raw ? [row.raw] : []),
               summary: row,

@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { logger } from '@/utils/logger';
 
 /**
  * Hybrid PDF Export Service
@@ -165,7 +166,7 @@ export const exportDashboardToPDF = async (
     // Step 6: Download PDF
     pdf.save(filename);
   } catch (error) {
-    console.error('PDF Export Error:', error);
+    logger.error('PDF Export Error:', error);
     throw new Error(`Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -299,7 +300,7 @@ export const generateDataDrivenPDF = async (
 
     pdf.save(filename);
   } catch (error) {
-    console.error('PDF Generation Error:', error);
+    logger.error('PDF Generation Error:', error);
     throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

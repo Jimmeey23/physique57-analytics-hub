@@ -9,6 +9,7 @@ import DOMPurify from 'dompurify';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface AiNotesProps {
   tableKey: string; // unique key per table (e.g., 'sessions:advancedAttendance')
@@ -236,7 +237,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
   const restoreVersion = async (index: number) => {
     const item = notes[index];
     if (!item) {
-      console.error('Cannot restore: item not found at index', index);
+      logger.error('Cannot restore: item not found at index', index);
       return;
     }
     
@@ -256,7 +257,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
         setNoteHtml(restoredNote);
       }
     } catch (error) {
-      console.error('Error restoring note version:', error);
+      logger.error('Error restoring note version:', error);
     }
   };
 
@@ -280,7 +281,7 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
     if (editIndex === null) return;
     const item = notes[editIndex];
     if (!item || !item.rowNumber) {
-      console.error('Cannot save: item missing or no rowNumber', item);
+      logger.error('Cannot save: item missing or no rowNumber', item);
       return;
     }
     
@@ -291,16 +292,16 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
       if (success) {
         onCancelEdit();
       } else {
-        console.error('Update operation failed');
+        logger.error('Update operation failed');
       }
     } catch (error) {
-      console.error('Error updating note:', error);
+      logger.error('Error updating note:', error);
     }
   };
   const onDelete = async (idx: number) => {
     const item = notes[idx];
     if (!item || !item.rowNumber) {
-      console.error('Cannot delete: item missing or no rowNumber', item);
+      logger.error('Cannot delete: item missing or no rowNumber', item);
       return;
     }
     // Confirm delete
@@ -311,10 +312,10 @@ export const AiNotes: React.FC<AiNotesProps> = ({ tableKey, location, period, se
     try {
       const success = await deleteByRow(item.rowNumber);
       if (!success) {
-        console.error('Delete operation failed');
+        logger.error('Delete operation failed');
       }
     } catch (error) {
-      console.error('Error deleting note:', error);
+      logger.error('Error deleting note:', error);
     }
   };
 

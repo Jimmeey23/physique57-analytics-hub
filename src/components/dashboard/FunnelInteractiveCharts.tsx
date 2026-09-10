@@ -9,6 +9,7 @@ import { LeadsData } from '@/types/leads';
 import { formatCurrency } from '@/utils/formatters';
 import { isLeadConverted } from '@/utils/leadConversions';
 import { cn } from '@/lib/utils';
+import { designTokens } from '@/utils/designTokens';
 
 interface FunnelInteractiveChartsProps {
   data: LeadsData[];
@@ -344,7 +345,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                       <feDropShadow dx="2" dy="2" stdDeviation="3" floodColor="#dc2626" floodOpacity="0.3"/>
                     </filter>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} opacity={0.6} />
                   <XAxis 
                     dataKey="name" 
                     stroke="#475569"
@@ -378,7 +379,7 @@ export const FunnelInteractiveCharts: React.FC<FunnelInteractiveChartsProps> = (
                       <feDropShadow dx="3" dy="3" stdDeviation="4" floodColor="#dc2626" floodOpacity="0.4"/>
                     </filter>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} opacity={0.6} />
                   <XAxis 
                     dataKey="name" 
                     stroke="#475569"

@@ -46,6 +46,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { MemberInsightModalData } from '@/components/dashboard/MemberInsightsDrillDownModal';
+import { designTokens } from '@/utils/designTokens';
 
 interface ActionItem {
   id: string;
@@ -705,7 +706,7 @@ const ForecastingActionCenter: React.FC = () => {
                 <div className="h-[340px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={forecastChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                       <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#475569' }} />
                       <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 12, fill: '#475569' }} />
                       <Tooltip
@@ -758,7 +759,7 @@ const ForecastingActionCenter: React.FC = () => {
                 <div className="h-[240px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={actionMix}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                       <XAxis dataKey="type" tick={{ fontSize: 12, fill: '#475569' }} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#475569' }} />
                       <Tooltip formatter={(value: number) => [formatNumber(value), 'Actions']} />

@@ -304,13 +304,14 @@ const StudioPulseMetricCard = React.forwardRef<HTMLDivElement, StudioPulseMetric
                     aria-label={`${title} monthly chart`}
                   >
                     {bars.map((bar, i) => {
+                      const __bkey = `${bar.label}-${bar.rawValue}-${i}`;
                       const isCurrent = bar.isLast;
                       const isPeak = i === peakIdx && !isCurrent;
                       const barBg = isCurrent ? accentColor : isPeak ? peakColor : '#cbd5e1';
                       const barOpacity = isCurrent ? 1 : isPeak ? 0.85 : 0.55;
 
                       return (
-                        <TooltipProvider key={i} delayDuration={60}>
+                        <TooltipProvider key={__bkey} delayDuration={60}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
@@ -392,13 +393,14 @@ const StudioPulseMetricCard = React.forwardRef<HTMLDivElement, StudioPulseMetric
                     aria-label={`${title} 12-month chart`}
                   >
                     {backBars.map((bar, i) => {
+                      const __bbkey = `${bar.label}-${bar.rawValue}-${i}`;
                       const isCurrent = bar.isLast;
                       const isPeak = i === backPeakIdx && !isCurrent;
                       const barBg = isCurrent ? accentColor : isPeak ? peakColor : '#cbd5e1';
                       const barOpacity = isCurrent ? 1 : isPeak ? 0.85 : 0.5;
 
                       return (
-                        <TooltipProvider key={i} delayDuration={60}>
+                        <TooltipProvider key={__bbkey} delayDuration={60}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div

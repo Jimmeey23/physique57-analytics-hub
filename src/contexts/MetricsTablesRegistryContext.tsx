@@ -67,16 +67,9 @@ export const useMetricsTablesRegistry = () => {
     return {
       register: () => {},
       unregister: () => {},
-      registerTable: () => {},
-      unregisterTable: () => {},
       getAllTabsContent: () => '',
       getAllTables: () => new Map()
     };
   }
-  // Also expose registerTable/unregisterTable aliases for compatibility
-  return {
-    ...ctx,
-    registerTable: ctx.register,
-    unregisterTable: ctx.unregister
-  };
+  return ctx;
 };

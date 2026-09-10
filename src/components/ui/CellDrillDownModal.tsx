@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 export interface DrillContextChip {
   label: string;
@@ -103,7 +104,7 @@ export const CellDrillDownModal: React.FC<CellDrillDownModalProps> = ({
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i}>
+                <tr key={rowKey(r, i)}>
                   {columns.map((c) => (
                     <td
                       key={c.key}

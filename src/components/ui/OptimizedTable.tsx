@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { extractTableTextFromContainer } from '@/utils/tableCopy';
+import { rowKey } from '@/utils/reactKeys';
 
 interface OptimizedTableProps<T> {
   data: T[];
@@ -41,19 +43,19 @@ function OptimizedTableComponent<T extends Record<string, any>>({
   const tableRef = useRef<HTMLTableElement>(null);
   
   // Register with metrics tables registry
-  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  const { register, unregister } = useMetricsTablesRegistry();
   
   useEffect(() => {
     if (tableId) {
-      registerTable(tableId, tableRef);
-      return () => unregisterTable(tableId);
+      register({ id: tableId, getTextContent: () => (tableRef.current ? extractTableTextFromContainer(tableRef.current, tableId) : `${tableId} (No Data)`) });
+      return () => unregister(tableId);
     }
-  }, [tableId, registerTable, unregisterTable]);
+  }, [tableId, register, unregister]);
   
   const memoizedRows = useMemo(() => {
     return data.map((item, index) => (
       <TableRow 
-        key={index} 
+        key={rowKey(item, index)} 
         className="hover:bg-gray-50/80 transition-colors duration-150 border-b border-gray-200 cursor-pointer"
         onClick={() => onRowClick?.(item)}
       >

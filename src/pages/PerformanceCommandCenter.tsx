@@ -56,6 +56,7 @@ import type {
 } from '@/components/dashboard/performance-command-center/types';
 import { formatOverviewValue } from '@/components/dashboard/overview/filtering';
 import { OVERVIEW_LOCATION_OPTIONS } from '@/components/dashboard/overview/filtering';
+import { designTokens } from '@/utils/designTokens';
 
 type ChartMode = 'bar' | 'line';
 
@@ -195,7 +196,7 @@ const DashboardChart = ({ chart }: { chart: PerformanceChart }) => {
             <ResponsiveContainer width="100%" height="100%">
               {mode === 'bar' ? (
                 <BarChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey={chart.xKey} tick={{ fill: '#475569', fontSize: 11 }} interval={0} angle={-12} textAnchor="end" height={58} />
                   <YAxis tick={{ fill: '#475569', fontSize: 11 }} />
                   <Tooltip formatter={(value, name) => {
@@ -209,7 +210,7 @@ const DashboardChart = ({ chart }: { chart: PerformanceChart }) => {
                 </BarChart>
               ) : (
                 <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey={chart.xKey} tick={{ fill: '#475569', fontSize: 11 }} interval={0} angle={-12} textAnchor="end" height={58} />
                   <YAxis tick={{ fill: '#475569', fontSize: 11 }} />
                   <Tooltip formatter={(value, name) => {
@@ -426,7 +427,7 @@ const ConsolidatedTrend = ({ model }: { model: ReturnType<typeof buildPerformanc
                         <stop offset="95%" stopColor={selectedMetric.color} stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                     <XAxis dataKey="monthLabel" tick={{ fill: '#475569', fontSize: 12 }} />
                     <YAxis tick={{ fill: '#475569', fontSize: 12 }} />
                     <Tooltip formatter={(value) => renderFormatted(value as number, selectedMetric.format)} />

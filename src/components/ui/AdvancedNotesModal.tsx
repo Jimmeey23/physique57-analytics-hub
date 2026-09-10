@@ -22,6 +22,7 @@ import {
   Clock
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 interface Note {
   id: string;
@@ -66,7 +67,7 @@ export const AdvancedNotesModal: React.FC<AdvancedNotesModalProps> = ({
       try {
         setNotes(JSON.parse(savedNotes));
       } catch (error) {
-        console.error('Error loading notes:', error);
+        logger.error('Error loading notes:', error);
       }
     }
   }, [storageKey]);
@@ -338,8 +339,8 @@ export const AdvancedNotesModal: React.FC<AdvancedNotesModalProps> = ({
                         
                         {note.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {note.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
+                            {note.tags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
                                 #{tag}
                               </Badge>
                             ))}

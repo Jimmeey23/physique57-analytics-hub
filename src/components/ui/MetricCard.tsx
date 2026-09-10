@@ -21,6 +21,13 @@ interface MetricCardProps {
    */
   details?: React.ReactNode;
   detailsTitle?: string;
+  /**
+   * Drill-down action. Without `details` the whole card triggers it (legacy
+   * grid behaviour); with `details` the click flips and the back face shows
+   * a drill button instead — flip and drill-down coexist.
+   */
+  onSelect?: () => void;
+  selectLabel?: string;
 }
 
 /**
@@ -130,6 +137,18 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           <div className="mt-1.5 text-[12px] font-medium leading-relaxed text-foreground/90">
             {details}
           </div>
+          {onSelect && (
+            <button
+              type="button"
+              className="p57-flip-drill"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+            >
+              {selectLabel} →
+            </button>
+          )}
           <span className="p57-flip-hint" aria-hidden="true">
             <RotateCw />
             Back

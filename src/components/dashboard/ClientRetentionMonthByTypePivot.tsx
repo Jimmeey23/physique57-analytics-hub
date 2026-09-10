@@ -8,8 +8,9 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 type MetricKey =
   | 'trials'
@@ -89,8 +90,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
     return Array.from(set).sort((a, b) => {
       const an = a.toLowerCase();
       const bn = b.toLowerCase();
-      if (an.includes('new') && !bn.includes('new')) return -1;
-      if (!an.includes('new') && bn.includes('new')) return 1;
+      if (isNewClient(an) && !isNewClient(bn)) return -1;
+      if (!isNewClient(an) && isNewClient(bn)) return 1;
       return a.localeCompare(b);
     });
   }, [data]);
@@ -130,9 +131,9 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       if (!cell) return;
 
       cell.trials += 1;
-      if (isInNewClientCohort(c)) cell.newMembers += 1;
-      if (isConvertedInCohort(c)) cell.converted += 1;
-      if (isRetainedInCohort(c)) cell.retained += 1;
+      if (isNewClient(c)) cell.newMembers += 1;
+      if (isConverted(c)) cell.converted += 1;
+      if (isRetained(c)) cell.retained += 1;
       cell.totalLTV += c.ltv || 0;
       if (c.conversionSpan && c.conversionSpan > 0) cell.conversionIntervals.push(c.conversionSpan);
       if (c.visitsPostTrial && c.visitsPostTrial > 0) cell.visitsPostTrial.push(c.visitsPostTrial);
@@ -150,8 +151,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         const avgVisits = cell.visitsPostTrial.length > 0
           ? cell.visitsPostTrial.reduce((a: number, b: number) => a + b, 0) / cell.visitsPostTrial.length
           : 0;
-        const conversionRate = cell.trials > 0 ? (cell.converted / cell.trials) * 100 : 0;
-        const retentionRate = cell.trials > 0 ? (cell.retained / cell.trials) * 100 : 0;
+        const conversionRate = calcConversionRate(cell.converted, cell.newMembers);
+        const retentionRate = calcRetentionRate(cell.retained, cell.newMembers);
         
         // Link to the actual previous month in chronological order
         const prevMonthKey = months[idx - 1]?.key;
@@ -342,8 +343,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       const avgVisits = aggregated.visitsPostTrial.length > 0
         ? aggregated.visitsPostTrial.reduce((a: number, b: number) => a + b, 0) / aggregated.visitsPostTrial.length
         : 0;
-      const conversionRate = aggregated.trials > 0 ? (aggregated.converted / aggregated.trials) * 100 : 0;
-      const retentionRate = aggregated.trials > 0 ? (aggregated.retained / aggregated.trials) * 100 : 0;
+      const conversionRate = calcConversionRate(aggregated.converted, aggregated.newMembers);
+      const retentionRate = calcRetentionRate(aggregated.retained, aggregated.newMembers);
 
       totals[m.key] = {
         ...aggregated,

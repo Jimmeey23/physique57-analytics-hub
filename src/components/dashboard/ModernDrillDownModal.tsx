@@ -22,6 +22,7 @@ import {
   Star,
   Zap
 } from 'lucide-react';
+import { rowKey } from '@/utils/reactKeys';
 
 interface ModernDrillDownModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
           
           <div className="max-h-96 overflow-y-auto space-y-2">
             {expirationData.slice(0, 50).map((member: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border hover:bg-slate-50 transition-colors">
+              <div key={rowKey(member, index)} className="flex items-center justify-between p-3 bg-white rounded-lg border hover:bg-slate-50 transition-colors">
                 <div className="flex-1">
                   <div className="font-medium text-slate-800">
                     {member.firstName} {member.lastName}
@@ -346,7 +347,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
         <CardContent>
           <div className="max-h-96 overflow-y-auto space-y-2">
             {transactionData.slice(0, 20).map((transaction: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border hover:bg-slate-50 transition-colors">
+              <div key={rowKey(transaction, index)} className="flex items-center justify-between p-3 bg-white rounded-lg border hover:bg-slate-50 transition-colors">
                 <div className="flex-1">
                   <div className="font-medium text-slate-800">
                     {transaction.membershipName || transaction.productName || transaction.itemName || 'Transaction'}

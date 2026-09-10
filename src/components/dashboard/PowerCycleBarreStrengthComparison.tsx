@@ -38,7 +38,7 @@ interface PowerCycleBarreStrengthComparisonProps {
 const COLORS = {
   'Power Cycle': '#8B5CF6',
   'Barre': '#06B6D4', 
-  'Strength': '#10B981'
+  'Strength': '#10b981'
 };
 
 export const PowerCycleBarreStrengthComparison: React.FC<PowerCycleBarreStrengthComparisonProps> = ({ data }) => {
@@ -227,7 +227,7 @@ export const PowerCycleBarreStrengthComparison: React.FC<PowerCycleBarreStrength
                 <YAxis />
                 <Tooltip formatter={(value: any) => formatCurrency(value)} />
                 <Legend />
-                <Bar dataKey="revenue" fill="#10B981" name="Revenue ($)" />
+                <Bar dataKey="revenue" fill="#10b981" name="Revenue ($)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

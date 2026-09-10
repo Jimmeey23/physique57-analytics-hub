@@ -2,7 +2,7 @@ import { NewClientData } from '@/types/dashboard';
 
 type RetentionLikeRecord = Pick<NewClientData, 'isNew' | 'conversionStatus' | 'retentionStatus'>;
 
-export const isInNewClientCohort = (record: Pick<RetentionLikeRecord, 'isNew'> | string | null | undefined) => {
+export const isNewClient = (record: Pick<RetentionLikeRecord, 'isNew'> | string | null | undefined) => {
   const value = typeof record === 'string' || record == null ? record : record.isNew;
   const normalized = String(value || '').trim().toLowerCase();
   if (!normalized || normalized === 'not new' || normalized.startsWith('not new')) {
@@ -15,10 +15,10 @@ export const isInNewClientCohort = (record: Pick<RetentionLikeRecord, 'isNew'> |
 // A row counts as converted/retained purely from its status column value.
 const normalizedStatus = (value: unknown) => String(value || '').trim();
 
-export const isConvertedInCohort = (record: RetentionLikeRecord) => {
+export const isConverted = (record: RetentionLikeRecord) => {
   return normalizedStatus(record.conversionStatus) === 'Converted';
 };
 
-export const isRetainedInCohort = (record: RetentionLikeRecord) => {
+export const isRetained = (record: RetentionLikeRecord) => {
   return normalizedStatus(record.retentionStatus) === 'Retained';
 };

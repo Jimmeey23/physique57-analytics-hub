@@ -65,7 +65,7 @@ export const PageHero: React.FC<PageHeroProps> = ({
         {stats.length > 0 && (
           <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border pt-5 sm:grid-cols-3 lg:grid-cols-4">
             {stats.slice(0, 8).map((s, i) => (
-              <div key={i} className="min-w-0">
+              <div key={s.label} className="min-w-0">
                 <dd className="p57-hero-stat-value truncate">
                   <span key={String(s.value)} className="p57-value-swap">{s.value}</span>
                   {s.delta && (

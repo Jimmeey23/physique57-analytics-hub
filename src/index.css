@@ -408,6 +408,9 @@ html.dark .p57-ambient::after { background: rgba(255, 45, 85, 0.08); }
     max-width: 100%;
   }
 
+  /* Canonical table row height (was copy-pasted `h-[35px]` per file) */
+  .p57-row-h { height: 35px; max-height: 35px; }
+  .p57-cell-line { max-height: 35px; line-height: 35px; }
   /* Sticky first column helper */
   .p57-sticky-col { position: sticky; left: 0; z-index: 20; }
   .p57-scope tbody .p57-sticky-col { background: inherit; box-shadow: 10px 0 22px -24px rgba(14, 23, 41, 0.68); }
@@ -1836,6 +1839,8 @@ html.dark .p57-spin { border-color: rgba(90, 200, 255, 0.2); border-top-color: #
   .p57-flip-back { position: absolute; inset: 0; transform: rotateY(180deg); overflow: hidden; }
   .p57-flip-hint { position: absolute; right: 8px; bottom: 6px; display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9aa3b2; }
   .p57-flip-hint svg { width: 11px; height: 11px; }
+  .p57-flip-drill { position: absolute; left: 10px; bottom: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: hsl(var(--primary)); }
+  .p57-flip-drill:hover { text-decoration: underline; }
 
   /* --- Smaller canonical metric --- */
   .p57-metric { padding: 0.8rem 0.95rem 0.75rem; }

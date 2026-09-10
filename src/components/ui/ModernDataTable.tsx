@@ -46,6 +46,7 @@ interface ModernDataTableProps {
 
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { rowKey } from '@/utils/reactKeys';
 
 export const ModernDataTable: React.FC<ModernDataTableProps> = ({
   data,
@@ -224,7 +225,7 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
         <TableBody>
           {data.map((row, index) => (
             <TableRow 
-              key={index} 
+              key={rowKey(row, index)} 
               className={cn(
                 TABLE_STYLES.body.row,
                 striped && index % 2 === 1 && TABLE_STYLES.body.rowAlternate,

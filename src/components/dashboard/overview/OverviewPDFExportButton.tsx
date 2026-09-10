@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { OverviewDataBundle, OverviewFiltersShape } from './types';
 import { exportDashboardOverviewPDFReports } from '@/services/dashboardOverviewPDFService';
+import { logger } from '@/utils/logger';
 
 interface OverviewPDFExportButtonProps {
   data: OverviewDataBundle;
@@ -30,7 +31,7 @@ export const OverviewPDFExportButton: React.FC<OverviewPDFExportButtonProps> = (
           : 'Separate location reports have been downloaded.',
       });
     } catch (error) {
-      console.error('Overview PDF export failed:', error);
+      logger.error('Overview PDF export failed:', error);
       toast({
         title: 'Export failed',
         description: error instanceof Error ? error.message : 'Failed to generate the overview reports.',

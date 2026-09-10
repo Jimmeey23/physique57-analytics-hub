@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Percent, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
-import { StandardizedMetricCard } from './StandardizedMetricCard';
+import { MetricCard, MetricGrid } from '@/components/ui/MetricCard';
 import { StandardizedTable } from './StandardizedTable';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
@@ -124,36 +124,32 @@ export const ExecutiveDiscountsSection: React.FC<ExecutiveDiscountsSectionProps>
       {/* Metric Cards */}
       <div>
           <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StandardizedMetricCard
-            title="Total Discounts"
+        <MetricGrid cols={4}>
+          <MetricCard
+            label="Total Discounts"
             value={formatCurrency(discountMetrics.totalDiscounts)}
             icon={DollarSign}
-            color="amber"
-            subtitle="Revenue reduced"
+            sub="Revenue reduced"
           />
-          <StandardizedMetricCard
-            title="Discount Count"
+          <MetricCard
+            label="Discount Count"
             value={discountMetrics.discountCount}
             icon={Percent}
-            color="blue"
-            subtitle="Transactions"
+            sub="Transactions"
           />
-          <StandardizedMetricCard
-            title="Avg Discount"
+          <MetricCard
+            label="Avg Discount"
             value={formatCurrency(discountMetrics.avgDiscount)}
             icon={TrendingUp}
-            color="emerald"
-            subtitle="Per transaction"
+            sub="Per transaction"
           />
-          <StandardizedMetricCard
-            title="Max Discount"
+          <MetricCard
+            label="Max Discount"
             value={formatCurrency(discountMetrics.maxDiscount)}
             icon={AlertCircle}
-            color="rose"
-            subtitle="Highest value"
+            sub="Highest value"
           />
-        </div>
+        </MetricGrid>
       </div>
 
       {/* Discount Categories Breakdown */}

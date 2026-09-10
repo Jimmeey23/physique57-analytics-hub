@@ -6,9 +6,11 @@ import { formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useRegisterTableForCopy } from '@/hooks/useRegisterTableForCopy';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
+import { downloadCsvArray } from '@/utils/csvExport';
 
 interface TeacherPerformanceTableProps {
   data: NewClientData[];
@@ -65,7 +67,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       if (client.memberId) {
         trainerStats.totalMembers.add(client.memberId);
       }
-      if (isInNewClientCohort(client) && client.memberId) {
+      if (isNewClient(client) && client.memberId) {
         trainerStats.newMembers.add(client.memberId);
       }
       
@@ -73,12 +75,12 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       trainerStats.sessions += client.classNo || 0;
       
       // Track conversions
-      if (isConvertedInCohort(client) && client.memberId) {
+      if (isConverted(client) && client.memberId) {
         trainerStats.converted.add(client.memberId);
       }
       
       // Track retention
-      if (isRetainedInCohort(client) && client.memberId) {
+      if (isRetained(client) && client.memberId) {
         trainerStats.retained.add(client.memberId);
       }
     });
@@ -96,9 +98,9 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
         totalMembers,
         sessions: stats.sessions,
         converted,
-        conversionRate: totalMembers > 0 ? (converted / totalMembers) * 100 : 0,
+        conversionRate: calcConversionRate(converted, newMembers),
         retained,
-        retentionRate: totalMembers > 0 ? (retained / totalMembers) * 100 : 0,
+        retentionRate: calcRetentionRate(retained, newMembers),
       };
     });
 
@@ -139,8 +141,8 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
 
   // Export functions
   const exportToCSV = () => {
-    const csvHeaders = ['Teacher Name', 'New Members', 'Sessions', 'Converted', 'Conversion Rate', 'Retained', 'Retention Rate'];
-    const csvData = sortedData.map(teacher => [
+    const headers = ['Teacher Name', 'New Members', 'Sessions', 'Converted', 'Conversion Rate', 'Retained', 'Retention Rate'];
+    const rows = sortedData.map(teacher => [
       teacher.trainerName,
       teacher.newMembers,
       teacher.sessions,
@@ -149,8 +151,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       teacher.retained,
       `${teacher.retentionRate.toFixed(1)}%`
     ]);
-    // Append totals row
-    const totalsRow = [
+    rows.push([
       totals.trainerName,
       totals.newMembers,
       totals.sessions,
@@ -158,31 +159,8 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       `${totals.conversionRate.toFixed(1)}%`,
       totals.retained,
       `${totals.retentionRate.toFixed(1)}%`
-    ];
-
-    // Basic CSV escaping for commas/newlines
-    const escape = (v: any) => {
-      if (v === null || v === undefined) return '';
-      const s = String(v);
-      if (s.includes(',') || s.includes('\n') || s.includes('"')) {
-        return '"' + s.replace(/"/g, '""') + '"';
-      }
-      return s;
-    };
-
-    const csvContent = [
-      csvHeaders.map(escape).join(','),
-      ...csvData.map(row => row.map(escape).join(',')),
-      totalsRow.map(escape).join(',')
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'teacher-performance.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    ]);
+    downloadCsvArray('teacher-performance.csv', headers, rows);
   };
 
   const exportToPDF = async () => {
@@ -418,9 +396,9 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       totalMembers: grandTotalMembers,
       sessions: totalSessions,
       converted: totalConverted,
-      conversionRate: grandTotalMembers > 0 ? (totalConverted / grandTotalMembers) * 100 : 0,
+      conversionRate: calcConversionRate(totalConverted, totalNewMembers),
       retained: totalRetained,
-      retentionRate: grandTotalMembers > 0 ? (totalRetained / grandTotalMembers) * 100 : 0,
+      retentionRate: calcRetentionRate(totalRetained, totalNewMembers),
     };
   }, [teacherStats]);
 
@@ -430,7 +408,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'trainerName',
       header: 'Teacher Name',
       render: (value: string) => (
-        <div className="truncate text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="truncate text-black font-medium p57-cell-line">
           {value}
         </div>
       ),
@@ -441,7 +419,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'newMembers',
       header: 'New Members Growth',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           --% (No historical data)
         </div>
       ),
@@ -452,7 +430,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'sessions',
       header: 'Sessions Growth',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           --% (No historical data)
         </div>
       ),
@@ -463,7 +441,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'converted',
       header: 'Conversions Growth',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           --% (No historical data)
         </div>
       ),
@@ -474,7 +452,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'conversionRate',
       header: 'Conv. Rate Growth',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           --% (No historical data)
         </div>
       ),
@@ -485,7 +463,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'retained',
       header: 'Retention Growth',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           --% (No historical data)
         </div>
       ),
@@ -496,7 +474,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'retentionRate',
       header: 'Ret. Rate Growth',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           --% (No historical data)
         </div>
       ),
@@ -510,7 +488,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'trainerName',
       header: 'Teacher Name',
       render: (value: string) => (
-        <div className="truncate text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="truncate text-black font-medium p57-cell-line">
           {value}
         </div>
       ),
@@ -521,7 +499,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'newMembers',
       header: 'New Members',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           {formatNumber(value)}
         </div>
       ),
@@ -532,7 +510,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'sessions',
       header: 'Sessions',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           {formatNumber(value)}
         </div>
       ),
@@ -543,7 +521,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'converted',
       header: 'Converted',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           {formatNumber(value)}
         </div>
       ),
@@ -554,7 +532,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'conversionRate',
       header: 'Conversion Rate',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           {formatPercentage(value)}
         </div>
       ),
@@ -565,7 +543,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'retained',
       header: 'Retained',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           {formatNumber(value)}
         </div>
       ),
@@ -576,7 +554,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       key: 'retentionRate',
       header: 'Retention Rate',
       render: (value: number) => (
-        <div className="text-center text-black font-medium" style={{ maxHeight: '35px', lineHeight: '35px' }}>
+        <div className="text-center text-black font-medium p57-cell-line">
           {formatPercentage(value)}
         </div>
       ),

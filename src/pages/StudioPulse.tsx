@@ -24,6 +24,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { designTokens } from '@/utils/designTokens';
 import {
   Activity,
   AlertTriangle,
@@ -103,7 +104,7 @@ import { TrainerNameCell, TrainerAvatar } from '@/components/ui/TrainerAvatar';
 import { mapLocationIdToTab } from '@/utils/memberLifecycleFilters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { isLeadConverted } from '@/utils/leadConversions';
-import { isInNewClientCohort, isConvertedInCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isNewClient, isConverted, isRetained } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -115,6 +116,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminCodeGate } from '@/components/ui/AdminCodeGate';
 import { useToast } from '@/hooks/use-toast';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
+import { logger } from '@/utils/logger';
 
 /* ------------------------------------------------------------------ */
 /* Studio definitions                                                  */
@@ -668,7 +670,7 @@ const StudioPulseMonthView: React.FC<{
 
 const chartTooltipStyle = {
   borderRadius: 12,
-  border: '1px solid #e2e8f0',
+  border: `1px solid ${designTokens.colors.slate[200]}`,
   boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
   fontSize: 12,
 };
@@ -788,7 +790,7 @@ function FormatComparisonSection({ sessions, trainerTabOnly, activeTab: activeTa
   const trendBg = (t: FormatMetrics['trend']) => t === 'growing' ? 'bg-emerald-50 border-emerald-200' : t === 'declining' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200';
 
   // Recharts tooltip style (inline)
-  const ttStyle = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 11, padding: '6px 10px' };
+  const ttStyle = { background: '#fff', border: `1px solid ${designTokens.colors.slate[200]}`, borderRadius: 10, fontSize: 11, padding: '6px 10px' };
 
   return (
     <div className="space-y-5">
@@ -1580,26 +1582,26 @@ const StudioPulse = memo(() => {
 
   /* ---------- Clients (retention / conversion) ---------- */
   const clientStats = useMemo(() => {
-    const rows = filteredClients.filter((c) => isInNewClientCohort(c));
+    const rows = filteredClients.filter((c) => isNewClient(c));
     const total = rows.length;
     // Status truth (New sheet): converted/retained count from status columns across ALL clients
     const totalClients = filteredClients.length;
-    const converted = filteredClients.filter((c) => isConvertedInCohort(c)).length;
-    const retained = filteredClients.filter((c) => isRetainedInCohort(c)).length;
+    const converted = filteredClients.filter((c) => isConverted(c)).length;
+    const retained = filteredClients.filter((c) => isRetained(c)).length;
     const ltvVals = rows.map((c) => Number(c.ltv) || 0).filter((v) => v > 0);
     const avgLtv = ltvVals.length ? ltvVals.reduce((a, b) => a + b, 0) / ltvVals.length : 0;
     const spanVals = rows.map((c) => Number(c.conversionSpan) || 0).filter((v) => v > 0);
     const avgSpan = spanVals.length ? spanVals.reduce((a, b) => a + b, 0) / spanVals.length : 0;
-    const prevRows = previousClients.filter((c) => isInNewClientCohort(c));
-    const yoyRows = previousYearClients.filter((c) => isInNewClientCohort(c));
+    const prevRows = previousClients.filter((c) => isNewClient(c));
+    const yoyRows = previousYearClients.filter((c) => isNewClient(c));
     const prevTotal = prevRows.length;
     const prevTotalClients = previousClients.length;
-    const prevConverted = previousClients.filter((c) => isConvertedInCohort(c)).length;
-    const prevRetained = previousClients.filter((c) => isRetainedInCohort(c)).length;
+    const prevConverted = previousClients.filter((c) => isConverted(c)).length;
+    const prevRetained = previousClients.filter((c) => isRetained(c)).length;
     const yoyTotal = yoyRows.length;
     const yoyTotalClients = previousYearClients.length;
-    const yoyConverted = previousYearClients.filter((c) => isConvertedInCohort(c)).length;
-    const yoyRetained = previousYearClients.filter((c) => isRetainedInCohort(c)).length;
+    const yoyConverted = previousYearClients.filter((c) => isConverted(c)).length;
+    const yoyRetained = previousYearClients.filter((c) => isRetained(c)).length;
     const lapsed = rows.filter((c) => /lapsed|inactive|expired|churn|lost/i.test(`${c.retentionStatus || ''} ${c.conversionStatus || ''}`)).length;
     const prevLapsed = prevRows.filter((c) => /lapsed|inactive|expired|churn|lost/i.test(`${c.retentionStatus || ''} ${c.conversionStatus || ''}`)).length;
     const yoyLapsed = yoyRows.filter((c) => /lapsed|inactive|expired|churn|lost/i.test(`${c.retentionStatus || ''} ${c.conversionStatus || ''}`)).length;
@@ -2188,8 +2190,8 @@ const StudioPulse = memo(() => {
   }, [salesStats.net, sessionStats.attendance, previousSales, previousSessions, previousYearSales, previousYearSessions]);
 
   const revenuePerNewClientStats = useMemo(() => {
-    const prevNewClients = previousClients.filter((c) => isInNewClientCohort(c)).length;
-    const yoyNewClients = previousYearClients.filter((c) => isInNewClientCohort(c)).length;
+    const prevNewClients = previousClients.filter((c) => isNewClient(c)).length;
+    const yoyNewClients = previousYearClients.filter((c) => isNewClient(c)).length;
     const previousNet = previousSales.reduce((sum, d) => sum + (Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0), 0);
     const yoyNet = previousYearSales.reduce((sum, d) => sum + (Number(d.paymentValue) || 0) - (Number(d.paymentVAT) || 0), 0);
     const value = clientStats.newClients > 0 ? salesStats.net / clientStats.newClients : 0;
@@ -2857,7 +2859,7 @@ const StudioPulse = memo(() => {
             </thead>
             <tbody className="bg-white">
               {rows.map((row) => (
-                <tr key={row.label} className="h-[35px] bg-white">
+                <tr key={row.label} className="p57-row-h bg-white">
                   <td className="sticky left-0 z-10 min-w-[280px] border-b border-gray-200 bg-white px-4 py-2 font-medium leading-none text-slate-900 border-r border-gray-200">
                     <button type="button" className="w-full text-left hover:text-blue-700" onClick={() => onCellClick(row)}>
                       {row.label}
@@ -2866,7 +2868,7 @@ const StudioPulse = memo(() => {
                   {months.map((month) => (
                     <td
                       key={`${row.label}-${month}`}
-                      className="h-[35px] border-b border-gray-200 bg-white px-3 py-2 text-center leading-none tabular-nums text-slate-700 cursor-pointer hover:bg-slate-50"
+                      className="p57-row-h border-b border-gray-200 bg-white px-3 py-2 text-center leading-none tabular-nums text-slate-700 cursor-pointer hover:bg-slate-50"
                       onClick={() => onCellClick(row, month)}
                     >
                       {formatSalesMetricCell(row.values[month] || 0, row.type)}
@@ -3141,21 +3143,21 @@ const StudioPulse = memo(() => {
   const backClientSparklineLabels = useMemo(() => backClientMonthKeys.map((k) => monthLabel(k)), [backClientMonthKeys]);
   const backNewClientSparkline = useMemo(() => {
     const monthly: Record<string, number> = {};
-    studioWideClients.filter((c) => isInNewClientCohort(c)).forEach((c) => {
+    studioWideClients.filter((c) => isNewClient(c)).forEach((c) => {
       const mk = monthKeyFromDate(c.firstVisitDate); if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
     });
     return backClientMonthKeys.map((k) => monthly[k] || 0);
   }, [studioWideClients, backClientMonthKeys]);
   const backConvertedSparkline = useMemo(() => {
     const monthly: Record<string, number> = {};
-    studioWideClients.filter((c) => isConvertedInCohort(c)).forEach((c) => {
+    studioWideClients.filter((c) => isConverted(c)).forEach((c) => {
       const mk = monthKeyFromDate(c.firstVisitDate); if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
     });
     return backClientMonthKeys.map((k) => monthly[k] || 0);
   }, [studioWideClients, backClientMonthKeys]);
   const backRetainedSparkline = useMemo(() => {
     const monthly: Record<string, number> = {};
-    studioWideClients.filter((c) => isRetainedInCohort(c)).forEach((c) => {
+    studioWideClients.filter((c) => isRetained(c)).forEach((c) => {
       const mk = monthKeyFromDate(c.firstVisitDate); if (mk) monthly[mk] = (monthly[mk] || 0) + 1;
     });
     return backClientMonthKeys.map((k) => monthly[k] || 0);
@@ -3361,8 +3363,8 @@ const StudioPulse = memo(() => {
       if (!key) return;
       const bucket = ensureMonth(key);
       bucket.clients += 1;
-      bucket.converted += isConvertedInCohort(row) ? 1 : 0;
-      bucket.retained += isRetainedInCohort(row) ? 1 : 0;
+      bucket.converted += isConverted(row) ? 1 : 0;
+      bucket.retained += isRetained(row) ? 1 : 0;
     });
     filteredLateCancels.forEach((row) => {
       const key = monthKeyFromDate(row.dateIST || row.sessionDateIST);
@@ -3714,7 +3716,7 @@ const StudioPulse = memo(() => {
         description: `Studio Pulse ${format.toUpperCase()} export queued for ${locationLabel}.`,
       });
     } catch (error) {
-      console.error('Studio Pulse export failed:', error);
+      logger.error('Studio Pulse export failed:', error);
       toast({
         title: 'Export failed',
         description: error instanceof Error ? error.message : 'Unable to generate the Studio Pulse export.',
@@ -3997,7 +3999,7 @@ const StudioPulse = memo(() => {
               { x: '95%', y: '68%', delay: 1.7, size: 'h-1.5 w-1.5', color: 'bg-rose-300' },
             ].map((dot, i) => (
               <motion.div
-                key={i}
+                key={dot.delay}
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: dot.delay }}
@@ -4479,7 +4481,7 @@ const StudioPulse = memo(() => {
                 ) : editableSummaryText ? (
                   <div className="grid gap-2 sm:grid-cols-2">
                     {editableSummaryText.split('\n').filter(Boolean).map((line, i) => (
-                      <div key={i} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                      <div key={line} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                         <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-500" />
                         <span className="text-[13px] font-medium leading-relaxed text-slate-700">{line.replace(/^[•\-]\s*/, '')}</span>
                       </div>
@@ -4503,7 +4505,7 @@ const StudioPulse = memo(() => {
                         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Key Insights</p>
                         <div className="grid gap-2 sm:grid-cols-2">
                           {bullets.map((b, i) => (
-                            <div key={i} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                            <div key={b} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
                               <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-400" />
                               <span className="text-[13px] font-medium leading-relaxed text-slate-700">{b}</span>
                             </div>
@@ -4576,7 +4578,7 @@ const StudioPulse = memo(() => {
                         </thead>
                         <tbody className="bg-white">
                           {salesMetricsMatrix.metricRows.map((row) => (
-                            <tr key={row.label} className="h-[35px] bg-white">
+                            <tr key={row.label} className="p57-row-h bg-white">
                               <td className="sticky left-0 z-10 min-w-[280px] border-b border-gray-200 bg-white px-4 py-2 font-medium leading-none text-slate-900 border-r border-gray-200">
                                 <div className="flex items-center justify-between gap-2">
                                   <button
@@ -4617,7 +4619,7 @@ const StudioPulse = memo(() => {
                               {salesMetricsMatrix.months.map((month) => (
                                 <td
                                   key={`${row.label}-${month}`}
-                                  className="h-[35px] border-b border-gray-200 bg-white px-3 py-2 text-center leading-none tabular-nums text-slate-700 cursor-pointer hover:bg-slate-50"
+                                  className="p57-row-h border-b border-gray-200 bg-white px-3 py-2 text-center leading-none tabular-nums text-slate-700 cursor-pointer hover:bg-slate-50"
                                   onClick={() => openSalesMatrixDrillDown(row, month)}
                                   title={`Open analytics for ${row.label} in ${salesMetricsMatrix.monthLabels[month]}`}
                                 >
@@ -4678,7 +4680,7 @@ const StudioPulse = memo(() => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: `1px solid ${designTokens.colors.slate[200]}`, fontSize: 12 }} />
                         <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
                         <Bar dataKey="memberships" name="Memberships" fill="#1e3a8a" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="packages" name="Packages" fill="#0e7490" radius={[4, 4, 0, 0]} />
@@ -4812,7 +4814,7 @@ const StudioPulse = memo(() => {
                   data={filteredClients}
                   onRowClick={(row) => {
                     const matched = filteredClients.filter((c) =>
-                      isInNewClientCohort(c) &&
+                      isNewClient(c) &&
                       String(c.membershipsBoughtPostTrial || '').split(',').map((m) => m.trim()).includes(row.name)
                     );
                     openMetricDrillDown(row.name || 'Membership detail', 'member', { name: row.name, rawData: matched, filteredTransactionData: matched }, matched);
@@ -4837,9 +4839,9 @@ const StudioPulse = memo(() => {
                     })
                   : filteredClients;
                 const srcLeadTotal = srcLeads.length;
-                const srcTrials = srcClients.filter(c => isInNewClientCohort(c)).length;
-                const srcConverted = srcClients.filter(c => c.conversionStatus === 'Converted' && isInNewClientCohort(c)).length;
-                const srcRetained = srcClients.filter(c => c.retentionStatus === 'Retained' && isInNewClientCohort(c)).length;
+                const srcTrials = srcClients.filter(c => isNewClient(c)).length;
+                const srcConverted = srcClients.filter(c => c.conversionStatus === 'Converted' && isNewClient(c)).length;
+                const srcRetained = srcClients.filter(c => c.retentionStatus === 'Retained' && isNewClient(c)).length;
 
                 const fStages = [
                   { id: 'leads',     label: 'Leads',     sub: '100% captured',                                 value: srcLeadTotal,  pctOfLeads: 100,    fromPrev: null as number|null, dropPct: null as number|null, accent: '#1e3a8a', light: '#eff6ff', textOnLight: '#1d4ed8' },
@@ -5689,7 +5691,7 @@ const StudioPulse = memo(() => {
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {instructorEfficiency.map((row, i) => (
-                          <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                          <tr key={row.trainer} className="hover:bg-slate-50/60 transition-colors">
                             <td className="px-4 py-2.5 font-medium text-slate-900">{row.trainer}</td>
                             <td className="px-4 py-2.5 tabular-nums text-right text-slate-600">{formatNumber(row.sessions)}</td>
                             <td className="px-4 py-2.5 tabular-nums text-right text-slate-500">{formatNumber(row.emptySessions)}</td>
@@ -7091,7 +7093,7 @@ const StudioPulse = memo(() => {
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {capacityByStudio.map((row, i) => (
-                            <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                            <tr key={row.location} className="hover:bg-slate-50/60 transition-colors">
                               <td className="px-4 py-2.5 font-medium text-slate-900">{row.location}</td>
                               <td className="px-4 py-2.5 tabular-nums text-right text-slate-600">{formatNumber(row.sessions)}</td>
                               <td className="px-4 py-2.5 tabular-nums text-right text-slate-700">{formatNumber(row.booked)}</td>
@@ -7152,7 +7154,7 @@ const StudioPulse = memo(() => {
                           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                           <RechartsTooltip
-                            contentStyle={{ borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                            contentStyle={{ borderRadius: 14, border: `1px solid ${designTokens.colors.slate[200]}`, fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
                             formatter={(v: number, name: string) => [`${v.toFixed(2)}%`, name === 'nonPaidRate' ? 'NonPaid %' : 'Comp %']}
                           />
                           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} formatter={(v) => v === 'nonPaidRate' ? 'NonPaid %' : 'Comp %'} />

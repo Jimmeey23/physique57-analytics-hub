@@ -22,6 +22,7 @@ import {
   X,
   ChevronRight
 } from 'lucide-react';
+import { rowKey } from '@/utils/reactKeys';
 
 interface ClassAttendanceDrillDownModalProps {
   isOpen: boolean;
@@ -275,7 +276,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                         </TableHeader>
                         <TableBody>
                           {filteredSessions.slice(0, 50).map((session, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={rowKey(session, index)}>
                               <TableCell className="font-medium">
                                 <div>
                                   <div className="text-slate-900">{session.date}</div>
@@ -329,7 +330,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-6">
                     <div className="grid gap-4">
                       {locationStats.map((location, index) => (
-                        <Card key={index} className="bg-gradient-to-r from-white to-green-50/30 border border-green-100">
+                        <Card key={location.location} className="bg-gradient-to-r from-white to-green-50/30 border border-green-100">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -382,7 +383,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-6">
                     <div className="grid gap-4">
                       {trainerStats.map((trainer, index) => (
-                        <Card key={index} className="bg-gradient-to-r from-white to-purple-50/30 border border-purple-100">
+                        <Card key={trainer.trainer} className="bg-gradient-to-r from-white to-purple-50/30 border border-purple-100">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -435,7 +436,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-6">
                     <div className="grid gap-4">
                       {timeSlotStats.map((timeSlot, index) => (
-                        <Card key={index} className="bg-gradient-to-r from-white to-orange-50/30 border border-orange-100">
+                        <Card key={timeSlot.timeSlot} className="bg-gradient-to-r from-white to-orange-50/30 border border-orange-100">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">

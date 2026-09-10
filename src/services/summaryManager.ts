@@ -1,5 +1,6 @@
 import { openaiService, SummaryGenerationOptions, SummaryResult } from './openaiService';
 import { supabaseService, StoredSummary } from './supabaseService';
+import { logger } from '@/utils/logger';
 
 export interface SummaryManagerOptions {
   context: string;
@@ -81,7 +82,7 @@ class SummaryManagerService {
           };
         }
       } catch (error) {
-        console.warn('Failed to retrieve stored summary:', error);
+        logger.warn('Failed to retrieve stored summary:', error);
       }
     }
 
@@ -111,7 +112,7 @@ class SummaryManagerService {
       };
 
     } catch (error: any) {
-      console.error('Summary generation failed:', error);
+      logger.error('Summary generation failed:', error);
       return {
         success: false,
         error: error.message
@@ -192,7 +193,7 @@ class SummaryManagerService {
     try {
       await supabaseService.saveSummary(context, locationId, summary, filters, dateRange);
     } catch (error) {
-      console.warn('Failed to store summary in database:', error);
+      logger.warn('Failed to store summary in database:', error);
     }
   }
 

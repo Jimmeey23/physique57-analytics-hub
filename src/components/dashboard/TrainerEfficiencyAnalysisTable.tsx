@@ -6,6 +6,7 @@ import { Zap, Clock, Target, TrendingUp, TrendingDown, Award } from 'lucide-reac
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrainerNameCell } from '@/components/ui/TrainerAvatar';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 const compactLocationLabel = (location: string) =>
   location
@@ -488,7 +489,7 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
                 {columns.map((column, index) => (
                   <th
                     key={column.key}
-                    className={cn(`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer transition-colors ${
+                    className={cn(`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap cursor-pointer p57-row-h transition-colors ${
                       column.className || ''
                     } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`,
                       index === 0
@@ -496,7 +497,6 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
                         : 'border-l border-white/20 bg-slate-900 hover:bg-slate-800'
                     )}
                     onClick={() => column.sortable !== false && handleSort(column.key)}
-                    style={{ height: '35px', maxHeight: '35px' }}
                   >
                     <div className="flex items-center gap-1">
                       {column.header}
@@ -515,7 +515,7 @@ export const TrainerEfficiencyAnalysisTable: React.FC<TrainerEfficiencyAnalysisT
             <tbody className="bg-white divide-y divide-gray-200">
               {efficiencyData.map((row, index) => (
                 <tr
-                  key={index}
+                  key={rowKey(row, index)}
                   className="border-b border-gray-200 bg-white cursor-pointer transition-all duration-200 hover:bg-slate-50"
                   onClick={() => handleRowClick(row)}
                   style={{ height: '40px', maxHeight: '40px' }}

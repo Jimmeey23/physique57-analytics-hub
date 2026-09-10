@@ -11,6 +11,7 @@ import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFoo
 import { Button } from '@/components/ui/button';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { generateStandardMonthRange } from '@/utils/dateUtils';
+import { extractTableTextFromContainer } from '@/utils/tableCopy';
 interface FunnelYearOnYearTableProps {
   allData: LeadsData[]; // Use all data, not filtered
   onDrillDown?: (title: string, data: LeadsData[], type: string) => void;
@@ -30,9 +31,9 @@ export const FunnelYearOnYearTable: React.FC<FunnelYearOnYearTableProps> = ({
   // Register table for metrics
   React.useEffect(() => {
     if (tableRef.current) {
-      registry.registerTable('funnel-year-on-year-analysis', tableRef.current);
+      registry.register({ id: 'funnel-year-on-year-analysis', getTextContent: () => (tableRef.current ? extractTableTextFromContainer(tableRef.current, 'funnel-year-on-year-analysis') : 'funnel-year-on-year-analysis (No Data)') });
     }
-    return () => registry.unregisterTable('funnel-year-on-year-analysis');
+    return () => registry.unregister('funnel-year-on-year-analysis');
   }, [registry]);
 
   const tableVariants = {

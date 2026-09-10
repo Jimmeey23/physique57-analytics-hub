@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { format } from 'date-fns';
+import { rowKey } from '@/utils/reactKeys';
+import { designTokens } from '@/utils/designTokens';
 
 interface EnhancedTrainerDrillDownModalProps {
   isOpen: boolean;
@@ -248,17 +250,17 @@ export function EnhancedTrainerDrillDownModal({
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={processedData.byLocation}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                       <XAxis 
                         dataKey="name" 
                         fontSize={12} 
-                        tick={{ fill: '#64748b' }}
+                        tick={{ fill: designTokens.colors.slate[500] }}
                       />
-                      <YAxis fontSize={12} tick={{ fill: '#64748b' }} />
+                      <YAxis fontSize={12} tick={{ fill: designTokens.colors.slate[500] }} />
                       <Tooltip 
                         contentStyle={{ 
                           backgroundColor: '#f8fafc', 
-                          border: '1px solid #e2e8f0',
+                          border: `1px solid ${designTokens.colors.slate[200]}`,
                           borderRadius: '8px',
                           fontSize: '12px'
                         }}
@@ -309,7 +311,7 @@ export function EnhancedTrainerDrillDownModal({
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {filteredSessions.map((session: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition-shadow" style={{ minHeight: '35px' }}>
+                    <div key={rowKey(session, idx)} className="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-200 hover:shadow-sm transition-shadow p57-row-h">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
                           <div className="px-2 py-1 rounded bg-slate-800 text-white text-xs font-semibold">

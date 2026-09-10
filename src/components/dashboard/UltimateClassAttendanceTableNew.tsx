@@ -27,6 +27,7 @@ import {
   Table as TableIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { rowKey } from '@/utils/reactKeys';
 
 interface UltimateClassAttendanceTableProps {
   data: SessionData[];
@@ -1265,7 +1266,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                           const fillRate = session.capacity > 0 ? ((session.checkedInCount || 0) / session.capacity) * 100 : 0;
                           return (
                             <div
-                              key={idx}
+                              key={rowKey(session, idx)}
                               className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
                             >
                               <div className="flex-1">

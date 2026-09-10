@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getPreviousMonthPeriod } from '@/utils/dateUtils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 // Types
 export interface TableSummaryOptions {
@@ -80,7 +81,7 @@ class GeminiServiceImpl {
         diagnostics: diagnosticsDefault,
       };
     } catch (error: any) {
-      console.error('Gemini API error:', error);
+      logger.error('Gemini API error:', error);
       let errorMessage = 'AI analysis temporarily unavailable. Please try again later.';
       if (error?.status === 404) errorMessage = 'Model not found. Please check the Gemini model configuration.';
       else if (error?.status === 429) errorMessage = 'Rate limit exceeded. Please try again in a few moments.';
@@ -159,7 +160,7 @@ Provide ${hasMoMData ? '7' : '5'} detailed, data-driven insights:`;
         'AI analysis temporarily unavailable - showing basic metrics'
       ];
     } catch (error: any) {
-      console.error('Quick insights error:', error);
+      logger.error('Quick insights error:', error);
       return ['AI insights temporarily unavailable. Please try again.'];
     }
   }

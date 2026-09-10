@@ -42,9 +42,9 @@ export const METRIC_DEFINITIONS: Record<string, MetricDefinition[]> = {
     { name: 'Conversion Rate', formula: 'converted ÷ leads × 100', text: 'Converted leads as a share of filtered leads. 0 with no leads.' },
   ],
   clientRetention: [
-    { name: 'Total Trials', formula: 'filtered rows', text: 'Count of new-client sheet rows after filters. The denominator for the cohort rates below.' },
-    { name: 'Conversion Rate', formula: '|conversionStatus = Converted| ÷ trials × 100', text: 'Rows whose conversionStatus is exactly “Converted”. No isNew gate — status column is the source of truth.' },
-    { name: 'Retention Rate', formula: '|retentionStatus = Retained| ÷ trials × 100', text: 'Rows whose retentionStatus is exactly “Retained”.' },
+    { name: 'Total Trials', formula: 'filtered rows', text: 'Count of new-client sheet rows after filters. The cohort size behind the rates below.' },
+    { name: 'Conversion Rate', formula: '|conversionStatus = Converted| ÷ new clients × 100', text: 'Converted rows as a share of the new-client cohort: converted ÷ newClients × 100, one decimal.' },
+    { name: 'Retention Rate', formula: '|retentionStatus = Retained| ÷ new clients × 100', text: 'Retained rows as a share of the new-client cohort: retained ÷ newClients × 100, one decimal.' },
     { name: 'Avg LTV', formula: 'Σ ltv ÷ trials', text: 'Mean lifetime value across trial rows (ltv column, missing treated as 0).' },
     { name: 'New-client cohort', formula: 'isNew ≈ “new…”', text: 'A row joins the new-client cohort when its isNew value normalises to “new” or starts with “new ” (“not new…” excluded).' },
   ],

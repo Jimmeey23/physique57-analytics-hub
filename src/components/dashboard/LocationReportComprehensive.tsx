@@ -394,7 +394,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                   const total = (metrics.powerCycleSessions || 0) + (metrics.barreSessions || 0) + (metrics.strengthSessions || 0);
                   const percentage = total > 0 ? (format.count / total) * 100 : 0;
                   return (
-                    <div key={idx} className="space-y-2">
+                    <div key={format.name} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-700">{format.name}</span>
                         <div className="text-right">
@@ -684,7 +684,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                 (metrics.leadConversionRate || 0) >= 20 ? `Effective lead conversion: ${formatPercentage(metrics.leadConversionRate)}` : null,
                 metrics.topTrainerName !== 'N/A' ? `${metrics.topTrainerName} leading performance with ${formatCurrency(metrics.topTrainerRevenue)} revenue` : null
               ].filter(Boolean).slice(0, 4).map((achievement, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                <li key={String(achievement).slice(0, 48)} className="text-sm text-gray-700 flex items-start gap-2">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
                   <span>{achievement}</span>
                 </li>
@@ -723,7 +723,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                 (metrics.lateCancellations || 0) > 50 ? `High late cancellations: ${formatNumber(metrics.lateCancellations)} affecting revenue` : null,
                 (metrics.discountRate || 0) > 15 ? `Heavy discount usage: ${formatPercentage(metrics.discountRate)} impacting margins` : null
               ].filter(Boolean).slice(0, 4).map((concern, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                <li key={String(concern).slice(0, 48)} className="text-sm text-gray-700 flex items-start gap-2">
                   <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
                   <span>{concern}</span>
                 </li>
@@ -764,7 +764,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                 (metrics.avgClassSize || 0) < 8 ? 'Focus marketing on increasing class attendance' : null,
                 (metrics.newClientsAcquired || 0) < 15 ? 'Enhance member referral and acquisition programs' : null
               ].filter(Boolean).slice(0, 4).map((recommendation, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                <li key={String(recommendation).slice(0, 48)} className="text-sm text-gray-700 flex items-start gap-2">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
                   <span>{recommendation}</span>
                 </li>

@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingBag, Users } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { P57TableShell } from '@/components/ui/P57TableShell';
 import { P57SortTh, useSortableData } from '@/components/ui/P57SortTh';
 import { TABLE_STYLES } from '@/styles/tableStyles';
 import { downloadCsv } from '@/utils/csvExport';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,9 +93,9 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
     const aggs: Array<GroupAgg & { clients: NewClientData[]; type: string }> = [];
     buckets.forEach((clients, key) => {
       const trials = clients.length;
-      const newMembers = clients.filter((c) => isInNewClientCohort(c)).length;
-      const converted = clients.filter((c) => isConvertedInCohort(c)).length;
-      const retained = clients.filter((c) => isRetainedInCohort(c)).length;
+      const newMembers = clients.filter((c) => isNewClient(c)).length;
+      const converted = clients.filter((c) => isConverted(c)).length;
+      const retained = clients.filter((c) => isRetained(c)).length;
       const totalLtv = clients.reduce((sum, c) => sum + (c.ltv || 0), 0);
       const spans = clients.map((c) => c.conversionSpan).filter((v) => (v || 0) > 0);
       const visits = clients.map((c) => c.visitsPostTrial).filter((v) => (v || 0) > 0);
@@ -106,8 +107,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
         newMembers,
         converted,
         retained,
-        conversionPct: trials > 0 ? (converted / trials) * 100 : 0,
-        retentionPct: trials > 0 ? (retained / trials) * 100 : 0,
+        conversionPct: calcConversionRate(converted, newMembers),
+        retentionPct: calcRetentionRate(retained, newMembers),
         avgLtv: trials > 0 ? totalLtv / trials : 0,
         totalLtv,
         avgConvDays: spans.length > 0 ? spans.reduce((sum, v) => sum + v, 0) / spans.length : null,
@@ -123,19 +124,19 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
     return groups.filter((g) => g.key.toLowerCase().includes(term));
   }, [groups, query]);
 
-  const { rows, sortKey, sortDir, toggleSort } = useSortableData(
-    filtered,
-    (row, key) => (key === 'key' ? row.key : (row as unknown as Record<string, number | null>)[key] ?? null),
-    'trials',
-    'desc'
+  const getAggSortValue = useCallback(
+    (row: GroupAgg & { clients: NewClientData[]; type: string }, key: string) =>
+      (key === 'key' ? row.key : row[key as MetricKey] ?? null),
+    []
   );
+  const { rows, sortKey, sortDir, toggleSort } = useSortableData(filtered, getAggSortValue, 'trials', 'desc');
 
   // Totals across the full filtered dataset (independent of search/sort).
   const totals = useMemo(() => {
     const trials = data.length;
-    const converted = data.filter((c) => isConvertedInCohort(c)).length;
-    const retained = data.filter((c) => isRetainedInCohort(c)).length;
-    const newMembers = data.filter((c) => isInNewClientCohort(c)).length;
+    const converted = data.filter((c) => isConverted(c)).length;
+    const retained = data.filter((c) => isRetained(c)).length;
+    const newMembers = data.filter((c) => isNewClient(c)).length;
     const totalLtv = data.reduce((sum, c) => sum + (c.ltv || 0), 0);
     const spans = data.map((c) => c.conversionSpan).filter((v) => (v || 0) > 0);
     const visits = data.map((c) => c.visitsPostTrial).filter((v) => (v || 0) > 0);
@@ -144,8 +145,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       newMembers,
       converted,
       retained,
-      conversionPct: trials > 0 ? (converted / trials) * 100 : 0,
-      retentionPct: trials > 0 ? (retained / trials) * 100 : 0,
+      conversionPct: calcConversionRate(converted, newMembers),
+      retentionPct: calcRetentionRate(retained, newMembers),
       avgLtv: trials > 0 ? totalLtv / trials : 0,
       totalLtv,
       avgConvDays: spans.length > 0 ? spans.reduce((sum, v) => sum + v, 0) / spans.length : null,
@@ -260,6 +261,21 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
 };
 // ─── New Client Membership Purchases Table ────────────────────────────────────
 
+interface PurchaseRow {
+  name: string;
+  uniqueMembers: number;
+  unitsSold: number;
+  totalLtv: number;
+  atv: number;
+  auv: number;
+  purchaseFreq: number;
+  avgConvDays: number | null;
+  avgVisits: number;
+  _clients: Set<string>;
+}
+
+type PurchaseMetricKey = 'uniqueMembers' | 'unitsSold' | 'totalLtv' | 'atv' | 'auv' | 'purchaseFreq' | 'avgConvDays' | 'avgVisits';
+
 interface MembershipPurchasesTableProps {
   data: NewClientData[];
   onRowClick?: (row: any) => void;
@@ -270,11 +286,9 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
   const registry = useMetricsTablesRegistry();
   const tableId = 'New Client Membership Purchases';
   const [query, setQuery] = useState('');
-  const [sortKey, setSortKey] = useState<string>('uniqueMembers');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   // Only converted members — their first purchase is what we want
-  const convertedMembers = useMemo(() => data.filter((c) => isConvertedInCohort(c)), [data]);
+  const convertedMembers = useMemo(() => data.filter((c) => isConverted(c)), [data]);
 
   const rows = useMemo(() => {
     type Bucket = {
@@ -304,7 +318,7 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
     });
 
     return Object.entries(grouped)
-      .map(([name, g]) => {
+      .map(([name, g]): PurchaseRow => {
         const uniqueMembers = g.members.size;
         const totalLtv = g.totalLtv;
         const unitsSold = g.totalUnits;
@@ -333,24 +347,21 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
     return { uniqueMembers, unitsSold, totalLtv, atv, auv, purchaseFreq, avgConvDays, avgVisits };
   }, [rows, convertedMembers]);
 
-  const displayedRows = useMemo(() => {
+  const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
-    const base = term ? rows.filter((r) => r.name.toLowerCase().includes(term)) : rows;
-    return [...base].sort((a, b) => {
-      const av = (a as unknown as Record<string, string | number | null>)[sortKey];
-      const bv = (b as unknown as Record<string, string | number | null>)[sortKey];
-      if (av === bv) return 0;
-      if (av === null || av === undefined) return 1;
-      if (bv === null || bv === undefined) return -1;
-      const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv), 'en-IN');
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [rows, query, sortKey, sortDir]);
+    return term ? rows.filter((r) => r.name.toLowerCase().includes(term)) : rows;
+  }, [rows, query]);
 
-  const toggleSort = (key: string) => {
-    if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
-    else setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
-  };
+  const getPurchaseSortValue = useCallback(
+    (row: PurchaseRow, key: string) => (key === 'name' ? row.name : row[key as PurchaseMetricKey] ?? null),
+    []
+  );
+  const { rows: displayedRows, sortKey, sortDir, toggleSort } = useSortableData<PurchaseRow>(
+    filteredRows,
+    getPurchaseSortValue,
+    'uniqueMembers',
+    'desc'
+  );
 
   const handleExportCsv = () => {
     const cols = [
