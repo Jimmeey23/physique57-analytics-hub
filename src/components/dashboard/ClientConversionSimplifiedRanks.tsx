@@ -107,9 +107,10 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
     return Array.from(stats.values()).map(stat => {
       // Prefer client-derived counts; fall back to payroll columns when the
       // client feed has no rows for this trainer in the current filter.
-      const totalNew = stat.totalNew || stat.payrollNew;
-      const totalConverted = stat.totalConverted || stat.payrollConverted;
-      const totalRetained = stat.totalRetained || stat.payrollRetained;
+      const usePayrollFallback = stat.clientCount === 0;
+      const totalNew = usePayrollFallback ? stat.payrollNew : stat.totalNew;
+      const totalConverted = usePayrollFallback ? stat.payrollConverted : stat.totalConverted;
+      const totalRetained = usePayrollFallback ? stat.payrollRetained : stat.totalRetained;
 
       const conversionRate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
       const retentionRate = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
@@ -186,9 +187,10 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
     });
 
     return Array.from(stats.values()).map(stat => {
-      const totalNew = stat.totalNew || stat.payrollNew;
-      const totalConverted = stat.totalConverted || stat.payrollConverted;
-      const totalRetained = stat.totalRetained || stat.payrollRetained;
+      const usePayrollFallback = stat.clientCount === 0;
+      const totalNew = usePayrollFallback ? stat.payrollNew : stat.totalNew;
+      const totalConverted = usePayrollFallback ? stat.payrollConverted : stat.totalConverted;
+      const totalRetained = usePayrollFallback ? stat.payrollRetained : stat.totalRetained;
 
       const conversionRate = totalNew > 0 ? (totalConverted / totalNew) * 100 : 0;
       const retentionRate = totalNew > 0 ? (totalRetained / totalNew) * 100 : 0;
@@ -330,15 +332,15 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
 
     // With fewer than 10 eligible rows, top-5 and bottom-5 would overlap and
     // show the same names twice. Split the list instead.
-    const half = Math.min(5, Math.floor(sorted.length / 2));
-    const top = sorted.length >= 10 ? sorted.slice(0, 5) : sorted.slice(0, Math.max(half, sorted.length <= 5 ? sorted.length : half));
+    const topCount = sorted.length >= 10 ? 5 : Math.ceil(sorted.length / 2);
+    const top = sorted.slice(0, topCount);
     const bottom = sorted.length >= 10
       ? sorted.slice(-5).reverse()
-      : sorted.slice(sorted.length - half).reverse();
+      : sorted.slice(topCount).reverse();
 
     return {
-      top: sorted.slice(0, 5),
-      bottom: sorted.slice(-5).reverse(),
+      top,
+      bottom,
       total: sorted.length,
     };
   };

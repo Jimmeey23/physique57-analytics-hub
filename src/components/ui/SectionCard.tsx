@@ -50,6 +50,7 @@ export const SectionCard = React.forwardRef<HTMLElement, SectionCardProps>(
                     <PopoverPrimitive.Root>
                       <PopoverPrimitive.Trigger asChild>
                         <button
+                          type="button"
                           aria-label="About this section"
                           className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-primary"
                         >
