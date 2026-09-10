@@ -89,7 +89,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       if (bucket) bucket.push(c);
       else buckets.set(k, [c]);
     });
-    const aggs: Array<GroupAgg & { clients: NewClientData[] }> = [];
+    const aggs: Array<GroupAgg & { clients: NewClientData[]; type: string }> = [];
     buckets.forEach((clients, key) => {
       const trials = clients.length;
       const newMembers = clients.filter((c) => isInNewClientCohort(c)).length;
@@ -100,6 +100,7 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       const visits = clients.map((c) => c.visitsPostTrial).filter((v) => (v || 0) > 0);
       aggs.push({
         key,
+        type: key,
         clients,
         trials,
         newMembers,
