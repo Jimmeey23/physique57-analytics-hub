@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { SalesData } from '@/types/dashboard';
 import { requestCache } from '@/utils/performanceOptimizations';
-import { getGoogleAccessToken, parseNumericValue } from '@/utils/googleAuth';
+import { fetchSheetValuesSmart, parseNumericValue } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 import { useDataSource } from '@/contexts/DataSourceContext';
 import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
@@ -142,7 +142,7 @@ export const useGoogleSheets = () => {
             secMembershipEndDate: rawItem['Sec. Membership End Date'] || rawItem['Sec Membership End Date'] || '',
             secMembershipTotalClasses: parseNumericValue(rawItem['Sec. Membership Total Classes'] || 0),
             secMembershipClassesLeft: parseNumericValue(rawItem['Sec. Membership Classes Left'] || 0),
-            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || 0),
+            secMembershipUsedSessions: parseNumericValue(rawItem['Sec. Total Used Sessions'] || rawItem['Sec. Membership Used Sessions'] || rawItem['Sec. Membership Used Session Credits'] || 0),
             // Additional discount indicators
             discountCode: rawItem['Discount Code'] || rawItem['discount_code'] || rawItem['DiscountCode'] || rawItem['Promo Code'] || rawItem['promo_code'] || '',
             discountType: rawItem['Discount Code'] ? 'code' : undefined,

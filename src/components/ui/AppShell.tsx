@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useTheme } from '@/contexts/ThemeContext';
 
 /* ------------------------------------------------------------------ */
@@ -146,16 +147,14 @@ function Wordmark({ collapsed }: { collapsed: boolean }) {
       className={cn('group flex items-center gap-2.5 px-4 pb-4 pt-5 text-left', collapsed && 'justify-center px-0')}
       title="Home"
     >
-      <span className="p57-logo-mark flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--brand-deep))] font-display text-[15px] font-extrabold text-white shadow-[0_8px_24px_-10px_rgba(0,94,237,0.55)] ring-1 ring-primary/30">
-        57
-      </span>
+      <BrandLogo className="p57-logo-mark h-10 w-10" />
       {!collapsed && (
         <span className="min-w-0">
-          <span className="block truncate font-serif text-[22px] leading-none tracking-tight text-foreground">
-            Physique <em className="text-primary">57</em>
+          <span className="block truncate font-serif text-[21px] leading-none tracking-tight text-foreground">
+            Analytics Hub
           </span>
           <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-            Analytics Hub
+            Physique 57 · India
           </span>
         </span>
       )}

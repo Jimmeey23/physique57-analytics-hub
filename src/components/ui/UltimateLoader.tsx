@@ -28,8 +28,8 @@ const MESSAGES: Record<string, string[]> = {
 
 export const UltimateLoader: React.FC<UltimateLoaderProps> = ({
   onComplete,
-  title = "Physique 57",
-  subtitle = "Analytics Hub",
+  title = "Analytics Hub",
+  subtitle = "Physique 57 · India",
 }) => {
   const location = useLocation();
   const [progress, setProgress] = useState(0);

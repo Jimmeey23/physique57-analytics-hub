@@ -946,7 +946,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="flex items-start justify-between">
                             <div>
                               <p className="text-sm font-medium text-emerald-700">Conversion Rate</p>
-                              <p className="text-4xl font-bold text-emerald-600 mt-2">
+                              <p className="text-3xl font-bold text-emerald-600 mt-2">
                                 {summary.conversionRate.toFixed(1)}%
                               </p>
                               <p className="text-sm text-emerald-600/70 mt-1">
@@ -965,7 +965,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="flex items-start justify-between">
                             <div>
                               <p className="text-sm font-medium text-blue-700">Retention Rate</p>
-                              <p className="text-4xl font-bold text-blue-600 mt-2">
+                              <p className="text-3xl font-bold text-blue-600 mt-2">
                                 {summary.retentionRate.toFixed(1)}%
                               </p>
                               <p className="text-sm text-blue-600/70 mt-1">
@@ -1199,7 +1199,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="flex items-center justify-center">
                             <div className="w-40 h-40 rounded-full border-8 border-blue-100 flex items-center justify-center">
                               <div className="text-center">
-                                <p className="text-4xl font-bold text-blue-600">
+                                <p className="text-3xl font-bold text-blue-600">
                                   {formatNumber(summary.totalCustomers)}
                                 </p>
                                 <p className="text-sm text-slate-500">Total Attendees</p>
@@ -1450,7 +1450,7 @@ export function ComprehensiveTrainerDrillDown({
                         <div className="flex items-center gap-8 mb-6">
                           <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
                             <div className="text-center">
-                              <p className="text-4xl font-bold">{performanceScore}</p>
+                              <p className="text-3xl font-bold">{performanceScore}</p>
                               <p className="text-sm text-white/80">Score</p>
                             </div>
                           </div>

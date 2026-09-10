@@ -25,7 +25,7 @@ const VARIANT_SUBTITLES: Record<string, string> = {
 };
 
 export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
-  title = 'PHYSIQUE 57',
+  title = 'Analytics Hub',
   subtitle,
   variant = 'default',
   onComplete,

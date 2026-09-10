@@ -149,7 +149,7 @@ export const MetricDrilldown: React.FC<MetricDrilldownProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Current Value</p>
-                  <p className="text-4xl font-bold text-slate-900">{metric.value}</p>
+                  <p className="text-[28px] font-bold text-slate-900">{metric.value}</p>
                 </div>
                 <Badge className={`${
                   metric.changeType === 'positive' 

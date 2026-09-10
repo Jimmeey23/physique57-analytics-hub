@@ -136,7 +136,7 @@ const MetricCardComponent: React.FC<MetricCardProps> = ({
                 {/* Premium value display */}
                 <div className="space-y-3 mt-6">
                   <p className={cn(
-                    "text-4xl font-light text-transparent bg-clip-text transition-all duration-700",
+                    "text-[28px] font-light text-transparent bg-clip-text transition-all duration-700",
                     "bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900",
                     "group-hover:from-white group-hover:via-slate-100 group-hover:to-white",
                     "group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] tracking-tight leading-none"

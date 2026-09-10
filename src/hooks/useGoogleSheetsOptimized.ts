@@ -9,22 +9,7 @@ const SPREADSHEET_ID = "1HbGnJk-peffUp7XoXSlsL55924E9yUt8cP_h93cdTT0";
 
 const fetchSalesData = async (): Promise<SalesData[]> => {
   logger.info('Fetching sales data from Google Sheets...');
-  const accessToken = await getGoogleAccessToken();
-  
-  const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
-    {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch sales data');
-  }
-
-  const result = await response.json();
+  const result = await fetchSheetValuesSmart(SPREADSHEET_ID, 'Sales');
   const rows = result.values || [];
   
   if (rows.length < 2) {

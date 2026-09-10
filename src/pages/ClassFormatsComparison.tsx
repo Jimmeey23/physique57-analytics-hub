@@ -58,7 +58,7 @@ const ClassFormatsComparison: React.FC = () => {
   const FormatTrendsSection: React.FC<{ sessions: SessionData[]; checkins: any[]; activeLocation: string }>
     = ({ sessions, checkins, activeLocation }) => {
     const { filters } = useSessionsFilters();
-    const filteredSessionsByFilters = useFilteredSessionsData(sessions || []);
+    const filteredSessionsByFilters = useFilteredSessionsData(sessions || [], { skipDateRange: true });
     const filteredSessionsByLocation = React.useMemo(() => {
       if (activeLocation === 'all') return filteredSessionsByFilters;
       return filteredSessionsByFilters.filter(s => {
@@ -149,6 +149,7 @@ const ClassFormatsComparison: React.FC = () => {
     = ({ sessions, allCheckins }) => {
     const { filters } = useSessionsFilters();
     const filteredAll = useFilteredSessionsData(sessions || []);
+    const filteredAllNoDate = useFilteredSessionsData(sessions || [], { skipDateRange: true });
     
     React.useEffect(() => {
       if (sessions && sessions.length > 0) {
@@ -408,6 +409,16 @@ const ClassFormatsComparison: React.FC = () => {
               return false;
             });
 
+            // Date-free sessions for the MoM tab (same location predicate, no date range)
+            const momLocationSessions = location.id === 'all' ? filteredAllNoDate : filteredAllNoDate.filter(s => {
+              const sl = (s.location || '').toLowerCase();
+              if (location.id === 'kwality') return sl.includes('kwality');
+              if (location.id === 'supreme') return sl.includes('supreme');
+              if (location.id === 'kenkere') return sl.includes('kenkere');
+              if (location.id === 'popup') return sl.includes('pop') || sl.includes('popup') || sl.includes('pop-up');
+              return false;
+            });
+
             // Filter checkins data to match the location (SessionsFilters already applied globally)
             const locationFilteredCheckins = location.id === 'all' ? filteredAllCheckins : filteredAllCheckins.filter((c: any) => {
               const loc = String(c.location || '').toLowerCase();
@@ -476,7 +487,7 @@ const ClassFormatsComparison: React.FC = () => {
                         <h3 className="text-lg font-semibold text-slate-900 mb-2">Month-over-Month Performance Trends</h3>
                         <p className="text-sm text-slate-600">Historical class format performance comparison across all months</p>
                       </div>
-                      <ClassFormatsMoMTable sessions={locationFilteredData as any} checkins={locationFilteredCheckins} />
+                      <ClassFormatsMoMTable sessions={momLocationSessions as any} checkins={locationFilteredCheckins} />
                     </>
                   ) : (
                     <div className="text-center py-8 text-slate-500">No data available</div>

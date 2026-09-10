@@ -49,6 +49,21 @@ export const ExecutiveCancellationsSection: React.FC<ExecutiveCancellationsSecti
     });
   }, [cancellationsData, filters.dateRange, filters.location]);
 
+  // Location-only (date-free) — feeds the MoM table
+  const dateUnfilteredCancellations = useMemo(() => {
+    if (!cancellationsData) return [];
+    return cancellationsData.filter(cancellation => {
+      if (filters.location && filters.location.length > 0) {
+        const locations = Array.isArray(filters.location) ? filters.location : [filters.location];
+        const locStr = (cancellation.location || '').toString();
+        if (!locations.includes('all') && !locations.some(loc => locStr?.includes(loc))) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [cancellationsData, filters.location]);
+
   if (cancellationsLoading) {
     return (
       <ExecutiveSectionCard
@@ -82,7 +97,7 @@ export const ExecutiveCancellationsSection: React.FC<ExecutiveCancellationsSecti
       {filteredCancellations && filteredCancellations.length > 0 && (
         <div className="pt-4 border-t border-slate-100">
           <h4 className="text-sm font-semibold text-slate-700 mb-4">Cancellations by Time Period</h4>
-          <LateCancellationsMonthOnMonthTable data={filteredCancellations} />
+          <LateCancellationsMonthOnMonthTable data={dateUnfilteredCancellations} />
         </div>
       )}
     </ExecutiveSectionCard>

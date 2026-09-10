@@ -279,7 +279,7 @@ export const EnhancedTrainerMetricCards: React.FC<EnhancedTrainerMetricCardsProp
                 {/* Value */}
                 <div className="space-y-2 mb-4">
                   <p className={cn(
-                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                    "text-[28px] font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
                   )}>
                     {card.value}
                   </p>

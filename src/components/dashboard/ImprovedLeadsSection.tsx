@@ -44,12 +44,13 @@ export const ImprovedLeadsSection = () => {
   }, [leadsData]);
 
   // Filter leads data based on global filters
-  const filteredLeadsData = useMemo(() => {
+  // skipDate=true keeps MoM datasets free of the date-range filter
+  const applyImprovedLeadFilters = (skipDate: boolean) => {
     if (!leadsData) return [];
 
     return leadsData.filter(lead => {
       // Date range filter
-      if (globalFilters.dateRange.start || globalFilters.dateRange.end) {
+      if (!skipDate && (globalFilters.dateRange.start || globalFilters.dateRange.end)) {
         const leadDate = new Date(lead.createdAt);
         if (globalFilters.dateRange.start && leadDate < new Date(globalFilters.dateRange.start)) return false;
         if (globalFilters.dateRange.end && leadDate > new Date(globalFilters.dateRange.end)) return false;
@@ -68,7 +69,9 @@ export const ImprovedLeadsSection = () => {
 
       return true;
     });
-  }, [leadsData, globalFilters]);
+  };
+  const filteredLeadsData = useMemo(() => applyImprovedLeadFilters(false), [leadsData, globalFilters]);
+  const dateUnfilteredLeadsData = useMemo(() => applyImprovedLeadFilters(true), [leadsData, globalFilters]);
 
   if (loading) {
     return null; // Global loader will handle this
@@ -225,7 +228,7 @@ export const ImprovedLeadsSection = () => {
                   </TabsContent>
 
                   <TabsContent value="month-comparison">
-                    <ImprovedLeadMonthOnMonthTable data={filteredLeadsData} />
+                    <ImprovedLeadMonthOnMonthTable data={dateUnfilteredLeadsData} />
                   </TabsContent>
 
                   <TabsContent value="year-comparison">

@@ -65,7 +65,8 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
     showEmpty: true
   });
 
-  const filteredData = useMemo(() => {
+  // skipDate=true keeps the monthly analysis free of the date-period filter
+  const applyFormatFilters = (skipDate: boolean) => {
     let result = data;
     
     // Apply SessionsFilters first
@@ -101,7 +102,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
     }
 
     // Filter by date period
-    if (filters.dateRange.period !== 'all') {
+    if (!skipDate && filters.dateRange.period !== 'all') {
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth();
@@ -148,7 +149,10 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
 
     
     return result;
-  }, [data, filters, sessionFilters]);  const getMonthIndex = (monthName: string): number => {
+  };
+  const filteredData = useMemo(() => applyFormatFilters(false), [data, filters, sessionFilters]);
+  const dateUnfilteredData = useMemo(() => applyFormatFilters(true), [data, filters, sessionFilters]);
+  const getMonthIndex = (monthName: string): number => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months.indexOf(monthName.substring(0, 3));
   };
@@ -743,7 +747,7 @@ export const FormatMetricsAnalysis: React.FC<FormatMetricsAnalysisProps> = ({ da
 
         {/* Monthly Analysis Tab */}
         <TabsContent value="monthly" className="mt-8">
-          <MonthOnMonthAnalysis data={filteredData} filters={filters} />
+          <MonthOnMonthAnalysis data={dateUnfilteredData} filters={filters} />
         </TabsContent>
 
         {/* Location Analysis Tab */}

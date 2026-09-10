@@ -52,6 +52,8 @@ export const ClassAttendanceSection: React.FC = () => {
 
   // Apply filters to the data (from SessionsFiltersContext)
   const filteredData = useFilteredSessionsData(sessionsData || []);
+  // Same filters minus the date range — feeds MoM/YoY views
+  const dateUnfilteredData = useFilteredSessionsData(sessionsData || [], { skipDateRange: true });
 
   // Keep the session filters' locations in sync when user switches tabs
   React.useEffect(() => {
@@ -64,16 +66,16 @@ export const ClassAttendanceSection: React.FC = () => {
   }, [activeLocation, updateSessionFilters]);
 
   // Filter data by location — prefer explicit sessionFilters.locations when provided
-  const locationFilteredData = useMemo(() => {
-    if (!filteredData) return [];
+  const applyLocationFilter = React.useCallback((rows: typeof filteredData) => {
+    if (!rows) return [];
 
     const filterLocations = (sessionFilters && (sessionFilters as any).locations && (sessionFilters as any).locations.length > 0)
       ? (sessionFilters as any).locations
       : [activeLocation];
 
-    if (!filterLocations || filterLocations.length === 0 || filterLocations.includes('all')) return filteredData;
+    if (!filterLocations || filterLocations.length === 0 || filterLocations.includes('all')) return rows;
 
-    return filteredData.filter(session => {
+    return rows.filter(session => {
       const sessionLoc = (session.location || '').toLowerCase();
       return filterLocations.some((loc: string) => {
         const l = (loc || '').toLowerCase();
@@ -84,7 +86,17 @@ export const ClassAttendanceSection: React.FC = () => {
         return false;
       });
     });
-  }, [filteredData, activeLocation, sessionFilters]);
+  }, [activeLocation, sessionFilters]);
+
+  const locationFilteredData = useMemo(
+    () => applyLocationFilter(filteredData),
+    [applyLocationFilter, filteredData]
+  );
+  // Location-filtered but date-free — feeds MoM/YoY views
+  const locationFilteredDateUnfilteredData = useMemo(
+    () => applyLocationFilter(dateUnfilteredData),
+    [applyLocationFilter, dateUnfilteredData]
+  );
 
   // Get unique class formats
   const uniqueClassFormats = useMemo(() => {
@@ -205,7 +217,7 @@ export const ClassAttendanceSection: React.FC = () => {
                 </TabsContent>
 
                 <TabsContent value="trends">
-                  <ClassAttendanceMonthOnMonthTable data={locationFilteredData} payrollData={payrollData || []} location={activeLocation} />
+                  <ClassAttendanceMonthOnMonthTable data={locationFilteredDateUnfilteredData} payrollData={payrollData || []} location={activeLocation} />
                 </TabsContent>
               </Tabs>
             </TabsContent>

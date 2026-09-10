@@ -16,11 +16,11 @@ interface BrandSpinnerProps {
   srcs?: string[];
 }
 
-const sizeMap: Record<SpinnerSize, { ring: string; mark: string; text: string }> = {
-  xs: { ring: 'h-3.5 w-3.5', mark: 'h-3.5 w-3.5', text: 'text-[5px]' },
-  sm: { ring: 'h-5 w-5', mark: 'h-5 w-5', text: 'text-[7px]' },
-  md: { ring: 'h-8 w-8', mark: 'h-8 w-8', text: 'text-[10px]' },
-  lg: { ring: 'h-12 w-12', mark: 'h-12 w-12', text: 'text-[13px]' },
+const sizeMap: Record<SpinnerSize, { ring: string }> = {
+  xs: { ring: 'h-3.5 w-3.5' },
+  sm: { ring: 'h-5 w-5' },
+  md: { ring: 'h-8 w-8' },
+  lg: { ring: 'h-12 w-12' },
 };
 
 /**
@@ -44,16 +44,16 @@ export const BrandSpinner: React.FC<BrandSpinnerProps> = ({
     >
       <span className={cn('p57-spin absolute inset-0', ringClassName)} aria-hidden="true" />
       {showMark && (
-        <span
+        <img
           aria-hidden="true"
+          src="/physique57-logo.png"
+          alt=""
+          draggable={false}
           className={cn(
-            'flex items-center justify-center rounded-[6px] bg-gradient-to-br from-primary to-[hsl(var(--brand-deep))] font-display font-extrabold text-white',
-            size === 'lg' ? 'h-6 w-6' : 'h-4 w-4',
-            sz.text
+            'rounded-[6px] bg-white object-contain p-[2px] ring-1 ring-black/[0.06]',
+            size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'
           )}
-        >
-          57
-        </span>
+        />
       )}
     </span>
   );

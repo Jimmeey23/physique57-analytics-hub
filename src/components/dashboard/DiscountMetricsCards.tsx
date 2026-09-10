@@ -223,7 +223,7 @@ export const DiscountMetricsCards: React.FC<DiscountMetricsCardsProps> = ({ data
 
                 <div className="space-y-2">
                   <p className={cn(
-                    "text-4xl font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
+                    "text-[28px] font-bold transition-all duration-700 text-slate-900 group-hover:text-white"
                   )}>
                     {metric.value}
                   </p>

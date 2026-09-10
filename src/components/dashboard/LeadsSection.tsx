@@ -81,7 +81,8 @@ const LeadsSectionContent: React.FC = () => {
       });
     }
   }, [data, setOptions]);
-  const filteredData = useMemo(() => {
+  // skipDate=true keeps MoM/YoY datasets free of the date-range filter
+  const applyLeadFilters = (skipDate: boolean) => {
     if (!data) return [];
     let filtered = data;
 
@@ -108,7 +109,7 @@ const LeadsSectionContent: React.FC = () => {
     }
 
     // Date range filter
-    if (filters.dateRange.start || filters.dateRange.end) {
+    if (!skipDate && (filters.dateRange.start || filters.dateRange.end)) {
       filtered = filtered.filter(item => {
         if (!item.createdAt) return false;
         const itemDate = new Date(item.createdAt);
@@ -118,7 +119,9 @@ const LeadsSectionContent: React.FC = () => {
       });
     }
     return filtered;
-  }, [data, activeLocation, filters]);
+  };
+  const filteredData = useMemo(() => applyLeadFilters(false), [data, activeLocation, filters]);
+  const dateUnfilteredData = useMemo(() => applyLeadFilters(true), [data, activeLocation, filters]);
   const metrics = useMemo((): MetricCardData[] => {
     const totalLeads = filteredData.length;
     const trialsCompleted = filteredData.filter(item => item.stage === 'Trial Completed').length;
@@ -279,7 +282,7 @@ const LeadsSectionContent: React.FC = () => {
 
   // Stage performance data for month-on-month view
   const stagePerformanceData = useMemo(() => {
-    const monthlyStageStats = filteredData.reduce((acc, item) => {
+    const monthlyStageStats = dateUnfilteredData.reduce((acc, item) => {
       if (!item.createdAt) return acc;
       const date = new Date(item.createdAt);
       if (isNaN(date.getTime())) return acc;
@@ -331,11 +334,11 @@ const LeadsSectionContent: React.FC = () => {
       });
     });
     return result;
-  }, [filteredData, stageMetric]);
+  }, [dateUnfilteredData, stageMetric]);
 
   // Source performance data for month-on-month view with improved calculations
   const sourcePerformanceData = useMemo(() => {
-    const monthlySourceStats = filteredData.reduce((acc, item) => {
+    const monthlySourceStats = dateUnfilteredData.reduce((acc, item) => {
       if (!item.createdAt) return acc;
       const date = new Date(item.createdAt);
       if (isNaN(date.getTime())) return acc;
@@ -395,7 +398,7 @@ const LeadsSectionContent: React.FC = () => {
       });
     });
     return result;
-  }, [filteredData, sourceMetric]);
+  }, [dateUnfilteredData, sourceMetric]);
   
   // Remove individual loader - component should not show its own loader
   // Parent component handles loading via global loader
@@ -424,7 +427,7 @@ const LeadsSectionContent: React.FC = () => {
         </div>
       </div>;
   }
-  const availableMonths = [...new Set(filteredData.map(item => {
+  const availableMonths = [...new Set(dateUnfilteredData.map(item => {
     if (!item.createdAt) return null;
     const date = new Date(item.createdAt);
     if (isNaN(date.getTime())) return null;
@@ -433,6 +436,9 @@ const LeadsSectionContent: React.FC = () => {
   const availableAssociates = [...new Set(filteredData.map(item => item.associate))].filter(Boolean);
   const availableStages = [...new Set(filteredData.map(item => item.stage))].filter(Boolean);
   const availableSources = [...new Set(filteredData.map(item => item.source))].filter(Boolean);
+  // Date-free row labels for the MoM tables (pivot keeps the filtered lists above)
+  const momStages = [...new Set(dateUnfilteredData.map(item => item.stage))].filter(Boolean);
+  const momSources = [...new Set(dateUnfilteredData.map(item => item.source))].filter(Boolean);
   return <div className="space-y-6 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 min-h-screen">
       {/* Modern Header Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/50 to-purple-50/30 border-b border-slate-200">
@@ -532,9 +538,9 @@ const LeadsSectionContent: React.FC = () => {
                     
                     <LeadDataTable title="Lead Performance Analysis" data={filteredData} />
                     
-                    <LeadMonthOnMonthTable data={stagePerformanceData} months={availableMonths} stages={availableStages} activeMetric={stageMetric} onMetricChange={setStageMetric} />
+                    <LeadMonthOnMonthTable data={stagePerformanceData} months={availableMonths} stages={momStages} activeMetric={stageMetric} onMetricChange={setStageMetric} />
 
-                    <LeadSourceMonthOnMonthTable data={sourcePerformanceData} months={availableMonths} sources={availableSources} activeMetric={sourceMetric} onMetricChange={setSourceMetric} />
+                    <LeadSourceMonthOnMonthTable data={sourcePerformanceData} months={availableMonths} sources={momSources} activeMetric={sourceMetric} onMetricChange={setSourceMetric} />
 
                     <LeadYearOnYearSourceTable allData={data} // Pass unfiltered data for year-on-year comparison
                 activeMetric={yoyMetric as LeadsMetricType} onMetricChange={metric => setYoyMetric(metric as any)} />

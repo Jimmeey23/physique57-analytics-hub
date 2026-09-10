@@ -50,7 +50,7 @@ export const NewClientSection: React.FC<NewClientSectionProps> = ({
   });
 
   // Helper function to filter data
-  const applyFilters = (rawData: NewClientData[]) => {
+  const applyFilters = (rawData: NewClientData[], skipDate = false) => {
     if (!rawData || !Array.isArray(rawData)) {
       return [];
     }
@@ -58,7 +58,7 @@ export const NewClientSection: React.FC<NewClientSectionProps> = ({
     let filtered = rawData;
 
     // Apply date range filter
-    if (filters.dateRange.start || filters.dateRange.end) {
+    if (!skipDate && (filters.dateRange.start || filters.dateRange.end)) {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
       const endDate = filters.dateRange.end ? new Date(filters.dateRange.end) : null;
 
@@ -125,6 +125,8 @@ export const NewClientSection: React.FC<NewClientSectionProps> = ({
   };
 
   const filteredData = useMemo(() => applyFilters(data || []), [data, filters]);
+  // MoM/YoY tables ignore the date range but respect every other filter
+  const dateUnfilteredData = useMemo(() => applyFilters(data || [], true), [data, filters]);
 
   // Get unique values for filters (only 3 main locations)
   const uniqueLocations = useMemo(() => {
@@ -223,11 +225,11 @@ export const NewClientSection: React.FC<NewClientSectionProps> = ({
         </TabsContent>
 
         <TabsContent value="monthonmonth" className="space-y-8">
-          <ClientConversionMonthOnMonthTable data={filteredData} />
+          <ClientConversionMonthOnMonthTable data={dateUnfilteredData} />
         </TabsContent>
 
         <TabsContent value="yearonyear" className="space-y-8">
-          <ClientConversionYearOnYearTable data={filteredData} />
+          <ClientConversionYearOnYearTable data={dateUnfilteredData} />
         </TabsContent>
 
         <TabsContent value="detailed" className="space-y-8">

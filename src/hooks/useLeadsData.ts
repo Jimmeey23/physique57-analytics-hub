@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LeadsData } from '@/types/leads';
-import { getGoogleAccessToken } from '@/utils/googleAuth';
+import { fetchSheetValuesSmart } from '@/utils/googleAuth';
 import { createLogger } from '@/utils/logger';
 import { useDataSource } from '@/contexts/DataSourceContext';
 import { loadDatasetRowsForMode } from '@/lib/offlineDatasetLoader';
