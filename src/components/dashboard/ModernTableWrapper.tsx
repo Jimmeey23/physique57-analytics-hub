@@ -210,7 +210,7 @@ const ModernTableWrapperComponent: React.FC<ModernTableWrapperProps> = ({
 
       {/* Animated Color-Changing Border */}
       <div className="w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-400 animate-pulse duration-[3000ms]"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-400 animate-pulse [animation-duration:3000ms]"></div>
       </div>
 
       <CardContent className={TABLE_STYLES.card.content} ref={internalTableRef}>

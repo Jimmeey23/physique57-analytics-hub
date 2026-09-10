@@ -95,7 +95,7 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
     filters.retentionStatus.length + filters.conversionStatus.length + 
     filters.paymentMethod.length + filters.isNew.length +
     (filters.dateRange.start || filters.dateRange.end ? 1 : 0) +
-    (filters.minLTV ? 1 : 0) + (filters.maxLTV ? 1 : 0);
+    (filters.minLTV !== undefined ? 1 : 0) + (filters.maxLTV !== undefined ? 1 : 0);
 
   // Use only 3 main locations as in sales tab
   const mainLocations = ['Kwality House, Kemps Corner', 'Supreme HQ, Bandra', 'Kenkere House, Bengaluru'];
@@ -121,7 +121,7 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
         {
           key: 'trainer' as keyof NewClientFilterOptions,
           label: 'Trainers',
-          options: trainers.slice(0, 12),
+          options: trainers,
           values: filters.trainer
         }
       ]
@@ -166,10 +166,10 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
 
   if (!isExpanded) {
     return (
-      <Card className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20 border-0 shadow-xl">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      <Card className="bg-white border border-slate-200 shadow-sm">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
                 <Filter className="w-5 h-5 text-white" />
               </div>
@@ -185,6 +185,7 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
             </div>
             <Button
               variant="outline"
+              aria-expanded={false}
               onClick={() => setIsExpanded(true)}
               className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
             >
@@ -198,13 +199,13 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
   }
 
   return (
-    <Card className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/20 border-0 shadow-xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <Card className="bg-white border border-slate-200 shadow-sm overflow-hidden">
+      <CardHeader className="bg-slate-900 text-white p-4 sm:p-5">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Filter className="w-6 h-6" />
             <div>
-              <h3 className="text-xl font-bold">Advanced Client Filters</h3>
+              <h3 className="text-base font-semibold">Advanced Client Filters</h3>
               <p className="text-blue-100 text-sm">Customize your analysis view</p>
             </div>
             <Badge className="bg-white/20 text-white border-white/30">
@@ -225,6 +226,8 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
             <Button
               variant="ghost"
               size="sm"
+              aria-expanded={true}
+              aria-label="Collapse filters"
               onClick={() => setIsExpanded(false)}
               className="text-white hover:bg-white/20"
             >
@@ -234,7 +237,7 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-8 space-y-8">
+      <CardContent className="p-4 space-y-5 sm:p-5">
         {/* Date Range and Search */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
@@ -254,10 +257,11 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
           <div className="space-y-3">
             <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
               <Search className="w-5 h-5 text-blue-600" />
-              Quick Search
+              Find filter options
             </label>
             <Input
-              placeholder="Search trainers, locations..."
+              aria-label="Search filter options"
+              placeholder="Search filter options..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-white border-slate-200"
@@ -274,8 +278,9 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               type="number"
+              aria-label="Minimum lifetime value in rupees"
               placeholder="Min LTV (₹)"
-              value={filters.minLTV || ''}
+              value={filters.minLTV ?? ''}
               onChange={(e) => onFiltersChange({
                 ...filters,
                 minLTV: e.target.value ? parseFloat(e.target.value) : undefined
@@ -284,8 +289,9 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
             />
             <Input
               type="number"
+              aria-label="Maximum lifetime value in rupees"
               placeholder="Max LTV (₹)"
-              value={filters.maxLTV || ''}
+              value={filters.maxLTV ?? ''}
               onChange={(e) => onFiltersChange({
                 ...filters,
                 maxLTV: e.target.value ? parseFloat(e.target.value) : undefined
@@ -296,16 +302,16 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
         </div>
 
         {/* Filter Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filterSections.map((section) => (
-            <Card key={section.title} className="bg-white/70 border-slate-200 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Card key={section.title} className="bg-slate-50 border-slate-200 shadow-none">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                   <section.icon className="w-5 h-5 text-blue-600" />
                   {section.title}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 p-4 pt-0">
                 {section.filters.map((filter) => (
                   <div key={filter.key} className="space-y-3">
                     <label className="text-sm font-medium text-slate-700">
@@ -324,6 +330,7 @@ export const EnhancedClientConversionFilterSection: React.FC<EnhancedClientConve
                           key={option}
                           variant={filter.values.includes(option) ? "default" : "outline"}
                           size="sm"
+                          aria-pressed={filter.values.includes(option)}
                           onClick={() => handleArrayFilterChange(filter.key, option)}
                           className={`text-xs transition-all duration-200 ${
                             filter.values.includes(option)

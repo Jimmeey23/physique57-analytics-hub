@@ -1,13 +1,15 @@
 import React from 'react';
 import { logger } from '@/utils/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { isInNewClientCohort, isConvertedInCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { TrendingUp, Users, BarChart3, DollarSign, Target, Star, Zap, X, Download, Copy, LayoutGrid, List } from 'lucide-react';
+import { TrendingUp, Users, BarChart3, DollarSign, Target, Star, Zap, Download, Copy, LayoutGrid, List } from 'lucide-react';
 import { NewClientData } from '@/types/dashboard';
 
 type DrillDownModalType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ranking';
@@ -37,6 +39,8 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
   const [quickFilter, setQuickFilter] = React.useState<'all' | 'new' | 'converted' | 'retained' | 'highLTV'>('all');
   const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('table');
   const [search, setSearch] = React.useState('');
+  const [visibleCount, setVisibleCount] = React.useState(200);
+  React.useEffect(() => { setVisibleCount(200); }, [search, quickFilter, data]);
   const hasData = Boolean(data);
   const payload = data && !Array.isArray(data) ? data : null;
   const metricType = typeof payload?.metricType === 'string' ? payload.metricType : '';
@@ -84,61 +88,37 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
   const summary = React.useMemo(() => {
     const totalMembers = clients.length;
     
-    // New members: match the exact logic from metric cards - where isNew contains "new" (case insensitive)
-    const newMembers = clients.filter(c => {
-      const isNewValue = String(c.isNew || '').toLowerCase();
-      return isNewValue.includes('new');
-    }).length;
-    
-    // Converted members: those with exact conversionStatus "Converted"
-    const convertedMembers = clients.filter(c => (c.conversionStatus || '').trim() === 'Converted').length;
-    
-    // Retained members: those with exact retentionStatus "Retained"
-    const retainedMembers = clients.filter(c => (c.retentionStatus || '').trim() === 'Retained').length;
-    
+    const newMembers = clients.filter(isInNewClientCohort).length;
+    const convertedMembers = clients.filter(isConvertedInCohort).length;
+    const retainedMembers = clients.filter(isRetainedInCohort).length;
+
     const totalLTV = clients.reduce((sum, c) => sum + (c.ltv || 0), 0);
     const totalConversionSpan = clients.filter(c => c.conversionSpan > 0).reduce((sum, c) => sum + (c.conversionSpan || 0), 0);
     const clientsWithConversionData = clients.filter(c => c.conversionSpan > 0).length;
-    
-    // Debug logging to understand the data
-    logger.debug('Modal Summary Calculation (Updated Logic):', {
-      totalMembers,
-      newMembers,
-      convertedMembers,
-      retainedMembers,
-      metricType,
-      sampleIsNewValues: clients.slice(0, 5).map(c => c.isNew),
-      sampleConversionStatus: clients.slice(0, 5).map(c => c.conversionStatus),
-      sampleRetentionStatus: clients.slice(0, 5).map(c => c.retentionStatus),
-      filteredNewMembersCheck: clients.filter(c => {
-        const isNewValue = String(c.isNew || '').toLowerCase();
-        return isNewValue.includes('new');
-      }).length
-    });
     
     return {
       totalMembers,
       newMembers,
       convertedMembers,
       retainedMembers,
-      conversionRate: totalMembers > 0 ? (convertedMembers / totalMembers) * 100 : 0, // Conversion rate within this subset
-      retentionRate: totalMembers > 0 ? (retainedMembers / totalMembers) * 100 : 0, // Retention rate within this subset
+      conversionRate: newMembers > 0 ? (convertedMembers / newMembers) * 100 : 0, // Conversion rate within this subset
+      retentionRate: newMembers > 0 ? (retainedMembers / newMembers) * 100 : 0, // Retention rate within this subset
       avgLTV: totalMembers > 0 ? totalLTV / totalMembers : 0,
       totalLTV,
       avgConversionTime: clientsWithConversionData > 0 ? totalConversionSpan / clientsWithConversionData : 0
     };
-  }, [clients, metricType]);
+  }, [clients]);
 
   // Apply local quick filters and search within the modal scope
   const displayedClients = React.useMemo(() => {
     const term = search.trim().toLowerCase();
     let arr = clients;
     if (quickFilter === 'new') {
-      arr = arr.filter(c => (String(c.isNew || '').toLowerCase().includes('new')));
+      arr = arr.filter(isInNewClientCohort);
     } else if (quickFilter === 'converted') {
-      arr = arr.filter(c => (c.conversionStatus || '').trim() === 'Converted');
+      arr = arr.filter(isConvertedInCohort);
     } else if (quickFilter === 'retained') {
-      arr = arr.filter(c => (c.retentionStatus || '').trim() === 'Retained');
+      arr = arr.filter(isRetainedInCohort);
     } else if (quickFilter === 'highLTV') {
       // Heuristic threshold for high LTV
       const values = arr.map(c => c.ltv || 0).sort((a,b)=>a-b);
@@ -169,10 +149,15 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
     URL.revokeObjectURL(url);
   }, [title]);
 
-  const copyEmails = React.useCallback((rows: NewClientData[]) => {
+  const copyEmails = React.useCallback(async (rows: NewClientData[]) => {
     const emails = rows.map(r => r.email).filter(Boolean).join(', ');
     if (!emails) return;
-    navigator.clipboard.writeText(emails);
+    try {
+      await navigator.clipboard.writeText(emails);
+      toast.success('Email addresses copied');
+    } catch {
+      toast.error('Could not copy email addresses. Please use the CSV export.');
+    }
   }, []);
   const renderMetricCards = () => {
     const isConvertedDrillDown = metricType === 'converted_members';
@@ -251,31 +236,31 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               Client Details ({formatNumber(displayedClients.length)} of {formatNumber(clients.length)})
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => exportCSV(displayedClients)} className="gap-1">
+              <Button variant="ghost" size="sm" disabled={!displayedClients.length} onClick={() => exportCSV(displayedClients)} className="gap-1">
                 <Download className="w-4 h-4" /> Export
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => copyEmails(displayedClients)} className="gap-1">
+              <Button variant="ghost" size="sm" disabled={!displayedClients.some(client => client.email)} onClick={() => void copyEmails(displayedClients)} className="gap-1">
                 <Copy className="w-4 h-4" /> Emails
               </Button>
             </div>
           </div>
           {/* Toolbar */}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <div className="inline-flex rounded-full bg-slate-100 p-1">
+            <div className="inline-flex flex-wrap rounded-lg bg-slate-100 p-1">
               {(['all','new','converted','retained','highLTV'] as const).map(q => (
-                <button key={q} onClick={() => setQuickFilter(q)} className={`px-3 py-1.5 text-xs rounded-full transition-all ${quickFilter===q? 'bg-slate-900 shadow text-white font-medium' : 'text-slate-600'}`}>
+                <button key={q} aria-pressed={quickFilter === q} onClick={() => setQuickFilter(q)} className={`px-3 py-1.5 text-xs rounded-full transition-all ${quickFilter===q? 'bg-slate-900 shadow text-white font-medium' : 'text-slate-600'}`}>
                   {q==='all'?'All': q==='new'?'New': q==='converted'?'Converted': q==='retained'?'Retained':'High LTV'}
                 </button>
               ))}
             </div>
             <div className="relative ml-auto">
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name or email" className="h-9 w-56 rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200" />
+              <input aria-label="Search clients by name or email" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name or email" className="h-9 w-56 rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200" />
             </div>
-            <div className="inline-flex rounded-full bg-slate-100 p-1">
-              <button onClick={()=>setViewMode('table')} className={`px-2 py-1.5 rounded-full ${viewMode==='table'?'bg-slate-900 shadow text-white':''}`} title="Table View">
+            <div className="inline-flex flex-wrap rounded-lg bg-slate-100 p-1">
+              <button aria-label="Table view" aria-pressed={viewMode === 'table'} onClick={()=>setViewMode('table')} className={`px-2 py-1.5 rounded-full ${viewMode==='table'?'bg-slate-900 shadow text-white':''}`} title="Table View">
                 <List className="w-4 h-4" />
               </button>
-              <button onClick={()=>setViewMode('cards')} className={`px-2 py-1.5 rounded-full ${viewMode==='cards'?'bg-slate-900 shadow text-white':''}`} title="Card View">
+              <button aria-label="Card view" aria-pressed={viewMode === 'cards'} onClick={()=>setViewMode('cards')} className={`px-2 py-1.5 rounded-full ${viewMode==='cards'?'bg-slate-900 shadow text-white':''}`} title="Card View">
                 <LayoutGrid className="w-4 h-4" />
               </button>
             </div>
@@ -300,7 +285,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayedClients.slice(0, 200).map((client, index) => (
+                  {displayedClients.slice(0, visibleCount).map((client, index) => (
                     <TableRow key={index} className="compact-table-row hover:bg-gray-50 transition-colors">
                       <TableCell className="text-xs px-3 font-medium text-slate-800">
                         {client.firstName} {client.lastName}
@@ -336,15 +321,10 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   ))}
                 </TableBody>
               </Table>
-              {displayedClients.length > 200 && (
-                <div className="p-4 text-center text-sm text-gray-600">
-                  Showing 200 of {displayedClients.length} clients.
-                </div>
-              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
-              {displayedClients.map((client, idx) => (
+              {displayedClients.slice(0, visibleCount).map((client, idx) => (
                 <div key={idx} className="rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow bg-white">
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-semibold text-slate-800 text-sm truncate max-w-[70%]">{client.firstName} {client.lastName}</div>
@@ -363,6 +343,12 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               ))}
             </div>
           )}
+          {displayedClients.length > visibleCount && (
+            <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-200 p-3 text-sm text-slate-600">
+              <span>Showing {visibleCount} of {displayedClients.length} clients</span>
+              <Button variant="outline" size="sm" onClick={() => setVisibleCount(count => count + 200)}>Show more clients</Button>
+            </div>
+          )}
         </CardContent>
       </Card>;
   };
@@ -370,21 +356,21 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
   if (!hasData) return null;
 
   return <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-white border border-slate-200 shadow-2xl">
-        <DialogHeader className="-m-6 mb-6 border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-6 pb-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+      <DialogContent className="flex w-[calc(100vw-1.5rem)] max-w-[1400px] max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 bg-white text-slate-900 border border-slate-200 shadow-2xl [&>button]:text-white">
+        <DialogHeader className="shrink-0 border-b border-slate-200 bg-slate-900 p-4 pr-12 text-left text-white sm:p-5 sm:pr-12">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3 break-words">
                 <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                {title} - Detailed Analysis
+                {title}
               </DialogTitle>
-              <p className="mt-2 text-sm text-slate-300">
+              <DialogDescription className="mt-2 text-sm text-slate-300">
                 Targeted client conversion and retention analysis
-              </p>
+              </DialogDescription>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className="border-white/30 bg-white/20 text-white backdrop-blur-sm">
                 {type === 'month' ? 'Monthly' : type === 'year' ? 'Yearly' : type === 'metric' ? 'Metric Analysis' : 'Analytics'}
               </Badge>
@@ -392,24 +378,22 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                 {formatNumber(displayedClients.length)} of {formatNumber(clients.length)}
               </Badge>
               <div className="flex items-center gap-2">
-                <Button size="sm" className="bg-white font-medium text-slate-900 hover:bg-slate-100" onClick={() => exportCSV(displayedClients)}>
+                <Button size="sm" className="bg-white font-medium text-slate-900 hover:bg-slate-100" disabled={!displayedClients.length} onClick={() => exportCSV(displayedClients)}>
                   <Download className="w-4 h-4 mr-1" /> Export
                 </Button>
-                <Button size="sm" className="bg-white font-medium text-slate-900 hover:bg-slate-100" onClick={() => copyEmails(displayedClients)}>
+                <Button size="sm" className="bg-white font-medium text-slate-900 hover:bg-slate-100" disabled={!displayedClients.some(client => client.email)} onClick={() => void copyEmails(displayedClients)}>
                   <Copy className="w-4 h-4 mr-1" /> Emails
                 </Button>
-                <Button size="sm" variant="ghost" className="text-white hover:bg-white/20" onClick={onClose}>
-                  <X className="w-4 h-4" />
-                </Button>
+
               </div>
             </div>
           </div>
         </DialogHeader>
         
-        <div className="space-y-6 overflow-y-auto px-8 py-6" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+        <div className="min-h-0 space-y-4 overflow-y-auto p-4 sm:p-5">
           
           {/* Key Metrics Section */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="space-y-4">
             <h3 className="mb-6 flex items-center gap-2 border-b border-slate-200 pb-4 text-lg font-semibold text-slate-800">
               <BarChart3 className="h-5 w-5 text-slate-700" />
               Key Performance Metrics
@@ -434,8 +418,8 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="mt-8">
-              <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <TabsContent value="overview" className="mt-4">
+              <div className="space-y-6 space-y-4">
                 <h3 className="mb-6 flex items-center gap-2 border-b border-slate-200 pb-4 text-lg font-semibold text-slate-800">
                   <Star className="h-5 w-5 text-slate-700" />
                   Overview Analysis
@@ -532,7 +516,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               {summary.totalMembers > summary.newMembers && (
                 <Card className="bg-white border border-slate-200/70">
                   <CardHeader>
-                    <CardTitle className="text-slate-900">New Members Discrepancy</CardTitle>
+                    <CardTitle className="text-slate-900">Other client types</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-slate-600 mb-3">
@@ -542,7 +526,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                       {Object.entries(
                         clients.reduce((acc, c) => {
                           const isNewVal = (String(c.isNew || '').trim() || 'Unspecified');
-                          if (!String(c.isNew || '').toLowerCase().includes('new')) {
+                          if (!isInNewClientCohort(c)) {
                             acc[isNewVal] = (acc[isNewVal] || 0) + 1;
                           }
                           return acc;
@@ -557,8 +541,8 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               </div>
             </TabsContent>
 
-            <TabsContent value="clients" className="mt-8">
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <TabsContent value="clients" className="mt-4">
+              <div className="space-y-4">
                 <h3 className="mb-6 flex items-center gap-2 border-b border-slate-200 pb-4 text-lg font-semibold text-slate-800">
                   <Users className="h-5 w-5 text-slate-700" />
                   Client Details
@@ -567,7 +551,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               </div>
             </TabsContent>
 
-            <TabsContent value="insights" className="mt-8">
+            <TabsContent value="insights" className="mt-4">
               <Card className="border border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-slate-800">

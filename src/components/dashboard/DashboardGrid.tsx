@@ -207,6 +207,15 @@ const DASHBOARD_SECTIONS: DashboardSection[] = [
     hoverColor: 'hover:from-indigo-600 hover:to-pink-700',
     insight: 'Data Lab',
   },
+  {
+    id: 'executive-report',
+    title: 'Executive Report',
+    description: 'Select a studio and month to generate a full executive performance report with sales, classes, trainers, funnel, churn, and late cancellations',
+    icon: Target,
+    color: 'from-yellow-600 to-amber-700',
+    hoverColor: 'hover:from-yellow-700 hover:to-amber-800',
+    insight: 'Report',
+  },
 ];
 
 const DEFAULT_ORDER = DASHBOARD_SECTIONS.map((section) => section.id);

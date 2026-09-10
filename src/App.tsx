@@ -86,6 +86,9 @@ const LocationReport = React.lazy(() =>
 const StudioPulse = React.lazy(() =>
   import("./pages/StudioPulse").then(module => ({ default: module.default }))
 );
+const ExecutiveReport = React.lazy(() =>
+  import("./pages/ExecutiveReport").then(module => ({ default: module.default }))
+);
 const NotFound = React.lazy(() => 
   import("./pages/NotFound").then(module => ({ default: module.default }))
 );
@@ -146,6 +149,7 @@ const AppRoutes = () => {
               <Route path="/member-lifecycle" element={<MemberLifecycle />} />
               <Route path="/location-report" element={<LocationReport />} />
               <Route path="/studio-pulse" element={<StudioPulse />} />
+              <Route path="/executive-report" element={<ExecutiveReport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

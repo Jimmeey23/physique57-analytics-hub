@@ -1,6 +1,9 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import {
   Area,
   AreaChart,
@@ -48,6 +51,8 @@ import {
   Repeat,
   RotateCcw,
   Scan,
+  FileSpreadsheet,
+  FileText,
   SlidersHorizontal,
   Sparkles,
   Star,
@@ -106,6 +111,7 @@ import { PresenterToolbar } from '@/components/dashboard/PresenterToolbar';
 import { PresenterAnnotationOverlay } from '@/components/dashboard/PresenterAnnotationOverlay';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminCodeGate } from '@/components/ui/AdminCodeGate';
+import { useToast } from '@/hooks/use-toast';
 
 /* ------------------------------------------------------------------ */
 /* Studio definitions                                                  */
@@ -194,9 +200,9 @@ const normalizeClassName = (value?: string): string => {
 
 const classifyFormat = (value?: string): keyof typeof FORMAT_COLORS => {
   const v = (value || '').toLowerCase();
-  if (v.includes('cycle') || v.includes('spin') || v.includes('ride')) return 'PowerCycle';
-  if (v.includes('strength') || v.includes('sculpt') || v.includes('hiit') || v.includes('fit')) return 'Strength';
-  return 'Barre'; // All other classes (barre, mat, express, workshops, privates, yoga, etc.) → Barre
+  if (v.includes('powercycle')) return 'PowerCycle';
+  if (v.includes('strength lab')) return 'Strength';
+  return 'Barre';
 };
 
 const pctChange = (current: number, previous: number): number | null => {
@@ -466,11 +472,222 @@ const EmptyNote: React.FC<{ label?: string }> = ({ label = 'No data for this stu
   </div>
 );
 
+type MonthlyInsightData = {
+  months: string[];
+  latestMonth: string;
+  latestMonthLabel: string;
+  trend: Array<{
+    month: string;
+    label: string;
+    sales: number;
+    sessions: number;
+    attendance: number;
+    capacity: number;
+    fillRate: number;
+    leads: number;
+    clients: number;
+    converted: number;
+    retained: number;
+    ltc: number;
+    expirations: number;
+  }>;
+  current: null | {
+    month: string;
+    sales: number;
+    sessions: number;
+    attendance: number;
+    capacity: number;
+    fillRate: number;
+    leads: number;
+    clients: number;
+    converted: number;
+    retained: number;
+    ltc: number;
+    expirations: number;
+  };
+  previous: null | {
+    month: string;
+    sales: number;
+    sessions: number;
+    attendance: number;
+    capacity: number;
+    fillRate: number;
+    leads: number;
+    clients: number;
+    converted: number;
+    retained: number;
+    ltc: number;
+    expirations: number;
+  };
+};
+
+const StudioPulseMonthView: React.FC<{
+  studioName: string;
+  studioArea: string;
+  dateRange: { start: string; end: string };
+  monthlyInsight: MonthlyInsightData;
+  salesStats: { net: number; growth: { net: number | null } };
+  sessionStats: { totalSessions: number; attendance: number; growth: { totalSessions: number | null; attendance: number | null; avgFill: number | null }; avgFill: number };
+}> = ({ studioName, studioArea, dateRange, monthlyInsight, salesStats, sessionStats }) => {
+  const metricCards = [
+    { label: 'Net Sales', value: monthlyInsight.current ? formatCurrency(monthlyInsight.current.sales) : formatCurrency(salesStats.net), delta: salesStats.growth.net },
+    { label: 'Sessions', value: monthlyInsight.current ? formatNumber(monthlyInsight.current.sessions) : formatNumber(sessionStats.totalSessions), delta: sessionStats.growth.totalSessions },
+    { label: 'Attendance', value: monthlyInsight.current ? formatNumber(monthlyInsight.current.attendance) : formatNumber(sessionStats.attendance), delta: sessionStats.growth.attendance },
+    { label: 'Fill Rate', value: monthlyInsight.current ? formatPercentage(monthlyInsight.current.fillRate) : formatPercentage(sessionStats.avgFill), delta: sessionStats.growth.avgFill },
+  ];
+
+  return (
+    <motion.div
+      key={`month-view`}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35 }}
+      className="space-y-8"
+    >
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-7 py-6 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-white/45">Monthly insight report</div>
+              <h2 className="mt-2 text-2xl font-black tracking-tight">{monthlyInsight.latestMonthLabel}</h2>
+              <p className="mt-2 max-w-3xl text-sm text-white/70">
+                Month view consolidates the filtered studio into a denser operating readout with month-by-month revenue, attendance, conversion, and retention signals.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right backdrop-blur">
+              <div className="text-[10px] uppercase tracking-[0.22em] text-white/45">Filtered scope</div>
+              <div className="mt-1 text-lg font-bold">Monthly report mode</div>
+              <div className="text-sm text-white/65">{studioName} · {dateRange.start} to {dateRange.end}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
+          {metricCards.map((card) => (
+            <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{card.label}</div>
+              <div className="mt-2 text-2xl font-black text-slate-900">{card.value}</div>
+              <div className="mt-2 text-xs font-medium text-slate-500">{card.delta === null ? 'No previous period' : `${card.delta > 0 ? '+' : ''}${card.delta.toFixed(1)}% vs previous month`}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[1.4fr_0.95fr]">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">12-Month Trend</h3>
+              <p className="text-sm text-slate-500">Revenue, attendance, conversion, and churn at month level.</p>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            {monthlyInsight.trend.slice(-12).map((row) => (
+              <div key={row.month} className="grid grid-cols-5 gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
+                <div className="font-semibold text-slate-700">{row.label}</div>
+                <div className="text-right tabular-nums text-slate-900">{formatCurrency(row.sales)}</div>
+                <div className="text-right tabular-nums text-slate-700">{formatNumber(row.attendance)}</div>
+                <div className="text-right tabular-nums text-slate-700">{formatPercentage(row.fillRate)}</div>
+                <div className="text-right tabular-nums text-slate-500">{formatNumber(row.ltc)} LCs</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900">Monthly Snapshot</h3>
+          <p className="mt-1 text-sm text-slate-500">Current month vs prior month inside the filtered scope.</p>
+          <div className="mt-4 space-y-3">
+            {monthlyInsight.current ? [
+              ['Sales', formatCurrency(monthlyInsight.current.sales), monthlyInsight.previous ? `${monthlyInsight.current.sales >= monthlyInsight.previous.sales ? 'Up' : 'Down'} vs prior month` : 'No prior month'],
+              ['Sessions', formatNumber(monthlyInsight.current.sessions), monthlyInsight.previous ? `${monthlyInsight.current.sessions - monthlyInsight.previous.sessions >= 0 ? '+' : ''}${monthlyInsight.current.sessions - monthlyInsight.previous.sessions} vs prior month` : 'No prior month'],
+              ['Leads', formatNumber(monthlyInsight.current.leads), monthlyInsight.previous ? `${monthlyInsight.current.leads - monthlyInsight.previous.leads >= 0 ? '+' : ''}${monthlyInsight.current.leads - monthlyInsight.previous.leads} vs prior month` : 'No prior month'],
+              ['Expirations', formatNumber(monthlyInsight.current.expirations), monthlyInsight.previous ? `${monthlyInsight.current.expirations - monthlyInsight.previous.expirations >= 0 ? '+' : ''}${monthlyInsight.current.expirations - monthlyInsight.previous.expirations} vs prior month` : 'No prior month'],
+            ] : [['Sales', formatCurrency(0), 'No monthly bucket found']].map(([label, value, sub]) => (
+              <div key={label} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</div>
+                <div className="mt-1 text-lg font-bold text-slate-900">{value as string}</div>
+                <div className="text-sm text-slate-500">{sub as string}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900">Monthly Operations Readout</h3>
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Month</th>
+                  <th className="px-4 py-3 text-right">Revenue</th>
+                  <th className="px-4 py-3 text-right">Sessions</th>
+                  <th className="px-4 py-3 text-right">Clients</th>
+                  <th className="px-4 py-3 text-right">Late Cancels</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyInsight.trend.slice(-6).map((row) => (
+                  <tr key={row.month} className="border-t border-slate-100">
+                    <td className="px-4 py-3 font-medium text-slate-700">{row.label}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-900">{formatCurrency(row.sales)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-700">{formatNumber(row.sessions)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-700">{formatNumber(row.clients)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-600">{formatNumber(row.ltc)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900">Monthly Summary Notes</h3>
+          <div className="mt-4 space-y-3">
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              Sales are being read at month granularity for the selected studio scope, with the latest month anchored to <span className="font-semibold text-slate-900">{monthlyInsight.latestMonthLabel}</span>.
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              Month view keeps the same date range and location filters but makes monthly movement more visible for revenue, attendance, lead flow, and churn.
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              Toggle back to the full report when you want the detailed sectional view and all drilldowns.
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 const chartTooltipStyle = {
   borderRadius: 12,
   border: '1px solid #e2e8f0',
   boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
   fontSize: 12,
+};
+
+const exportTableToSheet = (sheetName: string, columns: string[], rows: Array<Record<string, any>>) => {
+  const worksheet = XLSX.utils.json_to_sheet(rows.map((row) => {
+    const normalized: Record<string, any> = {};
+    columns.forEach((column) => {
+      normalized[column] = row[column] ?? '';
+    });
+    return normalized;
+  }));
+  XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: 'A1' });
+  return { sheetName, worksheet };
+};
+
+const csvSafeValue = (value: any) => {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) return value.join(', ');
+  if (value instanceof Set) return Array.from(value).join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
 };
 
 /* ------------------------------------------------------------------ */
@@ -2166,6 +2383,10 @@ const StudioPulse = memo(() => {
   const [sessionTopCount, setSessionTopCount] = useState<5 | 10 | 20>(10);
   const [sessionBottomCount, setSessionBottomCount] = useState<5 | 10 | 20>(10);
   const [sessionExpandedGroups, setSessionExpandedGroups] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+  const [isExportingPulse, setIsExportingPulse] = useState(false);
+  const monthViewMode = searchParams.get('mv') === '1';
+  const aiSummaryCacheOnly = import.meta.env.VITE_TESTMODE === 'true' && searchParams.get('testmode') !== 'false';
   const toggleSessionGroup = useCallback((key: string) => {
     setSessionExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -2556,7 +2777,7 @@ const StudioPulse = memo(() => {
   const renderAISummary = (sectionKey: string, fallbackItems: string[], columns: 1 | 2 = 2) => {
     const s = getSummary(sectionKey);
     const loading = aiSectionLoading(sectionKey);
-    const bullets = s ? s.bullets : fallbackItems;
+    const bullets = s ? s.bullets : (aiSummaryCacheOnly ? [] : fallbackItems);
     return (
       <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4 shadow-sm">
         <div className="mb-2 flex items-center gap-2">
@@ -2566,7 +2787,9 @@ const StudioPulse = memo(() => {
           </span>
           {loading && <div className="h-3 w-3 animate-spin rounded-full border-2 border-purple-200 border-t-purple-500 shrink-0" />}
         </div>
-        {renderBulletSummary(bullets, columns)}
+        {bullets.length > 0 ? renderBulletSummary(bullets, columns) : (
+          <p className="text-sm text-slate-400">AI summary will appear here when cached or generated.</p>
+        )}
       </div>
     );
   };
@@ -3075,6 +3298,133 @@ const StudioPulse = memo(() => {
     yoyNetSales: salesStats.yoyGrowth.net,
   }), [salesStats, sessionStats, lcStats, expirationStats, clientStats]);
 
+  const monthlyInsight = (() => {
+    const monthBuckets = new Map<string, {
+      sales: number;
+      sessions: number;
+      attendance: number;
+      capacity: number;
+      leads: number;
+      clients: number;
+      converted: number;
+      retained: number;
+      ltc: number;
+      expirations: number;
+    }>();
+
+    const ensureMonth = (key: string) => {
+      if (!monthBuckets.has(key)) {
+        monthBuckets.set(key, {
+          sales: 0,
+          sessions: 0,
+          attendance: 0,
+          capacity: 0,
+          leads: 0,
+          clients: 0,
+          converted: 0,
+          retained: 0,
+          ltc: 0,
+          expirations: 0,
+        });
+      }
+      return monthBuckets.get(key)!;
+    };
+
+    filteredSales.forEach((row) => {
+      const key = monthKeyFromDate(row.paymentDate);
+      if (!key) return;
+      ensureMonth(key).sales += (Number(row.paymentValue) || 0) - (Number(row.paymentVAT) || 0);
+    });
+    filteredSessions.forEach((row) => {
+      const key = monthKeyFromDate(row.date);
+      if (!key) return;
+      const bucket = ensureMonth(key);
+      bucket.sessions += 1;
+      bucket.attendance += Number(row.checkedInCount) || 0;
+      bucket.capacity += Number(row.capacity) || 0;
+    });
+    filteredLeads.forEach((row) => {
+      const key = monthKeyFromDate(row.createdAt);
+      if (!key) return;
+      ensureMonth(key).leads += 1;
+    });
+    filteredClients.forEach((row) => {
+      const key = monthKeyFromDate(row.firstVisitDate);
+      if (!key) return;
+      const bucket = ensureMonth(key);
+      bucket.clients += 1;
+      bucket.converted += isConvertedInCohort(row) ? 1 : 0;
+      bucket.retained += isRetainedInCohort(row) ? 1 : 0;
+    });
+    filteredLateCancels.forEach((row) => {
+      const key = monthKeyFromDate(row.dateIST || row.sessionDateIST);
+      if (!key) return;
+      ensureMonth(key).ltc += 1;
+    });
+    filteredExpirations.forEach((row) => {
+      const key = monthKeyFromDate(row.endDate);
+      if (!key) return;
+      ensureMonth(key).expirations += 1;
+    });
+
+    const months = Array.from(monthBuckets.keys()).sort().slice(-12);
+    const latestMonth = months[months.length - 1] || monthKeyFromDate(dateRange.end) || monthKeyFromDate(dateRange.start) || '';
+    const current = latestMonth ? ensureMonth(latestMonth) : null;
+    const previous = months.length > 1 ? ensureMonth(months[months.length - 2]) : null;
+
+    return {
+      months,
+      latestMonth,
+      latestMonthLabel: latestMonth ? monthLabel(latestMonth) : 'N/A',
+      trend: months.map((month) => {
+        const value = ensureMonth(month);
+        return {
+          month,
+          label: monthLabel(month),
+          sales: value.sales,
+          sessions: value.sessions,
+          attendance: value.attendance,
+          capacity: value.capacity,
+          fillRate: value.capacity > 0 ? (value.attendance / value.capacity) * 100 : 0,
+          leads: value.leads,
+          clients: value.clients,
+          converted: value.converted,
+          retained: value.retained,
+          ltc: value.ltc,
+          expirations: value.expirations,
+        };
+      }),
+      current: current && latestMonth ? {
+        month: latestMonth,
+        sales: current.sales,
+        sessions: current.sessions,
+        attendance: current.attendance,
+        capacity: current.capacity,
+        fillRate: current.capacity > 0 ? (current.attendance / current.capacity) * 100 : 0,
+        leads: current.leads,
+        clients: current.clients,
+        converted: current.converted,
+        retained: current.retained,
+        ltc: current.ltc,
+        expirations: current.expirations,
+      } : null,
+      previous: previous ? {
+        month: months[months.length - 2],
+        sales: previous.sales,
+        sessions: previous.sessions,
+        attendance: previous.attendance,
+        capacity: previous.capacity,
+        fillRate: previous.capacity > 0 ? (previous.attendance / previous.capacity) * 100 : 0,
+        leads: previous.leads,
+        clients: previous.clients,
+        converted: previous.converted,
+        retained: previous.retained,
+        ltc: previous.ltc,
+        expirations: previous.expirations,
+      } : null,
+    };
+  })();
+
   const buildSummaryInput = useCallback((sectionKey: string, sectionContext?: string) => ({
     studioName: activeStudio.name,
     dateRange,
@@ -3090,6 +3440,26 @@ const StudioPulse = memo(() => {
     const topLapsed = lapsedByMembership.slice(0, 3);
     const topSessions = [...sessionIntelligence.rows].sort((a, b) => b.classAvg - a.classAvg).slice(0, 3);
     const botSessions = [...sessionIntelligence.rows].sort((a, b) => a.fillRate - b.fillRate).slice(0, 3);
+    const topSalesRows = [...salesMetricsMatrix.metricRows].slice(0, 3);
+    const topFunnelRows = [...funnelRankings.rows].slice(0, 3);
+    const bottomFunnelRows = [...funnelRankings.rows].slice(-3).reverse();
+    const topCapacityRows = [...capacityByStudio].sort((a, b) => b.utilization - a.utilization).slice(0, 3);
+    const heatmapPeak = (() => {
+      let peakSlot = '';
+      let peakDay = '';
+      let peakValue = 0;
+      peakHourHeatmap.timeSlots.forEach((slot) => {
+        peakHourHeatmap.days.forEach((day) => {
+          const v = peakHourHeatmap.buckets[slot]?.[day]?.fillRate ?? 0;
+          if (v > peakValue) {
+            peakValue = v;
+            peakSlot = slot;
+            peakDay = day;
+          }
+        });
+      });
+      return { peakSlot, peakDay, peakValue };
+    })();
 
     return {
       sales: [
@@ -3097,6 +3467,26 @@ const StudioPulse = memo(() => {
         `ATV ${formatCurrency(salesStats.atv)} · Discount penetration ${formatPercentage(salesStats.discountPenetration)} · Total discount value ${formatCurrency(salesStats.discount)}`,
         `Transactions ${formatNumber(salesStats.txns)} · Unique buyers ${formatNumber(salesStats.members)} · Sales/member ${formatCurrency(salesStats.members > 0 ? salesStats.net / salesStats.members : 0)}`,
         salesStats.growth.net !== null ? `Net sales MoM: ${salesStats.growth.net > 0 ? '+' : ''}${salesStats.growth.net.toFixed(1)}%` : 'MoM comparison unavailable',
+      ].join('\n'),
+      salesMatrix: [
+        `Latest month ${matrixSummaryStats.latestMonth} net sales ${formatCurrency(matrixSummaryStats.latestNet)} · ATV ${formatCurrency(matrixSummaryStats.latestAtv)} · discount penetration ${formatPercentage(matrixSummaryStats.latestDiscount)}`,
+        `The matrix is reading the full available sales history for ${activeStudio.name} and is not limited by the visible date filter.`,
+        topSalesRows.length ? `Leading matrix rows: ${topSalesRows.map((row) => `${row.label}`).join(' | ')}` : '',
+      ].filter(Boolean).join('\n'),
+      salesMom: [
+        `${showMomTable ? 'Month-on-month table is expanded' : 'Month-on-month table is collapsed'} for category and product movement.`,
+        `The newest visible month is highlighted, making month-to-month deltas easy to inspect without changing the underlying filter scope.`,
+        `Use the table to compare absolute sales mix shifts, not just growth percentages.`,
+      ].join('\n'),
+      salesRankings: [
+        `${salesSellerSummary.topName} leads current seller performance with ${formatPercentage(salesSellerSummary.share)} of displayed sales.`,
+        `The lead over the next seller is ${formatCurrency(salesSellerSummary.gap)}.`,
+        `Concentration risk becomes material when one seller exceeds about 40% of displayed sales.`,
+      ].join('\n'),
+      salesMix: [
+        `Product mix shift is comparing memberships, packages, intro offers, and single classes across months.`,
+        `The chart is useful for seeing whether acquisition is moving toward longer-duration value or shorter one-off purchases.`,
+        `Watch for a rising share of single classes when membership conversion softens.`,
       ].join('\n'),
 
       funnel: [
@@ -3108,6 +3498,16 @@ const StudioPulse = memo(() => {
           ? `Retention-to-conversion ratio: ${(clientStats.retentionRate / clientStats.conversionRate * 100).toFixed(0)}% of converters retained`
           : '',
       ].filter(Boolean).join('\n'),
+      funnelOverview: [
+        `${clientStats.newClients} newcomers entered the funnel and ${clientStats.converted} converted.`,
+        `The biggest gap is ${formatNumber(clientStats.newClients - clientStats.converted)} members who entered but did not convert.`,
+        `Avg LTV is ${formatCurrency(clientStats.avgLtv)}, so every conversion gap has direct revenue impact.`,
+      ].join('\n'),
+      funnelRankings: [
+        topFunnelRows.length ? `Top funnel segments: ${topFunnelRows.map((row) => `${row.name} (${formatPercentage(row.conversionRate)} conv, ${formatPercentage(row.retentionRate)} ret, ${formatCurrency(row.ltv)} LTV)`).join(' | ')}` : '',
+        bottomFunnelRows.length ? `Bottom funnel segments: ${bottomFunnelRows.map((row) => `${row.name} (${formatPercentage(row.conversionRate)} conv, ${formatPercentage(row.retentionRate)} ret)`).join(' | ')}` : '',
+        `Use the ranking lists to identify which sources are producing retained revenue, not just trial volume.`,
+      ].filter(Boolean).join('\n'),
 
       trainers: [
         `${trainerRankingsExtended.rows.length} trainers in period`,
@@ -3115,6 +3515,16 @@ const StudioPulse = memo(() => {
         botTrainers.length ? `Bottom 3 fill rate: ${botTrainers.map((t) => `${t.name} ${formatPercentage(t.utilization)} fill`).join(' | ')}` : '',
         `Studio avg fill ${formatPercentage(sessionStats.avgFill)} · Total late cancels ${formatNumber(lcStats.total)}`,
         `Total trainer pay: ${formatCurrency(trainerRankingsExtended.rows.reduce((s, r) => s + r.paid, 0))}`,
+      ].filter(Boolean).join('\n'),
+      trainerScorecard: [
+        `${trainerRankingsExtended.rows.length} trainers are in the scorecard, and the top earner is ${trainerRankingsExtended.rows[0]?.name || 'N/A'}.`,
+        `Compare pay, fill, and conversion together so the highest-paid trainer is not treated as automatically highest-performing.`,
+        `The most useful gap is between sessions delivered and fill rate, not just raw attendance.`,
+      ].join('\n'),
+      trainerEfficiency: [
+        topTrainers.length ? `Top pay performers: ${topTrainers.map((t) => `${t.name} ${formatPercentage(t.utilization)} fill · ${formatCurrency(t.paid)}`).join(' | ')}` : '',
+        botTrainers.length ? `Lowest utilization performers: ${botTrainers.map((t) => `${t.name} ${formatPercentage(t.utilization)} fill`).join(' | ')}` : '',
+        `Efficiency view should be read against the studio average fill of ${formatPercentage(sessionStats.avgFill)}.`,
       ].filter(Boolean).join('\n'),
 
       lapsed: [
@@ -3124,6 +3534,16 @@ const StudioPulse = memo(() => {
         `Late cancel same-day rate: ${lcStats.total > 0 ? ((lcStats.sameDay / lcStats.total) * 100).toFixed(0) : 0}% of LCs are same-day`,
         expirationStats.momGrowth !== null ? `Lapsed MoM: ${expirationStats.momGrowth > 0 ? '+' : ''}${expirationStats.momGrowth.toFixed(1)}%` : '',
       ].filter(Boolean).join('\n'),
+      lapsedTrend: [
+        `${expirationStats.total} expirations and ${expirationStats.churned} churned members are visible in the current window.`,
+        `Same-day late cancels account for ${lcStats.total > 0 ? ((lcStats.sameDay / lcStats.total) * 100).toFixed(0) : 0}% of cancellations, which is the immediate revenue-loss pressure point.`,
+        `The most common lapse memberships are ${topLapsed.map((m) => `${m.name} (${m.count})`).join(', ')}.`,
+      ].join('\n'),
+      lapsedTable: [
+        `The lapse table should be used to prioritize outreach by membership type, days active, and session usage percentage.`,
+        `Early exits with low session usage are the clearest churn-rescue candidates.`,
+        `Penalty revenue of ${formatCurrency(lcStats.penalty)} gives the near-term cash impact of cancellation behavior.`,
+      ].join('\n'),
 
       attendance: [
         `${sessionStats.totalSessions} sessions · ${sessionStats.attendance} visits · ${formatPercentage(sessionStats.avgFill)} avg fill · ${formatPercentage(sessionStats.emptyShare)} empty-class rate`,
@@ -3132,6 +3552,26 @@ const StudioPulse = memo(() => {
         botSessions.length ? `Bottom 3 by fill rate: ${botSessions.map((r) => `${r.name} (${formatPercentage(r.fillRate)} fill, ${r.sessions} cls)`).join(' | ')}` : '',
         `Late cancels ${lcStats.total} · Rev/visit ${formatCurrency(sessionStats.attendance > 0 ? salesStats.net / sessionStats.attendance : 0)}`,
       ].filter(Boolean).join('\n'),
+      attendanceHeatmap: [
+        `Peak heatmap cell is ${heatmapPeak.peakSlot} on ${heatmapPeak.peakDay} at ${formatPercentage(heatmapPeak.peakValue)} fill rate.`,
+        `The heatmap shows where demand clusters across the week instead of averaging out the signal.`,
+        `Use this to move capacity into the strongest day-and-hour combinations.`,
+      ].join('\n'),
+      attendanceCapacity: [
+        topCapacityRows.length ? `Highest utilization locations: ${topCapacityRows.map((row) => `${row.location} (${row.utilization.toFixed(1)}%)`).join(' | ')}` : '',
+        `Booked ${formatNumber(sessionStats.attendance)} against ${formatNumber(sessionStats.totalSessions)} sessions and ${formatNumber(sessionStats.totalSessions > 0 ? sessionStats.attendance / sessionStats.totalSessions : 0)} avg all-session attendance.`,
+        `Capacity should be read as utilization quality, not just raw headcount.`,
+      ].filter(Boolean).join('\n'),
+      attendanceComp: [
+        `Complementary and non-paid visit trend is used to detect dilution in attendance quality.`,
+        `If the non-paid share rises while fill rate stays flat, the studio is filling seats but not monetizing them efficiently.`,
+        `The chart should be used alongside revenue per visit to judge whether free traffic is productive.`,
+      ].join('\n'),
+      attendanceTable: [
+        `The session intelligence table is most useful when read by class average, fill rate, late cancels, and revenue together.`,
+        `Expanded rows reveal the underlying class-by-class drivers instead of only the grouped totals.`,
+        `Look for classes that are full enough to sell but still weak on revenue per check-in.`,
+      ].join('\n'),
     };
   }, [salesStats, clientStats, sessionStats, trainerRankingsExtended, expirationStats, lcStats, lapsedByMembership, sessionIntelligence.rows]);
 
@@ -3139,26 +3579,170 @@ const StudioPulse = memo(() => {
     if (anyLoading) return;
     generateAISummary(buildSummaryInput('main'));
     generateAISummary(buildSummaryInput('sales', sectionContexts.sales));
+    generateAISummary(buildSummaryInput('sales-matrix', sectionContexts.salesMatrix));
+    generateAISummary(buildSummaryInput('sales-mom', sectionContexts.salesMom));
+    generateAISummary(buildSummaryInput('sales-rankings', sectionContexts.salesRankings));
+    generateAISummary(buildSummaryInput('sales-mix', sectionContexts.salesMix));
     generateAISummary(buildSummaryInput('funnel', sectionContexts.funnel));
+    generateAISummary(buildSummaryInput('funnel-overview', sectionContexts.funnelOverview));
+    generateAISummary(buildSummaryInput('funnel-rankings', sectionContexts.funnelRankings));
     generateAISummary(buildSummaryInput('trainers', sectionContexts.trainers));
+    generateAISummary(buildSummaryInput('trainer-scorecard', sectionContexts.trainerScorecard));
+    generateAISummary(buildSummaryInput('trainer-efficiency', sectionContexts.trainerEfficiency));
     generateAISummary(buildSummaryInput('lapsed', sectionContexts.lapsed));
+    generateAISummary(buildSummaryInput('lapsed-trend', sectionContexts.lapsedTrend));
+    generateAISummary(buildSummaryInput('lapsed-table', sectionContexts.lapsedTable));
     generateAISummary(buildSummaryInput('attendance', sectionContexts.attendance));
+    generateAISummary(buildSummaryInput('attendance-heatmap', sectionContexts.attendanceHeatmap));
+    generateAISummary(buildSummaryInput('attendance-capacity', sectionContexts.attendanceCapacity));
+    generateAISummary(buildSummaryInput('attendance-comp', sectionContexts.attendanceComp));
+    generateAISummary(buildSummaryInput('attendance-table', sectionContexts.attendanceTable));
   }, [anyLoading, studio, dateRange.start, dateRange.end]);
 
   const handleRefresh = useCallback(() => {
     refetchSales();
   }, [refetchSales]);
 
+  const handleExportStudioPulse = useCallback(async (format: 'pdf' | 'xlsx') => {
+    if (isExportingPulse) return;
+    setIsExportingPulse(true);
+
+    const filenameBase = `studio-pulse-${studio}-${dateRange.start}-to-${dateRange.end}`.replace(/[^a-zA-Z0-9-_.]+/g, '-');
+    const locationLabel = studio === 'all' ? 'All Studios' : activeStudio.name;
+
+    const workbookSections = [
+      { title: 'Filtered Sales', columns: ['paymentDate', 'calculatedLocation', 'memberId', 'cleanedProduct', 'cleanedCategory', 'paymentValue', 'paymentVAT', 'discountAmount', 'soldBy', 'paymentMethod'], rows: filteredSales },
+      { title: 'Filtered Sessions', columns: ['date', 'location', 'sessionName', 'cleanedClass', 'trainerName', 'checkedInCount', 'capacity', 'revenue', 'lateCancelledCount'], rows: filteredSessions },
+      { title: 'Filtered Clients', columns: ['firstVisitDate', 'firstVisitLocation', 'firstVisitEntityName', 'memberId', 'email', 'conversionStatus', 'retentionStatus', 'ltv'], rows: filteredClients },
+      { title: 'Filtered Leads', columns: ['createdAt', 'center', 'source', 'stage', 'classType', 'memberId', 'email', 'conversionStatus', 'ltv'], rows: filteredLeads },
+      { title: 'Filtered Late Cancellations', columns: ['dateIST', 'sessionDateIST', 'location', 'teacherName', 'memberId', 'sessionName', 'penaltyAmount'], rows: filteredLateCancels },
+      { title: 'Filtered Expirations', columns: ['endDate', 'primaryLocation', 'homeLocation', 'membershipName', 'memberId', 'status', 'sessionsUsedPct', 'avgSessionsPerMonth', 'daysActive'], rows: filteredExpirations },
+      { title: 'Sales Metrics Matrix', columns: ['label', ...salesMetricsMatrix.months.map((m) => salesMetricsMatrix.monthLabels[m])], rows: salesMetricsMatrix.metricRows.map((row) => ({
+        label: row.label,
+        ...Object.fromEntries(salesMetricsMatrix.months.map((month) => [salesMetricsMatrix.monthLabels[month], row.values[month] ?? 0])),
+      })) },
+      { title: 'Session Intelligence Rankings', columns: ['name', 'sessions', 'visits', 'capacity', 'empty', 'classAvg', 'fillRate', 'cancellationRate', 'revPerCheckin', 'revenue', 'isActive'], rows: sessionIntelligence.rows },
+      { title: 'Funnel Rankings', columns: ['name', 'leads', 'trials', 'converted', 'retained', 'visitsPostTrial', 'ltv', 'membershipsBought'], rows: funnelRankings.rows },
+      { title: 'Trainer Rankings', columns: ['name', 'sessions', 'customers', 'paid', 'classAvg', 'fillRate', 'utilization', 'conversionRate', 'lateCancels', 'revenueScore'], rows: trainerRankingsExtended.rows },
+      { title: 'Lapsed Memberships', columns: ['name', 'count', 'uniqueMembers', 'avgLtv', 'avgSessionsUsedPct', 'avgDaysActive', 'earlyExitRate', 'discountRate'], rows: membershipChurnBreakdown },
+      { title: 'Heatmap', columns: ['slot', ...peakHourHeatmap.days], rows: peakHourHeatmap.timeSlots.map((slot) => ({ slot, ...Object.fromEntries(peakHourHeatmap.days.map((day) => [day, peakHourHeatmap.buckets[slot]?.[day]?.fillRate ?? 0])) })) },
+    ];
+
+    try {
+      if (format === 'xlsx') {
+        const wb = XLSX.utils.book_new();
+        const metaSheet = XLSX.utils.aoa_to_sheet([
+          ['Studio Pulse Export'],
+          ['Location', locationLabel],
+          ['Date Range', `${dateRange.start} to ${dateRange.end}`],
+          ['Generated At', new Date().toLocaleString()],
+        ]);
+        XLSX.utils.book_append_sheet(wb, metaSheet, 'Summary');
+        workbookSections.forEach((section) => {
+          if (!section.rows.length) return;
+          const sheetRows = section.rows.map((row) => {
+            const out: Record<string, any> = {};
+            section.columns.forEach((column) => {
+              out[column] = csvSafeValue((row as Record<string, any>)[column]);
+            });
+            return out;
+          });
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetRows), section.title.slice(0, 31));
+        });
+        XLSX.writeFile(wb, `${filenameBase}.xlsx`);
+      } else {
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        let y = 14;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(16);
+        pdf.text('Studio Pulse Export', 14, y);
+        y += 7;
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Location: ${locationLabel}`, 14, y);
+        y += 5;
+        pdf.text(`Date Range: ${dateRange.start} to ${dateRange.end}`, 14, y);
+        y += 5;
+        pdf.text(`Generated: ${new Date().toLocaleString()}`, 14, y);
+        y += 8;
+
+        const pdfSections = [
+          { title: 'Filtered Sales', columns: ['paymentDate', 'calculatedLocation', 'cleanedProduct', 'paymentValue', 'paymentVAT', 'discountAmount', 'soldBy'], rows: filteredSales },
+          { title: 'Filtered Sessions', columns: ['date', 'location', 'sessionName', 'trainerName', 'checkedInCount', 'capacity', 'revenue'], rows: filteredSessions },
+          { title: 'Filtered Clients', columns: ['firstVisitDate', 'firstVisitLocation', 'memberId', 'conversionStatus', 'retentionStatus', 'ltv'], rows: filteredClients },
+          { title: 'Filtered Leads', columns: ['createdAt', 'center', 'source', 'stage', 'conversionStatus', 'ltv'], rows: filteredLeads },
+          { title: 'Filtered Late Cancellations', columns: ['dateIST', 'location', 'teacherName', 'sessionName', 'penaltyAmount'], rows: filteredLateCancels },
+          { title: 'Filtered Expirations', columns: ['endDate', 'primaryLocation', 'membershipName', 'memberId', 'sessionsUsedPct', 'daysActive'], rows: filteredExpirations },
+        ];
+
+        pdfSections.forEach((section) => {
+          if (!section.rows.length) return;
+          if (y > 170) {
+            pdf.addPage();
+            y = 14;
+          }
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(section.title, 14, y);
+          y += 4;
+          autoTable(pdf, {
+            startY: y,
+            head: [section.columns],
+            body: section.rows.slice(0, 250).map((row) => section.columns.map((column) => csvSafeValue((row as Record<string, any>)[column]))),
+            styles: { fontSize: 7, cellPadding: 1.5 },
+            headStyles: { fillColor: [15, 23, 42] },
+            margin: { left: 14, right: 14 },
+            theme: 'grid',
+          });
+          y = ((pdf as any).lastAutoTable?.finalY || y) + 8;
+        });
+
+        pdf.save(`${filenameBase}.pdf`);
+      }
+
+      toast({
+        title: 'Export started',
+        description: `Studio Pulse ${format.toUpperCase()} export queued for ${locationLabel}.`,
+      });
+    } catch (error) {
+      console.error('Studio Pulse export failed:', error);
+      toast({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'Unable to generate the Studio Pulse export.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingPulse(false);
+    }
+  }, [activeStudio.name, dateRange.end, dateRange.start, filteredClients, filteredExpirations, filteredLateCancels, filteredLeads, filteredSales, filteredSessions, isExportingPulse, membershipChurnBreakdown, peakHourHeatmap.buckets, peakHourHeatmap.days, peakHourHeatmap.timeSlots, salesMetricsMatrix.months, salesMetricsMatrix.monthLabels, sessionIntelligence.rows, studio, toast, trainerRankingsExtended.rows, funnelRankings.rows]);
+
   const [summaryRefreshing, setSummaryRefreshing] = useState(false);
+  const [funnelActiveIdx, setFunnelActiveIdx] = useState(0);
+  const [funnelSrcFilter, setFunnelSrcFilter] = useState<string | null>(null);
   const handleRefreshSummaries = useCallback(async () => {
     setSummaryRefreshing(true);
     await refreshAllSummaries([
       buildSummaryInput('main'),
       buildSummaryInput('sales', sectionContexts.sales),
+      buildSummaryInput('sales-matrix', sectionContexts.salesMatrix),
+      buildSummaryInput('sales-mom', sectionContexts.salesMom),
+      buildSummaryInput('sales-rankings', sectionContexts.salesRankings),
+      buildSummaryInput('sales-mix', sectionContexts.salesMix),
       buildSummaryInput('funnel', sectionContexts.funnel),
+      buildSummaryInput('funnel-overview', sectionContexts.funnelOverview),
+      buildSummaryInput('funnel-rankings', sectionContexts.funnelRankings),
       buildSummaryInput('trainers', sectionContexts.trainers),
+      buildSummaryInput('trainer-scorecard', sectionContexts.trainerScorecard),
+      buildSummaryInput('trainer-efficiency', sectionContexts.trainerEfficiency),
       buildSummaryInput('lapsed', sectionContexts.lapsed),
+      buildSummaryInput('lapsed-trend', sectionContexts.lapsedTrend),
+      buildSummaryInput('lapsed-table', sectionContexts.lapsedTable),
       buildSummaryInput('attendance', sectionContexts.attendance),
+      buildSummaryInput('attendance-heatmap', sectionContexts.attendanceHeatmap),
+      buildSummaryInput('attendance-capacity', sectionContexts.attendanceCapacity),
+      buildSummaryInput('attendance-comp', sectionContexts.attendanceComp),
+      buildSummaryInput('attendance-table', sectionContexts.attendanceTable),
     ]);
     setSummaryRefreshing(false);
   }, [buildSummaryInput, refreshAllSummaries, sectionContexts]);
@@ -3166,6 +3750,9 @@ const StudioPulse = memo(() => {
   const handleResetFilters = useCallback(() => {
     setStudio('all');
     setDateRange(defaultDateRange);
+    const params = new URLSearchParams(searchParams);
+    params.delete('mv');
+    setSearchParams(params, { replace: true });
   }, [defaultDateRange]);
 
   // ─── Admin auth + presenter mode ──────────────────────────────────────────
@@ -3454,6 +4041,42 @@ const StudioPulse = memo(() => {
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
+            <button
+              onClick={() => handleExportStudioPulse('xlsx')}
+              disabled={isExportingPulse}
+              title="Export Excel"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white/70 px-3 text-[11px] font-semibold text-slate-600 shadow-sm backdrop-blur transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              Excel
+            </button>
+            <button
+              onClick={() => handleExportStudioPulse('pdf')}
+              disabled={isExportingPulse}
+              title="Export PDF"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white/70 px-3 text-[11px] font-semibold text-slate-600 shadow-sm backdrop-blur transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              PDF
+            </button>
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                if (monthViewMode) params.delete('mv');
+                else params.set('mv', '1');
+                setSearchParams(params, { replace: true });
+              }}
+              title={monthViewMode ? 'Return to full report' : 'Switch to month view'}
+              className={cn(
+                'flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[11px] font-semibold shadow-sm backdrop-blur transition',
+                monthViewMode
+                  ? 'border-slate-900 bg-slate-900 text-white'
+                  : 'border-slate-200 bg-white/70 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              )}
+            >
+              <CalendarDays className="h-3.5 w-3.5" />
+              Month View
+            </button>
             {/* Refresh Summaries */}
             <button
               onClick={handleRefreshSummaries}
@@ -3519,6 +4142,16 @@ const StudioPulse = memo(() => {
         </div>
         </div>{/* end viewer-lock wrapper */}
 
+        {monthViewMode ? (
+          <StudioPulseMonthView
+            studioName={activeStudio.name}
+            studioArea={activeStudio.area}
+            dateRange={dateRange}
+            monthlyInsight={monthlyInsight}
+            salesStats={salesStats}
+            sessionStats={sessionStats}
+          />
+        ) : (
         <AnimatePresence mode="wait">
           <motion.div
             key={studio}
@@ -3917,7 +4550,7 @@ const StudioPulse = memo(() => {
                     </div>
                   </div>
                   <div className="relative h-px w-full overflow-hidden bg-gradient-to-r from-transparent via-blue-400 to-transparent">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 animate-pulse duration-[3000ms]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 animate-pulse [animation-duration:3000ms]"></div>
                   </div>
                   {salesMetricsMatrix.months.length ? (
                     <div className="overflow-x-auto">
@@ -3999,7 +4632,7 @@ const StudioPulse = memo(() => {
                     </div>
                   )}
                 </div>
-                {renderAISummary('sales', [
+                {renderAISummary('sales-matrix', [
                   `Latest net sales in ${matrixSummaryStats.latestMonth} closed at ${formatCurrency(matrixSummaryStats.latestNet)}.`,
                   `Average transaction value for the latest month sits at ${formatCurrency(matrixSummaryStats.latestAtv)}.`,
                   `Latest discount penetration is ${formatPercentage(matrixSummaryStats.latestDiscount)}, showing current discount dependence.`,
@@ -4008,7 +4641,7 @@ const StudioPulse = memo(() => {
                 {showMomTable ? (
                   <>
                     <MonthOnMonthTableNew data={sales as any} collapsedGroups={salesCollapsedGroups} contextInfo={{ dateRange: defaultDateRange, location: activeStudio.name }} />
-                    {renderAISummary('sales', [
+                    {renderAISummary('sales-mom', [
                       'Month columns are sorted newest first, with the active month highlighted for faster scanning.',
                       'Collapse groups to compare top-level categories before drilling into products.',
                       'Click any month cell to open context-aware analytics for that exact category or product slice.',
@@ -4017,7 +4650,7 @@ const StudioPulse = memo(() => {
                 ) : null}
                 {showSalesRankings && <>
                   <UnifiedTopBottomSellers data={filteredSales as any} onRowClick={(row) => openMetricDrillDown(row.title || row.name || 'Seller detail', row.type || 'seller', row, filteredSales)} />
-                  {renderAISummary('sales', [
+                  {renderAISummary('sales-rankings', [
                     `${salesSellerSummary.topName} is the current top seller across the displayed data.`,
                     `Top-seller share stands at ${formatPercentage(salesSellerSummary.share)}, indicating current concentration risk.`,
                     `The lead over the next seller is ${formatCurrency(salesSellerSummary.gap)}.`,
@@ -4187,8 +4820,10 @@ const StudioPulse = memo(() => {
               {/* Conversion Pipeline — reference style */}
               {(() => {
                 const PILL_COLORS = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2'];
-                const [activeIdx, setActiveIdx] = React.useState(0);
-                const [srcFilter, setSrcFilter] = React.useState<string|null>(null);
+                const activeIdx = funnelActiveIdx;
+                const setActiveIdx = setFunnelActiveIdx;
+                const srcFilter = funnelSrcFilter;
+                const setSrcFilter = setFunnelSrcFilter;
 
                 // Source-filtered funnel values
                 const srcLeads = srcFilter ? filteredLeads.filter(l => (l.source || 'Unknown') === srcFilter) : filteredLeads;
@@ -4689,7 +5324,7 @@ const StudioPulse = memo(() => {
 
               {/* Summary — full width at bottom */}
               <div className="mt-6">
-                {renderAISummary('funnel', [
+                {renderAISummary('funnel-overview', [
                   `Current conversion rate is ${formatPercentage(clientStats.conversionRate)} and retention rate is ${formatPercentage(clientStats.retentionRate)}.`,
                   `Average post-trial value is ${formatCurrency(clientStats.avgLtv)} with ${formatNumber(filteredClients.reduce((sum, item) => sum + (Number(item.visitsPostTrial) || 0), 0))} total post-trial visits.`,
                   `${clientStats.newClients} new clients entered the funnel — ${clientStats.converted} converted.`,
@@ -5064,12 +5699,19 @@ const StudioPulse = memo(() => {
                       </tbody>
                     </table>
                   </div>
+                  <div className="px-6 pb-6">
+                    {renderAISummary('attendance-capacity', [
+                      `${capacityByStudio.length} studios are shown, with the strongest utilization currently in the highest rows of the table.`,
+                      'Booked capacity should be read against total capacity to understand whether utilization is actually efficient.',
+                      'Low-utilization studios are the clearest place to look for schedule or demand misalignment.',
+                    ])}
+                  </div>
                 </div>
-              )}
+                )}
 
               {/* Summary — full width at bottom */}
               <div className="mt-6">
-                {renderAISummary('trainers', [
+                {renderAISummary('trainer-scorecard', [
                   `${trainerRankingsExtended.rows.length} trainers in scorecard, top earner is ${trainerRankingsExtended.rows[0]?.name || 'N/A'}.`,
                   `Avg fill rate across all sessions is ${formatPercentage(sessionStats.avgFill)}.`,
                   'Conv % and Ret % are calculated from new members attributed to each trainer.',
@@ -5504,7 +6146,7 @@ const StudioPulse = memo(() => {
 
               {/* Summary */}
               <div className="mt-6">
-                {renderAISummary('lapsed', [
+                {renderAISummary('lapsed-trend', [
                   `${formatNumber(expirationStats.total)} memberships expired, ${formatNumber(expirationStats.churned)} churned (${expirationStats.total ? formatPercentage((expirationStats.churned / expirationStats.total) * 100) : '0%'} churn rate).`,
                   `Early exit rate: ${lapsedEngagementStats.earlyExitRate.toFixed(1)}% of lapsed members used less than 50% of purchased sessions — high intent, low retention.`,
                   `${lapsedEngagementStats.discountDrivenPct.toFixed(0)}% of lapsed members had a promo code — watch for promo-driven churn patterns.`,
@@ -6198,7 +6840,7 @@ const StudioPulse = memo(() => {
 
                 {/* Summary */}
                 <div className="mt-2">
-                  {renderAISummary('attendance', [
+                  {renderAISummary('attendance-table', [
                     `${formatNumber(sessionStats.totalSessions)} sessions conducted with ${formatNumber(sessionStats.attendance)} total visits and ${formatPercentage(sessionStats.avgFill)} average fill rate.`,
                     `Average class size across non-empty sessions is ${sessionStats.classAvg.toFixed(1)}, with ${formatPercentage(sessionStats.emptyShare)} of sessions running empty.`,
                     `${lcStats.total} late cancellations recorded across sessions — review slot patterns.`,
@@ -6234,6 +6876,13 @@ const StudioPulse = memo(() => {
                   </div>
                   <div className="p-5">
                     <DetailedComparisonView data={filteredSessions as any} />
+                  </div>
+                  <div className="px-5 pb-5">
+                    {renderAISummary('sales-mix', [
+                      'Use the detailed comparison to isolate which session formats are driving the best attendance and revenue combination.',
+                      'Look for formats with high fill but weak revenue if pricing or package mix is suppressing yield.',
+                      'The strongest formats should be those with healthy attendance and stable revenue per check-in.',
+                    ])}
                   </div>
                 </div>
               </div>
@@ -6403,6 +7052,13 @@ const StudioPulse = memo(() => {
                           <span>Max: <strong className="text-slate-600">{activeTab.format(globalMax)}</strong></span>
                         </div>
                       </div>
+                      <div className="px-6 pb-6">
+                        {renderAISummary('attendance-heatmap', [
+                          `Peak heatmap cell is ${fmtHour(peakSlot)} on ${peakDay} at ${activeTab.format(peakVal)} for ${activeTab.label.toLowerCase()}.`,
+                          'The heatmap is the clearest place to see time-of-day demand concentration.',
+                          'Move supply toward the strongest time and day clusters rather than spreading capacity evenly.',
+                        ])}
+                      </div>
                     </div>
                   );
                 })()}
@@ -6476,8 +7132,8 @@ const StudioPulse = memo(() => {
                         ))}
                       </div>
                     </div>
-                    <div className="p-6">
-                      <ResponsiveContainer width="100%" height={240}>
+                  <div className="p-6">
+                    <ResponsiveContainer width="100%" height={240}>
                         <AreaChart data={compRateTrend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                           <defs>
                             <linearGradient id="nonPaidGrad" x1="0" y1="0" x2="0" y2="1">
@@ -6500,10 +7156,17 @@ const StudioPulse = memo(() => {
                           <Area type="monotone" dataKey="nonPaidRate" stroke="#f59e0b" strokeWidth={2.5} fill="url(#nonPaidGrad)" dot={{ r: 3.5, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5 }} />
                           <Area type="monotone" dataKey="compRate"    stroke="#8b5cf6" strokeWidth={2.5} fill="url(#compGrad2)"   dot={{ r: 3.5, fill: '#8b5cf6', strokeWidth: 0 }} activeDot={{ r: 5 }} />
                         </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                    </ResponsiveContainer>
                   </div>
-                )}
+                  <div className="px-6 pb-6">
+                    {renderAISummary('attendance-comp', [
+                      'Track non-paid and complementary share together to avoid calling a high-traffic month healthy when monetization is weakening.',
+                      'If the free visit share rises without a matching increase in revenue per visit, the mix is becoming less efficient.',
+                      'This chart is a quality-of-demand check, not just an activity trend.',
+                    ])}
+                  </div>
+                </div>
+              )}
               </div>
             </AnimatedSectionCard>
 
@@ -6533,6 +7196,7 @@ const StudioPulse = memo(() => {
             </div>
           </motion.div>
         </AnimatePresence>
+        )}
       </div>
 
       <InsightDetailDialog

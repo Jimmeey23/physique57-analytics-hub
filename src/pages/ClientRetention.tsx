@@ -10,10 +10,9 @@ import React, {
   useTransition,
 } from 'react';
 import { useNewClientData } from '@/hooks/useNewClientData';
-import { useSessionsData } from '@/hooks/useSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { BarChart3, Clock3, Gauge, Rocket, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { BarChart3, Clock3, Gauge, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Footer } from '@/components/ui/footer';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -29,6 +28,7 @@ import { EnhancedClientConversionFilterSection } from '@/components/dashboard/En
 import { ClientConversionMetricCards } from '@/components/dashboard/ClientConversionMetricCards';
 import { ClientConversionDataTableSelector } from '@/components/dashboard/ClientConversionDataTableSelector';
 import { LazyClientConversionDrillDownModalV3 } from '@/components/lazy/LazyModals';
+import { isRetentionTable } from '@/components/dashboard/retentionTableOptions';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
@@ -83,7 +83,6 @@ type DrillDownType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ran
 
 interface DrillDownModalState {
   isOpen: boolean;
-  client: null;
   title: string;
   data: unknown;
   type: DrillDownType;
@@ -257,12 +256,12 @@ const isFullCalendarMonthRange = (start: Date, end: Date) => {
 };
 
 const isClientInRetentionDateRange = (client: NewClientData, startDate: Date | null, endDate: Date | null) => {
-  if (!startDate || !endDate) return true;
+  if (!startDate && !endDate) return true;
 
-  const normalizedStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  const normalizedEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+  const normalizedStart = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+  const normalizedEnd = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999) : null;
 
-  if (isFullCalendarMonthRange(normalizedStart, normalizedEnd)) {
+  if (normalizedStart && normalizedEnd && isFullCalendarMonthRange(normalizedStart, normalizedEnd)) {
     const monthDate = parseRetentionMonthYear(client.monthYear);
     if (monthDate) {
       return monthDate.getFullYear() === normalizedStart.getFullYear() && monthDate.getMonth() === normalizedStart.getMonth();
@@ -272,7 +271,7 @@ const isClientInRetentionDateRange = (client: NewClientData, startDate: Date | n
   const clientDate = parseDate(client.firstVisitDate || '');
   if (!clientDate) return false;
   clientDate.setHours(0, 0, 0, 0);
-  return clientDate >= normalizedStart && clientDate <= normalizedEnd;
+  return (!normalizedStart || clientDate >= normalizedStart) && (!normalizedEnd || clientDate <= normalizedEnd);
 };
 
 const finalizeRetentionPivotCell = (cell: RetentionPivotCell) => ({
@@ -307,7 +306,7 @@ const formatPivotMetricValue = (metric: RetentionPivotMetricKey, cell: Retention
 };
 
 const buildRetentionPivotMatrix = (
-  inputData: any[],
+  inputData: NewClientData[],
   months: RetentionMonthDef[],
   dimension: 'clientType' | 'membership'
 ) => {
@@ -401,11 +400,11 @@ const buildPivotMetricExportRows = (
 };
 
 const buildClientConversionMonthOnMonthRows = (
-  inputData: any[],
+  inputData: NewClientData[],
   visitsSummary: Record<string, number>,
   rowType: RetentionDimension
 ): ExportRow[] => {
-  const statsMap = new Map<string, any>();
+  const statsMap = new Map<string, { type: string; totalTrials: number; newMembers: number; converted: number; retained: number; totalLTV: number; conversionSpans: number[]; visitsPostTrial: number[] }>();
 
   inputData.forEach((client) => {
     const groupValue = rowType === 'clientType'
@@ -462,9 +461,9 @@ const buildClientConversionMonthOnMonthRows = (
     .sort((a, b) => String(Object.values(a)[0]).localeCompare(String(Object.values(b)[0])));
 };
 
-const buildHostedClassesExportRows = (inputData: any[]): ExportRow[] => {
+const buildHostedClassesExportRows = (inputData: NewClientData[]): ExportRow[] => {
   const tokens = ['host', 'hosted', 'p57', 'birthday', 'rugby', 'lrs'];
-  const map = new Map<string, any>();
+  const map = new Map<string, { month: string; className: string; totalMembers: number; newMembers: number; converted: number; retained: number; totalLTV: number; conversionIntervals: number[] }>();
 
   inputData.forEach((client) => {
     const className = String(client.firstVisitEntityName || '');
@@ -521,8 +520,8 @@ const buildHostedClassesExportRows = (inputData: any[]): ExportRow[] => {
     .sort((a, b) => Number(String(b.Trials).replace(/,/g, '')) - Number(String(a.Trials).replace(/,/g, '')));
 };
 
-const buildMembershipPerformanceRows = (inputData: any[]): ExportRow[] => {
-  const map = new Map<string, any>();
+const buildMembershipPerformanceRows = (inputData: NewClientData[]): ExportRow[] => {
+  const map = new Map<string, { membership: string; totalMembers: number; newMembers: number; converted: number; retained: number; totalLTV: number }>();
   inputData.forEach((client) => {
     const membership = client.membershipUsed || 'No Membership';
     if (!map.has(membership)) {
@@ -558,7 +557,7 @@ const buildMembershipPerformanceRows = (inputData: any[]): ExportRow[] => {
     .sort((a, b) => Number(String(b.Trials).replace(/,/g, '')) - Number(String(a.Trials).replace(/,/g, '')));
 };
 
-const buildTeacherPerformanceRows = (inputData: any[]): ExportRow[] => {
+const buildTeacherPerformanceRows = (inputData: NewClientData[]): ExportRow[] => {
   const stats = new Map<string, { newMembers: Set<string>; sessions: number; converted: Set<string>; retained: Set<string> }>();
   inputData.forEach((client) => {
     const trainerName = client.trainerName || 'Unknown Trainer';
@@ -590,9 +589,9 @@ const buildTeacherPerformanceRows = (inputData: any[]): ExportRow[] => {
     .sort((a, b) => Number(String(b['New Members']).replace(/,/g, '')) - Number(String(a['New Members']).replace(/,/g, '')));
 };
 
-const buildNewClientPurchaseRows = (inputData: any[], groupBy: 'detailed' | 'membership' | 'clientType'): ExportRow[] => {
+const buildNewClientPurchaseRows = (inputData: NewClientData[], groupBy: 'detailed' | 'membership' | 'clientType'): ExportRow[] => {
   const newClients = inputData.filter((client) => isInNewClientCohort(client));
-  const baseMap = new Map<string, any>();
+  const baseMap = new Map<string, { membershipType: string; clientType: string; units: number; clientIds: Set<string>; totalRevenue: number; conversionSpans: number[]; visitsPostTrial: number[] }>();
 
   newClients.forEach((client) => {
     const membershipsBought = String(client.membershipsBoughtPostTrial || 'No Membership Purchase');
@@ -637,7 +636,7 @@ const buildNewClientPurchaseRows = (inputData: any[], groupBy: 'detailed' | 'mem
   }));
 
   const aggregateRows = (dimension: 'membershipType' | 'clientType') => {
-    const aggregateMap = new Map<string, any>();
+    const aggregateMap = new Map<string, { membershipType: string; clientType: string; units: number; newClientsCount: number; totalRevenue: number; weightedDays: number; weightedVisits: number }>();
     detailedRows.forEach((row) => {
       const label = row[dimension];
       if (!aggregateMap.has(label)) {
@@ -692,12 +691,10 @@ const buildNewClientPurchaseRows = (inputData: any[], groupBy: 'detailed' | 'mem
 const ClientRetention = () => {
   const {
     data,
-    loading
+    loading,
+    error,
+    refetch
   } = useNewClientData();
-  const {
-    data: sessionsData,
-    loading: sessionsLoading
-  } = useSessionsData();
   const {
     data: payrollData,
     isLoading: payrollLoading
@@ -717,17 +714,16 @@ const ClientRetention = () => {
     if (typeof window === 'undefined') return 'monthonmonthbytype';
     const remember = window.localStorage.getItem('p57-retention-remember-table') !== '0';
     const saved = window.localStorage.getItem('p57-retention-active-table');
-    return remember && saved ? saved : 'monthonmonthbytype';
+    return remember && isRetentionTable(saved) ? saved : 'monthonmonthbytype';
   });
   const [compactTableMode, setCompactTableMode] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('p57-retention-compact-mode') === '1';
   });
-  const [prefetchDone, setPrefetchDone] = useState(false);
-  const [selectedMetric] = useState('conversion');
+  const [chartsOpen, setChartsOpen] = useState(false);
+  const selectedMetric = 'conversion';
   const [drillDownModal, setDrillDownModal] = useState<DrillDownModalState>({
     isOpen: false,
-    client: null,
     title: '',
     data: null,
     type: 'month'
@@ -768,8 +764,8 @@ const ClientRetention = () => {
     });
   }, [exportPreset]);
   useEffect(() => {
-    setLoading(loading || sessionsLoading || payrollLoading, 'Analyzing client conversion and retention patterns...');
-  }, [loading, sessionsLoading, payrollLoading, setLoading]);
+    setLoading(loading || payrollLoading, 'Analyzing client conversion and retention patterns...');
+  }, [loading, payrollLoading, setLoading]);
 
   // Create comprehensive filtered payroll data matching all applied filters
   const filteredPayrollData = useMemo(() => {
@@ -795,27 +791,14 @@ const ClientRetention = () => {
     }
     
     // Apply date range filter to payroll data using monthYear field
-    if (filters.dateRange.start && filters.dateRange.end) {
-      const startDate = new Date(filters.dateRange.start + 'T00:00:00');
-      const endDate = new Date(filters.dateRange.end + 'T23:59:59');
-      
+    if (filters.dateRange.start || filters.dateRange.end) {
+      const startDate = filters.dateRange.start ? new Date(filters.dateRange.start + 'T00:00:00') : null;
+      const endDate = filters.dateRange.end ? new Date(filters.dateRange.end + 'T23:59:59') : null;
       filtered = filtered.filter(payroll => {
-        if (!payroll.monthYear) return false;
-        
-        // Parse monthYear (format: "Jan 2024" or "2024-01")
-        let payrollDate: Date;
-        if (payroll.monthYear.includes('-')) {
-          // Format: "2024-01"
-          payrollDate = new Date(payroll.monthYear + '-01');
-        } else {
-          // Format: "Jan 2024"
-          payrollDate = new Date(payroll.monthYear + ' 01');
-        }
-        
-        if (isNaN(payrollDate.getTime())) return false;
-        
-        // Check if payroll month falls within the selected date range
-        return payrollDate >= startDate && payrollDate <= endDate;
+        const month = parseRetentionMonthYear(payroll.monthYear);
+        if (!month) return false;
+        const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999);
+        return (!startDate || monthEnd >= startDate) && (!endDate || month <= endDate);
       });
     }
     
@@ -911,8 +894,8 @@ const ClientRetention = () => {
   const filteredData = React.useMemo(() => {
     let filtered = data;
 
-    // Apply date range filter FIRST - only if both start and end dates are provided
-    if (filters.dateRange.start && filters.dateRange.end) {
+    // Apply either date boundary, including a partially selected range.
+    if (filters.dateRange.start || filters.dateRange.end) {
       const startDate = filters.dateRange.start ? new Date(filters.dateRange.start + 'T00:00:00') : null;
       const endDate = filters.dateRange.end ? new Date(filters.dateRange.end + 'T23:59:59') : null;
       
@@ -968,62 +951,6 @@ const ClientRetention = () => {
     
     return filtered;
   }, [data, selectedLocation, filters]);
-
-  // Build a filtered dataset that applies ALL current filters EXCEPT the selectedLocation tab
-  // This powers the tab counts to reflect the active filters rather than the entire dataset
-  const filteredByFiltersOnly = React.useMemo(() => {
-    let filtered = data;
-
-    // Apply date range filter FIRST - only if both start and end dates are provided
-    if (filters.dateRange.start && filters.dateRange.end) {
-      const startDate = filters.dateRange.start ? new Date(filters.dateRange.start + 'T00:00:00') : null;
-      const endDate = filters.dateRange.end ? new Date(filters.dateRange.end + 'T23:59:59') : null;
-
-      filtered = filtered.filter(client => isClientInRetentionDateRange(client, startDate, endDate));
-    }
-
-    // Apply additional filters (but NOT the selectedLocation tab filter)
-    if (filters.location.length > 0) {
-      filtered = filtered.filter(client => filters.location.includes(client.firstVisitLocation || ''));
-    }
-    if (filters.trainer.length > 0) {
-      filtered = filtered.filter(client => filters.trainer.includes(client.trainerName || ''));
-    }
-    if (filters.conversionStatus.length > 0) {
-      filtered = filtered.filter(client => filters.conversionStatus.includes(client.conversionStatus || ''));
-    }
-    if (filters.retentionStatus.length > 0) {
-      filtered = filtered.filter(client => filters.retentionStatus.includes(client.retentionStatus || ''));
-    }
-    if (filters.paymentMethod.length > 0) {
-      filtered = filtered.filter(client => filters.paymentMethod.includes(client.paymentMethod || ''));
-    }
-    if (filters.isNew.length > 0) {
-      filtered = filtered.filter(client => filters.isNew.includes(client.isNew || ''));
-    }
-    if (filters.minLTV !== undefined) {
-      filtered = filtered.filter(client => (client.ltv || 0) >= filters.minLTV!);
-    }
-    if (filters.maxLTV !== undefined) {
-      filtered = filtered.filter(client => (client.ltv || 0) <= filters.maxLTV!);
-    }
-
-    return filtered;
-  }, [data, filters]);
-
-  // Compute counts per location using the current filters only (no selectedLocation tab filter)
-  const tabCounts = React.useMemo(() => {
-    const matchKenkere = (loc: string) => loc.toLowerCase().includes('kenkere') || loc.toLowerCase().includes('bengaluru') || loc === 'Kenkere House';
-
-    const countFor = (predicate: (c: typeof data[number]) => boolean) => filteredByFiltersOnly.filter(predicate).length;
-
-    const all = filteredByFiltersOnly.length;
-    const kwality = countFor(c => c.firstVisitLocation === 'Kwality House, Kemps Corner');
-    const supreme = countFor(c => c.firstVisitLocation === 'Supreme HQ, Bandra');
-    const kenkere = countFor(c => matchKenkere(c.firstVisitLocation || ''));
-
-    return { all, kwality, supreme, kenkere };
-  }, [filteredByFiltersOnly]);
 
   // Special filtered data for month-on-month and year-on-year tables - ignores date range but applies location filter
   const filteredDataNoDateRange = React.useMemo(() => {
@@ -1100,7 +1027,6 @@ const ClientRetention = () => {
   const resetViewPreferences = useCallback(() => {
     setCompactTableMode(false);
     setRememberLastTable(true);
-    setPrefetchDone(false);
     startTableSwitch(() => setActiveTable('monthonmonthbytype'));
 
     if (typeof window !== 'undefined') {
@@ -1109,19 +1035,6 @@ const ClientRetention = () => {
       window.localStorage.setItem('p57-retention-remember-table', '1');
     }
   }, [startTableSwitch]);
-
-  const preloadHeavyRetentionViews = useCallback(() => {
-    void import('@/components/dashboard/ClientConversionMonthOnMonthByTypeTableEnhanced');
-    void import('@/components/dashboard/ClientRetentionMonthByTypePivot');
-    void import('@/components/dashboard/ClientRetentionYearOnYearPivotNew');
-    void import('@/components/dashboard/ClientHostedClassesTable');
-    void import('@/components/dashboard/ClientConversionMembershipTableEnhanced');
-    void import('@/components/dashboard/TeacherPerformanceTable');
-    void import('@/components/dashboard/NewClientMembershipPurchaseTable');
-    void import('@/components/dashboard/ClientConversionEnhancedCharts');
-    void import('@/components/dashboard/ClientConversionSimplifiedRanks');
-    setPrefetchDone(true);
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1198,8 +1111,8 @@ const ClientRetention = () => {
     });
 
     const yoyMonths = selectedYoyMonths;
-    const yoyClientTypePivot = buildRetentionPivotMatrix(filteredData, yoyMonths, 'clientType');
-    const yoyMembershipPivot = buildRetentionPivotMatrix(filteredData, yoyMonths, 'membership');
+    const yoyClientTypePivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'clientType');
+    const yoyMembershipPivot = buildRetentionPivotMatrix(filteredDataNoDateRange, yoyMonths, 'membership');
     (Object.keys(RETENTION_PIVOT_METRIC_LABELS) as RetentionPivotMetricKey[]).forEach((metricKey) => {
       exportSections[`Client Retention • YoY Pivot • Client Type • ${RETENTION_PIVOT_METRIC_LABELS[metricKey]}`] = buildPivotMetricExportRows(
         'Client Type',
@@ -1236,16 +1149,9 @@ const ClientRetention = () => {
     </div>
   );
 
-  return <div className="client-retention-page min-h-screen bg-white relative overflow-hidden">
-      {/* Enhanced Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-        <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-      </div>
-
+  return <div className="client-retention-page min-h-screen bg-slate-50 text-slate-900">
       <div className="relative z-10">
-        <div className="bg-white text-slate-800 slide-in-from-left">
+        <div className="bg-white text-slate-800">
           <DashboardMotionHero 
             title="Client Conversion & Retention" 
             subtitle="Comprehensive client acquisition and retention analysis across all customer touchpoints" 
@@ -1254,8 +1160,8 @@ const ClientRetention = () => {
           />
         </div>
 
-        <div className="container mx-auto px-6 py-8 bg-white min-h-screen">
-          <main className="space-y-8 slide-in-from-right stagger-1">
+        <div className="mx-auto w-full max-w-screen-2xl px-3 py-5 sm:px-6 lg:px-8">
+          <main className="min-w-0 space-y-5">
             {/* Section Navigation */}
             <SectionTimelineNav />
             
@@ -1278,8 +1184,14 @@ const ClientRetention = () => {
               infoPopoverContext="client-retention-overview"
             />
 
+            {error && (
+              <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                <span>Client retention data could not be loaded. {error}</span>
+                <button type="button" disabled={loading} onClick={() => void refetch()} className="rounded-md border border-red-300 px-3 py-2 font-medium hover:bg-red-100 disabled:opacity-50">Retry</button>
+              </div>
+            )}
             {/* Enhanced Filter Section */}
-            <div className="glass-card modern-card-hover p-6 rounded-2xl" id="filters">
+            <div className="min-w-0" id="filters">
               <EnhancedClientConversionFilterSection filters={filters} onFiltersChange={setFilters} locations={uniqueLocations} trainers={uniqueTrainers} membershipTypes={uniqueMembershipTypes} />
             </div>
 
@@ -1291,7 +1203,6 @@ const ClientRetention = () => {
               dateRange={filters.dateRange}
               onCardClick={(title, data, metricType) => setDrillDownModal({
               isOpen: true,
-              client: null,
               title: `${title} - Detailed Analysis`,
               data: {
                 clients: data,
@@ -1303,7 +1214,7 @@ const ClientRetention = () => {
           </div>
 
           {/* Enhanced Simplified Ranking System */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-3" id="rankings">
+          <div className="min-w-0" id="rankings">
             <Suspense fallback={lazySectionFallback}>
               <ClientConversionSimplifiedRanks 
               data={deferredFilteredData} 
@@ -1335,7 +1246,6 @@ const ClientRetention = () => {
 
                 setDrillDownModal({
                   isOpen: true,
-                  client: null,
                   title: `${item.name} - ${metric} Analysis`,
                   data: {
                     type,
@@ -1352,10 +1262,10 @@ const ClientRetention = () => {
           </div>
 
           {/* Enhanced Interactive Charts - Collapsed by default */}
-          <div className="space-y-4 slide-in-left stagger-4" id="charts">
-            <div className="glass-card rounded-2xl border-0 shadow-lg">
-              <details className="group">
-                <summary className="cursor-pointer p-6 font-semibold text-slate-800 border-b border-white/20 group-open:bg-gradient-to-r group-open:from-purple-50/50 group-open:to-pink-50/50 rounded-t-2xl transition-all duration-300">
+          <div className="min-w-0" id="charts">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <details className="group" onToggle={(event) => setChartsOpen(event.currentTarget.open)}>
+                <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500">
                   <span className="inline-flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-slate-700" />
                     Interactive Charts & Visualizations
@@ -1363,7 +1273,7 @@ const ClientRetention = () => {
                 </summary>
                 <div className="p-6 bg-gradient-to-br from-white to-slate-50/50">
                   <Suspense fallback={lazySectionFallback}>
-                    <ClientConversionEnhancedCharts data={deferredFilteredData} />
+                    {chartsOpen && <ClientConversionEnhancedCharts data={deferredFilteredData} />}
                   </Suspense>
                 </div>
               </details>
@@ -1371,15 +1281,16 @@ const ClientRetention = () => {
           </div>
 
           {/* Performance & view controls (collapsed by default to reduce clutter) */}
-          <div className="glass-card modern-card-hover rounded-2xl border border-slate-200/80 shadow-lg" id="performance-controls">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm" id="performance-controls">
             <details>
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl px-6 py-4 text-sm font-semibold text-slate-800 hover:bg-slate-50/70">
                 <SlidersHorizontal className="h-4 w-4 text-slate-700" />
-                Performance & View Controls
+                View preferences
               </summary>
-              <div className="grid gap-4 border-t border-slate-200/80 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 border-t border-slate-200/80 px-6 py-5 md:grid-cols-2 xl:grid-cols-3">
                 <button
                   type="button"
+                  aria-pressed={compactTableMode}
                   onClick={() => setCompactTableMode((prev) => !prev)}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                     compactTableMode
@@ -1398,6 +1309,7 @@ const ClientRetention = () => {
 
                 <button
                   type="button"
+                  aria-pressed={rememberLastTable}
                   onClick={() => setRememberLastTable((prev) => !prev)}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                     rememberLastTable
@@ -1411,24 +1323,6 @@ const ClientRetention = () => {
                   </div>
                   <div className={`mt-1 text-xs ${rememberLastTable ? 'text-slate-200' : 'text-slate-500'}`}>
                     Reopens the last viewed table automatically.
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={preloadHeavyRetentionViews}
-                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
-                    prefetchDone
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-semibold">
-                    <Rocket className="h-4 w-4" />
-                    {prefetchDone ? 'Views Preloaded' : 'Preload Heavy Views'}
-                  </div>
-                  <div className={`mt-1 text-xs ${prefetchDone ? 'text-emerald-600' : 'text-slate-500'}`}>
-                    Loads heavy table modules ahead of tab switches.
                   </div>
                 </button>
 
@@ -1450,11 +1344,11 @@ const ClientRetention = () => {
           </div>
 
           {/* Enhanced Data Table Selector */}
-          <div className="glass-card modern-card-hover rounded-2xl p-6 slide-in-right stagger-5" id="table-selector">
+          <div className="min-w-0" id="table-selector">
             <ClientConversionDataTableSelector
               activeTable={activeTable}
               onTableChange={handleTableChange}
-              dataLength={deferredFilteredData.length}
+              dataLength={['monthonmonth', 'yearonyear'].includes(activeTable) ? deferredFilteredDataNoDateRange.length : deferredFilteredData.length}
               isPending={isPendingTableSwitch}
             />
           </div>
@@ -1465,14 +1359,13 @@ const ClientRetention = () => {
               {activeTable === 'monthonmonthbytype' && (
                 <div
                   id="monthonmonthbytype-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientConversionMonthOnMonthByTypeTable
                     data={deferredFilteredData}
                     visitsSummary={visitsSummary}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      client: null,
                       title: `${rowData.type} Analysis`,
                       data: rowData,
                       type: 'month'
@@ -1484,7 +1377,7 @@ const ClientRetention = () => {
               {activeTable === 'monthonmonth' && (
                 <div
                   id="monthonmonth-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientRetentionMonthByTypePivot
                     data={deferredFilteredDataNoDateRange}
@@ -1492,7 +1385,6 @@ const ClientRetention = () => {
                     visitsSummary={visitsSummaryNoDateRange}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      client: null,
                       title: `${rowData.type} - Analysis`,
                       data: rowData,
                       type: 'month'
@@ -1504,14 +1396,13 @@ const ClientRetention = () => {
               {activeTable === 'yearonyear' && (
                 <div
                   id="yearonyear-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientRetentionYearOnYearPivot
-                    data={deferredFilteredData}
+                    data={deferredFilteredDataNoDateRange}
                     months={selectedYoyMonths}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      client: null,
                       title: `${rowData.rowKey} - Year Comparison`,
                       data: rowData,
                       type: 'year'
@@ -1523,13 +1414,12 @@ const ClientRetention = () => {
               {activeTable === 'hostedclasses' && (
                 <div
                   id="hostedclasses-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientHostedClassesTable
                     data={deferredFilteredData}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      client: null,
                       title: `${rowData.className} - ${rowData.month}`,
                       data: rowData,
                       type: 'class'
@@ -1541,13 +1431,12 @@ const ClientRetention = () => {
               {activeTable === 'memberships' && (
                 <div
                   id="memberships-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <ClientConversionMembershipTable
                     data={deferredFilteredData}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      client: null,
                       title: `${rowData.membershipType} - Membership Analysis`,
                       data: rowData,
                       type: 'membership'
@@ -1559,13 +1448,12 @@ const ClientRetention = () => {
               {activeTable === 'teacherperformance' && (
                 <div
                   id="teacherperformance-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <TeacherPerformanceTable
                     data={deferredFilteredData}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      client: null,
                       title: `${rowData.trainerName} - Teacher Performance Analysis`,
                       data: {
                         type: 'trainer',
@@ -1583,7 +1471,7 @@ const ClientRetention = () => {
               {activeTable === 'newclientpurchases' && (
                 <div
                   id="newclientpurchases-table"
-                  className={`client-retention-sales-table rounded-2xl border-2 border-slate-200 bg-white shadow-2xl overflow-hidden ${compactTableMode ? 'client-retention-compact' : ''}`}
+                  className={`client-retention-sales-table min-w-0 ${compactTableMode ? 'client-retention-compact' : ''}`}
                 >
                   <NewClientMembershipPurchaseTable data={deferredFilteredData} />
                 </div>
@@ -1599,7 +1487,6 @@ const ClientRetention = () => {
               isOpen={drillDownModal.isOpen} 
               onClose={() => setDrillDownModal({
                 isOpen: false,
-                client: null,
                 title: '',
                 data: null,
                 type: 'month'
@@ -1615,34 +1502,7 @@ const ClientRetention = () => {
       
       <Footer />
 
-      <style>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-        }
-        
-        .delay-200 {
-          animation-delay: 0.2s;
-        }
-        
-        .delay-300 {
-          animation-delay: 0.3s;
-        }
-        
-        .delay-500 {
-          animation-delay: 0.5s;
-        }
-      `}</style>
+
     </div>;
 };
 export default ClientRetention;

@@ -125,17 +125,6 @@ STRICT RULES — violating any rule = failure:
 7. No preamble, no markdown, ONLY valid JSON`;
 };
 
-const staticFallback = (input: StudioSummaryInput): StudioSummaryResult => ({
-  bullets: [
-    `Net sales closed at ${input.metrics.netSales} across ${input.metrics.transactions.toLocaleString('en-IN')} transactions.`,
-    `${input.metrics.uniqueMembers.toLocaleString('en-IN')} unique members purchased in the period.`,
-    `${input.metrics.attendance.toLocaleString('en-IN')} visits across ${input.metrics.totalSessions.toLocaleString('en-IN')} sessions · ${input.metrics.avgFill} avg fill.`,
-    `${input.metrics.newClients.toLocaleString('en-IN')} new clients — ${input.metrics.conversionRate} converted, ${input.metrics.retentionRate} retained.`,
-    `${input.metrics.lapsed.toLocaleString('en-IN')} memberships expired · ${input.metrics.lateCancels.toLocaleString('en-IN')} late cancellations.`,
-  ],
-  lastGenerated: new Date().toISOString(),
-});
-
 /** Try GPT-5, fall back to deepseek-chat */
 const callAI = async (prompt: string): Promise<{ bullets: string[]; narrative?: string }> => {
   const hasOpenAI = import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY !== 'your_openai_api_key';
@@ -209,16 +198,33 @@ const callAI = async (prompt: string): Promise<{ bullets: string[]; narrative?: 
 
 export const useStudioAISummary = () => {
   // Map of sectionKey → result — summaries persist until explicit refresh
-  const [summaryMap, setSummaryMap] = useState<Record<string, StudioSummaryResult>>({});
+  const [summaryMap, setSummaryMap] = useState<Record<string, StudioSummaryResult>>(() => {
+    try {
+      const raw = localStorage.getItem('studio-pulse-ai-summary-cache-v1');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
   const [loadingKeys, setLoadingKeys] = useState<Set<string>>(new Set());
   const [errorMap, setErrorMap] = useState<Record<string, string>>({});
   // Track what key was last generated to skip duplicates
   const generatedRef = useRef<Record<string, string>>({});
 
+  const persistSummaryMap = useCallback((nextMap: Record<string, StudioSummaryResult>) => {
+    setSummaryMap(nextMap);
+    try {
+      localStorage.setItem('studio-pulse-ai-summary-cache-v1', JSON.stringify(nextMap));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
   /** Generate (or skip if cached and not forced) */
   const generate = useCallback(async (input: StudioSummaryInput, force = false) => {
     const sectionKey = input.sectionKey || 'main';
-    const testMode = import.meta.env.VITE_TESTMODE === 'true';
+    const testModeFlag = new URLSearchParams(window.location.search).get('testmode');
+    const testMode = import.meta.env.VITE_TESTMODE === 'true' && testModeFlag !== 'false';
 
     // Stable cache key — changes when studio/date/metrics change
     const cacheKey = JSON.stringify({
@@ -237,7 +243,21 @@ export const useStudioAISummary = () => {
 
     const noKeys = !import.meta.env.VITE_OPENAI_API_KEY && !import.meta.env.VITE_DEEPSEEK_API_KEY;
     if (noKeys || testMode) {
-      setSummaryMap((prev) => ({ ...prev, [sectionKey]: staticFallback(input) }));
+      if (!summaryMap[sectionKey]) {
+        const cached = (() => {
+          try {
+            const raw = localStorage.getItem('studio-pulse-ai-summary-cache-v1');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw) as Record<string, StudioSummaryResult>;
+            return parsed[sectionKey] || null;
+          } catch {
+            return null;
+          }
+        })();
+        if (cached) {
+          persistSummaryMap({ ...summaryMap, [sectionKey]: cached });
+        }
+      }
       return;
     }
 
@@ -248,17 +268,14 @@ export const useStudioAISummary = () => {
       const prompt = buildPrompt(input);
       const result = await callAI(prompt);
       if (result.bullets.length > 0) {
-        setSummaryMap((prev) => ({ ...prev, [sectionKey]: { bullets: result.bullets, narrative: result.narrative, lastGenerated: new Date().toISOString() } }));
-      } else {
-        setSummaryMap((prev) => ({ ...prev, [sectionKey]: staticFallback(input) }));
+        persistSummaryMap({ ...summaryMap, [sectionKey]: { bullets: result.bullets, narrative: result.narrative, lastGenerated: new Date().toISOString() } });
       }
     } catch (e: any) {
       setErrorMap((prev) => ({ ...prev, [sectionKey]: e.message || 'AI summary failed' }));
-      setSummaryMap((prev) => ({ ...prev, [sectionKey]: staticFallback(input) }));
     } finally {
       setLoadingKeys((prev) => { const n = new Set(prev); n.delete(sectionKey); return n; });
     }
-  }, [summaryMap]);
+  }, [persistSummaryMap, summaryMap]);
 
   /** Force refresh all cached summaries */
   const refreshAll = useCallback(async (inputs: StudioSummaryInput[]) => {

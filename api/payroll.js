@@ -24,6 +24,39 @@ try {
   console.log('No .env file found or error reading it:', e.message);
 }
 
+// Google's token/sheets endpoints intermittently drop the TLS connection
+// (ECONNRESET) on the first attempt from a cold dev server. Retry transient
+// network failures with a short backoff instead of failing the request.
+const TRANSIENT_CODES = new Set(['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EAI_AGAIN', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT']);
+
+function isTransient(err) {
+  const codes = [err?.code, err?.cause?.code, err?.cause?.cause?.code];
+  return codes.some((c) => c && TRANSIENT_CODES.has(c));
+}
+
+async function fetchWithRetry(url, options = {}, retries = 3, baseDelayMs = 300) {
+  let lastError;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (err) {
+      lastError = err;
+      const retryable = isTransient(err) || err?.name === 'AbortError';
+      if (!retryable || attempt === retries - 1) throw err;
+      const delay = baseDelayMs * 2 ** attempt;
+      console.warn(`fetch ${url} failed (${err?.cause?.code || err?.code || err?.name}), retry ${attempt + 1}/${retries - 1} in ${delay}ms`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastError;
+}
+
 async function getAccessToken() {
   const clientId = process.env.GOOGLE_CLIENT_ID || '';
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -36,7 +69,7 @@ async function getAccessToken() {
     grant_type: 'refresh_token',
   });
 
-  const resp = await fetch('https://oauth2.googleapis.com/token', {
+  const resp = await fetchWithRetry('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params,
@@ -164,7 +197,7 @@ export default async function handler(req, res) {
   try {
     const accessToken = await getAccessToken();
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Payroll?alt=json`;
-    const resp = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const resp = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${accessToken}` } });
 
     if (!resp.ok) {
       const text = await resp.text();

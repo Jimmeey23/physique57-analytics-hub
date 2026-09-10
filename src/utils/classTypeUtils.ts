@@ -2,12 +2,12 @@
  * Utility functions for categorizing class types based on class name patterns
  */
 
-export type ClassFormat = 'PowerCycle' | 'Barre' | 'Strength Lab';
+export type ClassFormat = 'PowerCycle' | 'Barre' | 'Strength';
 
 /**
  * Determines the class format based on the class name
  * - PowerCycle: contains "powerCycle" (case-insensitive)
- * - Strength Lab: contains "Strength Lab" (case-insensitive)
+ * - Strength: contains "strength lab" (case-insensitive)
  * - Barre: everything else
  */
 export const getClassFormat = (className: string | undefined): ClassFormat => {
@@ -20,7 +20,7 @@ export const getClassFormat = (className: string | undefined): ClassFormat => {
   }
   
   if (lower.includes('strength lab')) {
-    return 'Strength Lab';
+    return 'Strength';
   }
   
   return 'Barre';
@@ -30,7 +30,7 @@ export const getClassFormat = (className: string | undefined): ClassFormat => {
  * Get all available class formats
  */
 export const getAllFormats = (): ClassFormat[] => {
-  return ['PowerCycle', 'Barre', 'Strength Lab'];
+  return ['PowerCycle', 'Barre', 'Strength'];
 };
 
 /**

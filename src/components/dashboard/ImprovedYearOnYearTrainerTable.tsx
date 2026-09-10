@@ -498,7 +498,7 @@ export const ImprovedYearOnYearTrainerTable = ({
                      {/* Expanded Row Details */}
                      {isExpanded && (
                        <TableRow className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 animate-fade-in">
-                         <TableCell colSpan={processedData.organizedMonths.length + 3} className="p-6" style={{ minHeight: '200px' }}">
+                         <TableCell colSpan={processedData.organizedMonths.length + 3} className="p-6" style={{ minHeight: '200px' }}>
                            <div className="space-y-6">
                              {/* Core Metrics Grid */}
                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
