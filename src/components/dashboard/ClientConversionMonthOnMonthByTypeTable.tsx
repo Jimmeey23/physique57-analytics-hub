@@ -115,8 +115,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
 
   const tableData = useMemo(() => {
     return groupedDataByType.map(stat => {
-      const conversionRate = stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0;
-      const retentionRate = stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0;
+      const conversionRate = stat.totalTrials > 0 ? (stat.converted / stat.totalTrials) * 100 : 0;
+      const retentionRate = stat.totalTrials > 0 ? (stat.retained / stat.totalTrials) * 100 : 0;
       const avgLTV = stat.totalTrials > 0 ? stat.totalLTV / stat.totalTrials : 0;
       const avgConversionDays = stat.conversionIntervals.length > 0 ? stat.conversionIntervals.reduce((sum, interval) => sum + interval, 0) / stat.conversionIntervals.length : 0;
       const avgVisits = stat.visitsPostTrial.length > 0 ? stat.visitsPostTrial.reduce((sum, visits) => sum + visits, 0) / stat.visitsPostTrial.length : 0;
@@ -162,8 +162,8 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
   }, [tableData]);
 
   const totalsRow = useMemo(() => {
-    const conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
-    const retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+    const conversionRate = totals.totalTrials > 0 ? (totals.converted / totals.totalTrials) * 100 : 0;
+    const retentionRate = totals.totalTrials > 0 ? (totals.retained / totals.totalTrials) * 100 : 0;
     const avgLTV = totals.totalTrials > 0 ? totals.totalLTV / totals.totalTrials : 0;
     const avgConversionDays = totals.conversionIntervals.length > 0 ? totals.conversionIntervals.reduce((sum, interval) => sum + interval, 0) / totals.conversionIntervals.length : 0;
     const avgVisits = totals.visitsPostTrial.length > 0 ? totals.visitsPostTrial.reduce((sum, visits) => sum + visits, 0) / totals.visitsPostTrial.length : 0;

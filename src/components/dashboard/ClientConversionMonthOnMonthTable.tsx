@@ -122,8 +122,8 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
       .map((stat: any) => ({
         ...stat,
         trialsCompleted: stat.visitsPostTrial.length, // trials completed = actual trials with visits
-        conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0, // Converted from new members
-        retentionRate: stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0, // Retained from new members (corrected)
+        conversionRate: stat.totalMembers > 0 ? (stat.converted / stat.totalMembers) * 100 : 0, // Converted from new members
+        retentionRate: stat.totalMembers > 0 ? (stat.retained / stat.totalMembers) * 100 : 0, // Retained from new members (corrected)
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgConversionInterval: stat.conversionIntervals.length > 0 
           ? stat.conversionIntervals.reduce((a: number, b: number) => a + b, 0) / stat.conversionIntervals.length 
@@ -254,8 +254,8 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
     avgConversionInterval: monthlyData.reduce((sum, row) => sum + (row.avgConversionInterval * row.totalMembers), 0) / Math.max(monthlyData.reduce((sum, row) => sum + row.totalMembers, 0), 1),
     avgVisitsPostTrial: monthlyData.reduce((sum, row) => sum + (row.avgVisitsPostTrial * row.totalMembers), 0) / Math.max(monthlyData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
-  totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
-  totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+  totals.conversionRate = totals.totalMembers > 0 ? (totals.converted / totals.totalMembers) * 100 : 0;
+  totals.retentionRate = totals.totalMembers > 0 ? (totals.retained / totals.totalMembers) * 100 : 0;
 
   // Sorting
   const displayedData = React.useMemo(() => {
@@ -307,16 +307,16 @@ export const ClientConversionMonthOnMonthTable: React.FC<ClientConversionMonthOn
         <div className="border-t border-slate-200 p-4 bg-slate-50">
           <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
             <li>Highest conversion: {(() => {
-              const withNew = monthlyData.filter(r => r.newMembers > 0);
+              const withNew = monthlyData.filter(r => r.totalMembers > 0);
               if (withNew.length === 0) return 'N/A';
               const top = [...withNew].sort((a,b) => b.conversionRate - a.conversionRate)[0];
-              return `${top.month} at ${top.conversionRate.toFixed(1)}% (${top.converted}/${top.newMembers})`;
+              return `${top.month} at ${top.conversionRate.toFixed(1)}% (${top.converted}/${top.totalMembers})`;
             })()}</li>
             <li>Best retention: {(() => {
-              const withNew = monthlyData.filter(r => r.newMembers > 0);
+              const withNew = monthlyData.filter(r => r.totalMembers > 0);
               if (withNew.length === 0) return 'N/A';
               const top = [...withNew].sort((a,b) => b.retentionRate - a.retentionRate)[0];
-              return `${top.month} at ${top.retentionRate.toFixed(1)}% (${top.retained}/${top.newMembers})`;
+              return `${top.month} at ${top.retentionRate.toFixed(1)}% (${top.retained}/${top.totalMembers})`;
             })()}</li>
             <li>Most trials: {(() => {
               if (monthlyData.length === 0) return 'N/A';

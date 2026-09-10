@@ -44,7 +44,7 @@ export const ClientConversionTopBottomRanks: React.FC<ClientConversionTopBottomR
     
     return Array.from(stats.values()).map(stat => ({
       ...stat,
-      conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
+      conversionRate: stat.totalClients > 0 ? (stat.converted / stat.totalClients) * 100 : 0,
       avgLTV: stat.totalClients > 0 ? stat.totalLTV / stat.totalClients : 0
     }));
   }, [data]);
@@ -83,7 +83,7 @@ export const ClientConversionTopBottomRanks: React.FC<ClientConversionTopBottomR
     
     return Array.from(stats.values()).map(stat => ({
       ...stat,
-      conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
+      conversionRate: stat.totalClients > 0 ? (stat.converted / stat.totalClients) * 100 : 0,
       avgLTV: stat.totalClients > 0 ? stat.totalLTV / stat.totalClients : 0
     }));
   }, [data]);

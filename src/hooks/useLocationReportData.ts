@@ -486,7 +486,7 @@ export const useLocationReportData = () => {
       };
     }
 
-    const { sales, sessions, payroll, newClients, leads, discounts, lateCancellations, expirations } = filteredData;
+    const { sales, sessions, payroll, newClients, leads, discounts, lateCancellations } = filteredData;
 
     // Revenue & Sales Performance
     const totalRevenue = sales.reduce((sum, item) => sum + (parseFloat(String(item.paymentValue)) || 0), 0);
@@ -556,24 +556,25 @@ export const useLocationReportData = () => {
       trainer.revenue > (top?.revenue || 0) ? trainer : top, null
     );
 
-    // Client Acquisition & Retention
+    // Client Acquisition & Retention — source of truth is the New sheet's status columns:
+    // Conversion Status = 'Converted' means converted; Retention Status = 'Retained' means retained.
     const newClientsAcquired = newClients.length;
-    const trialClients = leads.filter(item => item.status?.toLowerCase().includes('trial')).length;
-    const convertedClients = leads.filter(item => item.status?.toLowerCase().includes('converted')).length;
-    const conversionRate = trialClients > 0 ? (convertedClients / trialClients) * 100 : 0;
-    
-    const averageLTV = newClients.reduce((sum, item) => 
+    const convertedLeads = leads.filter(item => item.status?.toLowerCase().includes('converted')).length;
+    const convertedClients = newClients.filter(item => String(item.conversionStatus || '').trim() === 'Converted').length;
+    const retainedClients = newClients.filter(item => String(item.retentionStatus || '').trim() === 'Retained').length;
+    const conversionRate = newClientsAcquired > 0 ? (convertedClients / newClientsAcquired) * 100 : 0;
+
+    const averageLTV = newClients.reduce((sum, item) =>
       sum + (parseFloat(String(item.ltv)) || 0), 0
     ) / (newClients.length || 1);
-    
-    const churnedMembers = expirations.length;
-    const activeMembers = uniqueMembers - churnedMembers;
-    const churnRate = uniqueMembers > 0 ? (churnedMembers / uniqueMembers) * 100 : 0;
-    const retentionRate = 100 - churnRate;
+
+    const churnedMembers = newClientsAcquired - retainedClients;
+    const churnRate = newClientsAcquired > 0 ? (churnedMembers / newClientsAcquired) * 100 : 0;
+    const retentionRate = newClientsAcquired > 0 ? (retainedClients / newClientsAcquired) * 100 : 0;
 
     // Lead Funnel
     const totalLeads = leads.length;
-    const leadsConverted = convertedClients;
+    const leadsConverted = convertedLeads;
     const leadConversionRate = totalLeads > 0 ? (leadsConverted / totalLeads) * 100 : 0;
     
     // Calculate average conversion days

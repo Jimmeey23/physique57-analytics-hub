@@ -92,8 +92,8 @@ export const ClientConversionInteractiveCharts: React.FC<ClientConversionInterac
       .sort((a, b) => a.month.localeCompare(b.month))
       .map(stat => ({
         ...stat,
-        conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
-        retentionRate: stat.converted > 0 ? (stat.retained / stat.converted) * 100 : 0,
+        conversionRate: stat.totalClients > 0 ? (stat.converted / stat.totalClients) * 100 : 0,
+        retentionRate: stat.totalClients > 0 ? (stat.retained / stat.totalClients) * 100 : 0,
         avgLTV: stat.totalClients > 0 ? stat.totalLTV / stat.totalClients : 0
       }));
   }, [data]);

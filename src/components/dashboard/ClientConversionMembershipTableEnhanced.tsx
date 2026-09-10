@@ -72,8 +72,8 @@ const buildChildRows = (clients: NewClientData[]) => {
   return Object.values(byClientType)
     .map((row) => ({
       ...row,
-      conversionRate: row.newMembers > 0 ? (row.converted / row.newMembers) * 100 : 0,
-      retentionRate: row.newMembers > 0 ? (row.retained / row.newMembers) * 100 : 0,
+      conversionRate: row.totalMembers > 0 ? (row.converted / row.totalMembers) * 100 : 0,
+      retentionRate: row.totalMembers > 0 ? (row.retained / row.totalMembers) * 100 : 0,
       avgLTV: row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0,
     }))
     .sort((a, b) => b.totalMembers - a.totalMembers);
@@ -135,8 +135,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     return Object.values(grouped)
       .map((bucket) => ({
         ...bucket,
-        conversionRate: bucket.newMembers > 0 ? (bucket.converted / bucket.newMembers) * 100 : 0,
-        retentionRate: bucket.newMembers > 0 ? (bucket.retained / bucket.newMembers) * 100 : 0,
+        conversionRate: bucket.totalMembers > 0 ? (bucket.converted / bucket.totalMembers) * 100 : 0,
+        retentionRate: bucket.totalMembers > 0 ? (bucket.retained / bucket.totalMembers) * 100 : 0,
         avgLTV: bucket.totalMembers > 0 ? bucket.totalLTV / bucket.totalMembers : 0,
         avgVisits: bucket.totalMembers > 0 ? bucket.totalVisits / bucket.totalMembers : 0,
         avgConversionSpan:
@@ -194,8 +194,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       }
     );
 
-    total.conversionRate = total.newMembers > 0 ? (total.converted / total.newMembers) * 100 : 0;
-    total.retentionRate = total.newMembers > 0 ? (total.retained / total.newMembers) * 100 : 0;
+    total.conversionRate = total.totalMembers > 0 ? (total.converted / total.totalMembers) * 100 : 0;
+    total.retentionRate = total.totalMembers > 0 ? (total.retained / total.totalMembers) * 100 : 0;
     total.avgLTV = total.totalMembers > 0 ? total.totalLTV / total.totalMembers : 0;
     total.avgVisits = total.totalMembers > 0 ? total.totalVisits / total.totalMembers : 0;
     total.avgConversionSpan = total.conversionSpans.length > 0

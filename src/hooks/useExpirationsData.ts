@@ -12,6 +12,7 @@ export const useExpirationsData = () => {
   const [data, setData] = useState<ExpirationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [excludedCount, setExcludedCount] = useState(0);
   const { mode } = useDataSource();
 
   const fetchExpirationsData = async () => {
@@ -118,8 +119,18 @@ export const useExpirationsData = () => {
         };
       });
 
-      logger.info(`Processed ${processedData.length} expirations`);
-      setData(processedData);
+      // Lapsed calculations exclude single-class and zero-value memberships.
+      // NOTE: deliberately narrow — must NOT match names like "Single Location".
+      const isSingleClassMembership = (name: string): boolean =>
+        /single[\s-]*class|single[\s-]*session|\b1[\s-]*class\b|one[\s-]*class|drop[\s-]*in|trial[\s-]*class/i.test(name || '');
+      const qualifiedData = processedData.filter(
+        item => !isSingleClassMembership(item.membershipName) && (item.amountPaid || 0) > 0
+      );
+      const excluded = processedData.length - qualifiedData.length;
+
+      logger.info(`Processed ${processedData.length} lapsed rows; ${qualifiedData.length} qualify (excluded ${excluded} single-class / zero-value)`);
+      setExcludedCount(excluded);
+      setData(qualifiedData);
     } catch (error) {
       logger.error('Error fetching expirations data:', error);
       setError(error instanceof Error ? error.message : 'Unknown error occurred');
@@ -137,5 +148,7 @@ export const useExpirationsData = () => {
     loading,
     error,
     refetch: fetchExpirationsData,
+    /** Rows dropped from calculations (single-class / zero-value memberships). */
+    excludedCount,
   };
 };

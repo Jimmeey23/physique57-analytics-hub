@@ -148,8 +148,8 @@ export const ClientConversionAdvancedMetrics: React.FC<ClientConversionAdvancedM
 
     return Object.values(classGroups).map((group: any) => ({
       ...group,
-      conversionRate: group.newMembers > 0 ? (group.converted / group.newMembers) * 100 : 0,
-      retentionRate: group.newMembers > 0 ? (group.retained / group.newMembers) * 100 : 0,
+      conversionRate: group.totalAttendees > 0 ? (group.converted / group.totalAttendees) * 100 : 0,
+      retentionRate: group.totalAttendees > 0 ? (group.retained / group.totalAttendees) * 100 : 0,
       avgLTV: group.newMembers > 0 ? group.totalLTV / group.newMembers : 0,
       avgVisits: group.newMembers > 0 ? group.totalVisits / group.newMembers : 0,
       avgClasses: group.newMembers > 0 ? group.totalClasses / group.newMembers : 0

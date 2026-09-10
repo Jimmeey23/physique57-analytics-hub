@@ -191,8 +191,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
         const b = map[rk][m.key];
         if (!b) return;
         b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-        b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
-        b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+        b.conversionRate = b.trials > 0 ? (b.converted / b.trials) * 100 : 0;
+        b.retentionRate = b.trials > 0 ? (b.retained / b.trials) * 100 : 0;
         b.avgConversionDays = b.conversionIntervals.length > 0 
           ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
           : 0;
@@ -454,8 +454,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       
       const b = totals[m.key];
       b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
-      b.conversionRate = b.newMembers > 0 ? (b.converted / b.newMembers) * 100 : 0;
-      b.retentionRate = b.newMembers > 0 ? (b.retained / b.newMembers) * 100 : 0;
+      b.conversionRate = b.trials > 0 ? (b.converted / b.trials) * 100 : 0;
+      b.retentionRate = b.trials > 0 ? (b.retained / b.trials) * 100 : 0;
       b.avgConversionDays = b.conversionIntervals.length > 0 
         ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
         : 0;

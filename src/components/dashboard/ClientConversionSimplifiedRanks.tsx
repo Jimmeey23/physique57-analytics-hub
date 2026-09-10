@@ -210,8 +210,8 @@ export const ClientConversionSimplifiedRanks: React.FC<ClientConversionSimplifie
     });
     
     return Array.from(stats.values()).map(stat => {
-      const conversionRate = stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0;
-      const retentionRate = stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0;
+      const conversionRate = stat.totalClients > 0 ? (stat.converted / stat.totalClients) * 100 : 0;
+      const retentionRate = stat.totalClients > 0 ? (stat.retained / stat.totalClients) * 100 : 0;
       const avgLTV = stat.totalClients > 0 ? stat.totalLTV / stat.totalClients : 0;
       const avgVisitsPerClient = stat.totalClients > 0 ? stat.avgVisits / stat.totalClients : 0;
       

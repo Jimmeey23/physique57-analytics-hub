@@ -103,8 +103,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data }) => {
     // Calculate derived metrics
     Object.values(map).forEach((bucket: any) => {
       bucket.avgLTV = bucket.trials > 0 ? bucket.totalLTV / bucket.trials : 0;
-      bucket.conversionRate = bucket.newMembers > 0 ? (bucket.converted / bucket.newMembers) * 100 : 0;
-      bucket.retentionRate = bucket.newMembers > 0 ? (bucket.retained / bucket.newMembers) * 100 : 0;
+      bucket.conversionRate = bucket.trials > 0 ? (bucket.converted / bucket.trials) * 100 : 0;
+      bucket.retentionRate = bucket.trials > 0 ? (bucket.retained / bucket.trials) * 100 : 0;
     });
     
     return map;

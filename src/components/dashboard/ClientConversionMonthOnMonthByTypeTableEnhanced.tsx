@@ -75,8 +75,8 @@ function buildCell(clients: NewClientData[], metric: MetricKey): number {
     case 'newMembers': return newMembers;
     case 'converted': return converted;
     case 'retained': return retained;
-    case 'retentionPct': return newMembers > 0 ? (retained / newMembers) * 100 : 0;
-    case 'conversionPct': return newMembers > 0 ? (converted / newMembers) * 100 : 0;
+    case 'retentionPct': return trials > 0 ? (retained / trials) * 100 : 0;
+    case 'conversionPct': return trials > 0 ? (converted / trials) * 100 : 0;
     case 'avgLtv': return trials > 0 ? totalLtv / trials : 0;
     case 'totalLtv': return totalLtv;
     case 'avgConvDays': return convIntervals.length > 0 ? convIntervals.reduce((s, v) => s + v, 0) / convIntervals.length : 0;

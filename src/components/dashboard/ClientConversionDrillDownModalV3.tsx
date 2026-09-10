@@ -101,8 +101,8 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
       newMembers,
       convertedMembers,
       retainedMembers,
-      conversionRate: newMembers > 0 ? (convertedMembers / newMembers) * 100 : 0, // Conversion rate within this subset
-      retentionRate: newMembers > 0 ? (retainedMembers / newMembers) * 100 : 0, // Retention rate within this subset
+      conversionRate: totalMembers > 0 ? (convertedMembers / totalMembers) * 100 : 0, // Conversion rate within this subset
+      retentionRate: totalMembers > 0 ? (retainedMembers / totalMembers) * 100 : 0, // Retention rate within this subset
       avgLTV: totalMembers > 0 ? totalLTV / totalMembers : 0,
       totalLTV,
       avgConversionTime: clientsWithConversionData > 0 ? totalConversionSpan / clientsWithConversionData : 0

@@ -20,6 +20,7 @@ interface TeacherPerformanceTableProps {
 interface TeacherStats {
   trainerName: string;
   newMembers: number;
+  totalMembers: number;
   sessions: number;
   converted: number;
   conversionRate: number;
@@ -39,6 +40,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
   const teacherStats = useMemo(() => {
     const stats = new Map<string, {
       newMembers: Set<string>;
+      totalMembers: Set<string>;
       sessions: number;
       converted: Set<string>;
       retained: Set<string>;
@@ -51,6 +53,7 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
       if (!stats.has(trainerName)) {
         stats.set(trainerName, {
           newMembers: new Set(),
+          totalMembers: new Set(),
           sessions: 0,
           converted: new Set(),
           retained: new Set()
@@ -59,7 +62,10 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
 
       const trainerStats = stats.get(trainerName)!;
       
-      // Track unique new members
+      // Track every member (rate denominators) + unique new members
+      if (client.memberId) {
+        trainerStats.totalMembers.add(client.memberId);
+      }
       if (isInNewClientCohort(client) && client.memberId) {
         trainerStats.newMembers.add(client.memberId);
       }
@@ -81,17 +87,19 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
     // Convert to array and calculate rates
     const results: TeacherStats[] = Array.from(stats.entries()).map(([trainerName, stats]) => {
       const newMembers = stats.newMembers.size;
+      const totalMembers = stats.totalMembers.size;
       const converted = stats.converted.size;
       const retained = stats.retained.size;
       
       return {
         trainerName,
         newMembers,
+        totalMembers,
         sessions: stats.sessions,
         converted,
-        conversionRate: newMembers > 0 ? (converted / newMembers) * 100 : 0,
+        conversionRate: totalMembers > 0 ? (converted / totalMembers) * 100 : 0,
         retained,
-        retentionRate: newMembers > 0 ? (retained / newMembers) * 100 : 0,
+        retentionRate: totalMembers > 0 ? (retained / totalMembers) * 100 : 0,
       };
     });
 
@@ -402,14 +410,16 @@ export const TeacherPerformanceTable: React.FC<TeacherPerformanceTableProps> = (
     const totalConverted = teacherStats.reduce((sum, t) => sum + t.converted, 0);
     const totalRetained = teacherStats.reduce((sum, t) => sum + t.retained, 0);
     
+    const grandTotalMembers = teacherStats.reduce((sum, t) => sum + t.totalMembers, 0);
     return {
       trainerName: 'TOTAL',
       newMembers: totalNewMembers,
+      totalMembers: grandTotalMembers,
       sessions: totalSessions,
       converted: totalConverted,
-      conversionRate: totalNewMembers > 0 ? (totalConverted / totalNewMembers) * 100 : 0,
+      conversionRate: grandTotalMembers > 0 ? (totalConverted / grandTotalMembers) * 100 : 0,
       retained: totalRetained,
-      retentionRate: totalNewMembers > 0 ? (totalRetained / totalNewMembers) * 100 : 0,
+      retentionRate: grandTotalMembers > 0 ? (totalRetained / grandTotalMembers) * 100 : 0,
     };
   }, [teacherStats]);
 

@@ -121,11 +121,13 @@ export function useClientConversionMetrics(
     const prevConverted = previous.filter(isConverted).length;
     const prevRetained = previous.filter(isRetained).length;
 
-    const overallConvCur = curNew > 0 ? (curConverted / curNew) * 100 : 0;
-    const overallConvPrev = prevNew > 0 ? (prevConverted / prevNew) * 100 : 0;
+    const curTotal = current.length;
+    const prevTotal = previous.length;
+    const overallConvCur = curTotal > 0 ? (curConverted / curTotal) * 100 : 0;
+    const overallConvPrev = prevTotal > 0 ? (prevConverted / prevTotal) * 100 : 0;
 
-    const retentionCur = curNew > 0 ? (curRetained / curNew) * 100 : 0;
-    const retentionPrev = prevNew > 0 ? (prevRetained / prevNew) * 100 : 0;
+    const retentionCur = curTotal > 0 ? (curRetained / curTotal) * 100 : 0;
+    const retentionPrev = prevTotal > 0 ? (prevRetained / prevTotal) * 100 : 0;
 
     const totalLTVCur = current.reduce((s, c) => s + (c.ltv || 0), 0);
     const totalLTVPrev = previous.reduce((s, c) => s + (c.ltv || 0), 0);

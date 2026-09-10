@@ -112,10 +112,10 @@ export const ClientConversionYearOnYearTable: React.FC<ClientConversionYearOnYea
 
     return Object.values(monthlyStats)
       .map((stat: any) => {
-        const currentConversionRate = stat.currentYear.newMembers > 0 ? (stat.currentYear.converted / stat.currentYear.newMembers) * 100 : 0;
-        const previousConversionRate = stat.previousYear.newMembers > 0 ? (stat.previousYear.converted / stat.previousYear.newMembers) * 100 : 0;
-        const currentRetentionRate = stat.currentYear.newMembers > 0 ? (stat.currentYear.retained / stat.currentYear.newMembers) * 100 : 0;
-        const previousRetentionRate = stat.previousYear.newMembers > 0 ? (stat.previousYear.retained / stat.previousYear.newMembers) * 100 : 0;
+        const currentConversionRate = stat.currentYear.totalMembers > 0 ? (stat.currentYear.converted / stat.currentYear.totalMembers) * 100 : 0;
+        const previousConversionRate = stat.previousYear.totalMembers > 0 ? (stat.previousYear.converted / stat.previousYear.totalMembers) * 100 : 0;
+        const currentRetentionRate = stat.currentYear.totalMembers > 0 ? (stat.currentYear.retained / stat.currentYear.totalMembers) * 100 : 0;
+        const previousRetentionRate = stat.previousYear.totalMembers > 0 ? (stat.previousYear.retained / stat.previousYear.totalMembers) * 100 : 0;
         const currentAvgLTV = stat.currentYear.totalMembers > 0 ? stat.currentYear.totalLTV / stat.currentYear.totalMembers : 0;
         const previousAvgLTV = stat.previousYear.totalMembers > 0 ? stat.previousYear.totalLTV / stat.previousYear.totalMembers : 0;
 

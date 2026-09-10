@@ -97,9 +97,9 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     return Object.values(classStats)
       .map((stat: any) => ({
         ...stat,
-        conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
-  // Standardize retention rate: retained / newMembers
-  retentionRate: stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0,
+        conversionRate: stat.totalMembers > 0 ? (stat.converted / stat.totalMembers) * 100 : 0,
+  // Standardize retention rate: retained / totalMembers
+  retentionRate: stat.totalMembers > 0 ? (stat.retained / stat.totalMembers) * 100 : 0,
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgConversionInterval: stat.conversionIntervals.length > 0 
           ? stat.conversionIntervals.reduce((a: number, b: number) => a + b, 0) / stat.conversionIntervals.length 
@@ -217,8 +217,8 @@ export const ClientHostedClassesTable: React.FC<ClientHostedClassesTableProps> =
     avgLTV: hostedClassData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1),
     avgConversionInterval: hostedClassData.reduce((sum, row) => sum + (row.avgConversionInterval * row.totalMembers), 0) / Math.max(hostedClassData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
-  totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
-  totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+  totals.conversionRate = totals.totalMembers > 0 ? (totals.converted / totals.totalMembers) * 100 : 0;
+  totals.retentionRate = totals.totalMembers > 0 ? (totals.retained / totals.totalMembers) * 100 : 0;
   const allHostedClients = hostedClassData.flatMap(row => row.clients || []);
 
   // Sorting logic

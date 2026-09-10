@@ -52,9 +52,9 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     return Object.values(membershipStats)
       .map((stat: any) => ({
         ...stat,
-        conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
-  // Standardize retention rate: retained / newMembers
-  retentionRate: stat.newMembers > 0 ? (stat.retained / stat.newMembers) * 100 : 0,
+        conversionRate: stat.totalMembers > 0 ? (stat.converted / stat.totalMembers) * 100 : 0,
+  // Standardize retention rate: retained / totalMembers
+  retentionRate: stat.totalMembers > 0 ? (stat.retained / stat.totalMembers) * 100 : 0,
         avgLTV: stat.totalMembers > 0 ? stat.totalLTV / stat.totalMembers : 0,
         avgVisits: stat.totalMembers > 0 ? stat.totalVisits / stat.totalMembers : 0,
         avgConversionSpan: stat.conversionSpans.length > 0 
@@ -145,8 +145,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     totalLTV: membershipData.reduce((sum, row) => sum + row.totalLTV, 0),
     avgLTV: membershipData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(membershipData.reduce((sum, row) => sum + row.totalMembers, 0), 1)
   };
-  totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
-  totals.retentionRate = totals.newMembers > 0 ? (totals.retained / totals.newMembers) * 100 : 0;
+  totals.conversionRate = totals.totalMembers > 0 ? (totals.converted / totals.totalMembers) * 100 : 0;
+  totals.retentionRate = totals.totalMembers > 0 ? (totals.retained / totals.totalMembers) * 100 : 0;
 
   const displayedData = React.useMemo(() => {
     if (!sortField) return membershipData;

@@ -100,12 +100,15 @@ export const ClientConversionCharts: React.FC<ClientConversionChartsProps> = ({ 
       const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       
       if (!acc[monthKey]) {
-        acc[monthKey] = { month: monthName, total: 0, converted: 0, sortKey: monthKey };
+        acc[monthKey] = { month: monthName, total: 0, converted: 0, retained: 0, sortKey: monthKey };
       }
       
       acc[monthKey].total += 1;
       if (client.conversionStatus === 'Converted') {
         acc[monthKey].converted += 1;
+      }
+      if (client.retentionStatus === 'Retained') {
+        acc[monthKey].retained += 1;
       }
       
       return acc;
@@ -118,7 +121,7 @@ export const ClientConversionCharts: React.FC<ClientConversionChartsProps> = ({ 
         ...item,
         conversionRate: item.total > 0 ? ((item.converted / item.total) * 100) : 0,
         newClients: item.total || 0,
-        retained: item.converted || 0
+        retained: item.retained || 0
       }));
 
     return {

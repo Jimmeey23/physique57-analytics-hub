@@ -165,8 +165,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         const avgVisits = cell.visitsPostTrial.length > 0
           ? cell.visitsPostTrial.reduce((a: number, b: number) => a + b, 0) / cell.visitsPostTrial.length
           : 0;
-        const conversionRate = cell.newMembers > 0 ? (cell.converted / cell.newMembers) * 100 : 0;
-        const retentionRate = cell.newMembers > 0 ? (cell.retained / cell.newMembers) * 100 : 0;
+        const conversionRate = cell.trials > 0 ? (cell.converted / cell.trials) * 100 : 0;
+        const retentionRate = cell.trials > 0 ? (cell.retained / cell.trials) * 100 : 0;
         
         // Link to the actual previous month in chronological order
         const prevMonthKey = months[idx - 1]?.key;
@@ -357,8 +357,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       const avgVisits = aggregated.visitsPostTrial.length > 0
         ? aggregated.visitsPostTrial.reduce((a: number, b: number) => a + b, 0) / aggregated.visitsPostTrial.length
         : 0;
-      const conversionRate = aggregated.newMembers > 0 ? (aggregated.converted / aggregated.newMembers) * 100 : 0;
-      const retentionRate = aggregated.newMembers > 0 ? (aggregated.retained / aggregated.newMembers) * 100 : 0;
+      const conversionRate = aggregated.trials > 0 ? (aggregated.converted / aggregated.trials) * 100 : 0;
+      const retentionRate = aggregated.trials > 0 ? (aggregated.retained / aggregated.trials) * 100 : 0;
 
       totals[m.key] = {
         ...aggregated,

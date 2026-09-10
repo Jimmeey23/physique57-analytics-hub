@@ -55,7 +55,7 @@ export const ClientConversionEntityTable: React.FC<ClientConversionEntityTablePr
     return Object.values(entityStats)
       .map((stat: any) => ({
         ...stat,
-        conversionRate: stat.newMembers > 0 ? (stat.converted / stat.newMembers) * 100 : 0,
+        conversionRate: stat.totalClients > 0 ? (stat.converted / stat.totalClients) * 100 : 0,
         retentionRate: stat.totalClients > 0 ? (stat.retained / stat.totalClients) * 100 : 0,
         avgLTV: stat.totalClients > 0 ? stat.totalLTV / stat.totalClients : 0,
         avgVisits: stat.totalClients > 0 ? stat.totalVisits / stat.totalClients : 0,
@@ -138,7 +138,7 @@ export const ClientConversionEntityTable: React.FC<ClientConversionEntityTablePr
     retentionRate: 0,
     avgLTV: entityData.reduce((sum, row) => sum + row.totalLTV, 0) / Math.max(entityData.reduce((sum, row) => sum + row.totalClients, 0), 1)
   };
-  totals.conversionRate = totals.newMembers > 0 ? (totals.converted / totals.newMembers) * 100 : 0;
+  totals.conversionRate = totals.totalClients > 0 ? (totals.converted / totals.totalClients) * 100 : 0;
   totals.retentionRate = totals.totalClients > 0 ? (totals.retained / totals.totalClients) * 100 : 0;
 
   return (

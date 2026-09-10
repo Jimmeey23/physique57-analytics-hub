@@ -42,7 +42,7 @@ export const ClientRetentionSection: React.FC<ClientRetentionSectionProps> = ({
 }) => {
   // Client lifecycle data
   const clientLifecycleData = [
-    { name: 'Active', value: metrics.uniqueMembers - metrics.churnedMembers, color: '#10B981' },
+    { name: 'Active', value: Math.max(0, metrics.uniqueMembers - metrics.churnedMembers), color: '#10B981' },
     { name: 'Churned', value: metrics.churnedMembers, color: '#EF4444' },
     { name: 'New', value: metrics.newClientsAcquired, color: '#3B82F6' }
   ];
