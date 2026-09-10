@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,6 +34,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { designTokens } from '@/utils/designTokens';
 
 const SEGMENT_COLORS: Record<string, string> = {
   'high-value': '#2563eb',
@@ -38,7 +42,7 @@ const SEGMENT_COLORS: Record<string, string> = {
   reliable: '#06b6d4',
   'at-risk': '#f59e0b',
   unreliable: '#ef4444',
-  inactive: '#64748b',
+  inactive: designTokens.colors.slate[500],
 };
 
 const SEGMENT_BADGES: Record<string, string> = {
@@ -79,7 +83,7 @@ const MemberLifecycle: React.FC = () => {
       segment,
       label: titleCaseSegment(segment),
       count,
-      color: SEGMENT_COLORS[segment] || '#64748b',
+      color: SEGMENT_COLORS[segment] || designTokens.colors.slate[500],
     }));
   }, [analytics.memberSegments]);
 
@@ -175,6 +179,17 @@ const MemberLifecycle: React.FC = () => {
         ]}
         compact={false}
       />
+
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker
+          items={[
+            { label: 'Tracked members', value: formatNumber(analytics.summaryInsights.totalMembers) },
+            { label: 'Active members', value: formatNumber(analytics.summaryInsights.activeMembers) },
+            { label: 'At-risk members', value: formatNumber(analytics.summaryInsights.atRiskMembers) },
+            { label: 'Avg show-up rate', value: formatPercentage(analytics.summaryInsights.averageShowUpRate) },
+          ]}
+        />
+      </div>
 
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
@@ -479,6 +494,7 @@ const MemberLifecycle: React.FC = () => {
               </Tabs>
             </CardContent>
           </Card>
+          <MetricDefinitions items={METRIC_DEFINITIONS.lifecycle} />
         </main>
       </div>
     </div>

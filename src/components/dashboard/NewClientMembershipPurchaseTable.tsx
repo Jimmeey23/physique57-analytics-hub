@@ -1,12 +1,15 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, TrendingUp, X, Users, Calendar, TrendingDown, DollarSign, Activity } from 'lucide-react';
+import { Activity, Calendar, DollarSign, ShoppingCart, TrendingUp, Users } from 'lucide-react';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57SortTh } from '@/components/ui/P57SortTh';
+import { TABLE_STYLES } from '@/styles/tableStyles';
+import { downloadCsv } from '@/utils/csvExport';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { isNewClient } from '@/utils/clientRetention';
+import { rowKey } from '@/utils/reactKeys';
 
 interface NewClientMembershipPurchaseTableProps {
   data: NewClientData[];
@@ -35,35 +38,15 @@ interface MembershipPurchaseStats {
 }
 
 export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurchaseTableProps> = ({ data }) => {
-  const totalsRowStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#9d174d',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#9d174d',
-    color: '#ffffff',
-    borderTopColor: '#be185d',
-  };
-
-  const totalsCellStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#9d174d',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#9d174d',
-    color: '#ffffff',
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    borderTopColor: '#be185d',
-  };
-
   const [sortField, setSortField] = React.useState<string | undefined>(undefined);
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const [drillDownData, setDrillDownData] = React.useState<DrillDownData | null>(null);
   const [groupBy, setGroupBy] = React.useState<'detailed' | 'membership' | 'clientType'>('detailed');
+  const [query, setQuery] = React.useState('');
 
   // Filter to only new clients
   const newClientsData = React.useMemo(() => {
-    return data.filter(client => 
-      String(client.isNew || '').toLowerCase().includes('new')
-    );
+    return data.filter(isNewClient);
   }, [data]);
 
   // Store client data by membership + client type combination for drill-down
@@ -331,128 +314,6 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
     });
   };
 
-  const columns = React.useMemo(() => {
-    const baseColumns = [
-      ...(groupBy !== 'clientType' ? [{
-        key: 'membershipType' as const,
-        header: 'Membership Type',
-        className: 'font-medium text-xs min-w-[200px]',
-        sortable: true,
-        render: (value: string, row: MembershipPurchaseStats) => (
-          <span 
-            className="text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:underline" 
-            title={value}
-            onClick={() => handleCellClick(row, 'membershipType', 'Membership Overview')}
-          >
-            {value}
-          </span>
-        )
-      }] : []),
-      ...(groupBy !== 'membership' ? [{
-        key: 'clientType' as const,
-        header: 'Client Type',
-        className: 'font-medium text-xs min-w-[120px]',
-        sortable: true,
-        render: (value: string, row: MembershipPurchaseStats) => (
-          <span 
-            className="text-sm text-slate-600 cursor-pointer hover:text-indigo-600 hover:underline" 
-            title={value}
-            onClick={() => handleCellClick(row, 'clientType', 'Client Type Analysis')}
-          >
-            {value}
-          </span>
-        )
-      }] : []),
-    ];
-
-    return [
-      ...baseColumns,
-      {
-        key: 'units' as const,
-      header: 'Units Sold',
-      align: 'center' as const,
-      sortable: true,
-      render: (value: number, row: MembershipPurchaseStats) => (
-        <span 
-          className="text-sm font-medium text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline"
-          onClick={() => handleCellClick(row, 'units', 'Units Sold Analysis')}
-        >
-          {formatNumber(value)}
-        </span>
-      )
-    },
-    {
-      key: 'newClientsCount' as const,
-      header: 'Clients',
-      align: 'center' as const,
-      sortable: true,
-      render: (value: number, row: MembershipPurchaseStats) => (
-        <span 
-          className="text-sm font-medium text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline"
-          onClick={() => handleCellClick(row, 'newClientsCount', 'Client Details')}
-        >
-          {formatNumber(value)}
-        </span>
-      )
-    },
-    {
-      key: 'totalRevenue' as const,
-      header: 'Total Value (LTV)',
-      align: 'right' as const,
-      sortable: true,
-      render: (value: number, row: MembershipPurchaseStats) => (
-        <span 
-          className="text-sm font-medium text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline"
-          onClick={() => handleCellClick(row, 'totalRevenue', 'Revenue Breakdown')}
-        >
-          {formatCurrency(value)}
-        </span>
-      )
-    },
-    {
-      key: 'avgRevenue' as const,
-      header: 'Avg Value',
-      align: 'right' as const,
-      sortable: true,
-      render: (value: number, row: MembershipPurchaseStats) => (
-        <span 
-          className="text-sm font-medium text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline"
-          onClick={() => handleCellClick(row, 'avgRevenue', 'Average Value Analysis')}
-        >
-          {formatCurrency(value)}
-        </span>
-      )
-    },
-    {
-      key: 'avgDaysTaken' as const,
-      header: 'Avg Days to Convert',
-      align: 'center' as const,
-      sortable: true,
-      render: (value: number, row: MembershipPurchaseStats) => (
-        <span 
-          className="text-sm font-medium text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline"
-          onClick={() => handleCellClick(row, 'avgDaysTaken', 'Conversion Timeline')}
-        >
-          {value > 0 ? `${value.toFixed(1)} days` : 'N/A'}
-        </span>
-      )
-    },
-    {
-      key: 'avgVisitsPostTrial' as const,
-      header: 'Avg Visits',
-      align: 'center' as const,
-      sortable: true,
-      render: (value: number, row: MembershipPurchaseStats) => (
-        <span 
-          className="text-sm font-medium text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline"
-          onClick={() => handleCellClick(row, 'avgVisitsPostTrial', 'Visit Patterns')}
-        >
-          {value.toFixed(1)}
-        </span>
-      )
-    }
-    ];
-  }, [groupBy]);
 
   // Calculate totals
   const totals = React.useMemo(() => {
@@ -480,8 +341,12 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
   }, [membershipPurchaseData]);
 
   const displayedData = React.useMemo(() => {
-    if (!sortField) return membershipPurchaseData;
-    const arr = [...membershipPurchaseData];
+    const term = query.trim().toLowerCase();
+    const base = term
+      ? membershipPurchaseData.filter((r) => `${r.membershipType} ${r.clientType}`.toLowerCase().includes(term))
+      : membershipPurchaseData;
+    if (!sortField) return base;
+    const arr = [...base];
     return arr.sort((a: any, b: any) => {
       const av = a[sortField];
       const bv = b[sortField];
@@ -489,7 +354,29 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
       return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
     });
-  }, [membershipPurchaseData, sortField, sortDirection]);
+  }, [membershipPurchaseData, sortField, sortDirection, query]);
+
+  const handleExportCsv = () => {
+    const cols = [
+      ...(groupBy !== 'clientType' ? [{ key: 'membershipType', header: 'Membership Type' }] : []),
+      ...(groupBy !== 'membership' ? [{ key: 'clientType', header: 'Client Type' }] : []),
+      { key: 'units', header: 'Units' },
+      { key: 'newClientsCount', header: 'Clients' },
+      { key: 'totalRevenue', header: 'Total Value' },
+      { key: 'avgRevenue', header: 'Avg Value' },
+      { key: 'avgDaysTaken', header: 'Avg Days' },
+      { key: 'avgVisitsPostTrial', header: 'Avg Visits' },
+    ];
+    const toRec = (r: Record<string, unknown>): Record<string, unknown> => {
+      const rec: Record<string, unknown> = {};
+      cols.forEach((c) => { rec[c.key] = r[c.key] ?? ''; });
+      return rec;
+    };
+    downloadCsv('New Client Membership Purchases.csv', cols, [
+      ...displayedData.map((r) => toRec(r as unknown as Record<string, unknown>)),
+      toRec(totals as unknown as Record<string, unknown>),
+    ]);
+  };
 
   const handleSort = (field: string) => {
     if (sortField === field) setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
@@ -522,175 +409,137 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
   }, [membershipPurchaseData, groupBy]);
 
   return (
-    <Card className="bg-white shadow-lg border-0">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
-        <CardTitle className="flex items-center gap-2 flex-wrap">
-          <ShoppingCart className="w-5 h-5" />
-          New Client Membership Purchases
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {newClientsData.length} New Clients
-          </Badge>
-          <Badge variant="secondary" className="bg-white/20 text-white">
-            {membershipPurchaseData.length} {groupBy === 'detailed' ? 'Rows' : groupBy === 'membership' ? 'Memberships' : 'Client Types'}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
+    <>
+      <P57TableShell
+        icon={ShoppingCart}
+        title="New Client Membership Purchases"
+        description="Memberships purchased by new clients post-trial. Click any cell for drill-down detail."
+        rowCount={displayedData.length}
+        rowCountLabel="rows"
+        onSearch={setQuery}
+        searchPlaceholder="Search memberships or client types\u2026"
+        onExportCsv={handleExportCsv}
+        meta={<span>{formatNumber(newClientsData.length)} new clients \u00b7 {groupBy === 'detailed' ? 'Detailed view' : groupBy === 'membership' ? 'By membership' : 'By client type'}</span>}
+        actions={
+          <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 p-0.5 text-[11px] font-semibold">
+            {([['detailed', 'Detailed'], ['membership', 'By Membership'], ['clientType', 'By Client Type']] as const).map(([v, label]) => (
+              <button key={v} type="button" onClick={() => setGroupBy(v)}
+                className={groupBy === v ? 'rounded-full bg-white px-2.5 py-1 text-slate-900 shadow-sm' : 'rounded-full px-2.5 py-1 text-slate-500 hover:text-slate-800'}>
+                {label}
+              </button>
+            ))}
+          </div>
+        }
+      >
         {membershipPurchaseData.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="px-1 py-12 text-center text-sm text-slate-500">
             No membership purchase data available for new clients.
           </div>
         ) : (
           <>
-            {/* Grouping Controls */}
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-slate-700">Group By:</span>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={groupBy === 'detailed' ? 'default' : 'outline'}
-                    onClick={() => setGroupBy('detailed')}
-                    className={groupBy === 'detailed' ? 'bg-pink-600 hover:bg-pink-500 text-white border-pink-500' : 'border-pink-200 text-pink-700 hover:bg-pink-50'}
-                  >
-                    Detailed View
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={groupBy === 'membership' ? 'default' : 'outline'}
-                    onClick={() => setGroupBy('membership')}
-                    className={groupBy === 'membership' ? 'bg-pink-600 hover:bg-pink-500 text-white border-pink-500' : 'border-pink-200 text-pink-700 hover:bg-pink-50'}
-                  >
-                    By Membership
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={groupBy === 'clientType' ? 'default' : 'outline'}
-                    onClick={() => setGroupBy('clientType')}
-                    className={groupBy === 'clientType' ? 'bg-pink-600 hover:bg-pink-500 text-white border-pink-500' : 'border-pink-200 text-pink-700 hover:bg-pink-50'}
-                  >
-                    By Client Type
-                  </Button>
-                </div>
-                <span className="text-xs text-slate-500 ml-auto">
-                  {groupBy === 'detailed' && 'Showing all membership + client type combinations'}
-                  {groupBy === 'membership' && 'Aggregated by membership type across all client types'}
-                  {groupBy === 'clientType' && 'Aggregated by client type across all memberships'}
-                </span>
-              </div>
-            </div>
-
-            <div className="overflow-auto" style={{ maxHeight: '600px' }} data-table="client-retention-new-client-purchases" data-table-name="New Client Membership Purchases">
-              <table className="w-full border-collapse" data-table="client-retention-new-client-purchases" data-table-name="New Client Membership Purchases">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-slate-950 text-white">
+          <div className="max-h-[560px] overflow-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
                     {groupBy !== 'clientType' && (
-                      <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '300px', minWidth: '300px', maxHeight: '35px' }}>
+                      <P57SortTh sortKey="membershipType" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} style={{ minWidth: '300px' }}>
                         Membership Type
-                      </th>
+                      </P57SortTh>
                     )}
                     {groupBy !== 'membership' && (
-                      <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                      <P57SortTh sortKey="clientType" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort}>
                         Client Type
-                      </th>
+                      </P57SortTh>
                     )}
-                    <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                    <P57SortTh sortKey="units" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} align="center">
                       Units
-                    </th>
-                    <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                    </P57SortTh>
+                    <P57SortTh sortKey="newClientsCount" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} align="center">
                       Clients
-                    </th>
-                    <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                    </P57SortTh>
+                    <P57SortTh sortKey="totalRevenue" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} align="right">
                       Total Value
-                    </th>
-                    <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                    </P57SortTh>
+                    <P57SortTh sortKey="avgRevenue" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} align="right">
                       Avg Value
-                    </th>
-                    <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wider border-r border-slate-700" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                    </P57SortTh>
+                    <P57SortTh sortKey="avgDaysTaken" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} align="center">
                       Avg Days
-                    </th>
-                    <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wider" style={{ width: '100px', minWidth: '100px', maxHeight: '35px' }}>
+                    </P57SortTh>
+                    <P57SortTh sortKey="avgVisitsPostTrial" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} align="center">
                       Avg Visits
-                    </th>
+                    </P57SortTh>
                   </tr>
                 </thead>
                 <tbody>
                   {displayedData.map((row, idx) => (
-                    <tr key={idx} className="border-b border-gray-200 hover:bg-slate-50 transition-colors" style={{ maxHeight: '35px' }}>
+                    <tr>
                       {groupBy !== 'clientType' && (
-                        <td className="py-2 px-3 text-sm text-slate-700 font-medium border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline truncate" 
-                            style={{ maxHeight: '35px' }}
+                        <td className="truncate font-medium cursor-pointer hover:text-sky-700 hover:underline" 
                             onClick={() => handleCellClick(row, 'membershipType', 'Membership Overview')}>
                           {row.membershipType}
                         </td>
                       )}
                       {groupBy !== 'membership' && (
-                        <td className="py-2 px-3 text-sm text-slate-600 border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline truncate" 
-                            style={{ maxHeight: '35px' }}
+                        <td className="cursor-pointer hover:text-sky-700 hover:underline" 
                             onClick={() => handleCellClick(row, 'clientType', 'Client Type Analysis')}>
                           {row.clientType}
                         </td>
                       )}
-                      <td className="py-2 px-3 text-sm text-center text-slate-700 border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline" 
-                          style={{ maxHeight: '35px' }}
+                      <td className="text-center cursor-pointer hover:text-sky-700 hover:underline" 
                           onClick={() => handleCellClick(row, 'units', 'Units Sold Analysis')}>
                         {formatNumber(row.units)}
                       </td>
-                      <td className="py-2 px-3 text-sm text-center text-slate-700 border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline" 
-                          style={{ maxHeight: '35px' }}
+                      <td className="text-center cursor-pointer hover:text-sky-700 hover:underline" 
                           onClick={() => handleCellClick(row, 'newClientsCount', 'Client Details')}>
                         {formatNumber(row.newClientsCount)}
                       </td>
-                      <td className="py-2 px-3 text-sm text-right text-slate-700 font-medium border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline" 
-                          style={{ maxHeight: '35px' }}
+                      <td className="text-right font-medium cursor-pointer hover:text-sky-700 hover:underline" 
                           onClick={() => handleCellClick(row, 'totalRevenue', 'Revenue Breakdown')}>
                         {formatCurrency(row.totalRevenue)}
                       </td>
-                      <td className="py-2 px-3 text-sm text-right text-slate-700 border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline" 
-                          style={{ maxHeight: '35px' }}
+                      <td className="text-right cursor-pointer hover:text-sky-700 hover:underline" 
                           onClick={() => handleCellClick(row, 'avgRevenue', 'Average Value Analysis')}>
                         {formatCurrency(row.avgRevenue)}
                       </td>
-                      <td className="py-2 px-3 text-sm text-center text-slate-700 border-r border-gray-200 cursor-pointer hover:text-indigo-600 hover:underline" 
-                          style={{ maxHeight: '35px' }}
+                      <td className="text-center cursor-pointer hover:text-sky-700 hover:underline" 
                           onClick={() => handleCellClick(row, 'avgDaysTaken', 'Conversion Timeline')}>
                         {row.avgDaysTaken > 0 ? `${row.avgDaysTaken.toFixed(1)}` : 'N/A'}
                       </td>
-                      <td className="py-2 px-3 text-sm text-center text-slate-700 cursor-pointer hover:text-indigo-600 hover:underline" 
-                          style={{ maxHeight: '35px' }}
+                      <td className="text-center cursor-pointer hover:text-sky-700 hover:underline" 
                           onClick={() => handleCellClick(row, 'avgVisitsPostTrial', 'Visit Patterns')}>
                         {row.avgVisitsPostTrial.toFixed(1)}
                       </td>
                     </tr>
                   ))}
                   {/* Totals Row */}
-                  <tr className="retention-totals-row border-t-4 border-pink-700 font-bold" style={{ ...totalsRowStyle, maxHeight: '35px' }}>
+                  <tr className={TABLE_STYLES.footer.row}>
                     {groupBy !== 'clientType' && (
-                      <td className="border-r py-2 px-3 text-sm" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                      <td className={TABLE_STYLES.footer.cell}>
                         {totals.membershipType}
                       </td>
                     )}
                     {groupBy !== 'membership' && (
-                      <td className="border-r py-2 px-3 text-sm" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                      <td className={TABLE_STYLES.footer.cell}>
                         {totals.clientType}
                       </td>
                     )}
-                    <td className="border-r py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                    <td className={`${TABLE_STYLES.footer.cell} text-center`}>
                       {formatNumber(totals.units)}
                     </td>
-                    <td className="border-r py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                    <td className={`${TABLE_STYLES.footer.cell} text-center`}>
                       {formatNumber(totals.newClientsCount)}
                     </td>
-                    <td className="border-r py-2 px-3 text-sm text-right font-semibold" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                    <td className={`${TABLE_STYLES.footer.cell} text-right`}>
                       {formatCurrency(totals.totalRevenue)}
                     </td>
-                    <td className="border-r py-2 px-3 text-sm text-right" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                    <td className={`${TABLE_STYLES.footer.cell} text-right`}>
                       {formatCurrency(totals.avgRevenue)}
                     </td>
-                    <td className="border-r py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                    <td className={`${TABLE_STYLES.footer.cell} text-center`}>
                       {totals.avgDaysTaken > 0 ? totals.avgDaysTaken.toFixed(1) : 'N/A'}
                     </td>
-                    <td className="py-2 px-3 text-sm text-center" style={{ ...totalsCellStyle, maxHeight: '35px' }}>
+                    <td className={`${TABLE_STYLES.footer.cell} text-center`}>
                       {totals.avgVisitsPostTrial.toFixed(1)}
                     </td>
                   </tr>
@@ -699,7 +548,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
             </div>
             
             {insights && (
-              <div className="border-t border-slate-200 p-6 bg-slate-50">
+              <div className="border-t border-slate-100 bg-slate-50/60 p-4">
                 <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-slate-700" />
                   Key Insights
@@ -749,7 +598,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
             )}
           </>
         )}
-      </CardContent>
+      </P57TableShell>
 
       {/* Drill-Down Modal */}
       <Dialog open={!!drillDownData} onOpenChange={() => setDrillDownData(null)}>
@@ -870,7 +719,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                         <p>• Engagement status: {drillDownData.clients.filter(c => c.conversionStatus === 'Converted').length} converted clients, {drillDownData.clients.filter(c => c.retentionStatus === 'Retained').length} retained</p>
                         <p>• Client type insight: {(() => {
                           const type = drillDownData.stats.clientType.toLowerCase();
-                          if (type.includes('new')) return 'New clients typically show higher engagement and are building their relationship with the studio.';
+                          if (isNewClient(type)) return 'New clients typically show higher engagement and are building their relationship with the studio.';
                           if (type.includes('return') || type.includes('existing')) return 'Returning clients demonstrate loyalty and familiarity with the studio offerings.';
                           return 'This client segment shows unique engagement patterns worth monitoring.';
                         })()}</p>
@@ -951,7 +800,7 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
                       </thead>
                       <tbody className="divide-y divide-slate-200">
                         {drillDownData.clients.map((client, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50">
+                          <tr key={rowKey(client, idx)} className="hover:bg-slate-50">
                             <td className="px-4 py-2 text-slate-700">
                               <div className="font-medium">{client.firstName} {client.lastName}</div>
                               <div className="text-xs text-slate-500">{client.email}</div>
@@ -984,6 +833,6 @@ export const NewClientMembershipPurchaseTable: React.FC<NewClientMembershipPurch
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   );
 };

@@ -1,13 +1,11 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, Target, TrendingUp, DollarSign, Clock, UserCheck, Award, UserPlus, ArrowRight, CalendarDays, Repeat, TrendingDown, ShoppingBag, AlertTriangle, HeartHandshake, UserX } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, UserCheck, Award, UserPlus, CalendarDays, Repeat, ShoppingBag, AlertTriangle, HeartHandshake, UserX, type LucideIcon } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { useClientConversionMetrics, ClientMetricWithYoY } from '@/hooks/useClientConversionMetrics';
-import { cn } from '@/lib/utils';
+import { useClientConversionMetrics } from '@/hooks/useClientConversionMetrics';
 import { parseDate } from '@/utils/dateUtils';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { MetricCard, MetricGrid } from '@/components/ui/MetricCard';
 
 interface ClientConversionMetricCardsProps {
   data: NewClientData[];
@@ -28,10 +26,10 @@ interface ClientConversionMetricCardsProps {
   const isReactivatedStatus = (c: NewClientData) => /reactivat|rejoin|win.?back|returning|re-?engag/.test(statusOf(c));
   const isAtRiskStatus = (c: NewClientData) => !isReactivatedStatus(c) && /at.?risk|dormant|inactive|lapsing|slipping|cooling/.test(statusOf(c));
   const isChurnedStatus = (c: NewClientData) => !isReactivatedStatus(c) && !isAtRiskStatus(c) && /churn|lost|cancel|lapsed|expir|dropped|terminat|dead/.test(statusOf(c));
-  const isRepeatBuyer = (c: NewClientData) => isConvertedInCohort(c) && (c.purchaseCountPostTrial || 0) >= 2;
+  const isRepeatBuyer = (c: NewClientData) => isConverted(c) && (c.purchaseCountPostTrial || 0) >= 2;
   const pctGrowth = (cur: number, prev: number) => prev > 0 ? Math.round(((cur - prev) / prev) * 100) : (cur > 0 ? 100 : 0);
   const repeatRateOf = (arr: NewClientData[]) => {
-    const converted = arr.filter(isConvertedInCohort).length;
+    const converted = arr.filter(isConverted).length;
     if (converted === 0) return 0;
     return (arr.filter(isRepeatBuyer).length / converted) * 100;
   };
@@ -124,7 +122,26 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
     'Avg Visits Post-Trial': Repeat,
   };
   
-  const metricCards: ClientMetricWithYoY[] = [
+  interface ClientCard {
+    title: string;
+    value: string;
+    icon: LucideIcon;
+    description: string;
+    change: number;
+    previousValue: string;
+    yoyPreviousValue?: string;
+    yoyChange?: number;
+    comparison?: { current: number; previous: number; difference: number };
+    changeDetails?: { rate: number; isSignificant: boolean; trend: string };
+    filterData?: () => NewClientData[];
+    metricType?: string;
+    gradient?: string;
+    period?: string;
+    rawValue?: number;
+    previousRawValue?: number;
+    yoyPreviousRawValue?: number;
+  }
+  const metricCards: ClientCard[] = [
     ...metrics.map(m => ({
       title: m.title,
       value: m.value,
@@ -144,16 +161,16 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
       filterData: () => {
         switch (m.title) {
           case 'New Members':
-            return data.filter(client => isInNewClientCohort(client));
+            return data.filter(client => isNewClient(client));
           case 'Converted Members':
-            return data.filter(client => isConvertedInCohort(client));
+            return data.filter(client => isConverted(client));
           case 'Retained Members':
-            return data.filter(client => isRetainedInCohort(client));
+            return data.filter(client => isRetained(client));
           default:
             return data;
         }
       }
-    } as ClientMetricWithYoY)),
+    })),
     {
       title: 'Avg Conversion Time',
       value: `${Math.round(avgConversionTime)} days`,
@@ -175,7 +192,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: avgConversionTime > avgConversionTimePrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => c.conversionSpan && c.conversionSpan > 0)
-    } as ClientMetricWithYoY,
+    },
     {
       title: 'Avg Visits Post-Trial',
       value: avgVisitsPostTrial.toFixed(1),
@@ -195,7 +212,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: avgVisitsPostTrial > avgVisitsPostTrialPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => c.visitsPostTrial && c.visitsPostTrial > 0)
-    } as ClientMetricWithYoY,
+    },
     {
       title: 'Repeat Purchase Rate',
       value: formatPercentage(repeatRate),
@@ -218,7 +235,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: repeatRate > repeatRatePrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(isRepeatBuyer)
-    } as ClientMetricWithYoY,
+    },
     {
       title: 'At-Risk Members',
       value: formatNumber(atRiskCount),
@@ -241,7 +258,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: atRiskCount > atRiskPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(isAtRiskStatus)
-    } as ClientMetricWithYoY,
+    },
     ...(reactivatedCount > 0 ? [{
       title: 'Reactivated Members',
       value: formatNumber(reactivatedCount),
@@ -264,7 +281,7 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: reactivatedCount > reactivatedPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(isReactivatedStatus)
-    } as ClientMetricWithYoY] : []),
+    }] : []),
     {
       title: 'Avg Visits Before Churn',
       value: churnVisitsAvg.toFixed(1),
@@ -287,237 +304,64 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: churnVisitsAvg > churnVisitsPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => isChurnedStatus(c) && (c.visitsPostTrial || 0) > 0)
-    } as ClientMetricWithYoY
+    }
   ];
 
+  const formatYoyFallback = (metric: ClientCard): string => {
+    const prev = metric.comparison?.previous;
+    if (prev === undefined) return '—';
+    const title = metric.title.toLowerCase();
+    if (title.includes('rate') || title.includes('conversion')) return formatPercentage(prev);
+    if (title.includes('ltv') || title.includes('revenue')) return formatCurrency(prev);
+    return formatNumber(prev);
+  };
+
   return (
-    <div className="min-w-0">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {metricCards.map((metric, index) => {
-          const Icon = metric.icon;
-          const change = typeof metric.change === 'number' ? metric.change : 0;
-          const isPositive = change > 0;
-          const isSignificant = Math.abs(change) >= 5;
-          
-          return (
-            <Card
-              key={index}
-              className={cn(
-                "group relative overflow-hidden cursor-pointer transition-all duration-200 h-full flex flex-col",
-                "bg-white hover:bg-gradient-to-br hover:from-slate-900 hover:via-slate-900 hover:to-slate-950",
-                "border border-slate-200 hover:border-slate-800 border-t-4",
-                "shadow-sm hover:shadow-md",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500",
-                index % 4 === 0 && "border-t-emerald-500",
-                index % 4 === 1 && "border-t-blue-500",
-                index % 4 === 2 && "border-t-purple-500",
-                index % 4 === 3 && "border-t-rose-500",
-                onCardClick && "hover:cursor-pointer"
-              )}
-              role={onCardClick ? 'button' : undefined}
-              tabIndex={onCardClick ? 0 : undefined}
-              aria-label={onCardClick ? `View ${metric.title} details` : undefined}
-              onKeyDown={(event) => {
-                if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
-                  event.preventDefault();
-                  onCardClick?.(metric.title, metric.filterData(), metric.metricType);
-                }
-              }}
-              onClick={() => onCardClick?.(metric.title, metric.filterData(), metric.metricType)}
-            >
-              <CardContent className="p-5 relative flex-1 flex flex-col">
-                <div className={cn(
-                  "absolute inset-0 opacity-[0.03] group-hover:opacity-[0.08] transition-all duration-200",
-                  index % 4 === 0 && "bg-gradient-to-br from-emerald-500 to-teal-500",
-                  index % 4 === 1 && "bg-gradient-to-br from-blue-500 to-cyan-500",
-                  index % 4 === 2 && "bg-gradient-to-br from-purple-500 to-pink-500",
-                  index % 4 === 3 && "bg-gradient-to-br from-rose-500 to-orange-500"
-                )} />
-
-                <div className="absolute top-3 right-3 opacity-[0.08] group-hover:opacity-[0.15] transition-all duration-700 ease-out group-hover:scale-110 group-hover:rotate-6">
-                  <Icon className="w-20 h-20 text-slate-900 group-hover:text-white" />
-                </div>
-
-                <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity duration-200"
-                     style={{backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px'}} />
-
-                <div className="relative z-10 space-y-2.5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className={cn(
-                        "p-2.5 rounded-xl shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md",
-                        index % 4 === 0 && "bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 text-emerald-700 group-hover:from-emerald-500/25 group-hover:to-emerald-600/20 group-hover:text-emerald-400 group-hover:shadow-emerald-500/20",
-                        index % 4 === 1 && "bg-gradient-to-br from-blue-500/15 to-blue-600/10 text-blue-700 group-hover:from-blue-500/25 group-hover:to-blue-600/20 group-hover:text-blue-400 group-hover:shadow-blue-500/20",
-                        index % 4 === 2 && "bg-gradient-to-br from-purple-500/15 to-purple-600/10 text-purple-700 group-hover:from-purple-500/25 group-hover:to-purple-600/20 group-hover:text-purple-400 group-hover:shadow-purple-500/20",
-                        index % 4 === 3 && "bg-gradient-to-br from-rose-500/15 to-rose-600/10 text-rose-700 group-hover:from-rose-500/25 group-hover:to-rose-600/20 group-hover:text-rose-400 group-hover:shadow-rose-500/20"
-                      )}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className={cn(
-                          "font-bold text-sm text-slate-700 transition-all duration-200 leading-tight",
-                          "group-hover:text-white group-hover:underline group-hover:underline-offset-4 group-hover:decoration-2",
-                          index % 4 === 0 && "group-hover:decoration-emerald-400",
-                          index % 4 === 1 && "group-hover:decoration-blue-400",
-                          index % 4 === 2 && "group-hover:decoration-purple-400",
-                          index % 4 === 3 && "group-hover:decoration-rose-400"
-                        )}>
-                          {metric.title}
-                        </h3>
-                        <p className="text-[9px] text-slate-500 group-hover:text-slate-400 transition-colors duration-200 mt-0.5 uppercase tracking-wide font-semibold">
-                          Current Period
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={cn(
-                    "p-2.5 rounded-lg transition-all duration-200",
-                    "bg-slate-50 group-hover:bg-slate-800/30",
-                    "border border-slate-100 group-hover:border-slate-700/50"
-                  )}>
-                    <p className="text-3xl font-bold text-slate-900 group-hover:text-white transition-colors duration-200 tracking-tight">
-                      {metric.value}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className={cn(
-                        "h-0.5 flex-1 rounded-full transition-all duration-200",
-                        metric.change > 0 && "bg-emerald-200 group-hover:bg-emerald-500/40",
-                        metric.change < 0 && "bg-rose-200 group-hover:bg-rose-500/40",
-                        metric.change === 0 && "bg-slate-200 group-hover:bg-slate-500/40"
-                      )} />
-                      <div className="flex items-center gap-1">
-                        {metric.change > 0 && <TrendingUp className="w-3 h-3 text-emerald-600 group-hover:text-emerald-400" />}
-                        {metric.change < 0 && <TrendingDown className="w-3 h-3 text-rose-600 group-hover:text-rose-400" />}
-                        {metric.change === 0 && <TrendingDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />}
-                        <span className={cn(
-                          "text-[10px] font-bold transition-colors duration-200",
-                          metric.change > 0 && "text-emerald-600 group-hover:text-emerald-400",
-                          metric.change < 0 && "text-rose-600 group-hover:text-rose-400",
-                          metric.change === 0 && "text-slate-600 group-hover:text-slate-400"
-                        )}>
-                          {metric.changeDetails?.trend || (metric.change > 0 ? 'up' : metric.change < 0 ? 'down' : 'stable')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-auto">
-                    <div className={cn(
-                      "p-2.5 rounded-lg border transition-all duration-200 min-h-[100px] flex flex-col justify-between",
-                      "bg-white/50 group-hover:bg-slate-800/20",
-                      "border-slate-200 group-hover:border-slate-700/50"
-                    )}>
-                      <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-200">
-                        Month over Month
-                      </div>
-                      <div className="flex items-baseline gap-1.5 mb-1.5">
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-200 tabular-nums">
-                          {metric.previousValue}
-                        </span>
-                        <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-200">prev</span>
-                      </div>
-                      <div className={cn(
-                        "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-200 min-w-[65px]",
-                        metric.change > 0 && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
-                        metric.change < 0 && "bg-rose-900/90 text-white group-hover:bg-rose-800 group-hover:shadow-lg group-hover:shadow-rose-900/40",
-                        metric.change === 0 && "bg-slate-700/90 text-white group-hover:bg-slate-600 group-hover:shadow-lg"
-                      )}>
-                        {metric.change > 0 && <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />}
-                        {metric.change < 0 && <TrendingDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                        <span>{metric.change > 0 ? '+' : ''}{Math.round(metric.change || 0)}%</span>
-                      </div>
-                    </div>
-
-                    <div className={cn(
-                      "p-2.5 rounded-lg border transition-all duration-200 min-h-[100px] flex flex-col justify-between",
-                      metric.yoyChange !== undefined 
-                        ? "bg-white/50 group-hover:bg-slate-800/20 border-slate-200 group-hover:border-slate-700/50"
-                        : "bg-slate-50/50 group-hover:bg-slate-800/10 border-slate-200 group-hover:border-slate-700/30"
-                    )}>
-                      {(metric.yoyPreviousValue !== undefined || metric.comparison?.previous !== undefined) ? (
-                        <>
-                          <div className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 uppercase tracking-wider mb-1 transition-colors duration-200">
-                            Year over Year
-                          </div>
-                          <div className="flex items-baseline gap-1.5 mb-1.5">
-                            <span className="text-sm font-bold text-slate-700 group-hover:text-white transition-colors duration-200 tabular-nums">
-                              {metric.yoyPreviousValue ?? (
-                                metric.comparison?.previous !== undefined ? (
-                                  // Fallback formatting based on metric type
-                                  (metric.title.toLowerCase().includes('rate') || metric.title.toLowerCase().includes('conversion'))
-                                    ? formatPercentage(metric.comparison.previous)
-                                    : metric.title.toLowerCase().includes('ltv') || metric.title.toLowerCase().includes('revenue')
-                                      ? formatCurrency(metric.comparison.previous)
-                                      : formatNumber(metric.comparison.previous)
-                                ) : '—'
-                              )}
-                            </span>
-                            <span className="text-[8px] text-slate-400 group-hover:text-slate-500 transition-colors duration-200">last year</span>
-                          </div>
-                          <div className={cn(
-                            "inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg font-bold text-[11px] tabular-nums transition-all duration-200 min-w-[65px]",
-                            metric.yoyChange > 0 && "bg-emerald-900/90 text-white group-hover:bg-emerald-800 group-hover:shadow-lg group-hover:shadow-emerald-900/40",
-                            metric.yoyChange < 0 && "bg-rose-900/90 text-white group-hover:bg-rose-800 group-hover:shadow-lg group-hover:shadow-rose-900/40",
-                            metric.yoyChange === 0 && "bg-slate-700/90 text-white group-hover:bg-slate-600 group-hover:shadow-lg"
-                          )}>
-                            {metric.yoyChange > 0 && <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />}
-                            {metric.yoyChange < 0 && <TrendingDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                            <span>{metric.yoyChange > 0 ? '+' : ''}{Math.round(metric.yoyChange || 0)}%</span>
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-[9px] text-slate-400 group-hover:text-slate-500 transition-colors duration-200 font-semibold">
-                          No YoY Data
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={cn(
-                    "relative pt-1.5 border-l-3 pl-3 transition-all duration-200",
-                    "before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-200",
-                    index % 4 === 0 && "border-l-emerald-500/50 group-hover:border-l-emerald-400 before:bg-emerald-500/20 group-hover:before:bg-emerald-400/30",
-                    index % 4 === 1 && "border-l-blue-500/50 group-hover:border-l-blue-400 before:bg-blue-500/20 group-hover:before:bg-blue-400/30",
-                    index % 4 === 2 && "border-l-purple-500/50 group-hover:border-l-purple-400 before:bg-purple-500/20 group-hover:before:bg-purple-400/30",
-                    index % 4 === 3 && "border-l-rose-500/50 group-hover:border-l-rose-400 before:bg-rose-500/20 group-hover:before:bg-rose-400/30"
-                  )}>
-                    <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-200 line-clamp-2 font-medium">
-                      {metric.description}
-                    </p>
-                  </div>
-
-                  <div className={cn(
-                    "pt-2 space-y-2 border-t transition-all duration-200 overflow-hidden",
-                    "max-h-0 opacity-0 group-hover:max-h-40 group-hover:opacity-100",
-                    index % 4 === 0 && "border-emerald-200 group-hover:border-emerald-500/30",
-                    index % 4 === 1 && "border-blue-200 group-hover:border-blue-500/30",
-                    index % 4 === 2 && "border-purple-200 group-hover:border-purple-500/30",
-                    index % 4 === 3 && "border-rose-200 group-hover:border-rose-500/30"
-                  )}>
-                    <div className="text-xs space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-medium">Trend:</span>
-                        <span className="text-white font-semibold">{metric.changeDetails?.trend || ''}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-medium">Difference:</span>
-                        <span className="text-white font-semibold">{Math.abs(metric.comparison?.difference || 0)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+    <MetricGrid cols={4}>
+      {metricCards.map((metric) => {
+        const Icon = metric.icon;
+        const change = typeof metric.change === 'number' ? metric.change : 0;
+        const yoyValue = metric.yoyPreviousValue ?? formatYoyFallback(metric);
+        const yoyChange = typeof metric.yoyChange === 'number' ? metric.yoyChange : null;
+        return (
+          <MetricCard
+            key={metric.title}
+            label={metric.title}
+            value={metric.value}
+            sub={metric.description}
+            icon={Icon}
+            delta={{
+              value: `${change > 0 ? '+' : ''}${Math.round(change)}%`,
+              tone: change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
+            }}
+            details={
+              <span className="space-y-1">
+                <span className="block">
+                  MoM: <strong>{metric.previousValue}</strong> ({change > 0 ? '+' : ''}{Math.round(change)}%)
+                </span>
+                <span className="block">
+                  YoY: <strong>{yoyValue}</strong>
+                  {yoyChange !== null && yoyValue !== '—' && (
+                    <> ({yoyChange > 0 ? '+' : ''}{Math.round(yoyChange)}%)</>
+                  )}
+                </span>
+                <span className="block text-muted-foreground">
+                  Trend: {metric.changeDetails?.trend || '—'} · Δ {Math.abs(metric.comparison?.difference || 0)}
+                </span>
+              </span>
+            }
+            detailsTitle="Period comparison"
+            onSelect={
+              onCardClick
+                ? () => onCardClick(metric.title, metric.filterData?.() ?? data, metric.metricType ?? '')
+                : undefined
+            }
+          />
+        );
+      })}
+    </MetricGrid>
   );
 };
 
 // Memoize to prevent unnecessary re-renders
 export const ClientConversionMetricCards = React.memo(ClientConversionMetricCardsComponent);
-
-// Temporary fix for Icon component type
-const Icon = ({ className }: { className?: string }) => <svg className={className}></svg>; // Updated to accept optional className

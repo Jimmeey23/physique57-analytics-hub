@@ -22,6 +22,7 @@ import {
   X,
   ChevronRight
 } from 'lucide-react';
+import { rowKey } from '@/utils/reactKeys';
 
 interface ClassAttendanceDrillDownModalProps {
   isOpen: boolean;
@@ -262,20 +263,20 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                     <div className="max-h-96 overflow-auto">
                       <Table className="class-attendance-neat-table">
                         <TableHeader className="sticky top-0 z-10">
-                          <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                            <TableHead className="font-semibold text-slate-100">Date</TableHead>
-                            <TableHead className="font-semibold text-slate-100">Time</TableHead>
-                            <TableHead className="font-semibold text-slate-100">Trainer</TableHead>
-                            <TableHead className="font-semibold text-slate-100">Location</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Capacity</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Checked In</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Fill Rate</TableHead>
-                            <TableHead className="text-center font-semibold text-slate-100">Revenue</TableHead>
+                          <TableRow className="bg-[#f6f7f9]">
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Date</TableHead>
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Time</TableHead>
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Trainer</TableHead>
+                            <TableHead className="bg-[#f6f7f9] font-semibold text-slate-700">Location</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Capacity</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Checked In</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Fill Rate</TableHead>
+                            <TableHead className="bg-[#f6f7f9] text-center font-semibold text-slate-700">Revenue</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {filteredSessions.slice(0, 50).map((session, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={rowKey(session, index)}>
                               <TableCell className="font-medium">
                                 <div>
                                   <div className="text-slate-900">{session.date}</div>
@@ -329,7 +330,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-6">
                     <div className="grid gap-4">
                       {locationStats.map((location, index) => (
-                        <Card key={index} className="bg-gradient-to-r from-white to-green-50/30 border border-green-100">
+                        <Card key={location.location} className="bg-gradient-to-r from-white to-green-50/30 border border-green-100">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -382,7 +383,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-6">
                     <div className="grid gap-4">
                       {trainerStats.map((trainer, index) => (
-                        <Card key={index} className="bg-gradient-to-r from-white to-purple-50/30 border border-purple-100">
+                        <Card key={trainer.trainer} className="bg-gradient-to-r from-white to-purple-50/30 border border-purple-100">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -435,7 +436,7 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
                   <CardContent className="p-6">
                     <div className="grid gap-4">
                       {timeSlotStats.map((timeSlot, index) => (
-                        <Card key={index} className="bg-gradient-to-r from-white to-orange-50/30 border border-orange-100">
+                        <Card key={timeSlot.timeSlot} className="bg-gradient-to-r from-white to-orange-50/30 border border-orange-100">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">

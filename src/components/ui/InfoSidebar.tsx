@@ -14,8 +14,7 @@ import {
   Maximize2,
   RefreshCw,
   Sparkles,
-  Brain,
-  Tabs
+  Brain
 } from 'lucide-react';
 import { Button } from './button';
 import { Textarea } from './textarea';
@@ -25,6 +24,7 @@ import { summaryManager } from '@/services/summaryManager';
 import { useDataContext } from '@/hooks/useDataContext';
 import { useToast } from '@/hooks/use-toast';
 import { useDataSource } from '@/contexts/DataSourceContext';
+import { logger } from '@/utils/logger';
 
 interface InfoPopoverProps {
   context: string;
@@ -268,7 +268,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
         });
       }
     } catch (error: any) {
-      console.error('Summary generation error:', error);
+      logger.error('Summary generation error:', error);
       setSummaryError(error.message || 'Failed to generate summary');
       toast({
         title: "Summary Generation Failed",
@@ -571,7 +571,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                           setIframeError(false);
                         }}
                         onError={() => {
-                          console.error(`Iframe failed to load: ${resolvedIframeSrc}`);
+                          logger.error(`Iframe failed to load: ${resolvedIframeSrc}`);
                           setIframeError(true);
                           setIframeOk(false);
                         }}
@@ -799,7 +799,7 @@ const InfoPopover: React.FC<InfoPopoverProps> = ({
                         setIframeError(false);
                       }}
                       onError={() => {
-                        console.error(`Iframe failed to load: ${resolvedIframeSrc}`);
+                        logger.error(`Iframe failed to load: ${resolvedIframeSrc}`);
                         setIframeError(true);
                         setIframeOk(false);
                       }}

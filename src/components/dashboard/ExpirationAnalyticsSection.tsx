@@ -62,31 +62,6 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
     };
   });
 
-  // Count data by location for tabs
-  const tabCounts = useMemo(() => {
-    const counts = {
-      all: data?.length || 0,
-      kwality: 0,
-      supreme: 0,
-      kenkere: 0
-    };
-
-    data?.forEach(item => {
-      const location = (item.homeLocation || '').toString();
-      if (location.includes('Kwality') || location.includes('Kemps Corner')) {
-        counts.kwality++;
-      } else if (location.includes('Supreme') || location.includes('Bandra')) {
-        counts.supreme++;
-      } else if (location.includes('Kenkere') || location.includes('Bengaluru')) {
-        counts.kenkere++;
-      } else if (location.toLowerCase().includes('pop') || location.toLowerCase().includes('popup') || location.toLowerCase().includes('pop-up')) {
-        counts.popup++;
-      }
-    });
-
-    return counts;
-  }, [data]);
-
   const applyFilters = (rawData: ExpirationData[]) => {
     logger.debug('Applying filters to', rawData.length, 'expiration records');
     

@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase as sharedClient } from '@/lib/supabaseClient';
 import { SummaryResult } from './openaiService';
+import { logger } from '@/utils/logger';
 
 // Database types
 export interface StoredSummary {
@@ -38,7 +39,7 @@ class SupabaseService {
     this.supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 
     if (!sharedClient) {
-      console.warn('Supabase credentials not configured. Summary persistence will be unavailable.');
+      logger.warn('Supabase credentials not configured. Summary persistence will be unavailable.');
       return;
     }
 
@@ -99,7 +100,7 @@ class SupabaseService {
           .single();
 
         if (error) {
-          console.error('Error updating summary:', error);
+          logger.error('Error updating summary:', error);
           return { success: false, error: error.message };
         }
 
@@ -113,14 +114,14 @@ class SupabaseService {
           .single();
 
         if (error) {
-          console.error('Error saving summary:', error);
+          logger.error('Error saving summary:', error);
           return { success: false, error: error.message };
         }
 
         return { success: true, id: data.id };
       }
     } catch (error: any) {
-      console.error('Supabase operation failed:', error);
+      logger.error('Supabase operation failed:', error);
       return { success: false, error: error.message };
     }
   }
@@ -147,13 +148,13 @@ class SupabaseService {
         .limit(limit);
 
       if (error) {
-        console.error('Error retrieving summaries:', error);
+        logger.error('Error retrieving summaries:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, summaries: data || [] };
     } catch (error: any) {
-      console.error('Supabase operation failed:', error);
+      logger.error('Supabase operation failed:', error);
       return { success: false, error: error.message };
     }
   }
@@ -188,13 +189,13 @@ class SupabaseService {
         if (error.code === 'PGRST116') { // No rows found
           return { success: true, summary: undefined };
         }
-        console.error('Error retrieving latest summary:', error);
+        logger.error('Error retrieving latest summary:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, summary: data };
     } catch (error: any) {
-      console.error('Supabase operation failed:', error);
+      logger.error('Supabase operation failed:', error);
       return { success: false, error: error.message };
     }
   }
@@ -214,13 +215,13 @@ class SupabaseService {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting summary:', error);
+        logger.error('Error deleting summary:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error: any) {
-      console.error('Supabase operation failed:', error);
+      logger.error('Supabase operation failed:', error);
       return { success: false, error: error.message };
     }
   }
@@ -244,13 +245,13 @@ class SupabaseService {
         .eq('location_id', locationId);
 
       if (error) {
-        console.error('Error clearing summaries:', error);
+        logger.error('Error clearing summaries:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error: any) {
-      console.error('Supabase operation failed:', error);
+      logger.error('Supabase operation failed:', error);
       return { success: false, error: error.message };
     }
   }

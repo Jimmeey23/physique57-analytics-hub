@@ -343,7 +343,7 @@ export interface DiscountAnalysisData {
   paymentDate?: string;
   soldBy?: string;
   paymentValue?: number;
-  [key: string]: string | number | undefined;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface LateCancellationsFilterOptions {

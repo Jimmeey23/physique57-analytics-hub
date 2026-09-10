@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useCheckinsData } from '@/hooks/useCheckinsData';
@@ -105,8 +108,15 @@ const DataLabPageContent = () => {
             onExportClick={() => {}}
           />
 
+          <div className="container mx-auto px-6 pt-2">
+            <KpiTicker items={heroMetrics} />
+          </div>
+
           <div className="container mx-auto px-6 py-8">
             <DataLabWorkspace dataSources={dataSources} />
+            <div className="pt-2">
+              <MetricDefinitions items={METRIC_DEFINITIONS.outlierLab} />
+            </div>
           </div>
         </div>
       </div>

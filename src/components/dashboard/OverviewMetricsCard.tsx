@@ -145,7 +145,7 @@ const OverviewMetricsCard: React.FC<OverviewMetricsCardProps> = ({ data }) => {
             style={{
               backgroundImage: m.format === 'PowerCycle'
                 ? 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'
-                : m.format === 'Strength Lab'
+                : m.format === 'Strength'
                 ? 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)'
                 : 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)'
             }}
@@ -164,7 +164,7 @@ const OverviewMetricsCard: React.FC<OverviewMetricsCardProps> = ({ data }) => {
                     background:
                       m.format === 'PowerCycle'
                         ? '#fbbf24'
-                        : m.format === 'Strength Lab'
+                        : m.format === 'Strength'
                         ? '#f472b6'
                         : '#c084fc'
                   }}

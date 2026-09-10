@@ -183,7 +183,7 @@ export const DrillDownModal: React.FC<DrillDownModalProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm text-slate-700">
-                  <div className="p-3 bg-white rounded-lg border-l-4 border-blue-400">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
                     <strong className="text-blue-600">Performance:</strong> 
                     {grossRevenue > 100000 
                       ? ' Exceptional performance with high revenue generation'
@@ -192,7 +192,7 @@ export const DrillDownModal: React.FC<DrillDownModalProps> = ({
                       : ' Moderate performance with room for improvement'
                     }
                   </div>
-                  <div className="p-3 bg-white rounded-lg border-l-4 border-green-400">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
                     <strong className="text-green-600">Customer Engagement:</strong> 
                     {uniqueMembers > 50 
                       ? ' Strong customer base with good engagement'
@@ -201,7 +201,7 @@ export const DrillDownModal: React.FC<DrillDownModalProps> = ({
                       : ' Limited customer base - focus on acquisition'
                     }
                   </div>
-                  <div className="p-3 bg-white rounded-lg border-l-4 border-purple-400">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
                     <strong className="text-purple-600">Transaction Volume:</strong> 
                     {transactions > 100 
                       ? ' High transaction volume indicating strong sales activity'
@@ -210,7 +210,7 @@ export const DrillDownModal: React.FC<DrillDownModalProps> = ({
                       : ' Low transaction volume - consider promotional strategies'
                     }
                   </div>
-                  <div className="p-3 bg-white rounded-lg border-l-4 border-orange-400">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
                     <strong className="text-orange-600">Recommendation:</strong> 
                     {totalChange > 0 
                       ? ' Continue current strategies and consider scaling successful initiatives'

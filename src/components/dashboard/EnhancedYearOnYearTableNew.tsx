@@ -449,8 +449,8 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
           selectedMetric: selectedMetric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          dateRange: copyContext.contextInfo.dateRange,
+          filters: copyContext.contextInfo.filters,
           additionalInfo: {
             displayMode: displayMode,
             totalItems: processedData.length,
@@ -463,9 +463,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
         <div className="overflow-x-auto" data-table="year-on-year-analysis">
           <table ref={tableRef} className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
+              <tr className="bg-[#f6f7f9]">
                 <th
-                  className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20 cursor-pointer select-none"
+                  className="w-[30rem] bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 sticky left-0 z-40 border-r border-slate-200 cursor-pointer select-none"
                   onClick={() => {
                     if (sortKey !== 'total') { setSortKey('total'); setSortDir('desc'); }
                     else setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -473,7 +473,7 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                   title={`Sort by total (${sortDir})`}
                 >
                   <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-white" />
+                    <Calendar className="w-4 h-4" />
                     <span>Category / Product</span>
                   </div>
                 </th>
@@ -491,14 +491,14 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                   return (
                     <th
                       key={key}
-                      className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider min-w-[90px] cursor-pointer select-none ${
-                        isFirstOfGroup ? 'border-l-2 border-slate-400' : ''
+                      className={`bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 min-w-[90px] cursor-pointer select-none ${
+                        isFirstOfGroup ? 'border-l border-slate-300' : ''
                       } ${
-                        isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                        isLastOfGroup ? 'border-r border-slate-300' : ''
                       } ${
                         isPreviousMonth 
-                          ? 'bg-blue-800 text-white' 
-                          : 'text-white'
+                          ? 'bg-sky-100 text-sky-900' 
+                          : 'text-slate-700'
                       }`}
                       onClick={() => {
                         if (sortKey !== key) { setSortKey(key); setSortDir('desc'); }
@@ -511,7 +511,7 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                           {isPreviousMonth && <Star className="w-3 h-3" />}
                           <span className="text-xs font-bold whitespace-nowrap leading-tight">{display.split(' ')[0]}</span>
                         </div>
-                        <span className="text-slate-300 text-xs leading-tight">{display.split(' ')[1]}</span>
+                        <span className="text-xs leading-tight text-slate-400">{display.split(' ')[1]}</span>
                       </div>
                     </th>
                   );
@@ -577,9 +577,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                         <td 
                           key={key} 
                           className={`px-2 py-2 text-center text-sm font-bold text-slate-800 hover:bg-blue-100/50 cursor-pointer transition-all duration-200 h-12 ${
-                            isFirstOfGroup ? 'border-l-2 border-slate-400' : ''
+                            isFirstOfGroup ? 'border-l border-slate-300' : ''
                           } ${
-                            isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                            isLastOfGroup ? 'border-r border-slate-300' : ''
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -662,9 +662,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                             <td 
                               key={key} 
                               className={`px-2 py-2 text-center text-sm font-mono text-slate-700 border-gray-200 hover:bg-blue-100/50 cursor-pointer transition-all duration-200 ${
-                                isFirstOfGroup ? 'border-l-2 border-slate-400' : 'border-l'
+                                isFirstOfGroup ? 'border-l border-slate-200' : 'border-l'
                               } ${
-                                isLastOfGroup ? 'border-r-2 border-slate-400' : ''
+                                isLastOfGroup ? 'border-r border-slate-300' : ''
                               }`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -748,9 +748,9 @@ export const EnhancedYearOnYearTableNewComponent: React.FC<EnhancedYearOnYearTab
                     <td 
                       key={key} 
                       className={`px-2 py-2 text-center text-sm font-bold text-white border-slate-400 group-hover:bg-slate-700 ${
-                        isFirstOfGroup ? 'border-l-2' : 'border-l'
+                        isFirstOfGroup ? 'border-l border-white/20' : 'border-l border-white/10'
                       } ${
-                        isLastOfGroup ? 'border-r-2' : ''
+                        isLastOfGroup ? 'border-r border-white/20' : ''
                       }`}
                       onClick={(e) => {
                         e.stopPropagation();

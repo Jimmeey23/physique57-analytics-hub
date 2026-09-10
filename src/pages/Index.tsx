@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { PageHero } from '@/components/ui/PageHero';
 import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { MetricCard, MetricGrid } from '@/components/ui/MetricCard';
 import { ErrorState } from '@/components/ui/States';
 import { OPEN_CONSOLIDATED_REPORT_EVENT } from '@/components/ui/consolidatedReportEvents';
@@ -67,7 +69,7 @@ const Index = memo(() => {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 p57-stagger">
       <PageHero
         eyebrow="Physique 57 · India"
         title="Business Intelligence Dashboard"
@@ -108,13 +110,15 @@ const Index = memo(() => {
         ]}
       />
 
-      <MetricGrid cols={3}>
+      <MetricGrid cols={3} className="p57-stagger">
         <MetricCard label="Total revenue" value={formatRevenue(totalRevenue)} sub="Across all locations" accent="#0e9f6e" />
         <MetricCard label="Unique members" value={uniqueMembers.toLocaleString()} sub={`${totalRecords.toLocaleString()} records`} accent="#005eed" />
         <MetricCard label="Data status" value="Live" sub="Auto-sync enabled" accent="#7c5cf0" />
       </MetricGrid>
 
       <DashboardGrid onButtonClick={handleSectionClick} />
+
+      <MetricDefinitions items={METRIC_DEFINITIONS.home} />
     </div>
   );
 });

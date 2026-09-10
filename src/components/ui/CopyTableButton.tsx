@@ -4,6 +4,7 @@ import { Button } from './button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown-menu';
 import { toast } from './use-toast';
 import { buildAllTablesText, extractTableTextFromContainer } from '@/utils/tableCopy';
+import { logger } from '@/utils/logger';
 
 interface CopyTableButtonProps {
   tableRef: React.RefObject<HTMLTableElement | HTMLDivElement>;
@@ -305,12 +306,12 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
               cell.classList.add('metric-negative');
             }
           } catch (cellError) {
-            console.warn('Error processing cell:', cellError);
+            logger.warn('Error processing cell:', cellError);
             // Continue processing other cells
           }
         });
       } catch (cellsError) {
-        console.warn('Error processing table cells:', cellsError);
+        logger.warn('Error processing table cells:', cellsError);
         // Continue with table copy without enhanced styling
       }
 
@@ -325,7 +326,7 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
           await navigator.clipboard.write([clipboardItem]);
         } catch (clipboardError) {
           // If HTML copying fails, fall back to plain text
-          console.warn('HTML copy failed, falling back to text:', clipboardError);
+          logger.warn('HTML copy failed, falling back to text:', clipboardError);
           const plainText = tableClone.textContent || '';
           await navigator.clipboard.writeText(plainText);
         }
@@ -352,7 +353,7 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       });
 
     } catch (error) {
-      console.error('Error copying table:', error);
+      logger.error('Error copying table:', error);
       toast({
         title: "Copy Failed",
         description: `Unable to copy table to clipboard: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -399,7 +400,7 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       });
 
     } catch (error) {
-      console.error('Error copying table as text:', error);
+      logger.error('Error copying table as text:', error);
       toast({
         title: "Copy Failed",
         description: `Unable to copy table to clipboard: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -425,7 +426,7 @@ export const CopyTableButton: React.FC<CopyTableButtonProps> = ({
       });
 
     } catch (error) {
-      console.error('Error copying all tabs:', error);
+      logger.error('Error copying all tabs:', error);
       toast({
         title: "Copy Failed",
         description: `Unable to copy all tabs: ${error instanceof Error ? error.message : 'Unknown error'}`,

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { logger } from '@/utils/logger';
 
 // Types
 export interface SummaryGenerationOptions {
@@ -38,7 +39,7 @@ class OpenAIService {
     this.apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
     if (!this.apiKey) {
-      console.warn('OpenAI API key not configured. AI summaries will be unavailable.');
+      logger.warn('OpenAI API key not configured. AI summaries will be unavailable.');
       return;
     }
 
@@ -101,7 +102,7 @@ class OpenAIService {
       };
 
     } catch (error: any) {
-      console.error('OpenAI API error:', error);
+      logger.error('OpenAI API error:', error);
       
       if (error.status === 401) {
         throw new Error('Invalid OpenAI API key. Please check your configuration.');

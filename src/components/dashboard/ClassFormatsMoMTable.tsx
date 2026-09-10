@@ -378,7 +378,7 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
                     }}
                     className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
                       dimension === dim
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
+                        ? 'bg-[#E6F4FF] font-bold text-[#0277C4]'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
@@ -441,7 +441,7 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
                 <TableRow className="bg-slate-100" style={{ borderBottom: '2px solid rgb(220, 38, 38)', animation: 'borderPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                   <TableHead className="font-bold text-black py-3" style={{ color: '#000' }}>{dimensionLabel[dimension]}</TableHead>
                   {headerMonths.map((hm, idx) => (
-                    <TableHead key={idx} className="text-right font-bold text-black py-3" style={{ color: '#000' }}>{hm}</TableHead>
+                    <TableHead key={hm} className="text-right font-bold text-black py-3" style={{ color: '#000' }}>{hm}</TableHead>
                   ))}
                   <TableHead className="text-right font-bold text-black py-3" style={{ color: '#000' }}>MoM Δ</TableHead>
                 </TableRow>
@@ -470,7 +470,7 @@ export const ClassFormatsMoMTable: React.FC<ClassFormatsMoMTableProps> = ({ sess
                 <TableRow className="bg-slate-100 font-bold" style={{ borderTop: '2px solid rgb(220, 38, 38)', animation: 'borderPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                   <TableCell className="font-bold py-3" style={{ color: '#000' }}>Total</TableCell>
                   {months.map((m, idx) => (
-                    <TableCell key={idx} className="text-right py-3 font-bold" style={{ color: '#000' }}>{renderTotalValue(m)}</TableCell>
+                    <TableCell key={m} className="text-right py-3 font-bold" style={{ color: '#000' }}>{renderTotalValue(m)}</TableCell>
                   ))}
                   <TableCell className="text-right py-3 font-bold" style={{ color: '#000' }}>—</TableCell>
                 </TableRow>

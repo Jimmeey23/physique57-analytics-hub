@@ -5,6 +5,9 @@ import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useFilteredSessionsData } from '@/hooks/useFilteredSessionsData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -83,7 +86,7 @@ const ClassAttendance = () => {
   const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawData, payrollData }) => {
     const filteredData = useFilteredSessionsData(rawData || []);
     const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
-    const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
+    const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
     const [activeTab, setActiveTab] = useState('overview');
 
     const filterByLocation = useMemo(() => {
@@ -175,6 +178,10 @@ const ClassAttendance = () => {
             metrics={metrics}
             extra={exportButton}
           />
+
+          <div className="container mx-auto px-6 pt-5">
+            <KpiTicker items={metrics} />
+          </div>
 
           <div className="bg-white text-slate-800 slide-in-from-left">
             <div className="container mx-auto px-6 space-y-6">
@@ -276,6 +283,9 @@ const ClassAttendance = () => {
                 <Rankings data={locationFilteredData} />
               </TabsContent>
             </Tabs>
+            <div className="mt-8">
+              <MetricDefinitions items={METRIC_DEFINITIONS.classAttendance} />
+            </div>
           </div>
             </div>
           </div>

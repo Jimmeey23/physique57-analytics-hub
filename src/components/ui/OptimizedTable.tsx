@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { extractTableTextFromContainer } from '@/utils/tableCopy';
+import { rowKey } from '@/utils/reactKeys';
 
 interface OptimizedTableProps<T> {
   data: T[];
@@ -41,19 +43,19 @@ function OptimizedTableComponent<T extends Record<string, any>>({
   const tableRef = useRef<HTMLTableElement>(null);
   
   // Register with metrics tables registry
-  const { registerTable, unregisterTable } = useMetricsTablesRegistry();
+  const { register, unregister } = useMetricsTablesRegistry();
   
   useEffect(() => {
     if (tableId) {
-      registerTable(tableId, tableRef);
-      return () => unregisterTable(tableId);
+      register({ id: tableId, getTextContent: () => (tableRef.current ? extractTableTextFromContainer(tableRef.current, tableId) : `${tableId} (No Data)`) });
+      return () => unregister(tableId);
     }
-  }, [tableId, registerTable, unregisterTable]);
+  }, [tableId, register, unregister]);
   
   const memoizedRows = useMemo(() => {
     return data.map((item, index) => (
       <TableRow 
-        key={index} 
+        key={rowKey(item, index)} 
         className="hover:bg-gray-50/80 transition-colors duration-150 border-b border-gray-200 cursor-pointer"
         onClick={() => onRowClick?.(item)}
       >
@@ -96,15 +98,15 @@ function OptimizedTableComponent<T extends Record<string, any>>({
         style={{ maxHeight }}
       >
         <Table ref={tableRef} id={tableId}>
-          <TableHeader className={stickyHeader ? "sticky top-0 z-20 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800" : "bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800"}>
-            <TableRow className="border-b-2 border-slate-600">
+          <TableHeader className={stickyHeader ? "sticky top-0 z-20 bg-[#f6f7f9]" : "bg-[#f6f7f9]"}>
+            <TableRow className="border-b border-slate-200">
               {columns.map((column, colIndex) => (
                 <TableHead 
                   key={String(column.key)} 
                   className={`
-                    font-bold text-white py-4 px-4 text-sm uppercase tracking-wider
+                    bg-[#f6f7f9] font-bold text-slate-700 py-4 px-4 text-sm uppercase tracking-wider
                     ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}
-                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-30 border-r border-slate-600' : ''}
+                    ${stickyFirstColumn && colIndex === 0 ? 'sticky left-0 z-30 border-r border-slate-200 bg-[#f6f7f9]' : ''}
                   `}
                 >
                   {column.header}

@@ -2,6 +2,9 @@ import React from 'react';
 import { ExecutiveSummarySection } from '@/components/dashboard/ExecutiveSummarySection';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { FileText, Download, Home, Play, Pause } from 'lucide-react';
 import { useSalesData } from '@/hooks/useSalesData';
@@ -25,7 +28,7 @@ const ExecutiveSummaryContent = () => {
   const { data: leadsData = [], loading: leadsLoading } = useLeadsData();
   const { data: discountData = [] } = useDiscountAnalysis();
   const { setLoading } = useGlobalLoading();
-  const exportRef = React.useRef<{ open: () => void }>(null);
+  const exportRef = React.useRef<{ open: () => void; close: () => void }>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
 
   // Track loading state
@@ -92,15 +95,23 @@ const ExecutiveSummaryContent = () => {
         <InfoPopover context="sales-overview" locationId="supreme" iframeSrc="/popovers/sales-overview/supreme.html" startAsSidebar={true} />
       </div>
       
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker items={heroMetrics} />
+      </div>
+
       <div className="container mx-auto px-6 py-8">
         <ExecutiveSummarySection />
+      </div>
+
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.executiveSummary} />
       </div>
 
       {/* Hidden export dialog wired for programmatic open */}
       <div className="hidden">
         <AdvancedExportButton 
           renderTrigger={false}
-          openRef={exportRef as any}
+          openRef={exportRef}
           salesData={salesData}
           sessionsData={sessionsData as any}
           newClientData={newClientData}

@@ -34,6 +34,7 @@ interface ModernTableWrapperProps {
     selectedMetric?: string;
     dateRange?: { start: string; end: string };
     filters?: Record<string, any>;
+    location?: string;
     additionalInfo?: Record<string, any>;
   };
 }

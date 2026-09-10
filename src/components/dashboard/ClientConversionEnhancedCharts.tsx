@@ -33,6 +33,9 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
+import { isNewClient } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
+import { designTokens } from '@/utils/designTokens';
 
 interface ClientConversionEnhancedChartsProps {
   data: NewClientData[];
@@ -82,7 +85,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
       
       const monthData = monthMap.get(monthKey);
       
-      if (String(client.isNew || '').includes('New')) {
+      if (isNewClient(client)) {
         monthData.newMembers++;
       }
       if (client.conversionStatus === 'Converted') {
@@ -99,8 +102,8 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
       .sort((a, b) => a.month.localeCompare(b.month))
       .map(item => ({
         ...item,
-        conversionRate: item.total > 0 ? (item.converted / item.total) * 100 : 0,
-        retentionRate: item.total > 0 ? (item.retained / item.total) * 100 : 0
+        conversionRate: calcConversionRate(item.converted, item.newMembers),
+        retentionRate: calcRetentionRate(item.retained, item.newMembers)
       }));
   }, [data]);
 
@@ -124,7 +127,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
       
       const locationStat = locationMap.get(location);
       
-      if (String(client.isNew || '').includes('New')) {
+      if (isNewClient(client)) {
         locationStat.newMembers++;
       }
       if (client.conversionStatus === 'Converted') {
@@ -140,8 +143,8 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
     return Array.from(locationMap.values())
       .map(item => ({
         ...item,
-        conversionRate: item.total > 0 ? (item.converted / item.total) * 100 : 0,
-        retentionRate: item.total > 0 ? (item.retained / item.total) * 100 : 0
+        conversionRate: calcConversionRate(item.converted, item.newMembers),
+        retentionRate: calcRetentionRate(item.retained, item.newMembers)
       }))
       .sort((a, b) => b.revenue - a.revenue);
   }, [data]);
@@ -166,7 +169,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
       
       const trainerStat = trainerMap.get(trainer);
       
-      if (String(client.isNew || '').includes('New')) {
+      if (isNewClient(client)) {
         trainerStat.newMembers++;
       }
       if (client.conversionStatus === 'Converted') {
@@ -183,8 +186,8 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
       .filter(item => item.newMembers >= 3)
       .map(item => ({
         ...item,
-        conversionRate: item.total > 0 ? (item.converted / item.total) * 100 : 0,
-        retentionRate: item.total > 0 ? (item.retained / item.total) * 100 : 0
+        conversionRate: calcConversionRate(item.converted, item.newMembers),
+        retentionRate: calcRetentionRate(item.retained, item.newMembers)
       }))
       .sort((a, b) => b.conversionRate - a.conversionRate)
       .slice(0, 10);
@@ -219,21 +222,21 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         return (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
               <XAxis 
                 dataKey="month" 
-                stroke="#64748b"
+                stroke={designTokens.colors.slate[500]}
                 fontSize={12}
                 tickFormatter={(value) => {
                   const [year, month] = value.split('-');
                   return `${month}/${year.slice(2)}`;
                 }}
               />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <YAxis stroke={designTokens.colors.slate[500]} fontSize={12} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  border: `1px solid ${designTokens.colors.slate[200]}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                 }}
@@ -264,7 +267,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
 
       case 'conversion-funnel':
         const funnelData = [
-          { name: 'New Members', value: data.filter(c => String(c.isNew || '').includes('New')).length, color: '#3b82f6' },
+          { name: 'New Members', value: data.filter(isNewClient).length, color: '#3b82f6' },
           { name: 'Trials Completed', value: data.filter(c => (c.visitsPostTrial || 0) > 0).length, color: '#8b5cf6' },
           { name: 'Converted', value: data.filter(c => c.conversionStatus === 'Converted').length, color: '#22c55e' },
           { name: 'Retained', value: data.filter(c => c.retentionStatus === 'Retained').length, color: '#f97316' }
@@ -273,13 +276,13 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={funnelData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
+              <XAxis dataKey="name" stroke={designTokens.colors.slate[500]} fontSize={12} />
+              <YAxis stroke={designTokens.colors.slate[500]} fontSize={12} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  border: `1px solid ${designTokens.colors.slate[200]}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                 }}
@@ -294,21 +297,21 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={locationData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
               <XAxis 
                 dataKey="location" 
-                stroke="#64748b" 
+                stroke={designTokens.colors.slate[500]} 
                 fontSize={12}
                 angle={-45}
                 textAnchor="end"
                 height={80}
                 tickFormatter={(value) => value.length > 15 ? `${value.slice(0, 15)}...` : value}
               />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <YAxis stroke={designTokens.colors.slate[500]} fontSize={12} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  border: `1px solid ${designTokens.colors.slate[200]}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                 }}
@@ -326,21 +329,21 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={trainerData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
               <XAxis 
                 dataKey="trainer" 
-                stroke="#64748b" 
+                stroke={designTokens.colors.slate[500]} 
                 fontSize={12}
                 angle={-45}
                 textAnchor="end"
                 height={80}
                 tickFormatter={(value) => value.length > 10 ? `${value.slice(0, 10)}...` : value}
               />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <YAxis stroke={designTokens.colors.slate[500]} fontSize={12} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  border: `1px solid ${designTokens.colors.slate[200]}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                 }}
@@ -359,21 +362,21 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
         return (
           <ResponsiveContainer width="100%" height={400}>
             <AreaChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
               <XAxis 
                 dataKey="month" 
-                stroke="#64748b"
+                stroke={designTokens.colors.slate[500]}
                 fontSize={12}
                 tickFormatter={(value) => {
                   const [year, month] = value.split('-');
                   return `${month}/${year.slice(2)}`;
                 }}
               />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <YAxis stroke={designTokens.colors.slate[500]} fontSize={12} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  border: `1px solid ${designTokens.colors.slate[200]}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                 }}
@@ -420,7 +423,7 @@ export const ClientConversionEnhancedCharts: React.FC<ClientConversionEnhancedCh
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  border: `1px solid ${designTokens.colors.slate[200]}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                 }}

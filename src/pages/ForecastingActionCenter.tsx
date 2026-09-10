@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
 import { SectionAnchor } from '@/components/ui/SectionAnchor';
@@ -43,6 +46,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { MemberInsightModalData } from '@/components/dashboard/MemberInsightsDrillDownModal';
+import { designTokens } from '@/utils/designTokens';
 
 interface ActionItem {
   id: string;
@@ -420,6 +424,16 @@ const ForecastingActionCenter: React.FC = () => {
           extra={exportButton}
           compact={false}
         />
+        <div className="container mx-auto px-6 pt-5">
+          <KpiTicker
+            items={[
+              { label: '90-day forecast', value: formatCurrency(forecastSummary.totalForecastRevenue) },
+              { label: 'Forecast confidence', value: formatPercentage(forecastSummary.avgConfidence) },
+              { label: 'Open actions', value: formatNumber(actionQueue.length) },
+              { label: 'Outstanding exposure', value: formatCurrency(forecastSummary.outstandingExposure) },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="container relative z-10 mx-auto px-6 py-8">
@@ -464,11 +478,11 @@ const ForecastingActionCenter: React.FC = () => {
                       { label: 'Conversion rate', value: formatPercentage(leadSignals.leadConversionRate), tone: 'amber' },
                     ],
                     rows: leadsData.map((lead) => ({
-                      name: lead.clientName || lead.name || 'Lead',
+                      name: lead.fullName || 'Lead',
                       status: lead.status || 'Unknown',
                       conversionStatus: lead.conversionStatus || 'Unknown',
                       source: lead.source || 'Unknown',
-                      owner: lead.salesOwner || lead.assignedTo || 'Unassigned',
+                      owner: lead.associate || 'Unassigned',
                     })),
                     columns: [
                       { key: 'name', header: 'Lead', align: 'left' },
@@ -692,7 +706,7 @@ const ForecastingActionCenter: React.FC = () => {
                 <div className="h-[340px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={forecastChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                       <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#475569' }} />
                       <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 12, fill: '#475569' }} />
                       <Tooltip
@@ -745,7 +759,7 @@ const ForecastingActionCenter: React.FC = () => {
                 <div className="h-[240px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={actionMix}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                       <XAxis dataKey="type" tick={{ fontSize: 12, fill: '#475569' }} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#475569' }} />
                       <Tooltip formatter={(value: number) => [formatNumber(value), 'Actions']} />
@@ -943,11 +957,11 @@ const ForecastingActionCenter: React.FC = () => {
                         { label: 'Conversion rate', value: formatPercentage(leadSignals.leadConversionRate), tone: 'amber' },
                       ],
                       rows: leadsData.map((lead) => ({
-                        name: lead.clientName || lead.name || 'Lead',
+                        name: lead.fullName || 'Lead',
                         status: lead.status || 'Unknown',
                         conversionStatus: lead.conversionStatus || 'Unknown',
                         source: lead.source || 'Unknown',
-                        owner: lead.salesOwner || lead.assignedTo || 'Unassigned',
+                        owner: lead.associate || 'Unassigned',
                       })),
                       columns: [
                         { key: 'name', header: 'Lead', align: 'left' },
@@ -1034,6 +1048,9 @@ const ForecastingActionCenter: React.FC = () => {
           </section>
           </SectionAnchor>
         </main>
+      </div>
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.forecasting} />
       </div>
       <ModalSuspense>
         {drillDownModal && (

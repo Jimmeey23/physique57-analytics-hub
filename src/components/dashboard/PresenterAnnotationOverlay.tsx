@@ -17,7 +17,7 @@ interface PresenterAnnotationOverlayProps {
   isPresenter: boolean;      // only presenter can draw
 }
 
-const COLORS = ['#FBBF24', '#EF4444', '#3B82F6', '#10B981', '#8B5CF6', '#F97316'];
+const COLORS = ['#FBBF24', '#EF4444', '#3b82f6', '#10b981', '#8B5CF6', '#F97316'];
 
 export function PresenterAnnotationOverlay({ active, isPresenter }: PresenterAnnotationOverlayProps) {
   const [tool, setTool] = useState<Tool>('pointer');

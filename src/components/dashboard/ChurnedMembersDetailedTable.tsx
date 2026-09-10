@@ -117,7 +117,7 @@ export const ChurnedMembersDetailedTable: React.FC<ChurnedMembersDetailedTablePr
       variant="ghost"
       size="sm"
       onClick={() => handleSort(field)}
-      className="h-auto p-1 font-medium text-white hover:text-gray-200 hover:bg-white/10"
+      className="h-auto p-1 font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-200/60"
     >
       {children}
       {sortField === field && (
@@ -229,7 +229,7 @@ export const ChurnedMembersDetailedTable: React.FC<ChurnedMembersDetailedTablePr
         <CardContent className="p-0">
           <div className="overflow-x-auto max-h-[600px]">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+              <thead className="sticky top-0 bg-[#f6f7f9] text-slate-700">
                 <tr>
                   <th className="text-left py-3 px-4 min-w-[150px]">
                     <SortButton field="firstName">Member Details</SortButton>

@@ -58,9 +58,11 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
+import { designTokens } from '@/utils/designTokens';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 interface ComprehensiveTrainerDrillDownProps {
   isOpen: boolean;
@@ -73,8 +75,8 @@ interface ComprehensiveTrainerDrillDownProps {
 }
 
 const COLORS = {
-  primary: '#3B82F6',
-  success: '#10B981',
+  primary: '#3b82f6',
+  success: '#10b981',
   warning: '#F59E0B',
   danger: '#EF4444',
   purple: '#8B5CF6',
@@ -281,7 +283,7 @@ export function ComprehensiveTrainerDrillDown({
 
     // Robust date parsing to normalize to MMM-YYYY (tries multiple formats)
     const toMonthYear = (dStr: string) => {
-      if (!dStr && dStr !== 0) return '';
+      if (!dStr) return '';
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
       // If already in MMM-YYYY, return as-is
@@ -855,8 +857,8 @@ export function ComprehensiveTrainerDrillDown({
                         <CardContent>
                           <ResponsiveContainer width="100%" height={280}>
                             <RadarChart data={radarData}>
-                              <PolarGrid stroke="#e2e8f0" />
-                              <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12, fill: '#64748b' }} />
+                              <PolarGrid stroke={designTokens.colors.slate[200]} />
+                              <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12, fill: designTokens.colors.slate[500] }} />
                               <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
                               <Radar
                                 name="Performance"
@@ -1020,7 +1022,7 @@ export function ComprehensiveTrainerDrillDown({
                         {byFormat.length > 0 ? (
                           <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={byFormat} layout="vertical">
-                              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                               <XAxis type="number" />
                               <YAxis type="category" dataKey="name" width={80} />
                               <Tooltip 
@@ -1147,7 +1149,7 @@ export function ComprehensiveTrainerDrillDown({
                                     const cls = (s.cleanedClass || s.classType || '').trim();
                                     const revenue = Number(s.totalPaid || s.revenue || 0);
                                     return (
-                                      <tr key={idx} className="border-t">
+                                      <tr key={rowKey(s, idx)} className="border-t">
                                         <td className="p-2">{s.date || s.monthYear || ''}</td>
                                         <td className="p-2">{s.time || ''}</td>
                                         <td className="p-2">{cls}</td>
@@ -1247,27 +1249,27 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="overflow-x-auto">
                             <table className="w-full">
                               <thead>
-                                <tr className="border-b border-slate-200 bg-black">
-                                  <th className="text-left py-3 px-4 font-medium text-white bg-gradient-to-r from-blue-800 via-blue-900 to-blue-800">Month</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Sessions</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Revenue</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Avg/Session</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Customers</th>
-                                  <th className="text-right py-3 px-4 font-medium text-white bg-black">Avg/Customer</th>
+                                <tr className="border-b border-slate-200 bg-[#f6f7f9]">
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-left font-medium text-slate-700">Month</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Sessions</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Revenue</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Avg/Session</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Customers</th>
+                                  <th className="bg-[#f6f7f9] px-4 py-3 text-right font-medium text-slate-700">Avg/Customer</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {byMonth.map((month, index) => (
                                   <tr key={month.month} className={cn(
                                     "border-b border-slate-100 hover:bg-slate-50",
-                                    "h-[35px] max-h-[35px]"
+                                    "p57-row-h"
                                   )}>
-                                    <td className="py-2 px-4 font-medium text-slate-900 h-[35px]">{month.month}</td>
-                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{month.sessions}</td>
-                                    <td className="py-2 px-4 text-right font-semibold text-slate-900 h-[35px]">{formatCurrency(month.revenue)}</td>
-                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{formatCurrency(month.revenue / month.sessions)}</td>
-                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{month.customers}</td>
-                                    <td className="py-2 px-4 text-right text-slate-700 h-[35px]">{formatCurrency(month.revenue / month.customers)}</td>
+                                    <td className="py-2 px-4 font-medium text-slate-900 p57-row-h">{month.month}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 p57-row-h">{month.sessions}</td>
+                                    <td className="py-2 px-4 text-right font-semibold text-slate-900 p57-row-h">{formatCurrency(month.revenue)}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 p57-row-h">{formatCurrency(month.revenue / month.sessions)}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 p57-row-h">{month.customers}</td>
+                                    <td className="py-2 px-4 text-right text-slate-700 p57-row-h">{formatCurrency(month.revenue / month.customers)}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -1340,7 +1342,7 @@ export function ComprehensiveTrainerDrillDown({
                                     <stop offset="95%" stopColor={COLORS.success} stopOpacity={0} />
                                   </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                                 <YAxis tick={{ fontSize: 12 }} />
                                 <Tooltip 
@@ -1367,7 +1369,7 @@ export function ComprehensiveTrainerDrillDown({
                           <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
                               <LineChart data={byMonth}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                                 <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
@@ -1404,7 +1406,7 @@ export function ComprehensiveTrainerDrillDown({
                           <CardContent>
                             <ResponsiveContainer width="100%" height={250}>
                               <BarChart data={byMonth}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                                 <YAxis tick={{ fontSize: 12 }} domain={[0, 'auto']} />
                                 <Tooltip formatter={(value: any) => value.toFixed(1)} />
@@ -1477,7 +1479,7 @@ export function ComprehensiveTrainerDrillDown({
                           <div className="space-y-3">
                             {insights.map((insight, idx) => (
                               <div
-                                key={idx}
+                                key={insight.message}
                                 className={cn(
                                   "flex items-start gap-3 p-4 rounded-lg",
                                   insight.type === 'success' && 'bg-emerald-50 border border-emerald-200',

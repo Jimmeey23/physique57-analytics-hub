@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import { logger } from '@/utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -155,7 +156,7 @@ export function usePresenterMode(userEmail: string | null) {
         setModeState((s) => ({ ...s, viewers, viewerCount: viewers.length }));
       })
       .subscribe((status) => {
-        console.log('[presenter] channel status=', status);
+        logger.debug('[presenter] channel status=', status);
         if (status === 'SUBSCRIBED') {
           channel.track({ role: 'presenter', email: userEmail, joinedAt: Date.now() });
           setModeState({ role: 'presenter', sessionCode: code, viewerCount: 0, viewers: [], isConnected: true, error: null });
@@ -190,11 +191,11 @@ export function usePresenterMode(userEmail: string | null) {
 
     channel
       .on('broadcast', { event: BROADCAST_EVENT }, ({ payload }: { payload: PulseSnapshot }) => {
-        console.log('[viewer] received broadcast studio=', payload?.studio);
+        logger.debug('[viewer] received broadcast studio=', payload?.studio);
         snapshotCallbackRef.current?.(payload);
       })
       .subscribe((status) => {
-        console.log('[viewer] channel status=', status);
+        logger.debug('[viewer] channel status=', status);
         if (status === 'SUBSCRIBED') {
           channel.track({ role: 'viewer', name: name.trim() || 'Guest', joinedAt: Date.now() });
           setModeState({ role: 'viewer', sessionCode: code.toUpperCase(), viewerCount: 0, viewers: [], isConnected: true, error: null });
@@ -211,13 +212,13 @@ export function usePresenterMode(userEmail: string | null) {
   const broadcastSnapshot = useCallback((snap: PulseSnapshot) => {
     if (roleRef.current !== 'presenter') return;
     if (!channelRef.current) {
-      console.warn('[presenter] broadcastSnapshot: no channel');
+      logger.warn('[presenter] broadcastSnapshot: no channel');
       return;
     }
     const serialized = JSON.stringify(snap);
     if (serialized === lastBroadcastRef.current) return;
     lastBroadcastRef.current = serialized;
-    console.log('[presenter] broadcasting studio=', snap.studio);
+    logger.debug('[presenter] broadcasting studio=', snap.studio);
     channelRef.current.send({ type: 'broadcast', event: BROADCAST_EVENT, payload: snap });
   }, []); // intentionally empty — reads everything via refs
 

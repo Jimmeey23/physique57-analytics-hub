@@ -27,6 +27,7 @@ import {
   Table as TableIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { rowKey } from '@/utils/reactKeys';
 
 interface UltimateClassAttendanceTableProps {
   data: SessionData[];
@@ -1093,7 +1094,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                             className={`${rowHeightClass} border-b border-slate-200/70 bg-slate-50/60 hover:bg-slate-100/70`}
                           >
                             {columns.map((col, colIdx) => {
-                              const cellValue = col.accessorFn 
+                              const cellValue = 'accessorFn' in col && col.accessorFn
                                 ? col.accessorFn(childSession, idx)
                                 : (childSession as any)[col.id || ''];
                               
@@ -1221,19 +1222,19 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
 
                       return (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-blue-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Sessions</p>
                             <p className="text-2xl font-bold text-blue-700">{formatNumber(metrics.totalSessions)}</p>
                           </div>
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-green-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Total Check-ins</p>
                             <p className="text-2xl font-bold text-green-700">{formatNumber(metrics.totalCheckIns)}</p>
                           </div>
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-purple-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Avg Fill Rate</p>
                             <p className="text-2xl font-bold text-purple-700">{formatPercentage(avgFillRate)}</p>
                           </div>
-                          <div className="glass-card rounded-xl p-4 border-l-4 border-emerald-600">
+                          <div className="glass-card rounded-xl p-4 border border-slate-200">
                             <p className="text-xs text-gray-600 mb-1 uppercase font-semibold">Revenue</p>
                             <p className="text-2xl font-bold text-emerald-700">{formatNumber(metrics.totalRevenue)}</p>
                           </div>
@@ -1265,7 +1266,7 @@ export const UltimateClassAttendanceTable: React.FC<UltimateClassAttendanceTable
                           const fillRate = session.capacity > 0 ? ((session.checkedInCount || 0) / session.capacity) * 100 : 0;
                           return (
                             <div
-                              key={idx}
+                              key={rowKey(session, idx)}
                               className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
                             >
                               <div className="flex-1">

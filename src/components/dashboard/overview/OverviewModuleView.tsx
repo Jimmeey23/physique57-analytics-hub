@@ -37,6 +37,7 @@ import type {
 } from './types';
 import { formatOverviewValue } from './filtering';
 import { buildClipboardHtml, buildElementPayload } from '@/utils/elementCopy';
+import { designTokens } from '@/utils/designTokens';
 
 const accentStyles: Record<
   OverviewAccent,
@@ -202,7 +203,7 @@ const ChartCard: React.FC<{ chart: OverviewChartDefinition }> = ({ chart }) => {
             <ResponsiveContainer width="100%" height="100%">
               {mode === 'bar' ? (
                 <BarChart data={chart.data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey={chart.xKey} tick={{ fill: '#475569', fontSize: 12 }} />
                   <YAxis tick={{ fill: '#475569', fontSize: 12 }} />
                   <Tooltip formatter={(value) => formatOverviewValue(value as number, chart.format)} />
@@ -219,7 +220,7 @@ const ChartCard: React.FC<{ chart: OverviewChartDefinition }> = ({ chart }) => {
                 </BarChart>
               ) : (
                 <LineChart data={chart.data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey={chart.xKey} tick={{ fill: '#475569', fontSize: 12 }} />
                   <YAxis tick={{ fill: '#475569', fontSize: 12 }} />
                   <Tooltip formatter={(value) => formatOverviewValue(value as number, chart.format)} />

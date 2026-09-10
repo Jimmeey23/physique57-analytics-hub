@@ -14,6 +14,7 @@ import {
   TrendingDown, DollarSign, Package, Users, CreditCard, 
   Calendar, MapPin, Percent, ShoppingCart
 } from 'lucide-react';
+import { rowKey } from '@/utils/reactKeys';
 
 interface DiscountDrillDownModalProps {
   isOpen: boolean;
@@ -414,9 +415,9 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
               </TableHeader>
               <TableBody>
                 {tableData.slice(0, 20).map((item, index) => (
-                  <TableRow key={index} className="hover:bg-gray-50 max-h-[35px]">
+                  <TableRow key={rowKey(item, index)} className="hover:bg-gray-50 max-p57-row-h">
                     {columns.map((col) => (
-                      <TableCell key={col.key} className="py-2 max-h-[35px]">
+                      <TableCell key={col.key} className="py-2 max-p57-row-h">
                         <span className="truncate block text-sm">
                           {col.format ? col.format(item[col.key]) : item[col.key]}
                         </span>
@@ -458,45 +459,45 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
               </TableHeader>
               <TableBody>
                 {data.slice(0, 50).map((item, index) => (
-                  <TableRow key={index} className="hover:bg-gray-50 max-h-[35px]">
-                    <TableCell className="py-2 max-h-[35px]">
+                  <TableRow key={rowKey(item, index)} className="hover:bg-gray-50 max-p57-row-h">
+                    <TableCell className="py-2 max-p57-row-h">
                       <span className="text-sm truncate block">
                         {new Date(item.paymentDate).toLocaleDateString()}
                       </span>
                     </TableCell>
-                    <TableCell className="py-2 max-h-[35px]">
+                    <TableCell className="py-2 max-p57-row-h">
                       <div className="truncate">
                         <div className="text-sm font-medium truncate">{item.customerName}</div>
                         <div className="text-xs text-slate-500 truncate">{item.customerEmail}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2 max-h-[35px]">
+                    <TableCell className="py-2 max-p57-row-h">
                       <div className="truncate">
                         <div className="text-sm truncate">{item.cleanedProduct}</div>
                         <div className="text-xs text-slate-500 truncate">{item.cleanedCategory}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right py-2 max-h-[35px]">
+                    <TableCell className="text-right py-2 max-p57-row-h">
                       <span className="text-sm truncate block">
                         {formatCurrency(item.mrpPostTax || item.mrpPreTax || 0)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right py-2 max-h-[35px]">
+                    <TableCell className="text-right py-2 max-p57-row-h">
                       <span className="text-sm font-semibold text-red-600 truncate block">
                         -{formatCurrency(item.discountAmount || 0)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right py-2 max-h-[35px]">
+                    <TableCell className="text-right py-2 max-p57-row-h">
                       <Badge variant="outline" className="text-xs h-6 px-2">
                         {formatPercentage(item.discountPercentage || 0)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right py-2 max-h-[35px]">
+                    <TableCell className="text-right py-2 max-p57-row-h">
                       <span className="text-sm font-semibold text-green-600 truncate block">
                         {formatCurrency(item.paymentValue || 0)}
                       </span>
                     </TableCell>
-                    <TableCell className="py-2 max-h-[35px]">
+                    <TableCell className="py-2 max-p57-row-h">
                       <span className="text-xs text-slate-600 truncate block">{item.calculatedLocation}</span>
                     </TableCell>
                   </TableRow>

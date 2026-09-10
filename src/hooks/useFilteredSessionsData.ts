@@ -2,6 +2,7 @@
 import { useMemo, useContext } from 'react';
 import { SessionData } from '@/hooks/useSessionsData';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
+import { logger } from '@/utils/logger';
 
 export const useFilteredSessionsData = (data: SessionData[], options?: { skipDateRange?: boolean }) => {
   // Try to get filters context, but don't throw if it doesn't exist
@@ -84,7 +85,7 @@ export const useFilteredSessionsData = (data: SessionData[], options?: { skipDat
         
         // Ensure we have a valid date
         if (isNaN(sessionDate.getTime())) {
-          console.warn('Invalid date format:', session.date);
+          logger.warn('Invalid date format:', session.date);
           return true; // Don't exclude if we can't parse the date
         }
         

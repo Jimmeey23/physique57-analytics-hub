@@ -24,8 +24,8 @@ const sizeMap: Record<SpinnerSize, { ring: string }> = {
 };
 
 /**
- * Sleek dual-tone brand spinner: soft track + royal-blue arc,
- * with a micro "57" tile at the center (md/lg only).
+ * Quiet brand spinner: soft track + single blue arc,
+ * with the brand logo at the center (md/lg only).
  */
 export const BrandSpinner: React.FC<BrandSpinnerProps> = ({
   size = 'md',

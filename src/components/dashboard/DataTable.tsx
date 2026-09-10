@@ -12,7 +12,7 @@ import { ChevronLeft, ChevronRight, ArrowUpDown, Eye, Download, Filter, Search, 
 import { SalesData, FilterOptions } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { getTableHeaderClasses } from '@/utils/colorThemes';
+import { rowKey } from '@/utils/reactKeys';
 interface DataTableProps {
   title: string;
   data: SalesData[];
@@ -519,20 +519,20 @@ export const DataTable: React.FC<DataTableProps> = ({
 
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <Table className="unified-table">
-            <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-10 shadow-lg">
+            <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
               <TableRow className="border-0">
-                <TableHead className="font-bold text-white text-sm sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 backdrop-blur-sm border-r border-white/20 min-w-[200px] shadow-lg">
+                <TableHead className="bg-[#f6f7f9] text-sm font-bold text-slate-700 sticky left-0 border-r border-slate-200 min-w-[200px]">
                   Product
                 </TableHead>
-                {Object.entries(quarterGroups).map(([quarter, months]) => <TableHead key={quarter} colSpan={months.length} className="text-center font-bold text-white text-sm border-r border-white/20">
+                {Object.entries(quarterGroups).map(([quarter, months]) => <TableHead key={quarter} colSpan={months.length} className="bg-[#f6f7f9] text-center text-sm font-bold text-slate-700 border-r border-slate-200">
                     {quarter}
                   </TableHead>)}
               </TableRow>
-              <TableRow className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 border-0">
-                <TableHead className="font-bold text-white text-sm sticky left-0 bg-gradient-to-r from-slate-700 to-slate-800 backdrop-blur-sm border-r border-white/20">
+              <TableRow className="border-0 bg-[#f6f7f9]">
+                <TableHead className="bg-[#f6f7f9] text-sm font-bold text-slate-700 sticky left-0 border-r border-slate-200">
                   &nbsp;
                 </TableHead>
-                {monthYears.map(month => <TableHead key={month} className="text-center font-bold text-white text-sm min-w-[120px] border-r border-white/10">
+                {monthYears.map(month => <TableHead key={month} className="bg-[#f6f7f9] text-center text-sm font-bold text-slate-700 min-w-[120px] border-r border-slate-200">
                     {month}
                   </TableHead>)}
               </TableRow>
@@ -540,9 +540,9 @@ export const DataTable: React.FC<DataTableProps> = ({
             <TableBody className="bg-white">
               {Object.entries(groupedData).map(([category, items]) => <React.Fragment key={category}>
                   <TableRow className="bg-gradient-to-r from-slate-100/60 to-slate-200/60 font-bold border-b border-slate-300/50 cursor-pointer hover:from-slate-200/70 hover:to-slate-300/70 transition-all duration-300" onClick={() => toggleGroupCollapse(category)}>
-                    <TableCell className={`font-bold sticky left-0 backdrop-blur-sm border-r shadow-sm ${getTableHeaderClasses('sales')}`}>
+                    <TableCell className={`font-bold sticky left-0 backdrop-blur-sm border-r shadow-sm bg-[#eef0f3] text-slate-800`}>
                       <div className="flex items-center gap-2">
-                        <ChevronDown className={cn("w-4 h-4 transition-transform text-white", collapsedGroups.has(category) && "rotate-180")} />
+                        <ChevronDown className={cn("w-4 h-4 transition-transform text-slate-500", collapsedGroups.has(category) && "rotate-180")} />
                         {category} ({ensureArray(items).length} items)
                       </div>
                     </TableCell>
@@ -570,12 +570,12 @@ export const DataTable: React.FC<DataTableProps> = ({
                     </TableRow>)}
                 </React.Fragment>)}
             </TableBody>
-            <TableFooter className="sticky bottom-0 bg-slate-800 shadow-lg">
+            <TableFooter className="sticky bottom-0 bg-slate-950">
               <TableRow className="border-0">
-                <TableCell className="font-bold text-white sticky left-0 bg-slate-800 backdrop-blur-sm border-r border-slate-600">
+                <TableCell className="font-bold text-white sticky left-0 bg-slate-950 border-r border-white/10">
                   GRAND TOTALS
                 </TableCell>
-                {monthYears.map(month => <TableCell key={month} className="text-center font-bold text-white border-r border-slate-600">
+                {monthYears.map(month => <TableCell key={month} className="text-center font-bold text-white border-r border-white/10">
                     {activeTab === 'grossRevenue' && formatCurrency(totals[`${month}_grossRevenue`] || 0)}
                     {activeTab === 'netRevenue' && formatCurrency(totals[`${month}_netRevenue`] || 0)}
                     {activeTab === 'transactions' && formatNumber(totals[`${month}_transactions`] || 0)}
@@ -604,21 +604,21 @@ export const DataTable: React.FC<DataTableProps> = ({
 
         <div className="max-h-[600px] overflow-y-auto">
           <Table className="unified-table">
-            <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-10 shadow-lg">
+            <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
               <TableRow className="border-0">
-                <TableHead className="font-bold text-white">Category</TableHead>
-                <TableHead className="font-bold text-white border-l border-white/20">Name</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear()} Revenue</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear() - 1} Revenue</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">Revenue Growth</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear()} Transactions</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">{new Date().getFullYear() - 1} Transactions</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">Transaction Growth</TableHead>
-                <TableHead className="text-center font-bold text-white border-l border-white/20">Member Growth</TableHead>
+                <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Category</TableHead>
+                <TableHead className="font-bold text-slate-700 border-l border-slate-200">Name</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">{new Date().getFullYear()} Revenue</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">{new Date().getFullYear() - 1} Revenue</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Revenue Growth</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">{new Date().getFullYear()} Transactions</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">{new Date().getFullYear() - 1} Transactions</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Transaction Growth</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Member Growth</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="bg-white">
-              {currentData.map((row, index) => <TableRow key={index} className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-purple-50/30 cursor-pointer transition-all duration-300 border-b border-slate-200/20" onClick={() => handleRowClick(row)}>
+              {currentData.map((row, index) => <TableRow key={rowKey(row, index)} className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-purple-50/30 cursor-pointer transition-all duration-300 border-b border-slate-200/20" onClick={() => handleRowClick(row)}>
                   <TableCell>
                     <Badge variant="outline" className="capitalize font-semibold">
                       {row.category}
@@ -655,7 +655,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </TableCell>
                 </TableRow>)}
             </TableBody>
-            <TableFooter className="sticky bottom-0 bg-slate-800 shadow-lg">
+            <TableFooter className="sticky bottom-0 bg-slate-950">
               <TableRow className="border-0">
                 <TableCell colSpan={2} className="font-bold text-white">TOTALS</TableCell>
                 <TableCell className="text-center font-bold text-white">{formatCurrency(totals.currentYearRevenue)}</TableCell>
@@ -682,24 +682,24 @@ export const DataTable: React.FC<DataTableProps> = ({
         
 
         <Table className="unified-table">
-          <TableHeader className="sticky top-0 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 z-10 shadow-lg">
+          <TableHeader className="sticky top-0 z-10 bg-[#f6f7f9]">
             <TableRow className="border-0">
-              <TableHead className="font-bold text-white">Name</TableHead>
-              <TableHead className="text-center font-bold text-white cursor-pointer border-l border-white/20" onClick={() => handleSort('grossRevenue')}>
+              <TableHead className="bg-[#f6f7f9] font-bold text-slate-700">Name</TableHead>
+              <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700 cursor-pointer border-l border-slate-200" onClick={() => handleSort('grossRevenue')}>
                 <div className="flex items-center justify-center gap-1">
                   Gross Revenue 
                   {sortField === 'grossRevenue' ? sortDirection === 'desc' ? <SortDesc className="w-3 h-3" /> : <SortAsc className="w-3 h-3" /> : <ArrowUpDown className="w-3 h-3" />}
                 </div>
               </TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">VAT</TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">Net Revenue</TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">Units</TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">Transactions</TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">Members</TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">ATV</TableHead>
-              <TableHead className="text-center font-bold text-white border-l border-white/20">AUV</TableHead>
-              <TableHead className="text-center font-bold text-white">ASV</TableHead>
-              <TableHead className="text-center font-bold text-white">UPT</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">VAT</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Net Revenue</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Units</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Transactions</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">Members</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">ATV</TableHead>
+              <TableHead className="text-center font-bold text-slate-700 border-l border-slate-200">AUV</TableHead>
+              <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">ASV</TableHead>
+              <TableHead className="bg-[#f6f7f9] text-center font-bold text-slate-700">UPT</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -756,19 +756,19 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </TableRow>)}
               </React.Fragment>)}
           </TableBody>
-          <TableFooter className="sticky bottom-0 bg-slate-800 shadow-lg">
+          <TableFooter className="sticky bottom-0 bg-slate-950">
             <TableRow className="border-0">
               <TableCell className="font-bold text-white">GRAND TOTALS</TableCell>
-              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatCurrency(totals.grossRevenue)}</TableCell>
-              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatCurrency(totals.vat)}</TableCell>
-              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatCurrency(totals.netRevenue)}</TableCell>
-              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatNumber(totals.unitsSold)}</TableCell>
-              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatNumber(totals.transactions)}</TableCell>
-              <TableCell className="text-center font-bold text-white border-l border-slate-600">{formatNumber(totals.uniqueMembers)}</TableCell>
-              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
-              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
-              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
-              <TableCell className="text-center text-white border-l border-slate-600">-</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-white/10">{formatCurrency(totals.grossRevenue)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-white/10">{formatCurrency(totals.vat)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-white/10">{formatCurrency(totals.netRevenue)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-white/10">{formatNumber(totals.unitsSold)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-white/10">{formatNumber(totals.transactions)}</TableCell>
+              <TableCell className="text-center font-bold text-white border-l border-white/10">{formatNumber(totals.uniqueMembers)}</TableCell>
+              <TableCell className="text-center text-white border-l border-white/10">-</TableCell>
+              <TableCell className="text-center text-white border-l border-white/10">-</TableCell>
+              <TableCell className="text-center text-white border-l border-white/10">-</TableCell>
+              <TableCell className="text-center text-white border-l border-white/10">-</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableFooter>

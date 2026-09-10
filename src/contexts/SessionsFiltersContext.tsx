@@ -3,6 +3,7 @@ import * as React from 'react';
 import { ReactNode } from 'react';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
+import { logger } from '@/utils/logger';
 
 interface SessionsFilters {
   locations: string[];
@@ -25,7 +26,7 @@ const SessionsFiltersContext = React.createContext<SessionsFiltersContextType | 
 export const useSessionsFilters = () => {
   const context = React.useContext(SessionsFiltersContext);
   if (!context) {
-    console.error('useSessionsFilters must be used within a SessionsFiltersProvider. Returning fallback values.');
+    logger.error('useSessionsFilters must be used within a SessionsFiltersProvider. Returning fallback values.');
     // Return a fallback context
     return {
       filters: {

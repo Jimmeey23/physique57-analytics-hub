@@ -3,6 +3,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { SalesData, SessionData, NewClientData, PayrollData, LateCancellationsData, DiscountAnalysisData } from '@/types/dashboard';
 import { format } from 'date-fns';
+import { logger } from '@/utils/logger';
+import { buildCsvString, downloadTextFile } from '@/utils/csvExport';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -34,35 +36,11 @@ interface ExportData {
 export const useAdvancedExport = () => {
   const [isExporting, setIsExporting] = useState(false);
 
-  const convertToCSV = (data: any[], headers: string[]): string => {
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => 
-        headers.map(header => {
-          const value = row[header];
-          if (value === null || value === undefined) return '';
-          if (typeof value === 'string' && value.includes(',')) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value;
-        }).join(',')
-      )
-    ].join('\n');
-    
-    return csvContent;
-  };
-
-  const downloadCSV = (content: string, fileName: string) => {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const convertToCSV = (data: any[], headers: string[]): string =>
+    buildCsvString(
+      headers.map((header) => ({ key: header, header })),
+      data
+    );
 
   const generatePDF = (exportData: ExportData, options: ExportOptions): jsPDF => {
     const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape orientation for better table display
@@ -250,10 +228,10 @@ export const useAdvancedExport = () => {
           });
         }
 
-        downloadCSV(csvContent, `${fileName}.csv`);
+        downloadTextFile(`${fileName}.csv`, csvContent);
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('Export failed:', error);
       throw error;
     } finally {
       setIsExporting(false);

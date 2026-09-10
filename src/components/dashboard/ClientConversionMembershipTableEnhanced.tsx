@@ -1,12 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { P57TableShell } from '@/components/ui/P57TableShell';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { P57SortTh } from '@/components/ui/P57SortTh';
+import { P57Badge } from '@/components/ui/P57Badge';
+import { TABLE_STYLES } from '@/styles/tableStyles';
+import { downloadCsv } from '@/utils/csvExport';
 import { Award, ChevronDown, ChevronRight, Layers3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 interface ClientConversionMembershipTableProps {
   data: NewClientData[];
@@ -61,9 +66,9 @@ const buildChildRows = (clients: NewClientData[]) => {
       };
     }
     acc[label].totalMembers += 1;
-    if (isInNewClientCohort(client)) acc[label].newMembers += 1;
-    if (isConvertedInCohort(client)) acc[label].converted += 1;
-    if (isRetainedInCohort(client)) acc[label].retained += 1;
+    if (isNewClient(client)) acc[label].newMembers += 1;
+    if (isConverted(client)) acc[label].converted += 1;
+    if (isRetained(client)) acc[label].retained += 1;
     acc[label].totalLTV += client.ltv || 0;
     acc[label].clients.push(client);
     return acc;
@@ -72,36 +77,19 @@ const buildChildRows = (clients: NewClientData[]) => {
   return Object.values(byClientType)
     .map((row) => ({
       ...row,
-      conversionRate: row.totalMembers > 0 ? (row.converted / row.totalMembers) * 100 : 0,
-      retentionRate: row.totalMembers > 0 ? (row.retained / row.totalMembers) * 100 : 0,
+      conversionRate: calcConversionRate(row.converted, row.newMembers),
+      retentionRate: calcRetentionRate(row.retained, row.newMembers),
       avgLTV: row.totalMembers > 0 ? row.totalLTV / row.totalMembers : 0,
     }))
     .sort((a, b) => b.totalMembers - a.totalMembers);
 };
 
 export const ClientConversionMembershipTable: React.FC<ClientConversionMembershipTableProps> = ({ data, onRowClick }) => {
-  const totalsRowStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#9a3412',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#9a3412',
-    color: '#ffffff',
-    borderTopColor: '#c2410c',
-  };
-
-  const totalsCellStyle: React.CSSProperties = {
-    ['--retention-totals-bg' as string]: '#9a3412',
-    ['--retention-totals-text' as string]: '#ffffff',
-    ['--retention-totals-border' as string]: 'rgba(255, 255, 255, 0.16)',
-    backgroundColor: '#9a3412',
-    color: '#ffffff',
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    borderTopColor: '#c2410c',
-  };
-
   const [sortField, setSortField] = useState<string>();
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [query, setQuery] = useState('');
+  const tableId = 'Membership Type Performance';
 
   const membershipData = useMemo<MembershipRow[]>(() => {
     const grouped = data.reduce<Record<string, Omit<MembershipRow, 'conversionRate' | 'retentionRate' | 'avgLTV' | 'avgVisits' | 'avgConversionSpan'>>>((acc, client) => {
@@ -122,9 +110,9 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
 
       const bucket = acc[membership];
       bucket.totalMembers += 1;
-      if (isInNewClientCohort(client)) bucket.newMembers += 1;
-      if (isConvertedInCohort(client)) bucket.converted += 1;
-      if (isRetainedInCohort(client)) bucket.retained += 1;
+      if (isNewClient(client)) bucket.newMembers += 1;
+      if (isConverted(client)) bucket.converted += 1;
+      if (isRetained(client)) bucket.retained += 1;
       bucket.totalLTV += client.ltv || 0;
       bucket.totalVisits += client.visitsPostTrial || 0;
       if ((client.conversionSpan || 0) > 0) bucket.conversionSpans.push(client.conversionSpan);
@@ -135,8 +123,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
     return Object.values(grouped)
       .map((bucket) => ({
         ...bucket,
-        conversionRate: bucket.totalMembers > 0 ? (bucket.converted / bucket.totalMembers) * 100 : 0,
-        retentionRate: bucket.totalMembers > 0 ? (bucket.retained / bucket.totalMembers) * 100 : 0,
+        conversionRate: calcConversionRate(bucket.converted, bucket.newMembers),
+        retentionRate: calcRetentionRate(bucket.retained, bucket.newMembers),
         avgLTV: bucket.totalMembers > 0 ? bucket.totalLTV / bucket.totalMembers : 0,
         avgVisits: bucket.totalMembers > 0 ? bucket.totalVisits / bucket.totalMembers : 0,
         avgConversionSpan:
@@ -148,15 +136,17 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
   }, [data]);
 
   const displayedData = useMemo(() => {
-    if (!sortField) return membershipData;
-    return [...membershipData].sort((a: any, b: any) => {
+    const term = query.trim().toLowerCase();
+    const base = term ? membershipData.filter((r) => r.membershipType.toLowerCase().includes(term)) : membershipData;
+    if (!sortField) return base;
+    return [...base].sort((a: any, b: any) => {
       const dir = sortDirection === 'asc' ? 1 : -1;
       const aValue = a[sortField];
       const bValue = b[sortField];
       if (typeof aValue === 'number' && typeof bValue === 'number') return (aValue - bValue) * dir;
       return String(aValue ?? '').localeCompare(String(bValue ?? '')) * dir;
     });
-  }, [membershipData, sortDirection, sortField]);
+  }, [membershipData, sortDirection, sortField, query]);
 
   const totals = useMemo<MembershipRow>(() => {
     const total = membershipData.reduce(
@@ -194,8 +184,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
       }
     );
 
-    total.conversionRate = total.totalMembers > 0 ? (total.converted / total.totalMembers) * 100 : 0;
-    total.retentionRate = total.totalMembers > 0 ? (total.retained / total.totalMembers) * 100 : 0;
+    total.conversionRate = calcConversionRate(total.converted, total.newMembers);
+    total.retentionRate = calcRetentionRate(total.retained, total.newMembers);
     total.avgLTV = total.totalMembers > 0 ? total.totalLTV / total.totalMembers : 0;
     total.avgVisits = total.totalMembers > 0 ? total.totalVisits / total.totalMembers : 0;
     total.avgConversionSpan = total.conversionSpans.length > 0
@@ -204,6 +194,27 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
 
     return total;
   }, [membershipData]);
+
+  const handleExportCsv = () => {
+    const cols = [
+      { key: 'membershipType', header: 'Membership Type' },
+      { key: 'totalMembers', header: 'Trials' },
+      { key: 'newMembers', header: 'New Members' },
+      { key: 'retained', header: 'Retained' },
+      { key: 'retentionRate', header: 'Retention %' },
+      { key: 'converted', header: 'Converted' },
+      { key: 'conversionRate', header: 'Conversion %' },
+      { key: 'avgLTV', header: 'Avg LTV' },
+      { key: 'totalLTV', header: 'Total LTV' },
+    ];
+    const toRec = (r: MembershipRow): Record<string, unknown> => ({
+      membershipType: r.membershipType, totalMembers: r.totalMembers,
+      newMembers: r.newMembers, retained: r.retained, retentionRate: r.retentionRate,
+      converted: r.converted, conversionRate: r.conversionRate,
+      avgLTV: r.avgLTV, totalLTV: r.totalLTV,
+    });
+    downloadCsv(`${tableId}.csv`, cols, [...displayedData.map(toRec), { ...toRec(totals), membershipType: 'TOTALS' }]);
+  };
 
   const handleSort = (field: string) => {
     if (sortField === field) setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
@@ -220,39 +231,22 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
   };
 
   return (
-    <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.10)]">
-      <CardHeader className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
-        <div>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Award className="h-5 w-5" />
-          Membership Type Performance Analysis
-          <Badge className="border-white/20 bg-white/10 text-white">{displayedData.length} types</Badge>
-        </CardTitle>
-        <p className="mt-2 text-sm text-slate-300">
-          Stronger table styling, clickable totals, and attached child rows showing client-type detail for every membership.
-        </p>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/90 px-5 py-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Membership rows</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatNumber(displayedData.length)}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Total trials</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatNumber(totals.totalMembers)}</div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Total LTV</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-950">{formatCurrency(totals.totalLTV)}</div>
-          </div>
-        </div>
-        <div className="max-h-[680px] overflow-auto">
+    <P57TableShell
+      icon={Award}
+      title="Memberships"
+      description="Membership usage, access package preference, and revenue concentration. Expand a row for client-type detail; click any row for drill-down evidence."
+      rowCount={displayedData.length}
+      rowCountLabel="types"
+      onSearch={setQuery}
+      searchPlaceholder="Search memberships…"
+      onExportCsv={handleExportCsv}
+      meta={<span>{formatNumber(totals.totalMembers)} trials · {formatCurrency(totals.totalLTV)} total LTV</span>}
+    >
+        <div className="max-h-[560px] overflow-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-slate-950">
-              <TableRow className="border-slate-800 bg-slate-950 hover:bg-slate-950">
-                <TableHead className="sticky left-0 z-10 min-w-[320px] bg-slate-950 text-xs font-semibold uppercase tracking-wide text-white">Membership Type</TableHead>
+            <TableHeader>
+              <TableRow>
+                <P57SortTh sortKey="membershipType" activeKey={sortField ?? null} dir={sortDirection} onToggle={handleSort} className="sticky left-0 z-40 min-w-[320px]">Membership Type</P57SortTh>
                 {[
                   ['totalMembers', 'Trials'],
                   ['newMembers', 'New Members'],
@@ -263,13 +257,16 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
                   ['avgLTV', 'Avg LTV'],
                   ['totalLTV', 'Total LTV'],
                 ].map(([field, label]) => (
-                  <TableHead
+                  <P57SortTh
                     key={field}
-                    onClick={() => handleSort(field)}
-                    className="cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-white"
+                    sortKey={field}
+                    activeKey={sortField ?? null}
+                    dir={sortDirection}
+                    onToggle={handleSort}
+                    align={field === 'avgLTV' || field === 'totalLTV' ? 'right' : 'center'}
                   >
                     {label}
-                  </TableHead>
+                  </P57SortTh>
                 ))}
               </TableRow>
             </TableHeader>
@@ -281,8 +278,8 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
 
                 return (
                   <React.Fragment key={row.membershipType}>
-                    <TableRow className="cursor-pointer border-b border-slate-100 bg-white/90 hover:bg-violet-50/40" onClick={() => onRowClick?.(row)}>
-                      <TableCell className="sticky left-0 z-10 bg-inherit py-3">
+                    <TableRow className="cursor-pointer" onClick={() => onRowClick?.(row)}>
+                      <TableCell className="sticky left-0 z-10 py-3">
                         <div className="flex items-center gap-3">
                           <Button
                             size="icon"
@@ -310,16 +307,16 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
                       <TableCell className="text-center font-medium text-slate-900">{formatNumber(row.totalMembers)}</TableCell>
                       <TableCell className="text-center font-medium text-slate-900">{formatNumber(row.newMembers)}</TableCell>
                       <TableCell className="text-center font-medium text-slate-900">{formatNumber(row.retained)}</TableCell>
-                      <TableCell className="text-center"><span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">{row.retentionRate.toFixed(1)}%</span></TableCell>
+                      <TableCell className="text-center"><P57Badge tone="blue">{row.retentionRate.toFixed(1)}%</P57Badge></TableCell>
                       <TableCell className="text-center font-medium text-slate-900">{formatNumber(row.converted)}</TableCell>
-                      <TableCell className="text-center"><span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{row.conversionRate.toFixed(1)}%</span></TableCell>
+                      <TableCell className="text-center"><P57Badge tone="green">{row.conversionRate.toFixed(1)}%</P57Badge></TableCell>
                       <TableCell className="text-right font-medium text-slate-900">{formatCurrency(row.avgLTV)}</TableCell>
                       <TableCell className="text-right font-medium text-slate-900">{formatCurrency(row.totalLTV)}</TableCell>
                     </TableRow>
                     {isExpanded && (childRows.length > 0 ? childRows.map((child) => (
                       <TableRow
                         key={`${row.membershipType}-${child.label}`}
-                        className="cursor-pointer border-b border-orange-100 bg-orange-50/70 hover:bg-orange-100/80"
+                        className="cursor-pointer p57-group-row"
                         onClick={() => onRowClick?.({
                           membershipType: row.membershipType,
                           rowType: 'clientTypeChild',
@@ -335,9 +332,9 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
                           clients: child.clients, 
                         })}
                       >
-                        <TableCell className="sticky left-0 z-10 bg-orange-50/70 py-2.5 pl-14">
+                        <TableCell className="sticky left-0 z-10 py-2.5 pl-14">
                           <div className="flex items-start gap-3 text-sm text-slate-700">
-                            <Layers3 className="mt-0.5 h-4 w-4 text-orange-600" />
+                            <Layers3 className="mt-0.5 h-4 w-4 text-slate-400" />
                             <div>
                               <div className="font-semibold text-slate-900">{child.label}</div>
                               <div className="text-xs text-slate-500"></div>
@@ -347,9 +344,9 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
                         <TableCell className="text-center font-medium text-slate-900">{formatNumber(child.totalMembers)}</TableCell>
                         <TableCell className="text-center font-medium text-slate-900">{formatNumber(child.newMembers)}</TableCell>
                         <TableCell className="text-center font-medium text-slate-900">{formatNumber(child.retained)}</TableCell>
-                        <TableCell className="text-center"><span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">{child.retentionRate.toFixed(1)}%</span></TableCell>
+                        <TableCell className="text-center"><P57Badge tone="blue">{child.retentionRate.toFixed(1)}%</P57Badge></TableCell>
                         <TableCell className="text-center font-medium text-slate-900">{formatNumber(child.converted)}</TableCell>
-                        <TableCell className="text-center"><span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{child.conversionRate.toFixed(1)}%</span></TableCell>
+                        <TableCell className="text-center"><P57Badge tone="green">{child.conversionRate.toFixed(1)}%</P57Badge></TableCell>
                         <TableCell className="text-right font-medium text-slate-900">{formatCurrency(child.avgLTV)}</TableCell>
                         <TableCell className="text-right font-medium text-slate-900">{formatCurrency(child.totalLTV)}</TableCell>
                       </TableRow>
@@ -363,22 +360,21 @@ export const ClientConversionMembershipTable: React.FC<ClientConversionMembershi
                   </React.Fragment>
                 );
               })}
-              <TableRow className="cursor-pointer border-t-4 border-orange-700" style={totalsRowStyle} onClick={() => onRowClick?.(totals)}>
-                <TableCell className="sticky left-0 z-10 py-3 font-semibold" style={totalsCellStyle}>TOTALS</TableCell>
-                <TableCell className="text-center font-bold" style={totalsCellStyle}>{formatNumber(totals.totalMembers)}</TableCell>
-                <TableCell className="text-center font-bold" style={totalsCellStyle}>{formatNumber(totals.newMembers)}</TableCell>
-                <TableCell className="text-center font-bold" style={totalsCellStyle}>{formatNumber(totals.retained)}</TableCell>
-                <TableCell className="text-center font-bold" style={totalsCellStyle}>{totals.retentionRate.toFixed(1)}%</TableCell>
-                <TableCell className="text-center font-bold" style={totalsCellStyle}>{formatNumber(totals.converted)}</TableCell>
-                <TableCell className="text-center font-bold" style={totalsCellStyle}>{totals.conversionRate.toFixed(1)}%</TableCell>
-                <TableCell className="text-right font-bold" style={totalsCellStyle}>{formatCurrency(totals.avgLTV)}</TableCell>
-                <TableCell className="text-right font-bold" style={totalsCellStyle}>{formatCurrency(totals.totalLTV)}</TableCell>
+              <TableRow className={`${TABLE_STYLES.footer.row} cursor-pointer`} onClick={() => onRowClick?.(totals)}>
+                <TableCell className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} py-3`}>Totals</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{formatNumber(totals.totalMembers)}</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{formatNumber(totals.newMembers)}</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{formatNumber(totals.retained)}</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{totals.retentionRate.toFixed(1)}%</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{formatNumber(totals.converted)}</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{totals.conversionRate.toFixed(1)}%</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-right`}>{formatCurrency(totals.avgLTV)}</TableCell>
+                <TableCell className={`${TABLE_STYLES.footer.cell} text-right`}>{formatCurrency(totals.totalLTV)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
+    </P57TableShell>
   );
 };
 

@@ -565,7 +565,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="overflow-x-auto">
                     <table data-table="class-attendance-trainer-rankings" data-table-name="Class Attendance Trainer Rankings" className="w-full text-sm">
-                      <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white">
+                      <thead className="bg-[#f6f7f9] text-slate-700">
                         <tr>
                           <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-wider w-16">Rank</th>
                           <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Trainer</th>
@@ -582,7 +582,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                           <tr 
                             key={trainer.trainer}
                             onClick={() => setSelectedTrainer(trainer.trainer)}
-                            className="hover:bg-slate-50 transition-colors cursor-pointer h-[35px]"
+                            className="hover:bg-slate-50 transition-colors cursor-pointer p57-row-h"
                           >
                             <td className="px-4 py-2">
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${
@@ -819,7 +819,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table data-table="class-attendance-historical-sessions" data-table-name="Class Attendance Historical Sessions" className="w-full text-sm">
-                      <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white sticky top-0 z-10">
+                      <thead className="sticky top-0 z-10 bg-[#f6f7f9] text-slate-700">
                         <tr>
                           <th className="px-3 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Date</th>
                           {selectedClasses.length > 1 && (
@@ -839,7 +839,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                         {historicalSessions.map((session, index) => {
                           const fillRate = (session.capacity || 0) > 0 ? ((session.checkedInCount || 0) / (session.capacity || 1)) * 100 : 0;
                           return (
-                            <tr key={`hist_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors h-[35px]">
+                            <tr key={`hist_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors p57-row-h">
                               <td className="px-3 py-2 font-medium text-slate-900 text-xs whitespace-nowrap">
                                 {format(parseISO(session.date), 'MMM dd, yyyy')}
                               </td>
@@ -913,7 +913,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                   <table data-table="class-attendance-trainer-session-detail" data-table-name="Class Attendance Trainer Session Detail" className="w-full text-sm">
-                    <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white sticky top-0 z-10">
+                    <thead className="sticky top-0 z-10 bg-[#f6f7f9] text-slate-700">
                       <tr>
                         <th className="px-3 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Date</th>
                         <th className="px-3 py-3 text-left font-bold text-[10px] uppercase tracking-wider">Day</th>
@@ -932,7 +932,7 @@ export default function ClassDeepDive({ data }: ClassDeepDiveProps) {
                         .map((session, index) => {
                           const fillRate = (session.capacity || 0) > 0 ? ((session.checkedInCount || 0) / (session.capacity || 1)) * 100 : 0;
                           return (
-                            <tr key={`trainer_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors h-[35px]">
+                            <tr key={`trainer_${index}_${session.date}`} className="hover:bg-slate-50 transition-colors p57-row-h">
                               <td className="px-3 py-2 font-medium text-slate-900 text-xs whitespace-nowrap">
                                 {format(parseISO(session.date), 'MMM dd, yyyy')}
                               </td>

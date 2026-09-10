@@ -45,6 +45,7 @@ import {
   addDataLabChartToModule,
   addDataLabTableToModule,
 } from '@/services/dataLabDashboardBridge';
+import { designTokens } from '@/utils/designTokens';
 
 const STORAGE_KEY = 'p57-data-lab-views-v2';
 const STORAGE_ACTIVE_KEY = 'p57-data-lab-active-view-v2';
@@ -1949,10 +1950,8 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
           dragField.from === 'columns'
             ? current.columnFields.filter((field) => field !== dragField.field)
             : current.columnFields;
-        const nextValues =
-          dragField.from === 'values'
-            ? current.valueFields.filter((valueField) => valueField.id !== dragField.valueId)
-            : current.valueFields;
+        // NOTE: `from === 'values'` returns early above, so values always pass through here.
+        const nextValues = current.valueFields;
         const nextMetric: ValueFieldConfig = {
           id: makeId('value'),
           field: dragField.field,
@@ -2509,7 +2508,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
             <ResponsiveContainer width="100%" height="100%">
               {config.chartType === 'bar' ? (
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-35} textAnchor="end" height={95} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
@@ -2524,7 +2523,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </BarChart>
               ) : config.chartType === 'line' ? (
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-35} textAnchor="end" height={95} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
@@ -2538,7 +2537,7 @@ export const DataLabWorkspace: React.FC<DataLabWorkspaceProps> = ({ dataSources 
                 </LineChart>
               ) : config.chartType === 'area' ? (
                 <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-35} textAnchor="end" height={95} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip

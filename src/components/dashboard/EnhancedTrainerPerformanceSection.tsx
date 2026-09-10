@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
+import { designTokens } from '@/utils/designTokens';
 
 const MONTH_LABEL_TO_INDEX: Record<string, number> = {
   Jan: 0,
@@ -406,12 +407,12 @@ export const EnhancedTrainerPerformanceSection = () => {
       t.totalCustomers += r.totalCustomers || 0;
       t.nonEmptySessions += r.nonEmptySessions || 0;
       // processed data fields use `convertedMembers`, `newMembers`, `retainedMembers`, `conversionRate`
-      t.totalConverted += (r.convertedMembers ?? r.converted ?? 0);
-      t.totalNew += (r.newMembers ?? r.new ?? 0);
-      t.totalRetained += (r.retainedMembers ?? r.retained ?? 0);
+      t.totalConverted += r.convertedMembers;
+      t.totalNew += r.newMembers;
+      t.totalRetained += r.retainedMembers;
       t.conversionSum += (r.conversionRate ?? 0);
       t.retentionSum += (r.retentionRate ?? 0);
-      t.emptySessions += (r.emptySessions ?? r.totalEmptySessions ?? 0);
+      t.emptySessions += r.emptySessions;
       t.records += 1;
       return acc;
     }, {} as Record<string, any>);
@@ -661,12 +662,12 @@ export const EnhancedTrainerPerformanceSection = () => {
               >
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                   <filter id="shadow">
                     <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3"/>
@@ -674,19 +675,19 @@ export const EnhancedTrainerPerformanceSection = () => {
                 </defs>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
-                  stroke="#e2e8f0" 
+                  stroke={designTokens.colors.slate[200]} 
                   strokeOpacity={0.5}
                 />
                 <XAxis 
                   dataKey="month" 
-                  stroke="#64748b"
+                  stroke={designTokens.colors.slate[500]}
                   style={{ fontSize: '12px', fontWeight: 500 }}
-                  tick={{ fill: '#64748b' }}
+                  tick={{ fill: designTokens.colors.slate[500] }}
                 />
                 <YAxis 
-                  stroke="#64748b"
+                  stroke={designTokens.colors.slate[500]}
                   style={{ fontSize: '12px', fontWeight: 500 }}
-                  tick={{ fill: '#64748b' }}
+                  tick={{ fill: designTokens.colors.slate[500] }}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -698,16 +699,16 @@ export const EnhancedTrainerPerformanceSection = () => {
                     backdropFilter: 'blur(10px)'
                   }}
                   labelStyle={{ color: '#f1f5f9', fontWeight: 600, marginBottom: '8px' }}
-                  itemStyle={{ color: '#e2e8f0', padding: '4px 0' }}
-                  cursor={{ stroke: '#3B82F6', strokeWidth: 2, strokeDasharray: '5 5' }}
+                  itemStyle={{ color: designTokens.colors.slate[200], padding: '4px 0' }}
+                  cursor={{ stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5 5' }}
                 />
                 <Line 
                   type="monotone" 
                   dataKey="revenue" 
-                  stroke="#3B82F6" 
+                  stroke="#3b82f6" 
                   strokeWidth={4}
                   name="Revenue"
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6, stroke: '#fff', filter: 'url(#shadow)' }}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 6, stroke: '#fff', filter: 'url(#shadow)' }}
                   activeDot={{ r: 8, fill: '#2563EB', stroke: '#fff', strokeWidth: 3 }}
                   fill="url(#revenueGradient)"
                   animationDuration={1500}
@@ -716,11 +717,11 @@ export const EnhancedTrainerPerformanceSection = () => {
                 <Line 
                   type="monotone" 
                   dataKey="sessions" 
-                  stroke="#10B981" 
+                  stroke="#10b981" 
                   strokeWidth={3}
                   strokeDasharray="5 5"
                   name="Sessions"
-                  dot={{ fill: '#10B981', strokeWidth: 2, r: 5, stroke: '#fff', filter: 'url(#shadow)' }}
+                  dot={{ fill: '#10b981', strokeWidth: 2, r: 5, stroke: '#fff', filter: 'url(#shadow)' }}
                   activeDot={{ r: 7, fill: '#059669', stroke: '#fff', strokeWidth: 3 }}
                   animationDuration={1500}
                   animationEasing="ease-in-out"
@@ -770,7 +771,7 @@ export const EnhancedTrainerPerformanceSection = () => {
               >
                 <defs>
                   <linearGradient id="sessionsBarGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10B981" stopOpacity={1}/>
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
                     <stop offset="100%" stopColor="#059669" stopOpacity={0.8}/>
                   </linearGradient>
                   <linearGradient id="customersBarGradient" x1="0" y1="0" x2="0" y2="1">
@@ -783,19 +784,19 @@ export const EnhancedTrainerPerformanceSection = () => {
                 </defs>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
-                  stroke="#e2e8f0" 
+                  stroke={designTokens.colors.slate[200]} 
                   strokeOpacity={0.5}
                 />
                 <XAxis 
                   dataKey="month" 
-                  stroke="#64748b"
+                  stroke={designTokens.colors.slate[500]}
                   style={{ fontSize: '12px', fontWeight: 500 }}
-                  tick={{ fill: '#64748b' }}
+                  tick={{ fill: designTokens.colors.slate[500] }}
                 />
                 <YAxis 
-                  stroke="#64748b"
+                  stroke={designTokens.colors.slate[500]}
                   style={{ fontSize: '12px', fontWeight: 500 }}
-                  tick={{ fill: '#64748b' }}
+                  tick={{ fill: designTokens.colors.slate[500] }}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -807,7 +808,7 @@ export const EnhancedTrainerPerformanceSection = () => {
                     backdropFilter: 'blur(10px)'
                   }}
                   labelStyle={{ color: '#f1f5f9', fontWeight: 600, marginBottom: '8px' }}
-                  itemStyle={{ color: '#e2e8f0', padding: '4px 0' }}
+                  itemStyle={{ color: designTokens.colors.slate[200], padding: '4px 0' }}
                   cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
                 />
                 <Bar 

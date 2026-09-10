@@ -132,7 +132,6 @@ export const ModernSalesTable: React.FC<ModernSalesTableProps> = ({
         footerData={footerData}
         maxHeight={maxHeight}
         className={className}
-        headerGradient="from-slate-700 to-slate-900"
         onRowClick={onRowClick}
       />
     </div>

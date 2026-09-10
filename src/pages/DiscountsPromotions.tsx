@@ -3,6 +3,9 @@ import { useSalesData } from '@/hooks/useSalesData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedDiscountsDashboardV2 } from '@/components/dashboard/EnhancedDiscountsDashboardV2';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -100,6 +103,10 @@ const DiscountsPromotions: React.FC = () => {
         metrics={heroMetrics}
         extra={exportButton}
       />
+
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker items={heroMetrics} />
+      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
@@ -428,6 +435,9 @@ const DiscountsPromotions: React.FC = () => {
           animation-delay: 0.5s;
         }
       `}</style>
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.discounts} />
+      </div>
     </div>
   );
 };

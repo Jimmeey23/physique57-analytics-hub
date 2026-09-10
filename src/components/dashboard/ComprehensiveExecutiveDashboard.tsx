@@ -57,7 +57,6 @@ import { LateCancellationsMonthOnMonthTable } from './LateCancellationsMonthOnMo
 import { EnhancedLateCancellationsDataTables } from './EnhancedLateCancellationsDataTables';
 import { LateCancellationsInteractiveCharts } from './LateCancellationsInteractiveCharts';
 import { ClientConversionMetricCards } from './ClientConversionMetricCards';
-import { ClientConversionMonthOnMonthByTypeTable } from './ClientConversionMonthOnMonthByTypeTable';
 import { ClientRetentionMonthByTypePivot } from './ClientRetentionMonthByTypePivot';
 import { ClientConversionEnhancedCharts } from './ClientConversionEnhancedCharts';
 import { SalesAnimatedMetricCards } from './SalesAnimatedMetricCards';
@@ -92,6 +91,9 @@ import { getSummaryText } from '@/services/infoSummaryService';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { parseDate } from '@/utils/dateUtils';
 import { generateHTMLPDFReport, generateMultiLocationHTMLPDFReports } from '@/services/htmlPDFService';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
+import { logger } from '@/utils/logger';
 
 // Helper function to get location ID for InfoPopover
 const getLocationId = (location: string | undefined): 'kwality' | 'supreme' | 'kenkere' | 'all' => {
@@ -178,7 +180,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
       // Force the Executive Summary to November 2025 on mount
       updateFilters({ dateRange: { start: '2025-11-01', end: '2025-11-30' } });
     } catch (e) {
-      console.warn('Failed to set default Executive Summary date range:', e);
+      logger.warn('Failed to set default Executive Summary date range:', e);
     }
     // Intentionally only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -357,9 +359,9 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
         (sessions.reduce((sum, s) => sum + (s.checkedInCount || 0), 0) / sessions.reduce((sum, s) => sum + (s.capacity || 0), 0)) * 100 : 0,
       lateCancellations: cancellations.length,
       cancellationRate: sessions.length > 0 ? (cancellations.length / sessions.length) * 100 : 0,
-      newClients: clients.length,
-      conversionRate: clients.length > 0 ? (clients.filter(c => c.conversionStatus === 'Converted').length / clients.length) * 100 : 0,
-      retentionRate: clients.length > 0 ? (clients.filter(c => c.retentionStatus === 'Retained').length / clients.length) * 100 : 0,
+      newClients: clients.filter(isNewClient).length,
+      conversionRate: calcConversionRate(clients.filter(isConverted).length, clients.filter(isNewClient).length),
+      retentionRate: calcRetentionRate(clients.filter(isRetained).length, clients.filter(isNewClient).length),
       avgLTV: clients.length > 0 ? clients.reduce((sum, c) => sum + (c.ltv || 0), 0) / clients.length : 0,
       totalDiscounts: discounts.reduce((sum, d) => sum + (d.discountAmount || 0), 0),
       discountRate: sales.length > 0 ? (discounts.length / sales.length) * 100 : 0
@@ -578,7 +580,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
             uniqueCustomers: new Set(safeArray(previousMonthData.sales).map(s => safeString(s.customerName))).size,
           },
           clients: {
-            newMembers: safeArray(previousMonthData.newClients).filter(c => safeString(c.isNew).toLowerCase().includes('new')).length,
+            newMembers: safeArray(previousMonthData.newClients).filter(c => isNewClient(c.isNew)).length,
             convertedMembers: safeArray(previousMonthData.newClients).filter(c => safeString(c.conversionStatus) === 'Converted').length,
             retentionRate: safeArray(previousMonthData.newClients).length > 0
               ? (safeArray(previousMonthData.newClients).filter(c => safeString(c.retentionStatus) === 'Retained').length / safeArray(previousMonthData.newClients).length) * 100
@@ -660,7 +662,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
           duration: 5000,
         });
     } catch (error) {
-      console.error('Error generating PDF reports:', error);
+      logger.error('Error generating PDF reports:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF reports. Please try again.",
@@ -799,7 +801,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-emerald-500/50 group-hover:border-l-emerald-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-emerald-500/20 group-hover:before:bg-emerald-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {salesMetrics?.metrics?.[0]?.description || 'Total sales revenue'}
                     </p>
@@ -873,7 +875,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-blue-500/50 group-hover:border-l-blue-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-blue-500/20 group-hover:before:bg-blue-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       Total classes conducted
                     </p>
@@ -955,7 +957,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-red-500/50 group-hover:border-l-red-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-red-500/20 group-hover:before:bg-red-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       Sessions cancelled late
                     </p>
@@ -1043,7 +1045,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-purple-500/50 group-hover:border-l-purple-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-purple-500/20 group-hover:before:bg-purple-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {clientMetrics?.metrics?.[0]?.description || 'New member acquisitions'}
                     </p>
@@ -1131,7 +1133,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-indigo-500/50 group-hover:border-l-indigo-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-indigo-500/20 group-hover:before:bg-indigo-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {salesMetrics?.metrics?.[6]?.description || 'Average value per transaction'}
                     </p>
@@ -1205,7 +1207,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-teal-500/50 group-hover:border-l-teal-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-teal-500/20 group-hover:before:bg-teal-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       Total member check-ins
                     </p>
@@ -1295,7 +1297,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-rose-500/50 group-hover:border-l-rose-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-rose-500/20 group-hover:before:bg-rose-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {clientMetrics?.metrics?.[3]?.description || 'Average customer lifetime value'}
                     </p>
@@ -1383,7 +1385,7 @@ export const ComprehensiveExecutiveDashboard = React.memo(() => {
                     </div>
                   </div>
 
-                  <div className="relative pt-1.5 border-l-3 pl-3 transition-all duration-500 border-l-orange-500/50 group-hover:border-l-orange-400 before:absolute before:left-0 before:top-0 before:w-1 before:h-full before:rounded-r-full before:transition-all before:duration-500 before:bg-orange-500/20 group-hover:before:bg-orange-400/30">
+                  <div className="relative pt-1.5 transition-all duration-500">
                     <p className="text-xs text-slate-600 group-hover:text-slate-300 leading-snug transition-colors duration-500 line-clamp-2 font-medium">
                       {salesMetrics?.metrics?.[8]?.description || 'Average discount percentage'}
                     </p>

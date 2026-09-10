@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { EnhancedTrainerPerformanceSection } from '@/components/dashboard/EnhancedTrainerPerformanceSection';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { formatCurrency } from '@/utils/formatters';
 import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
@@ -91,11 +94,15 @@ const TrainerPerformance = () => {
             metrics={heroMetrics}
             extra={exportButton}
           />
+          <div className="container mx-auto px-6 pb-5">
+            <KpiTicker items={heroMetrics} />
+          </div>
         </div>
 
         <div className="container mx-auto px-6 py-8 bg-white min-h-screen">
           <main className="space-y-8 slide-in-from-right stagger-1">
             <EnhancedTrainerPerformanceSection />
+            <MetricDefinitions items={METRIC_DEFINITIONS.trainerPerformance} />
           </main>
         </div>
       </div>

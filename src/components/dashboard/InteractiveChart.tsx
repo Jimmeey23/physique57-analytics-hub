@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TrendingUp, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react';
 import { SalesData, NewClientData } from '@/types/dashboard';
 import { formatCurrency } from '@/utils/formatters';
+import { designTokens } from '@/utils/designTokens';
 
 interface InteractiveChartProps {
   title: string;
@@ -14,7 +15,7 @@ interface InteractiveChartProps {
   type: 'revenue' | 'performance' | 'conversion' | 'retention';
 }
 
-const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
+const COLORS = ['#3b82f6', '#8B5CF6', '#10b981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({ title, data, type }) => {
   const [activeChart, setActiveChart] = useState('bar');
@@ -204,17 +205,17 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ title, data,
         return (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
               <XAxis 
                 dataKey={xAxisKey} 
-                stroke="#64748b"
+                stroke={designTokens.colors.slate[500]}
                 fontSize={12}
                 angle={title.toLowerCase().includes('product') ? -45 : 0}
                 textAnchor={title.toLowerCase().includes('product') ? 'end' : 'middle'}
                 height={title.toLowerCase().includes('product') ? 80 : 30}
               />
               <YAxis 
-                stroke="#64748b"
+                stroke={designTokens.colors.slate[500]}
                 fontSize={12}
                 tickFormatter={(value) => typeof value === 'number' && dataKey.toLowerCase().includes('revenue') 
                   ? formatCurrency(value) 
@@ -228,7 +229,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ title, data,
               />
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--theme-primary, #3B82F6)" />
+                  <stop offset="0%" stopColor="var(--theme-primary, #3b82f6)" />
                   <stop offset="100%" stopColor="var(--theme-secondary, #8B5CF6)" />
                 </linearGradient>
               </defs>
@@ -240,14 +241,14 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ title, data,
         return (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={designTokens.colors.slate[200]} />
               <XAxis 
                 dataKey={xAxisKey} 
-                stroke="#64748b"
+                stroke={designTokens.colors.slate[500]}
                 fontSize={12}
               />
               <YAxis 
-                stroke="#64748b"
+                stroke={designTokens.colors.slate[500]}
                 fontSize={12}
                 tickFormatter={(value) => typeof value === 'number' && dataKey.toLowerCase().includes('revenue') 
                   ? formatCurrency(value) 
@@ -257,10 +258,10 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ title, data,
               <Line 
                 type="monotone" 
                 dataKey={dataKey} 
-                stroke="var(--theme-primary, #3B82F6)" 
+                stroke="var(--theme-primary, #3b82f6)" 
                 strokeWidth={3}
-                dot={{ fill: 'var(--theme-primary, #3B82F6)', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: 'var(--theme-primary, #3B82F6)', strokeWidth: 2, fill: 'white' }}
+                dot={{ fill: 'var(--theme-primary, #3b82f6)', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: 'var(--theme-primary, #3b82f6)', strokeWidth: 2, fill: 'white' }}
               />
             </LineChart>
           </ResponsiveContainer>

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Centralized Google OAuth Authentication Utility
  * 
@@ -39,7 +40,7 @@ interface QueuedRequest {
 const requestQueue: QueuedRequest[] = [];
 let isProcessingQueue = false;
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests (60/min limit)
+const MIN_REQUEST_INTERVAL = 350; // ~171 req/min sustained, inside the 300 reads/min/user Sheets quota
 
 /**
  * Get a valid access token, using cache when possible
@@ -86,7 +87,7 @@ export const getGoogleAccessToken = async (): Promise<string> => {
     
     return cachedToken;
   } catch (error) {
-    console.error('Error getting access token:', error);
+    logger.error('Error getting access token:', error);
     throw error;
   }
 };
@@ -247,7 +248,7 @@ export const fetchGoogleSheet = async (
       const result = await response.json();
       return result.values || [];
     } catch (error) {
-      console.warn(`[googleAuth] Sheets API failed for ${spreadsheetId} / ${range}; trying public access:`, error);
+      logger.warn(`[googleAuth] Sheets API failed for ${spreadsheetId} / ${range}; trying public access:`, error);
       return fetchPublicSheetRange(spreadsheetId, range);
     }
   });
@@ -344,7 +345,7 @@ export const validateGoogleConfig = (): boolean => {
   const missing = required.filter(key => !import.meta.env[key]);
   
   if (missing.length > 0) {
-    console.warn('Missing Google OAuth environment variables:', missing);
+    logger.warn('Missing Google OAuth environment variables:', missing);
     return false;
   }
   

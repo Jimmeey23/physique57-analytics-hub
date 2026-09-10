@@ -1,20 +1,38 @@
-import { useState, useMemo } from 'react';
-import { SessionData } from '@/types';
+import React, { Suspense, useMemo } from 'react';
+import type { SessionData as HookSessionData } from '@/hooks/useSessionsData';
+import { adaptHookSessions } from '@/utils/sessionShape';
 import { formatCurrency, formatNumber, formatPercentage, calculateMetrics } from '@/utils/calculations';
-import { Calendar, Users, DollarSign, TrendingUp, AlertCircle, Target } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { Calendar, Users, DollarSign, TrendingUp, AlertCircle, Target, type LucideIcon } from 'lucide-react';
+import { MetricCard, MetricGrid, type MetricDelta } from '@/components/ui/MetricCard';
+
+// Chart lib (~100 kB) loads only when a card back is first rendered — never in the initial chunk.
+const SparkBack = React.lazy(() =>
+  import('./MetricsSparkBack').then((m) => ({ default: m.SparkBack })),
+);
+const SparkFallback = () => <div className="h-[62px] animate-pulse rounded bg-slate-100" />;
 
 interface MetricsCardsEnhancedProps {
-  sessions: SessionData[];
+  sessions: HookSessionData[];
 }
 
+const deltaFor = (data: Array<{ value: number }>, invert = false): MetricDelta | undefined => {
+  if (data.length < 2) return undefined;
+  const prev = data[data.length - 2].value;
+  const last = data[data.length - 1].value;
+  if (prev === 0) return undefined;
+  const pct = ((last - prev) / Math.abs(prev)) * 100;
+  const dir: MetricDelta['tone'] = pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : 'flat';
+  const tone = invert ? (dir === 'up' ? 'down' : dir === 'down' ? 'up' : 'flat') : dir;
+  return { value: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`, tone };
+};
+
 export function MetricsCardsEnhanced({ sessions }: MetricsCardsEnhancedProps) {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  // Normalize hook rows so legacy readers (checkins, revenue, …) resolve.
+  const rows = useMemo(() => adaptHookSessions(sessions || []), [sessions]);
 
   // Calculate overall metrics
   const metrics = useMemo(() => {
-    if (sessions.length === 0) {
+    if (rows.length === 0) {
       return {
         totalClasses: 0,
         totalCheckIns: 0,
@@ -26,7 +44,7 @@ export function MetricsCardsEnhanced({ sessions }: MetricsCardsEnhancedProps) {
       };
     }
 
-    const calculated = calculateMetrics(sessions);
+    const calculated = calculateMetrics(rows);
     return {
       totalClasses: calculated.classes,
       totalCheckIns: calculated.totalCheckIns,
@@ -36,15 +54,15 @@ export function MetricsCardsEnhanced({ sessions }: MetricsCardsEnhancedProps) {
       consistencyScore: calculated.consistencyScore,
       avgClassSize: calculated.classAvg,
     };
-  }, [sessions]);
+  }, [rows]);
 
-  // Generate time series data for mini charts
+  // Generate time series data for flip-side sparklines
   const timeSeriesData = useMemo(() => {
-    if (sessions.length === 0) return [];
+    if (rows.length === 0) return [];
 
     const dateMap = new Map<string, { checkIns: number; revenue: number; classes: number }>();
-    
-    sessions.forEach((session) => {
+
+    rows.forEach((session) => {
       const dateKey = session.date;
       const existing = dateMap.get(dateKey) || { checkIns: 0, revenue: 0, classes: 0 };
       dateMap.set(dateKey, {
@@ -64,140 +82,113 @@ export function MetricsCardsEnhanced({ sessions }: MetricsCardsEnhancedProps) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(-30); // Last 30 days
-  }, [sessions]);
+  }, [rows]);
 
-  const cards = [
+  const series = {
+    classes: timeSeriesData.map((d) => ({ value: d.classes })),
+    checkIns: timeSeriesData.map((d) => ({ value: d.checkIns })),
+    avgClass: timeSeriesData.map((d) => ({ value: d.avgClass })),
+    revenue: timeSeriesData.map((d) => ({ value: d.revenue })),
+  };
+
+  const cards: Array<{
+    id: string;
+    title: string;
+    value: string;
+    sub: string;
+    icon: LucideIcon;
+    accent: string;
+    chartData: Array<{ value: number }>;
+    caption: string;
+    delta?: MetricDelta;
+  }> = [
     {
       id: 'classes',
       title: 'Total Classes',
       value: formatNumber(metrics.totalClasses),
+      sub: `${formatNumber(metrics.avgClassSize, 1)} avg size`,
       icon: Calendar,
-      gradient: 'from-blue-600 to-blue-800',
-      bgGradient: 'from-blue-50 to-blue-100',
-      chartData: timeSeriesData.map(d => ({ value: d.classes })),
-      chartColor: '#2563eb',
+      accent: '#2563eb',
+      chartData: series.classes,
+      caption: 'Daily classes held · last 30 days',
+      delta: deltaFor(series.classes),
     },
     {
       id: 'checkIns',
       title: 'Check-ins',
       value: formatNumber(metrics.totalCheckIns),
+      sub: 'Across filtered sessions',
       icon: Users,
-      gradient: 'from-green-600 to-green-800',
-      bgGradient: 'from-green-50 to-green-100',
-      chartData: timeSeriesData.map(d => ({ value: d.checkIns })),
-      chartColor: '#16a34a',
+      accent: '#16a34a',
+      chartData: series.checkIns,
+      caption: 'Daily check-ins · last 30 days',
+      delta: deltaFor(series.checkIns),
     },
     {
       id: 'fillRate',
       title: 'Fill Rate',
       value: formatPercentage(metrics.fillRate),
+      sub: 'Of total capacity',
       icon: Target,
-      gradient: 'from-purple-600 to-purple-800',
-      bgGradient: 'from-purple-50 to-purple-100',
-      chartData: timeSeriesData.map(d => ({ value: d.avgClass })),
-      chartColor: '#9333ea',
+      accent: '#9333ea',
+      chartData: series.avgClass,
+      caption: 'Daily average class size · last 30 days',
+      delta: deltaFor(series.avgClass),
     },
     {
       id: 'revenue',
       title: 'Total Revenue',
       value: formatCurrency(metrics.totalRevenue, true),
+      sub: 'Session revenue',
       icon: DollarSign,
-      gradient: 'from-emerald-600 to-emerald-800',
-      bgGradient: 'from-emerald-50 to-emerald-100',
-      chartData: timeSeriesData.map(d => ({ value: d.revenue })),
-      chartColor: '#059669',
+      accent: '#059669',
+      chartData: series.revenue,
+      caption: 'Daily revenue · last 30 days',
+      delta: deltaFor(series.revenue),
     },
     {
       id: 'cancellations',
       title: 'Cancellation Rate',
       value: formatPercentage(metrics.cancellationRate),
+      sub: 'Of bookings',
       icon: AlertCircle,
-      gradient: 'from-orange-600 to-orange-800',
-      bgGradient: 'from-orange-50 to-orange-100',
-      chartData: timeSeriesData.map(d => ({ value: d.classes })),
-      chartColor: '#ea580c',
+      accent: '#ea580c',
+      chartData: series.classes,
+      caption: 'Daily classes held · last 30 days',
+      delta: deltaFor(series.classes, true),
     },
     {
       id: 'consistency',
       title: 'Consistency',
       value: formatPercentage(metrics.consistencyScore),
+      sub: 'Attendance steadiness',
       icon: TrendingUp,
-      gradient: 'from-cyan-600 to-cyan-800',
-      bgGradient: 'from-cyan-50 to-cyan-100',
-      chartData: timeSeriesData.map(d => ({ value: d.avgClass })),
-      chartColor: '#0891b2',
+      accent: '#0891b2',
+      chartData: series.avgClass,
+      caption: 'Daily average class size · last 30 days',
+      delta: deltaFor(series.avgClass),
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-      {cards.map((card, index) => {
-        const Icon = card.icon;
-        const isHovered = hoveredCard === card.id;
-
-        return (
-          <motion.div
-            key={card.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            onMouseEnter={() => setHoveredCard(card.id)}
-            onMouseLeave={() => setHoveredCard(null)}
-            className="relative glass-card rounded-2xl p-5 sm:p-4 cursor-pointer overflow-hidden group hover:shadow-2xl transition-all duration-300 min-h-[120px] sm:min-h-[140px]"
-            whileHover={{ y: -6, scale: 1.03 }}
-          >
-            {/* Gradient Top Border */}
-            <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${card.gradient}`} />
-
-            {/* Background Pattern */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-20 transition-opacity duration-300`} />
-
-            <div className="relative z-10">
-              <div className="flex flex-col items-center mb-3">
-                <div className={`p-3 sm:p-2.5 rounded-xl bg-gradient-to-br ${card.gradient} shadow-lg mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6`}>
-                  <Icon className="w-6 h-6 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider text-center mb-2">
-                  {card.title}
-                </p>
-                <p className="text-3xl sm:text-2xl font-bold text-gray-900 text-center transition-colors duration-300 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent">
-                  {card.value}
-                </p>
-              </div>
-
-              {/* Mini Chart */}
-              {isHovered && card.chartData.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 60 }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-2"
-                >
-                  <ResponsiveContainer width="100%" height={60}>
-                    <AreaChart data={card.chartData}>
-                      <defs>
-                        <linearGradient id={`gradient-${card.id}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={card.chartColor} stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor={card.chartColor} stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke={card.chartColor}
-                        strokeWidth={2}
-                        fill={`url(#gradient-${card.id})`}
-                        isAnimationActive={true}
-                        animationDuration={500}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
+    <MetricGrid cols={6}>
+      {cards.map((card) => (
+        <MetricCard
+          key={card.id}
+          label={card.title}
+          value={card.value}
+          sub={card.sub}
+          delta={card.delta}
+          icon={card.icon}
+          accent={card.accent}
+          detailsTitle={`${card.title} · trend`}
+          details={
+            <Suspense fallback={<SparkFallback />}>
+              <SparkBack id={card.id} data={card.chartData} color={card.accent} caption={card.caption} />
+            </Suspense>
+          }
+        />
+      ))}
+    </MetricGrid>
   );
 }

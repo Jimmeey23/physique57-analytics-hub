@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { exportDashboardToPDF } from '@/services/hybridPDFExportService';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
+import { logger } from '@/utils/logger';
 
 interface ExecutivePDFExportButtonProps {
   dateRange?: {
@@ -55,7 +56,7 @@ export const ExecutivePDFExportButton: React.FC<ExecutivePDFExportButtonProps> =
         description: 'Executive report PDF has been generated and downloaded.',
       });
     } catch (error) {
-      console.error('PDF export failed:', error);
+      logger.error('PDF export failed:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to generate PDF report. Please try again.',

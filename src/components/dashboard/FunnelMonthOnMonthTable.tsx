@@ -128,8 +128,8 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
         tableRef={tableRef}
         contextInfo={{
           selectedMetric: metric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          dateRange: copyContext.contextInfo.dateRange,
+          filters: copyContext.contextInfo.filters,
           additionalInfo: {
             groupKey: groupKey,
             metric: metric,
@@ -263,7 +263,6 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
                   footerData={footerData}
                   maxHeight="480px"
                   className="rounded-lg"
-                  headerGradient="from-slate-800 via-slate-900 to-slate-800"
                   onRowClick={onDrillDown ? (row) => {
                     // Filter data based on the group value and pass to drill down
                     const filteredData = data.filter(lead => {
@@ -303,7 +302,7 @@ const FunnelMonthOnMonthTable: React.FC<FunnelMonthOnMonthTableProps> = ({ data,
                     <div className="text-sm font-bold text-slate-700 mb-2">AI Notes</div>
                     {aiNotes.length ? (
                       <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-                        {aiNotes.map((n, i) => <li key={i}>{n}</li>)}
+                        {aiNotes.map((n) => <li key={n}>{n}</li>)}
                       </ul>
                     ) : (
                       <div className="text-xs text-slate-500">No notable anomalies detected in the selected view.</div>

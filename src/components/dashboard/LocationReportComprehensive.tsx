@@ -152,7 +152,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
           {/* Quick Stats Pills */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
             <div className="bg-white/10 backdrop-blur rounded-lg p-3 text-center">
-              <div className="text-lg font-bold">{formatCurrency(metrics.totalRevenue || 0, true)}</div>
+              <div className="text-lg font-bold">{formatCurrency(metrics.totalRevenue || 0)}</div>
               <div className="text-xs text-blue-200">Revenue</div>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-3 text-center">
@@ -191,7 +191,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
           <CardContent className="space-y-6">
             {/* Revenue & Growth Row */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-l-4 border-emerald-500 pl-3">Revenue & Growth</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue & Growth</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-lg border border-emerald-200 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
@@ -241,7 +241,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
 
             {/* Operations & Efficiency Row */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-l-4 border-blue-500 pl-3">Operations & Efficiency</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Operations & Efficiency</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
@@ -302,7 +302,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
 
             {/* Growth & Retention Row */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-l-4 border-purple-500 pl-3">Client Growth & Retention</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Client Growth & Retention</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
@@ -394,7 +394,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                   const total = (metrics.powerCycleSessions || 0) + (metrics.barreSessions || 0) + (metrics.strengthSessions || 0);
                   const percentage = total > 0 ? (format.count / total) * 100 : 0;
                   return (
-                    <div key={idx} className="space-y-2">
+                    <div key={format.name} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-700">{format.name}</span>
                         <div className="text-right">
@@ -684,7 +684,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                 (metrics.leadConversionRate || 0) >= 20 ? `Effective lead conversion: ${formatPercentage(metrics.leadConversionRate)}` : null,
                 metrics.topTrainerName !== 'N/A' ? `${metrics.topTrainerName} leading performance with ${formatCurrency(metrics.topTrainerRevenue)} revenue` : null
               ].filter(Boolean).slice(0, 4).map((achievement, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                <li key={String(achievement).slice(0, 48)} className="text-sm text-gray-700 flex items-start gap-2">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
                   <span>{achievement}</span>
                 </li>
@@ -723,7 +723,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                 (metrics.lateCancellations || 0) > 50 ? `High late cancellations: ${formatNumber(metrics.lateCancellations)} affecting revenue` : null,
                 (metrics.discountRate || 0) > 15 ? `Heavy discount usage: ${formatPercentage(metrics.discountRate)} impacting margins` : null
               ].filter(Boolean).slice(0, 4).map((concern, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                <li key={String(concern).slice(0, 48)} className="text-sm text-gray-700 flex items-start gap-2">
                   <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
                   <span>{concern}</span>
                 </li>
@@ -764,7 +764,7 @@ const LocationReportContent: React.FC<LocationReportContentProps> = ({
                 (metrics.avgClassSize || 0) < 8 ? 'Focus marketing on increasing class attendance' : null,
                 (metrics.newClientsAcquired || 0) < 15 ? 'Enhance member referral and acquisition programs' : null
               ].filter(Boolean).slice(0, 4).map((recommendation, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                <li key={String(recommendation).slice(0, 48)} className="text-sm text-gray-700 flex items-start gap-2">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
                   <span>{recommendation}</span>
                 </li>

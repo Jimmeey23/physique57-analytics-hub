@@ -21,7 +21,7 @@ export const TABLE_STYLES = {
     row: "",
     cell: "px-3.5 py-2.5 text-left font-bold text-[11px] uppercase tracking-wider border-r border-border/60 last:border-r-0 whitespace-nowrap text-muted-foreground bg-white dark:bg-[#131721] dark:text-slate-300",
     cellCenter: "text-center",
-    cellSticky: "sticky left-0 z-40 border-r border-border/60 bg-[#f8fafc] dark:bg-[#131721]",
+    cellSticky: "sticky left-0 z-40 border-r border-border/60 bg-[#f6f7f9] dark:bg-[#141417]",
     monthCell: "min-w-[90px] text-center",
     monthDisplay: "flex flex-col items-center",
     monthText: "text-[11px] font-bold whitespace-nowrap",
@@ -30,7 +30,7 @@ export const TABLE_STYLES = {
 
   // Body styles
   body: {
-    row: "bg-card hover:bg-accent/60 border-b border-border transition-colors duration-150 dark:hover:bg-[#172134]",
+    row: "bg-card hover:bg-accent/60 border-b border-border transition-colors duration-150 dark:hover:bg-[rgba(5,155,255,0.10)]",
     rowAlternate: "bg-secondary/40",
     rowClickable: "cursor-pointer",
     cell: "px-3.5 py-2 text-[13px] font-medium text-foreground/90 border-r border-border/60 last:border-r-0 tabular-nums whitespace-nowrap dark:text-slate-200",
@@ -43,7 +43,7 @@ export const TABLE_STYLES = {
 
   // Group/Category row styles
   group: {
-    row: "bg-secondary hover:bg-secondary/70 border-b border-border transition-colors duration-150",
+    row: "p57-group-row bg-secondary hover:bg-secondary/70 border-b border-border transition-colors duration-150",
     cell: "px-4 py-2 text-[13px] font-bold text-foreground",
     cellSticky: "sticky left-0 bg-secondary border-r border-border z-20",
     badge: "inline-flex items-center px-2 py-0.5 text-xs font-bold bg-secondary text-secondary-foreground rounded-md",
@@ -53,10 +53,10 @@ export const TABLE_STYLES = {
 
   // Total/Footer row styles — ink band light / blue-tinted band dark
   footer: {
-    row: "bg-ink text-white font-bold sticky bottom-0 z-20 dark:bg-[#101a2e]",
+    row: "p57-total-row bg-ink text-white font-bold sticky bottom-0 z-20 dark:bg-[#0D1520]",
     cell: "px-3.5 py-2 text-[13px] font-bold border-r border-white/10 last:border-r-0 tabular-nums",
     cellCenter: "text-center",
-    cellSticky: "sticky left-0 bg-ink border-r border-white/10 z-30 dark:bg-[#101a2e]",
+    cellSticky: "sticky left-0 bg-ink border-r border-white/10 z-30 dark:bg-[#0D1520]",
     label: "text-[11px] uppercase tracking-wider",
   },
 
@@ -88,14 +88,32 @@ export const TABLE_STYLES = {
     buttonInactive: "p57-tab",
   },
 
-  // Card wrapper
+  // Card wrapper (flat + hairline; new code should use P57TableShell)
   card: {
     container: "p57-card overflow-hidden",
-    header: "border-b border-border bg-gradient-to-b from-white to-[#f8fafc] px-4 py-2.5 dark:from-[#111216] dark:to-[#090a0d]",
+    header: "border-b border-border bg-white px-4 py-3 dark:bg-[#101013]",
     headerTitle: "font-display text-[14px] font-bold text-foreground",
     headerDescription: "text-muted-foreground text-xs font-medium",
-    headerIcon: "p-2 bg-secondary rounded-lg",
+    headerIcon: "p57-shell-ic",
     content: "p-0",
+  },
+
+  // Canonical badge (P57Badge) — uniform 22px geometry in every table
+  badge: {
+    base: "p57-badge",
+    green: "p57-badge p57-badge-green",
+    red: "p57-badge p57-badge-red",
+    amber: "p57-badge p57-badge-amber",
+    blue: "p57-badge p57-badge-blue",
+    violet: "p57-badge p57-badge-violet",
+    slate: "p57-badge p57-badge-slate",
+  },
+
+  // Sortable header affordance (see P57SortTh)
+  sortable: {
+    th: "cursor-pointer select-none",
+    icon: "p57-sort-ic",
+    iconActive: "p57-sort-ic p57-sort-pop",
   },
 } as const;
 

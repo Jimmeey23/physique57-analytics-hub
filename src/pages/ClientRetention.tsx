@@ -17,9 +17,12 @@ import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { getConsolidatedExportPresetFromSearch, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
 
 // Import new components for rebuilt client conversion tab
@@ -31,6 +34,7 @@ import { isRetentionTable } from '@/components/dashboard/retentionTableOptions';
 import { ModalSuspense } from '@/components/lazy/ModalSuspense';
 // Removed NotesBlock (AI summary/notes) per request
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
+import type { DrillDownDataPayload } from '@/components/dashboard/ClientConversionRetentionDrillDownModal';
 
 const ClientConversionSimplifiedRanks = lazy(() =>
   import('@/components/dashboard/ClientConversionSimplifiedRanks').then((module) => ({
@@ -83,7 +87,7 @@ type DrillDownType = 'month' | 'year' | 'class' | 'membership' | 'metric' | 'ran
 interface DrillDownModalState {
   isOpen: boolean;
   title: string;
-  data: unknown;
+  data: DrillDownDataPayload | NewClientData[] | null;
   type: DrillDownType;
 }
 
@@ -171,8 +175,8 @@ const sortRetentionDimensionValues = (values: string[], dimension: RetentionDime
     if (dimension === 'clientType' || dimension === 'yoy-clientType') {
       const an = a.toLowerCase();
       const bn = b.toLowerCase();
-      if (an.includes('new') && !bn.includes('new')) return -1;
-      if (!an.includes('new') && bn.includes('new')) return 1;
+      if (isNewClient(an) && !isNewClient(bn)) return -1;
+      if (!isNewClient(an) && isNewClient(bn)) return 1;
     }
     return a.localeCompare(b);
   });
@@ -340,9 +344,9 @@ const buildRetentionPivotMatrix = (
     if (!cell) return;
 
     cell.trials += 1;
-    if (isInNewClientCohort(client)) cell.newMembers += 1;
-    if (isConvertedInCohort(client)) cell.converted += 1;
-    if (isRetainedInCohort(client)) cell.retained += 1;
+    if (isNewClient(client)) cell.newMembers += 1;
+    if (isConverted(client)) cell.converted += 1;
+    if (isRetained(client)) cell.retained += 1;
     cell.totalLTV += client.ltv || 0;
     if (client.conversionSpan && client.conversionSpan > 0) cell.conversionSpans.push(client.conversionSpan);
     if (client.visitsPostTrial && client.visitsPostTrial > 0) cell.visitsPostTrial.push(client.visitsPostTrial);
@@ -427,9 +431,9 @@ const buildClientConversionMonthOnMonthRows = (
 
     const row = statsMap.get(groupValue);
     row.totalTrials += 1;
-    if (isInNewClientCohort(client)) row.newMembers += 1;
-    if (isConvertedInCohort(client)) row.converted += 1;
-    if (isRetainedInCohort(client)) row.retained += 1;
+    if (isNewClient(client)) row.newMembers += 1;
+    if (isConverted(client)) row.converted += 1;
+    if (isRetained(client)) row.retained += 1;
     row.totalLTV += client.ltv || 0;
     if (client.conversionSpan && client.conversionSpan > 0) row.conversionSpans.push(client.conversionSpan);
     if (client.visitsPostTrial && client.visitsPostTrial > 0) row.visitsPostTrial.push(client.visitsPostTrial);
@@ -487,9 +491,9 @@ const buildHostedClassesExportRows = (inputData: NewClientData[]): ExportRow[] =
 
     const row = map.get(key);
     row.totalMembers += 1;
-    if (isInNewClientCohort(client)) row.newMembers += 1;
-    if (isConvertedInCohort(client)) row.converted += 1;
-    if (isRetainedInCohort(client)) row.retained += 1;
+    if (isNewClient(client)) row.newMembers += 1;
+    if (isConverted(client)) row.converted += 1;
+    if (isRetained(client)) row.retained += 1;
     row.totalLTV += client.ltv || 0;
     if (client.firstPurchase && client.firstVisitDate) {
       const firstVisitDate = parseDate(client.firstVisitDate || '');
@@ -535,9 +539,9 @@ const buildMembershipPerformanceRows = (inputData: NewClientData[]): ExportRow[]
     }
     const row = map.get(membership);
     row.totalMembers += 1;
-    if (isInNewClientCohort(client)) row.newMembers += 1;
-    if (isConvertedInCohort(client)) row.converted += 1;
-    if (isRetainedInCohort(client)) row.retained += 1;
+    if (isNewClient(client)) row.newMembers += 1;
+    if (isConverted(client)) row.converted += 1;
+    if (isRetained(client)) row.retained += 1;
     row.totalLTV += client.ltv || 0;
   });
 
@@ -565,10 +569,10 @@ const buildTeacherPerformanceRows = (inputData: NewClientData[]): ExportRow[] =>
     }
     const row = stats.get(trainerName)!;
     if (client.memberId) row.totalMembers.add(client.memberId);
-    if (isInNewClientCohort(client) && client.memberId) row.newMembers.add(client.memberId);
+    if (isNewClient(client) && client.memberId) row.newMembers.add(client.memberId);
     row.sessions += client.classNo || 0;
-    if (isConvertedInCohort(client) && client.memberId) row.converted.add(client.memberId);
-    if (isRetainedInCohort(client) && client.memberId) row.retained.add(client.memberId);
+    if (isConverted(client) && client.memberId) row.converted.add(client.memberId);
+    if (isRetained(client) && client.memberId) row.retained.add(client.memberId);
   });
 
   return Array.from(stats.entries())
@@ -591,7 +595,7 @@ const buildTeacherPerformanceRows = (inputData: NewClientData[]): ExportRow[] =>
 };
 
 const buildNewClientPurchaseRows = (inputData: NewClientData[], groupBy: 'detailed' | 'membership' | 'clientType'): ExportRow[] => {
-  const newClients = inputData.filter((client) => isInNewClientCohort(client));
+  const newClients = inputData.filter((client) => isNewClient(client));
   const baseMap = new Map<string, { membershipType: string; clientType: string; units: number; clientIds: Set<string>; totalRevenue: number; conversionSpans: number[]; visitsPostTrial: number[] }>();
 
   newClients.forEach((client) => {
@@ -618,7 +622,7 @@ const buildNewClientPurchaseRows = (inputData: NewClientData[], groupBy: 'detail
       row.units += memberships.length > 0 ? 1 : 0;
       if (client.memberId) row.clientIds.add(String(client.memberId));
       row.totalRevenue += client.ltv || 0;
-      if (isConvertedInCohort(client) && client.conversionSpan && client.conversionSpan > 0) {
+      if (isConverted(client) && client.conversionSpan && client.conversionSpan > 0) {
         row.conversionSpans.push(client.conversionSpan);
       }
       if (client.visitsPostTrial) row.visitsPostTrial.push(client.visitsPostTrial);
@@ -1062,9 +1066,9 @@ const ClientRetention = () => {
     if (!filteredData || filteredData.length === 0) return [];
     
     const totalTrials = filteredData.length;
-    const newMembers = filteredData.filter(c => isInNewClientCohort(c)).length;
-    const converted = filteredData.filter(c => isConvertedInCohort(c)).length;
-    const retained = filteredData.filter(c => isRetainedInCohort(c)).length;
+    const newMembers = filteredData.filter(c => isNewClient(c)).length;
+    const converted = filteredData.filter(c => isConverted(c)).length;
+    const retained = filteredData.filter(c => isRetained(c)).length;
     const conversionRate = totalTrials > 0 ? (converted / totalTrials) * 100 : 0;
     const retentionRate = totalTrials > 0 ? (retained / totalTrials) * 100 : 0;
     const totalLTV = filteredData.reduce((sum, c) => sum + (c.ltv || 0), 0);
@@ -1159,6 +1163,9 @@ const ClientRetention = () => {
             metrics={heroMetrics}
             extra={exportButton}
           />
+          <div className="mx-auto w-full max-w-screen-2xl px-3 pb-5 sm:px-6 lg:px-8">
+            <KpiTicker items={heroMetrics} />
+          </div>
         </div>
 
         <div className="mx-auto w-full max-w-screen-2xl px-3 py-5 sm:px-6 lg:px-8">
@@ -1498,6 +1505,7 @@ const ClientRetention = () => {
             />
           )}
         </ModalSuspense>
+          <MetricDefinitions items={METRIC_DEFINITIONS.clientRetention} />
         </div>
       </div>
     </div>;

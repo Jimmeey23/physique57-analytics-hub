@@ -11,6 +11,7 @@ import { useNewClientData } from '@/hooks/useNewClientData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useDiscountAnalysis } from '@/hooks/useDiscountAnalysis';
+import { logger } from '@/utils/logger';
 
 interface Message {
   id: string;
@@ -114,14 +115,14 @@ Be conversational but professional. Use emojis sparingly for clarity.`;
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('OpenAI API Error:', error);
+        logger.error('OpenAI API Error:', error);
         return `I encountered an issue accessing the AI service. Please try again. (Error: ${error.error?.message || 'Unknown'})`;
       }
 
       const data = await response.json();
       return data.choices[0].message.content || 'Unable to generate response.';
     } catch (error) {
-      console.error('Error calling OpenAI API:', error);
+      logger.error('Error calling OpenAI API:', error);
       return 'I encountered an error processing your request. Please try again.';
     }
   };
@@ -154,7 +155,7 @@ Be conversational but professional. Use emojis sparingly for clarity.`;
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error generating response:', error);
+      logger.error('Error generating response:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

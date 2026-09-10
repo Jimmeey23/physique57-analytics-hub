@@ -1,6 +1,7 @@
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useSessionsFilters } from '@/contexts/SessionsFiltersContext';
 import { useMemo } from 'react';
+import { logger } from '@/utils/logger';
 
 // Hook to extract relevant contextual data for AI summary generation
 export const useDataContext = (context: string, locationId: string) => {
@@ -68,7 +69,7 @@ function extractCurrentPageData(context: string, locationId: string): any[] {
     // Fallback: create sample data based on context
     return createFallbackData(context, locationId);
   } catch (error) {
-    console.warn('Failed to extract page data:', error);
+    logger.warn('Failed to extract page data:', error);
     return createFallbackData(context, locationId);
   }
 }
@@ -111,7 +112,7 @@ function extractTableData(): any[] {
         }
       });
     } catch (error) {
-      console.warn('Failed to extract table data:', error);
+      logger.warn('Failed to extract table data:', error);
     }
   });
   
@@ -167,7 +168,7 @@ function extractMetricsData(context: string, locationId: string): any[] {
       });
     });
   } catch (error) {
-    console.warn('Failed to extract metrics data:', error);
+    logger.warn('Failed to extract metrics data:', error);
   }
   
   return data.slice(0, 20); // Limit to 20 items

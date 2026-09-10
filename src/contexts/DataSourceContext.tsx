@@ -7,6 +7,7 @@ import {
   seedBundledOfflineDatasets,
 } from '@/lib/offlineDataStore';
 import type { DataSourceMode, DatasetLiveSource, OfflineDatasetKey, OfflineDatasetSummary } from '@/types/offlineData';
+import { logger } from '@/utils/logger';
 
 interface DataSourceContextValue {
   mode: DataSourceMode;
@@ -70,7 +71,7 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         await seedBundledOfflineDatasets();
       } catch (error) {
-        console.error('Failed to seed bundled offline datasets:', error);
+        logger.error('Failed to seed bundled offline datasets:', error);
       } finally {
         if (!cancelled) {
           setBundleSeeded(true);

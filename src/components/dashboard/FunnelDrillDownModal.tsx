@@ -259,7 +259,6 @@ export const FunnelDrillDownModal: React.FC<FunnelDrillDownModalProps> = ({
             <ModernDataTable
               data={data}
               columns={columns}
-              headerGradient="from-slate-900 via-blue-950 to-slate-900"
               maxHeight="450px"
               stickyHeader={true}
             />

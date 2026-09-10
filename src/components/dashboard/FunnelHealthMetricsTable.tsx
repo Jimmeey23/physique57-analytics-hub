@@ -6,8 +6,8 @@ import { LeadsData } from '@/types/leads';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { ModernTableWrapper } from './ModernTableWrapper';
-import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { extractTableTextFromContainer } from '@/utils/tableCopy';
 
 interface FunnelHealthMetricsTableProps {
   data: LeadsData[];
@@ -20,9 +20,9 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
   // Register table for metrics
   React.useEffect(() => {
     if (tableRef.current) {
-      registry.registerTable('funnel-health-metrics', tableRef.current);
+      registry.register({ id: 'funnel-health-metrics', getTextContent: () => (tableRef.current ? extractTableTextFromContainer(tableRef.current, 'funnel-health-metrics') : 'funnel-health-metrics (No Data)') });
     }
-    return () => registry.unregisterTable('funnel-health-metrics');
+    return () => registry.unregister('funnel-health-metrics');
   }, [registry]);
   const healthMetrics = useMemo(() => {
     if (!data.length) return [];
@@ -217,23 +217,23 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
       <div className="overflow-x-auto" data-table="funnel-health-metrics">
         <table ref={tableRef} className="min-w-full bg-white">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-              <th className="px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide border-r border-white/20">
+            <tr className="bg-[#f6f7f9]">
+              <th className="bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 border-r border-slate-200">
                 <div className="flex items-center space-x-2">
                   <Star className="w-4 h-4 text-white" />
                   <span>Health Metric</span>
                 </div>
               </th>
-              <th className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[120px] text-white">
+              <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[120px]">
                 Current Value
               </th>
-              <th className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[120px] text-white">
+              <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[120px]">
                 Benchmark
               </th>
-              <th className="px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[120px] text-white">
+              <th className="bg-[#f6f7f9] px-3 py-3 text-center font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[120px]">
                 Status
               </th>
-              <th className="px-3 py-3 text-left font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[200px] text-white">
+              <th className="bg-[#f6f7f9] px-3 py-3 text-left font-bold text-xs uppercase tracking-wider text-slate-700 border-l border-slate-200 min-w-[200px]">
                 Description
               </th>
             </tr>
@@ -358,11 +358,6 @@ export const FunnelHealthMetricsTable: React.FC<FunnelHealthMetricsTableProps> =
         </div>
       </div>
 
-      <PersistentTableFooter
-        tableRef={tableRef}
-        filename="funnel-health-metrics"
-        sheetName="Health Metrics"
-      />
     </ModernTableWrapper>
   );
 };

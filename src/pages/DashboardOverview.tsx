@@ -1,5 +1,8 @@
 import React from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExecutiveFilterSection } from '@/components/dashboard/ExecutiveFilterSection';
@@ -163,6 +166,17 @@ const DashboardOverview = () => {
         ]}
       />
 
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker
+          items={[
+            { label: 'Source Modules', value: String(overviewModules.length) },
+            { label: 'Active View', value: activeModule.label },
+            { label: 'Date Window', value: dateLabel },
+            { label: 'Location', value: locationLabel },
+          ]}
+        />
+      </div>
+
       <div className="container mx-auto px-6 py-8">
         <main className="space-y-8">
           <ExecutiveFilterSection
@@ -219,6 +233,9 @@ const DashboardOverview = () => {
           >
             <ActiveAdapter data={filteredData} />
           </React.Suspense>
+          <div className="pt-2">
+            <MetricDefinitions items={METRIC_DEFINITIONS.overview} />
+          </div>
         </main>
       </div>
     </div>

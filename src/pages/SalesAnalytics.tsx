@@ -1,9 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { SalesAnalyticsSection } from '@/components/dashboard/SalesAnalyticsSection';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
+import type { TickerItem } from '@/components/ui/KpiTicker';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 const SalesAnalytics = () => {
   const { data, loading, error, refetch } = useGoogleSheets();
@@ -17,6 +22,16 @@ const SalesAnalytics = () => {
   useEffect(() => {
     setLoading(loading, 'Loading sales analytics data...');
   }, [loading, setLoading]);
+
+  const tickerItems: TickerItem[] = useMemo(() => {
+    const rows = data || [];
+    const revenue = rows.reduce((sum, item) => sum + (item.paymentValue || 0), 0);
+    return [
+      { label: 'Total revenue', value: formatCurrency(revenue) },
+      { label: 'Transactions', value: formatNumber(rows.length) },
+      { label: 'Avg ticket', value: rows.length > 0 ? formatCurrency(revenue / rows.length) : '—' },
+    ];
+  }, [data]);
 
   return (
     <GlobalFiltersProvider>
@@ -42,7 +57,13 @@ const SalesAnalytics = () => {
             </div>
           ) : (
             <div className="bg-white text-slate-800 slide-in-from-left">
+              <div className="container mx-auto px-6 pt-8">
+                <KpiTicker items={tickerItems} />
+              </div>
               <SalesAnalyticsSection data={data} onReady={handleReady} />
+              <div className="container mx-auto px-6 pb-8">
+                <MetricDefinitions items={METRIC_DEFINITIONS.sales} />
+              </div>
             </div>
           )}
         </div>

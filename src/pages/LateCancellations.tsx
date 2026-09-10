@@ -10,9 +10,11 @@ import { LateCancellationsMonthOnMonthTable } from '@/components/dashboard/LateC
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatNumber } from '@/utils/formatters';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
-import '@/components/dashboard/trainer-performance-styles.css';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +26,7 @@ const LateCancellations = () => {
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   
   // Location tabs state
-  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
+  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
   
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
 
@@ -491,6 +493,10 @@ const LateCancellations = () => {
         extra={exportButton}
       />
 
+      <div className="container mx-auto px-6 pt-5">
+        <KpiTicker items={heroMetrics} />
+      </div>
+
       {/* Main Content */}
       <div className="relative">
         <div className="container mx-auto px-6 py-8">
@@ -562,6 +568,10 @@ const LateCancellations = () => {
             <EnhancedLateCancellationsDataTables data={filteredData} allCheckins={filteredCheckins} onDrillDown={handleDrillDownOpen} />
           </div>
         </div>
+      </div>
+
+      <div className="container mx-auto px-6 pb-8">
+        <MetricDefinitions items={METRIC_DEFINITIONS.lateCancellations} />
       </div>
 
       <LateCancellationsDrillDownModal

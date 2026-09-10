@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { usePayrollData } from '@/hooks/usePayrollData';
@@ -42,9 +44,9 @@ const P = {
   gold: '#D4AF37', goldLight: '#F0D060', goldDark: '#A08828',
   navy: '#080E1C', navyLight: '#0D1526', navyMid: '#162040', navyCard: '#111A30',
   cream: '#F5F0E8', creamMuted: '#9BA8BF',
-  green: '#10B981', greenLight: '#34D399', greenDark: '#065F46',
+  green: '#10b981', greenLight: '#34D399', greenDark: '#065F46',
   red: '#EF4444', redLight: '#F87171',
-  blue: '#3B82F6', blueLight: '#93C5FD',
+  blue: '#3b82f6', blueLight: '#93C5FD',
   purple: '#8B5CF6', purpleLight: '#C4B5FD',
   orange: '#F59E0B', orangeLight: '#FCD34D',
   teal: '#14B8A6', tealLight: '#5EEAD4',
@@ -205,7 +207,7 @@ const TT = ({ active, payload, label, prefix = '', suffix = '' }: any) => {
     <div className="rounded-xl p-3 shadow-xl text-xs" style={{ background: P.navyMid, border: `1px solid ${P.gold}30` }}>
       <div className="font-semibold mb-2" style={{ color: P.gold }}>{label}</div>
       {payload.map((p: any, i: number) => (
-        <div key={i} className="flex items-center gap-2">
+        <div key={p.name} className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: p.fill || p.stroke || p.color }} />
           <span style={{ color: P.cream }}>{p.name}: {prefix}{typeof p.value === 'number' ? (prefix === '₹' ? fmt(p.value) : p.value.toLocaleString('en-IN')) : p.value}{suffix}</span>
         </div>
@@ -827,9 +829,10 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
               {m.topCats.length > 0 ? (
                 <div className="space-y-3 pt-1">
                   {m.topCats.slice(0, 5).map((cat, i) => {
+                    const __ckey = cat.name;
                     const share = m.currRevenue > 0 ? (cat.value / m.currRevenue) * 100 : 0;
                     return (
-                      <div key={i}>
+                      <div key={__ckey}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-medium" style={{ color: `${P.cream}75` }}>{cat.name}</span>
                           <div className="flex items-center gap-2">
@@ -856,7 +859,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
                 { label: 'Membership Revenue', value: m.memRev, color: P.purple },
                 { label: 'Drop-in / Trial', value: m.dropRev, color: P.teal },
               ].filter(x => x.value > 0).map((x, i) => (
-                <div key={i} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+                <div key={x.label} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
                   style={{ background: `${x.color}12`, border: `1px solid ${x.color}25` }}>
                   <div className="w-2 h-2 rounded-full" style={{ background: x.color }} />
                   <span className="text-xs font-medium" style={{ color: `${P.cream}70` }}>{x.label}</span>
@@ -867,7 +870,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
             </div>
           )}
 
-          <div className="space-y-3">{revenueInsights.map((item, i) => <InsightCard key={i} {...item} />)}</div>
+          <div className="space-y-3">{revenueInsights.map((item, i) => <InsightCard key={item.text} {...item} />)}</div>
         </section>
 
         {/* ── 2. Sessions ── */}
@@ -957,7 +960,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
             </div>
           )}
 
-          <div className="space-y-3">{sessionInsights.map((item, i) => <InsightCard key={i} {...item} />)}</div>
+          <div className="space-y-3">{sessionInsights.map((item, i) => <InsightCard key={item.text} {...item} />)}</div>
         </section>
 
         {/* ── 3. Lead Funnel & New Members ── */}
@@ -986,7 +989,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
                 { label: 'Converted to Member', value: m.converted, pctVal: m.totalLeads > 0 ? (m.converted / m.totalLeads) * 100 : (m.newClients > 0 ? (m.converted / m.newClients) * 100 : 0), color: P.green, note: `${pct(m.convRate)} of trialists` },
                 { label: 'Retained Active', value: m.retained, pctVal: m.totalLeads > 0 ? (m.retained / m.totalLeads) * 100 : (m.newClients > 0 ? (m.retained / m.newClients) * 100 : 0), color: P.gold, note: `${pct(m.retRate)} of trialists` },
               ].filter(r => r.value > 0 || r.label === 'Leads Received').map((row, i) => (
-                <div key={i}>
+                <div key={row.label}>
                   <div className="flex items-center justify-between mb-1.5">
                     <div>
                       <span className="text-sm font-semibold" style={{ color: `${P.cream}85` }}>{row.label}</span>
@@ -1008,7 +1011,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
               <h3 className="text-sm font-bold mb-4" style={{ color: P.cream }}>Lead Source Performance</h3>
               <div className="space-y-3">
                 {m.topSources.map((src, i) => (
-                  <div key={i} className="flex items-center gap-4">
+                  <div key={src.name} className="flex items-center gap-4">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0"
                       style={{ background: `${CHART_COLORS[i]}25`, color: CHART_COLORS[i] }}>{i + 1}</div>
                     <div className="flex-1 min-w-0">
@@ -1032,7 +1035,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
             </div>
           )}
 
-          <div className="space-y-3">{funnelInsights.map((item, i) => <InsightCard key={i} {...item} />)}</div>
+          <div className="space-y-3">{funnelInsights.map((item, i) => <InsightCard key={item.text} {...item} />)}</div>
         </section>
 
         {/* ── 4. Trainers ── */}
@@ -1087,7 +1090,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
                   );
                 })}
               </div>
-              <div className="space-y-3">{trainerInsights.map((item, i) => <InsightCard key={i} {...item} />)}</div>
+              <div className="space-y-3">{trainerInsights.map((item, i) => <InsightCard key={item.text} {...item} />)}</div>
             </>
           ) : (
             <div className="rounded-2xl p-8 text-center" style={{ background: P.navyCard }}>
@@ -1114,9 +1117,10 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
               <h3 className="text-sm font-bold mb-4" style={{ color: P.cream }}>Lapsed by Membership Type</h3>
               <div className="space-y-3">
                 {m.churnByMem.map((mem, i) => {
+                  const __mkey = mem.name;
                   const share = m.churnedMembers > 0 ? (mem.count / m.churnedMembers) * 100 : 0;
                   return (
-                    <div key={i}>
+                    <div key={__mkey}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium truncate" style={{ color: `${P.cream}80` }}>{mem.name}</span>
                         <div className="flex items-center gap-3 shrink-0">
@@ -1134,7 +1138,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
             </div>
           )}
 
-          <div className="space-y-3">{churnInsights.map((item, i) => <InsightCard key={i} {...item} />)}</div>
+          <div className="space-y-3">{churnInsights.map((item, i) => <InsightCard key={item.text} {...item} />)}</div>
         </section>
 
         {/* ── 6. Late Cancellations ── */}
@@ -1179,7 +1183,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
             )}
           </div>
 
-          <div className="space-y-3">{lcInsights.map((item, i) => <InsightCard key={i} {...item} />)}</div>
+          <div className="space-y-3">{lcInsights.map((item, i) => <InsightCard key={item.text} {...item} />)}</div>
         </section>
 
         {/* ── Footer ── */}
@@ -1202,6 +1206,10 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
             </div>
           </div>
         </footer>
+
+        <div className="pb-10">
+          <MetricDefinitions items={METRIC_DEFINITIONS.executiveReport} />
+        </div>
 
       </div>
     </div>

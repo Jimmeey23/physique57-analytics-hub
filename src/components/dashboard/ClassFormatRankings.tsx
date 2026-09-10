@@ -1,13 +1,36 @@
 import React, { useMemo, useState } from 'react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import type { SessionData } from '@/hooks/useSessionsData';
-import { Crown, AlertTriangle, Calendar, Clock, Zap, Users, BarChart3, Download, RefreshCw, Filter } from 'lucide-react';
+import { Crown, AlertTriangle, BarChart3, Download, RefreshCw, Filter, Users } from 'lucide-react';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57RankList, type P57RankItem } from '@/components/ui/P57RankList';
+import { CellDrillDownModal } from '@/components/ui/CellDrillDownModal';
+import { downloadCsv } from '@/utils/csvExport';
 
 interface ClassFormatRankingsProps {
   data: SessionData[];
 }
 
 type SortCriteria = 'revenue' | 'sessions' | 'fill' | 'class-avg' | 'rev-per-seat' | 'rev-per-session' | 'empty-classes';
+
+interface ClassRankEntry {
+  classId: string;
+  className: string;
+  dayOfWeek: string;
+  time: string;
+  totalSessions: number;
+  totalRevenue: number;
+  totalCapacity: number;
+  totalCheckins: number;
+  fillRate: number;
+  avgRevPerSession: number;
+  avgRevPerSeat: number;
+  emptyClassCount: number;
+  nonEmptyClassCount: number;
+  topTrainer: string;
+  classSessions: SessionData[];
+  isHosted: boolean;
+}
 
 const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
   const sessions = Array.isArray(data) ? data : [];
@@ -16,6 +39,7 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
   const [excludeHosted, setExcludeHosted] = useState(false);
   const [minClasses, setMinClasses] = useState(1);
   const [minVisitors, setMinVisitors] = useState(0);
+  const [drill, setDrill] = useState<ClassRankEntry | null>(null);
 
   const allRankings = useMemo(() => {
     // Group by uniqueId1 (unique class occurrence)
@@ -27,7 +51,7 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
     });
 
     // Build ranking data for each class
-    let rankings = Array.from(classMap.entries()).map(([classId, classSessions]) => {
+    let rankings: ClassRankEntry[] = Array.from(classMap.entries()).map(([classId, classSessions]) => {
       const totalSessions = classSessions.length;
       const totalRevenue = classSessions.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
       const totalCapacity = classSessions.reduce((sum, s) => sum + (s.capacity || 0), 0);
@@ -138,7 +162,7 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
     }
   };
 
-  const getMetricValue = (item: any) => {
+  const getMetricValue = (item: ClassRankEntry) => {
     switch (sortBy) {
       case 'revenue': return formatCurrency(item.totalRevenue);
       case 'sessions': return formatNumber(item.totalSessions);
@@ -151,81 +175,100 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
     }
   };
 
-  const RankingCard = ({ item, index, isTop }: { item: any; index: number; isTop: boolean }) => (
-    <div className="group flex items-center justify-between p-4 rounded-xl bg-white shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-300 cursor-pointer">
-      <div className="flex items-center gap-4 flex-1">
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm text-white ${
-            isTop
-              ? 'bg-gradient-to-r from-green-400 to-emerald-600'
-              : 'bg-gradient-to-r from-red-400 to-rose-600'
-          }`}
-        >
-          {index + 1}
-        </div>
-        <div className="flex-1">
-          <p className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{item.className}</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
-              <Calendar className="w-3 h-3 inline mr-1" />
-              {item.dayOfWeek}
-            </span>
-            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
-              <Clock className="w-3 h-3 inline mr-1" />
-              {item.time}
-            </span>
-            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
-              {formatNumber(item.totalSessions)} sessions
-            </span>
-            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">
-              {item.totalCapacity} capacity
-            </span>
-            <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium border ${
-              item.fillRate >= 75 ? 'bg-green-50 text-green-700 border-green-200' :
-              item.fillRate >= 50 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-              'bg-red-50 text-red-700 border-red-200'
-            }`}>
-              {item.fillRate.toFixed(1)}% fill
-            </span>
-            {includeTrainers && (
-              <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-medium">
-                <Users className="w-3 h-3 inline mr-1" />
-                {item.topTrainer}
-              </span>
-            )}
-            {item.isHosted && (
-              <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 font-medium">
-                🎥 Hosted
-              </span>
-            )}
-          </div>
-        </div>
+  const getMetricNumber = (item: ClassRankEntry): number => {
+    switch (sortBy) {
+      case 'revenue': return item.totalRevenue;
+      case 'sessions': return item.totalSessions;
+      case 'fill': return item.fillRate;
+      case 'class-avg': return item.nonEmptyClassCount > 0 ? item.totalCheckins / item.nonEmptyClassCount : 0;
+      case 'rev-per-seat': return item.avgRevPerSeat;
+      case 'rev-per-session': return item.avgRevPerSession;
+      case 'empty-classes': return item.emptyClassCount;
+      default: return 0;
+    }
+  };
+
+  const maxMetric = Math.max(1, ...allRankings.map(getMetricNumber));
+
+  const toRankItems = (items: ClassRankEntry[], ranks: number[]): P57RankItem[] =>
+    items.map((item, i) => ({
+      rank: ranks[i] ?? i + 1,
+      name: item.className,
+      sub: [
+        `${item.dayOfWeek} · ${item.time}`,
+        `${formatNumber(item.totalSessions)} sessions`,
+        `${item.fillRate.toFixed(1)}% fill`,
+        ...(includeTrainers ? [item.topTrainer] : []),
+        ...(item.isHosted ? ['Hosted'] : []),
+      ].join(' · '),
+      value: getMetricValue(item),
+      barPct: (getMetricNumber(item) / maxMetric) * 100,
+    }));
+
+  const handleExport = () => {
+    downloadCsv(
+      `class-rankings-${new Date().toISOString().split('T')[0]}.csv`,
+      [
+        { key: 'rank', header: 'Rank' },
+        { key: 'className', header: 'Class Name' },
+        { key: 'trainer', header: 'Trainer' },
+        { key: 'sessions', header: 'Sessions' },
+        { key: 'revenue', header: 'Revenue' },
+        { key: 'fillRate', header: 'Fill Rate %' },
+      ],
+      allRankings.map((item, idx) => ({
+        rank: idx + 1,
+        className: item.className,
+        trainer: item.topTrainer,
+        sessions: item.totalSessions,
+        revenue: item.totalRevenue,
+        fillRate: item.fillRate.toFixed(1),
+      }))
+    );
+  };
+
+  const renderPanel = (items: ClassRankEntry[], isTop: boolean, ranks: number[]) => (
+    <P57TableShell
+      icon={isTop ? Crown : AlertTriangle}
+      title={isTop ? 'Top Performers' : 'Needs Improvement'}
+      description={
+        isTop
+          ? `Highest-ranked class occurrences by ${getMetricLabel().toLowerCase()}. Click a row for session-level detail.`
+          : `Lowest-ranked class occurrences by ${getMetricLabel().toLowerCase()}. Click a row for session-level detail.`
+      }
+      rowCount={items.length}
+      meta={<span>{formatCurrency(items.reduce((s, r) => s + r.totalRevenue, 0))} combined revenue</span>}
+    >
+      <div className={items.length > 8 ? 'max-h-[560px] overflow-y-auto' : ''}>
+        <P57RankList
+          items={toRankItems(items, ranks)}
+          onSelect={(item) => {
+            const idx = ranks.indexOf(item.rank);
+            if (idx >= 0) setDrill(items[idx]);
+          }}
+          emptyText="No classes to rank."
+        />
       </div>
-      <div className="text-right">
-        <p className="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
-          {getMetricValue(item)}
-        </p>
-        <p className="text-sm text-slate-500">{getMetricLabel()}</p>
-      </div>
-    </div>
+    </P57TableShell>
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">Individual Class Rankings</h3>
-          <p className="text-sm text-slate-500 mt-1">Performance metrics by class occurrence with advanced filters</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Individual Class Rankings</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Performance metrics by class occurrence with advanced filters</p>
         </div>
 
         {/* Main Filter and Sort Controls */}
-        <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-[#2a2a2e] dark:bg-[#141416]">
           {/* Row 1: Sort and Toggles */}
-          <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-wrap items-center gap-3">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 cursor-pointer hover:border-slate-400 transition-all"
+              onChange={(e) => setSortBy(e.target.value as SortCriteria)}
+              className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:text-slate-100"
+              aria-label="Sort rankings by"
             >
               <option value="revenue">Sort by Revenue</option>
               <option value="sessions">Sort by Sessions</option>
@@ -236,37 +279,35 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
               <option value="empty-classes">Sort by Empty Classes</option>
             </select>
 
-            <div className="h-6 w-px bg-slate-300" />
+            <div className="h-6 w-px bg-slate-300 dark:bg-[#2a2a2e]" />
 
-            {/* Toggle Trainer Inclusion */}
-            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 hover:bg-slate-50 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:hover:bg-[#232326]">
               <input
                 type="checkbox"
                 checked={includeTrainers}
                 onChange={(e) => setIncludeTrainers(e.target.checked)}
-                className="w-4 h-4 rounded accent-blue-600"
+                className="h-4 w-4 rounded accent-blue-600"
               />
-              <Users className="w-4 h-4 text-slate-600" />
-              <span className="text-sm font-medium text-slate-700">Show Trainers</span>
+              <Users className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Show Trainers</span>
             </label>
 
-            {/* Toggle Exclude Hosted */}
-            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 hover:bg-slate-50 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:hover:bg-[#232326]">
               <input
                 type="checkbox"
                 checked={excludeHosted}
                 onChange={(e) => setExcludeHosted(e.target.checked)}
-                className="w-4 h-4 rounded accent-blue-600"
+                className="h-4 w-4 rounded accent-blue-600"
               />
-              <span className="text-sm font-medium text-slate-700">Exclude Hosted</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Exclude Hosted</span>
             </label>
           </div>
 
           {/* Row 2: Min Classes and Min Visitors */}
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                <Filter className="w-3 h-3" />
+              <label className="flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Filter className="h-3 w-3" />
                 Min Classes
               </label>
               <input
@@ -275,13 +316,13 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
                 onChange={(e) => setMinClasses(Math.max(1, parseInt(e.target.value) || 1))}
                 min="1"
                 max="100"
-                className="w-20 px-2.5 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                className="w-20 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:text-slate-100"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                <Users className="w-3 h-3" />
+              <label className="flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Users className="h-3 w-3" />
                 Min Visitors
               </label>
               <input
@@ -290,12 +331,12 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
                 onChange={(e) => setMinVisitors(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
                 max="1000"
-                className="w-20 px-2.5 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                className="w-20 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:text-slate-100"
               />
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 ml-auto">
+            <div className="ml-auto flex gap-2">
               <button
                 onClick={() => {
                   setSortBy('revenue');
@@ -304,55 +345,35 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
                   setMinClasses(1);
                   setMinVisitors(0);
                 }}
-                className="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all flex items-center gap-1"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:text-slate-200 dark:hover:bg-[#232326]"
                 title="Reset all filters to default values"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="h-4 w-4" />
                 Reset
               </button>
 
               <button
-                onClick={() => {
-                  const csvData = allRankings.map((item, idx) => ({
-                    rank: (idx + 1),
-                    className: item.className,
-                    trainer: item.topTrainer,
-                    sessions: item.totalSessions,
-                    revenue: item.totalRevenue,
-                    fillRate: item.fillRate.toFixed(1),
-                  }));
-                  const csv = [
-                    ['Rank', 'Class Name', 'Trainer', 'Sessions', 'Revenue', 'Fill Rate %'].join(','),
-                    ...csvData.map(row => [row.rank, row.className, row.trainer, row.sessions, row.revenue, row.fillRate].join(','))
-                  ].join('\n');
-                  const blob = new Blob([csv], { type: 'text/csv' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `class-rankings-${new Date().toISOString().split('T')[0]}.csv`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all flex items-center gap-1"
+                onClick={handleExport}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#2a2a2e] dark:bg-[#1c1c1f] dark:text-slate-200 dark:hover:bg-[#232326]"
                 title="Export rankings as CSV"
               >
-                <Download className="w-4 h-4" />
+                <Download className="h-4 w-4" />
                 Export
               </button>
 
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-medium transition-all flex items-center gap-1"
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                 title="View analytics and insights"
               >
-                <BarChart3 className="w-4 h-4" />
+                <BarChart3 className="h-4 w-4" />
                 Analytics
               </button>
             </div>
           </div>
 
           {/* Filter Summary */}
-          <div className="text-xs text-slate-600 px-3 py-2 bg-white/50 rounded-lg border border-slate-200">
+          <div className="rounded-lg border border-slate-200 bg-white/50 px-3 py-2 text-xs text-slate-600 dark:border-[#2a2a2e] dark:bg-white/5 dark:text-slate-400">
             <span className="font-semibold">Active Filters:</span> Min {minClasses}+ classes • Min {minVisitors}+ visitors {excludeHosted && '• Excluding hosted'} {includeTrainers && '• Trainers visible'}
           </div>
         </div>
@@ -360,46 +381,51 @@ const ClassFormatRankings: React.FC<ClassFormatRankingsProps> = ({ data }) => {
 
       {/* Top and Bottom Rankings */}
       {allRankings.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-slate-300 p-8 text-center">
-          <Zap className="w-12 h-12 mx-auto text-slate-400 mb-3" />
-          <p className="text-slate-600 font-medium">No classes found</p>
-          <p className="text-sm text-slate-500 mt-1">Try adjusting your filters</p>
-        </div>
+        <P57RankList items={[]} emptyText="No classes found — try adjusting your filters." />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Performers */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-emerald-600 flex items-center justify-center text-white">
-                <Crown className="w-4 h-4" />
-              </div>
-              <h4 className="font-semibold text-slate-900">Top Performers</h4>
-              <span className="ml-auto text-xs text-slate-500 font-medium">{topRankings.length} classes</span>
-            </div>
-            <div className="space-y-3">
-              {topRankings.map((item, index) => (
-                <RankingCard key={item.classId} item={item} index={index} isTop={true} />
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom Performers */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-red-400 to-rose-600 flex items-center justify-center text-white">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              <h4 className="font-semibold text-slate-900">Needs Improvement</h4>
-              <span className="ml-auto text-xs text-slate-500 font-medium">{bottomRankings.length} classes</span>
-            </div>
-            <div className="space-y-3">
-              {bottomRankings.map((item, index) => (
-                <RankingCard key={item.classId} item={item} index={index} isTop={false} />
-              ))}
-            </div>
-          </div>
+        <div className="p57-stagger grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {renderPanel(topRankings, true, topRankings.map((_, i) => i + 1))}
+          {renderPanel(bottomRankings, false, bottomRankings.map((_, i) => allRankings.length - i))}
         </div>
       )}
+
+      <CellDrillDownModal
+        open={drill !== null}
+        onClose={() => setDrill(null)}
+        title={drill ? drill.className : ''}
+        subtitle={`${drill?.dayOfWeek ?? ''} · ${drill?.time ?? ''} · session-level rows`}
+        context={
+          drill
+            ? [
+                { label: 'Class', value: drill.className },
+                { label: 'Schedule', value: `${drill.dayOfWeek} · ${drill.time}` },
+                { label: 'Trainer', value: drill.topTrainer },
+                { label: 'Sessions', value: formatNumber(drill.totalSessions) },
+                { label: getMetricLabel(), value: getMetricValue(drill) },
+              ]
+            : []
+        }
+        columns={[
+          { key: 'date', header: 'Date', mono: true },
+          { key: 'trainer', header: 'Trainer' },
+          { key: 'checkedIn', header: 'Checked In', align: 'right', mono: true },
+          { key: 'capacity', header: 'Capacity', align: 'right', mono: true },
+          { key: 'fill', header: 'Fill', align: 'right', mono: true },
+          { key: 'revenue', header: 'Revenue', align: 'right', mono: true },
+        ]}
+        rows={(drill?.classSessions ?? []).map((s) => {
+          const checkedIn = s.checkedInCount || 0;
+          const capacity = s.capacity || 0;
+          return {
+            date: s.date || '—',
+            trainer: s.trainerName || '—',
+            checkedIn: formatNumber(checkedIn),
+            capacity: formatNumber(capacity),
+            fill: capacity > 0 ? `${((checkedIn / capacity) * 100).toFixed(1)}%` : '—',
+            revenue: formatCurrency(s.totalPaid || 0),
+          };
+        })}
+      />
     </div>
   );
 };

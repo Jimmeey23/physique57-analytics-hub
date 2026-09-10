@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { designTokens } from '@/utils/designTokens';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 interface SourceDefinition {
   name: string;              // Human-friendly name e.g. "Sales"
@@ -78,7 +79,7 @@ export const SourceDataModal: React.FC<SourceDataModalProps> = ({ open, onOpenCh
                         <TableHeader className={designTokens.table.header + ' sticky top-0 z-10'}>
                           <TableRow>
                             {cols.map((col) => (
-                              <TableHead key={col} className={cn(designTokens.table.headerText, 'px-4 py-3')}>
+                              <TableHead key={col} className={cn(designTokens.table.headerCell, 'px-4 py-3')}>
                                 {col}
                               </TableHead>
                             ))}
@@ -86,7 +87,7 @@ export const SourceDataModal: React.FC<SourceDataModalProps> = ({ open, onOpenCh
                         </TableHeader>
                         <TableBody>
                           {limitedRows.map((row, idx) => (
-                            <TableRow key={idx} className={designTokens.table.row}>
+                            <TableRow key={rowKey(row, idx)} className={designTokens.table.row}>
                               {cols.map((col) => (
                                 <TableCell key={col} className={cn(designTokens.table.cell)}>
                                   {row[col] !== undefined && row[col] !== null ? String(row[col]) : ''}

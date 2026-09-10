@@ -18,14 +18,14 @@ interface ExecutiveSectionCardProps {
 }
 
 const borderColorMap = {
-  emerald: 'border-l-emerald-500',
-  blue: 'border-l-blue-500',
-  purple: 'border-l-purple-500',
-  rose: 'border-l-rose-500',
-  amber: 'border-l-amber-500',
-  sky: 'border-l-sky-500',
-  indigo: 'border-l-indigo-500',
-  pink: 'border-l-pink-500',
+  emerald: 'border-emerald-200',
+  blue: 'border-blue-200',
+  purple: 'border-purple-200',
+  rose: 'border-rose-200',
+  amber: 'border-amber-200',
+  sky: 'border-sky-200',
+  indigo: 'border-indigo-200',
+  pink: 'border-pink-200',
 };
 
 const iconBgMap = {
@@ -69,7 +69,7 @@ export const ExecutiveSectionCard: React.FC<ExecutiveSectionCardProps> = ({
       className={cn(
         'group relative overflow-hidden transition-all duration-300',
         'bg-white hover:shadow-md shadow-sm',
-        'rounded-lg border-l-4',
+        'rounded-lg border',
         borderColorMap[borderColor],
         className
       )}

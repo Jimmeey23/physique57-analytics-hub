@@ -1,11 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Star } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ShoppingBag, Users } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
-import { isConvertedInCohort, isInNewClientCohort, isRetainedInCohort } from '@/utils/clientRetention';
-import CopyTableButton from '@/components/ui/CopyTableButton';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { P57TableShell } from '@/components/ui/P57TableShell';
+import { P57SortTh, useSortableData } from '@/components/ui/P57SortTh';
+import { TABLE_STYLES } from '@/styles/tableStyles';
+import { downloadCsv } from '@/utils/csvExport';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,79 +20,51 @@ interface ClientConversionMonthOnMonthByTypeTableProps {
   onRowClick?: (row: any) => void;
 }
 
-type MetricKey = 'trials' | 'newMembers' | 'converted' | 'retained' | 'retentionPct' | 'conversionPct' | 'avgLtv' | 'totalLtv' | 'avgConvDays' | 'avgVisits';
+type GroupDim = 'clientType' | 'location' | 'membership' | 'trainer';
 
-interface MonthCell {
+const GROUP_OPTS: Array<{ value: GroupDim; label: string; plural: string; get: (c: NewClientData) => string }> = [
+  { value: 'clientType', label: 'Client Type', plural: 'client types', get: (c) => c.isNew || 'Unknown' },
+  { value: 'location', label: 'Location', plural: 'locations', get: (c) => c.firstVisitLocation || c.homeLocation || 'Unknown' },
+  { value: 'membership', label: 'Membership', plural: 'memberships', get: (c) => c.membershipUsed || 'Unknown' },
+  { value: 'trainer', label: 'Trainer', plural: 'trainers', get: (c) => c.trainerName || 'Unknown' },
+];
+
+interface GroupAgg {
+  key: string;
   trials: number;
   newMembers: number;
   converted: number;
   retained: number;
-  retentionPct: number;
   conversionPct: number;
+  retentionPct: number;
   avgLtv: number;
   totalLtv: number;
-  avgConvDays: number;
+  avgConvDays: number | null;
   avgVisits: number;
 }
 
-const METRIC_OPTS: { value: MetricKey; label: string }[] = [
-  { value: 'trials', label: 'Trials' },
-  { value: 'newMembers', label: 'New Members' },
-  { value: 'converted', label: 'Converted' },
-  { value: 'retained', label: 'Retained' },
-  { value: 'retentionPct', label: 'Retention %' },
-  { value: 'conversionPct', label: 'Conversion %' },
-  { value: 'avgLtv', label: 'Avg LTV' },
-  { value: 'totalLtv', label: 'Total LTV' },
-  { value: 'avgConvDays', label: 'Avg Conv Days' },
-  { value: 'avgVisits', label: 'Avg Visits' },
+type MetricKey = 'trials' | 'newMembers' | 'converted' | 'retained' | 'conversionPct' | 'retentionPct' | 'avgLtv' | 'totalLtv' | 'avgConvDays' | 'avgVisits';
+type MetricKind = 'int' | 'pct' | 'currency' | 'days' | 'decimal';
+
+const METRIC_COLS: Array<{ key: MetricKey; label: string; kind: MetricKind; align: 'center' | 'right' }> = [
+  { key: 'trials', label: 'Trials', kind: 'int', align: 'center' },
+  { key: 'newMembers', label: 'New', kind: 'int', align: 'center' },
+  { key: 'converted', label: 'Converted', kind: 'int', align: 'center' },
+  { key: 'retained', label: 'Retained', kind: 'int', align: 'center' },
+  { key: 'conversionPct', label: 'Conv %', kind: 'pct', align: 'center' },
+  { key: 'retentionPct', label: 'Ret %', kind: 'pct', align: 'center' },
+  { key: 'avgLtv', label: 'Avg LTV', kind: 'currency', align: 'right' },
+  { key: 'totalLtv', label: 'Total LTV', kind: 'currency', align: 'right' },
+  { key: 'avgConvDays', label: 'Avg Days', kind: 'days', align: 'center' },
+  { key: 'avgVisits', label: 'Avg Visits', kind: 'decimal', align: 'center' },
 ];
 
-const MONTHS_SHOWN = 30;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getMonthKey(dateStr: string): string | null {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function fmtMonthKey(mk: string): string {
-  const [year, month] = mk.split('-');
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${MONTHS[parseInt(month, 10) - 1]} ${year.slice(2)}`;
-}
-
-function buildCell(clients: NewClientData[], metric: MetricKey): number {
-  const trials = clients.length;
-  const newMembers = clients.filter((c) => isInNewClientCohort(c)).length;
-  const converted = clients.filter((c) => isConvertedInCohort(c)).length;
-  const retained = clients.filter((c) => isRetainedInCohort(c)).length;
-  const totalLtv = clients.reduce((s, c) => s + (c.ltv || 0), 0);
-  const convIntervals = clients.map((c) => c.conversionSpan).filter((v) => v > 0);
-  const visitsList = clients.map((c) => c.visitsPostTrial).filter((v) => v > 0);
-
-  switch (metric) {
-    case 'trials': return trials;
-    case 'newMembers': return newMembers;
-    case 'converted': return converted;
-    case 'retained': return retained;
-    case 'retentionPct': return trials > 0 ? (retained / trials) * 100 : 0;
-    case 'conversionPct': return trials > 0 ? (converted / trials) * 100 : 0;
-    case 'avgLtv': return trials > 0 ? totalLtv / trials : 0;
-    case 'totalLtv': return totalLtv;
-    case 'avgConvDays': return convIntervals.length > 0 ? convIntervals.reduce((s, v) => s + v, 0) / convIntervals.length : 0;
-    case 'avgVisits': return visitsList.length > 0 ? visitsList.reduce((s, v) => s + v, 0) / visitsList.length : 0;
-  }
-}
-
-function fmtCell(value: number, metric: MetricKey): string {
-  if (metric === 'retentionPct' || metric === 'conversionPct') return `${value.toFixed(1)}%`;
-  if (metric === 'avgLtv' || metric === 'totalLtv') return formatCurrency(value);
-  if (metric === 'avgConvDays') return `${value.toFixed(0)}d`;
-  if (metric === 'avgVisits') return value.toFixed(1);
+function fmtValue(value: number | null, kind: MetricKind): string {
+  if (value === null || value === undefined) return '—';
+  if (kind === 'pct') return `${value.toFixed(1)}%`;
+  if (kind === 'currency') return formatCurrency(value);
+  if (kind === 'days') return `${Math.round(value)}d`;
+  if (kind === 'decimal') return value.toFixed(1);
   return formatNumber(Math.round(value));
 }
 
@@ -100,62 +76,95 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const registry = useMetricsTablesRegistry();
-  const [metric, setMetric] = useState<MetricKey>('trials');
-  const [viewMode, setViewMode] = useState<'values' | 'growth'>('values');
-  const tableId = 'Month-on-Month by Client Type';
+  const [groupDim, setGroupDim] = useState<GroupDim>('clientType');
+  const [query, setQuery] = useState('');
+  const dim = GROUP_OPTS.find((d) => d.value === groupDim) ?? GROUP_OPTS[0];
+  const tableId = `By ${dim.label}`;
 
-  // Collect all month keys across all data, sorted newest-last
-  const allMonths = useMemo(() => {
-    const keys = new Set<string>();
+  // Aggregate every client into its group bucket (single pass per dimension).
+  const groups = useMemo(() => {
+    const buckets = new Map<string, NewClientData[]>();
     data.forEach((c) => {
-      const mk = getMonthKey(c.firstVisitDate);
-      if (mk) keys.add(mk);
+      const k = dim.get(c);
+      const bucket = buckets.get(k);
+      if (bucket) bucket.push(c);
+      else buckets.set(k, [c]);
     });
-    const sorted = [...keys].sort();
-    return sorted.slice(-MONTHS_SHOWN);
+    const aggs: Array<GroupAgg & { clients: NewClientData[]; type: string }> = [];
+    buckets.forEach((clients, key) => {
+      const trials = clients.length;
+      const newMembers = clients.filter((c) => isNewClient(c)).length;
+      const converted = clients.filter((c) => isConverted(c)).length;
+      const retained = clients.filter((c) => isRetained(c)).length;
+      const totalLtv = clients.reduce((sum, c) => sum + (c.ltv || 0), 0);
+      const spans = clients.map((c) => c.conversionSpan).filter((v) => (v || 0) > 0);
+      const visits = clients.map((c) => c.visitsPostTrial).filter((v) => (v || 0) > 0);
+      aggs.push({
+        key,
+        type: key,
+        clients,
+        trials,
+        newMembers,
+        converted,
+        retained,
+        conversionPct: calcConversionRate(converted, newMembers),
+        retentionPct: calcRetentionRate(retained, newMembers),
+        avgLtv: trials > 0 ? totalLtv / trials : 0,
+        totalLtv,
+        avgConvDays: spans.length > 0 ? spans.reduce((sum, v) => sum + v, 0) / spans.length : null,
+        avgVisits: visits.length > 0 ? visits.reduce((sum, v) => sum + v, 0) / visits.length : 0,
+      });
+    });
+    return aggs;
+  }, [data, dim]);
+
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return groups;
+    return groups.filter((g) => g.key.toLowerCase().includes(term));
+  }, [groups, query]);
+
+  const getAggSortValue = useCallback(
+    (row: GroupAgg & { clients: NewClientData[]; type: string }, key: string) =>
+      (key === 'key' ? row.key : row[key as MetricKey] ?? null),
+    []
+  );
+  const { rows, sortKey, sortDir, toggleSort } = useSortableData(filtered, getAggSortValue, 'trials', 'desc');
+
+  // Totals across the full filtered dataset (independent of search/sort).
+  const totals = useMemo(() => {
+    const trials = data.length;
+    const converted = data.filter((c) => isConverted(c)).length;
+    const retained = data.filter((c) => isRetained(c)).length;
+    const newMembers = data.filter((c) => isNewClient(c)).length;
+    const totalLtv = data.reduce((sum, c) => sum + (c.ltv || 0), 0);
+    const spans = data.map((c) => c.conversionSpan).filter((v) => (v || 0) > 0);
+    const visits = data.map((c) => c.visitsPostTrial).filter((v) => (v || 0) > 0);
+    return {
+      trials,
+      newMembers,
+      converted,
+      retained,
+      conversionPct: calcConversionRate(converted, newMembers),
+      retentionPct: calcRetentionRate(retained, newMembers),
+      avgLtv: trials > 0 ? totalLtv / trials : 0,
+      totalLtv,
+      avgConvDays: spans.length > 0 ? spans.reduce((sum, v) => sum + v, 0) / spans.length : null,
+      avgVisits: visits.length > 0 ? visits.reduce((sum, v) => sum + v, 0) / visits.length : 0,
+    };
   }, [data]);
 
-  // Active month highlight — most recent complete month (matches other MoM tables)
-  const activeMonthKey = (() => {
-    const now = new Date();
-    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
-  })();
-
-  // Unique client types (rows)
-  const clientTypes = useMemo(() => {
-    const types = new Set(data.map((c) => c.isNew || 'Unknown'));
-    return [...types].sort((a, b) => {
-      const aNew = a.toLowerCase().includes('new');
-      const bNew = b.toLowerCase().includes('new');
-      if (aNew && !bNew) return -1;
-      if (!aNew && bNew) return 1;
-      return a.localeCompare(b);
-    });
-  }, [data]);
-
-  // Build matrix: clientType → month → clients[]
-  const matrix = useMemo(() => {
-    const m: Record<string, Record<string, NewClientData[]>> = {};
-    clientTypes.forEach((ct) => { m[ct] = {}; });
-    data.forEach((c) => {
-      const ct = c.isNew || 'Unknown';
-      const mk = getMonthKey(c.firstVisitDate);
-      if (!mk || !m[ct]) return;
-      if (!m[ct][mk]) m[ct][mk] = [];
-      m[ct][mk].push(c);
-    });
-    return m;
-  }, [data, clientTypes]);
-
-  // Totals per month
-  const monthTotals = useMemo(() => {
-    const t: Record<string, NewClientData[]> = {};
-    allMonths.forEach((mk) => {
-      t[mk] = clientTypes.flatMap((ct) => matrix[ct]?.[mk] ?? []);
-    });
-    return t;
-  }, [allMonths, clientTypes, matrix]);
+  const handleExport = () => {
+    downloadCsv(
+      `${tableId}.csv`,
+      [{ key: 'group', header: dim.label }, ...METRIC_COLS.map((c) => ({ key: c.key, header: c.label }))],
+      rows.map((r) => {
+        const rec: Record<string, unknown> = { group: r.key };
+        METRIC_COLS.forEach((c) => { rec[c.key] = r[c.key] ?? ''; });
+        return rec;
+      })
+    );
+  };
 
   // Register for copy
   useEffect(() => {
@@ -164,171 +173,108 @@ export const ClientConversionMonthOnMonthByTypeTable: React.FC<ClientConversionM
       const table = containerRef.current?.querySelector('table');
       if (!table) return `${tableId} (No Data)`;
       const headers = Array.from(table.querySelectorAll('thead th')).map((n) => n.textContent?.trim() || '');
-      const rows = Array.from(table.querySelectorAll('tbody tr'))
+      const bodyRows = Array.from(table.querySelectorAll('tbody tr'))
         .map((n) => Array.from(n.querySelectorAll('td')).map((c) => c.textContent?.trim() || '').join('\t'))
         .filter(Boolean);
-      return [tableId, headers.join('\t'), ...rows].join('\n');
+      return [tableId, headers.join('\t'), ...bodyRows].join('\n');
     };
     registry.register({ id: tableId, getTextContent });
     return () => registry.unregister(tableId);
-  }, [registry, tableId, metric, allMonths]);
-
-  const months = allMonths.slice().reverse(); // newest first for display
+  }, [registry, tableId, rows]);
 
   return (
-    <div ref={containerRef} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08)]">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-5 py-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <span className="text-[15px] font-bold text-white">{tableId}</span>
-            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">{months.length} months</span>
-            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">{clientTypes.length} client types</span>
-          </div>
-          <p className="mt-1 text-[12px] text-slate-400">Click any row or totals cell to open detailed drill-down evidence for that slice.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Values / Growth toggle */}
-          <div className="flex rounded-xl border border-white/10 bg-white/10 p-0.5">
-            {(['values', 'growth'] as const).map((v) => (
+    <div ref={containerRef}>
+      <P57TableShell
+        icon={Users}
+        title={tableId}
+        description={`Retention, revenue, visits, and conversion performance by ${dim.plural} — aggregated over the filtered period. Click any row for drill-down evidence.`}
+        rowCount={rows.length}
+        rowCountLabel="groups"
+        onSearch={setQuery}
+        searchPlaceholder={`Search ${dim.plural}…`}
+        onExportCsv={handleExport}
+        actions={
+          <div className="flex items-center gap-1 rounded-[10px] border border-[#ececef] bg-[#f6f7f9] p-[3px] dark:border-[#2a2a2e] dark:bg-[#141416]" role="group" aria-label="Group rows by">
+            {GROUP_OPTS.map((o) => (
               <button
-                key={v}
-                onClick={() => setViewMode(v)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${viewMode === v ? 'bg-violet-600 text-white shadow-sm' : 'text-white/60 hover:text-white'}`}
+                key={o.value}
+                type="button"
+                onClick={() => setGroupDim(o.value)}
+                aria-pressed={groupDim === o.value}
+                className={groupDim === o.value
+                  ? 'rounded-[7px] bg-slate-900 px-2.5 py-1 text-[12px] font-bold text-white shadow-sm dark:bg-white dark:text-slate-900'
+                  : 'rounded-[7px] px-2.5 py-1 text-[12px] font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}
               >
-                {v === 'values' ? 'Values' : 'Growth %'}
+                {o.label}
               </button>
             ))}
           </div>
+        }
+        meta={<span>{formatNumber(data.length)} clients in the filtered period · sorted by {sortKey === 'key' ? dim.label : METRIC_COLS.find((c) => c.key === sortKey)?.label ?? 'Trials'} ({sortDir === 'desc' ? 'high to low' : 'low to high'})</span>}
+      >
+        <div className="max-h-[560px] overflow-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <P57SortTh sortKey="key" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} className="sticky left-0 z-40 min-w-[220px]">
+                  {dim.label}
+                </P57SortTh>
+                {METRIC_COLS.map((c) => (
+                  <P57SortTh key={c.key} sortKey={c.key} activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align={c.align}>
+                    {c.label}
+                  </P57SortTh>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((g) => (
+                <tr key={g.key} className="cursor-pointer" onClick={() => onRowClick?.({ type: g.key, clients: g.clients })}>
+                  <td className="sticky left-0 z-20 px-3.5 py-2 text-[13px] font-semibold">{g.key}</td>
+                  {METRIC_COLS.map((c) => (
+                    <td key={c.key} className={c.align === 'right' ? 'px-3.5 py-2 text-right text-[13px] font-medium tabular-nums' : 'px-3.5 py-2 text-center text-[13px] font-medium tabular-nums'}>
+                      {fmtValue(g[c.key], c.kind)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={METRIC_COLS.length + 1} className="px-3.5 py-12 text-center text-sm text-slate-500">
+                    No groups match the current search.
+                  </td>
+                </tr>
+              )}
+              <tr className={`${TABLE_STYLES.footer.row} cursor-pointer`} onClick={() => onRowClick?.({ type: `All ${dim.plural}`, clients: data })}>
+                <td className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} px-3.5 py-2`}>Total</td>
+                {METRIC_COLS.map((c) => (
+                  <td key={c.key} className={`${TABLE_STYLES.footer.cell} ${c.align === 'right' ? 'text-right' : 'text-center'}`}>
+                    {fmtValue(totals[c.key], c.kind)}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      {/* Metric selector */}
-      <div className="flex flex-wrap gap-1.5 border-b border-slate-100 bg-slate-950 px-4 py-2.5">
-        {METRIC_OPTS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setMetric(opt.value)}
-            className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${metric === opt.value ? 'bg-emerald-500 text-white shadow-sm' : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'}`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div className="max-h-[600px] overflow-auto">
-        <Table>
-          <TableHeader className="sticky top-0 z-20">
-            <TableRow className="border-slate-800 bg-slate-950 hover:bg-slate-950">
-              <TableHead className="sticky left-0 z-30 min-w-[200px] bg-slate-950 py-3 text-xs font-semibold uppercase tracking-wide text-white">
-                Client Type
-              </TableHead>
-              {months.map((mk) => {
-                const isActive = mk === activeMonthKey;
-                return (
-                  <TableHead
-                    key={mk}
-                    className={`min-w-[70px] py-3 text-center text-xs font-semibold uppercase tracking-wide ${isActive ? 'bg-blue-800 text-white' : 'bg-slate-950 text-white/70'}`}
-                  >
-                    {isActive && <Star className="w-3 h-3 mx-auto mb-0.5 text-white" />}
-                    <div>{fmtMonthKey(mk).split(' ')[0]}</div>
-                    <div className="text-[10px] font-normal opacity-70">{fmtMonthKey(mk).split(' ')[1]}</div>
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {clientTypes.map((ct, rowIdx) => {
-              return (
-                <TableRow
-                  key={ct}
-                  className={`cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50 ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
-                  onClick={() => onRowClick?.({ type: ct, clients: data.filter((c) => c.isNew === ct) })}
-                >
-                  <TableCell className="sticky left-0 z-10 bg-inherit py-2.5">
-                    <span className="text-[12px] font-semibold text-slate-800">
-                      {ct}
-                    </span>
-                  </TableCell>
-                  {months.map((mk) => {
-                    const clients = matrix[ct]?.[mk] ?? [];
-                    if (viewMode === 'growth') {
-                      // compare to previous month
-                      const prevMk = months[months.indexOf(mk) + 1] ?? null;
-                      const cur = buildCell(clients, metric);
-                      const prev = prevMk ? buildCell(matrix[ct]?.[prevMk] ?? [], metric) : null;
-                      const pct = prev !== null && prev !== 0 ? ((cur - prev) / prev) * 100 : null;
-                      return (
-                        <TableCell key={mk} className="py-2 text-center text-xs font-semibold">
-                          {pct === null ? (
-                            <span className="text-slate-300">—</span>
-                          ) : (
-                            <span className={pct >= 0 ? 'text-emerald-600' : 'text-red-500'}>
-                              {pct >= 0 ? '+' : ''}{pct.toFixed(1)}%
-                            </span>
-                          )}
-                        </TableCell>
-                      );
-                    }
-                    const value = buildCell(clients, metric);
-                    return (
-                      <TableCell key={mk} className={`py-2 text-center text-[12px] font-medium text-slate-800 ${value === 0 ? 'text-slate-300' : ''}`}>
-                        {value === 0 ? '0' : fmtCell(value, metric)}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              );
-            })}
-
-            {/* Totals row */}
-            <TableRow className="sticky bottom-0 z-10 border-t-2 border-slate-800 bg-slate-900 hover:bg-slate-800">
-              <TableCell className="sticky left-0 z-20 bg-slate-900 py-3 text-xs font-bold uppercase tracking-widest text-white">
-                Totals
-              </TableCell>
-              {months.map((mk) => {
-                const clients = monthTotals[mk] ?? [];
-                if (viewMode === 'growth') {
-                  const prevMk = months[months.indexOf(mk) + 1] ?? null;
-                  const cur = buildCell(clients, metric);
-                  const prev = prevMk ? buildCell(monthTotals[prevMk] ?? [], metric) : null;
-                  const pct = prev !== null && prev !== 0 ? ((cur - prev) / prev) * 100 : null;
-                  return (
-                    <TableCell key={mk} className="py-3 text-center text-xs font-bold">
-                      {pct === null ? (
-                        <span className="text-slate-500">—</span>
-                      ) : (
-                        <span className={pct >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                          {pct >= 0 ? '+' : ''}{pct.toFixed(1)}%
-                        </span>
-                      )}
-                    </TableCell>
-                  );
-                }
-                const value = buildCell(clients, metric);
-                return (
-                  <TableCell key={mk} className="py-3 text-center text-[12px] font-bold text-white">
-                    {fmtCell(value, metric)}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+      </P57TableShell>
     </div>
   );
 };
-
 // ─── New Client Membership Purchases Table ────────────────────────────────────
+
+interface PurchaseRow {
+  name: string;
+  uniqueMembers: number;
+  unitsSold: number;
+  totalLtv: number;
+  atv: number;
+  auv: number;
+  purchaseFreq: number;
+  avgConvDays: number | null;
+  avgVisits: number;
+  _clients: Set<string>;
+}
+
+type PurchaseMetricKey = 'uniqueMembers' | 'unitsSold' | 'totalLtv' | 'atv' | 'auv' | 'purchaseFreq' | 'avgConvDays' | 'avgVisits';
 
 interface MembershipPurchasesTableProps {
   data: NewClientData[];
@@ -339,9 +285,10 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
   const containerRef = useRef<HTMLDivElement>(null);
   const registry = useMetricsTablesRegistry();
   const tableId = 'New Client Membership Purchases';
+  const [query, setQuery] = useState('');
 
   // Only converted members — their first purchase is what we want
-  const convertedMembers = useMemo(() => data.filter((c) => isConvertedInCohort(c)), [data]);
+  const convertedMembers = useMemo(() => data.filter((c) => isConverted(c)), [data]);
 
   const rows = useMemo(() => {
     type Bucket = {
@@ -371,7 +318,7 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
     });
 
     return Object.entries(grouped)
-      .map(([name, g]) => {
+      .map(([name, g]): PurchaseRow => {
         const uniqueMembers = g.members.size;
         const totalLtv = g.totalLtv;
         const unitsSold = g.totalUnits;
@@ -400,6 +347,41 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
     return { uniqueMembers, unitsSold, totalLtv, atv, auv, purchaseFreq, avgConvDays, avgVisits };
   }, [rows, convertedMembers]);
 
+  const filteredRows = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return term ? rows.filter((r) => r.name.toLowerCase().includes(term)) : rows;
+  }, [rows, query]);
+
+  const getPurchaseSortValue = useCallback(
+    (row: PurchaseRow, key: string) => (key === 'name' ? row.name : row[key as PurchaseMetricKey] ?? null),
+    []
+  );
+  const { rows: displayedRows, sortKey, sortDir, toggleSort } = useSortableData<PurchaseRow>(
+    filteredRows,
+    getPurchaseSortValue,
+    'uniqueMembers',
+    'desc'
+  );
+
+  const handleExportCsv = () => {
+    const cols = [
+      { key: 'name', header: 'First Purchase' },
+      { key: 'uniqueMembers', header: 'Members' },
+      { key: 'unitsSold', header: 'Units Sold' },
+      { key: 'totalLtv', header: 'Total LTV' },
+      { key: 'atv', header: 'ATV' },
+      { key: 'auv', header: 'AUV' },
+      { key: 'purchaseFreq', header: 'Purch. Freq' },
+      { key: 'avgConvDays', header: 'Avg Conv Days' },
+      { key: 'avgVisits', header: 'Avg Visits' },
+    ];
+    downloadCsv(`${tableId}.csv`, cols, displayedRows.map((r) => ({
+      name: r.name, uniqueMembers: r.uniqueMembers, unitsSold: r.unitsSold,
+      totalLtv: r.totalLtv, atv: r.atv, auv: r.auv, purchaseFreq: r.purchaseFreq,
+      avgConvDays: r.avgConvDays ?? '', avgVisits: r.avgVisits,
+    })));
+  };
+
   useEffect(() => {
     if (!registry || !containerRef.current) return;
     const getTextContent = () => {
@@ -417,49 +399,42 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
 
   return (
     <div ref={containerRef} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08)]">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-5 py-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 01-8 0" />
-            </svg>
-            <span className="text-[15px] font-bold text-white">New Client Membership Purchases</span>
-            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">{totals.uniqueMembers} Converted Members</span>
-            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">{rows.length} Purchase Types</span>
-          </div>
-          <p className="mt-1 text-[12px] text-slate-400">First purchases made by converted members — grouped by payment type.</p>
-        </div>
-      </div>
-
-      {/* Table */}
+      <P57TableShell
+        icon={ShoppingBag}
+        title="New Client Purchases"
+        description="First purchases made by converted members — grouped by payment type. Click a row for detail."
+        rowCount={displayedRows.length}
+        rowCountLabel="types"
+        onSearch={setQuery}
+        searchPlaceholder="Search purchase types…"
+        onExportCsv={handleExportCsv}
+        meta={<span>{formatNumber(totals.uniqueMembers)} converted members · {rows.length} purchase types</span>}
+      >
       <div className="max-h-[480px] overflow-auto">
         <Table>
-          <TableHeader className="sticky top-0 z-20 bg-slate-950">
-            <TableRow className="border-slate-800 hover:bg-slate-950">
-              <TableHead className="sticky left-0 z-30 min-w-[200px] bg-slate-950 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-white">
+          <TableHeader>
+            <TableRow>
+              <P57SortTh sortKey="name" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} className="sticky left-0 z-40 min-w-[200px]">
                 First Purchase
-              </TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Members</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Units Sold</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">Total LTV</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">ATV</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-white">AUV</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Purch. Freq</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Avg Conv Days</TableHead>
-              <TableHead className="bg-slate-950 py-3 pr-4 text-center text-xs font-semibold uppercase tracking-wide text-white">Avg Visits</TableHead>
+              </P57SortTh>
+              <P57SortTh sortKey="uniqueMembers" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="center">Members</P57SortTh>
+              <P57SortTh sortKey="unitsSold" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="center">Units Sold</P57SortTh>
+              <P57SortTh sortKey="totalLtv" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="right">Total LTV</P57SortTh>
+              <P57SortTh sortKey="atv" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="right">ATV</P57SortTh>
+              <P57SortTh sortKey="auv" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="right">AUV</P57SortTh>
+              <P57SortTh sortKey="purchaseFreq" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="center">Purch. Freq</P57SortTh>
+              <P57SortTh sortKey="avgConvDays" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="center">Avg Conv Days</P57SortTh>
+              <P57SortTh sortKey="avgVisits" activeKey={sortKey} dir={sortDir} onToggle={toggleSort} align="center">Avg Visits</P57SortTh>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((row, i) => (
+            {displayedRows.map((row) => (
               <TableRow
                 key={row.name}
-                className={`cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
+                className="cursor-pointer"
                 onClick={() => onRowClick?.(row)}
               >
-                <TableCell className={`sticky left-0 z-10 px-5 py-3 text-[13px] font-medium text-slate-900 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>{row.name}</TableCell>
+                <TableCell className="sticky left-0 z-10 px-5 py-3 text-[13px] font-semibold">{row.name}</TableCell>
                 <TableCell className="py-3 text-center text-[13px] font-medium text-slate-800">{formatNumber(row.uniqueMembers)}</TableCell>
                 <TableCell className="py-3 text-center text-[13px] font-medium text-slate-800">{formatNumber(row.unitsSold)}</TableCell>
                 <TableCell className="py-3 text-right text-[13px] font-medium text-slate-800">{formatCurrency(row.totalLtv)}</TableCell>
@@ -472,20 +447,21 @@ export const NewClientMembershipPurchasesTable: React.FC<MembershipPurchasesTabl
             ))}
 
             {/* Totals */}
-            <TableRow className="sticky bottom-0 z-10 border-t-2 border-slate-800 bg-slate-900 hover:bg-slate-800">
-              <TableCell className="sticky left-0 z-20 bg-slate-900 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white">Total</TableCell>
-              <TableCell className="py-3 text-center text-[13px] font-bold text-white">{formatNumber(totals.uniqueMembers)}</TableCell>
-              <TableCell className="py-3 text-center text-[13px] font-bold text-white">{formatNumber(totals.unitsSold)}</TableCell>
-              <TableCell className="py-3 text-right text-[13px] font-bold text-white">{formatCurrency(totals.totalLtv)}</TableCell>
-              <TableCell className="py-3 text-right text-[13px] font-bold text-white">{formatCurrency(totals.atv)}</TableCell>
-              <TableCell className="py-3 text-right text-[13px] font-bold text-white">{formatCurrency(totals.auv)}</TableCell>
-              <TableCell className="py-3 text-center text-[13px] font-bold text-white">{totals.purchaseFreq.toFixed(1)}×</TableCell>
-              <TableCell className="py-3 text-center text-[13px] font-bold text-white">{totals.avgConvDays !== null ? `${totals.avgConvDays.toFixed(0)}d` : '—'}</TableCell>
-              <TableCell className="py-3 text-center text-[13px] font-bold text-white">{totals.avgVisits.toFixed(1)}</TableCell>
+            <TableRow className={TABLE_STYLES.footer.row}>
+              <TableCell className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} px-5 py-3`}>Total</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{formatNumber(totals.uniqueMembers)}</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{formatNumber(totals.unitsSold)}</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-right`}>{formatCurrency(totals.totalLtv)}</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-right`}>{formatCurrency(totals.atv)}</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-right`}>{formatCurrency(totals.auv)}</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{totals.purchaseFreq.toFixed(1)}×</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{totals.avgConvDays !== null ? `${totals.avgConvDays.toFixed(0)}d` : '—'}</TableCell>
+              <TableCell className={`${TABLE_STYLES.footer.cell} text-center`}>{totals.avgVisits.toFixed(1)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </div>
+      </P57TableShell>
     </div>
   );
 };

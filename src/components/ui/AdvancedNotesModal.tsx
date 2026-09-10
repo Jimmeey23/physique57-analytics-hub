@@ -22,6 +22,7 @@ import {
   Clock
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 interface Note {
   id: string;
@@ -66,7 +67,7 @@ export const AdvancedNotesModal: React.FC<AdvancedNotesModalProps> = ({
       try {
         setNotes(JSON.parse(savedNotes));
       } catch (error) {
-        console.error('Error loading notes:', error);
+        logger.error('Error loading notes:', error);
       }
     }
   }, [storageKey]);
@@ -272,7 +273,7 @@ export const AdvancedNotesModal: React.FC<AdvancedNotesModalProps> = ({
               {filteredNotes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredNotes.map((note) => (
-                    <Card key={note.id} className="bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 border-l-4 border-l-indigo-400">
+                    <Card key={note.id} className="bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 border border-indigo-200">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -338,8 +339,8 @@ export const AdvancedNotesModal: React.FC<AdvancedNotesModalProps> = ({
                         
                         {note.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {note.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
+                            {note.tags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
                                 #{tag}
                               </Badge>
                             ))}

@@ -34,6 +34,7 @@ import {
   Line
 } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { rowKey } from '@/utils/reactKeys';
 
 interface ExecutiveDiscountsTabProps {
   data: SalesData[];
@@ -428,7 +429,7 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
 
       {/* No Discount Warning */}
       {discountAnalysis.message && (
-        <Card className="border-l-4 border-yellow-400 bg-yellow-50">
+        <Card className="border border-amber-200 bg-amber-50/60">
           <CardContent className="pt-6">
             <div className="flex gap-3">
               <div className="text-yellow-600 font-semibold">ℹ️</div>
@@ -538,7 +539,7 @@ export const ExecutiveDiscountsTab: React.FC<ExecutiveDiscountsTabProps> = ({
                     .filter(item => (item.discountAmount || 0) > 0)
                     .slice(0, 50)
                     .map((item, index) => (
-                    <TableRow key={index}>
+                    <TableRow key={rowKey(item, index)}>
                       <TableCell>{item.paymentDate}</TableCell>
                       <TableCell className="font-medium">{item.customerName}</TableCell>
                       <TableCell>

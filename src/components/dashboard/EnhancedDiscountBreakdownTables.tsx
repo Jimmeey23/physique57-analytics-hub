@@ -25,6 +25,7 @@ import { SalesData } from '@/types/dashboard';
 import { PersistentTableFooter } from '@/components/dashboard/PersistentTableFooter';
 import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
+import { rowKey } from '@/utils/reactKeys';
 
 interface EnhancedDiscountBreakdownTablesProps {
   data: SalesData[];
@@ -220,38 +221,39 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
               </TableHeader>
               <TableBody>
                 {productBreakdown.slice(0, 10).map((item, index) => {
+                  const __pkey = rowKey(item, index);
                   const badge = getPerformanceBadge(item.avgDiscountPercentage);
                   return (
-                    <TableRow key={index} className="max-h-[35px]">
-                      <TableCell className="font-medium py-2 max-h-[35px]">
+                    <TableRow key={__pkey} className="max-p57-row-h">
+                      <TableCell className="font-medium py-2 max-p57-row-h">
                         <div className="max-w-[200px] truncate text-sm" title={item.product}>
                           {item.product}
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 max-h-[35px]">
+                      <TableCell className="py-2 max-p57-row-h">
                         <span className="text-sm text-slate-600 truncate block">{item.category}</span>
                       </TableCell>
-                      <TableCell className="text-center py-2 max-h-[35px]">
+                      <TableCell className="text-center py-2 max-p57-row-h">
                         <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.transactions)}</span>
                       </TableCell>
-                      <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
+                      <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-p57-row-h">
                         <span className="truncate block">{formatCurrency(item.totalDiscount)}</span>
                       </TableCell>
-                      <TableCell className="text-right py-2 max-h-[35px]">
+                      <TableCell className="text-right py-2 max-p57-row-h">
                         <span className="inline-flex text-sm font-semibold text-slate-700">
                           {formatPercentage(item.avgDiscountPercentage)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
+                      <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-p57-row-h">
                         <span className="truncate block">{formatCurrency(item.totalRevenue)}</span>
                       </TableCell>
-                      <TableCell className="text-right py-2 max-h-[35px]">
+                      <TableCell className="text-right py-2 max-p57-row-h">
                         <div className="text-xs truncate">
                           <div className="font-medium truncate">{formatCurrency(item.discountRate)}</div>
                           <div className="text-slate-500 truncate">per transaction</div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center py-2 max-h-[35px]">
+                      <TableCell className="text-center py-2 max-p57-row-h">
                         <Button
                           variant="outline"
                           size="sm"
@@ -349,9 +351,10 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
               </TableHeader>
               <TableBody>
                 {locationBreakdown.map((item, index) => {
+                  const __lkey = rowKey(item, index);
                   const badge = getPerformanceBadge(item.avgDiscountPercentage);
                   return (
-                    <TableRow key={index}>
+                    <TableRow key={__lkey}>
                       <TableCell className="font-medium">{item.location}</TableCell>
                       <TableCell className="text-center">
                         <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.transactions)}</span>
@@ -481,9 +484,10 @@ export const EnhancedDiscountBreakdownTables: React.FC<EnhancedDiscountBreakdown
               </TableHeader>
               <TableBody>
                 {staffBreakdown.map((item, index) => {
+                  const __skey = rowKey(item, index);
                   const badge = getPerformanceBadge(item.avgDiscountPercentage);
                   return (
-                    <TableRow key={index}>
+                    <TableRow key={__skey}>
                       <TableCell className="font-medium">{item.staff}</TableCell>
                       <TableCell className="text-center">
                         <span className="inline-flex text-sm font-semibold text-slate-700">{formatNumber(item.transactions)}</span>

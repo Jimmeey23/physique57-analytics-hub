@@ -3,6 +3,7 @@ import * as React from 'react';
 import { ReactNode } from 'react';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption } from '@/utils/consolidatedExportPreset';
+import { logger } from '@/utils/logger';
 
 interface GlobalFilters {
   dateRange: {
@@ -39,7 +40,7 @@ export const useGlobalFilters = () => {
   const context = React.useContext(GlobalFiltersContext);
   if (!context) {
     // Instead of throwing, log the error and return a fallback
-    console.error('useGlobalFilters must be used within a GlobalFiltersProvider. Returning fallback values.');
+    logger.error('useGlobalFilters must be used within a GlobalFiltersProvider. Returning fallback values.');
     
     const fallbackDateRange = getDashboardDefaultDateRange();
     // Return a fallback context with default values

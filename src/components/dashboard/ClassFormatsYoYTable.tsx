@@ -296,8 +296,8 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
             onCopyAllTabs={async () => getAllTabsText()}
             contextInfo={{
               selectedMetric: metric,
-              dateRange: copyContext.dateRange,
-              filters: copyContext.filters,
+              dateRange: copyContext.contextInfo.dateRange,
+              filters: copyContext.contextInfo.filters,
                 additionalInfo: {
                 metric: metric,
                 yearsCompared: years,
@@ -313,7 +313,7 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
             <TableRow>
               <TableHead>Format / Year</TableHead>
               {years.map((y, idx) => (
-                <TableHead key={idx} className="text-right">{y}</TableHead>
+                <TableHead key={y} className="text-right">{y}</TableHead>
               ))}
               <TableHead className="text-right">YoY Δ</TableHead>
             </TableRow>
@@ -328,7 +328,7 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
                     const value = renderValue(y, fmt);
                     return (
                       <TableCell 
-                        key={idx} 
+                        key={y} 
                         className="text-right cursor-pointer hover:bg-gray-50 transition-colors"
                         onClick={() => handleCellClick(formatName, y, parseFloat(String(value).replace(/[^0-9.-]/g, '')) || 0)}
                       >
@@ -345,7 +345,7 @@ export const ClassFormatsYoYTable: React.FC<ClassFormatsYoYTableProps> = ({ sess
             <TableRow>
               <TableCell className="font-semibold text-white">All Formats</TableCell>
               {years.map((y, idx) => (
-                <TableCell key={idx} className="text-right text-white">{renderTotalValue(y)}</TableCell>
+                <TableCell key={y} className="text-right text-white">{renderTotalValue(y)}</TableCell>
               ))}
               <TableCell className="text-right text-white">{computeTotalsYoYDelta()}</TableCell>
             </TableRow>

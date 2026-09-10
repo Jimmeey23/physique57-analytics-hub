@@ -34,7 +34,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
 }) => {
   if (!data) return null;
 
-  const rawData = data.rawData || data.filteredTransactionData || [];
+  const rawData: SalesData[] = data.rawData || data.filteredTransactionData || [];
 
   const analytics = React.useMemo(() => {
     const totalRevenue = rawData.reduce((sum: number, item: SalesData) => sum + (Number(item.paymentValue) || 0), 0);
@@ -250,7 +250,7 @@ export const SalesDrillDownModal: React.FC<SalesDrillDownModalProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <ModernDataTable data={rawData} columns={tableColumns} headerGradient="from-slate-900 via-blue-950 to-slate-900" maxHeight="420px" />
+              <ModernDataTable data={rawData} columns={tableColumns} maxHeight="420px" />
             </CardContent>
           </Card>
 

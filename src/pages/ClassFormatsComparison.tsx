@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
+import { KpiTicker } from '@/components/ui/KpiTicker';
+import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
@@ -36,7 +39,7 @@ const ClassFormatsComparison: React.FC = () => {
   const { allCheckins, loading: checkinsLoading } = useLateCancellationsData();
   const { setLoading } = useGlobalLoading();
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
-  const [activeLocation, setActiveLocation] = useState(exportPreset?.studioId || 'kwality');
+  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
   const [drill, setDrill] = useState<any | null>(null);
 
   useEffect(() => {
@@ -134,11 +137,27 @@ const ClassFormatsComparison: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="monthly" className="space-y-6">
-          <ClassFormatsMoMDetails sessions={filteredSessionsByLocation as any} />
+          <ClassFormatsMoMTable
+            sessions={filteredSessionsByLocation as any}
+            checkins={filteredCheckinsByLocation}
+            onDrillDown={(data) => {
+              window.dispatchEvent(new CustomEvent('open-drilldown', {
+                detail: { type: 'format-trend', ...data }
+              }));
+            }}
+          />
         </TabsContent>
-        
+
         <TabsContent value="yearly" className="space-y-6">
-          <ClassFormatsYoYDetails sessions={filteredSessionsByLocation as any} />
+          <ClassFormatsYoYTable
+            sessions={filteredSessionsByLocation as any}
+            checkins={filteredCheckinsByLocation}
+            onDrillDown={(data) => {
+              window.dispatchEvent(new CustomEvent('open-drilldown', {
+                detail: { type: 'format-trend', ...data }
+              }));
+            }}
+          />
         </TabsContent>
       </Tabs>
     );
@@ -381,6 +400,16 @@ const ClassFormatsComparison: React.FC = () => {
           extra={exportButton}
         />
 
+        <div className="container mx-auto px-6 pt-5">
+          <KpiTicker
+            items={[
+              { label: 'Total Sessions', value: heroTotals.sessions.toLocaleString() },
+              { label: 'Avg Fill', value: `${heroTotals.fill.toFixed(1)}%` },
+              { label: 'Total Revenue', value: formatNumber(heroTotals.revenue) },
+            ]}
+          />
+        </div>
+
         <div className="container mx-auto px-6 py-10">
           {/* Location Tabs - Above Filters Section */}
           <div className="mb-8">
@@ -497,6 +526,9 @@ const ClassFormatsComparison: React.FC = () => {
               </div>
             );
           })}</div>
+        </div>
+        <div className="container mx-auto px-6 pb-10">
+          <MetricDefinitions items={METRIC_DEFINITIONS.classFormats} />
         </div>
         {drill && (
           <ModernDrillDownModal

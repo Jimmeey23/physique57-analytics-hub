@@ -150,9 +150,9 @@ export const LeadMonthOnMonthTable: React.FC<LeadMonthOnMonthTableProps> = ({
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <Table>
             <TableHeader className="sticky top-0 z-20">
-              <TableRow className="bg-gradient-to-r from-slate-800 via-slate-900 to-black text-white hover:bg-gradient-to-r hover:from-slate-800 hover:to-black">
+              <TableRow className="bg-[#f6f7f9]">
                 <TableHead 
-                  className="cursor-pointer hover:bg-slate-700 transition-colors font-bold text-white sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-30 min-w-[250px] w-[250px] max-w-[250px] p-4"
+                  className="bg-[#f6f7f9] cursor-pointer font-bold text-slate-700 hover:bg-slate-200/70 transition-colors sticky left-0 z-30 min-w-[250px] w-[250px] max-w-[250px] p-4"
                   onClick={() => handleSort('stage')}
                 >
                   <div className="flex items-center gap-2 text-sm">
@@ -162,7 +162,7 @@ export const LeadMonthOnMonthTable: React.FC<LeadMonthOnMonthTableProps> = ({
                 {formattedMonths.map(month => (
                   <TableHead 
                     key={month.original}
-                    className="cursor-pointer hover:bg-slate-700 transition-colors text-center font-bold text-white min-w-[100px] w-[100px] p-3"
+                    className="bg-[#f6f7f9] cursor-pointer text-center font-bold text-slate-700 hover:bg-slate-200/70 transition-colors min-w-[100px] w-[100px] p-3"
                     onClick={() => handleSort(month.original)}
                   >
                     <div className="flex items-center justify-center gap-1 text-xs whitespace-nowrap">

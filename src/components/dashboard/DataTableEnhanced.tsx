@@ -14,6 +14,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { GroupBy, ViewMode, GroupedRow, SessionData } from '@/types';
+import type { SessionData as HookSessionData } from '@/hooks/useSessionsData';
+import { adaptHookSessions } from '@/utils/sessionShape';
 import { calculateMetrics, calculateTotalsRow, formatCurrency, formatPercentage, formatNumber } from '@/utils/calculations';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
 
 interface DataTableEnhancedProps {
-  sessions: SessionData[];
+  sessions: HookSessionData[];
 }
 
 const groupByOptions: { value: GroupBy; label: string }[] = [
@@ -52,6 +54,8 @@ const viewModeOptions: { value: ViewMode; label: string }[] = [
 ];
 
 export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
+  // Normalize hook rows to the legacy UI shape this table groups by.
+  const rows = useMemo(() => adaptHookSessions(sessions || []), [sessions]);
   const [groupBy, setGroupBy] = useState<GroupBy>('ClassDayTimeLocation');
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -64,7 +68,7 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
     
     const groups = new Map<string, SessionData[]>();
     
-    sessions.forEach((session) => {
+    rows.forEach((session) => {
       let key = '';
       
       switch (groupBy) {
@@ -169,25 +173,25 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
     
     setTimeout(() => setIsCalculating(false), 100);
     return result;
-  }, [sessions, groupBy, viewMode]);
+  }, [rows, groupBy, viewMode]);
 
   // Calculate totals
   const totalsRow = useMemo(() => {
     const allSessions = groupedData.flatMap(row => 
       row.children && row.children.length > 0 
-        ? row.children.map(() => sessions.find(s => 
+        ? row.children.map(() => rows.find(s => 
             s.className === row.className && 
             s.day === row.day && 
             s.time === row.time
           )!).filter(Boolean)
-        : [sessions.find(s => 
+        : [rows.find(s => 
             s.className === row.className && 
             s.day === row.day && 
             s.time === row.time
           )!].filter(Boolean)
     );
     return calculateTotalsRow(allSessions);
-  }, [groupedData, sessions]);
+  }, [groupedData, rows]);
 
   // Define columns
   const columns = useMemo<ColumnDef<GroupedRow>[]>(() => {
@@ -414,10 +418,8 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
         header: 'Status',
         cell: ({ row }) => (
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.original.status === 'excellent' ? 'bg-green-100 text-green-700' :
-            row.original.status === 'good' ? 'bg-blue-100 text-blue-700' :
-            row.original.status === 'average' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-red-100 text-red-700'
+            row.original.status === 'Active' ? 'bg-green-100 text-green-700' :
+            'bg-slate-100 text-slate-600'
           }`}>
             {row.original.status?.charAt(0).toUpperCase() + row.original.status?.slice(1)}
           </span>
@@ -516,7 +518,7 @@ export function DataTableEnhanced({ sessions }: DataTableEnhancedProps) {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-800 text-white sticky top-0 z-10">
+            <thead className="sticky top-0 z-10 bg-[#f6f7f9] text-slate-700">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (

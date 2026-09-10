@@ -1,5 +1,6 @@
 import { getOfflineDatasetRows, saveOfflineDatasetRows } from '@/lib/offlineDataStore';
 import type { DataSourceMode, DatasetLiveSource, OfflineDatasetKey } from '@/types/offlineData';
+import { logger } from '@/utils/logger';
 
 interface DatasetRowsResult {
   rows: any[][];
@@ -16,9 +17,11 @@ export const loadDatasetRowsForMode = async (
 
   const finish = (rows: any[][], source: DatasetLiveSource): DatasetRowsResult => {
     if (source === 'remote') {
-      console.info(`[data] ${key}: live rows loaded (${rows.length} rows)`);
+      logger.info(`[data] ${key}: live rows loaded (${rows.length} rows)`);
+    } else if (mode === 'offline') {
+      logger.info(`[data] ${key}: offline mode - serving ${rows.length} cached rows`);
     } else {
-      console.warn(`[data] ${key}: remote fetch failed in ${mode} mode — serving ${rows.length} cached rows`);
+      logger.warn(`[data] ${key}: remote fetch failed - serving ${rows.length} cached rows`);
     }
     try {
       onSource?.(key, source);

@@ -245,45 +245,45 @@ export const EnhancedDiscountDataTable: React.FC<EnhancedDiscountDataTableProps>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedData.map((item, index) => <TableRow key={`${item.saleItemId}-${index}`} className="hover:cursor-pointer max-h-[35px]">
-                  <TableCell className="font-medium py-2 max-h-[35px]">
+              {paginatedData.map((item, index) => <TableRow key={`${item.saleItemId}-${index}`} className="hover:cursor-pointer max-p57-row-h">
+                  <TableCell className="font-medium py-2 max-p57-row-h">
                     <span className="truncate block">{new Date(item.paymentDate).toLocaleDateString()}</span>
                   </TableCell>
-                  <TableCell className="py-2 max-h-[35px]">
+                  <TableCell className="py-2 max-p57-row-h">
                     <div className="truncate">
                       <div className="font-medium text-sm text-slate-700 truncate">{item.customerName}</div>
                       <div className="text-xs text-slate-500 truncate">{item.customerEmail}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-2 max-h-[35px]">
+                  <TableCell className="py-2 max-p57-row-h">
                     <div className="truncate">
                       <div className="font-medium text-sm text-slate-700 truncate">{item.cleanedProduct}</div>
                       <div className="text-xs text-slate-500 truncate">{item.cleanedCategory}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-medium py-2 max-h-[35px]">
+                  <TableCell className="text-right font-medium py-2 max-p57-row-h">
                     <span className="truncate block">{formatCurrency(item.mrpPostTax || 0)}</span>
                   </TableCell>
-                  <TableCell className="text-right py-2 max-h-[35px]">
+                  <TableCell className="text-right py-2 max-p57-row-h">
                     <span className="font-medium text-sm text-slate-700 truncate block">
                       -{formatCurrency(item.discountAmount || 0)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right py-2 max-h-[35px]">
+                  <TableCell className="text-right py-2 max-p57-row-h">
                     <span className="inline-flex justify-end text-sm font-semibold text-slate-700">
                       {formatPercentage(item.discountPercentage || 0)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-h-[35px]">
+                  <TableCell className="text-right font-medium text-sm text-slate-700 py-2 max-p57-row-h">
                     <span className="truncate block">{formatCurrency(item.paymentValue || 0)}</span>
                   </TableCell>
-                  <TableCell className="py-2 max-h-[35px]">
+                  <TableCell className="py-2 max-p57-row-h">
                     <span className="text-sm text-slate-600 truncate block">{item.calculatedLocation}</span>
                   </TableCell>
-                  <TableCell className="py-2 max-h-[35px]">
+                  <TableCell className="py-2 max-p57-row-h">
                     <span className="text-sm text-slate-600 truncate block">{item.soldBy}</span>
                   </TableCell>
-                  <TableCell className="text-center py-2 max-h-[35px]">
+                  <TableCell className="text-center py-2 max-p57-row-h">
                     <Button variant="outline" size="sm" onClick={() => handleRowClick(item)} className="hover:bg-blue-50 h-7">
                       <Eye className="w-3 h-3" />
                     </Button>

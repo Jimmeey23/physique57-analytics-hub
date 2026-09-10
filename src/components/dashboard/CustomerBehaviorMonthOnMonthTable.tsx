@@ -359,8 +359,8 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
         onCopyAllTabs={generateAllTabsContent}
         contextInfo={{
           selectedMetric: selectedMetric,
-          dateRange: copyContext.dateRange,
-          filters: copyContext.filters,
+          dateRange: copyContext.contextInfo.dateRange,
+          filters: copyContext.contextInfo.filters,
           additionalInfo: {
             displayMode: displayMode,
             behaviorMetric: selectedMetric,
@@ -371,22 +371,22 @@ export const CustomerBehaviorMonthOnMonthTable: React.FC<Props> = ({ data, onRow
         <div className="overflow-x-auto" data-table="customer-behavior-analysis">
           <table className="min-w-full bg-white">
             <thead className="sticky top-0 z-30">
-              <tr className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800">
-                <th className="w-[30rem] px-6 py-3 text-left text-white font-bold text-sm uppercase tracking-wide sticky left-0 bg-gradient-to-r from-slate-800 to-slate-900 z-40 border-r border-white/20">
+              <tr className="bg-[#f6f7f9]">
+                <th className="w-[30rem] bg-[#f6f7f9] px-6 py-3 text-left font-bold text-sm uppercase tracking-wide text-slate-700 sticky left-0 z-40 border-r border-slate-200">
                   Category / Product
                 </th>
                 {monthKeys.map(({ key, display }) => {
                   const isPreviousMonth = key === previousMonthKey;
                   return (
-                    <th key={key} className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-white/20 min-w-[90px] ${
-                      isPreviousMonth ? 'bg-blue-800 text-white' : 'text-white'
+                    <th key={key} className={`px-3 py-3 text-center font-bold text-xs uppercase tracking-wider border-l border-slate-200 min-w-[90px] ${
+                      isPreviousMonth ? 'bg-sky-100 text-sky-900' : 'bg-[#f6f7f9] text-slate-700'
                     }`}>
                       <div className="flex flex-col items-center">
                         <div className="flex items-center space-x-1">
                           {isPreviousMonth && <Star className="w-3 h-3" />}
                           <span className="text-xs font-bold whitespace-nowrap">{display.split(' ')[0]}</span>
                         </div>
-                        <span className="text-slate-300 text-xs">{display.split(' ')[1]}</span>
+                        <span className="text-xs text-slate-400">{display.split(' ')[1]}</span>
                       </div>
                     </th>
                   );

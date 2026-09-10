@@ -7,6 +7,7 @@ import { ExpirationData } from '@/types/dashboard';
 import { formatNumber } from '@/utils/formatters';
 import { Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { rowKey } from '@/utils/reactKeys';
 
 interface ExpirationDataTablesProps {
   data: ExpirationData[];
@@ -146,7 +147,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
                 <tbody>
                   {churnedData.slice(0, 50).map((item, index) => (
                     <tr 
-                      key={index} 
+                      key={rowKey(item, index)} 
                       className="border-b border-slate-100 hover:bg-slate-50/50 cursor-pointer"
                       onClick={() => onRowClick?.(item)}
                     >
@@ -190,7 +191,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
                 <tbody>
                   {frozenData.slice(0, 50).map((item, index) => (
                     <tr 
-                      key={index} 
+                      key={rowKey(item, index)} 
                       className="border-b border-slate-100 hover:bg-slate-50/50 cursor-pointer"
                       onClick={() => onRowClick?.(item)}
                     >
@@ -234,7 +235,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
                 <tbody>
                   {activeData.slice(0, 50).map((item, index) => (
                     <tr 
-                      key={index} 
+                      key={rowKey(item, index)} 
                       className="border-b border-slate-100 hover:bg-slate-50/50 cursor-pointer"
                       onClick={() => onRowClick?.(item)}
                     >
@@ -272,7 +273,7 @@ export const ExpirationDataTables: React.FC<ExpirationDataTablesProps> = ({ data
                 </thead>
                 <tbody>
                   {summaryArray.map((item, index) => (
-                    <tr key={index} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <tr key={item.name} className="border-b border-slate-100 hover:bg-slate-50/50">
                       <td className="py-2 px-3 font-medium text-xs">{item.name}</td>
                       <td className="py-2 px-3 text-center font-medium">{formatNumber(item.total)}</td>
                       <td className="py-2 px-3 text-center text-green-600">{formatNumber(item.active)}</td>

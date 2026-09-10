@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { MapPin, Play, Pause, Building2, Home, LocateFixed, Navigation } from 'lucide-react';
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { BrandSpinner } from '@/components/ui/BrandSpinner';
+import { logger } from '@/utils/logger';
 
 interface StudioLocation {
   id: string;
@@ -116,7 +117,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
   const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState<boolean>(true);
   const [autoCollapseTimer, setAutoCollapseTimer] = useState<NodeJS.Timeout | null>(null);
-  const intervalRefs = useRef<Record<string, number>>({});
+  const intervalRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   // Shared animation state for synchronization
   const colorAnimation = {
@@ -168,7 +169,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
     try {
       await Promise.allSettled(preloadPromises);
     } catch (error) {
-      console.warn('Some images failed to preload:', error);
+      logger.warn('Some images failed to preload:', error);
     }
   }, [locations, preloadedImages]);
 
@@ -512,7 +513,7 @@ export const StudioLocationTabs: React.FC<StudioLocationTabsProps> = ({
                             opacity: imageLoadingStatus[`${location.id}-${currentIndex}`] === 'loaded' || preloadedImages.has(location.media.sources[currentIndex]) ? 1 : 0
                           }}
                           onError={(e) => {
-                            console.error(`Failed to load image: ${location.media.sources[currentIndex]}`);
+                            logger.error(`Failed to load image: ${location.media.sources[currentIndex]}`);
                             const imageKey = `${location.id}-${currentIndex}`;
                             setImageLoadingStatus(prev => ({ ...prev, [imageKey]: 'error' }));
                             

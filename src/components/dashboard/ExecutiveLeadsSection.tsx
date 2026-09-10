@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { TrendingUp, Users, CheckCircle, Zap } from 'lucide-react';
 import { ExecutiveSectionCard } from './ExecutiveSectionCard';
 import { ExecutiveDrillDownModal } from './ExecutiveDrillDownModal';
-import { StandardizedMetricCard } from './StandardizedMetricCard';
+import { MetricCard, MetricGrid } from '@/components/ui/MetricCard';
 import { StandardizedTable } from './StandardizedTable';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
@@ -111,35 +111,30 @@ export const ExecutiveLeadsSection: React.FC<ExecutiveLeadsSectionProps> = ({
           onClick={() => setDrillDownOpen(true)}
         >
           <h4 className="text-sm font-semibold text-slate-700 mb-4">Key Metrics</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StandardizedMetricCard
-              title="Total Leads"
+          <MetricGrid cols={4}>
+            <MetricCard
+              label="Total Leads"
               value={filteredLeads.length}
               icon={Users}
-              color="pink"
             />
-            <StandardizedMetricCard
-              title="Converted"
+            <MetricCard
+              label="Converted"
               value={filteredLeads.filter(l => l.convertedToCustomerAt).length}
               icon={CheckCircle}
-              color="emerald"
-              change={filteredLeads.length > 0 ? (filteredLeads.filter(l => l.convertedToCustomerAt).length / filteredLeads.length) * 100 : 0}
+              sub={filteredLeads.length > 0 ? `${((filteredLeads.filter(l => l.convertedToCustomerAt).length / filteredLeads.length) * 100).toFixed(1)}% of leads` : 'No leads'}
             />
-            <StandardizedMetricCard
-              title="Qualified"
+            <MetricCard
+              label="Qualified"
               value={filteredLeads.filter(l => l.stage === 'qualified' || l.stage === 'Qualified').length}
               icon={TrendingUp}
-              color="blue"
-              change={filteredLeads.length > 0 ? (filteredLeads.filter(l => l.stage === 'qualified' || l.stage === 'Qualified').length / filteredLeads.length) * 100 : 0}
+              sub={filteredLeads.length > 0 ? `${((filteredLeads.filter(l => l.stage === 'qualified' || l.stage === 'Qualified').length / filteredLeads.length) * 100).toFixed(1)}% of leads` : 'No leads'}
             />
-            <StandardizedMetricCard
-              title="Conversion Rate"
-              value={filteredLeads.length > 0 ? calculateConversionRate(filteredLeads).toFixed(1) : '0'}
-              subtitle="%"
+            <MetricCard
+              label="Conversion Rate"
+              value={filteredLeads.length > 0 ? `${calculateConversionRate(filteredLeads).toFixed(1)}%` : '0%'}
               icon={Zap}
-              color="amber"
             />
-          </div>
+          </MetricGrid>
         </div>
 
         {/* Lead Sources Table */}

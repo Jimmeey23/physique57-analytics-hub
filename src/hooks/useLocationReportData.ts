@@ -14,6 +14,8 @@ import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { logger } from '@/utils/logger';
+import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, pct, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
 export interface LocationReportMetrics {
   // Revenue & Sales Performance
@@ -80,10 +82,6 @@ export interface LocationReportData {
     concerns: string[];
     recommendations: string[];
   };
-  comparisons: {
-    monthOverMonth: { [key: string]: number };
-    yearOverYear: { [key: string]: number };
-  };
 }
 
 export const useLocationReportData = () => {
@@ -139,12 +137,8 @@ export const useLocationReportData = () => {
   // Get the primary location for filtering
   const primaryLocation = activeLocations[0] || 'All Locations';
 
-  // Filter data by location and date range
-  const filteredData = useMemo(() => {
-    // If no date range is set, use all available data
-    // This ensures the report can still display even without explicit filters
-
-    const filterByLocation = (item: any) => {
+  // Shared location predicate (used by the period filter and the MoM comparison window)
+  const filterByLocation = useCallback((item: any) => {
       // Temporarily make location filtering more lenient
       if (!primaryLocation || primaryLocation === 'All Locations' || activeLocations.length === 0) {
         return true;
@@ -166,7 +160,14 @@ export const useLocationReportData = () => {
       
       // If no specific location match, include the item (less strict)
       return true;
-    };
+    },
+    [primaryLocation, activeLocations]
+  );
+
+  // Filter data by location and date range
+  const filteredData = useMemo(() => {
+    // If no date range is set, use all available data
+    // This ensures the report can still display even without explicit filters
 
     const filterByDateRange = (item: any) => {
       // Always use the shared dashboard default range, ignore global date filters
@@ -239,7 +240,7 @@ export const useLocationReportData = () => {
   }, [
     salesData, sessionsData, payrollData, newClientData, leadsData, 
     discountData, lateCancellationsData, expirationsData,
-    primaryLocation, previousMonthRange, activeLocations
+    primaryLocation, previousMonthRange, activeLocations, filterByLocation
   ]);
 
   // Generate AI insights based on metrics
@@ -433,7 +434,7 @@ export const useLocationReportData = () => {
         ).slice(0, 3) : []
       };
     } catch (error) {
-      console.error('Error generating AI insights:', error);
+      logger.error('Error generating AI insights:', error);
       return null;
     }
   }, [generateQuickInsights, primaryLocation, previousMonthRange, filteredData]);
@@ -499,6 +500,20 @@ export const useLocationReportData = () => {
     const totalDiscounts = discounts.reduce((sum, item) => sum + (parseFloat(String(item.discountAmount)) || 0), 0);
     const discountRate = totalRevenue > 0 ? (totalDiscounts / totalRevenue) * 100 : 0;
 
+    // Honest month-over-month revenue growth: current period vs the immediately
+    // preceding calendar month over the same location-filtered sales data.
+    const rangeStart = parseDate(previousMonthRange.startDate) ?? new Date();
+    const prevWindowStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth() - 1, 1);
+    const prevWindowEnd = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 0, 23, 59, 59, 999);
+    const prevMonthRevenue = salesData
+      .filter((item: any) => {
+        if (!filterByLocation(item) || !item.paymentDate) return false;
+        const d = parseDate(item.paymentDate);
+        return !!d && d >= prevWindowStart && d <= prevWindowEnd;
+      })
+      .reduce((sum: number, item: any) => sum + (parseFloat(String(item.paymentValue)) || 0), 0);
+    const revenueGrowth = pct(totalRevenue - prevMonthRevenue, prevMonthRevenue, 1);
+
     // Session & Class Performance
     const totalSessions = sessions.length;
     const totalCheckIns = sessions.reduce((sum, item) => sum + (parseInt(String(item.checkedInCount)) || 0), 0);
@@ -558,19 +573,19 @@ export const useLocationReportData = () => {
 
     // Client Acquisition & Retention — source of truth is the New sheet's status columns:
     // Conversion Status = 'Converted' means converted; Retention Status = 'Retained' means retained.
-    const newClientsAcquired = newClients.length;
+    const newClientsAcquired = newClients.filter(isNewClient).length;
     const convertedLeads = leads.filter(item => item.status?.toLowerCase().includes('converted')).length;
-    const convertedClients = newClients.filter(item => String(item.conversionStatus || '').trim() === 'Converted').length;
-    const retainedClients = newClients.filter(item => String(item.retentionStatus || '').trim() === 'Retained').length;
-    const conversionRate = newClientsAcquired > 0 ? (convertedClients / newClientsAcquired) * 100 : 0;
+    const convertedClients = newClients.filter(isConverted).length;
+    const retainedClients = newClients.filter(isRetained).length;
+    const conversionRate = calcConversionRate(convertedClients, newClientsAcquired);
 
     const averageLTV = newClients.reduce((sum, item) =>
       sum + (parseFloat(String(item.ltv)) || 0), 0
     ) / (newClients.length || 1);
 
-    const churnedMembers = newClientsAcquired - retainedClients;
-    const churnRate = newClientsAcquired > 0 ? (churnedMembers / newClientsAcquired) * 100 : 0;
-    const retentionRate = newClientsAcquired > 0 ? (retainedClients / newClientsAcquired) * 100 : 0;
+    const churnedMembers = Math.max(0, newClientsAcquired - retainedClients);
+    const churnRate = pct(churnedMembers, newClientsAcquired, 1);
+    const retentionRate = calcRetentionRate(retainedClients, newClientsAcquired);
 
     // Lead Funnel
     const totalLeads = leads.length;
@@ -603,7 +618,7 @@ export const useLocationReportData = () => {
       uniqueMembers,
       avgTransactionValue,
       avgSpendPerMember,
-      revenueGrowth: 0, // TODO: Calculate from historical data
+      revenueGrowth,
       totalDiscounts,
       discountRate,
       totalSessions,
@@ -635,7 +650,7 @@ export const useLocationReportData = () => {
       sessionUtilization: capacityUtilization,
       overallScore: 0 // Will be calculated based on various factors
     };
-  }, [filteredData]);
+  }, [filteredData, salesData, previousMonthRange, filterByLocation]);
 
   // Calculate overall performance score
   const calculatedMetrics = useMemo(() => {
@@ -688,13 +703,13 @@ export const useLocationReportData = () => {
     const basicInsights = {
       highlights: [
         `Generated ${formatCurrency(calculatedMetrics.totalRevenue)} in total revenue`,
-        `Achieved ${formatPercentage(calculatedMetrics.fillRate)}% class fill rate`,
+        `Achieved ${formatPercentage(calculatedMetrics.fillRate)} class fill rate`,
         `Acquired ${calculatedMetrics.newClientsAcquired} new clients`
       ].filter(Boolean),
       concerns: [
-        calculatedMetrics.churnRate > 20 ? `High churn rate of ${formatPercentage(calculatedMetrics.churnRate)}%` : null,
-        calculatedMetrics.fillRate < 60 ? `Low class utilization at ${formatPercentage(calculatedMetrics.fillRate)}%` : null,
-        calculatedMetrics.conversionRate < 15 ? `Low conversion rate of ${formatPercentage(calculatedMetrics.conversionRate)}%` : null
+        calculatedMetrics.churnRate > 20 ? `High churn rate of ${formatPercentage(calculatedMetrics.churnRate)}` : null,
+        calculatedMetrics.fillRate < 60 ? `Low class utilization at ${formatPercentage(calculatedMetrics.fillRate)}` : null,
+        calculatedMetrics.conversionRate < 15 ? `Low conversion rate of ${formatPercentage(calculatedMetrics.conversionRate)}` : null
       ].filter(Boolean),
       recommendations: [
         calculatedMetrics.fillRate < 70 ? 'Consider optimizing class schedules and capacity' : null,
@@ -708,10 +723,6 @@ export const useLocationReportData = () => {
       location: primaryLocation,
       metrics: calculatedMetrics,
       insights: basicInsights, // This will be enhanced with AI insights in real-time
-      comparisons: {
-        monthOverMonth: {}, // TODO: Calculate from historical data
-        yearOverYear: {}     // TODO: Calculate from historical data
-      }
     };
   }, [calculatedMetrics, primaryLocation, previousMonthRange]);
 

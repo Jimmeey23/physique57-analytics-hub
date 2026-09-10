@@ -40,48 +40,32 @@ const shouldLog = (level: LogLevel): boolean => {
  * Create a logger instance with an optional source identifier
  */
 export const createLogger = (source?: string) => ({
-  debug: (message: string, data?: any) => {
+  debug: (message: string, ...rest: any[]) => {
     if (!shouldLog('debug')) return;
-    const entry: LogEntry = { level: 'debug', message, data, timestamp: new Date(), source };
+    const entry: LogEntry = { level: 'debug', message, data: rest.length <= 1 ? rest[0] : rest, timestamp: new Date(), source };
     addToHistory(entry);
-    if (data !== undefined) {
-      console.debug(`[${source || 'App'}] ${message}`, data);
-    } else {
-      console.debug(`[${source || 'App'}] ${message}`);
-    }
+    console.debug(`[${source || 'App'}] ${message}`, ...rest);
   },
 
-  info: (message: string, data?: any) => {
+  info: (message: string, ...rest: any[]) => {
     if (!shouldLog('info')) return;
-    const entry: LogEntry = { level: 'info', message, data, timestamp: new Date(), source };
+    const entry: LogEntry = { level: 'info', message, data: rest[0], timestamp: new Date(), source };
     addToHistory(entry);
-    if (data !== undefined) {
-      console.info(`[${source || 'App'}] ${message}`, data);
-    } else {
-      console.info(`[${source || 'App'}] ${message}`);
-    }
+    console.info(`[${source || 'App'}] ${message}`, ...rest);
   },
 
-  warn: (message: string, data?: any) => {
+  warn: (message: string, ...rest: any[]) => {
     if (!shouldLog('warn')) return;
-    const entry: LogEntry = { level: 'warn', message, data, timestamp: new Date(), source };
+    const entry: LogEntry = { level: 'warn', message, data: rest[0], timestamp: new Date(), source };
     addToHistory(entry);
-    if (data !== undefined) {
-      console.warn(`[${source || 'App'}] ${message}`, data);
-    } else {
-      console.warn(`[${source || 'App'}] ${message}`);
-    }
+    console.warn(`[${source || 'App'}] ${message}`, ...rest);
   },
 
-  error: (message: string, error?: any) => {
-    const entry: LogEntry = { level: 'error', message, data: error, timestamp: new Date(), source };
+  error: (message: string, ...rest: any[]) => {
+    const entry: LogEntry = { level: 'error', message, data: rest[0], timestamp: new Date(), source };
     addToHistory(entry);
     // Always log errors
-    if (error !== undefined) {
-      console.error(`[${source || 'App'}] ${message}`, error);
-    } else {
-      console.error(`[${source || 'App'}] ${message}`);
-    }
+    console.error(`[${source || 'App'}] ${message}`, ...rest);
   },
 });
 

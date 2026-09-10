@@ -27,10 +27,11 @@ import type {
   OverviewTableDefinition,
 } from '@/components/dashboard/overview/types';
 import { getSummaryText, type SummaryContext, type SummaryLocationId } from '@/services/infoSummaryService';
+import { logger } from '@/utils/logger';
 
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: unknown) => jsPDF;
+    autoTable: (options: any) => jsPDF;
     lastAutoTable?: {
       finalY: number;
     };
@@ -75,6 +76,7 @@ const MODULE_POPOVER_CONTEXT: Record<OverviewModuleId, string> = {
   'late-cancellations': 'late-cancellations-overview',
   'patterns-trends': 'patterns-trends-overview',
   'expiration-analytics': 'expiration-analytics-overview',
+  'dashboard-workbench': 'dashboard-workbench-overview',
 };
 
 const MODULE_SUMMARY_CONTEXT: Record<OverviewModuleId, SummaryContext> = {
@@ -88,6 +90,7 @@ const MODULE_SUMMARY_CONTEXT: Record<OverviewModuleId, SummaryContext> = {
   'late-cancellations': 'late-cancellations-overview',
   'patterns-trends': 'sessions-overview',
   'expiration-analytics': 'expiration-analytics-overview',
+  'dashboard-workbench': 'executive',
 };
 
 const ACCENT_PALETTES: Record<OverviewAccent, AccentPalette> = {
@@ -217,7 +220,7 @@ const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
     context.drawImage(image, 0, 0);
     return canvas.toDataURL('image/jpeg', 0.9);
   } catch (error) {
-    console.warn(`Unable to load image asset: ${src}`, error);
+    logger.warn(`Unable to load image asset: ${src}`, error);
     return null;
   }
 };
@@ -339,7 +342,7 @@ const loadModuleSummaries = async (moduleId: OverviewModuleId, locationId: Overv
       return blocks;
     }
   } catch (error) {
-    console.warn(`Failed to load popover summary for ${moduleId}/${locationId}`, error);
+    logger.warn(`Failed to load popover summary for ${moduleId}/${locationId}`, error);
   }
 
   return fallbackSummary ? [fallbackSummary] : [];
