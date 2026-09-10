@@ -186,7 +186,7 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
               <div className="space-y-3">
                 {data.keyInsights.map((insight, index) => (
                   <motion.div
-                    key={insight}
+                    key={`${insight}-${index}`}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + index * 0.1 }}
