@@ -5,7 +5,6 @@ import { EnhancedDiscountsDashboardV2 } from '@/components/dashboard/EnhancedDis
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { formatCurrency } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
-import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { getDashboardDefaultDateRange, getPreviousMonthDisplay, parseDate } from '@/utils/dateUtils';
 
@@ -108,9 +107,6 @@ const DiscountsPromotions: React.FC = () => {
           <EnhancedDiscountsDashboardV2 data={discountData} />
         </main>
       </div>
-      
-      <Footer />
-
       <style>{`
         @keyframes fade-in-up {
           from {

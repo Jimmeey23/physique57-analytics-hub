@@ -7,7 +7,6 @@ import { EnhancedLateCancellationsTopBottomLists } from '@/components/dashboard/
 import { EnhancedLateCancellationsDataTables } from '@/components/dashboard/EnhancedLateCancellationsDataTables';
 import { EnhancedLateCancellationsFilterSection } from '@/components/dashboard/EnhancedLateCancellationsFilterSection';
 import { LateCancellationsMonthOnMonthTable } from '@/components/dashboard/LateCancellationsMonthOnMonthTable';
-import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { LateCancellationsDrillDownModal } from '@/components/dashboard/LateCancellationsDrillDownModal';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
@@ -570,8 +569,6 @@ const LateCancellations = () => {
         onClose={() => setIsDrillDownOpen(false)}
         data={drillDownData}
       />
-      
-      <Footer />
     </div>
   );
 };

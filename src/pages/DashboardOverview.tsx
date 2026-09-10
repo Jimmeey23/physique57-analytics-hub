@@ -1,5 +1,4 @@
 import React from 'react';
-import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -222,8 +221,6 @@ const DashboardOverview = () => {
           </React.Suspense>
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 };

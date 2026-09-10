@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { UltimateLoader } from './UltimateLoader';
 
 interface UniversalLoaderProps {
@@ -12,59 +11,31 @@ interface UniversalLoaderProps {
   currentStep?: string;
 }
 
+const VARIANT_SUBTITLES: Record<string, string> = {
+  sales: 'Loading Sales Analytics…',
+  discounts: 'Loading Discount Analysis…',
+  funnel: 'Loading Funnel & Lead Data…',
+  retention: 'Loading Retention Metrics…',
+  attendance: 'Loading Class Attendance…',
+  analytics: 'Loading Analytics Dashboard…',
+  cancellations: 'Loading Late Cancellations…',
+  payroll: 'Loading Payroll Data…',
+  expirations: 'Loading Expiration Analytics…',
+  default: 'Analytics Hub',
+};
+
 export const UniversalLoader: React.FC<UniversalLoaderProps> = ({
-  title = "Physique 57 Analytics",
+  title = 'PHYSIQUE 57',
   subtitle,
   variant = 'default',
   onComplete,
 }) => {
-  const getVariantSubtitle = () => {
-    if (subtitle) return subtitle;
-    
-    switch (variant) {
-      case 'sales':
-        return 'Loading Sales Analytics...';
-      case 'discounts':
-        return 'Loading Discount Analysis...';
-      case 'funnel':
-        return 'Loading Funnel & Lead Data...';
-      case 'retention':
-        return 'Loading Retention Metrics...';
-      case 'attendance':
-        return 'Loading Class Attendance...';
-      case 'analytics':
-        return 'Loading Analytics Dashboard...';
-      case 'cancellations':
-        return 'Loading Late Cancellations...';
-      case 'payroll':
-        return 'Loading Payroll Data...';
-      case 'expirations':
-        return 'Loading Expiration Analytics...';
-      default:
-        return 'Analytics Hub';
-    }
-  };
-
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ 
-          opacity: 0,
-        }}
-        transition={{ 
-          duration: 0.5,
-          ease: [0.4, 0, 0.2, 1]
-        }}
-      >
-        <UltimateLoader
-          title={title}
-          subtitle={getVariantSubtitle()}
-          onComplete={onComplete}
-        />
-      </motion.div>
-    </AnimatePresence>
+    <UltimateLoader
+      title={title}
+      subtitle={subtitle || VARIANT_SUBTITLES[variant] || VARIANT_SUBTITLES.default}
+      onComplete={onComplete}
+    />
   );
 };
 

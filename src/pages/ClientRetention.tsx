@@ -13,7 +13,6 @@ import { useNewClientData } from '@/hooks/useNewClientData';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { BarChart3, Clock3, Gauge, RotateCcw, SlidersHorizontal } from 'lucide-react';
-import { Footer } from '@/components/ui/footer';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
@@ -1499,10 +1498,6 @@ const ClientRetention = () => {
         </ModalSuspense>
         </div>
       </div>
-      
-      <Footer />
-
-
     </div>;
 };
 export default ClientRetention;

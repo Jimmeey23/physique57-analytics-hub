@@ -1,35 +1,39 @@
+/**
+ * Physique 57 — "Atelier" design tokens (Athena-inspired).
+ * Single source of truth for class strings shared across the app.
+ * NOTE: prefer the `p57-*` CSS primitives in index.css for new code;
+ * this module keeps legacy `designTokens.*` imports working.
+ */
 
 export const designTokens = {
-  // Modern spacing scale
   spacing: {
-    xs: '0.25rem',    // 4px
-    sm: '0.5rem',     // 8px
-    md: '0.75rem',    // 12px
-    lg: '1rem',       // 16px
-    xl: '1.5rem',     // 24px
-    xxl: '2rem',      // 32px
-    xxxl: '3rem',     // 48px
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '0.75rem',
+    lg: '1rem',
+    xl: '1.5rem',
+    xxl: '2rem',
+    xxxl: '3rem',
   },
-  
-  // Professional card styling
+
   card: {
     padding: 'p-6',
-    shadow: 'shadow-[0_4px_20px_rgba(0,0,0,0.08)]',
-    border: 'border border-slate-200/60',
-    background: 'bg-white/95 backdrop-blur-md',
-    radius: 'rounded-2xl',
-    hover: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-[1.02] transition-all duration-300',
+    shadow: 'shadow-card',
+    border: 'border border-border',
+    background: 'bg-card',
+    radius: 'rounded-[20px]',
+    hover: 'transition-all duration-200 hover:shadow-lift hover:-translate-y-0.5',
   },
-  
-  // Modern color palette
+
   colors: {
-    primary: {
-      50: '#f0f9ff',
-      100: '#e0f2fe', 
-      500: '#0ea5e9',
-      600: '#0284c7',
-      700: '#0369a1',
-      900: '#0c4a6e',
+    brand: {
+      DEFAULT: '#005eed',
+      soft: '#eaf2ff',
+      deep: '#0047b8',
+    },
+    ink: {
+      DEFAULT: '#0e1729',
+      soft: '#1a2740',
     },
     slate: {
       50: '#f8fafc',
@@ -60,53 +64,99 @@ export const designTokens = {
       500: '#ef4444',
       600: '#dc2626',
       700: '#b91c1c',
-    }
+    },
   },
-  
-  // Typography scale
+
   typography: {
-    display: 'text-4xl md:text-5xl lg:text-6xl font-black tracking-tight',
-    h1: 'text-3xl md:text-4xl font-bold tracking-tight',
-    h2: 'text-2xl md:text-3xl font-semibold tracking-tight',
-    h3: 'text-xl md:text-2xl font-semibold',
+    display: 'font-display text-4xl md:text-5xl font-extrabold tracking-tight',
+    h1: 'font-display text-3xl md:text-4xl font-bold tracking-tight',
+    h2: 'font-display text-2xl md:text-3xl font-bold tracking-tight',
+    h3: 'font-display text-xl md:text-2xl font-bold',
     h4: 'text-lg md:text-xl font-semibold',
-    body: 'text-sm md:text-base text-slate-700',
-    caption: 'text-xs md:text-sm text-slate-500',
-    label: 'text-sm font-medium text-slate-900',
+    body: 'text-sm md:text-base text-foreground/90',
+    caption: 'text-xs md:text-sm text-muted-foreground',
+    label: 'text-sm font-medium text-foreground',
+    eyebrow: 'p57-eyebrow',
+    numeric: 'p57-num',
   },
-  
-  // Modern table styling
+
   table: {
-    header: 'bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200',
-    headerText: 'text-xs font-bold text-slate-700 uppercase tracking-wider',
-    row: 'hover:bg-slate-50/80 transition-colors border-b border-slate-100',
-    cell: 'px-4 py-2 text-sm text-slate-800 font-medium whitespace-nowrap overflow-hidden text-ellipsis',
-    maxHeight: 'max-h-[25px]',
+    frame: 'p57-table-frame',
+    scroll: 'p57-table-scroll',
+    header: '',
+    headerCell: 'px-3.5 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground',
+    row: 'bg-card border-b border-border transition-colors hover:bg-accent/60',
+    cell: 'px-3.5 py-2 text-[13px] font-medium text-foreground/90 tabular-nums whitespace-nowrap',
+    totalsRow: 'bg-ink text-white font-bold dark:bg-[#101a2e]',
+    pill: {
+      green: 'p57-pill p57-pill-green',
+      red: 'p57-pill p57-pill-red',
+      amber: 'p57-pill p57-pill-amber',
+      blue: 'p57-pill p57-pill-blue',
+      violet: 'p57-pill p57-pill-violet',
+      slate: 'p57-pill p57-pill-slate',
+      rose: 'p57-pill p57-pill-rose',
+    },
   },
-  
-  // Professional button styles
+
+  tabs: {
+    list: 'p57-tabs',
+    trigger: 'p57-tab',
+  },
+
+  metric: {
+    card: 'p57-metric',
+    label: 'p57-metric-label',
+    value: 'p57-metric-value',
+    sub: 'p57-metric-sub',
+  },
+
+  section: {
+    head: 'p57-section-head',
+    title: 'p57-section-title',
+    sub: 'p57-section-sub',
+  },
+
+  filterBar: 'p57-filterbar',
+  filterBarLabel: 'p57-filterbar-label',
+
+  hero: {
+    frame: 'p57-hero',
+    badge: 'p57-hero-badge',
+    title: 'p57-hero-title',
+    sub: 'p57-hero-sub',
+  },
+
+  grid: {
+    gap: 'gap-4 md:gap-5',
+    section: 'space-y-4 md:space-y-5',
+  },
+
   button: {
-    primary: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200',
-    secondary: 'bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200',
-    ghost: 'hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200',
+    base: 'p57-btn-press',
+    header: 'bg-ink text-white hover:bg-ink-soft dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200',
   },
-  
-  // Modern gradients
-  gradients: {
-    blue: 'bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700',
-    purple: 'bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700',
-    green: 'bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700',
-    orange: 'bg-gradient-to-br from-orange-500 via-red-500 to-red-600',
-    pink: 'bg-gradient-to-br from-pink-500 via-rose-500 to-red-600',
-    teal: 'bg-gradient-to-br from-teal-500 via-cyan-600 to-blue-700',
-    slate: 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800',
-  },
-  
-  // Animation system
-  animations: {
-    fadeIn: 'animate-fade-in',
-    slideUp: 'animate-slide-up',
-    scaleIn: 'animate-scale-in',
-    hover: 'hover:scale-105 transition-transform duration-200',
-  }
+} as const;
+
+export type DesignTokens = typeof designTokens;
+
+/** Chart palette shared by all recharts visuals. */
+export const chartPalette = [
+  '#005eed', // brand blue
+  '#7c5cf0', // violet
+  '#0e9f6e', // emerald
+  '#e08a00', // amber
+  '#0ea5b7', // teal
+  '#f0529a', // pink
+  '#64748b', // slate
+] as const;
+
+/** Location accent colors (stable mapping). */
+export const locationAccents: Record<string, string> = {
+  Kwality: '#005eed',
+  Supreme: '#7c5cf0',
+  Kenkere: '#0e9f6e',
+  All: '#e08a00',
 };
+
+export default designTokens;

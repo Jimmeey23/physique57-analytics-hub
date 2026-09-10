@@ -1,7 +1,6 @@
 
 import React, { useMemo, useEffect } from 'react';
 import { SessionsSection } from '@/components/dashboard/SessionsSection';
-import { Footer } from '@/components/ui/footer';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { useSessionsData } from '@/hooks/useSessionsData';
@@ -65,7 +64,6 @@ const Sessions = () => {
             />
           </div>
         </main>
-        <Footer />
       </div>
     </SessionsFiltersProvider>
   );

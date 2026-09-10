@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { SessionsFiltersProvider } from '@/contexts/SessionsFiltersContext';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -54,11 +53,6 @@ const ClassAttendance = () => {
   if (loading) {
     return (
       <div className="class-attendance-unified min-h-screen bg-white relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-        </div>
         <div className="relative z-10 container mx-auto px-6 py-10">
           <LoadingSkeleton type="full-page" />
         </div>
@@ -69,11 +63,6 @@ const ClassAttendance = () => {
   if (error) {
     return (
       <div className="class-attendance-unified min-h-screen bg-white relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-        </div>
         <div className="relative z-10 container mx-auto px-6 py-10">
           <div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-2xl shadow-sm">
             <div className="font-semibold text-lg mb-1">Failed to load class attendance data</div>
@@ -178,12 +167,6 @@ const ClassAttendance = () => {
 
     return (
       <div className="class-attendance-unified min-h-screen bg-white relative overflow-hidden">
-        {/* Enhanced Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-        </div>
 
         <div className="relative z-10">
           <DashboardMotionHero
@@ -297,7 +280,6 @@ const ClassAttendance = () => {
             </div>
           </div>
         </div>
-        <Footer />
       </div>
     );
   };

@@ -1,5 +1,4 @@
 import React, { useRef, forwardRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CopyTableButton from './CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { cn } from '@/lib/utils';
@@ -11,9 +10,8 @@ interface TableCardProps {
   className?: string;
   showCopyButton?: boolean;
   headerControls?: React.ReactNode;
-  onCopyAllTabs?: () => Promise<string>; // optional explicit override
+  onCopyAllTabs?: () => Promise<string>;
   disableAutoRegistry?: boolean;
-  // Enhanced context information for copying
   contextInfo?: {
     selectedMetric?: string;
     dateRange?: { start: string; end: string };
@@ -22,6 +20,10 @@ interface TableCardProps {
   };
 }
 
+/**
+ * Canonical table wrapper: gradient header band, copy/export actions,
+ * framed table body (inherits global `.p57-scope` table styling).
+ */
 export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
   title,
   subtitle,
@@ -64,46 +66,43 @@ export const TableCard = forwardRef<HTMLDivElement, TableCardProps>(({
     metricsRegistry.register({ id: title, getTextContent });
     return () => metricsRegistry.unregister(title);
   }, [metricsRegistry, title, disableAutoRegistry]);
-  
+
   return (
-    <Card className={cn("bg-white/95 backdrop-blur-sm border-0 shadow-xl", className)} ref={ref}>
+    <div className={cn('p57-card overflow-hidden', className)} ref={ref}>
       {(title || showCopyButton || headerControls) && (
-        <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              {title && (
-                <CardTitle className="text-lg font-bold text-white">
-                  {title}
-                </CardTitle>
-              )}
-              {subtitle && (
-                <p className="text-sm text-white/80 mt-1">{subtitle}</p>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              {headerControls}
-              {showCopyButton && (
-                <CopyTableButton 
-                  tableRef={tableRef}
-                  tableName={title || 'Table'}
-                  size="sm"
-                  className="text-white hover:bg-white/20"
-                  onCopyAllTabs={
-                    onCopyAllTabs ?
-                      (() => onCopyAllTabs().then(r => r)) :
-                      (metricsRegistry ? async () => metricsRegistry.getAllTabsContent() : undefined)
-                  }
-                  contextInfo={contextInfo}
-                />
-              )}
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-gradient-to-b from-white to-[#f8fafc] px-4 py-2.5 dark:from-[#111216] dark:to-[#090a0d]">
+          <div className="min-w-0">
+            {title && (
+              <h3 className="truncate font-display text-[14px] font-bold tracking-tight text-foreground">
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+            )}
           </div>
-        </CardHeader>
+          <div className="flex items-center gap-1.5">
+            {headerControls}
+            {showCopyButton && (
+              <CopyTableButton
+                tableRef={tableRef}
+                tableName={title || 'Table'}
+                size="sm"
+                onCopyAllTabs={
+                  onCopyAllTabs ?
+                    (() => onCopyAllTabs().then(r => r)) :
+                    (metricsRegistry ? async () => metricsRegistry.getAllTabsContent() : undefined)
+                }
+                contextInfo={contextInfo}
+              />
+            )}
+          </div>
+        </div>
       )}
-      <CardContent className="p-0" ref={tableRef}>
+      <div ref={tableRef} className="[&_table]:rounded-none [&_.p57-table-frame]:rounded-none [&_.p57-table-frame]:border-0 [&_.p57-table-frame]:shadow-none">
         {children}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 });
 

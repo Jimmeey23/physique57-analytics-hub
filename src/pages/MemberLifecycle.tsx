@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { Footer } from '@/components/ui/footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -482,8 +481,6 @@ const MemberLifecycle: React.FC = () => {
           </Card>
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 };

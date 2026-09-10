@@ -1,6 +1,5 @@
 import React from 'react';
 import { ExecutiveSummarySection } from '@/components/dashboard/ExecutiveSummarySection';
-import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
@@ -111,7 +110,6 @@ const ExecutiveSummaryContent = () => {
           defaultFileName="executive-dashboard-export"
         />
       </div>
-      <Footer />
     </div>
   );
 };

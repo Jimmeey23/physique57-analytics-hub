@@ -1,5 +1,4 @@
 import React from 'react';
-import { Footer } from '@/components/ui/footer';
 import { LocationReportComprehensive } from '@/components/dashboard/LocationReportComprehensive';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 
@@ -26,8 +25,6 @@ const LocationReportPage = () => {
 
         <LocationReportComprehensive onReady={handleReady} />
       </div>
-
-      <Footer />
     </div>
   );
 };

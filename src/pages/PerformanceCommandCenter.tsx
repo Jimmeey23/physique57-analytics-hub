@@ -602,7 +602,6 @@ const PerformanceCommandCenter = () => {
           ))}
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

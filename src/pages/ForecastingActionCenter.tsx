@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { Footer } from '@/components/ui/footer';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { SectionTimelineNav } from '@/components/ui/SectionTimelineNav';
 import { SectionAnchor } from '@/components/ui/SectionAnchor';
@@ -407,11 +406,6 @@ const ForecastingActionCenter: React.FC = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute left-[-6rem] top-20 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
-        <div className="absolute right-[-4rem] top-64 h-80 w-80 rounded-full bg-indigo-400/10 blur-3xl" />
-        <div className="absolute bottom-24 left-1/3 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
-      </div>
 
       <div className="relative z-10">
         <DashboardMotionHero
@@ -1041,9 +1035,6 @@ const ForecastingActionCenter: React.FC = () => {
           </SectionAnchor>
         </main>
       </div>
-
-      <Footer />
-
       <ModalSuspense>
         {drillDownModal && (
           <LazyMemberInsightsDrillDownModal

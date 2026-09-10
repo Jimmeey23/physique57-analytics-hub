@@ -19,7 +19,6 @@ import { MemberBehaviorPatterns } from '@/components/dashboard/MemberBehaviorPat
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { useNavigate } from 'react-router-dom';
-import { Footer } from '@/components/ui/footer';
 import { GlobalFiltersProvider } from '@/contexts/GlobalFiltersContext';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption, getPresetMonthLabels } from '@/utils/consolidatedExportPreset';
@@ -1016,10 +1015,6 @@ export const PatternsAndTrends = () => {
     return (
       <GlobalFiltersProvider>
         <div className="min-h-screen bg-white relative overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-1"></div>
-            <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full floating-animation stagger-3"></div>
-          </div>
           
           <div className="relative z-10">
             <div style={{ ['--hero-accent' as any]: heroColor }}>
@@ -1039,7 +1034,6 @@ export const PatternsAndTrends = () => {
               </div>
             </div>
           </div>
-          <Footer />
         </div>
       </GlobalFiltersProvider>
     );
@@ -1048,12 +1042,6 @@ export const PatternsAndTrends = () => {
   return (
     <GlobalFiltersProvider>
       <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Enhanced Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full floating-animation stagger-1"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full floating-animation stagger-3"></div>
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 rounded-full morph-shape stagger-2"></div>
-        </div>
         
         <div className="relative z-10">
           <div className="bg-white text-slate-800 slide-in-from-left">
@@ -2492,8 +2480,6 @@ export const PatternsAndTrends = () => {
             </div>
           </div>
         </div>
-        <Footer />
-        
         {/* Drill-Down Modal */}
         {isDrillDownOpen && (
           <PatternsDrillDownModal

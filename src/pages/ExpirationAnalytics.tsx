@@ -4,7 +4,6 @@ import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Footer } from '@/components/ui/footer';
 import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
 
 const ExpirationAnalytics = () => {
@@ -58,8 +57,6 @@ const ExpirationAnalytics = () => {
           <ExpirationAnalyticsSection data={data || []} />
         </main>
       </div>
-      
-      <Footer />
     </div>
   );
 };

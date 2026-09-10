@@ -3874,11 +3874,6 @@ const StudioPulse = memo(() => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {/* Ambient background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-24 left-10 h-80 w-80 rounded-full bg-gradient-to-br from-blue-300/20 to-blue-900/10 blur-3xl" />
-        <div className="absolute top-40 right-0 h-96 w-96 rounded-full bg-gradient-to-br from-fuchsia-300/15 to-purple-300/10 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-gradient-to-br from-emerald-300/15 to-teal-300/10 blur-3xl" />
-      </div>
 
       <div className="relative z-10 mx-auto max-w-[1400px] px-4 py-8 md:px-8">
         {/* Header */}
@@ -7220,8 +7215,6 @@ const StudioPulse = memo(() => {
           title={drillDownConfig.title}
         />
       ) : null}
-
-      <Footer />
     </div>
   );
 });
