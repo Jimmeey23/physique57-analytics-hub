@@ -58,7 +58,7 @@ export const useBookingsData = () => {
   const [data, setData] = useState<BookingData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchBookingsData = async () => {
     try {
@@ -70,7 +70,7 @@ export const useBookingsData = () => {
         return fetchGoogleSheet(SPREADSHEET_IDS.BOOKINGS, 'Bookings', {
           valueRenderOption: 'FORMATTED_VALUE',
         });
-      });
+      }, reportSource);
 
       if (rows.length < 2) {
         setData([]);

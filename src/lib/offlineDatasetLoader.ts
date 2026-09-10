@@ -1,21 +1,36 @@
 import { getOfflineDatasetRows, saveOfflineDatasetRows } from '@/lib/offlineDataStore';
-import type { DataSourceMode, OfflineDatasetKey } from '@/types/offlineData';
+import type { DataSourceMode, DatasetLiveSource, OfflineDatasetKey } from '@/types/offlineData';
 
 interface DatasetRowsResult {
   rows: any[][];
-  source: 'remote' | 'offline-cache';
+  source: DatasetLiveSource;
 }
 
 export const loadDatasetRowsForMode = async (
   key: OfflineDatasetKey,
   mode: DataSourceMode,
   remoteLoader: () => Promise<any[][]>,
+  onSource?: (key: OfflineDatasetKey, source: DatasetLiveSource) => void,
 ): Promise<DatasetRowsResult> => {
   const cachedRows = await getOfflineDatasetRows(key);
 
+  const finish = (rows: any[][], source: DatasetLiveSource): DatasetRowsResult => {
+    if (source === 'remote') {
+      console.info(`[data] ${key}: live rows loaded (${rows.length} rows)`);
+    } else {
+      console.warn(`[data] ${key}: remote fetch failed in ${mode} mode — serving ${rows.length} cached rows`);
+    }
+    try {
+      onSource?.(key, source);
+    } catch {
+      /* listener errors must never break data loading */
+    }
+    return { rows, source };
+  };
+
   if (mode === 'offline') {
     if (cachedRows && cachedRows.length > 0) {
-      return { rows: cachedRows, source: 'offline-cache' };
+      return finish(cachedRows, 'offline-cache');
     }
     throw new Error(`Offline dataset not available for ${key}. Upload a CSV/XLSX file or open the app online first.`);
   }
@@ -25,10 +40,10 @@ export const loadDatasetRowsForMode = async (
     if (remoteRows && remoteRows.length > 0) {
       await saveOfflineDatasetRows(key, remoteRows, 'remote');
     }
-    return { rows: remoteRows, source: 'remote' };
+    return finish(remoteRows, 'remote');
   } catch (error) {
     if (cachedRows && cachedRows.length > 0) {
-      return { rows: cachedRows, source: 'offline-cache' };
+      return finish(cachedRows, 'offline-cache');
     }
     throw error;
   }

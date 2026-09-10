@@ -123,7 +123,7 @@ export const useNewClientData = () => {
   const [data, setData] = useState<NewClientData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchNewClientData = useCallback(async () => {
     try {
@@ -134,7 +134,7 @@ export const useNewClientData = () => {
         return fetchGoogleSheet(SPREADSHEET_IDS.NEW_CLIENTS, 'New', {
           valueRenderOption: 'FORMATTED_VALUE'
         });
-      });
+      }, reportSource);
 
       if (rows.length < 2) {
         setData([]);

@@ -149,20 +149,30 @@ export const seedBundledOfflineDatasets = async () => {
 
   await Promise.all(
     OFFLINE_DATASET_KEYS.map(async (key) => {
-      const existing = existingRecords.find(([recordKey]) => recordKey === key)?.[1] ?? null;
-      if (existing?.source === 'upload') {
-        return;
-      }
+      try {
+        const existing = existingRecords.find(([recordKey]) => recordKey === key)?.[1] ?? null;
+        // Never clobber a fresher cache: only seed when nothing is stored,
+        // or when the stored copy is itself an older bundle.
+        if (existing && existing.source !== 'bundle') {
+          return;
+        }
 
-      const fileName = BUNDLED_OFFLINE_DATASET_FILES[key];
-      const response = await fetch(`/offline-files/${encodeURIComponent(fileName)}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load bundled offline dataset: ${fileName}`);
-      }
+        const fileName = BUNDLED_OFFLINE_DATASET_FILES[key];
+        if (!fileName) {
+          return;
+        }
+        const response = await fetch(`/offline-files/${encodeURIComponent(fileName)}`);
+        if (!response.ok) {
+          console.warn(`[offlineDataStore] Bundled dataset missing for ${key}: ${fileName}`);
+          return;
+        }
 
-      const buffer = await response.arrayBuffer();
-      const rows = parseSpreadsheetBufferToRows(buffer);
-      await saveOfflineDatasetRows(key, rows, 'bundle', fileName);
+        const buffer = await response.arrayBuffer();
+        const rows = parseSpreadsheetBufferToRows(buffer);
+        await saveOfflineDatasetRows(key, rows, 'bundle', fileName);
+      } catch (error) {
+        console.warn(`[offlineDataStore] Failed to seed bundled dataset for ${key}:`, error);
+      }
     })
   );
 };

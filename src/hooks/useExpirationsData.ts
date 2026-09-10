@@ -13,7 +13,7 @@ export const useExpirationsData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [excludedCount, setExcludedCount] = useState(0);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchExpirationsData = async () => {
     try {
@@ -26,7 +26,7 @@ export const useExpirationsData = () => {
         return fetchGoogleSheet(SPREADSHEET_IDS.EXPIRATIONS, SHEET_NAME, {
           valueRenderOption: 'FORMATTED_VALUE'
         });
-      });
+      }, reportSource);
 
       logger.info(`Total rows received: ${rows.length}`);
 

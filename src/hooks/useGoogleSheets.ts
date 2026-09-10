@@ -17,7 +17,7 @@ export const useGoogleSheets = () => {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchSalesData = async () => {
     // Abort previous request if still pending
@@ -34,27 +34,11 @@ export const useGoogleSheets = () => {
       const { rows } = await loadDatasetRowsForMode('sales', mode, async () => {
         const result = await requestCache.fetch('google-sheets-sales', async () => {
           logger.info('Fetching sales data from Google Sheets...');
-          const accessToken = await getGoogleAccessToken();
-          
-          const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sales?alt=json`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-              },
-              signal: abortControllerRef.current?.signal,
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch data');
-          }
-
-          return response.json();
+          return fetchSheetValuesSmart(SPREADSHEET_ID, 'Sales', abortControllerRef.current?.signal);
         });
 
         return result.values || [];
-      });
+      }, reportSource);
       
       // Raw data from Google Sheets received
       

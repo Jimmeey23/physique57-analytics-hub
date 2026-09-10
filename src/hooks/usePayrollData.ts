@@ -88,7 +88,7 @@ export const usePayrollData = () => {
   const [data, setData] = useState<PayrollData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mode } = useDataSource();
+  const { mode, reportSource } = useDataSource();
 
   const fetchPayrollData = async () => {
     try {
@@ -171,7 +171,7 @@ export const usePayrollData = () => {
           });
           return [sheetRows[0], ...body];
         }
-      });
+      }, reportSource);
 
       const loadedData = rows.length < 2 ? [] : rows.slice(1).map(mapRowToPayroll);
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Wifi, WifiOff, Database, Upload, Trash2, HardDriveDownload } from 'lucide-react';
+import { Wifi, WifiOff, Database, Upload, Trash2, HardDriveDownload, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { useDataSource } from '@/contexts/DataSourceContext';
 import { OFFLINE_DATASET_KEYS, OFFLINE_DATASET_LABELS, type OfflineDatasetKey } from '@/types/offlineData';
 
 export const OfflineAccessManager: React.FC = () => {
-  const { mode, setMode, isOnline, datasets, uploadDatasetFile, clearDataset, refreshDatasets, offlineAccessEnabled } = useDataSource();
+  const { mode, setMode, isOnline, datasets, uploadDatasetFile, clearDataset, refreshDatasets, sources } = useDataSource();
   const [isOpen, setIsOpen] = React.useState(false);
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const fileInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
@@ -45,10 +45,10 @@ export const OfflineAccessManager: React.FC = () => {
   };
 
   const availableCount = datasets.filter((dataset) => dataset.available).length;
-
-  if (!offlineAccessEnabled && mode !== 'offline') {
-    return null;
-  }
+  const cachedKeys = OFFLINE_DATASET_KEYS.filter((key) => sources[key] === 'offline-cache');
+  const liveKeys = OFFLINE_DATASET_KEYS.filter((key) => sources[key] === 'remote');
+  const staleWhileOnline = mode === 'online' && cachedKeys.length > 0;
+  const allLive = mode === 'online' && liveKeys.length > 0 && cachedKeys.length === 0;
 
   return (
     <div className="fixed bottom-6 right-6 z-[120]">
@@ -74,10 +74,10 @@ export const OfflineAccessManager: React.FC = () => {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <p className="font-medium text-slate-800">How it works</p>
               <p className="mt-1">
-                The dashboard loads live data by default. Offline mode stays available only after it has been explicitly enabled.
+                The dashboard loads live data by default: each dataset tries Google Sheets (OAuth, then public access) and only falls back to a stored copy when remote fetch fails.
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Once enabled, offline mode can use bundled, cached, or uploaded datasets so the dashboard still works without re-uploading files every session.
+                A <span className="font-semibold text-amber-600">Cached</span> badge means you are seeing stored rows, not live data. Check the browser console ([data] / [googleAuth] lines) for the exact failure. session.
               </p>
             </div>
 
@@ -126,6 +126,17 @@ export const OfflineAccessManager: React.FC = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            sources[key] === 'remote'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : sources[key] === 'offline-cache'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-slate-100 text-slate-500'
+                          }
+                        >
+                          {sources[key] === 'remote' ? 'Live' : sources[key] === 'offline-cache' ? 'Cached' : 'Pending'}
+                        </Badge>
                         <Badge className={dataset?.available ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
                           {dataset?.available ? 'Ready' : 'Missing'}
                         </Badge>
@@ -163,10 +174,30 @@ export const OfflineAccessManager: React.FC = () => {
 
       <Button
         onClick={() => setIsOpen((current) => !current)}
-        className="gap-2 rounded-full px-5 shadow-xl"
+        className={
+          staleWhileOnline
+            ? 'gap-2 rounded-full px-5 shadow-xl bg-amber-500 text-white hover:bg-amber-600'
+            : allLive
+              ? 'gap-2 rounded-full px-5 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'gap-2 rounded-full px-5 shadow-xl'
+        }
       >
-        <HardDriveDownload className="h-4 w-4" />
-        {mode === 'offline' ? 'Offline mode' : 'Offline access'}
+        {staleWhileOnline ? (
+          <>
+            <AlertTriangle className="h-4 w-4" />
+            {`Stale data · ${cachedKeys.length} cached`}
+          </>
+        ) : allLive ? (
+          <>
+            <Wifi className="h-4 w-4" />
+            Live data
+          </>
+        ) : (
+          <>
+            <HardDriveDownload className="h-4 w-4" />
+            {mode === 'offline' ? 'Offline mode' : 'Data status'}
+          </>
+        )}
       </Button>
     </div>
   );

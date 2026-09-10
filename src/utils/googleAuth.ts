@@ -44,10 +44,20 @@ const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests (60/min limit)
 /**
  * Get a valid access token, using cache when possible
  */
+export const isGoogleOAuthConfigured = (): boolean =>
+  Boolean(GOOGLE_CONFIG.CLIENT_ID && GOOGLE_CONFIG.CLIENT_SECRET && GOOGLE_CONFIG.REFRESH_TOKEN);
+
 export const getGoogleAccessToken = async (): Promise<string> => {
   // Return cached token if still valid (with 5 minute buffer)
   if (cachedToken && Date.now() < tokenExpiry - 300000) {
     return cachedToken;
+  }
+
+  if (!isGoogleOAuthConfigured()) {
+    throw new Error(
+      'Google OAuth is not configured (missing VITE_GOOGLE_CLIENT_ID / VITE_GOOGLE_CLIENT_SECRET / VITE_GOOGLE_REFRESH_TOKEN). ' +
+      'Falling back to public sheet access.'
+    );
   }
 
   try {
@@ -135,7 +145,13 @@ export const fetchPublicSheetRange = async (
   const bang = range.indexOf('!');
   const tabPart = bang >= 0 ? range.slice(0, bang) : range;
   const a1 = bang >= 0 ? range.slice(bang + 1) : '';
-  const sheet = tabPart.replace(/^'+|'+$/g, '');
+  let sheet = tabPart.replace(/^'+|'+$/g, '');
+  try {
+    // Tolerate pre-encoded tab names (e.g. '◉ Leads' -> %E2%97%89%20Leads).
+    sheet = decodeURIComponent(sheet);
+  } catch {
+    /* not encoded — use as-is */
+  }
   const url =
     `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json` +
     `&sheet=${encodeURIComponent(sheet)}${a1 ? `&range=${encodeURIComponent(a1)}` : ''}&headers=1`;
@@ -192,7 +208,9 @@ export const fetchSheetValuesSmart = async (
 };
 
 /**
- * Fetch data from a Google Sheet with rate limiting
+ * Fetch data from a Google Sheet with rate limiting.
+ * OAuth first; when OAuth is unavailable or the API call fails, falls back
+ * to the public gviz endpoint (works for publicly shared spreadsheets).
  */
 export const fetchGoogleSheet = async (
   spreadsheetId: string,
@@ -208,25 +226,30 @@ export const fetchGoogleSheet = async (
   } = options;
 
   return queueRequest(async () => {
-    const accessToken = await getGoogleAccessToken();
-    
-    const url = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`);
-    url.searchParams.set('valueRenderOption', valueRenderOption);
-    url.searchParams.set('dateTimeRenderOption', dateTimeRenderOption);
-    
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    try {
+      const accessToken = await getGoogleAccessToken();
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to fetch sheet data: ${response.status} - ${errorText}`);
+      const url = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`);
+      url.searchParams.set('valueRenderOption', valueRenderOption);
+      url.searchParams.set('dateTimeRenderOption', dateTimeRenderOption);
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch sheet data: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      return result.values || [];
+    } catch (error) {
+      console.warn(`[googleAuth] Sheets API failed for ${spreadsheetId} / ${range}; trying public access:`, error);
+      return fetchPublicSheetRange(spreadsheetId, range);
     }
-
-    const result = await response.json();
-    return result.values || [];
   });
 };
 

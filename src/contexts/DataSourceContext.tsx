@@ -6,11 +6,14 @@ import {
   saveOfflineDatasetRows,
   seedBundledOfflineDatasets,
 } from '@/lib/offlineDataStore';
-import type { DataSourceMode, OfflineDatasetKey, OfflineDatasetSummary } from '@/types/offlineData';
+import type { DataSourceMode, DatasetLiveSource, OfflineDatasetKey, OfflineDatasetSummary } from '@/types/offlineData';
 
 interface DataSourceContextValue {
   mode: DataSourceMode;
   setMode: (mode: DataSourceMode) => void;
+  /** Where each dataset's displayed rows actually came from this session. */
+  sources: Partial<Record<OfflineDatasetKey, DatasetLiveSource>>;
+  reportSource: (key: OfflineDatasetKey, source: DatasetLiveSource) => void;
   offlineAccessEnabled: boolean;
   enableOfflineAccess: () => void;
   isOnline: boolean;
@@ -53,6 +56,7 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isOnline, setIsOnline] = React.useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [datasets, setDatasets] = React.useState<OfflineDatasetSummary[]>([]);
   const [bundleSeeded, setBundleSeeded] = React.useState(false);
+  const [sources, setSources] = React.useState<Partial<Record<OfflineDatasetKey, DatasetLiveSource>>>({});
 
   const refreshDatasets = React.useCallback(async () => {
     const next = await listOfflineDatasets();
@@ -105,6 +109,10 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     window.localStorage.setItem(OFFLINE_ACCESS_KEY, 'true');
   }, []);
 
+  const reportSource = React.useCallback((key: OfflineDatasetKey, source: DatasetLiveSource) => {
+    setSources((prev) => (prev[key] === source ? prev : { ...prev, [key]: source }));
+  }, []);
+
   const setMode = React.useCallback((nextMode: DataSourceMode) => {
     if (nextMode === 'offline') {
       window.localStorage.setItem(OFFLINE_ACCESS_KEY, 'true');
@@ -128,6 +136,8 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const value = React.useMemo(() => ({
     mode,
     setMode,
+    sources,
+    reportSource,
     offlineAccessEnabled,
     enableOfflineAccess,
     isOnline,
@@ -135,7 +145,7 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     refreshDatasets,
     uploadDatasetFile,
     clearDataset,
-  }), [mode, setMode, offlineAccessEnabled, enableOfflineAccess, isOnline, datasets, refreshDatasets, uploadDatasetFile, clearDataset]);
+  }), [mode, setMode, sources, reportSource, offlineAccessEnabled, enableOfflineAccess, isOnline, datasets, refreshDatasets, uploadDatasetFile, clearDataset]);
 
   return <DataSourceContext.Provider value={value}>{children}</DataSourceContext.Provider>;
 };
