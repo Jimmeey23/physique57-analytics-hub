@@ -107,7 +107,7 @@ export const FunnelStageAnalytics: React.FC<FunnelStageAnalyticsProps> = ({ data
                     className="h-3 bg-gradient-to-r from-slate-100 to-slate-200"
                   />
                   
-                  <div className="grid grid-cols-4 gap-3 text-xs">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
                       <div className="font-bold text-green-700 text-lg">{stage.converted}</div>
                       <div className="text-green-600">Converted</div>

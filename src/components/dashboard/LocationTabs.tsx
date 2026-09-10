@@ -112,7 +112,7 @@ export const LocationTabs: React.FC<LocationTabsProps> = ({
                 <InfoPopover context={infoPopoverContext} locationId={selectedLocation} />
               </div>
             )}
-            <div className="grid grid-cols-4 location-tabs gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 location-tabs gap-3">
               {/* All Locations Tab */}
               <button
                 onClick={() => onLocationChange('all')}

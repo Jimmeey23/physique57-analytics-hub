@@ -380,7 +380,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
                 <Zap className="w-5 h-5 text-blue-600" />
                 <h4 className="font-semibold text-blue-800">PowerCycle</h4>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-blue-900">{formatComparison.powerCycle.sessions}</p>
                   <p className="text-xs text-blue-600">Sessions</p>
@@ -401,7 +401,7 @@ export const EnhancedExecutiveDataTables: React.FC<EnhancedExecutiveDataTablesPr
                 <Activity className="w-5 h-5 text-pink-600" />
                 <h4 className="font-semibold text-pink-800">Barre</h4>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-pink-900">{formatComparison.barre.sessions}</p>
                   <p className="text-xs text-pink-600">Sessions</p>

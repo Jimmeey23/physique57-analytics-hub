@@ -91,7 +91,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
             <div className="space-y-3">
               <Label className="text-sm font-medium">Pre-built Themes</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {themes.map((theme) => (
                   <Button
                     key={theme.id}

@@ -58,7 +58,7 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-4 bg-white rounded-lg border">
               <div className="text-2xl font-bold text-green-600">{activeCount}</div>
               <div className="text-sm text-green-600">Active</div>

@@ -105,7 +105,7 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           <div className="space-y-6 pt-2">
           {/* Metric Header */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="border-l-4 border-l-slate-200">
               <CardContent className="pt-6">
                 <p className="text-xs text-slate-600 font-semibold uppercase tracking-wide mb-1">

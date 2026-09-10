@@ -737,7 +737,7 @@ export default function MainDashboard({ sessions }: Props) {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <p className="text-blue-600 font-medium">Total Sessions</p>
                       <p className="text-xl font-bold text-blue-900">{drilldownData.sessions.length}</p>

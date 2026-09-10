@@ -811,7 +811,7 @@ export function ComprehensiveTrainerDrillDown({
                   {/* Overview Tab */}
                   <TabsContent value="overview" className="mt-0 space-y-6">
                     {/* Key Metrics Grid */}
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <MetricCard
                         title="Total Sessions"
                         value={summary.totalSessions}
@@ -983,7 +983,7 @@ export function ComprehensiveTrainerDrillDown({
 
                   {/* Sessions Tab */}
                   <TabsContent value="sessions" className="mt-0 space-y-6">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <MetricCard
                         title="Total Sessions (Clicked)"
                         value={summary.clickedCellSessions || summary.totalSessions}
@@ -1104,7 +1104,7 @@ export function ComprehensiveTrainerDrillDown({
 
                             {/* Format Split Mini Cards */}
                             {sessionMetrics.split && sessionMetrics.split.length > 0 && (
-                              <div className="grid grid-cols-3 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {sessionMetrics.split.map((s: any) => (
                                   <Card key={s.name} className="border bg-slate-50">
                                     <CardContent className="p-4">
@@ -1213,7 +1213,7 @@ export function ComprehensiveTrainerDrillDown({
 
                   {/* Revenue Tab */}
                   <TabsContent value="revenue" className="mt-0 space-y-6">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <MetricCard
                         title="Total Revenue"
                         value={formatCurrency(summary.totalRevenue)}
@@ -1291,7 +1291,7 @@ export function ComprehensiveTrainerDrillDown({
                       </CardHeader>
                       <CardContent>
                         {byFormat.length > 0 ? (
-                          <div className="grid grid-cols-3 gap-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             {byFormat.map((format) => (
                               <div 
                                 key={format.name}

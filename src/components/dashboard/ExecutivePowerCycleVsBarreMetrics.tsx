@@ -67,7 +67,7 @@ export const ExecutivePowerCycleVsBarreMetrics: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-800">PowerCycle</h3>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">{formatNumber(pcMetrics.sessions)}</p>
                 <p className="text-xs text-gray-600">Sessions</p>
@@ -92,7 +92,7 @@ export const ExecutivePowerCycleVsBarreMetrics: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-800">Barre</h3>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="text-center p-3 bg-pink-50 rounded-lg">
                 <p className="text-2xl font-bold text-pink-600">{formatNumber(barreMetrics.sessions)}</p>
                 <p className="text-xs text-gray-600">Sessions</p>

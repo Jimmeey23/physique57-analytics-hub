@@ -118,7 +118,7 @@ export const TrainerInsights = ({ data }: TrainerInsightsProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="text-center bg-white rounded-lg p-4 shadow-sm border">
               <div className="text-2xl font-bold text-green-600">{insights.trends.highPerformers}</div>
               <div className="text-xs text-slate-600">High Performers</div>

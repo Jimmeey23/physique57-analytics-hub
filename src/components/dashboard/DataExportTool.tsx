@@ -424,7 +424,7 @@ export const DataExportTool: React.FC<DataExportToolProps> = ({ dataSources }) =
               {/* Modal Content */}
               <div className="flex-1 overflow-auto p-6">
                 {/* Summary Stats */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <Card>
                     <CardContent className="p-4">
                       <div className="text-sm text-gray-600">Total Tables</div>

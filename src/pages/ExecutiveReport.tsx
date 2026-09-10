@@ -1065,7 +1065,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
                           <div className="text-xs" style={{ color: P.creamMuted }}>{t.sessions} sessions</div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {[
                           { label: 'Customers', value: num(t.customers), color: P.cream },
                           { label: 'Class Avg', value: t.classAvg.toFixed(1), color: classAvgColor },
@@ -1156,7 +1156,7 @@ const Report: React.FC<{ studio: typeof STUDIOS[0]; month: string; year: string;
           <div className="rounded-2xl p-5 mb-5" style={{ background: P.navyCard, border: `1px solid ${P.orange}18` }}>
             <h3 className="text-sm font-bold mb-3" style={{ color: P.cream }}>Cancellation Breakdown</h3>
             {m.lcCount > 0 ? (
-              <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                 {[
                   { label: 'Same-day', value: m.sameDayLC, pctVal: m.lcCount > 0 ? (m.sameDayLC / m.lcCount) * 100 : 0, color: P.red },
                   { label: 'In-advance', value: m.lcCount - m.sameDayLC, pctVal: m.lcCount > 0 ? ((m.lcCount - m.sameDayLC) / m.lcCount) * 100 : 0, color: P.orange },

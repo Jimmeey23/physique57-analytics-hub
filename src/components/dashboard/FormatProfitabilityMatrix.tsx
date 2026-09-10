@@ -281,7 +281,7 @@ export const FormatProfitabilityMatrix: React.FC<Props> = ({ data }) => {
           </div>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-200">
             <div className="text-center">
               <p className="text-xs text-slate-600 mb-1">Median Revenue/Session</p>
               <p className="text-lg font-bold text-slate-900">{formatCurrency(matrixData.medianProfitability)}</p>
