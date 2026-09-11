@@ -86,9 +86,11 @@ async function getAccessToken() {
 }
 
 function parseNumericValue(value) {
-  if (typeof value === 'number') return value;
-  if (!value || value === '') return 0;
-  const cleaned = value.toString().replace(/,/g, '');
+  if (typeof value === 'number') return Number.isNaN(value) ? 0 : value;
+  if (value === null || value === undefined || value === '') return 0;
+  // Sheets returns FORMATTED_VALUE, so currency/percent strings arrive as
+  // "₹114,173" or "55.0%". Strip everything that is not part of a number.
+  const cleaned = value.toString().replace(/[^0-9.-]/g, '');
   const parsed = parseFloat(cleaned);
   return Number.isNaN(parsed) ? 0 : parsed;
 }

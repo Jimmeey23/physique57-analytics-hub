@@ -685,7 +685,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="h-[96vh] max-h-[96vh] w-[98vw] max-w-[98vw] sm:max-w-[98vw] xl:w-[96vw] xl:max-w-[1800px] xl:sm:max-w-[1800px] overflow-hidden border-0 bg-transparent p-0 shadow-none">
+      <DialogContent className="h-[82vh] max-h-[82vh] w-[92vw] max-w-[92vw] sm:max-w-[92vw] xl:w-[88vw] xl:max-w-[1530px] xl:sm:max-w-[1530px] overflow-hidden border-0 bg-transparent p-0 shadow-none">
         <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200/90 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.18)] ring-1 ring-slate-200/60">
           <DialogHeader className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 text-slate-900 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
             <div className="flex flex-wrap items-start justify-between gap-5">
@@ -1018,7 +1018,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white">
-                    <div className="max-h-[58vh] overflow-auto min-[900px]:max-h-[62vh]">
+                    <div className="max-h-[46vh] overflow-auto min-[900px]:max-h-[50vh]">
                       <Table>
                         <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>
@@ -1266,7 +1266,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                         ))}
                       </div>
                     )}
-                    <div className="max-h-[58vh] overflow-auto min-[900px]:max-h-[62vh]">
+                    <div className="max-h-[46vh] overflow-auto min-[900px]:max-h-[50vh]">
                       <Table>
                         <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>

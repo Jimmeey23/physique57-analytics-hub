@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useSharedDataset } from '@/lib/datasetStore';
+import { useNewClientData } from './useNewClientData';
+import { deriveTrainerConversions } from '@/utils/payrollConversionDerivation';
 import { PayrollData } from '@/types/dashboard';
 import { fetchGoogleSheet, parseNumericValue, SPREADSHEET_IDS } from '@/utils/googleAuth';
 import { useDataSource } from '@/contexts/DataSourceContext';
@@ -85,17 +88,17 @@ const mapRowToPayroll = (row: any[]): PayrollData => {
   };
 };
 
+const EMPTY_PAYROLL: PayrollData[] = [];
+
 export const usePayrollData = () => {
-  const [data, setData] = useState<PayrollData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { mode, reportSource } = useDataSource();
+  // Shared cache: this reuses the already-parsed new-client dataset, it does
+  // not trigger a second network round trip.
+  const { data: newClients } = useNewClientData();
 
-  const fetchPayrollData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  const { data, loading, error, refetch } = useSharedDataset<PayrollData[]>(
+    `payroll:${mode}`,
+    async () => {
       const { rows } = await loadDatasetRowsForMode('payroll', mode, async () => {
         try {
           const response = await fetch('/api/payroll');
@@ -174,22 +177,17 @@ export const usePayrollData = () => {
         }
       }, reportSource);
 
-      const loadedData = rows.length < 2 ? [] : rows.slice(1).map(mapRowToPayroll);
+      return rows.length < 2 ? EMPTY_PAYROLL : rows.slice(1).map(mapRowToPayroll);
+    },
+  );
 
-      setData(loadedData || []);
-      setError(null);
-    } catch (err) {
-      logger.error('Error fetching payroll data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load payroll data');
-      setData([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const enriched = useMemo(
+    () => deriveTrainerConversions(data ?? EMPTY_PAYROLL, newClients),
+    [data, newClients],
+  );
 
-  useEffect(() => {
-    fetchPayrollData();
-  }, [mode]);
-
-  return { data, isLoading, error, refetch: fetchPayrollData };
+  return useMemo(
+    () => ({ data: enriched, isLoading: loading, error, refetch }),
+    [enriched, loading, error, refetch],
+  );
 };

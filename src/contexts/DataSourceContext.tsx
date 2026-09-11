@@ -6,6 +6,7 @@ import {
   saveOfflineDatasetRows,
   seedBundledOfflineDatasets,
 } from '@/lib/offlineDataStore';
+import { invalidateDataset } from '@/lib/datasetStore';
 import type { DataSourceMode, DatasetLiveSource, OfflineDatasetKey, OfflineDatasetSummary } from '@/types/offlineData';
 import { logger } from '@/utils/logger';
 
@@ -126,11 +127,13 @@ export const DataSourceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const uploadDatasetFile = React.useCallback(async (key: OfflineDatasetKey, file: File) => {
     const rows = await parseSpreadsheetFileToRows(file);
     await saveOfflineDatasetRows(key, rows, 'upload', file.name);
+    invalidateDataset(`${key}:`);
     await refreshDatasets();
   }, [refreshDatasets]);
 
   const clearDataset = React.useCallback(async (key: OfflineDatasetKey) => {
     await deleteOfflineDataset(key);
+    invalidateDataset(`${key}:`);
     await refreshDatasets();
   }, [refreshDatasets]);
 

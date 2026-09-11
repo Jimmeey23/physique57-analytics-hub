@@ -139,7 +139,9 @@ export default defineConfig(({ mode }) => {
   },
 
   build: {
-    sourcemap: true, // <-- important for debugging Vercel errors
+    // "hidden" still emits maps for Vercel/error tooling but drops the
+    // //# sourceMappingURL comment, so browsers never fetch ~15MB of maps.
+    sourcemap: env.VITE_INLINE_SOURCEMAPS === "true" ? true : "hidden",
     minify: "esbuild",
     cssCodeSplit: true,
     assetsInlineLimit: 4096,
@@ -167,7 +169,6 @@ export default defineConfig(({ mode }) => {
       "@radix-ui/react-slot",
       "@radix-ui/react-primitive",
     ],
-    force: true,
   },
 
   esbuild: {

@@ -1,5 +1,6 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
+import { useSharedDataset } from '@/lib/datasetStore';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
 import { fetchGoogleSheet, SPREADSHEET_IDS } from '@/utils/googleAuth';
@@ -119,15 +120,14 @@ const normalizeSheetDate = (dateValue: string, monthYear: string): string => {
   return parsed ? formatCanonicalDate(parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate()) : value;
 };
 
+const EMPTY_NEW_CLIENTS: NewClientData[] = [];
+
 export const useNewClientData = () => {
-  const [data, setData] = useState<NewClientData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { mode, reportSource } = useDataSource();
 
-  const fetchNewClientData = useCallback(async () => {
-    try {
-      setLoading(true);
+  const { data, loading, error, refetch } = useSharedDataset<NewClientData[]>(
+    `new-clients:${mode}`,
+    async () => {
       logger.info('Fetching new client data...');
 
       const { rows } = await loadDatasetRowsForMode('new-clients', mode, async () => {
@@ -136,10 +136,7 @@ export const useNewClientData = () => {
         });
       }, reportSource);
 
-      if (rows.length < 2) {
-        setData([]);
-        return;
-      }
+      if (rows.length < 2) return EMPTY_NEW_CLIENTS;
 
       const headers = (rows[0] || []).map((header: unknown) => String(header || '').trim());
       const headerIndexMap = new Map<string, number>();
@@ -231,20 +228,13 @@ export const useNewClientData = () => {
       });
 
       logger.info(`New client data loaded: ${newClientData.length} records`);
-      
-      setData(newClientData);
-      setError(null);
-    } catch (err) {
-      logger.error('Error fetching new client data:', err);
-      setError('Failed to load new client data');
-    } finally {
-      setLoading(false);
-    }
-  }, [mode]);
 
-  useEffect(() => {
-    fetchNewClientData();
-  }, [fetchNewClientData]);
+      return newClientData;
+    },
+  );
 
-  return { data, loading, error, refetch: fetchNewClientData };
+  return useMemo(
+    () => ({ data: data ?? EMPTY_NEW_CLIENTS, loading, error, refetch, isLoading: loading }),
+    [data, loading, error, refetch],
+  );
 };
