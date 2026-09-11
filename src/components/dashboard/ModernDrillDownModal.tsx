@@ -23,6 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 import { rowKey } from '@/utils/reactKeys';
+import { DRILLDOWN_SCROLL_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface ModernDrillDownModalProps {
   isOpen: boolean;
@@ -392,8 +393,8 @@ export const ModernDrillDownModal: React.FC<ModernDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-white via-slate-50/30 to-white border-0 shadow-2xl">
-        <DialogHeader className="pb-6 border-b border-slate-200">
+      <DialogContent className={DRILLDOWN_SCROLL_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-blue-600 to-purple-600 bg-clip-text text-transparent">

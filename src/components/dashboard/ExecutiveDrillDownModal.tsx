@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { X, Download, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { rowKey } from '@/utils/reactKeys';
+import { DRILLDOWN_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 /**
  * ExecutiveDrillDownModal
@@ -83,8 +84,8 @@ export const ExecutiveDrillDownModal: React.FC<ExecutiveDrillDownModalProps> = (
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="border-b border-slate-200 pb-4 pt-6 px-6 flex-shrink-0">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="flex items-start justify-between gap-4 pl-4">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-xl font-bold text-slate-900">{title}</DialogTitle>

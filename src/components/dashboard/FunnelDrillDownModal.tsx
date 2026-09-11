@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { LeadsData } from '@/types/leads';
+import { DRILLDOWN_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface FunnelDrillDownModalProps {
   isOpen: boolean;
@@ -149,8 +150,8 @@ export const FunnelDrillDownModal: React.FC<FunnelDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] max-w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-white border-slate-200 shadow-2xl">
-        <DialogHeader className="pb-6 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white -m-6 mb-6 p-6 shadow-xl">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
               <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">

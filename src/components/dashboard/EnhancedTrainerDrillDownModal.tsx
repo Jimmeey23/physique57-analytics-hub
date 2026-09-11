@@ -32,6 +32,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { rowKey } from '@/utils/reactKeys';
 import { designTokens } from '@/utils/designTokens';
+import { DRILLDOWN_CONTENT_CLASS } from '@/components/ui/drilldownDialog';
 
 interface EnhancedTrainerDrillDownModalProps {
   isOpen: boolean;
@@ -148,7 +149,7 @@ export function EnhancedTrainerDrillDownModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-full max-h-[95vh] h-full p-0 bg-white border-0 shadow-2xl overflow-hidden">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
         <div className="flex h-full overflow-hidden">
           {/* Left Profile Panel - Theme colors: silver, white, deep blue */}
           <div className="w-80 bg-gradient-to-b from-slate-800 to-slate-900 text-white p-6 flex flex-col overflow-y-auto">

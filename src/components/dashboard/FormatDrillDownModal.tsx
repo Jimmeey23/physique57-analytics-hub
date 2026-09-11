@@ -21,6 +21,7 @@ import {
   Zap,
   X
 } from 'lucide-react';
+import { DRILLDOWN_SCROLL_CONTENT_CLASS } from '@/components/ui/drilldownDialog';
 
 interface FormatDrillDownModalProps {
   data: PayrollData[];
@@ -243,7 +244,7 @@ export const FormatDrillDownModal: React.FC<FormatDrillDownModalProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={DRILLDOWN_SCROLL_CONTENT_CLASS}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <div className={`p-2 rounded-lg bg-gradient-to-r ${

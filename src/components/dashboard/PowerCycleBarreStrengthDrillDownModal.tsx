@@ -18,6 +18,7 @@ import {
   UserPlus,
   UserCheck
 } from 'lucide-react';
+import { DRILLDOWN_SCROLL_CONTENT_CLASS } from '@/components/ui/drilldownDialog';
 
 interface PowerCycleBarreStrengthDrillDownModalProps {
   isOpen: boolean;
@@ -248,7 +249,7 @@ export const PowerCycleBarreStrengthDrillDownModal: React.FC<PowerCycleBarreStre
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={DRILLDOWN_SCROLL_CONTENT_CLASS}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             {getModalTitle()}

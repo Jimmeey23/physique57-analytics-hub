@@ -6,6 +6,7 @@ import { OptimizedTable } from '@/components/ui/OptimizedTable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { Eye, Sparkles, X } from 'lucide-react';
+import { DRILLDOWN_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 type Tone = 'blue' | 'emerald' | 'amber' | 'rose' | 'slate' | 'violet';
 
@@ -77,8 +78,8 @@ export const MemberInsightsDrillDownModal: React.FC<MemberInsightsDrillDownModal
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl overflow-hidden border-0 bg-white p-0 shadow-2xl">
-        <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 px-6 py-5 text-white">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">

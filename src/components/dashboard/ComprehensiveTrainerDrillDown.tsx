@@ -63,6 +63,7 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { rowKey } from '@/utils/reactKeys';
+import { DRILLDOWN_CONTENT_CLASS } from '@/components/ui/drilldownDialog';
 
 interface ComprehensiveTrainerDrillDownProps {
   isOpen: boolean;
@@ -613,7 +614,7 @@ export function ComprehensiveTrainerDrillDown({
   if (!processedData.hasData || !processedData.summary) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <AlertCircle className="w-16 h-16 text-slate-300 mb-4" />
             <h3 className="text-xl font-semibold text-slate-700">No Data Available</h3>
@@ -629,12 +630,12 @@ export function ComprehensiveTrainerDrillDown({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[95vh] p-0 bg-slate-50 overflow-hidden">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
         <DialogHeader className="sr-only">
           <DialogTitle>Trainer drilldown — {trainerName}</DialogTitle>
           <DialogDescription>{summary?.monthYear ? `Data for ${summary.monthYear}` : 'All periods'}{filters?.location ? ` • ${filters.location}` : ''}</DialogDescription>
         </DialogHeader>
-        <div className="flex h-[90vh]">
+        <div className="flex h-full min-h-0">
           {/* Left Sidebar - Trainer Profile */}
           <div className="w-80 bg-gray-900 text-white flex flex-col border-r-2 border-gray-700">
             {/* Close Button */}

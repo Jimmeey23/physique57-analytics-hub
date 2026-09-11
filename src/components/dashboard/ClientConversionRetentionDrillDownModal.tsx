@@ -9,6 +9,14 @@ import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { parseDate } from '@/utils/dateUtils';
 import { NewClientData, SalesData } from '@/types/dashboard';
 import { P57Badge } from '@/components/ui/P57Badge';
+import {
+  DRILLDOWN_BODY_CLASS,
+  DRILLDOWN_CONTENT_CLASS,
+  DRILLDOWN_HEADER_CLASS,
+  DRILLDOWN_TABLE_VIEWPORT_CLASS,
+  DRILLDOWN_TILE_CLASS,
+  DRILLDOWN_TILE_GRID_CLASS,
+} from '@/components/ui/drilldownDialog';
 import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 import { isNewClient } from '@/utils/clientRetention';
 import { downloadCsvArray } from '@/utils/csvExport';
@@ -685,9 +693,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="h-[82vh] max-h-[82vh] w-[92vw] max-w-[92vw] sm:max-w-[92vw] xl:w-[88vw] xl:max-w-[1530px] xl:sm:max-w-[1530px] overflow-hidden border-0 bg-transparent p-0 shadow-none">
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200/90 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.18)] ring-1 ring-slate-200/60">
-          <DialogHeader className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 text-slate-900 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div className="space-y-3">
                 <div className="flex items-start gap-4">
@@ -724,9 +732,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
             </div>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+          <div className={DRILLDOWN_BODY_CLASS}>
             <div className="mb-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div className={DRILLDOWN_TILE_GRID_CLASS}>
               {[
                 { label: 'Clients in slice', value: formatNumber(summary.totalMembers), helper: `${formatNumber(displayedRecords.length)} shown`, icon: Users },
                 { label: 'Conversion cohort', value: formatNumber(summary.cohortIncluded), helper: `${formatNumber(summary.totalMembers - summary.cohortIncluded)} excluded`, icon: Target },
@@ -737,7 +745,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               ].map((card) => {
                 const Icon = card.icon;
                 return (
-                  <div key={card.label} className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-3 sm:px-4">
+                  <div key={card.label} className={DRILLDOWN_TILE_CLASS}>
                     <div className="flex min-h-[30px] items-start gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       <span className="min-w-0 break-words leading-snug">{card.label}</span>
@@ -1018,7 +1026,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white">
-                    <div className="max-h-[46vh] overflow-auto min-[900px]:max-h-[50vh]">
+                    <div className={DRILLDOWN_TABLE_VIEWPORT_CLASS}>
                       <Table>
                         <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>
@@ -1266,7 +1274,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                         ))}
                       </div>
                     )}
-                    <div className="max-h-[46vh] overflow-auto min-[900px]:max-h-[50vh]">
+                    <div className={DRILLDOWN_TABLE_VIEWPORT_CLASS}>
                       <Table>
                         <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>

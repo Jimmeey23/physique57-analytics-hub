@@ -14,6 +14,7 @@ import { SessionData } from '@/hooks/useSessionsData';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { rowKey } from '@/utils/reactKeys';
+import { DRILLDOWN_SCROLL_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface DrillDownAnalyticsModalProps {
   isOpen: boolean;
@@ -251,8 +252,8 @@ export const DrillDownAnalyticsModal: React.FC<DrillDownAnalyticsModalProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b border-slate-200 pb-4">
+      <DialogContent className={DRILLDOWN_SCROLL_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold text-slate-900">
               {data.title}

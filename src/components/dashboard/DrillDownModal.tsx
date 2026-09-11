@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { TrendingUp, TrendingDown, Users, ShoppingCart, Calendar, MapPin, BarChart3, DollarSign, Activity, CreditCard } from 'lucide-react';
+import { DRILLDOWN_SCROLL_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface DrillDownModalProps {
   isOpen: boolean;
@@ -276,8 +277,8 @@ export const DrillDownModal: React.FC<DrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white via-slate-50/50 to-white">
-        <DialogHeader className="pb-4 border-b">
+      <DialogContent className={DRILLDOWN_SCROLL_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
             {getTitle()}
           </DialogTitle>

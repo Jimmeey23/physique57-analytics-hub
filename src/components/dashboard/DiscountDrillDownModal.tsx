@@ -15,6 +15,7 @@ import {
   Calendar, MapPin, Percent, ShoppingCart
 } from 'lucide-react';
 import { rowKey } from '@/utils/reactKeys';
+import { DRILLDOWN_CONTENT_CLASS } from '@/components/ui/drilldownDialog';
 
 interface DiscountDrillDownModalProps {
   isOpen: boolean;
@@ -517,7 +518,7 @@ export const DiscountDrillDownModal: React.FC<DiscountDrillDownModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh]">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-900">
             {title} - Detailed Analysis

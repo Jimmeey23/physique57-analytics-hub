@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertTriangle, CalendarClock, Clock3, IndianRupee, MapPin, Users } from 'lucide-react';
 import { LateCancellationsData } from '@/types/dashboard';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
+import { DRILLDOWN_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface LateCancellationsDrillDownModalProps {
   isOpen: boolean;
@@ -78,8 +79,8 @@ export const LateCancellationsDrillDownModal: React.FC<LateCancellationsDrillDow
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[92vh] max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white p-0 shadow-2xl">
-        <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-red-950 to-orange-900 px-8 py-6 text-white">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <DialogTitle className="flex flex-col gap-2 text-left">
             <span className="text-2xl font-bold tracking-tight">{title}</span>
             <span className="text-sm font-normal text-red-100">Detailed record view with event, location, lead-time, and penalty context.</span>

@@ -23,6 +23,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { rowKey } from '@/utils/reactKeys';
+import { DRILLDOWN_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface ClassAttendanceDrillDownModalProps {
   isOpen: boolean;
@@ -138,8 +139,8 @@ export const ClassAttendanceDrillDownModal: React.FC<ClassAttendanceDrillDownMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-gradient-to-br from-white to-slate-50/50">
-        <DialogHeader className="border-b border-slate-200/60 pb-6">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600">

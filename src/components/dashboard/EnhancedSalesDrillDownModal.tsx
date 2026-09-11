@@ -30,6 +30,7 @@ import {
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { useAdvancedExport } from '@/hooks/useAdvancedExport';
 import { designTokens } from '@/utils/designTokens';
+import { DRILLDOWN_CONTENT_CLASS , DRILLDOWN_HEADER_CLASS } from '@/components/ui/drilldownDialog';
 
 interface EnhancedSalesDrillDownModalProps {
   isOpen: boolean;
@@ -670,9 +671,9 @@ const EnhancedSalesDrillDownModal: React.FC<EnhancedSalesDrillDownModalProps> = 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[85vw] max-w-[1200px] max-h-[85vh] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-0 shadow-2xl rounded-2xl">
+      <DialogContent className={DRILLDOWN_CONTENT_CLASS}>
         {/* Compact Header */}
-        <DialogHeader className="relative overflow-hidden bg-gradient-to-r from-blue-700 via-blue-800 to-blue-900 dark:from-blue-800 dark:via-blue-900 dark:to-blue-950 text-white p-6 -m-6 mb-6 rounded-t-2xl">
+        <DialogHeader className={DRILLDOWN_HEADER_CLASS}>
           <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
