@@ -1147,7 +1147,7 @@ const ClientRetention = () => {
     return exportSections;
   }, [filteredData, filteredDataNoDateRange, selectedMomMonths, selectedYoyMonths, visitsSummary]);
 
-  const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50" buttonLabel="Export Retention Tables" />;
+  const exportButton = <AdvancedExportButton additionalData={exportAdditionalData} defaultFileName={`client-retention-${selectedLocation.replace(/\s+/g, '-').toLowerCase()}`} size="sm" variant="ghost" buttonClassName="rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/30 dark:bg-transparent dark:text-white dark:hover:border-white/50 dark:hover:bg-white/10" buttonLabel="Export Retention Tables" />;
   const lazySectionFallback = (
     <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
       <p className="text-sm font-medium text-slate-600">Loading section...</p>

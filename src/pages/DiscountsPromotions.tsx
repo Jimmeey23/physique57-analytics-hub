@@ -91,7 +91,7 @@ const DiscountsPromotions: React.FC = () => {
       defaultFileName="discounts-promotions-export"
       size="sm"
       variant="ghost"
-      buttonClassName="rounded-xl border border-white/30 text-white hover:border-white/50"
+      buttonClassName="rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/30 dark:bg-transparent dark:text-white dark:hover:border-white/50 dark:hover:bg-white/10"
     />
   );
 

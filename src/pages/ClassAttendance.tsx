@@ -128,7 +128,7 @@ const ClassAttendance = () => {
         buttonLabel="Export Attendance Tables"
         buttonVariant="outline"
         buttonSize="sm"
-        buttonClassName="rounded-xl border border-white/30 bg-transparent text-white hover:border-white/50 hover:bg-white/10"
+        buttonClassName="rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/30 dark:bg-transparent dark:text-white dark:hover:border-white/50 dark:hover:bg-white/10"
         tabOptions={[
           { key: 'overview', label: 'Comprehensive tab', matchers: ['overview', 'comprehensive'] },
           { key: 'monthlyTrends', label: 'Month on Month tab', matchers: ['monthlytrends', 'month on month', 'month-on-month'] },

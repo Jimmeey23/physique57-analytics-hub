@@ -57,7 +57,7 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             <Button
               size="sm"
               onClick={primaryAction.onClick}
-              className="gap-2 border border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+              className="gap-2 border border-slate-200 bg-white text-slate-700 backdrop-blur-sm hover:border-slate-300 hover:bg-slate-50 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
             >
               <LayoutDashboard className="h-4 w-4" />
               {primaryAction.label}
@@ -67,7 +67,7 @@ export const SalesMotionHero: React.FC<SalesMotionHeroProps> = ({
             <Button
               size="sm"
               onClick={secondaryAction.onClick}
-              className="gap-2 bg-white text-ink hover:bg-white/90 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+              className="gap-2 border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 dark:border-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
               <Download className="h-4 w-4" />
               {secondaryAction.label}
