@@ -169,7 +169,16 @@ const getCohortReason = (client: NewClientData) => {
 };
 
 const getConversionReason = (client: NewClientData, transactionCount: number) => {
-  if (safeText(client.conversionStatus, '').trim() === 'Converted') {
+  const isConvertedStatus = safeText(client.conversionStatus, '').trim() === 'Converted';
+
+  if (isConvertedStatus && !isNewClient(client)) {
+    return {
+      included: false,
+      reason: `Marked “Converted” in the source, but kept out of the conversion numerator because isNew is “${safeText(client.isNew, 'Blank')}” and this client is not in the denominator.`,
+    };
+  }
+
+  if (isConvertedStatus) {
     if (client.firstPurchase) {
       return {
         included: true,
@@ -204,10 +213,19 @@ const getConversionReason = (client: NewClientData, transactionCount: number) =>
 };
 
 const getRetentionReason = (client: NewClientData) => {
-  if (safeText(client.retentionStatus, '').trim() === 'Retained') {
+  const isRetainedStatus = safeText(client.retentionStatus, '').trim() === 'Retained';
+
+  if (isRetainedStatus && !isNewClient(client)) {
+    return {
+      included: false,
+      reason: `Marked “Retained” in the source, but kept out of the retained numerator because isNew is “${safeText(client.isNew, 'Blank')}” and this client is not in the denominator.`,
+    };
+  }
+
+  if (isRetainedStatus) {
     return {
       included: true,
-      reason: 'Included in retained results because retentionStatus is “Retained”.',
+      reason: 'Included in retained results because this client is in the new-client cohort and retentionStatus is “Retained”.',
     };
   }
 
@@ -436,10 +454,67 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
       .sort((a, b) => (parseLooseDate(b.transaction.paymentDate)?.getTime() || 0) - (parseLooseDate(a.transaction.paymentDate)?.getTime() || 0));
   }, [displayedRecords]);
 
+  const transactionSummary = React.useMemo(() => {
+    const gross = displayedTransactions.reduce((sum, item) => sum + (item.transaction.paymentValue || 0), 0);
+    const clientsWith = new Set(displayedTransactions.map((item) => item.clientLabel)).size;
+    const statusMix = buildDistribution(displayedTransactions.map((item) => safeText(item.transaction.paymentStatus, 'Unknown')));
+    const methodMix = buildDistribution(displayedTransactions.map((item) => safeText(item.transaction.paymentMethod, 'Unknown')));
+    const dates = displayedTransactions
+      .map((item) => parseLooseDate(item.transaction.paymentDate)?.getTime())
+      .filter((value): value is number => typeof value === 'number' && !Number.isNaN(value));
+
+    return {
+      count: displayedTransactions.length,
+      gross,
+      avg: displayedTransactions.length > 0 ? gross / displayedTransactions.length : 0,
+      clientsWith,
+      statusMix,
+      methodMix,
+      firstDate: dates.length > 0 ? new Date(Math.min(...dates)).toLocaleDateString('en-IN') : '—',
+      lastDate: dates.length > 0 ? new Date(Math.max(...dates)).toLocaleDateString('en-IN') : '—',
+    };
+  }, [displayedTransactions]);
+
   const scopeBadges = React.useMemo(() => getScopeBadges(payload, type), [payload, type]);
-  const topMemberships = React.useMemo(() => buildDistribution(clientRecords.flatMap((record) => record.memberships)), [clientRecords]);
-  const topLocations = React.useMemo(() => buildDistribution(clientRecords.map((record) => record.client.firstVisitLocation || record.client.homeLocation || 'Unknown')), [clientRecords]);
-  const topTrainers = React.useMemo(() => buildDistribution(clientRecords.map((record) => record.client.trainerName || 'Unknown')), [clientRecords]);
+  const topMemberships = React.useMemo(() => buildDistribution(displayedRecords.flatMap((record) => record.memberships)), [displayedRecords]);
+  const topLocations = React.useMemo(() => buildDistribution(displayedRecords.map((record) => record.client.firstVisitLocation || record.client.homeLocation || 'Unknown')), [displayedRecords]);
+  const topTrainers = React.useMemo(() => buildDistribution(displayedRecords.map((record) => record.client.trainerName || 'Unknown')), [displayedRecords]);
+  const topEntities = React.useMemo(() => buildDistribution(displayedRecords.map((record) => record.client.firstVisitEntityName || 'Unknown')), [displayedRecords]);
+  const conversionStatusMix = React.useMemo(() => buildDistribution(displayedRecords.map((record) => safeText(record.client.conversionStatus, 'Blank'))), [displayedRecords]);
+  const retentionStatusMix = React.useMemo(() => buildDistribution(displayedRecords.map((record) => safeText(record.client.retentionStatus, 'Blank'))), [displayedRecords]);
+
+  const filteredSummary = React.useMemo(() => {
+    const totalMembers = displayedRecords.length;
+    const cohortIncluded = displayedRecords.filter((record) => record.cohortIncluded).length;
+    const convertedMembers = displayedRecords.filter((record) => record.conversionIncluded).length;
+    const retainedMembers = displayedRecords.filter((record) => record.retentionIncluded).length;
+    const totalLTV = displayedRecords.reduce((sum, record) => sum + (record.client.ltv || 0), 0);
+    const matchedTransactions = displayedRecords.reduce((sum, record) => sum + record.transactionCount, 0);
+    const matchedRevenue = displayedRecords.reduce((sum, record) => sum + record.totalMatchedRevenue, 0);
+    const withTransactions = displayedRecords.filter((record) => record.transactionCount > 0).length;
+    const spans = displayedRecords.map((record) => record.client.conversionSpan || 0).filter((value) => value > 0).sort((a, b) => a - b);
+    const visits = displayedRecords.map((record) => record.recordedVisits || 0);
+
+    return {
+      totalMembers,
+      cohortIncluded,
+      convertedMembers,
+      retainedMembers,
+      totalLTV,
+      matchedTransactions,
+      matchedRevenue,
+      withTransactions,
+      avgLTV: totalMembers > 0 ? totalLTV / totalMembers : 0,
+      conversionRate: calcConversionRate(convertedMembers, cohortIncluded),
+      retentionRate: calcRetentionRate(retainedMembers, cohortIncluded),
+      convertedNotRetained: displayedRecords.filter((record) => record.conversionIncluded && !record.retentionIncluded).length,
+      retainedNotConverted: displayedRecords.filter((record) => record.retentionIncluded && !record.conversionIncluded).length,
+      avgSpan: spans.length > 0 ? spans.reduce((sum, value) => sum + value, 0) / spans.length : 0,
+      medianSpan: spans.length > 0 ? spans[Math.floor(spans.length / 2)] : 0,
+      avgVisits: visits.length > 0 ? visits.reduce((sum, value) => sum + value, 0) / visits.length : 0,
+      singleVisit: displayedRecords.filter((record) => (record.recordedVisits || 0) <= 1).length,
+    };
+  }, [displayedRecords]);
 
   const suggestions = React.useMemo(() => {
     const notes: string[] = [];
@@ -610,9 +685,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="h-[95vh] w-[96vw] max-w-[1680px] overflow-hidden border-0 bg-transparent p-0 shadow-none">
+      <DialogContent className="h-[96vh] max-h-[96vh] w-[98vw] max-w-[98vw] sm:max-w-[98vw] xl:w-[96vw] xl:max-w-[1800px] xl:sm:max-w-[1800px] overflow-hidden border-0 bg-transparent p-0 shadow-none">
         <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200/90 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.18)] ring-1 ring-slate-200/60">
-          <DialogHeader className="border-b border-slate-200 bg-white px-8 py-6 text-slate-900">
+          <DialogHeader className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 text-slate-900 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div className="space-y-3">
                 <div className="flex items-start gap-4">
@@ -623,7 +698,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                       Retention drill-down
                     </div>
-                    <DialogTitle className="text-[26px] font-semibold tracking-tight text-slate-950">{title}</DialogTitle>
+                    <DialogTitle className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl lg:text-[26px]">{title}</DialogTitle>
                     <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                       A cleaner, more structured drill-down with direct client fields, clear supporting logic, and export-ready transaction evidence.
                     </p>
@@ -649,9 +724,9 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
             </div>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-8 py-6">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
             <div className="mb-5 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {[
                 { label: 'Clients in slice', value: formatNumber(summary.totalMembers), helper: `${formatNumber(displayedRecords.length)} shown`, icon: Users },
                 { label: 'Conversion cohort', value: formatNumber(summary.cohortIncluded), helper: `${formatNumber(summary.totalMembers - summary.cohortIncluded)} excluded`, icon: Target },
@@ -662,13 +737,13 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               ].map((card) => {
                 const Icon = card.icon;
                 return (
-                  <div key={card.label} className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
-                    <div className="flex min-h-[28px] items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="leading-snug">{card.label}</span>
+                  <div key={card.label} className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-3 sm:px-4">
+                    <div className="flex min-h-[30px] items-start gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span className="min-w-0 break-words leading-snug">{card.label}</span>
                     </div>
-                    <div className="mt-1 truncate text-[26px] font-semibold leading-none tracking-tight text-slate-950">{card.value}</div>
-                    <div className="mt-1.5 truncate text-xs text-slate-500">{card.helper}</div>
+                    <div className="mt-1.5 truncate text-xl font-semibold leading-none tracking-tight text-slate-950 sm:text-2xl" title={String(card.value)}>{card.value}</div>
+                    <div className="mt-1.5 truncate text-xs text-slate-500" title={String(card.helper)}>{card.helper}</div>
                   </div>
                 );
               })}
@@ -676,7 +751,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
             </div>
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ModalTabKey)} className="w-full">
-              <TabsList className="grid h-12 w-full grid-cols-4 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+              <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm sm:grid-cols-4">
                 {[
                   ['overview', 'Overview'],
                   ['clients', 'Client table'],
@@ -686,7 +761,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   <TabsTrigger
                     key={value}
                     value={value}
-                    className="rounded-xl text-sm data-[state=active]:bg-slate-950 data-[state=active]:bg-none data-[state=active]:text-white dark:data-[state=active]:bg-slate-200 dark:data-[state=active]:bg-none dark:data-[state=active]:text-slate-950"
+                    className="h-10 rounded-xl text-xs sm:text-sm data-[state=active]:bg-slate-950 data-[state=active]:bg-none data-[state=active]:text-white dark:data-[state=active]:bg-slate-200 dark:data-[state=active]:bg-none dark:data-[state=active]:text-slate-950"
                   >
                     {label}
                   </TabsTrigger>
@@ -694,7 +769,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
               </TabsList>
 
               <TabsContent value="overview" className="mt-6 space-y-6">
-                <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+                <div className="grid gap-4 lg:gap-6 xl:grid-cols-[1.35fr_1fr]">
                   <Card className="rounded-2xl border border-slate-200 shadow-sm">
                     <CardHeader className="border-b border-slate-100 pb-4">
                       <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
@@ -702,7 +777,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                         Better organised segment summary
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+                    <CardContent className="grid gap-4 p-4 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
                           <ShoppingBag className="h-4 w-4 text-slate-700" />
@@ -747,6 +822,51 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                           ))}
                         </div>
                       </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                          <Calendar className="h-4 w-4 text-slate-700" />
+                          First-visit entity
+                        </div>
+                        <div className="space-y-2">
+                          {topEntities.map(([label, count]) => (
+                            <div key={label} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="truncate text-slate-700" title={label}>{label}</span>
+                              <span className="text-xs font-medium text-slate-500">{formatNumber(count)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                          <Target className="h-4 w-4 text-slate-700" />
+                          Conversion status mix
+                        </div>
+                        <div className="space-y-2">
+                          {conversionStatusMix.map(([label, count]) => (
+                            <div key={label} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="truncate text-slate-700" title={label}>{label}</span>
+                              <span className="text-xs font-medium text-slate-500">{formatNumber(count)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                          <ListChecks className="h-4 w-4 text-slate-700" />
+                          Retention status mix
+                        </div>
+                        <div className="space-y-2">
+                          {retentionStatusMix.map(([label, count]) => (
+                            <div key={label} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="truncate text-slate-700" title={label}>{label}</span>
+                              <span className="text-xs font-medium text-slate-500">{formatNumber(count)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -757,22 +877,61 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                         Inclusion logic at a glance
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 p-6">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                        New-client eligibility is driven by <code className="rounded bg-white px-1 py-0.5 text-xs">isNew</code>. Converted and retained counts follow the explicit source statuses, and each client row now shows the reason for being included or excluded.
+                    <CardContent className="space-y-4 p-4 sm:p-6">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                        New-client eligibility is driven by <code className="rounded bg-white px-1 py-0.5 text-xs">isNew</code>. Converted and retained counts follow the explicit source statuses, and each client row shows the reason for being included or excluded. Every figure on this tab reflects the {quickFilter === 'all' && !search.trim() ? 'full drill-down slice' : 'currently filtered client set'}.
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                          <div className="text-2xl font-semibold text-emerald-700">{formatNumber(summary.cohortIncluded)}</div>
-                          <div className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-700">Included in denominator</div>
-                        </div>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Clients in scope', value: filteredSummary.totalMembers, base: filteredSummary.totalMembers, tone: 'bg-slate-900' },
+                          { label: 'Eligible cohort (isNew)', value: filteredSummary.cohortIncluded, base: filteredSummary.totalMembers, tone: 'bg-sky-600' },
+                          { label: 'Converted', value: filteredSummary.convertedMembers, base: filteredSummary.cohortIncluded, tone: 'bg-emerald-600' },
+                          { label: 'Retained', value: filteredSummary.retainedMembers, base: filteredSummary.cohortIncluded, tone: 'bg-indigo-600' },
+                        ].map((step) => {
+                          const pct = step.base > 0 ? (step.value / step.base) * 100 : 0;
+                          return (
+                            <div key={step.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                              <div className="flex items-center justify-between gap-3 text-sm">
+                                <span className="min-w-0 truncate text-slate-700">{step.label}</span>
+                                <span className="shrink-0 font-semibold text-slate-900">{formatNumber(step.value)} <span className="text-xs font-medium text-slate-500">({pct.toFixed(1)}%)</span></span>
+                              </div>
+                              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div className={`h-full rounded-full ${step.tone}`} style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                          <div className="text-2xl font-semibold text-amber-700">{formatNumber(summary.totalMembers - summary.cohortIncluded)}</div>
-                          <div className="text-xs font-medium uppercase tracking-[0.16em] text-amber-700">Excluded from denominator</div>
+                          <div className="text-xl font-semibold text-amber-700">{formatNumber(filteredSummary.totalMembers - filteredSummary.cohortIncluded)}</div>
+                          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-amber-700">Excluded from denominator</div>
                         </div>
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <div className="text-2xl font-semibold text-slate-900">{formatNumber(summary.matchedTransactions)}</div>
-                          <div className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Matched transactions</div>
+                          <div className="text-xl font-semibold text-slate-900">{formatNumber(filteredSummary.matchedTransactions)}</div>
+                          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Matched transactions · {formatCurrency(filteredSummary.matchedRevenue)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="text-xl font-semibold text-slate-900">{filteredSummary.avgSpan > 0 ? `${filteredSummary.avgSpan.toFixed(1)}d` : '—'}</div>
+                          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Avg conversion span · median {filteredSummary.medianSpan > 0 ? `${filteredSummary.medianSpan}d` : '—'}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="text-xl font-semibold text-slate-900">{filteredSummary.avgVisits.toFixed(1)}</div>
+                          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Avg visits · {formatNumber(filteredSummary.singleVisit)} single-visit</div>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                          <span className="font-semibold text-slate-900">{formatNumber(filteredSummary.convertedNotRetained)}</span> converted but not retained
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                          <span className="font-semibold text-slate-900">{formatNumber(filteredSummary.retainedNotConverted)}</span> retained without converted status
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                          <span className="font-semibold text-slate-900">{formatNumber(filteredSummary.withTransactions)}</span> clients with matched sales evidence
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                          <span className="font-semibold text-slate-900">{formatCurrency(filteredSummary.totalLTV)}</span> total LTV · {formatCurrency(filteredSummary.avgLTV)} avg
                         </div>
                       </div>
                     </CardContent>
@@ -859,7 +1018,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white">
-                    <div className="max-h-[62vh] overflow-auto">
+                    <div className="max-h-[58vh] overflow-auto min-[900px]:max-h-[62vh]">
                       <Table>
                         <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>
@@ -1073,9 +1232,11 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                 <Card className="rounded-2xl border border-slate-200 shadow-sm">
                   <CardHeader className="border-b border-slate-100 pb-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
+                      <div className="min-w-0">
                         <CardTitle className="text-lg text-slate-900">Matched transaction evidence</CardTitle>
-                        <p className="mt-1 text-sm text-slate-500">Exportable transaction-level support for the selected drill-down slice.</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Sales rows joined to the {formatNumber(displayedRecords.length)} client(s) currently shown, matched on member ID or email. Range {transactionSummary.firstDate} → {transactionSummary.lastDate}.
+                        </p>
                       </div>
                       <Button size="sm" variant="outline" className={toolbarButtonClass} onClick={exportTransactions}>
                         <Download className="mr-2 h-4 w-4" />
@@ -1084,11 +1245,32 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="max-h-[62vh] overflow-auto">
+                    <div className="grid grid-cols-2 gap-3 border-b border-slate-100 p-4 sm:grid-cols-3 lg:grid-cols-5">
+                      {[
+                        { label: 'Transactions', value: formatNumber(transactionSummary.count) },
+                        { label: 'Gross value', value: formatCurrency(transactionSummary.gross) },
+                        { label: 'Average value', value: formatCurrency(transactionSummary.avg) },
+                        { label: 'Clients with evidence', value: `${formatNumber(transactionSummary.clientsWith)} / ${formatNumber(displayedRecords.length)}` },
+                        { label: 'Top method', value: transactionSummary.methodMix[0] ? `${transactionSummary.methodMix[0][0]} (${formatNumber(transactionSummary.methodMix[0][1])})` : '—' },
+                      ].map((tile) => (
+                        <div key={tile.label} className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-2.5">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{tile.label}</div>
+                          <div className="mt-1 truncate text-base font-semibold text-slate-900" title={String(tile.value)}>{tile.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {transactionSummary.statusMix.length > 0 && (
+                      <div className="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-3">
+                        {transactionSummary.statusMix.map(([label, count]) => (
+                          <P57Badge key={label} tone={paymentTone(label)}>{label} · {formatNumber(count)}</P57Badge>
+                        ))}
+                      </div>
+                    )}
+                    <div className="max-h-[58vh] overflow-auto min-[900px]:max-h-[62vh]">
                       <Table>
                         <TableHeader className="sticky top-0 z-20 bg-[#f6f7f9]">
                           <TableRow>
-                            <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Client</TableHead>
+                            <TableHead className="min-w-[200px] bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Client</TableHead>
                             <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Type</TableHead>
                             <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Payment date</TableHead>
                             <TableHead className="bg-[#f6f7f9] text-xs font-semibold uppercase tracking-wide text-slate-700">Item</TableHead>
@@ -1121,6 +1303,13 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                               </TableCell>
                             </TableRow>
                           )}
+                          {displayedTransactions.length > 0 && (
+                            <TableRow className="sticky bottom-0 z-10 border-t border-slate-200 bg-slate-900 hover:bg-slate-900">
+                              <TableCell className="text-sm font-semibold text-white">Total</TableCell>
+                              <TableCell colSpan={8} className="text-sm text-slate-300">{formatNumber(transactionSummary.count)} transactions · {formatNumber(transactionSummary.clientsWith)} clients</TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-white">{formatCurrency(transactionSummary.gross)}</TableCell>
+                            </TableRow>
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -1128,24 +1317,41 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                 </Card>
               </TabsContent>
 
-              <TabsContent value="methodology" className="mt-6 space-y-6">
-                <div className="grid gap-6 xl:grid-cols-2">
+              <TabsContent value="methodology" className="mt-6 space-y-4 lg:space-y-6">
+                <div className="grid gap-4 lg:gap-6 xl:grid-cols-2">
                   <Card className="rounded-2xl border border-slate-200 shadow-sm">
                     <CardHeader className="border-b border-slate-100 pb-4">
                       <CardTitle className="text-lg text-slate-900">How this drill-down decides inclusion</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3 p-6 text-sm text-slate-700">
+                    <CardContent className="space-y-3 p-4 text-sm text-slate-700 sm:p-6">
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="font-semibold text-slate-900">Conversion denominator</div>
-                        <p className="mt-1">A client is included only when <code className="rounded bg-white px-1 py-0.5 text-xs">isNew</code> contains “new”. Everyone else stays visible with an explicit exclusion reason.</p>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="font-semibold text-slate-900">Conversion denominator</div>
+                          <div className="text-xs font-semibold text-slate-500">{formatNumber(filteredSummary.cohortIncluded)} of {formatNumber(filteredSummary.totalMembers)} shown</div>
+                        </div>
+                        <p className="mt-1">A client is included only when <code className="rounded bg-white px-1 py-0.5 text-xs">isNew</code> marks them as a new client. Everyone else stays visible with an explicit exclusion reason and never enters a numerator.</p>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="font-semibold text-slate-900">Conversion numerator</div>
-                        <p className="mt-1">A client is counted as converted when <code className="rounded bg-white px-1 py-0.5 text-xs">conversionStatus</code> is exactly “Converted”. Transaction matches are supporting evidence, not a replacement for the source flag.</p>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="font-semibold text-slate-900">Conversion numerator</div>
+                          <div className="text-xs font-semibold text-slate-500">{formatNumber(filteredSummary.convertedMembers)} → {filteredSummary.conversionRate.toFixed(1)}%</div>
+                        </div>
+                        <p className="mt-1">Counted as converted when the client is in the cohort <em>and</em> <code className="rounded bg-white px-1 py-0.5 text-xs">conversionStatus</code> is exactly “Converted”. Transaction matches are supporting evidence, not a replacement for the source flag.</p>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="font-semibold text-slate-900">Retention numerator</div>
-                        <p className="mt-1">A client is counted as retained when they are part of the new-client cohort and <code className="rounded bg-white px-1 py-0.5 text-xs">retentionStatus</code> is exactly “Retained”. A matching <code className="rounded bg-white px-1 py-0.5 text-xs">conversionStatus</code> is not required for retention.</p>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="font-semibold text-slate-900">Retention numerator</div>
+                          <div className="text-xs font-semibold text-slate-500">{formatNumber(filteredSummary.retainedMembers)} → {filteredSummary.retentionRate.toFixed(1)}%</div>
+                        </div>
+                        <p className="mt-1">Counted as retained when the client is in the cohort and <code className="rounded bg-white px-1 py-0.5 text-xs">retentionStatus</code> is exactly “Retained”. A converted status is not required, so {formatNumber(filteredSummary.retainedNotConverted)} retained client(s) here never reached “Converted”.</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="font-semibold text-slate-900">Transaction matching</div>
+                        <p className="mt-1">Sales rows join to clients on lowercase member ID first, then customer email, and duplicates are removed by transaction ID, sale item, date and item. {formatNumber(filteredSummary.withTransactions)} of {formatNumber(filteredSummary.totalMembers)} shown client(s) have at least one matched row ({formatNumber(filteredSummary.matchedTransactions)} rows, {formatCurrency(filteredSummary.matchedRevenue)}).</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="font-semibold text-slate-900">Scope of this drill-down</div>
+                        <p className="mt-1">{scopeBadges.join(' · ')}. Filters and search on the Client table tab re-scope the Overview, Transactions and Methodology figures; the header tiles always describe the full slice of {formatNumber(summary.totalMembers)} client(s).</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1154,7 +1360,7 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                     <CardHeader className="border-b border-slate-100 pb-4">
                       <CardTitle className="text-lg text-slate-900">Recommended data improvements</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3 p-6 text-sm text-slate-700">
+                    <CardContent className="space-y-3 p-4 text-sm text-slate-700 sm:p-6">
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div className="font-semibold text-slate-900">1. Normalize isNew values</div>
                         <p className="mt-1">Use one controlled set of labels for new-client status so exclusions are clearly intentional.</p>
@@ -1166,6 +1372,14 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div className="font-semibold text-slate-900">3. Keep a stable member key across datasets</div>
                         <p className="mt-1">Consistent IDs between retention and sales would improve transaction evidence matching and reduce unexplained gaps.</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div className="mb-2 font-semibold text-slate-900">What this slice looks like today</div>
+                        <ul className="list-disc space-y-1 pl-5 text-slate-600">
+                          {suggestions.map((suggestion) => (
+                            <li key={suggestion}>{suggestion}</li>
+                          ))}
+                        </ul>
                       </div>
                     </CardContent>
                   </Card>
