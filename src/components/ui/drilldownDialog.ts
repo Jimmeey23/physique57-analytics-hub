@@ -10,18 +10,18 @@
 
 /** Apply to <DialogContent> when the modal manages its own scroll region. */
 export const DRILLDOWN_CONTENT_CLASS =
-  'flex h-[82vh] max-h-[82vh] w-[92vw] max-w-[92vw] flex-col gap-0 overflow-hidden rounded-[26px] border border-slate-200 bg-white p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)] xl:w-[88vw] xl:max-w-[1530px]';
+  'flex h-[82vh] max-h-[82vh] w-[92vw] max-w-[92vw] flex-col gap-0 overflow-hidden rounded-[26px] border border-slate-200/80 bg-white p-0 xl:w-[88vw] xl:max-w-[1530px]';
 
 /**
  * Apply to <DialogContent> when the modal expects the dialog surface itself to
  * scroll (no internal scroll container of its own).
  */
 export const DRILLDOWN_SCROLL_CONTENT_CLASS =
-  'block h-[82vh] max-h-[82vh] w-[92vw] max-w-[92vw] overflow-y-auto overscroll-contain rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_28px_90px_rgba(15,23,42,0.18)] sm:p-6 xl:w-[88vw] xl:max-w-[1530px]';
+  'block h-[82vh] max-h-[82vh] w-[92vw] max-w-[92vw] overflow-y-auto overscroll-contain rounded-[26px] border border-slate-200/80 bg-white p-4 sm:p-6 xl:w-[88vw] xl:max-w-[1530px]';
 
 /** Sticky modal header band. */
 export const DRILLDOWN_HEADER_CLASS = [
-  'shrink-0 space-y-2 border-b border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950',
+  'p57-drill-header shrink-0 space-y-2 border-b border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950',
   'px-4 py-4 text-left text-white sm:px-6 sm:py-5 lg:px-8',
   // Drill-downs arrived with light and dark headers; these force one contrast
   // model so a modal written for a white band still reads on the dark one.
@@ -31,7 +31,7 @@ export const DRILLDOWN_HEADER_CLASS = [
 
 /** Scrollable body region under the header. */
 export const DRILLDOWN_BODY_CLASS =
-  'min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6';
+  'p57-drill-body min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6';
 
 /** Responsive KPI tile row used at the top of a drill-down body. */
 export const DRILLDOWN_TILE_GRID_CLASS =
@@ -39,7 +39,7 @@ export const DRILLDOWN_TILE_GRID_CLASS =
 
 /** A single KPI tile: min-w-0 so long values truncate instead of overlapping. */
 export const DRILLDOWN_TILE_CLASS =
-  'min-w-0 rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-3 sm:px-4';
+  'p57-drill-tile min-w-0 rounded-2xl border border-slate-200/90 px-3 py-3 sm:px-4';
 
 /** Table viewport inside a drill-down. */
 export const DRILLDOWN_TABLE_VIEWPORT_CLASS =
