@@ -314,25 +314,10 @@ export const EnhancedDiscountsDashboardV2: React.FC<EnhancedDiscountsDashboardV2
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="detailed" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-slate-50 via-indigo-50 to-purple-50 p-1.5 rounded-xl shadow-md border border-slate-200">
-            <TabsTrigger 
-              value="detailed" 
-              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              Data Tables
-            </TabsTrigger>
-            <TabsTrigger 
-              value="breakdown" 
-              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              Breakdowns
-            </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
-              className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-700 hover:text-slate-900 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              Analytics
-            </TabsTrigger>
+          <TabsList>
+            <TabsTrigger value="detailed">Data Tables</TabsTrigger>
+            <TabsTrigger value="breakdown">Breakdowns</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">

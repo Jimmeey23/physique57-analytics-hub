@@ -240,13 +240,9 @@ export const ExpirationAnalyticsSection: React.FC<ExpirationAnalyticsSectionProp
 
         {/* Analysis Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl shadow-xl border border-slate-200 flex w-full max-w-7xl mx-auto overflow-hidden">
-            <TabsTrigger value="overview" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-              Overview & Analytics
-            </TabsTrigger>
-            <TabsTrigger value="churned" className="relative flex-1 text-center px-4 py-3 font-semibold text-sm md:text-base min-h-[48px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:to-red-800 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50 border-l border-slate-200 first:border-l-0">
-              Churned Members Details
-            </TabsTrigger>
+          <TabsList>
+            <TabsTrigger value="overview">Overview &amp; Analytics</TabsTrigger>
+            <TabsTrigger value="churned">Churned Members Details</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}

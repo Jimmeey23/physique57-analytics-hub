@@ -18,9 +18,7 @@ import { BarChart3, Clock3, Gauge, RotateCcw, SlidersHorizontal } from 'lucide-r
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { AdvancedExportButton } from '@/components/ui/AdvancedExportButton';
 import { NewClientData, NewClientFilterOptions } from '@/types/dashboard';
-import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { KpiTicker } from '@/components/ui/KpiTicker';
-import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { AnalyticsPageShell } from '@/components/ui/AnalyticsPageShell';
 import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { formatNumber, formatCurrency, formatPercentage } from '@/utils/formatters';
 import { getDashboardDefaultDateRange, parseDate } from '@/utils/dateUtils';
@@ -1171,55 +1169,57 @@ const ClientRetention = () => {
     </div>
   );
 
-  return <div className="client-retention-page min-h-screen bg-slate-50 text-slate-900">
-      <div className="relative z-10">
-        <div className="bg-white text-slate-800">
-          <DashboardMotionHero 
-            title="Client Conversion & Retention" 
-            subtitle="Comprehensive client acquisition and retention analysis across all customer touchpoints" 
-            metrics={heroMetrics}
-            extra={exportButton}
+  const locationId =
+    selectedLocation === 'All Locations' ? 'all'
+      : selectedLocation.toLowerCase().includes('kwality') ? 'kwality'
+      : selectedLocation.toLowerCase().includes('supreme') ? 'supreme'
+      : selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere'
+      : 'all';
+
+  return (
+    <AnalyticsPageShell
+      title="Client Conversion & Retention"
+      subtitle="Comprehensive client acquisition and retention analysis across all customer touchpoints"
+      heroMetrics={heroMetrics}
+      actions={exportButton}
+      definitions={METRIC_DEFINITIONS.clientRetention}
+      className="client-retention-page"
+      locationTabs={
+        <>
+          <SectionTimelineNav />
+          <StudioLocationTabs
+            activeLocation={locationId}
+            onLocationChange={(id) => {
+              const locationMap: Record<string, string> = {
+                all: 'All Locations',
+                kwality: 'Kwality House, Kemps Corner',
+                supreme: 'Supreme HQ, Bandra',
+                kenkere: 'Kenkere House, Bengaluru',
+              };
+              setSelectedLocation(locationMap[id] || 'All Locations');
+            }}
+            showInfoPopover={true}
+            infoPopoverContext="client-retention-overview"
           />
-          <div className="mx-auto w-full max-w-screen-2xl px-3 pb-5 sm:px-6 lg:px-8">
-            <KpiTicker items={heroMetrics} />
-          </div>
-        </div>
-
-        <div className="mx-auto w-full max-w-screen-2xl px-3 py-5 sm:px-6 lg:px-8">
-          <main className="min-w-0 space-y-5">
-            {/* Section Navigation */}
-            <SectionTimelineNav />
-            
-            {/* Enhanced Location Tabs - unified styling (moved above filters) */}
-            <StudioLocationTabs 
-              activeLocation={selectedLocation === 'All Locations' ? 'all' : 
-                selectedLocation.toLowerCase().includes('kwality') ? 'kwality' : 
-                selectedLocation.toLowerCase().includes('supreme') ? 'supreme' : 
-                selectedLocation.toLowerCase().includes('kenkere') ? 'kenkere' : 'all'}
-              onLocationChange={(locationId) => {
-                const locationMap: Record<string, string> = {
-                  'all': 'All Locations',
-                  'kwality': 'Kwality House, Kemps Corner',
-                  'supreme': 'Supreme HQ, Bandra',
-                  'kenkere': 'Kenkere House, Bengaluru'
-                };
-                setSelectedLocation(locationMap[locationId] || 'All Locations');
-              }}
-              showInfoPopover={true}
-              infoPopoverContext="client-retention-overview"
-            />
-
+        </>
+      }
+      filters={
+        <EnhancedClientConversionFilterSection
+          filters={filters}
+          onFiltersChange={setFilters}
+          locations={uniqueLocations}
+          trainers={uniqueTrainers}
+          membershipTypes={uniqueMembershipTypes}
+        />
+      }
+    >
+      <>
             {error && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                 <span>Client retention data could not be loaded. {error}</span>
                 <button type="button" disabled={loading} onClick={() => void refetch()} className="rounded-md border border-red-300 px-3 py-2 font-medium hover:bg-red-100 disabled:opacity-50">Retry</button>
               </div>
             )}
-            {/* Enhanced Filter Section */}
-            <div className="min-w-0" id="filters">
-              <EnhancedClientConversionFilterSection filters={filters} onFiltersChange={setFilters} locations={uniqueLocations} trainers={uniqueTrainers} membershipTypes={uniqueMembershipTypes} />
-            </div>
-
           {/* Enhanced Metric Cards */}
           <div id="metrics" className="rounded-2xl p-0">
             <ClientConversionMetricCards 
@@ -1506,28 +1506,21 @@ const ClientRetention = () => {
               )}
             </Suspense>
           </div>
-        </main>
+      </>
 
-        {/* Enhanced Drill Down Modal - Lazy loaded */}
-        <ModalSuspense>
-          {drillDownModal.isOpen && (
-            <LazyClientConversionDrillDownModalV3 
-              isOpen={drillDownModal.isOpen} 
-              onClose={() => setDrillDownModal({
-                isOpen: false,
-                title: '',
-                data: null,
-                type: 'month'
-              })} 
-              title={drillDownModal.title} 
-              data={drillDownModal.data} 
-              type={drillDownModal.type} 
-            />
-          )}
-        </ModalSuspense>
-          <MetricDefinitions items={METRIC_DEFINITIONS.clientRetention} />
-        </div>
-      </div>
-    </div>;
+      {/* Enhanced Drill Down Modal - Lazy loaded */}
+      <ModalSuspense>
+        {drillDownModal.isOpen && (
+          <LazyClientConversionDrillDownModalV3
+            isOpen={drillDownModal.isOpen}
+            onClose={() => setDrillDownModal({ isOpen: false, title: '', data: null, type: 'month' })}
+            title={drillDownModal.title}
+            data={drillDownModal.data}
+            type={drillDownModal.type}
+          />
+        )}
+      </ModalSuspense>
+    </AnalyticsPageShell>
+  );
 };
 export default ClientRetention;

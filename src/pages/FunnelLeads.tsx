@@ -1,11 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
-import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { KpiTicker } from '@/components/ui/KpiTicker';
-import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { AnalyticsPageShell } from '@/components/ui/AnalyticsPageShell';
+import { SectionTabs } from '@/components/ui/SectionTabs';
 import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import { useLeadsData } from '@/hooks/useLeadsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
@@ -28,6 +26,15 @@ import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { useUrlParamState } from '@/hooks/useUrlParamState';
+type FunnelTableView = 'analytics' | 'mom' | 'yoy' | 'health';
+
+const FUNNEL_TABLE_VIEWS: Array<{ key: FunnelTableView; label: string; description: string }> = [
+  { key: 'analytics', label: 'Analytics', description: 'Source, stage and associate performance for the filtered period.' },
+  { key: 'mom', label: 'Month-on-Month', description: 'Monthly lead movement across all reporting months; the date filter is ignored.' },
+  { key: 'yoy', label: 'Year-on-Year', description: 'Year comparison across all reporting months; the date filter is ignored.' },
+  { key: 'health', label: 'Health Metrics', description: 'Funnel health signals for the filtered period.' },
+];
+
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -42,6 +49,9 @@ export default function FunnelLeads() {
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
   const [activeLocation, setActiveLocation] = useUrlParamState<string>('location', exportPreset?.studioId || 'all');
+  const [activeTableView, setActiveTableView] = useUrlParamState<FunnelTableView>('view', 'analytics', {
+    isValid: (value): value is FunnelTableView => FUNNEL_TABLE_VIEWS.some((option) => option.key === value),
+  });
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{
@@ -183,49 +193,30 @@ export default function FunnelLeads() {
   
   // Remove individual loader - rely on global loader only
   
-  if (error) {
-    return <div className="min-h-screen bg-gray-50/30 flex items-center justify-center p-4">
-        <Card className="p-8 bg-white shadow-lg max-w-md">
-          <CardContent className="text-center space-y-4">
-            <RefreshCw className="w-12 h-12 text-red-600 mx-auto" />
-            <div>
-              <p className="text-lg font-semibold text-gray-800">Connection Error</p>
-              <p className="text-sm text-gray-600 mt-2">{error?.toString()}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>;
-  }
-  return <div className="funnel-leads-unified min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
-      <DashboardMotionHero
-        title="Funnel & Leads Analytics"
-        subtitle="Analyze your marketing funnel, lead quality, source effectiveness, and conversion patterns to improve acquisition and retention."
-        metrics={[
-          { label: 'Total Leads', value: filteredData.length.toLocaleString() },
-          { label: 'Converted', value: countConvertedLeads(filteredData).toString() },
-          { label: 'Conversion Rate', value: `${calculateConversionRate(filteredData).toFixed(1)}%` },
-        ]}
-      />
+  const heroMetrics = [
+    { label: 'Total Leads', value: filteredData.length.toLocaleString() },
+    { label: 'Converted', value: countConvertedLeads(filteredData).toString() },
+    { label: 'Conversion Rate', value: `${calculateConversionRate(filteredData).toFixed(1)}%` },
+  ];
 
-      <div className="mx-auto w-full max-w-7xl px-6 pt-5">
-        <KpiTicker
-          items={[
-            { label: 'Total Leads', value: filteredData.length.toLocaleString() },
-            { label: 'Converted', value: countConvertedLeads(filteredData).toString() },
-            { label: 'Conversion Rate', value: `${calculateConversionRate(filteredData).toFixed(1)}%` },
-          ]}
-        />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Enhanced Location Tabs - unified styling (matching Client Retention) */}
-        <StudioLocationTabs 
+  return (
+    <AnalyticsPageShell
+      title="Funnel & Leads Analytics"
+      subtitle="Analyze your marketing funnel, lead quality, source effectiveness, and conversion patterns to improve acquisition and retention."
+      heroMetrics={heroMetrics}
+      definitions={METRIC_DEFINITIONS.funnelLeads}
+      error={error ? String(error) : null}
+      errorTitle="Connection error"
+      className="funnel-leads-unified"
+      locationTabs={
+        <StudioLocationTabs
           activeLocation={activeLocation}
           onLocationChange={setActiveLocation}
           showInfoPopover={true}
           infoPopoverContext="funnel-leads-overview"
         />
-
+      }
+    >
         {/* Content Sections */}
         <div className="space-y-8">
                   {!loading && allLeadsData.length === 0 && (
@@ -324,77 +315,36 @@ export default function FunnelLeads() {
                   <EnhancedFunnelRankings data={filteredData} />
 
                   {/* Tables Sub-Tabs */}
-          <Card className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 w-full">
-            <CardContent className="p-4 w-full">
-              <Tabs defaultValue="analytics" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-800 to-slate-700 p-1.5 rounded-xl shadow-lg border border-slate-600">
-                  <TabsTrigger 
-                    value="analytics" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
-                  >
-                    Analytics
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="mom" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
-                  >
-                    Month-on-Month
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="yoy" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
-                  >
-                    Year-on-Year
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="health" 
-                    className="rounded-lg px-4 py-2.5 font-semibold transition-all duration-300 text-slate-300 hover:text-white hover:bg-slate-600/50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-900 data-[state=active]:to-slate-800 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border data-[state=active]:border-slate-500"
-                  >
-                    Health Metrics
-                  </TabsTrigger>
-                </TabsList>
+          <div className="space-y-4">
+            <SectionTabs
+              ariaLabel="Funnel table views"
+              heading="Funnel tables"
+              meta={`${filteredData.length.toLocaleString()} leads`}
+              options={FUNNEL_TABLE_VIEWS}
+              value={activeTableView}
+              onChange={setActiveTableView}
+            />
 
-                <TabsContent value="analytics" className="mt-4">
-                  <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />
-                </TabsContent>
-
-                <TabsContent value="mom" className="mt-4">
-                  {/* Uses ALL location data, independent from page date filters */}
-                  <FunnelMonthOnMonthTable data={locationFilteredData} onDrillDown={handleDrillDown} />
-                </TabsContent>
-
-                <TabsContent value="yoy" className="mt-4">
-                  {/* Uses ALL location data, independent from page date filters */}
-                  <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />
-                </TabsContent>
-
-                <TabsContent value="health" className="mt-4">
-                  <FunnelHealthMetricsTable data={filteredData} />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-7xl px-6 pb-8">
-        <MetricDefinitions items={METRIC_DEFINITIONS.funnelLeads} />
+            {activeTableView === 'analytics' && <FunnelAnalyticsTables data={filteredData} onDrillDown={handleDrillDown} />}
+            {/* MoM and YoY use all location data, independent of the page date filter. */}
+            {activeTableView === 'mom' && <FunnelMonthOnMonthTable data={locationFilteredData} onDrillDown={handleDrillDown} />}
+            {activeTableView === 'yoy' && <FunnelYearOnYearTable allData={locationFilteredData} onDrillDown={handleDrillDown} />}
+            {activeTableView === 'health' && <FunnelHealthMetricsTable data={filteredData} />}
+          </div>
       </div>
 
       {/* Drill Down Modal - Lazy loaded */}
       <ModalSuspense>
         {drillDownModal.isOpen && (
-          <LazyFunnelDrillDownModal 
-            isOpen={drillDownModal.isOpen} 
-            onClose={() => setDrillDownModal(prev => ({
-              ...prev,
-              isOpen: false
-            }))} 
-            title={drillDownModal.title} 
-            data={drillDownModal.data} 
-            type={drillDownModal.type} 
+          <LazyFunnelDrillDownModal
+            isOpen={drillDownModal.isOpen}
+            onClose={() => setDrillDownModal(prev => ({ ...prev, isOpen: false }))}
+            title={drillDownModal.title}
+            data={drillDownModal.data}
+            type={drillDownModal.type}
           />
         )}
       </ModalSuspense>
-    </div>;
+    </AnalyticsPageShell>
+  );
 }

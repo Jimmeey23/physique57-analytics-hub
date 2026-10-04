@@ -16,20 +16,16 @@ import {
 } from 'recharts';
 import {
   ArrowDownRight,
-  ArrowLeft,
   ArrowUpRight,
   BarChart3,
   LineChart as LineChartIcon,
   Rows3,
   Sparkles,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Footer } from '@/components/ui/footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ExecutiveFilterSection } from '@/components/dashboard/ExecutiveFilterSection';
 import { useSalesData } from '@/hooks/useSalesData';
 import { useSessionsData } from '@/hooks/useSessionsData';
 import { useLeadsData } from '@/hooks/useLeadsData';
@@ -40,10 +36,6 @@ import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalFilters } from '@/contexts/GlobalFiltersContext';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { cn } from '@/lib/utils';
-import { KpiTicker } from '@/components/ui/KpiTicker';
-import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
-import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
-import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
 import { buildPerformanceCommandCenter } from '@/components/dashboard/performance-command-center/buildPerformanceCommandCenter';
 import type {
   PerformanceChart,
@@ -55,7 +47,6 @@ import type {
   PerformanceValueFormat,
 } from '@/components/dashboard/performance-command-center/types';
 import { formatOverviewValue } from '@/components/dashboard/overview/filtering';
-import { OVERVIEW_LOCATION_OPTIONS } from '@/components/dashboard/overview/filtering';
 import { designTokens } from '@/utils/designTokens';
 
 type ChartMode = 'bar' | 'line';
@@ -495,9 +486,9 @@ const PerformanceSectionView = ({ section }: { section: PerformanceSection }) =>
   </motion.section>
 );
 
-const PerformanceCommandCenter = () => {
-  const navigate = useNavigate();
-  const { filters, updateFilters } = useGlobalFilters();
+/** Data + model for the command-center view, shared with the ticker above it. */
+export const usePerformanceCommandCenterModel = () => {
+  const { filters } = useGlobalFilters();
   const { setLoading } = useGlobalLoading();
 
   const salesData = useSalesData();
@@ -518,10 +509,7 @@ const PerformanceCommandCenter = () => {
     expirationsData.loading;
 
   React.useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setLoading(false);
-    }, 750);
-
+    const timeoutId = window.setTimeout(() => setLoading(false), 750);
     return () => window.clearTimeout(timeoutId);
   }, [setLoading]);
 
@@ -543,82 +531,39 @@ const PerformanceCommandCenter = () => {
     [salesData.data, sessionsData.data, leadsData.data, newClientsData.data, payrollData.data, checkinsData.data, expirationsData.data, filters]
   );
 
-  const clearToDefault = React.useCallback(() => {
-    updateFilters({ dateRange: getDashboardDefaultDateRange(), location: ['Kwality House'] });
-  }, [updateFilters]);
-
-  return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#f8fafc_0,#ffffff_35%,#f1f5f9_100%)]">
-      <main className="container mx-auto space-y-8 px-6 py-8">
-        <motion.header
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-950 shadow-2xl shadow-slate-300/50"
-        >
-          <div className="relative p-8 md:p-10">
-            <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(14,165,233,0.18),rgba(124,58,237,0.16),rgba(16,185,129,0.12))]" />
-            <div className="absolute right-8 top-8 hidden h-32 w-32 rounded-full border border-white/10 md:block" />
-            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-4xl">
-                <Button variant="ghost" onClick={() => navigate('/')} className="mb-6 gap-2 text-slate-300 hover:bg-white/10 hover:text-white">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to dashboard
-                </Button>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200">Physique 57 India</p>
-                <h1 className="mt-3 text-4xl font-bold tracking-tight text-white md:text-6xl">Performance Command Center</h1>
-                <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-                  A consolidated operating view across revenue, attendance, conversion, instructor performance, format health, and lapsed member pressure.
-                </p>
-                {isLoading ? (
-                  <Badge variant="outline" className="mt-5 border-white/15 bg-white/10 text-slate-200">
-                    Source data is still syncing; visible panels update as each dataset arrives.
-                  </Badge>
-                ) : null}
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-right">
-                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Sections</p>
-                  <p className="mt-1 text-3xl font-bold text-white">6</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Metrics</p>
-                  <p className="mt-1 text-3xl font-bold text-white">8</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.header>
-
-        <KpiTicker
-          items={model.metricCards.map((card) => ({
-            label: card.label,
-            value: card.formattedValue,
-            delta: `${card.changePercent.toFixed(1)}%`,
-            tone: card.trend,
-          }))}
-        />
-
-        <ExecutiveFilterSection availableLocations={OVERVIEW_LOCATION_OPTIONS} showExportButton={false} onClearFilters={clearToDefault} />
-
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {model.metricCards.map((card, index) => (
-            <MetricCard key={card.id} card={card} index={index} />
-          ))}
-        </section>
-
-        <ConsolidatedTrend model={model} />
-
-        <div className="space-y-10">
-          {model.sections.map((section) => (
-            <PerformanceSectionView key={section.id} section={section} />
-          ))}
-        </div>
-
-        <MetricDefinitions items={METRIC_DEFINITIONS.commandCenter} />
-      </main>
-    </div>
-  );
+  return { model, isLoading };
 };
 
-export default PerformanceCommandCenter;
+/**
+ * Command-center content only: metric cards, the consolidated trend, and the
+ * six analysis sections. The hero, ticker, filters and metric definitions are
+ * owned by the Executive Command Center page so nothing is rendered twice.
+ */
+export const PerformanceCommandCenterView: React.FC<{ model: ReturnType<typeof buildPerformanceCommandCenter>; isLoading?: boolean }> = ({
+  model,
+  isLoading = false,
+}) => (
+  <div className="space-y-8">
+    {isLoading ? (
+      <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600">
+        Source data is still syncing; visible panels update as each dataset arrives.
+      </Badge>
+    ) : null}
+
+    <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+      {model.metricCards.map((card, index) => (
+        <MetricCard key={card.id} card={card} index={index} />
+      ))}
+    </section>
+
+    <ConsolidatedTrend model={model} />
+
+    <div className="space-y-10">
+      {model.sections.map((section) => (
+        <PerformanceSectionView key={section.id} section={section} />
+      ))}
+    </div>
+  </div>
+);
+
+export default PerformanceCommandCenterView;

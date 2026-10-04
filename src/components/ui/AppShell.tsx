@@ -59,9 +59,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Overview',
     items: [
       { to: '/', label: 'Home', short: 'Home', icon: Home },
-      { to: '/executive-summary', label: 'Executive Summary', short: 'Summary', icon: Gauge },
-      { to: '/dashboard-overview', label: 'Dashboard Overview', short: 'Overview', icon: LayoutDashboard },
-      { to: '/performance-command-center', label: 'Command Center', short: 'Command', icon: Radar },
+      { to: '/executive-command-center', label: 'Executive Command Center', short: 'Command', icon: Radar },
       { to: '/studio-pulse', label: 'Studio Pulse', short: 'Pulse', icon: Activity },
     ],
   },

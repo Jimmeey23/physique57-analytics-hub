@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { LazyGlobalCommandPalette } from "@/components/lazy/LazyGlobalCommandPalette";
 import { PageTransition } from "@/components/ui/PageTransition";
@@ -31,8 +31,8 @@ const Index = React.lazy(() =>
 const MainDashboard = React.lazy(() => 
   import("./pages/MainDashboard").then(module => ({ default: module.default }))
 );
-const ExecutiveSummary = React.lazy(() => 
-  import("./pages/ExecutiveSummary").then(module => ({ default: module.default }))
+const ExecutiveCommandCenter = React.lazy(() =>
+  import("./pages/ExecutiveCommandCenter").then(module => ({ default: module.default }))
 );
 const SalesAnalytics = React.lazy(() => 
   import("./pages/SalesAnalytics").then(module => ({ default: module.default }))
@@ -69,12 +69,6 @@ const LateCancellations = React.lazy(() =>
 );
 const PatternsAndTrends = React.lazy(() => 
   import("./pages/PatternsAndTrends").then(module => ({ default: module.default }))
-);
-const DashboardOverview = React.lazy(() =>
-  import("./pages/DashboardOverview").then(module => ({ default: module.default }))
-);
-const PerformanceCommandCenter = React.lazy(() =>
-  import("./pages/PerformanceCommandCenter").then(module => ({ default: module.default }))
 );
 const ForecastingActionCenter = React.lazy(() =>
   import("./pages/ForecastingActionCenter").then(module => ({ default: module.default }))
@@ -132,7 +126,9 @@ const AppRoutes = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/main-dashboard" element={<MainDashboard />} />
-              <Route path="/executive-summary" element={<ExecutiveSummary />} />
+              <Route path="/executive-command-center" element={<ExecutiveCommandCenter />} />
+              {/* The three executive tabs are now one page; old links keep working. */}
+              <Route path="/executive-summary" element={<Navigate to="/executive-command-center?view=summary" replace />} />
               <Route path="/sales-analytics" element={<SalesAnalytics />} />
               <Route path="/funnel-leads" element={<FunnelLeads />} />
               <Route path="/client-retention" element={<ClientRetention />} />
@@ -146,8 +142,8 @@ const AppRoutes = () => {
               <Route path="/expiration-analytics" element={<ExpirationAnalytics />} />
               <Route path="/late-cancellations" element={<LateCancellations />} />
               <Route path="/patterns-trends" element={<PatternsAndTrends />} />
-              <Route path="/dashboard-overview" element={<DashboardOverview />} />
-              <Route path="/performance-command-center" element={<PerformanceCommandCenter />} />
+              <Route path="/dashboard-overview" element={<Navigate to="/executive-command-center?view=modules" replace />} />
+              <Route path="/performance-command-center" element={<Navigate to="/executive-command-center?view=command" replace />} />
               <Route path="/forecasting-action-center" element={<ForecastingActionCenter />} />
               <Route path="/member-lifecycle" element={<MemberLifecycle />} />
               <Route path="/location-report" element={<LocationReport />} />

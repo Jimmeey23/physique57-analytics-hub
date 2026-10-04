@@ -57,9 +57,7 @@ const normalizeView = (stored: string | null): ViewMode => {
 };
 
 const DASHBOARD_SECTIONS: DashboardSection[] = [
-  { id: 'executive-summary', title: 'Executive Summary', description: 'High-level business metrics and KPIs', icon: TrendingUp, accent: '#005eed', tint: '#eaf2ff', insight: 'Leadership' },
-  { id: 'dashboard-overview', title: 'Dashboard Overview', description: 'One summary canvas across the core analytics modules', icon: Eye, accent: '#0e1729', tint: '#ececef', insight: 'Overview' },
-  { id: 'performance-command-center', title: 'Performance Command Center', description: 'Executive metrics, trends, tables and rankings in one view', icon: Activity, accent: '#7c5cf0', tint: '#efecfe', insight: 'Command' },
+  { id: 'executive-command-center', title: 'Executive Command Center', description: 'Summary, consolidated operating view and every analytics module on one filter state', icon: Activity, accent: '#005eed', tint: '#eaf2ff', insight: 'Leadership' },
   { id: 'sales-analytics', title: 'Sales Analytics', description: 'Revenue trends and sales performance', icon: DollarSign, accent: '#0e9f6e', tint: '#e7f6ef', insight: 'Revenue' },
   { id: 'class-attendance', title: 'Class Attendance', description: 'Session attendance and capacity analysis', icon: Users, accent: '#d63a6a', tint: '#fdeef3', insight: 'Operations' },
   { id: 'trainer-performance', title: 'Trainer Performance', description: 'Individual trainer metrics and rankings', icon: UserCheck, accent: '#e08a00', tint: '#fdf3e2', insight: 'Instructors' },

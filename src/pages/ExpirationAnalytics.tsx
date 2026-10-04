@@ -1,12 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ExpirationAnalyticsSection } from '@/components/dashboard/ExpirationAnalyticsSection';
 import { useExpirationsData } from '@/hooks/useExpirationsData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
-import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import DashboardMotionHero from '@/components/ui/DashboardMotionHero';
-import { KpiTicker } from '@/components/ui/KpiTicker';
-import { MetricDefinitions } from '@/components/ui/MetricDefinitions';
+import { AnalyticsPageShell } from '@/components/ui/AnalyticsPageShell';
 import { METRIC_DEFINITIONS } from '@/data/metricDefinitions';
 import type { TickerItem } from '@/components/ui/KpiTicker';
 import { formatNumber, formatPercentage } from '@/utils/formatters';
@@ -19,70 +15,29 @@ const ExpirationAnalytics = () => {
     setLoading(loading, 'Loading expirations and churn data...');
   }, [loading, setLoading]);
 
-  const tickerItems: TickerItem[] = (() => {
-    const rows = data || [];
-    const total = rows.length;
-    const active = rows.filter((item) => item.status === 'Active').length;
-    const churned = rows.filter((item) => item.status === 'Churned').length;
-    const frozen = rows.filter((item) => item.status === 'Frozen').length;
-    const churnRate = total > 0 ? (churned / total) * 100 : 0;
-    return [
-      { label: 'Memberships', value: formatNumber(total) },
-      { label: 'Active', value: formatNumber(active) },
-      { label: 'Churned', value: formatNumber(churned), delta: formatPercentage(churnRate), tone: 'down' },
-      { label: 'Frozen', value: formatNumber(frozen) },
-    ];
-  })();
+  const rows = data || [];
+  const total = rows.length;
+  const churned = rows.filter((item) => item.status === 'Churned').length;
+  const churnRate = total > 0 ? (churned / total) * 100 : 0;
 
-  // Remove individual loader - rely on global loader only
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20 flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-lg">
-          <h1 className="text-2xl font-bold text-red-600">Data Access Issue</h1>
-          <p className="text-slate-600">{error}</p>
-          {error.includes('Failed to fetch') && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left">
-              <h3 className="font-semibold text-amber-800 mb-2">Development Environment Note:</h3>
-              <p className="text-sm text-amber-700">
-                This appears to be a CORS/network restriction in the development environment. 
-                The integration is correctly configured for the spreadsheet:
-                <br />
-                <code className="text-xs bg-amber-100 px-2 py-1 rounded mt-1 inline-block">
-                  1rGMDDvvTbZfNg1dueWtRN3LhOgGQOdLg3Fd7Sn1GCZo
-                </code>
-                <br />
-                <br />
-                In a production environment with proper CORS configuration, this should work correctly.
-              </p>
-            </div>
-          )}
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        </div>
-      </div>
-    );
-  }
+  const tickerItems: TickerItem[] = [
+    { label: 'Memberships', value: formatNumber(total) },
+    { label: 'Active', value: formatNumber(rows.filter((item) => item.status === 'Active').length) },
+    { label: 'Churned', value: formatNumber(churned), delta: formatPercentage(churnRate), tone: 'down' },
+    { label: 'Frozen', value: formatNumber(rows.filter((item) => item.status === 'Frozen').length) },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/20">
-      <DashboardMotionHero 
-        title="Expirations & Churn"
-        subtitle="Comprehensive analysis of membership expirations and customer retention insights"
-        metrics={[]}
-      />
-
-      <div className="container mx-auto px-6 pt-5">
-        <KpiTicker items={tickerItems} />
-      </div>
-
-      <div className="container mx-auto px-6 py-8">
-        <main className="space-y-8">
-          <ExpirationAnalyticsSection data={data || []} />
-          <MetricDefinitions items={METRIC_DEFINITIONS.expirations} />
-        </main>
-      </div>
-    </div>
+    <AnalyticsPageShell
+      title="Expirations & Churn"
+      subtitle="Comprehensive analysis of membership expirations and customer retention insights"
+      heroMetrics={tickerItems.map((item) => ({ label: item.label, value: item.value }))}
+      tickerItems={tickerItems}
+      definitions={METRIC_DEFINITIONS.expirations}
+      error={error}
+    >
+      <ExpirationAnalyticsSection data={rows} />
+    </AnalyticsPageShell>
   );
 };
 

@@ -8,7 +8,7 @@ export const usePerformanceOptimization = () => {
     // the page modules instead of prefetching route URLs.
     const preloadPages = () => {
       const imports: Array<() => Promise<any>> = [
-        () => import('../pages/ExecutiveSummary'),
+        () => import('../pages/ExecutiveCommandCenter'),
         () => import('../pages/SalesAnalytics'),
         () => import('../pages/FunnelLeads'),
         () => import('../pages/ClientRetention'),
