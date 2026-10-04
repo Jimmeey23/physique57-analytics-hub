@@ -27,6 +27,7 @@ import { LeadsFilterOptions } from '@/types/leads';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 import { getDashboardDefaultDateRange } from '@/utils/dateUtils';
+import { useUrlParamState } from '@/hooks/useUrlParamState';
 export default function FunnelLeads() {
   const {
     data: allLeadsData,
@@ -40,7 +41,7 @@ export default function FunnelLeads() {
   }, [loading, setLoading]);
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
-  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'all');
+  const [activeLocation, setActiveLocation] = useUrlParamState<string>('location', exportPreset?.studioId || 'all');
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [chartsCollapsed, setChartsCollapsed] = useState(true);
   const [drillDownModal, setDrillDownModal] = useState<{

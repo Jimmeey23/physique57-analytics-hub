@@ -296,6 +296,26 @@ html.dark .p57-ambient::after { background: rgba(255, 45, 85, 0.08); }
   }
   .p57-scope thead th:last-child,
   .p57-scope thead td:last-child { border-right: 0 !important; }
+
+  /* Header alignment follows the column's data alignment. The base rule above
+     forces `text-align: left`, which left-aligned every numeric header over
+     centred/right-aligned cells. */
+  .p57-scope thead th[data-align="center"],
+  .p57-scope thead th.text-center,
+  .p57-scope thead td.text-center { text-align: center; }
+  .p57-scope thead th[data-align="right"],
+  .p57-scope thead th.text-right,
+  .p57-scope thead td.text-right { text-align: right; }
+
+  /* Sortable headers reserve a gutter for the sort glyph, which is positioned
+     out of flow so it cannot shift the label off the column's alignment. */
+  .p57-scope thead th[data-sortable="true"] { padding-right: 1.5rem !important; }
+  .p57-scope thead th[data-sortable="true"][data-align="center"] {
+    padding-left: 1.5rem !important; padding-right: 1.5rem !important;
+  }
+  .p57-scope thead th[data-sortable="true"][data-align="right"] {
+    padding-left: 1.5rem !important; padding-right: 0.85rem !important;
+  }
   .p57-scope thead th *, .p57-scope thead td * { color: inherit !important; }
   .p57-scope thead th svg, .p57-scope thead td svg { color: #059BFF !important; }
 
@@ -759,6 +779,19 @@ html.dark .p57-rank-rest { background: #202024; color: #C4C4CC; }
     box-shadow: 0 10px 22px -12px rgba(5, 155, 255, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 60, 120, 0.25);
     text-shadow: 0 1px 2px rgba(0, 60, 120, 0.35);
   }
+
+  /* Main in-page tabs: one prominent treatment everywhere, so page-level
+     one-off gradients cannot flatten the active state. */
+  .p57-tablist { position: relative; }
+  .p57-tabtrigger[data-state="active"] {
+    background: linear-gradient(180deg, #2BBCFF 0%, #059BFF 55%, #0484DC 100%);
+    color: #fff;
+    box-shadow: 0 12px 24px -12px rgba(5, 155, 255, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 60, 120, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 60, 120, 0.35);
+  }
+  .p57-tabtrigger[data-state="active"] svg { color: #fff; opacity: 1; }
+  .p57-tabtrigger:focus-visible { outline: 2px solid rgba(5, 155, 255, 0.55); outline-offset: 2px; }
+  html.dark .p57-tablist { border-color: #28282E; }
 
   /* Location pills */
   .p57-loc {

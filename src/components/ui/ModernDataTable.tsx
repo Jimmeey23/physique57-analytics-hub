@@ -180,7 +180,8 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                 <TableHead 
                   key={column.key} 
                   className={cn(
-                    "px-3 text-left font-bold text-xs uppercase tracking-wide border-r border-border/60 last:border-r-0 bg-[#f6f7f9] dark:bg-[#141417]",
+                    // px-3.5 matches TABLE_STYLES.body.cell, so header text sits over its data.
+                    "px-3.5 text-left font-bold text-xs uppercase tracking-wide border-r border-border/60 last:border-r-0 bg-[#f6f7f9] dark:bg-[#141417]",
                     compact ? "py-2" : "py-3",
                     column.align === 'center' && 'text-center',
                     column.align === 'right' && 'text-right',
@@ -193,17 +194,26 @@ export const ModernDataTable: React.FC<ModernDataTableProps> = ({
                   onClick={() => handleSort(column)}
                 >
                 <div className={cn(
-                  "flex items-center gap-1 h-full",
+                  "relative flex items-center gap-1 h-full",
                   column.align === 'center' && 'justify-center',
-                  column.align === 'right' && 'justify-end'
+                  column.align === 'right' && 'justify-end',
+                  // Reserve the sort-glyph gutter on every sortable column so the
+                  // header text keeps the column's alignment whether or not it is
+                  // the active sort.
+                  column.sortable && (column.align === 'right' ? 'pl-4' : 'pr-4')
                 )}>
                   <span className="text-xs font-bold uppercase tracking-wide leading-tight">
                     {column.header}
                   </span>
                   {column.sortable && sortField === column.key && (
-                    sortDirection === 'asc' ? 
-                      <ChevronUp className="w-3 h-3" /> : 
-                      <ChevronDown className="w-3 h-3" />
+                    <span className={cn(
+                      'absolute top-1/2 -translate-y-1/2',
+                      column.align === 'right' ? 'left-0' : 'right-0'
+                    )}>
+                      {sortDirection === 'asc' ?
+                        <ChevronUp className="w-3 h-3" /> :
+                        <ChevronDown className="w-3 h-3" />}
+                    </span>
                   )}
                 </div>
                 {/* Copy button positioned in last column header */}

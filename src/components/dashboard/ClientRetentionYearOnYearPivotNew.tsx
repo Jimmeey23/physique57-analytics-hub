@@ -8,7 +8,7 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
-import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { isConverted, isConvertedSameMonth, isNewClient, isRetained, isSameCalendarMonth } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
@@ -22,7 +22,9 @@ type MetricKey =
   | 'avgLTV'
   | 'totalLTV'
   | 'avgConversionDays'
-  | 'avgVisits';
+  | 'avgVisits'
+  | 'conversionRate30'
+  | 'retentionRate30';
 
 const SELECT_CLASS =
   'h-[30px] rounded-[9px] border border-[#ececef] bg-white px-2 text-[12px] font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-blue-400 dark:border-[#2a2a2e] dark:bg-[#141416] dark:text-slate-200';
@@ -38,6 +40,8 @@ const METRIC_LABELS: Record<MetricKey, string> = {
   totalLTV: 'Total LTV',
   avgConversionDays: 'Avg Conv Days',
   avgVisits: 'Avg Visits',
+  conversionRate30: '30-Day Conversion %',
+  retentionRate30: '30-Day Retention %',
 };
 
 type RowType = 'clientType' | 'membership';
@@ -45,10 +49,12 @@ type RowType = 'clientType' | 'membership';
 interface Props {
   data: NewClientData[];
   months?: Array<{ key: string; display?: string; year: number; month: number }>;
+  /** Resolves the member's second visit, used by the 30-day retention metric. */
+  getSecondVisitDate?: (client: NewClientData) => string | null;
   onRowClick?: (data: any) => void;
 }
 
-export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: providedMonths, onRowClick }) => {
+export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: providedMonths, getSecondVisitDate, onRowClick }) => {
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [rowType, setRowType] = useState<RowType>('clientType');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -98,6 +104,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
     return monthsArr;
   }, [providedMonths]);
 
+  // Columns render newest -> oldest (left to right); `months` stays chronological for math.
+  const displayMonths = useMemo(() => months.slice().reverse(), [months]);
+
   const comparisonYears = useMemo(() => {
     const years = Array.from(new Set(months.map((month) => month.year))).sort((a, b) => a - b);
     const latestYear = years[years.length - 1] ?? new Date().getFullYear();
@@ -128,6 +137,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       newMembers: 0, 
       converted: 0, 
       retained: 0, 
+      converted30: 0,
+      retained30: 0,
       totalLTV: 0, 
       conversionIntervals: [] as number[],
       visitsPostTrial: [] as number[],
@@ -158,6 +169,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       if (isNewClient(c)) bucket.newMembers += 1;
       if (isConverted(c)) bucket.converted += 1;
       if (isRetained(c)) bucket.retained += 1;
+      if (isConvertedSameMonth(c)) bucket.converted30 += 1;
+      if (isSameCalendarMonth(c.firstVisitDate, getSecondVisitDate?.(c))) bucket.retained30 += 1;
       bucket.totalLTV += c.ltv || 0;
       bucket.clients.push(c); // Add client to bucket
       
@@ -178,6 +191,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
         b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
         b.conversionRate = calcConversionRate(b.converted, b.newMembers);
         b.retentionRate = calcRetentionRate(b.retained, b.newMembers);
+        b.conversionRate30 = calcConversionRate(b.converted30, b.newMembers);
+        b.retentionRate30 = calcRetentionRate(b.retained30, b.newMembers);
         b.avgConversionDays = b.conversionIntervals.length > 0 
           ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
           : 0;
@@ -188,7 +203,7 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
     });
     
     return map;
-  }, [data, rowKeys, months, rowType]);
+  }, [data, rowKeys, months, rowType, getSecondVisitDate]);
 
   const metricRaw = (cell: any): number => {
     if (!cell) return 0;
@@ -199,6 +214,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       case 'retained': return cell.retained || 0;
       case 'retentionRate': return cell.retentionRate || 0;
       case 'conversionRate': return cell.conversionRate || 0;
+      case 'conversionRate30': return cell.conversionRate30 || 0;
+      case 'retentionRate30': return cell.retentionRate30 || 0;
       case 'avgLTV': return cell.avgLTV || 0;
       case 'totalLTV': return cell.totalLTV || 0;
       case 'avgConversionDays': return cell.avgConversionDays || 0;
@@ -211,16 +228,16 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
   const handleExportCsv = () => {
     downloadCsv(
       `${tableId} - ${METRIC_LABELS[metric]}.csv`,
-      [{ key: 'row', header: rowLabel }, ...months.map((m: any) => ({ key: m.key, header: `${m.monthName} ${m.year}` }))],
+      [{ key: 'row', header: rowLabel }, ...displayMonths.map((m: any) => ({ key: m.key, header: `${m.monthName} ${m.year}` }))],
       [
         ...sortedRowKeys.map((rk) => {
           const rec: Record<string, unknown> = { row: rk };
-          months.forEach((m: any) => { rec[m.key] = metricRaw(pivot[rk]?.[m.key]); });
+          displayMonths.forEach((m: any) => { rec[m.key] = metricRaw(pivot[rk]?.[m.key]); });
           return rec;
         }),
         (() => {
           const rec: Record<string, unknown> = { row: 'TOTALS' };
-          months.forEach((m: any) => { rec[m.key] = metricRaw(totalsRow[m.key]); });
+          displayMonths.forEach((m: any) => { rec[m.key] = metricRaw(totalsRow[m.key]); });
           return rec;
         })(),
       ]
@@ -278,6 +295,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
         newMembers: 0, 
         converted: 0, 
         retained: 0, 
+        converted30: 0,
+        retained30: 0,
         totalLTV: 0,
         conversionIntervals: [] as number[],
         visitsPostTrial: [] as number[],
@@ -292,6 +311,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
           totals[m.key].newMembers += cell.newMembers || 0;
           totals[m.key].converted += cell.converted || 0;
           totals[m.key].retained += cell.retained || 0;
+          totals[m.key].converted30 += cell.converted30 || 0;
+          totals[m.key].retained30 += cell.retained30 || 0;
           totals[m.key].totalLTV += cell.totalLTV || 0;
           totals[m.key].conversionIntervals.push(...(cell.conversionIntervals || []));
           totals[m.key].visitsPostTrial.push(...(cell.visitsPostTrial || []));
@@ -303,6 +324,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
       b.avgLTV = b.trials > 0 ? b.totalLTV / b.trials : 0;
       b.conversionRate = calcConversionRate(b.converted, b.newMembers);
       b.retentionRate = calcRetentionRate(b.retained, b.newMembers);
+      b.conversionRate30 = calcConversionRate(b.converted30, b.newMembers);
+      b.retentionRate30 = calcRetentionRate(b.retained30, b.newMembers);
       b.avgConversionDays = b.conversionIntervals.length > 0 
         ? b.conversionIntervals.reduce((sum: number, val: number) => sum + val, 0) / b.conversionIntervals.length 
         : 0;
@@ -331,6 +354,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
         case 'retained': return formatNumber(cell?.retained || 0);
         case 'retentionRate': return `${(cell?.retentionRate || 0).toFixed(1)}%`;
         case 'conversionRate': return `${(cell?.conversionRate || 0).toFixed(1)}%`;
+        case 'conversionRate30': return `${(cell?.conversionRate30 || 0).toFixed(1)}%`;
+        case 'retentionRate30': return `${(cell?.retentionRate30 || 0).toFixed(1)}%`;
         case 'avgLTV': return formatCurrency(cell?.avgLTV || 0);
         case 'totalLTV': return formatCurrency(cell?.totalLTV || 0);
         case 'avgConversionDays': return `${Math.round(cell?.avgConversionDays || 0)}`;
@@ -430,9 +455,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                 <P57SortTh sortKey="row" activeKey={sortColumn} dir={sortDir} onToggle={handleSort} className="sticky left-0 z-40 min-w-[300px]">
                   {rowLabel}
                 </P57SortTh>
-                {months.map((m, index) => {
-                  const prevMonth = index > 0 ? months[index - 1] : null;
-                  const nextMonth = index < months.length - 1 ? months[index + 1] : null;
+                {displayMonths.map((m, index) => {
+                  const prevMonth = index > 0 ? displayMonths[index - 1] : null;
+                  const nextMonth = index < displayMonths.length - 1 ? displayMonths[index + 1] : null;
                   
                   const isFirstOfGroup = !prevMonth || prevMonth.month !== m.month;
                   const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
@@ -480,9 +505,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                   <td className="sticky left-0 z-20 px-4 py-2 text-sm font-semibold">
                     {rk}
                   </td>
-                  {months.map((m, index) => {
-                    const prevMonth = index > 0 ? months[index - 1] : null;
-                    const nextMonth = index < months.length - 1 ? months[index + 1] : null;
+                  {displayMonths.map((m, index) => {
+                    const prevMonth = index > 0 ? displayMonths[index - 1] : null;
+                    const nextMonth = index < displayMonths.length - 1 ? displayMonths[index + 1] : null;
                     
                     const isFirstOfGroup = !prevMonth || prevMonth.month !== m.month;
                     const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
@@ -504,7 +529,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                           onRowClick?.({ 
                             rowKey: rk, 
                             rowType,
-                            month: m.month,
+                            month: m.display,
+                            monthKey: m.key,
                             year: m.year,
                             data: cellData,
                             metric,
@@ -521,6 +547,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                             case 'retained': return formatNumber(val.retained || 0);
                             case 'conversionRate': return `${(val.conversionRate || 0).toFixed(1)}%`;
                             case 'retentionRate': return `${(val.retentionRate || 0).toFixed(1)}%`;
+                          case 'conversionRate30': return `${(val.conversionRate30 || 0).toFixed(1)}%`;
+                          case 'retentionRate30': return `${(val.retentionRate30 || 0).toFixed(1)}%`;
                             case 'avgLTV': return formatCurrency(val.avgLTV || 0);
                             case 'totalLTV': return formatCurrency(val.totalLTV || 0);
                             case 'avgConversionDays': return `${(val.avgConversionDays || 0).toFixed(0)}`;
@@ -535,9 +563,9 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
               {/* Totals Row */}
               <tr className={TABLE_STYLES.footer.row}>
                 <td className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} px-4 py-2`}>Totals</td>
-                {months.map((m, index) => {
-                  const prevMonth = index > 0 ? months[index - 1] : null;
-                  const nextMonth = index < months.length - 1 ? months[index + 1] : null;
+                {displayMonths.map((m, index) => {
+                  const prevMonth = index > 0 ? displayMonths[index - 1] : null;
+                  const nextMonth = index < displayMonths.length - 1 ? displayMonths[index + 1] : null;
                   
                   const isFirstOfGroup = !prevMonth || prevMonth.month !== m.month;
                   const isLastOfGroup = !nextMonth || nextMonth.month !== m.month;
@@ -558,7 +586,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                         onRowClick?.({ 
                           rowKey: 'TOTALS', 
                           rowType,
-                          month: m.month,
+                          month: m.display,
+                          monthKey: m.key,
                           year: m.year,
                           data: cellData,
                           metric,
@@ -575,6 +604,8 @@ export const ClientRetentionYearOnYearPivot: React.FC<Props> = ({ data, months: 
                           case 'retained': return formatNumber(val.retained || 0);
                           case 'conversionRate': return `${(val.conversionRate || 0).toFixed(1)}%`;
                           case 'retentionRate': return `${(val.retentionRate || 0).toFixed(1)}%`;
+                          case 'conversionRate30': return `${(val.conversionRate30 || 0).toFixed(1)}%`;
+                          case 'retentionRate30': return `${(val.retentionRate30 || 0).toFixed(1)}%`;
                           case 'avgLTV': return formatCurrency(val.avgLTV || 0);
                           case 'totalLTV': return formatCurrency(val.totalLTV || 0);
                           case 'avgConversionDays': return `${(val.avgConversionDays || 0).toFixed(0)}`;

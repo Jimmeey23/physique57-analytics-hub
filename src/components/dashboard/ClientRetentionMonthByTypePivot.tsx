@@ -8,7 +8,7 @@ import CopyTableButton from '@/components/ui/CopyTableButton';
 import { useMetricsTablesRegistry } from '@/contexts/MetricsTablesRegistryContext';
 import { NewClientData } from '@/types/dashboard';
 import { parseDate } from '@/utils/dateUtils';
-import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { isConverted, isConvertedSameMonth, isNewClient, isRetained, isSameCalendarMonth } from '@/utils/clientRetention';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 
@@ -22,7 +22,9 @@ type MetricKey =
   | 'avgLTV'
   | 'totalLTV'
   | 'avgConversionDays'
-  | 'avgVisits';
+  | 'avgVisits'
+  | 'conversionRate30'
+  | 'retentionRate30';
 
 const SELECT_CLASS =
   'h-[30px] rounded-[9px] border border-[#ececef] bg-white px-2 text-[12px] font-semibold text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-blue-400 dark:border-[#2a2a2e] dark:bg-[#141416] dark:text-slate-200';
@@ -38,16 +40,20 @@ const METRIC_LABELS: Record<MetricKey, string> = {
   totalLTV: 'Total LTV',
   avgConversionDays: 'Avg Conv Days',
   avgVisits: 'Avg Visits',
+  conversionRate30: '30-Day Conversion %',
+  retentionRate30: '30-Day Retention %',
 };
 
 interface ClientRetentionMonthByTypePivotProps {
   data: NewClientData[];
   months?: Array<{ key: string; label?: string; display?: string; year: number; month: number }>;
   visitsSummary?: Record<string, number>;
+  /** Resolves the member's second visit, used by the 30-day retention metric. */
+  getSecondVisitDate?: (client: NewClientData) => string | null;
   onRowClick?: (data: any) => void;
 }
 
-export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTypePivotProps> = ({ data, months: providedMonths, visitsSummary, onRowClick }) => {
+export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTypePivotProps> = ({ data, months: providedMonths, visitsSummary, getSecondVisitDate, onRowClick }) => {
   const [metric, setMetric] = useState<MetricKey>('trials');
   const [displayMode, setDisplayMode] = useState<'values' | 'growth'>('values');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -84,6 +90,13 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
     return arr; // Jan 2024 first, current month last
   }, [providedMonths]);
 
+  // Columns render newest -> oldest (left to right). Keep `months` chronological for
+  // growth/previous-month linking; `idx` carries the chronological position.
+  const displayMonths = useMemo(
+    () => months.map((m, idx) => ({ ...m, idx })).slice().reverse(),
+    [months]
+  );
+
   const clientTypes = useMemo(() => {
     const set = new Set<string>();
     data.forEach(c => set.add(c.isNew || 'Unknown'));
@@ -111,6 +124,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
           newMembers: 0,
           converted: 0,
           retained: 0,
+          converted30: 0,
+          retained30: 0,
           totalLTV: 0,
           conversionIntervals: [] as number[],
           visitsPostTrial: [] as number[],
@@ -134,6 +149,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       if (isNewClient(c)) cell.newMembers += 1;
       if (isConverted(c)) cell.converted += 1;
       if (isRetained(c)) cell.retained += 1;
+      if (isConvertedSameMonth(c)) cell.converted30 += 1;
+      if (isSameCalendarMonth(c.firstVisitDate, getSecondVisitDate?.(c))) cell.retained30 += 1;
       cell.totalLTV += c.ltv || 0;
       if (c.conversionSpan && c.conversionSpan > 0) cell.conversionIntervals.push(c.conversionSpan);
       if (c.visitsPostTrial && c.visitsPostTrial > 0) cell.visitsPostTrial.push(c.visitsPostTrial);
@@ -153,6 +170,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
           : 0;
         const conversionRate = calcConversionRate(cell.converted, cell.newMembers);
         const retentionRate = calcRetentionRate(cell.retained, cell.newMembers);
+        const conversionRate30 = calcConversionRate(cell.converted30, cell.newMembers);
+        const retentionRate30 = calcRetentionRate(cell.retained30, cell.newMembers);
         
         // Link to the actual previous month in chronological order
         const prevMonthKey = months[idx - 1]?.key;
@@ -165,13 +184,15 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
           avgVisits,
           conversionRate,
           retentionRate,
+          conversionRate30,
+          retentionRate30,
           previous,
         };
       });
     });
 
     return map;
-  }, [data, clientTypes, months, visitsSummary]);
+  }, [data, clientTypes, months, visitsSummary, getSecondVisitDate]);
 
   const renderValue = (cell: any, monthIdx: number) => {
     let value: string;
@@ -182,6 +203,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       case 'retained': value = formatNumber(cell.retained || 0); break;
       case 'retentionRate': value = `${(cell.retentionRate || 0).toFixed(1)}%`; break;
       case 'conversionRate': value = `${(cell.conversionRate || 0).toFixed(1)}%`; break;
+      case 'conversionRate30': value = `${(cell.conversionRate30 || 0).toFixed(1)}%`; break;
+      case 'retentionRate30': value = `${(cell.retentionRate30 || 0).toFixed(1)}%`; break;
       case 'avgLTV': value = formatCurrency(cell.avgLTV || 0); break;
       case 'totalLTV': value = formatCurrency(cell.totalLTV || 0); break;
       case 'avgConversionDays': value = `${Math.round(cell.avgConversionDays || 0)}`; break;
@@ -201,6 +224,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         case 'retained': current = cell.retained || 0; previous = prevCell.retained || 0; break;
         case 'retentionRate': current = cell.retentionRate || 0; previous = prevCell.retentionRate || 0; break;
         case 'conversionRate': current = cell.conversionRate || 0; previous = prevCell.conversionRate || 0; break;
+        case 'conversionRate30': current = cell.conversionRate30 || 0; previous = prevCell.conversionRate30 || 0; break;
+        case 'retentionRate30': current = cell.retentionRate30 || 0; previous = prevCell.retentionRate30 || 0; break;
         case 'avgLTV': current = cell.avgLTV || 0; previous = prevCell.avgLTV || 0; break;
         case 'totalLTV': current = cell.totalLTV || 0; previous = prevCell.totalLTV || 0; break;
         case 'avgConversionDays': current = cell.avgConversionDays || 0; previous = prevCell.avgConversionDays || 0; break;
@@ -230,6 +255,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       case 'retained': value = formatNumber(cell.retained || 0); break;
       case 'retentionRate': value = `${(cell.retentionRate || 0).toFixed(1)}%`; break;
       case 'conversionRate': value = `${(cell.conversionRate || 0).toFixed(1)}%`; break;
+      case 'conversionRate30': value = `${(cell.conversionRate30 || 0).toFixed(1)}%`; break;
+      case 'retentionRate30': value = `${(cell.retentionRate30 || 0).toFixed(1)}%`; break;
       case 'avgLTV': value = formatCurrency(cell.avgLTV || 0); break;
       case 'totalLTV': value = formatCurrency(cell.totalLTV || 0); break;
       case 'avgConversionDays': value = `${Math.round(cell.avgConversionDays || 0)}`; break;
@@ -249,6 +276,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         case 'retained': current = cell.retained || 0; previous = prevCell.retained || 0; break;
         case 'retentionRate': current = cell.retentionRate || 0; previous = prevCell.retentionRate || 0; break;
         case 'conversionRate': current = cell.conversionRate || 0; previous = prevCell.conversionRate || 0; break;
+        case 'conversionRate30': current = cell.conversionRate30 || 0; previous = prevCell.conversionRate30 || 0; break;
+        case 'retentionRate30': current = cell.retentionRate30 || 0; previous = prevCell.retentionRate30 || 0; break;
         case 'avgLTV': current = cell.avgLTV || 0; previous = prevCell.avgLTV || 0; break;
         case 'totalLTV': current = cell.totalLTV || 0; previous = prevCell.totalLTV || 0; break;
         case 'avgConversionDays': current = cell.avgConversionDays || 0; previous = prevCell.avgConversionDays || 0; break;
@@ -317,6 +346,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         newMembers: 0,
         converted: 0,
         retained: 0,
+        converted30: 0,
+        retained30: 0,
         totalLTV: 0,
         conversionIntervals: [] as number[],
         visitsPostTrial: [] as number[],
@@ -330,6 +361,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         aggregated.newMembers += cell.newMembers || 0;
         aggregated.converted += cell.converted || 0;
         aggregated.retained += cell.retained || 0;
+        aggregated.converted30 += cell.converted30 || 0;
+        aggregated.retained30 += cell.retained30 || 0;
         aggregated.totalLTV += cell.totalLTV || 0;
         aggregated.conversionIntervals.push(...(cell.conversionIntervals || []));
         aggregated.visitsPostTrial.push(...(cell.visitsPostTrial || []));
@@ -345,6 +378,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         : 0;
       const conversionRate = calcConversionRate(aggregated.converted, aggregated.newMembers);
       const retentionRate = calcRetentionRate(aggregated.retained, aggregated.newMembers);
+      const conversionRate30 = calcConversionRate(aggregated.converted30, aggregated.newMembers);
+      const retentionRate30 = calcRetentionRate(aggregated.retained30, aggregated.newMembers);
 
       totals[m.key] = {
         ...aggregated,
@@ -353,6 +388,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         avgVisits,
         conversionRate,
         retentionRate,
+        conversionRate30,
+        retentionRate30,
       };
     });
     return totals;
@@ -367,6 +404,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
       case 'retained': return cell.retained || 0;
       case 'retentionRate': return cell.retentionRate || 0;
       case 'conversionRate': return cell.conversionRate || 0;
+      case 'conversionRate30': return cell.conversionRate30 || 0;
+      case 'retentionRate30': return cell.retentionRate30 || 0;
       case 'avgLTV': return cell.avgLTV || 0;
       case 'totalLTV': return cell.totalLTV || 0;
       case 'avgConversionDays': return cell.avgConversionDays || 0;
@@ -377,16 +416,16 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
   const handleExportCsv = () => {
     downloadCsv(
       `${tableId} - ${METRIC_LABELS[metric]}.csv`,
-      [{ key: 'type', header: 'Client Type' }, ...months.map((m) => ({ key: m.key, header: m.label }))],
+      [{ key: 'type', header: 'Client Type' }, ...displayMonths.map((m) => ({ key: m.key, header: m.label }))],
       [
         ...sortedTypes.map((t) => {
           const rec: Record<string, unknown> = { type: t };
-          months.forEach((m) => { rec[m.key] = metricRaw(pivot[t]?.[m.key]); });
+          displayMonths.forEach((m) => { rec[m.key] = metricRaw(pivot[t]?.[m.key]); });
           return rec;
         }),
         (() => {
           const rec: Record<string, unknown> = { type: 'TOTALS' };
-          months.forEach((m) => { rec[m.key] = metricRaw(totalsRow[m.key]); });
+          displayMonths.forEach((m) => { rec[m.key] = metricRaw(totalsRow[m.key]); });
           return rec;
         })(),
       ]
@@ -410,6 +449,8 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
         case 'retained': return formatNumber(cell?.retained || 0);
         case 'retentionRate': return `${(cell?.retentionRate || 0).toFixed(1)}%`;
         case 'conversionRate': return `${(cell?.conversionRate || 0).toFixed(1)}%`;
+        case 'conversionRate30': return `${(cell?.conversionRate30 || 0).toFixed(1)}%`;
+        case 'retentionRate30': return `${(cell?.retentionRate30 || 0).toFixed(1)}%`;
         case 'avgLTV': return formatCurrency(cell?.avgLTV || 0);
         case 'totalLTV': return formatCurrency(cell?.totalLTV || 0);
         case 'avgConversionDays': return `${Math.round(cell?.avgConversionDays || 0)}`;
@@ -527,7 +568,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                 <P57SortTh sortKey="type" activeKey={sortColumn} dir={sortDir} onToggle={handleSort} className="sticky left-0 z-40 min-w-[300px]">
                   Client Type
                 </P57SortTh>
-                {months.map(m => (
+                {displayMonths.map(m => (
                   <P57SortTh
                     key={m.key}
                     sortKey={m.key}
@@ -558,7 +599,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                   }}
                 >
                   <td className="sticky left-0 z-20 px-4 py-2 text-sm font-semibold">{t}</td>
-                  {months.map((m, idx) => {
+                  {displayMonths.map((m) => {
                     const cell = pivot[t]?.[m.key] || {};
                     return (
                       <td 
@@ -570,13 +611,14 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                           onRowClick?.({ 
                             type: t, 
                             month: m.label, 
+                            monthKey: m.key, 
                             data: cell, 
                             metric,
                             clients: cell.clients || []
                           });
                         }}
                       >
-                        {renderValue(cell, idx)}
+                        {renderValue(cell, m.idx)}
                       </td>
                     );
                   })}
@@ -585,7 +627,7 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
               {/* Totals Row */}
               <tr className={TABLE_STYLES.footer.row}>
                 <td className={`${TABLE_STYLES.footer.cellSticky} ${TABLE_STYLES.footer.label} px-4 py-2`}>Totals</td>
-                {months.map((m, idx) => {
+                {displayMonths.map((m) => {
                   const cell = totalsRow[m.key] || {};
                   return (
                     <td
@@ -596,13 +638,14 @@ export const ClientRetentionMonthByTypePivot: React.FC<ClientRetentionMonthByTyp
                         onRowClick?.({ 
                           type: 'TOTALS', 
                           month: m.label, 
+                          monthKey: m.key, 
                           data: cell, 
                           metric,
                           clients: cell.clients || []
                         });
                       }}
                     >
-                      {renderValueWhite(cell, idx)}
+                      {renderValueWhite(cell, m.idx)}
                     </td>
                   );
                 })}

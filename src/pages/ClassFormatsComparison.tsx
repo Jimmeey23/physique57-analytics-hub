@@ -24,6 +24,7 @@ import { ModernDrillDownModal } from '@/components/dashboard/ModernDrillDownModa
 import { InfoPopover } from '@/components/ui/InfoSidebar';
 import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
+import { useUrlParamState } from '@/hooks/useUrlParamState';
 
 
 const locations = [
@@ -39,7 +40,7 @@ const ClassFormatsComparison: React.FC = () => {
   const { allCheckins, loading: checkinsLoading } = useLateCancellationsData();
   const { setLoading } = useGlobalLoading();
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
-  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
+  const [activeLocation, setActiveLocation] = useUrlParamState<string>('location', exportPreset?.studioId || 'kwality');
   const [drill, setDrill] = useState<any | null>(null);
 
   useEffect(() => {

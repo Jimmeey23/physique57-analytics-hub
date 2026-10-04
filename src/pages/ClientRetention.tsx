@@ -10,6 +10,8 @@ import React, {
   useTransition,
 } from 'react';
 import { useNewClientData } from '@/hooks/useNewClientData';
+import { useSecondVisitDates } from '@/hooks/useSecondVisitDates';
+import { useUrlParamState } from '@/hooks/useUrlParamState';
 import { usePayrollData } from '@/hooks/usePayrollData';
 import { useGlobalLoading } from '@/hooks/useGlobalLoading';
 import { BarChart3, Clock3, Gauge, RotateCcw, SlidersHorizontal } from 'lucide-react';
@@ -709,18 +711,29 @@ const ClientRetention = () => {
   } = useGlobalLoading();
   const exportPreset = React.useMemo(() => (typeof window !== 'undefined' ? getConsolidatedExportPresetFromSearch(window.location.search) : null), []);
   const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
-  const [selectedLocation, setSelectedLocation] = useState(exportPreset ? (exportPreset.studioId === 'all' ? 'All Locations' : (exportStudio?.locationLabel || DEFAULT_RETENTION_LOCATION)) : DEFAULT_RETENTION_LOCATION);
+  const [selectedLocation, setSelectedLocation] = useUrlParamState<string>(
+    'location',
+    exportPreset
+      ? (exportPreset.studioId === 'all' ? 'All Locations' : (exportStudio?.locationLabel || DEFAULT_RETENTION_LOCATION))
+      : DEFAULT_RETENTION_LOCATION
+  );
   const [isPendingTableSwitch, startTableSwitch] = useTransition();
   const [rememberLastTable, setRememberLastTable] = useState(() => {
     if (typeof window === 'undefined') return true;
     return window.localStorage.getItem('p57-retention-remember-table') !== '0';
   });
-  const [activeTable, setActiveTable] = useState(() => {
-    if (typeof window === 'undefined') return 'monthonmonthbytype';
-    const remember = window.localStorage.getItem('p57-retention-remember-table') !== '0';
-    const saved = window.localStorage.getItem('p57-retention-active-table');
-    return remember && isRetentionTable(saved) ? saved : 'monthonmonthbytype';
-  });
+  // ?table=<key> deep-links a specific table; otherwise fall back to the
+  // remembered table, then to the default.
+  const [activeTable, setActiveTable] = useUrlParamState<string>(
+    'table',
+    () => {
+      if (typeof window === 'undefined') return 'monthonmonthbytype';
+      const remember = window.localStorage.getItem('p57-retention-remember-table') !== '0';
+      const saved = window.localStorage.getItem('p57-retention-active-table');
+      return remember && isRetentionTable(saved) ? saved : 'monthonmonthbytype';
+    },
+    { isValid: isRetentionTable }
+  );
   const [compactTableMode, setCompactTableMode] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('p57-retention-compact-mode') === '1';
@@ -1015,6 +1028,10 @@ const ClientRetention = () => {
   const deferredFilteredDataNoDateRange = useDeferredValue(filteredDataNoDateRange);
   const deferredFilteredPayrollData = useDeferredValue(filteredPayrollData);
 
+  // Second visits come from the check-ins sheet; the new-client sheet has no
+  // second-visit date, only a post-trial visit count.
+  const { getSecondVisitDate } = useSecondVisitDates();
+
   const selectedMomMonths = useMemo(
     () => buildMomMonths(filteredDataNoDateRange),
     [filteredDataNoDateRange]
@@ -1208,6 +1225,7 @@ const ClientRetention = () => {
             <ClientConversionMetricCards 
               data={deferredFilteredData}
               historicalData={deferredFilteredDataNoDateRange}
+              getSecondVisitDate={getSecondVisitDate}
               dateRange={filters.dateRange}
               onCardClick={(title, data, metricType) => setDrillDownModal({
               isOpen: true,
@@ -1391,9 +1409,10 @@ const ClientRetention = () => {
                     data={deferredFilteredDataNoDateRange}
                     months={selectedMomMonths}
                     visitsSummary={visitsSummaryNoDateRange}
+                    getSecondVisitDate={getSecondVisitDate}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      title: `${rowData.type} - Analysis`,
+                      title: rowData.month ? `${rowData.type} · ${rowData.month}` : `${rowData.type} - Analysis`,
                       data: rowData,
                       type: 'month'
                     })}
@@ -1409,9 +1428,10 @@ const ClientRetention = () => {
                   <ClientRetentionYearOnYearPivot
                     data={deferredFilteredDataNoDateRange}
                     months={selectedYoyMonths}
+                    getSecondVisitDate={getSecondVisitDate}
                     onRowClick={rowData => setDrillDownModal({
                       isOpen: true,
-                      title: `${rowData.rowKey} - Year Comparison`,
+                      title: rowData.month ? `${rowData.rowKey} · ${rowData.month}` : `${rowData.rowKey} - Year Comparison`,
                       data: rowData,
                       type: 'year'
                     })}

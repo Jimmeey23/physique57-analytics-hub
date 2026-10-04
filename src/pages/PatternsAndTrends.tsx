@@ -27,6 +27,7 @@ import { ModernDataTable } from '@/components/ui/ModernDataTable';
 import { getActiveConsolidatedExportPreset, getConsolidatedStudioOption, getPresetMonthLabels } from '@/utils/consolidatedExportPreset';
 import { isNewClient } from '@/utils/clientRetention';
 import { rowKey } from '@/utils/reactKeys';
+import { useUrlParamState } from '@/hooks/useUrlParamState';
 
 type GroupByOption = 'product' | 'category' | 'teacher' | 'location' | 'memberStatus';
 
@@ -66,7 +67,7 @@ export const PatternsAndTrends = () => {
   const navigate = useNavigate();
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   const exportStudio = exportPreset ? getConsolidatedStudioOption(exportPreset.studioId) : null;
-  const [selectedLocation, setSelectedLocation] = useState(exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.patternsLocationLabel || 'Kwality House, Kemps Corner'));
+  const [selectedLocation, setSelectedLocation] = useUrlParamState<string>('location', exportPreset?.studioId === 'all' ? 'All Locations' : (exportStudio?.patternsLocationLabel || 'Kwality House, Kemps Corner'));
   const [heroColor, setHeroColor] = useState<string>('#3b82f6');
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());

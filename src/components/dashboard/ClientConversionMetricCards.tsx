@@ -1,15 +1,18 @@
 import React from 'react';
-import { Users, Target, TrendingUp, DollarSign, UserCheck, Award, UserPlus, CalendarDays, Repeat, ShoppingBag, AlertTriangle, HeartHandshake, UserX, type LucideIcon } from 'lucide-react';
+import { Users, Target, TrendingUp, DollarSign, UserCheck, Award, UserPlus, CalendarDays, Repeat, ShoppingBag, AlertTriangle, CalendarCheck, HeartHandshake, UserX, type LucideIcon } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercentage } from '@/utils/formatters';
 import { NewClientData } from '@/types/dashboard';
 import { useClientConversionMetrics } from '@/hooks/useClientConversionMetrics';
 import { parseDate } from '@/utils/dateUtils';
-import { isConverted, isNewClient, isRetained } from '@/utils/clientRetention';
+import { isConverted, isConvertedSameMonth, isNewClient, isRetained, isSameCalendarMonth } from '@/utils/clientRetention';
+import { conversionRate as calcConversionRate, retentionRate as calcRetentionRate } from '@/utils/retentionRates';
 import { MetricCard, MetricGrid } from '@/components/ui/MetricCard';
 
 interface ClientConversionMetricCardsProps {
   data: NewClientData[];
   historicalData?: NewClientData[];
+  /** Resolves the member's second visit, used by the first-month retention metric. */
+  getSecondVisitDate?: (client: NewClientData) => string | null;
   dateRange?: { start?: string | Date; end?: string | Date };
   onCardClick?: (title: string, data: NewClientData[], metricType: string) => void;
 }
@@ -39,7 +42,7 @@ interface ClientConversionMetricCardsProps {
     return churned.reduce((sum, c) => sum + (c.visitsPostTrial || 0), 0) / churned.length;
   };
 
-const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCardsProps> = ({ data, historicalData, dateRange, onCardClick }) => {
+const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCardsProps> = ({ data, historicalData, dateRange, getSecondVisitDate, onCardClick }) => {
   const { metrics } = useClientConversionMetrics(data, historicalData, { dateRange });
 
   
@@ -110,6 +113,29 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
   const churnVisitsAvg = React.useMemo(() => churnVisitsAvgOf(data), [data]);
   const churnVisitsPrev = React.useMemo(() => churnVisitsAvgOf(prevPeriodData), [prevPeriodData]);
   const churnVisitsYoY = React.useMemo(() => churnVisitsAvgOf(prevYearData), [prevYearData]);
+
+  // First-calendar-month conversion / retention: the purchase (or the second
+  // visit) has to land in the same calendar month as the first visit.
+  const firstMonthRetained = React.useCallback(
+    (client: NewClientData) =>
+      Boolean(getSecondVisitDate) && isSameCalendarMonth(client.firstVisitDate, getSecondVisitDate?.(client)),
+    [getSecondVisitDate]
+  );
+
+  const firstMonthRates = React.useCallback(
+    (arr: NewClientData[]) => {
+      const cohort = arr.filter(isNewClient);
+      return {
+        conversion: calcConversionRate(cohort.filter(isConvertedSameMonth).length, cohort.length),
+        retention: calcRetentionRate(cohort.filter(firstMonthRetained).length, cohort.length),
+      };
+    },
+    [firstMonthRetained]
+  );
+
+  const firstMonthCurrent = React.useMemo(() => firstMonthRates(data), [data, firstMonthRates]);
+  const firstMonthPrev = React.useMemo(() => firstMonthRates(prevPeriodData), [prevPeriodData, firstMonthRates]);
+  const firstMonthYoY = React.useMemo(() => firstMonthRates(prevYearData), [prevYearData, firstMonthRates]);
 
   const iconMap: Record<string, typeof Users> = {
     'New Members': UserPlus,
@@ -304,6 +330,52 @@ const ClientConversionMetricCardsComponent: React.FC<ClientConversionMetricCards
         trend: churnVisitsAvg > churnVisitsPrev ? 'moderate' : 'weak'
       },
       filterData: () => data.filter(c => isChurnedStatus(c) && (c.visitsPostTrial || 0) > 0)
+    },
+    {
+      title: '30-Day Conversion Rate',
+      value: formatPercentage(firstMonthCurrent.conversion),
+      rawValue: firstMonthCurrent.conversion,
+      previousRawValue: firstMonthPrev.conversion,
+      icon: CalendarCheck,
+      gradient: 'from-slate-700 to-slate-800',
+      description: 'Purchased inside the first-visit month',
+      change: pctGrowth(firstMonthCurrent.conversion, firstMonthPrev.conversion),
+      previousValue: formatPercentage(firstMonthPrev.conversion),
+      period: 'vs previous month',
+      metricType: 'conversion_rate_30d',
+      yoyPreviousValue: prevYearData.length > 0 ? formatPercentage(firstMonthYoY.conversion) : undefined,
+      yoyPreviousRawValue: firstMonthYoY.conversion,
+      yoyChange: prevYearData.length > 0 ? pctGrowth(firstMonthCurrent.conversion, firstMonthYoY.conversion) : undefined,
+      comparison: { current: firstMonthCurrent.conversion, previous: firstMonthYoY.conversion, difference: firstMonthCurrent.conversion - firstMonthYoY.conversion },
+      changeDetails: {
+        rate: pctGrowth(firstMonthCurrent.conversion, firstMonthPrev.conversion),
+        isSignificant: Math.abs(firstMonthCurrent.conversion - firstMonthPrev.conversion) > 1,
+        trend: firstMonthCurrent.conversion > firstMonthPrev.conversion ? 'moderate' : 'weak'
+      },
+      filterData: () => data.filter(isConvertedSameMonth)
+    },
+    {
+      title: '30-Day Retention Rate',
+      value: formatPercentage(firstMonthCurrent.retention),
+      rawValue: firstMonthCurrent.retention,
+      previousRawValue: firstMonthPrev.retention,
+      icon: CalendarCheck,
+      gradient: 'from-slate-700 to-slate-800',
+      description: 'Returned inside the first-visit month',
+      change: pctGrowth(firstMonthCurrent.retention, firstMonthPrev.retention),
+      previousValue: formatPercentage(firstMonthPrev.retention),
+      period: 'vs previous month',
+      metricType: 'retention_rate_30d',
+      yoyPreviousValue: prevYearData.length > 0 ? formatPercentage(firstMonthYoY.retention) : undefined,
+      yoyPreviousRawValue: firstMonthYoY.retention,
+      yoyChange: prevYearData.length > 0 ? pctGrowth(firstMonthCurrent.retention, firstMonthYoY.retention) : undefined,
+      comparison: { current: firstMonthCurrent.retention, previous: firstMonthYoY.retention, difference: firstMonthCurrent.retention - firstMonthYoY.retention },
+      changeDetails: {
+        rate: pctGrowth(firstMonthCurrent.retention, firstMonthPrev.retention),
+        isSignificant: Math.abs(firstMonthCurrent.retention - firstMonthPrev.retention) > 1,
+        trend: firstMonthCurrent.retention > firstMonthPrev.retention ? 'moderate' : 'weak'
+      },
+      filterData: () => data.filter(firstMonthRetained)
     }
   ];
 

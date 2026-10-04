@@ -49,6 +49,8 @@ export type DrillDownDataPayload = {
   clients?: NewClientData[];
   relatedClients?: NewClientData[];
   metricType?: string;
+  metric?: string;
+  monthKey?: string;
   month?: string | number;
   year?: number;
   rowType?: string;
@@ -250,14 +252,30 @@ const getRetentionReason = (client: NewClientData) => {
   };
 };
 
+const METRIC_QUICK_FILTER: Record<string, QuickFilterKey> = {
+  converted: 'converted',
+  conversionRate: 'converted',
+  retained: 'retained',
+  retentionRate: 'retained',
+  newMembers: 'newOnly',
+};
+
+// The clicked cell decides what the modal opens on: a "Converted" cell shows converted
+// clients, not the whole cohort behind that cell.
+const getInitialQuickFilter = (payload: DrillDownDataPayload | null): QuickFilterKey => {
+  const metric = safeText(payload?.metric ?? payload?.metricType, '');
+  return METRIC_QUICK_FILTER[metric] ?? 'all';
+};
+
 const getScopeBadges = (payload: DrillDownDataPayload | null, type: DrillDownModalType) => {
   const badges: string[] = [];
 
-  if (type === 'month' && payload?.month) badges.push(`Month: ${payload.month}`);
+  if (payload?.month) badges.push(`Month: ${payload.month}`);
   if (type === 'year' && payload?.year) badges.push(`Year: ${payload.year}`);
   if (payload?.rowKey) badges.push(`Segment: ${String(payload.rowKey).replace(/_/g, ' ')}`);
   if (payload?.rowType) badges.push(`Grouping: ${String(payload.rowType).replace(/_/g, ' ')}`);
-  if (payload?.metricType) badges.push(`Metric: ${String(payload.metricType).replace(/_/g, ' ')}`);
+  const scopeMetric = payload?.metricType ?? payload?.metric;
+  if (scopeMetric) badges.push(`Metric: ${String(scopeMetric).replace(/_/g, ' ')}`);
   if (payload?.type && type !== 'month') badges.push(`Type: ${payload.type}`);
 
   if (badges.length === 0) badges.push(`${safeText(type, 'Detail')} drill-down`);
@@ -554,8 +572,10 @@ export const ClientConversionDrillDownModalV3: React.FC<ClientConversionDrillDow
     if (isOpen) {
       setActiveTab('clients');
       setExpandedClientKeys([]);
+      setSearch('');
+      setQuickFilter(getInitialQuickFilter(payload));
     }
-  }, [isOpen]);
+  }, [isOpen, payload]);
 
   const copyEmails = React.useCallback(() => {
     const emails = uniqBy(

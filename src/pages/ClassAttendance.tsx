@@ -23,6 +23,7 @@ import { BarChart3, Users, MapPin, Building2, Calendar, Trophy } from 'lucide-re
 import { useState } from 'react';
 import { DisplayedTablesExportButton } from '@/components/ui/DisplayedTablesExportButton';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
+import { useUrlParamState } from '@/hooks/useUrlParamState';
 
 const locations = [{
   id: 'all',
@@ -86,7 +87,7 @@ const ClassAttendance = () => {
   const InnerContent: React.FC<{ rawData: any[]; payrollData: any[] }> = ({ rawData, payrollData }) => {
     const filteredData = useFilteredSessionsData(rawData || []);
     const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
-    const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
+    const [activeLocation, setActiveLocation] = useUrlParamState<string>('location', exportPreset?.studioId || 'kwality');
     const [activeTab, setActiveTab] = useState('overview');
 
     const filterByLocation = useMemo(() => {

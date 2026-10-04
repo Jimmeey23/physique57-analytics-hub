@@ -70,27 +70,41 @@ export const P57SortTh: React.FC<P57SortThProps> = ({
   ...rest
 }) => {
   const active = activeKey === sortKey;
+  // The sort glyph is positioned out of flow so it never pushes the header
+  // label off the column's data alignment. Padding keeps them from colliding.
+  const iconOnLeft = align === 'right';
   return (
     <th
       {...rest}
       data-sortable="true"
+      data-align={align}
       aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
       onClick={() => onToggle(sortKey)}
       className={cn(
+        'relative',
         align === 'center' && 'text-center',
         align === 'right' && 'text-right',
+        // Centered columns reserve a gutter on both sides so the label stays on
+        // the column's centre line; edge-aligned columns reserve only the side
+        // the glyph sits on.
+        align === 'center' ? 'px-5' : iconOnLeft ? 'pl-5' : 'pr-5',
         className
       )}
     >
-      <span className="inline-flex items-center gap-0">
-        {children}
-        <span className={cn('p57-sort-ic', active && 'p57-sort-pop')} data-active={active}>
-          {active ? (
-            dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-          ) : (
-            <ChevronsUpDown className="h-3 w-3" />
-          )}
-        </span>
+      {children}
+      <span
+        className={cn(
+          'p57-sort-ic absolute top-1/2 -translate-y-1/2',
+          iconOnLeft ? 'left-1' : 'right-1',
+          active && 'p57-sort-pop'
+        )}
+        data-active={active}
+      >
+        {active ? (
+          dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        ) : (
+          <ChevronsUpDown className="h-3 w-3" />
+        )}
       </span>
     </th>
   );

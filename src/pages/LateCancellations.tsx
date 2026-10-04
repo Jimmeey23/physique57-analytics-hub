@@ -19,6 +19,7 @@ import { StudioLocationTabs } from '@/components/ui/StudioLocationTabs';
 import { getActiveConsolidatedExportPreset } from '@/utils/consolidatedExportPreset';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles } from 'lucide-react';
+import { useUrlParamState } from '@/hooks/useUrlParamState';
 
 const LateCancellations = () => {
   const { data: lateCancellationsData, allCheckins, loading } = useLateCancellationsData();
@@ -26,7 +27,7 @@ const LateCancellations = () => {
   const exportPreset = useMemo(() => (typeof window !== 'undefined' ? getActiveConsolidatedExportPreset(window.location.search) : null), []);
   
   // Location tabs state
-  const [activeLocation, setActiveLocation] = useState<string>(exportPreset?.studioId || 'kwality');
+  const [activeLocation, setActiveLocation] = useUrlParamState<string>('location', exportPreset?.studioId || 'kwality');
   
   const defaultDateRange = useMemo(() => getDashboardDefaultDateRange(), []);
 
