@@ -396,18 +396,21 @@ export const EnhancedClassAttendanceMetricCards: React.FC<EnhancedClassAttendanc
             value={metric.value}
             sub={metric.description}
             icon={IconComponent}
-            delta={{
+            delta={metric.yoyChange === undefined ? undefined : {
               value: `${metric.change > 0 ? '+' : ''}${metric.change.toFixed(1)}%`,
               tone: metric.change > 0 ? 'up' : metric.change < 0 ? 'down' : 'flat',
             }}
             details={
               <span className="space-y-1">
-                <span className="block">
+                {metric.yoyChange === undefined ? (
+                  <span className="block">Year-over-year comparison unavailable</span>
+                ) : <span className="block">
                   Last year: <strong>{metric.yoyPreviousValue}</strong> ({metric.yoyChange > 0 ? '+' : ''}
                   {metric.yoyChange.toFixed(1)}%)
-                </span>
+                </span>}
                 <span className="block text-muted-foreground">
-                  Trend: {metric.changeDetails.trend} · Δ {Math.abs(metric.comparison.difference)}
+                  Trend: {metric.changeDetails.trend}
+                  {metric.yoyChange !== undefined && <> · Δ {Math.abs(metric.comparison.difference)}</>}
                 </span>
               </span>
             }
